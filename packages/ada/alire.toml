@@ -1,6 +1,6 @@
 name = "uarp_sdk"
 description = "Ada client for the UARP (Snaga) Universal Agent Runtime Platform API"
-version = "0.2.0"
+version = "0.3.0"
 licenses = "MIT"
 authors = ["Snaga"]
 maintainers = ["Snaga <support@snaga.ai>"]

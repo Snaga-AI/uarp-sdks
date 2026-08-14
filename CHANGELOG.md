@@ -6,6 +6,48 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.3.0 — 2026-08-14
+
+Regenerated from a corrected API document, and one fix that matters more
+than the rest.
+
+### Fixed
+
+- **Paginated collections came back empty.** Every `*All` walker stopped at
+  the first page with no items, and this API returns exactly that: it applies
+  the page size before filtering, so a request for two items answers with none
+  while `has_more` is still true. Callers were told a collection was empty when
+  it was not — silently, with no error to notice. An empty page no longer ends
+  the walk; a server that never yields anything is stopped after three empty
+  pages in a row, and the repeated-cursor guard still bounds a server that never
+  clears its cursor. Affects TypeScript, Rust, Swift and Kotlin; the Ada walker
+  was already correct.
+
+### Changed — breaking
+
+The API document changed shape and the generated surface followed it.
+
+- **`AgentModelConfig` no longer carries `provider`, `model_ref`,
+  `endpoint_url` or `api_key_ref`**, and the `AgentModelConfigProvider`
+  enumeration is gone with them. The platform selects the model itself; the
+  response now describes capabilities only. Requests take
+  `AgentModelConfigInput`, which the document states is accepted and ignored —
+  so creating an agent is just a name.
+- **`GetHealthResponse.status` is an enumeration** (`healthy`, `degraded`,
+  `unhealthy`) rather than free text, and the four properties `/health` always
+  returned are described at last.
+- Required properties corrected across `ConstitutionRule`, `Integration`,
+  `BridgeConnection`, `GovernanceLedgerEntry` and `DesignRequest`, and twelve
+  input schemas added. 603 models where 0.2.0 had 575.
+
+Code written against 0.2.0 that sets a model on create, or reads a provider
+off an agent, will not compile. Both were already ignored by the platform.
+
+### Known
+
+The API document declares itself `0.2.0` in both releases although its content
+changed between them, so the SDK version is the only thing that tracks it.
+
 ## 0.2.0 — 2026-08-14
 
 First release. Generated from UARP spec version 0.2.0: 557 operations across
