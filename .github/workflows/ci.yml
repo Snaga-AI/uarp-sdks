@@ -114,6 +114,9 @@ jobs:
           java-version: 21
       - uses: alire-project/setup-alire@v4
         with:
+          # Without a version the action installs alr 2.0.2, whose pinned index
+          # has no GNAT 15 at all, so the toolchain below cannot resolve.
+          version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
       - run: npm install
         working-directory: packages/typescript
@@ -130,6 +133,9 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
       - uses: alire-project/setup-alire@v4
         with:
+          # Without a version the action installs alr 2.0.2, whose pinned index
+          # has no GNAT 15 at all, so the toolchain below cannot resolve.
+          version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
       - name: Build and test
         run: ./tests/run-tests.sh
