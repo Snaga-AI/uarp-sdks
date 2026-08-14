@@ -97,8 +97,22 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
       - run: ./gradlew :uarp-sdk:build
         working-directory: packages/kotlin
+      # Central needs a verified namespace and a signing key. Until those exist
+      # the release should still ship the other four packages rather than fail
+      # as a whole — but it must say so, not skip in silence.
+      - id: creds
+        env:
+          USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          SIGNING_KEY: ${{ secrets.MAVEN_SIGNING_KEY }}
+        run: |
+          if [ -n "$USERNAME" ] && [ -n "$SIGNING_KEY" ]; then
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::Maven Central is not configured; see PUBLISHING.md. The jar was built but not published."
+          fi
       - name: Publish
-        if: env.DRY_RUN != 'true'
+        if: env.DRY_RUN != 'true' && steps.creds.outputs.ready == 'true'
         run: ./gradlew :uarp-sdk:publish
         working-directory: packages/kotlin
         env:
@@ -106,8 +120,8 @@ jobs:
           ORG_GRADLE_PROJECT_mavenPassword: ${{ secrets.MAVEN_PASSWORD }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_SIGNING_PASSWORD }}
-      - name: Publish locally (dry run)
-        if: env.DRY_RUN == 'true'
+      - name: Publish locally
+        if: env.DRY_RUN == 'true' || steps.creds.outputs.ready != 'true'
         run: ./gradlew :uarp-sdk:publishToMavenLocal
         working-directory: packages/kotlin
 
@@ -143,6 +157,10 @@ jobs:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
+          if [ -z "${TOKEN}" ]; then
+            echo "::warning::SWIFT_MIRROR_TOKEN is not set; snaga-ai/uarp-swift was not updated. See PUBLISHING.md."
+            exit 0
+          fi
           remote="https://x-access-token:${TOKEN}@github.com/snaga-ai/uarp-swift.git"
           git clone --quiet "$remote" mirror || { mkdir mirror && git -C mirror init --quiet -b main; }
 
