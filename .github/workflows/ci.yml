@@ -69,6 +69,17 @@ jobs:
       - run: cargo build --examples
         working-directory: packages/rust
 
+  msrv:
+    name: Rust MSRV
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # Cargo.toml promises rust-version 1.75. Nothing checked it, so the
+      # promise was only ever as good as the day it was written.
+      - uses: dtolnay/rust-toolchain@1.75.0
+      - run: cargo check --all-features
+        working-directory: packages/rust
+
   swift:
     name: Swift
     runs-on: macos-14

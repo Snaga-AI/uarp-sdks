@@ -35,8 +35,8 @@ pub struct GetUsageTimeseriesParams {
 /// Query and header parameters for `handleStripeWebhook`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct HandleStripeWebhookParams {
-    /// Stripe webhook signature in `t=<timestamp>,v1=<sig>` format. Required; missing or invalid
-    /// signatures are rejected with 400.
+    /// Stripe webhook signature in `t=\<timestamp\>,v1=\<sig\>` format. Required; missing or
+    /// invalid signatures are rejected with 400.
     #[serde(skip)]
     pub stripe_signature: String,
 }
@@ -76,7 +76,7 @@ impl BillingApi {
     /// Create a Stripe Customer Portal session URL
     ///
     /// Returns a Stripe-hosted URL where the customer can manage subscriptions and payment methods.
-    /// `return_url` must be same-origin as the request; defaults to `<origin>/admin/billing`.
+    /// `return_url` must be same-origin as the request; defaults to `\<origin\>/admin/billing`.
     ///
     /// `POST /api/v1/billing/portal-session`
     ///

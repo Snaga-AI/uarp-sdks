@@ -30,7 +30,7 @@ impl OpenAiCompatApi {
     /// OpenAI-compatible chat completion
     ///
     /// Maps OpenAI ChatCompletion requests to UARP agent runs. The 'model' field maps to
-    /// 'agent/<agent_id>' or a plain agent_id.
+    /// 'agent/\<agent_id\>' or a plain agent_id.
     ///
     /// `POST /v1/chat/completions`
     ///

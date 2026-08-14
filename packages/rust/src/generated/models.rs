@@ -1303,7 +1303,7 @@ pub struct AuthVerifyCodeRequest {
 /// Success response: API key to use as Bearer token
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AuthVerifyCodeResponse {
-    /// uarp_<prefix>_<secret>; store and use as Authorization: Bearer <api_key>
+    /// uarp_\<prefix\>_\<secret\>; store and use as Authorization: Bearer \<api_key\>
     pub api_key: String,
 }
 
@@ -1814,7 +1814,7 @@ impl From<&str> for BulkDeleteNotificationsScope {
 pub struct CastBallotRequest {
     pub agent_id: String,
     pub vote: String,
-    /// Voting weight; 0 < w ≤ 100.
+    /// Voting weight; 0 \< w ≤ 100.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1827,7 +1827,7 @@ pub struct CastBallotRequest {
 /// `ChatCompletionRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ChatCompletionRequest {
-    /// Agent ID or 'agent/<agent_id>'
+    /// Agent ID or 'agent/\<agent_id\>'
     pub model: String,
     pub messages: Vec<ChatCompletionRequestMessage>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2489,8 +2489,8 @@ pub struct ConversationEntry {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_calls: Option<Vec<ConversationEntryToolCall>>,
     /// Reasoning / thinking content (DeepSeek `reasoning_content`, Anthropic extended thinking,
-    /// GLM/Qwen `<think>` blocks). Persisted on assistant entries so reload re-paints the Thinking
-    /// section above the assistant text.
+    /// GLM/Qwen `\<think\>` blocks). Persisted on assistant entries so reload re-paints the
+    /// Thinking section above the assistant text.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
 }
@@ -5728,7 +5728,7 @@ impl From<&str> for ListOAuthLoginProvidersResponseProviderId {
 pub struct ListProviderModelsResponse {
     /// Registered provider id (admin → Providers).
     pub provider: String,
-    /// Base URL for this provider's API (e.g. https://api.openai.com/v1). Empty for custom.
+    /// Base URL for this provider's API (e.g. <https://api.openai.com/v1>). Empty for custom.
     pub endpoint_url: String,
     pub models: Vec<ListProviderModelsResponseModel>,
     /// Present when models could not be fetched (e.g. provider not configured).
@@ -6423,7 +6423,7 @@ impl From<&str> for MemoryEntryType {
 /// `MintSSETokenResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MintSSETokenResponse {
-    /// Bearer-shape API key. Pass as `?token=<token>` on SSE/WS endpoints.
+    /// Bearer-shape API key. Pass as `?token=\<token\>` on SSE/WS endpoints.
     pub token: String,
     pub expires_at: String,
 }

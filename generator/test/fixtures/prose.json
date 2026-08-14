@@ -1,0 +1,53 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Prose", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/keys": {
+      "get": {
+        "operationId": "listKeys",
+        "tags": ["Keys"],
+        "summary": "List keys, see https://docs.test/keys for the rules",
+        "description": "Keys are shaped uarp_<prefix>_<secret>. Send them as Authorization: Bearer <api_key>. Full reference at https://docs.test/auth.",
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items"],
+                  "properties": {
+                    "items": {
+                      "type": "array",
+                      "items": { "$ref": "#/components/schemas/Key" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Key": {
+        "type": "object",
+        "description": "An API key. Documented at https://docs.test/keys.",
+        "required": ["value"],
+        "properties": {
+          "value": {
+            "type": "string",
+            "description": "uarp_<prefix>_<secret>; store and use as Authorization: Bearer <api_key>"
+          },
+          "note": {
+            "type": "string",
+            "description": "Free text. May contain [brackets], <angles> and a link like https://docs.test/notes."
+          }
+        }
+      }
+    }
+  }
+}

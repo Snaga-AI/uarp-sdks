@@ -606,9 +606,36 @@ function docComment(w: Writer, text: string | undefined): void {
   w.doc(escapeDoc(text), '/// ');
 }
 
-/** Rustdoc reads `[...]` as an intra-doc link, so brackets are escaped. */
+/**
+ * Defuse the Markdown in a description.
+ *
+ * Rustdoc renders doc comments as Markdown, which quietly mangles three things
+ * the spec's prose is full of. `[...]` becomes an intra-doc link. `<prefix>`
+ * parses as an HTML tag and vanishes from the page — the reader is left with
+ * `uarp__secret` where the document said `uarp_<prefix>_<secret>`. And a bare
+ * URL is rendered as text unless it is wrapped in angle brackets, so links in
+ * descriptions are not clickable.
+ */
 function escapeDoc(text: string): string {
-  return text.replace(/[[\]]/g, (match) => `\\${match}`);
+  //  URLs are found first and wrapped, because the escaping below would
+  //  otherwise turn the wrapper into literal brackets. Trailing sentence
+  //  punctuation is left outside the link: a description almost always ends
+  //  `…/keys.`, and swallowing the full stop points the link at a page that
+  //  does not exist.
+  const url = /https?:\/\/[^\s)>\]]+/g;
+  let out = '';
+  let last = 0;
+  for (const match of text.matchAll(url)) {
+    const trimmed = match[0].replace(/[.,;:!?]+$/, '');
+    out += escapeMarkdown(text.slice(last, match.index));
+    out += `<${trimmed}>`;
+    last = match.index + trimmed.length;
+  }
+  return out + escapeMarkdown(text.slice(last));
+}
+
+function escapeMarkdown(text: string): string {
+  return text.replace(/[[\]<>]/g, (match) => `\\${match}`);
 }
 
 function escape(value: string): string {
