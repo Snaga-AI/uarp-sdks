@@ -59,6 +59,22 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Live conformance probe** (`smoke/`, `make smoke`). Calls the whole
+  documented surface against a running server in dependency order, validates
+  every response against the schema that promised it, and writes a report for
+  the backend team. Requests carry the documented minimum — each required
+  property and nothing else — so a rejection means the endpoint enforces a rule
+  the document never states. Writes that have a matching read echo it back
+  unchanged, which exercises configuration endpoints without altering them.
+  Deletes only target identifiers the run created; `smoke/quarantine.json` names
+  the calls it will not make on its own. Requests go through the TypeScript
+  SDK's own transport, so the run exercises shipped code.
+- **Live SDK scenario** (`smoke/live/`). One fixed sequence through all five
+  SDKs against a real server, comparing what each decoded. It is the only check
+  that puts the Rust, Swift, Kotlin and Ada transports against real TLS and real
+  infrastructure rather than a local mock, and a value an SDK cannot decode is
+  reported rather than raised, so the disagreement shows up in the comparison
+  instead of a stack trace.
 - Release workflow covering npm, crates.io, Maven Central, a GitHub release and
   an Alire submission tarball, with a dry run through `workflow_dispatch`.
 - `node generator/src/index.ts --check` (also `make check`) reports every

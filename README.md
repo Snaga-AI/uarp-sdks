@@ -162,6 +162,40 @@ Differences that cannot be fixed are recorded in
 [contract/known-differences.json](contract/known-differences.json) with a
 reason, and reported without failing the run.
 
+## Checking the spec against the server
+
+Everything above compares the SDKs with the *document*. None of it can tell you
+whether the document is true. That is what [smoke/](smoke/README.md) is for:
+
+```sh
+make smoke-dry                      # what it would call, in what order
+UARP_API_KEY=… make smoke           # the sweep, then the report
+```
+
+It calls the whole documented surface — every operation, in dependency order,
+creates before reads before deletes — validates each response against the
+schema that promised it, and writes `smoke/out/BACKEND-REPORT.md` for whoever
+owns the API.
+
+Requests are built from the document alone: each property the schema marks
+required, and nothing else. A rejection therefore means the endpoint enforces a
+rule the document never states — which is the finding. Configuration writes echo
+back what the matching read returned, so production is exercised without being
+altered, and a server that refuses its own output is reported as a read/write
+asymmetry. Deletes only ever target identifiers the run itself created;
+`smoke/quarantine.json` names the calls it will not make on its own, with
+reasons.
+
+The first run against production found two 5xx faults, twenty-eight endpoints
+rejecting bodies built strictly from their own schemas, twelve `PUT`s refusing
+the output of their own `GET`, and thirty error responses that were not the RFC
+9457 documents every SDK decodes.
+
+[smoke/live/](smoke/live/SCENARIO.md) closes the last gap by running one fixed
+scenario through all five SDKs against the real server and comparing what each
+decoded — the only check that exercises the Rust, Swift, Kotlin and Ada
+transports against real TLS and real infrastructure rather than a local mock.
+
 ## Releasing
 
 All five packages share one version and one tag.

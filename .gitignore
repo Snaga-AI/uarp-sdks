@@ -35,3 +35,10 @@ contract/traces/
 *.swp
 .idea/
 .vscode/
+
+# Live probe: output and any local key file, never committed
+smoke/out/
+smoke/.env
+
+# Live SDK scenario output
+smoke/live/out/

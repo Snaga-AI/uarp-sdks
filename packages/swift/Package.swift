@@ -14,6 +14,7 @@ let package = Package(
         .library(name: "UARP", targets: ["UARP"]),
         .executable(name: "uarp-example", targets: ["UARPExample"]),
         .executable(name: "uarp-contract", targets: ["UARPContract"]),
+        .executable(name: "uarp-live", targets: ["UARPLive"]),
     ],
     targets: [
         .target(
@@ -29,6 +30,11 @@ let package = Package(
             name: "UARPContract",
             dependencies: ["UARP"],
             path: "Sources/UARPContract"
+        ),
+        .executableTarget(
+            name: "UARPLive",
+            dependencies: ["UARP"],
+            path: "Sources/UARPLive"
         ),
         .testTarget(
             name: "UARPTests",
