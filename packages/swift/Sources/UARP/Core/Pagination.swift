@@ -16,11 +16,20 @@ public func autoPaginate<Page, Item>(
             do {
                 var next: String?
                 var seen = Set<String>()
+                //  An empty page is not the end: an API that applies the page
+                //  size before filtering answers a request for two items with
+                //  none and `has_more: true`, and stopping there loses
+                //  everything behind it. Runaway protection is the repeated
+                //  cursor below and this bound on consecutive empty pages.
+                var consecutiveEmpty = 0
+                let emptyPageLimit = 3
                 while !Task.isCancelled {
                     let page = try await fetch(next)
                     let batch = items(page)
                     for item in batch { continuation.yield(item) }
-                    if batch.isEmpty || hasMore(page) == false { break }
+                    if hasMore(page) == false { break }
+                    consecutiveEmpty = batch.isEmpty ? consecutiveEmpty + 1 : 0
+                    if consecutiveEmpty >= emptyPageLimit { break }
                     guard let candidate = cursor(page), !candidate.isEmpty, seen.insert(candidate).inserted else {
                         break
                     }
