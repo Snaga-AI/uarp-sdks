@@ -15,14 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
       # The fixture-compile tests need a Rust toolchain; without one they skip.
       - uses: dtolnay/rust-toolchain@stable
       - uses: Swatinem/rust-cache@v2
         with:
           workspaces: packages/rust
+      # setup-node comes after every other toolchain action on purpose. Some of
+      # them put their own Node on PATH — setup-alire left this job running
+      # v20 despite asking for v24 — and whichever runs last wins.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - run: npm install --prefix generator
       - name: Type-check the generator
         run: npx --prefix generator tsc -p generator/tsconfig.json
@@ -104,9 +107,6 @@ jobs:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 24
       - uses: dtolnay/rust-toolchain@stable
       - uses: actions/setup-java@v4
         with:
@@ -118,12 +118,17 @@ jobs:
           # has no GNAT 15 at all, so the toolchain below cannot resolve.
           version: 2.1.1
           toolchain: gnat_native^15 gprbuild^26
+      # setup-node comes after every other toolchain action on purpose. Some of
+      # them put their own Node on PATH — setup-alire left this job running
+      # v20 despite asking for v24 — and whichever runs last wins.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
       - run: npm install
         working-directory: packages/typescript
-      # run.sh executes the TypeScript runner as a .ts file, which needs a Node
-      # that strips types. Printing the version turns "unknown file extension"
-      # into an answer rather than a guess.
-      - run: node --version && which node
+      # run.sh executes the TypeScript runner as a .ts file, so a Node that
+      # strips types is not optional here.
+      - run: node --version
       # Every SDK whose toolchain is present runs the same scenarios; the
       # script fails if their traffic differs.
       - run: ./contract/run.sh
