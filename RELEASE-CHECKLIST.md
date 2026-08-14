@@ -17,7 +17,7 @@ This file records what was actually verified, and what is left.
 | 2 | `packages/rust` | crates.io `uarp-sdk` | **published 0.2.0** |
 | 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **published, 0.2.0** |
 | 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **blocked** — namespace not verified |
-| 5 | `packages/ada` | Alire `uarp_sdk` | tarball hosted, manifest ready; index PR pending |
+| 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, awaiting review |
 
 ---
 
@@ -191,11 +191,25 @@ pointing at a hosted tarball.
 | Manifest | `packages/ada/alire-index/uarp_sdk-0.2.0.toml` |
 | Linux | the crate builds and its 93 tests pass on Ubuntu in CI, which is where the index reviewers build it |
 
-### Left to do
+### Submitted
 
-Open the pull request against
-[`alire-project/alire-index`](https://github.com/alire-project/alire-index),
-adding the manifest as `index/ua/uarp_sdk/uarp_sdk-0.2.0.toml`. `alr publish`
-can do it, but it forks a third-party repository and opens the PR under your
-account, so it has been left for you to run — or say the word and it can be
-done from here.
+[alire-project/alire-index#2059](https://github.com/alire-project/alire-index/pull/2059),
+against `stable-1.4.0`, which is the branch `alr` 2.1.1 actually reads.
+
+Two things were corrected before submitting, both of which would have failed
+review:
+
+- `maintainers-logins` named only the organisation. Alire checks that whoever
+  opens the submission is listed there, and an organisation cannot open a pull
+  request. The crate carries its own manifest inside the tarball, so the archive
+  was rebuilt and re-uploaded for the two to agree — and the hash recomputed
+  from the published file, not the local one.
+- The `tests` and `examples` crates ship inside the tarball and had drifted from
+  the root manifest.
+
+Verified by fetching it the way a user would: with the manifest in a local copy
+of the community index, `alr get uarp_sdk` retrieved and deployed the crate from
+the published archive and checked the hash.
+
+The rest is review by the Alire maintainers, and their CI builds the crate on
+Linux — which this repository's CI already does on every push.
