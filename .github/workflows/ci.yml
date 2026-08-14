@@ -79,7 +79,11 @@ jobs:
       # dependency tree raises it, and this job is how that becomes visible
       # rather than becoming a user's build error.
       - id: msrv
-        run: echo "version=$(grep -m1 '^rust-version' packages/rust/Cargo.toml | cut -d'\"' -f2)" >> "$GITHUB_OUTPUT"
+        run: |
+          version=$(sed -n 's/^rust-version *= *"\(.*\)"/\1/p' packages/rust/Cargo.toml | head -1)
+          test -n "$version" || { echo "::error::packages/rust/Cargo.toml has no rust-version"; exit 1; }
+          echo "checking against Rust $version"
+          echo "version=$version" >> "$GITHUB_OUTPUT"
       - uses: dtolnay/rust-toolchain@master
         with:
           toolchain: ${{ steps.msrv.outputs.version }}
