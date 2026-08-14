@@ -10,9 +10,14 @@ use std::pin::pin;
 use futures_util::StreamExt;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
 use uarp_sdk::models::{
-    AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest, RegistryPublishRequest,
+    AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest, CreateRunRequest,
+    RegistryPublishRequest,
 };
 use uarp_sdk::{Client, Error, FilePart};
+
+/// A quote, a backslash, a newline, a tab, a non-ASCII letter and a character
+/// outside the basic plane — everything a JSON encoder has to escape or carry.
+const AWKWARD: &str = "\"q\" \\ \n \t ы 😀";
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
@@ -115,6 +120,64 @@ async fn main() -> Result<(), Error> {
             }
         }
     }
+
+    // 14. zero and false must survive, not be dropped as falsy
+    let falsy = ListAgentsParams {
+        limit: Some(0),
+        include_offline: Some(false),
+        ..Default::default()
+    };
+    client.agents().list(&falsy).await?;
+
+    // 15. JSON string escaping and a zero in a body
+    client
+        .runs()
+        .create(&CreateRunRequest {
+            agent_id: AWKWARD.to_string(),
+            session_id: Some(String::new()),
+            version: Some(0),
+            ..Default::default()
+        })
+        .await?;
+
+    // 16. how the decoder handles a payload built to strain it
+    let probe = client.runs().get("probe").await?;
+    let mut keys: Vec<String> = probe
+        .metadata
+        .as_ref()
+        .map(|map| map.keys().cloned().collect())
+        .unwrap_or_default();
+    keys.sort();
+
+    let probes = serde_json::json!({
+        "status": probe.status.as_str(),
+        "error_is_absent": probe.error.is_none().to_string(),
+        "step_seq": probe.step_seq.map(|value| value.to_string()).unwrap_or_else(|| "absent".into()),
+        "artifacts_count": probe
+            .artifacts
+            .as_ref()
+            .map(|items| items.len().to_string())
+            .unwrap_or_else(|| "absent".into()),
+        "metadata_keys": keys.join(","),
+        "metrics_output_tokens": probe
+            .metrics
+            .as_ref()
+            .and_then(|m| m.output_tokens)
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "absent".into()),
+        "metrics_input_tokens": probe
+            .metrics
+            .as_ref()
+            .and_then(|m| m.input_tokens)
+            .map(|value| value.to_string())
+            .unwrap_or_else(|| "absent".into()),
+        "started_at_is_absent": probe.started_at.is_none().to_string(),
+    });
+
+    let report = serde_json::json!({ "language": "rust", "probes": probes });
+    let _: serde_json::Value = client
+        .raw(reqwest::Method::POST, "/__report", Some(&report))
+        .await?;
 
     println!("rust runner done");
     Ok(())

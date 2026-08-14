@@ -101,4 +101,7 @@ if [[ ${#ran[@]} -lt 2 ]]; then
     exit 1
 fi
 
+#  What each runner decoded, reported through the server.
+curl -fsS "$base/__probes" > "$traces/probes.json"
+
 python3 "$root/contract/compare.py" "${ran[@]}"

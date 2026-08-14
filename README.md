@@ -147,10 +147,20 @@ differ. Volatile values — the user agent, the idempotency key, the multipart
 boundary — are masked; method, path, query, headers and body bytes are
 compared exactly.
 
-It has already earned its keep: it caught Kotlin sending
-`application/json; charset=utf-8` where the others sent `application/json`, and
-Ada sending JSON null for an unset required `object` field where the others
-sent `{}`.
+The last scenario asks the mirror-image question: given one awkward payload —
+an enum value none of them has seen, an explicit `null`, an absent optional, an
+empty array and an integer beyond 2^53 — do the five read the same values out
+of it? Each runner reports what it decoded and those reports are compared too.
+
+It has already earned its keep. It caught Kotlin sending
+`application/json; charset=utf-8` where the others sent `application/json`, Ada
+sending JSON null for an unset required `object` field where the others sent
+`{}`, and Swift leaving `+` unescaped in a query value — which a form-decoding
+server reads back as a space, silently changing the value.
+
+Differences that cannot be fixed are recorded in
+[contract/known-differences.json](contract/known-differences.json) with a
+reason, and reported without failing the run.
 
 ## Releasing
 

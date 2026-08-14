@@ -11,7 +11,11 @@ import ai.snaga.uarp.models.RegistryPublishRequest
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.runBlocking
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.put
 
 /**
  * Contract runner for the Kotlin SDK.
@@ -23,6 +27,12 @@ import kotlinx.serialization.json.JsonObject
  *
  *   UARP_CONTRACT_BASE_URL=http://127.0.0.1:8940 ./gradlew :uarp-sdk:contract
  */
+/**
+ * A quote, a backslash, a newline, a tab, a non-ASCII letter and a character
+ * outside the basic plane — everything a JSON encoder has to escape or carry.
+ */
+private const val AWKWARD = "\"q\" \\ \n \t ы 😀"
+
 fun main() = runBlocking {
     val base = System.getenv("UARP_CONTRACT_BASE_URL")
         ?: error("UARP_CONTRACT_BASE_URL is not set")
@@ -98,6 +108,35 @@ fun main() = runBlocking {
     client.runs.streamRunEvents("r1", lastEventId = "42")
         .takeWhile { it.event != "run.completed" }
         .collect { }
+
+    //  14. zero and false must survive, not be dropped as falsy
+    client.agents.list(limit = 0, includeOffline = false)
+
+    //  15. JSON string escaping and a zero in a body
+    client.runs.create(
+        ai.snaga.uarp.models.CreateRunRequest(agentId = AWKWARD, sessionId = "", version = 0),
+    )
+
+    //  16. how the decoder handles a payload built to strain it
+    val probe = client.runs.get("probe")
+    val probes = mapOf(
+        "status" to probe.status.value,
+        "error_is_absent" to (probe.error == null).toString(),
+        "step_seq" to (probe.stepSeq?.toString() ?: "absent"),
+        "artifacts_count" to (probe.artifacts?.size?.toString() ?: "absent"),
+        "metadata_keys" to (probe.metadata?.keys?.sorted() ?: emptyList()).joinToString(","),
+        "metrics_output_tokens" to (probe.metrics?.outputTokens?.toString() ?: "absent"),
+        "metrics_input_tokens" to (probe.metrics?.inputTokens?.toString() ?: "absent"),
+        "started_at_is_absent" to (probe.startedAt == null).toString(),
+    )
+
+    val report = buildJsonObject {
+        put("language", JsonPrimitive("kotlin"))
+        put("probes", JsonObject(probes.mapValues { JsonPrimitive(it.value) }))
+    }
+    client.request<JsonElement>(
+        RequestSpec(method = "POST", path = "/__report", body = Body.Json(report.toString())),
+    )
 
     println("kotlin runner done")
 }

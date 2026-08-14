@@ -22,8 +22,15 @@ all five SDKs put **the same bytes on the wire** for the same logical request.
 | 11 | `agents.list(workspaceId = "ы w&x=y+z*!()~")` | percent-encoding of a query value: spaces, reserved and sub-delimiter characters |
 | 12 | `agents.get("агент/ы")` | percent-encoding of a multibyte path segment |
 | 13 | `runs.streamRunEvents("r1", lastEventId = "42")` | a header parameter reaching the wire |
+| 14 | `agents.list(limit = 0, includeOffline = false)` | zero and false are sent, not dropped as falsy |
+| 15 | `runs.create(agentId = awkward string, sessionId = "", version = 0)` | JSON string escaping and a zero in a body |
+| 16 | `runs.get("probe")` | how the decoder handles an awkward response |
 
-Total: **15 requests**: scenarios 4 and 5 make two each, the rest one.
+Total: **18 requests**: scenarios 4 and 5 make two each, the rest one.
+
+JSON bodies are compared after decoding, not byte for byte: key order and the
+choice between a raw `ы` and `\u044b` are free, but the value that arrives has
+to be identical.
 
 Both the decoded query pairs and the raw query string are compared: `a+b` and
 `a%20b` decode to the same thing but are not the same bytes, and a server that
@@ -42,6 +49,21 @@ The server masks what is allowed to differ:
 Everything else — method, path, query, `Accept`, `Content-Type`,
 `Authorization`, body bytes — must match exactly.
 
+## Decoding
+
+Scenario 16 answers the mirror-image question: given one payload, do the five
+SDKs read the same values out of it? The payload carries an enum value none of
+them has seen, an explicit `null`, an absent optional, an empty array, a nested
+object and an integer larger than a double holds exactly.
+
+Each runner posts what it decoded to `/__report` under agreed keys, and the
+harness compares those reports the same way it compares the traffic.
+
 ## Known differences
 
-None. A difference either gets fixed or gets recorded here with the reason.
+- **`step_seq` beyond 2^53.** The payload carries `9007199254740993`. Rust,
+  Swift, Kotlin and Ada read it exactly; TypeScript reads `9007199254740992`,
+  because a JavaScript `number` is a double and cannot represent that integer.
+  Fixing it would mean typing every `integer` in the spec as `bigint` or as a
+  string, which would make the ordinary case worse for the sake of a value the
+  platform does not currently send. Recorded rather than fixed.
