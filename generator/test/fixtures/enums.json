@@ -1,0 +1,43 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Enums", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/reports": {
+      "get": {
+        "operationId": "listReports",
+        "tags": ["Reports"],
+        "parameters": [
+          { "name": "category", "in": "query", "schema": { "type": "string", "enum": ["news", "other"] } }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": { "type": "array", "items": { "$ref": "#/components/schemas/Report" } }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Report": {
+        "type": "object",
+        "required": ["status"],
+        "properties": {
+          "status": {
+            "type": "string",
+            "description": "Includes a literal 'other', which collides with the catch-all variant.",
+            "enum": ["active", "other", "2fa", "run.completed", "in progress"]
+          },
+          "shared_order": { "type": "string", "enum": ["asc", "desc"] },
+          "also_order": { "type": "string", "enum": ["asc", "desc"] }
+        }
+      }
+    }
+  }
+}

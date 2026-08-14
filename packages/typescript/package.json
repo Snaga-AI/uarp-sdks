@@ -1,0 +1,49 @@
+{
+  "name": "uarp-sdk",
+  "version": "0.2.0",
+  "description": "TypeScript/Node client for the UARP (Snaga) Universal Agent Runtime Platform API",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "sideEffects": false,
+  "keywords": [
+    "uarp",
+    "snaga",
+    "ai",
+    "agents",
+    "sdk",
+    "openapi"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/snaga-ai/uarp-sdks",
+    "directory": "packages/typescript"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit && tsc -p tsconfig.examples.json",
+    "test": "npm run build && node --test test/*.test.ts",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  }
+}

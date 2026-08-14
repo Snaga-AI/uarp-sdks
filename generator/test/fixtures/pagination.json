@@ -1,0 +1,68 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Pagination", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/items": {
+      "get": {
+        "operationId": "listItems",
+        "tags": ["Items"],
+        "parameters": [
+          { "name": "limit", "in": "query", "schema": { "type": "integer" } },
+          { "name": "cursor", "in": "query", "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": ["items", "cursor", "has_more"],
+                  "properties": {
+                    "items": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } },
+                    "cursor": { "type": ["string", "null"] },
+                    "has_more": { "type": "boolean" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/boxes": {
+      "get": {
+        "operationId": "listBoxes",
+        "tags": ["Items"],
+        "parameters": [{ "name": "cursor", "in": "query", "schema": { "type": "string" } }],
+        "responses": {
+          "200": {
+            "description": "a differently named envelope",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "boxes": { "type": "array", "items": { "$ref": "#/components/schemas/Item" } },
+                    "cursor": { "type": ["string", "null"] },
+                    "total": { "type": "integer" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Item": {
+        "type": "object",
+        "required": ["id"],
+        "properties": { "id": { "type": "string" }, "label": { "type": "string" } }
+      }
+    }
+  }
+}

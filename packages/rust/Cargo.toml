@@ -1,0 +1,40 @@
+[package]
+name = "uarp-sdk"
+version = "0.2.0"
+edition = "2021"
+rust-version = "1.75"
+license = "MIT"
+description = "Async Rust client for the UARP (Snaga) Universal Agent Runtime Platform API"
+repository = "https://github.com/snaga-ai/uarp-sdks"
+keywords = ["uarp", "snaga", "ai", "agents", "sdk"]
+categories = ["api-bindings", "asynchronous"]
+readme = "README.md"
+
+[features]
+default = ["rustls-tls"]
+rustls-tls = ["reqwest/rustls-tls"]
+native-tls = ["reqwest/native-tls"]
+
+[dependencies]
+async-stream = "0.3"
+bytes = "1"
+futures-core = "0.3"
+futures-util = { version = "0.3", default-features = false, features = ["std"] }
+http = "1"
+reqwest = { version = "0.12", default-features = false, features = ["json", "stream", "multipart", "charset", "http2"] }
+serde = { version = "1.0.181", features = ["derive"] }
+serde_json = "1"
+serde_urlencoded = "0.7"
+thiserror = "2"
+tokio = { version = "1", features = ["time"] }
+form_urlencoded = "1"
+url = "2"
+uuid = { version = "1", features = ["v4"] }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+futures-util = "0.3"
+wiremock = "0.6"
+
+[package.metadata.docs.rs]
+all-features = true

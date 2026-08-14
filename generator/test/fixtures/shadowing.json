@@ -1,0 +1,146 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Shadowing",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.test"
+    }
+  ],
+  "paths": {
+    "/probe": {
+      "post": {
+        "operationId": "probe",
+        "tags": [
+          "Probe"
+        ],
+        "parameters": [
+          {
+            "name": "type",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "Last-Event-ID",
+            "in": "header",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Result"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/probe/{default}/{type}/{object}": {
+      "get": {
+        "operationId": "probeReservedPath",
+        "summary": "Path parameters whose names are keywords somewhere",
+        "tags": [
+          "Probe"
+        ],
+        "parameters": [
+          {
+            "name": "default",
+            "in": "path",
+            "required": true,
+            "description": "Reserved in TypeScript and Swift.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "type",
+            "in": "path",
+            "required": true,
+            "description": "Reserved in Rust and Ada.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "object",
+            "in": "path",
+            "required": true,
+            "description": "Reserved in Kotlin.",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "description": "Shadows Swift.Error and kotlin.Error unless renamed.",
+        "required": [
+          "type",
+          "title"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "text": {
+            "type": "string"
+          },
+          "value": {
+            "type": "string"
+          },
+          "object": {
+            "type": "string"
+          },
+          "default": {
+            "type": "string"
+          }
+        }
+      },
+      "Result": {
+        "type": "object",
+        "properties": {
+          "ok": {
+            "type": "boolean"
+          },
+          "match": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

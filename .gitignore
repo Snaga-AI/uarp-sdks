@@ -1,0 +1,37 @@
+# Node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# Rust
+target/
+Cargo.lock
+
+# Swift
+.build/
+.swiftpm/
+*.xcodeproj
+
+# Kotlin / Gradle
+build/
+.gradle/
+local.properties
+
+# Ada / Alire
+obj/
+lib/
+bin/
+alire/
+config/
+
+# Local tooling state, not part of the project
+.snaga/
+
+# Recorded by contract/run.sh on every run
+contract/traces/
+
+# Editors and OS
+.DS_Store
+*.swp
+.idea/
+.vscode/

@@ -1,0 +1,51 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Streaming", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/runs/{runId}/events": {
+      "get": {
+        "operationId": "streamRunEvents",
+        "summary": "Stream run events via SSE",
+        "tags": ["Runs"],
+        "security": [{ "bearerAuth": ["events:read"] }, { "queryTokenAuth": [] }],
+        "parameters": [
+          { "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } },
+          { "$ref": "#/components/parameters/SseToken" },
+          { "$ref": "#/components/parameters/LastEventId" },
+          { "$ref": "#/components/parameters/IdempotencyKey" }
+        ],
+        "responses": {
+          "200": {
+            "description": "SSE event stream",
+            "content": { "text/event-stream": { "schema": { "type": "string" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "SseToken": {
+        "name": "token",
+        "in": "query",
+        "required": false,
+        "description": "Short-lived SSE token for clients that cannot set headers.",
+        "schema": { "type": "string" }
+      },
+      "LastEventId": {
+        "name": "Last-Event-ID",
+        "in": "header",
+        "required": false,
+        "schema": { "type": "string" }
+      },
+      "IdempotencyKey": {
+        "name": "Idempotency-Key",
+        "in": "header",
+        "required": false,
+        "description": "The transport owns this header, so it must not become a parameter.",
+        "schema": { "type": "string" }
+      }
+    }
+  }
+}

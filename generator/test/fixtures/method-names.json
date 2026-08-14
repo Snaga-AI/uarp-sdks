@@ -1,0 +1,60 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Method names", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/agents": {
+      "get": {
+        "operationId": "listAgents",
+        "summary": "Shortens to `list`",
+        "tags": ["Agents"],
+        "responses": { "200": { "description": "ok" } }
+      },
+      "post": {
+        "operationId": "createAgent",
+        "summary": "Shortens to `create`",
+        "tags": ["Agents"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": { "type": "object", "required": ["name"], "properties": { "name": { "type": "string" } } }
+            }
+          }
+        },
+        "responses": { "201": { "description": "created" } }
+      }
+    },
+    "/agents/{agentId}/runs": {
+      "get": {
+        "operationId": "listAgentRuns",
+        "summary": "Must keep its full name: `listAgent` would lie",
+        "tags": ["Runs"],
+        "parameters": [{ "name": "agentId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "ok" } }
+      }
+    },
+    "/runs/{runId}": {
+      "get": {
+        "operationId": "getRun",
+        "tags": ["Runs"],
+        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "ok" } }
+      },
+      "delete": {
+        "operationId": "deleteRun",
+        "tags": ["Runs"],
+        "parameters": [{ "name": "runId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "gone" } }
+      }
+    },
+    "/runs/latest": {
+      "get": {
+        "operationId": "getRuns",
+        "summary": "Collides with getRun after shortening, so both keep their ids",
+        "tags": ["Runs"],
+        "responses": { "200": { "description": "ok" } }
+      }
+    }
+  }
+}

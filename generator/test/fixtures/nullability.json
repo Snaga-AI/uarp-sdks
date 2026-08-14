@@ -1,0 +1,156 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Nullability",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.test"
+    }
+  ],
+  "paths": {
+    "/things/{thingId}": {
+      "get": {
+        "operationId": "getThing",
+        "summary": "Fetch a thing",
+        "tags": [
+          "Things"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "things:read"
+            ]
+          }
+        ],
+        "parameters": [
+          {
+            "name": "thingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uuid"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Thing"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/envelopes": {
+      "get": {
+        "operationId": "listEnvelopes",
+        "tags": [
+          "Things"
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Envelope"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Thing": {
+        "type": "object",
+        "description": "Every shape of optionality the spec uses.",
+        "required": [
+          "id",
+          "required_nullable",
+          "count"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "required_nullable": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "Present but may be null."
+          },
+          "count": {
+            "type": "integer"
+          },
+          "optional_plain": {
+            "type": "number"
+          },
+          "optional_nullable": {
+            "type": [
+              "boolean",
+              "null"
+            ]
+          },
+          "legacy_nullable": {
+            "type": "object",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "tags": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "free_form": {
+            "type": "object"
+          },
+          "anything": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "deprecated_field": {
+            "type": "string",
+            "deprecated": true
+          },
+          "kind": {
+            "type": "string",
+            "const": "thing"
+          }
+        }
+      },
+      "Envelope": {
+        "type": "object",
+        "description": "Declares additionalProperties, so unmodelled keys must survive.",
+        "required": [
+          "id"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,640 @@
+//! Integration tests for the transport, exercised through generated methods.
+
+use std::pin::pin;
+
+use futures_util::StreamExt;
+use serde_json::json;
+use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
+use uarp_sdk::{ApiErrorKind, Client, Error};
+use wiremock::matchers::{body_json, header, header_exists, method, path, query_param};
+use wiremock::{Mock, MockServer, Request, ResponseTemplate};
+
+/// A complete `Agent` payload — the model decodes strictly, so every field the
+/// spec marks required has to be present.
+fn agent_json(id: &str) -> serde_json::Value {
+    json!({
+        "agent_id": id,
+        "tenant_id": "t1",
+        "name": "demo",
+        "model": {"provider": "openai_compat", "model_ref": "gpt-x", "capabilities": {}},
+        "created_at": "2026-01-01T00:00:00Z"
+    })
+}
+
+fn create_agent_request() -> uarp_sdk::models::CreateAgentRequest {
+    uarp_sdk::models::CreateAgentRequest {
+        name: "demo".into(),
+        model: uarp_sdk::models::AgentModelConfig {
+            provider: uarp_sdk::models::AgentModelConfigProvider::OpenaiCompat,
+            model_ref: "gpt-x".into(),
+            capabilities: Default::default(),
+            ..Default::default()
+        },
+        ..Default::default()
+    }
+}
+
+async fn client_for(server: &MockServer) -> Client {
+    Client::builder()
+        .api_key("uarp_test1234_secret")
+        .base_url(server.uri())
+        .max_retries(0)
+        .build()
+        .expect("client builds")
+}
+
+#[tokio::test]
+async fn sends_auth_and_user_agent() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .and(header("authorization", "Bearer uarp_test1234_secret"))
+        .and(header("accept", "application/json"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [], "cursor": null, "has_more": false
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let page = client.agents().list(&ListAgentsParams::default()).await.expect("request succeeds");
+    assert!(page.items.is_empty());
+
+    let recorded = &server.received_requests().await.unwrap()[0];
+    let agent = recorded.headers.get("user-agent").unwrap().to_str().unwrap();
+    assert!(agent.starts_with("uarp-sdk-rust/"), "unexpected user agent: {agent}");
+}
+
+#[tokio::test]
+async fn serialises_query_parameters_and_skips_none() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .and(query_param("limit", "25"))
+        .and(query_param("include_offline", "true"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [], "cursor": null, "has_more": false
+        })))
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let params = ListAgentsParams { limit: Some(25), include_offline: Some(true), ..Default::default() };
+    client.agents().list(&params).await.expect("request succeeds");
+
+    let recorded = &server.received_requests().await.unwrap()[0];
+    assert!(!recorded.url.query().unwrap().contains("cursor"), "None parameters must be omitted");
+}
+
+#[tokio::test]
+async fn percent_encodes_path_parameters() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/id%20with%2Fslash"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(agent_json("x")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    client.agents().get("id with/slash").await.expect("request succeeds");
+}
+
+#[tokio::test]
+async fn attaches_idempotency_key_to_writes_only() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/agents"))
+        .and(header_exists("idempotency-key"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(agent_json("a1")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [], "cursor": null, "has_more": false
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let body = create_agent_request();
+    client.agents().create(&body).await.expect("create succeeds");
+    client.agents().list(&ListAgentsParams::default()).await.expect("list succeeds");
+
+    let requests = server.received_requests().await.unwrap();
+    let get = requests.iter().find(|r| r.method == wiremock::http::Method::GET).unwrap();
+    assert!(get.headers.get("idempotency-key").is_none(), "reads must not carry an idempotency key");
+}
+
+#[tokio::test]
+async fn sends_json_body() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/agents"))
+        .and(header("content-type", "application/json"))
+        .and(body_json(serde_json::to_value(create_agent_request()).unwrap()))
+        .respond_with(ResponseTemplate::new(201).set_body_json(agent_json("a1")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let body = create_agent_request();
+    let agent = client.agents().create(&body).await.expect("create succeeds");
+    assert_eq!(agent.agent_id, "a1");
+}
+
+#[tokio::test]
+async fn retries_429_and_honours_retry_after() {
+    let server = MockServer::start().await;
+    let responses = std::sync::Mutex::new(0u32);
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1"))
+        .respond_with(move |_: &Request| {
+            let mut count = responses.lock().unwrap();
+            *count += 1;
+            if *count == 1 {
+                ResponseTemplate::new(429).insert_header("retry-after", "0").set_body_json(json!({
+                    "type": "about:blank", "title": "Too Many Requests", "status": 429
+                }))
+            } else {
+                ResponseTemplate::new(200).set_body_json(agent_json("a1"))
+            }
+        })
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(2)
+        .build()
+        .unwrap();
+    let agent = client.agents().get("a1").await.expect("retry succeeds");
+    assert_eq!(agent.agent_id, "a1");
+}
+
+#[tokio::test]
+async fn surfaces_rate_limit_hints_from_the_headers() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "1.5")
+                .insert_header("x-ratelimit-remaining", "0")
+                .insert_header("x-correlation-id", "corr-9")
+                .set_body_json(json!({"title": "Too Many Requests", "status": 429})),
+        )
+        .mount(&server)
+        .await;
+
+    //  No retries, or the transport would swallow the 429 we want to inspect.
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    let error = client.agents().get("a1").await.expect_err("must fail");
+
+    match error {
+        Error::Api(api) => {
+            assert_eq!(api.kind(), ApiErrorKind::RateLimit);
+            assert_eq!(api.retry_after_seconds(), Some(1.5));
+            assert_eq!(api.rate_limit_remaining(), Some(0));
+            //  Falls back to the header when the body carries no correlationId.
+            assert_eq!(api.correlation_id(), Some("corr-9"));
+            assert!(api.is_retryable());
+        }
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn maps_404_to_a_typed_error_without_retrying() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/missing"))
+        .respond_with(ResponseTemplate::new(404).set_body_json(json!({
+            "type": "about:blank",
+            "title": "Not Found",
+            "status": 404,
+            "detail": "no such agent",
+            "correlationId": "corr-1"
+        })))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let error = client.agents().get("missing").await.expect_err("must fail");
+    match error {
+        Error::Api(api) => {
+            assert_eq!(api.kind(), ApiErrorKind::NotFound);
+            assert_eq!(api.correlation_id(), Some("corr-1"));
+            assert!(api.to_string().contains("no such agent"), "{api}");
+        }
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn exposes_validation_errors() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/agents"))
+        .respond_with(ResponseTemplate::new(422).set_body_json(json!({
+            "type": "about:blank",
+            "title": "Unprocessable Entity",
+            "status": 422,
+            "errors": [{"field": "name", "message": "required"}]
+        })))
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let error = client
+        .agents()
+        .create(&create_agent_request())
+        .await
+        .expect_err("must fail");
+    match error {
+        Error::Api(api) => {
+            assert_eq!(api.kind(), ApiErrorKind::UnprocessableEntity);
+            assert_eq!(api.problem.errors.len(), 1);
+            assert_eq!(api.problem.errors[0].field.as_deref(), Some("name"));
+        }
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn list_all_follows_the_cursor() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .respond_with(|request: &Request| {
+            let cursor = request
+                .url
+                .query_pairs()
+                .find(|(key, _)| key == "cursor")
+                .map(|(_, value)| value.into_owned());
+            match cursor.as_deref() {
+                None => ResponseTemplate::new(200).set_body_json(json!({
+                    "items": [agent_json("a1")], "cursor": "next", "has_more": true
+                })),
+                Some("next") => ResponseTemplate::new(200).set_body_json(json!({
+                    "items": [agent_json("a2")], "cursor": null, "has_more": false
+                })),
+                Some(other) => panic!("unexpected cursor {other}"),
+            }
+        })
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let agents = client.agents();
+    let params = ListAgentsParams::default();
+    let mut stream = pin!(agents.list_all(&params));
+
+    let mut ids = Vec::new();
+    while let Some(agent) = stream.next().await {
+        ids.push(agent.expect("page loads").agent_id);
+    }
+    assert_eq!(ids, vec!["a1".to_string(), "a2".to_string()]);
+}
+
+#[tokio::test]
+async fn list_all_stops_when_a_server_repeats_a_cursor() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        //  A server that never clears its cursor would page forever.
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "items": [agent_json("a1")], "cursor": "same", "has_more": true
+        })))
+        .expect(2)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let agents = client.agents();
+    let params = ListAgentsParams::default();
+    let mut stream = pin!(agents.list_all(&params));
+
+    let mut count = 0;
+    while let Some(agent) = stream.next().await {
+        agent.expect("page loads");
+        count += 1;
+    }
+    assert_eq!(count, 2, "the cursor guard must stop the walk");
+}
+
+#[tokio::test]
+async fn streams_server_sent_events() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .and(header("accept", "text/event-stream"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw(
+                    "id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\nevent: run.completed\ndata: {}\n\n",
+                    "text/event-stream",
+                ),
+        )
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let runs = client.runs();
+    let params = StreamRunEventsParams::default();
+    let mut stream = pin!(runs.stream_run_events("r1", &params));
+
+    let mut names = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("event decodes");
+        let completed = event.event == "run.completed";
+        names.push(event.event);
+        if completed {
+            break;
+        }
+    }
+    assert_eq!(names, vec!["llm.chunk".to_string(), "run.completed".to_string()]);
+}
+
+fn publish_response() -> serde_json::Value {
+    json!({
+        "scope": "@demo",
+        "name": "bundle",
+        "version": "1.0.0",
+        "publisher_tenant_id": "t1",
+        "manifest": {"name": "demo"},
+        "sha256": "abc123",
+        "size_bytes": 3,
+        "visibility": "public",
+        "published_at": "2026-01-01T00:00:00Z"
+    })
+}
+
+#[tokio::test]
+async fn builds_a_multipart_body() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/registry/publish"))
+        .and(header_exists("idempotency-key"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(publish_response()))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let request = uarp_sdk::models::RegistryPublishRequest {
+        manifest: "{\"name\":\"demo\"}".into(),
+        artifact: uarp_sdk::FilePart::new("bundle.tar.zst", vec![0x00, 0xFF, 0x41])
+            .content_type("application/zstd"),
+        sha256: Some("abc123".into()),
+        ..Default::default()
+    };
+    client.registry().registry_publish(&request).await.expect("publish succeeds");
+
+    let recorded = &server.received_requests().await.unwrap()[0];
+    let content_type = recorded.headers.get("content-type").unwrap().to_str().unwrap();
+    assert!(content_type.starts_with("multipart/form-data; boundary="), "{content_type}");
+
+    let body = String::from_utf8_lossy(&recorded.body);
+    assert!(body.contains("name=\"manifest\""), "{body}");
+    assert!(body.contains("name=\"artifact\"; filename=\"bundle.tar.zst\""), "{body}");
+    assert!(body.contains("application/zstd"), "{body}");
+    assert!(body.contains("name=\"sha256\""), "{body}");
+    //  An optional part the caller left out must not appear at all.
+    assert!(!body.contains("attestation"), "{body}");
+    //  The raw bytes must survive, NUL and high byte included.
+    assert!(recorded.body.windows(3).any(|w| w == [0x00, 0xFF, 0x41]), "file bytes were altered");
+}
+
+#[tokio::test]
+async fn downloads_bytes_verbatim() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/files/f1/content"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "application/octet-stream")
+                .set_body_bytes(vec![0x00, 0xFF, 0x41, 0x00, 0x42]),
+        )
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let bytes = client.files().download_file_content("f1").await.expect("download succeeds");
+    assert_eq!(bytes.as_ref(), &[0x00, 0xFF, 0x41, 0x00, 0x42]);
+}
+
+#[tokio::test]
+async fn honours_the_no_retry_hint() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1"))
+        .respond_with(
+            ResponseTemplate::new(500)
+                .insert_header("x-should-retry", "false")
+                .insert_header("retry-after", "0")
+                .set_body_json(json!({"title": "boom", "status": 500})),
+        )
+        //  A 500 is normally retried; the header has to win.
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let error = client.agents().get("a1").await.expect_err("must fail");
+    assert!(matches!(error, Error::Api(_)), "{error:?}");
+}
+
+#[tokio::test]
+async fn can_carry_the_key_in_the_query_for_event_streams() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .and(query_param("token", "uarp_secret"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw("event: run.completed\ndata: {}\n\n", "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    //  Browser proxies that strip Authorization need the key in the URL.
+    let client = Client::builder()
+        .api_key("uarp_secret")
+        .base_url(server.uri())
+        .sse_token_in_query(true)
+        .build()
+        .unwrap();
+    let runs = client.runs();
+    let params = StreamRunEventsParams::default();
+    let mut stream = pin!(runs.stream_run_events("r1", &params));
+
+    let first = stream.next().await.expect("one event").expect("decodes");
+    assert_eq!(first.event, "run.completed");
+}
+
+#[tokio::test]
+async fn reopens_a_finished_stream_with_the_last_event_id() {
+    let server = MockServer::start().await;
+    let seen = std::sync::Mutex::new(0u32);
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .respond_with(move |request: &Request| {
+            let mut count = seen.lock().unwrap();
+            *count += 1;
+            let resumed = request
+                .headers
+                .get("last-event-id")
+                .map(|value| value.to_str().unwrap().to_string());
+            let frames = match resumed {
+                None => "id: 7\nevent: first\ndata: {}\n\n".to_string(),
+                Some(id) => format!("event: resumed.{id}\ndata: {{}}\n\n"),
+            };
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw(frames, "text/event-stream")
+        })
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let runs = client.runs();
+    let params = StreamRunEventsParams::default();
+    let mut stream = pin!(runs.stream_run_events("r1", &params));
+
+    let mut names = Vec::new();
+    while let Some(event) = stream.next().await {
+        let event = event.expect("event decodes");
+        let resumed = event.event.starts_with("resumed.");
+        names.push(event.event);
+        if resumed {
+            break;
+        }
+    }
+
+    //  The second connection has to replay the id the first one delivered.
+    assert_eq!(names, vec!["first".to_string(), "resumed.7".to_string()]);
+}
+
+#[tokio::test]
+async fn does_not_retry_a_write_that_carries_no_idempotency_key() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/experimental/thing"))
+        .respond_with(
+            ResponseTemplate::new(500)
+                .insert_header("retry-after", "0")
+                .set_body_json(json!({"title": "boom", "status": 500})),
+        )
+        //  Outside /api/v1 the transport adds no key, so replaying the write
+        //  would risk performing it twice.
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let error = client
+        .raw::<serde_json::Value>(reqwest::Method::POST, "/experimental/thing", None)
+        .await
+        .expect_err("must fail");
+    assert!(matches!(error, Error::Api(_)), "{error:?}");
+}
+
+#[tokio::test]
+async fn reuses_a_caller_supplied_idempotency_key() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/agents"))
+        .and(header("idempotency-key", "order-4711"))
+        .respond_with(ResponseTemplate::new(201).set_body_json(agent_json("a1")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    //  Per-call overrides ride on a clone of the client.
+    let client = client_for(&server).await;
+    client
+        .with_idempotency_key("order-4711")
+        .agents()
+        .create(&create_agent_request())
+        .await
+        .expect("create succeeds");
+}
+
+#[tokio::test]
+async fn per_call_overrides_travel_on_a_clone() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1"))
+        .and(header("x-trace", "abc"))
+        .and(query_param("debug", "1"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(agent_json("a1")))
+        .expect(1)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a2"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(agent_json("a2")))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let traced = client.with_header("X-Trace", "abc").with_query("debug", "1");
+
+    traced.agents().get("a1").await.expect("traced call succeeds");
+    //  The original client keeps its own settings.
+    client.agents().get("a2").await.expect("plain call succeeds");
+}
+
+#[tokio::test]
+async fn a_clone_can_turn_retries_off() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents/a1"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "0")
+                .set_body_json(json!({"title": "slow down", "status": 429})),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(5).build().unwrap();
+    client
+        .with_max_retries(0)
+        .agents()
+        .get("a1")
+        .await
+        .expect_err("must fail without retrying");
+}
+
+#[tokio::test]
+async fn decodes_an_enum_value_it_has_never_seen() {
+    //  A value the API adds later must round-trip rather than fail.
+    let decoded: uarp_sdk::models::AgentModelConfigProvider =
+        serde_json::from_str("\"brand_new\"").expect("decodes");
+    assert_eq!(decoded.as_str(), "brand_new");
+    assert_eq!(serde_json::to_string(&decoded).unwrap(), "\"brand_new\"");
+    assert_eq!(decoded, uarp_sdk::models::AgentModelConfigProvider::from("brand_new"));
+}
+
+#[tokio::test]
+async fn from_env_reports_a_missing_key() {
+    // `Client::new` requires an explicit key; the builder rejects an empty config.
+    let error = Client::builder().build().expect_err("must fail");
+    assert!(matches!(error, Error::Config(_)), "{error:?}");
+}

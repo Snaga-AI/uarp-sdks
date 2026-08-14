@@ -1,0 +1,71 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Bodies", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/uploads": {
+      "post": {
+        "operationId": "uploadBundle",
+        "tags": ["Uploads"],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "multipart/form-data": {
+              "schema": {
+                "type": "object",
+                "required": ["manifest", "artifact"],
+                "properties": {
+                  "manifest": { "type": "string", "description": "JSON-stringified manifest." },
+                  "artifact": { "type": "string", "format": "binary" },
+                  "sha256": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "stored",
+            "content": {
+              "application/json": {
+                "schema": { "type": "object", "required": ["id"], "properties": { "id": { "type": "string" } } }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/uploads/{uploadId}/content": {
+      "get": {
+        "operationId": "downloadBundle",
+        "tags": ["Uploads"],
+        "parameters": [{ "name": "uploadId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "200": { "description": "bytes", "content": { "application/octet-stream": { "schema": { "type": "string", "format": "binary" } } } }
+        }
+      }
+    },
+    "/uploads/{uploadId}": {
+      "delete": {
+        "operationId": "deleteUpload",
+        "tags": ["Uploads"],
+        "parameters": [{ "name": "uploadId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "204": { "description": "gone" } }
+      },
+      "get": {
+        "operationId": "getUploadMetadata",
+        "summary": "Documents no response body, so the SDKs return raw JSON",
+        "tags": ["Uploads"],
+        "parameters": [{ "name": "uploadId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": { "200": { "description": "ok" } }
+      }
+    },
+    "/metrics": {
+      "get": {
+        "operationId": "getMetrics",
+        "tags": ["Uploads"],
+        "responses": { "200": { "description": "text", "content": { "text/plain": { "schema": { "type": "string" } } } } }
+      }
+    }
+  }
+}

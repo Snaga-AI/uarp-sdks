@@ -1,0 +1,14 @@
+name = "uarp_sdk_tests"
+description = "Test suite for the UARP Ada SDK"
+version = "0.2.0"
+licenses = "MIT"
+authors = ["Snaga"]
+maintainers = ["Snaga <support@snaga.ai>"]
+maintainers-logins = ["snaga-ai"]
+executables = ["uarp_sdk_tests"]
+
+[[depends-on]]
+uarp_sdk = "*"
+
+[[pins]]
+uarp_sdk = { path = ".." }
