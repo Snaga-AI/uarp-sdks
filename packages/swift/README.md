@@ -16,6 +16,18 @@ targets: [
 
 macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+, Swift 5.9+.
 
+
+## Platforms
+
+Built for Apple platforms: macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+.
+
+The package also builds on Linux and every one of the 557 request/response
+operations works there. The eleven event-stream endpoints do not:
+`URLSession.bytes(for:)` is missing from swift-corelibs-foundation, and every
+other way of reading a response on that platform buffers it to completion, which
+never happens on a stream that stays open. Calling one on Linux throws
+`UARPError.stream` with that explanation rather than failing to compile.
+
 ## Quick start
 
 ```swift

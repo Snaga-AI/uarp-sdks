@@ -120,6 +120,10 @@ jobs:
           toolchain: gnat_native^15 gprbuild^26
       - run: npm install
         working-directory: packages/typescript
+      # run.sh executes the TypeScript runner as a .ts file, which needs a Node
+      # that strips types. Printing the version turns "unknown file extension"
+      # into an answer rather than a guess.
+      - run: node --version && which node
       # Every SDK whose toolchain is present runs the same scenarios; the
       # script fails if their traffic differs.
       - run: ./contract/run.sh

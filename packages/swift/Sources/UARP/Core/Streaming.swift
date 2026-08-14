@@ -95,6 +95,16 @@ public struct EventStream: AsyncSequence, Sendable {
     }
 
     private func run(_ continuation: AsyncThrowingStream<ServerEvent, Error>.Continuation) async throws {
+        #if canImport(FoundationNetworking)
+        //  swift-corelibs-foundation does not implement `URLSession.bytes(for:)`,
+        //  and every other way of reading a response there buffers it to the end
+        //  — which never arrives on a stream that stays open. The rest of the
+        //  SDK works on Linux; only the eleven event-stream endpoints do not.
+        throw UARPError.stream(
+            "event streams need URLSession.bytes, which swift-corelibs-foundation does not provide; "
+                + "this SDK can stream on Apple platforms only"
+        )
+        #else
         var lastEventId: String?
         var attempt = 0
 
@@ -165,6 +175,7 @@ public struct EventStream: AsyncSequence, Sendable {
             try await Task.sleep(nanoseconds: UInt64(Backoff.delay(attempt: attempt) * 1_000_000_000))
             attempt += 1
         }
+        #endif
     }
 }
 
