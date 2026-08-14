@@ -4,7 +4,7 @@ version = "0.2.0"
 licenses = "MIT"
 authors = ["Snaga"]
 maintainers = ["Snaga <support@snaga.ai>"]
-maintainers-logins = ["snaga-ai"]
+maintainers-logins = ["snaga-ai", "chabanov"]
 executables = ["uarp_sdk_tests"]
 
 [[depends-on]]
