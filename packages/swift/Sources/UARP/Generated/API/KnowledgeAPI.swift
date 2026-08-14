@@ -13,7 +13,7 @@ public struct KnowledgeAPI: Sendable {
     /// `POST /api/v1/knowledge-bases`
     ///
     /// Required scopes: `memory:write`.
-    public func createKnowledgeBase(body: KnowledgeBase, options: RequestOptions = .init()) async throws -> KnowledgeBase {
+    public func createKnowledgeBase(body: KnowledgeBaseCreate, options: RequestOptions = .init()) async throws -> KnowledgeBase {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/knowledge-bases",
@@ -110,7 +110,7 @@ public struct KnowledgeAPI: Sendable {
     /// `PUT /api/v1/knowledge-bases/{id}`
     ///
     /// Required scopes: `memory:write`.
-    public func updateKnowledgeBase(id: String, body: KnowledgeBase, options: RequestOptions = .init()) async throws -> KnowledgeBase {
+    public func updateKnowledgeBase(id: String, body: KnowledgeBaseUpdate, options: RequestOptions = .init()) async throws -> KnowledgeBase {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/knowledge-bases/\(encodePathSegment(id))",

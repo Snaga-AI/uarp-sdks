@@ -182,7 +182,7 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/builder/requests`
      */
-    public suspend fun createBuilderRequest(body: DesignRequest, options: RequestOptions = RequestOptions()): DesignRequest {
+    public suspend fun createBuilderRequest(body: DesignRequestCreate, options: RequestOptions = RequestOptions()): DesignRequest {
         return client.request<DesignRequest>(
             RequestSpec(
                 method = "POST",

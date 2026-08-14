@@ -4,8 +4,6 @@ import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
-import ai.snaga.uarp.models.AgentModelConfig
-import ai.snaga.uarp.models.AgentModelConfigProvider
 import ai.snaga.uarp.models.CreateAgentRequest
 import ai.snaga.uarp.models.RegistryPublishRequest
 import kotlinx.coroutines.flow.collect
@@ -53,11 +51,6 @@ fun main() = runBlocking {
     client.agents.create(
         CreateAgentRequest(
             name = "demo",
-            model = AgentModelConfig(
-                provider = AgentModelConfigProvider.OPENAI_COMPAT,
-                modelRef = "gpt-x",
-                capabilities = JsonObject(emptyMap()),
-            ),
         ),
     )
 

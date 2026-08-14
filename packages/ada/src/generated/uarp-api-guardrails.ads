@@ -17,7 +17,7 @@ package UARP.API.Guardrails is
    --  Required scopes: guardrails:write.
    function Create
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Guardrail_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

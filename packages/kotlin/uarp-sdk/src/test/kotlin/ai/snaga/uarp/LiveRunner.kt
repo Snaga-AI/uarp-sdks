@@ -3,13 +3,10 @@ package ai.snaga.uarp
 import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.health
-import ai.snaga.uarp.models.AgentModelConfig
-import ai.snaga.uarp.models.AgentModelConfigProvider
 import ai.snaga.uarp.models.CreateAgentRequest
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.runBlocking
-import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.buildJsonObject
 import kotlinx.serialization.json.put
 
@@ -42,7 +39,7 @@ fun main() = runBlocking {
         .build()
 
     //  1. public health, no authorisation needed
-    val health = client.health.get().status
+    val health = client.health.get().status?.value ?: "absent"
 
     //  2. the key resolves to an identity
     val me = client.auth.getMe()
@@ -76,14 +73,7 @@ fun main() = runBlocking {
     var createError = 0
     try {
         val agent = client.agents.create(
-            CreateAgentRequest(
-                name = agentName,
-                model = AgentModelConfig(
-                    provider = AgentModelConfigProvider.OPENAI_COMPAT,
-                    modelRef = "gpt-4o-mini",
-                    capabilities = JsonObject(emptyMap()),
-                ),
-            )
+            CreateAgentRequest(name = agentName)
         )
         createdId = agent.agentId
         created = agent.agentId.isNotEmpty()

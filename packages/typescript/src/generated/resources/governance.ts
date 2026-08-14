@@ -23,6 +23,7 @@ import type {
   DeactivateSafeModeResponse,
   DeleteSpawnPolicyResponse,
   DesignRequest,
+  DesignRequestCreate,
   FileArbiterAppealRequest,
   FileArbiterCaseRequest,
   GetAgentObligationsResponse,
@@ -240,7 +241,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/builder/requests`
    */
-  createBuilderRequest(body: DesignRequest, options?: RequestOptions): Promise<DesignRequest> {
+  createBuilderRequest(body: DesignRequestCreate, options?: RequestOptions): Promise<DesignRequest> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/builder/requests',

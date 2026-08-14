@@ -6,6 +6,8 @@ import type {
   IngestKbDocumentRequest,
   IngestKbDocumentResponse,
   KnowledgeBase,
+  KnowledgeBaseCreate,
+  KnowledgeBaseUpdate,
   ListKbDocumentsResponse,
   ListKnowledgeBasesResponse,
 } from '../models.js';
@@ -21,7 +23,7 @@ export class KnowledgeResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  createKnowledgeBase(body: KnowledgeBase, options?: RequestOptions): Promise<KnowledgeBase> {
+  createKnowledgeBase(body: KnowledgeBaseCreate, options?: RequestOptions): Promise<KnowledgeBase> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/knowledge-bases',
@@ -134,7 +136,7 @@ export class KnowledgeResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  updateKnowledgeBase(id: string, body: KnowledgeBase, options?: RequestOptions): Promise<KnowledgeBase> {
+  updateKnowledgeBase(id: string, body: KnowledgeBaseUpdate, options?: RequestOptions): Promise<KnowledgeBase> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}`,

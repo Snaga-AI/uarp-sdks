@@ -19,13 +19,14 @@ package body UARP.API.MCP is
           Options => Options);
    end Create_MCP_Server;
 
-   procedure Delete_MCP_Server
+   function Delete_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
    is
    begin
-      UARP.Client.Call_And_Discard
+      return UARP.Client.Call
          (Self,
           "DELETE",
           "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),

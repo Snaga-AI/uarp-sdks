@@ -42,7 +42,10 @@ pub struct StreamOptions {
 
 impl Default for StreamOptions {
     fn default() -> Self {
-        Self { reconnect: true, max_reconnects: 5 }
+        Self {
+            reconnect: true,
+            max_reconnects: 5,
+        }
     }
 }
 
@@ -149,7 +152,9 @@ impl EventStream {
                 continue;
             }
         };
-        Self { inner: Box::pin(stream) }
+        Self {
+            inner: Box::pin(stream),
+        }
     }
 }
 
@@ -209,7 +214,12 @@ impl Parser {
             return None; // comment / keep-alive
         }
         let (field, value) = match line.find(':') {
-            Some(index) => (&line[..index], line[index + 1..].strip_prefix(' ').unwrap_or(&line[index + 1..])),
+            Some(index) => (
+                &line[..index],
+                line[index + 1..]
+                    .strip_prefix(' ')
+                    .unwrap_or(&line[index + 1..]),
+            ),
             None => (line, ""),
         };
         self.has_fields = true;
@@ -233,7 +243,11 @@ impl Parser {
         }
         let event = Event {
             id: self.id.clone(),
-            event: if self.event.is_empty() { "message".to_string() } else { std::mem::take(&mut self.event) },
+            event: if self.event.is_empty() {
+                "message".to_string()
+            } else {
+                std::mem::take(&mut self.event)
+            },
             data: self.data.join("\n"),
             retry: self.retry.take(),
         };

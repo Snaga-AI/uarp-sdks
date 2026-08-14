@@ -38,7 +38,7 @@ let client = UARPClient(configuration: configuration)
 var report: [String: Any] = ["language": language]
 
 // 1. public health, no authorisation needed
-report["health"] = try await client.health.get().status
+report["health"] = try await client.health.get().status?.rawValue ?? "absent"
 
 // 2. the key resolves to an identity
 let me = try await client.auth.getMe()
@@ -73,8 +73,7 @@ var createdId: String?
 do {
     let created = try await client.agents.create(
         body: CreateAgentRequest(
-            name: agentName,
-            model: AgentModelConfig(provider: .openaiCompat, modelRef: "gpt-4o-mini", capabilities: [:])
+            name: agentName
         )
     )
     createdId = created.agentId

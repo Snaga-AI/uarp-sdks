@@ -211,7 +211,7 @@ impl GovernanceApi {
     /// Create design request
     ///
     /// `POST /api/v1/governance/builder/requests`
-    pub async fn create_builder_request(&self, body: &models::DesignRequest) -> Result<models::DesignRequest> {
+    pub async fn create_builder_request(&self, body: &models::DesignRequestCreate) -> Result<models::DesignRequest> {
         self.client
             .request_json(Request {
                 method: Method::POST,

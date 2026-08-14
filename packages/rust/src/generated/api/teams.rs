@@ -85,7 +85,7 @@ impl TeamsApi {
     /// `POST /api/v1/teams`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create(&self, body: &models::Team) -> Result<models::Team> {
+    pub async fn create(&self, body: &models::TeamCreate) -> Result<models::Team> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -385,7 +385,7 @@ impl TeamsApi {
     /// `PUT /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update(&self, team_id: &str, body: &models::Team) -> Result<models::Team> {
+    pub async fn update(&self, team_id: &str, body: &models::TeamUpdate) -> Result<models::Team> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

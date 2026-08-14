@@ -16,7 +16,11 @@ pub struct FilePart {
 
 impl FilePart {
     pub fn new(filename: impl Into<String>, data: impl Into<Vec<u8>>) -> Self {
-        Self { filename: filename.into(), content_type: None, data: data.into() }
+        Self {
+            filename: filename.into(),
+            content_type: None,
+            data: data.into(),
+        }
     }
 
     pub fn content_type(mut self, content_type: impl Into<String>) -> Self {
@@ -37,7 +41,9 @@ impl FilePart {
     pub(crate) fn into_part(self) -> Result<reqwest::multipart::Part> {
         let part = reqwest::multipart::Part::bytes(self.data).file_name(self.filename);
         match self.content_type {
-            Some(mime) => part.mime_str(&mime).map_err(|err| Error::Encode(err.to_string())),
+            Some(mime) => part
+                .mime_str(&mime)
+                .map_err(|err| Error::Encode(err.to_string())),
             None => Ok(part),
         }
     }

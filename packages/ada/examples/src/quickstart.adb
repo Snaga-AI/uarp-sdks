@@ -32,9 +32,6 @@ procedure Quickstart is
       Request : UARP.Models.Create_Agent_Request;
    begin
       Request.Name := +"quickstart";
-      Request.Model.Provider :=
-        UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
-      Request.Model.Model_Ref := +"gpt-4o-mini";
       return UARP.API.Agents.Create (Client, Request);
    end Create_Agent;
 

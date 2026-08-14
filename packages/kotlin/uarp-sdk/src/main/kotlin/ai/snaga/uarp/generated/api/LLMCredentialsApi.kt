@@ -30,7 +30,7 @@ public class LLMCredentialsApi internal constructor(private val client: UarpClie
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun deleteLLMProviderKey(provider: AgentModelConfigProvider, options: RequestOptions = RequestOptions()): DeleteLLMProviderKeyResponse {
+    public suspend fun deleteLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = RequestOptions()): DeleteLLMProviderKeyResponse {
         return client.request<DeleteLLMProviderKeyResponse>(
             RequestSpec(
                 method = "DELETE",
@@ -65,7 +65,7 @@ public class LLMCredentialsApi internal constructor(private val client: UarpClie
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun setLLMProviderKey(provider: AgentModelConfigProvider, body: SetLLMProviderKeyRequest, options: RequestOptions = RequestOptions()): SetLLMProviderKeyResponse {
+    public suspend fun setLLMProviderKey(provider: SetLLMProviderKeyProvider, body: SetLLMProviderKeyRequest, options: RequestOptions = RequestOptions()): SetLLMProviderKeyResponse {
         return client.request<SetLLMProviderKeyResponse>(
             RequestSpec(
                 method = "PUT",
@@ -84,7 +84,7 @@ public class LLMCredentialsApi internal constructor(private val client: UarpClie
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun testLLMProviderKey(provider: AgentModelConfigProvider, options: RequestOptions = RequestOptions()): TestLLMProviderKeyResponse {
+    public suspend fun testLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = RequestOptions()): TestLLMProviderKeyResponse {
         return client.request<TestLLMProviderKeyResponse>(
             RequestSpec(
                 method = "POST",

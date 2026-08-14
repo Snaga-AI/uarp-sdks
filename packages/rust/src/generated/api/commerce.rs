@@ -312,7 +312,7 @@ impl CommerceApi {
     /// silently dropped.
     ///
     /// `PATCH /api/v1/commerce/customers/{id}`
-    pub async fn update_commerce_customer(&self, id: &str, body: &models::Customer) -> Result<models::Customer> {
+    pub async fn update_commerce_customer(&self, id: &str, body: &models::CustomerUpdate) -> Result<models::Customer> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
@@ -330,7 +330,7 @@ impl CommerceApi {
     /// Whitelisted fields: same as create plus `stripe_price_id`. Unknown fields silently dropped.
     ///
     /// `PATCH /api/v1/commerce/products/{id}`
-    pub async fn update_commerce_product(&self, id: &str, body: &models::Product) -> Result<models::Product> {
+    pub async fn update_commerce_product(&self, id: &str, body: &models::ProductUpdate) -> Result<models::Product> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

@@ -8,18 +8,12 @@ use std::pin::pin;
 
 use futures_util::StreamExt;
 use uarp_sdk::api::ListAgentsParams;
-use uarp_sdk::models::{Agent, AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest, CreateRunRequest};
+use uarp_sdk::models::{Agent, CreateAgentRequest, CreateRunRequest};
 use uarp_sdk::{ApiErrorKind, Client, Error};
 
 async fn create_agent(client: &Client) -> Result<Agent, Error> {
     let request = CreateAgentRequest {
         name: "quickstart".into(),
-        model: AgentModelConfig {
-            provider: AgentModelConfigProvider::OpenaiCompat,
-            model_ref: "gpt-4o-mini".into(),
-            capabilities: Default::default(),
-            ..Default::default()
-        },
         ..Default::default()
     };
     client.agents().create(&request).await
@@ -28,7 +22,10 @@ async fn create_agent(client: &Client) -> Result<Agent, Error> {
 async fn run_and_follow(client: &Client, agent_id: &str) -> Result<(), Error> {
     let run = client
         .runs()
-        .create(&CreateRunRequest { agent_id: agent_id.to_string(), ..Default::default() })
+        .create(&CreateRunRequest {
+            agent_id: agent_id.to_string(),
+            ..Default::default()
+        })
         .await?;
 
     let runs = client.runs();
@@ -48,7 +45,10 @@ async fn run_and_follow(client: &Client, agent_id: &str) -> Result<(), Error> {
 
 async fn list_everything(client: &Client) -> Result<(), Error> {
     let agents = client.agents();
-    let params = ListAgentsParams { limit: Some(50), ..Default::default() };
+    let params = ListAgentsParams {
+        limit: Some(50),
+        ..Default::default()
+    };
 
     // `list_all` walks every page; `list` returns one page plus its cursor.
     let mut stream = pin!(agents.list_all(&params));

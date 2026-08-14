@@ -114,7 +114,7 @@ begin
       declare
          Health : constant UARP.Models.Get_Health_Response := UARP.API.Health.Get (Client);
       begin
-         Put ("health", +Health.Status);
+         Put ("health", UARP.Models.Image (Health.Status));
       end;
 
       --  2. the key resolves to an identity
@@ -173,9 +173,6 @@ begin
             Request : UARP.Models.Create_Agent_Request;
          begin
             Request.Name := +Agent_Name;
-            Request.Model.Provider :=
-              UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
-            Request.Model.Model_Ref := +"gpt-4o-mini";
             declare
                Created : constant UARP.Models.Agent :=
                  UARP.API.Agents.Create (Client, Request);

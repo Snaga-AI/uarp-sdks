@@ -8,11 +8,6 @@ func createAgent(_ client: UARPClient) async throws -> Agent {
     try await client.agents.create(
         body: CreateAgentRequest(
             name: "quickstart",
-            model: AgentModelConfig(
-                provider: .openaiCompat,
-                modelRef: "gpt-4o-mini",
-                capabilities: [:]
-            ),
             prompts: ["system": .string("You are a concise assistant.")]
         )
     )

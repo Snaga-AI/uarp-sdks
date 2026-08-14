@@ -158,7 +158,7 @@ package body UARP.API.Governance is
 
    function Create_Builder_Request
      (Self : Client_Type;
-      Payload : UARP.Models.Design_Request;
+      Payload : UARP.Models.Design_Request_Create;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Design_Request
    is

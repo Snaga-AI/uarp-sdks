@@ -111,7 +111,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create_agent_fria(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_agent_fria(&self, agent_id: &str, body: &models::CreateAgentFriaRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -515,7 +515,7 @@ impl AgentsApi {
     /// `PUT /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update(&self, agent_id: &str, body: &models::Agent) -> Result<models::Agent> {
+    pub async fn update(&self, agent_id: &str, body: &models::AgentUpdate) -> Result<models::Agent> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

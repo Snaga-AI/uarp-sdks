@@ -42,7 +42,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:write`.
-    public func createAgentFria(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/fria",
@@ -378,7 +378,7 @@ public struct AgentsAPI: Sendable {
     /// `PUT /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(agentId: String, body: Agent? = nil, options: RequestOptions = .init()) async throws -> Agent {
+    public func update(agentId: String, body: AgentUpdate? = nil, options: RequestOptions = .init()) async throws -> Agent {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "PUT",

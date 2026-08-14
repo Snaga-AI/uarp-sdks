@@ -11,7 +11,7 @@ use std::pin::pin;
 use futures_util::StreamExt;
 use serde_json::json;
 use uarp_sdk::api::ListAgentsParams;
-use uarp_sdk::models::{AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest};
+use uarp_sdk::models::CreateAgentRequest;
 use uarp_sdk::{Client, Error};
 
 const LANGUAGE: &str = "rust";
@@ -35,7 +35,11 @@ async fn main() -> Result<(), Error> {
     report.insert("language".into(), json!(LANGUAGE));
 
     // 1. public health, no authorisation needed
-    report.insert("health".into(), json!(client.health().get().await?.status));
+    let health = client.health().get().await?.status;
+    report.insert(
+        "health".into(),
+        json!(health.map(|s| s.as_str().to_string()).unwrap_or_else(|| "absent".into())),
+    );
 
     // 2. the key resolves to an identity
     let me = client.auth().get_me().await?;
@@ -51,7 +55,10 @@ async fn main() -> Result<(), Error> {
     //    running five SDKs against one server is to see which of them cannot
     //    read what it sends, and a panic here would hide that behind a stack
     //    trace instead of putting it in the comparison.
-    let params = ListAgentsParams { limit: Some(2), ..Default::default() };
+    let params = ListAgentsParams {
+        limit: Some(2),
+        ..Default::default()
+    };
     match client.agents().list(&params).await {
         Ok(page) => {
             report.insert("page_size".into(), json!(page.items.len().min(2)));
@@ -69,7 +76,11 @@ async fn main() -> Result<(), Error> {
             report.insert("not_found_status".into(), json!(error.status));
             report.insert(
                 "problem_has_title".into(),
-                json!(error.problem.title.as_deref().is_some_and(|title| !title.is_empty())),
+                json!(error
+                    .problem
+                    .title
+                    .as_deref()
+                    .is_some_and(|title| !title.is_empty())),
             );
         }
         Err(other) => return Err(other),
@@ -83,12 +94,6 @@ async fn main() -> Result<(), Error> {
         .agents()
         .create(&CreateAgentRequest {
             name: agent_name.clone(),
-            model: AgentModelConfig {
-                provider: AgentModelConfigProvider::OpenaiCompat,
-                model_ref: "gpt-4o-mini".into(),
-                capabilities: Default::default(),
-                ..Default::default()
-            },
             ..Default::default()
         })
         .await;
@@ -139,7 +144,10 @@ async fn main() -> Result<(), Error> {
     // 8. cursor pagination, stopped by the caller after six items
     {
         let agents = client.agents();
-        let all_params = ListAgentsParams { limit: Some(2), ..Default::default() };
+        let all_params = ListAgentsParams {
+            limit: Some(2),
+            ..Default::default()
+        };
         let mut all = pin!(agents.list_all(&all_params));
         let mut seen = 0usize;
         let mut decoded = true;
@@ -158,7 +166,11 @@ async fn main() -> Result<(), Error> {
         }
         report.insert(
             "paged_items".into(),
-            if decoded { json!(seen) } else { json!(DECODE_FAILED) },
+            if decoded {
+                json!(seen)
+            } else {
+                json!(DECODE_FAILED)
+            },
         );
     }
 

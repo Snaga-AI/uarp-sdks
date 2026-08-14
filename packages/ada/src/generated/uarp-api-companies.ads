@@ -16,7 +16,7 @@ package UARP.API.Companies is
    --  Required scopes: agents:write.
    function Create
      (Self : Client_Type;
-      Payload : UARP.Models.Company;
+      Payload : UARP.Models.Company_Create;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company;
 
@@ -114,7 +114,7 @@ package UARP.API.Companies is
    function Update
      (Self : Client_Type;
       Id : String;
-      Payload : UARP.Models.Company;
+      Payload : UARP.Models.Company_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company;
 

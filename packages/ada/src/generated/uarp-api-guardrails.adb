@@ -6,7 +6,7 @@ package body UARP.API.Guardrails is
 
    function Create
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Guardrail_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -15,7 +15,7 @@ package body UARP.API.Guardrails is
          (Self,
           "POST",
           "/api/v1/guardrails",
-          Payload => Payload,
+          Payload => UARP.Models.To_JSON (Payload),
           Has_Payload => True,
           Idempotent => True,
           Options => Options);

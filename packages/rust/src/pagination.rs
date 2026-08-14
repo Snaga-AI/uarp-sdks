@@ -15,7 +15,12 @@ impl CursorGuard {
     }
 
     /// Returns the next cursor to use, or `None` when iteration should stop.
-    pub(crate) fn advance(&mut self, cursor: Option<String>, has_more: Option<bool>, was_empty: bool) -> Option<String> {
+    pub(crate) fn advance(
+        &mut self,
+        cursor: Option<String>,
+        has_more: Option<bool>,
+        was_empty: bool,
+    ) -> Option<String> {
         if has_more == Some(false) || was_empty {
             return None;
         }

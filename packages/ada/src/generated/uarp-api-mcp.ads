@@ -32,10 +32,11 @@ package UARP.API.MCP is
    --  Delete MCP server
    --
    --  DELETE /api/v1/mcp/servers/{serverId}
-   procedure Delete_MCP_Server
+   function Delete_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
 
    --  Get MCP server
    --

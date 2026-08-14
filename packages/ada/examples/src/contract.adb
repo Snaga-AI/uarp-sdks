@@ -85,9 +85,6 @@ begin
          Created : UARP.Models.Agent;
       begin
          Request.Name := +"demo";
-         Request.Model.Provider :=
-           UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
-         Request.Model.Model_Ref := +"gpt-x";
          Created := UARP.API.Agents.Create (Client, Request);
          pragma Unreferenced (Created);
       end;

@@ -32,7 +32,7 @@ impl CompaniesApi {
     /// `POST /api/v1/companies`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create(&self, body: &models::Company) -> Result<models::Company> {
+    pub async fn create(&self, body: &models::CompanyCreate) -> Result<models::Company> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -194,7 +194,7 @@ impl CompaniesApi {
     /// `PUT /api/v1/companies/{id}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update(&self, id: &str, body: &models::Company) -> Result<models::Company> {
+    pub async fn update(&self, id: &str, body: &models::CompanyUpdate) -> Result<models::Company> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

@@ -55,9 +55,9 @@ impl MCPApi {
     /// Delete MCP server
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
-    pub async fn delete_mcp_server(&self, server_id: &str) -> Result<()> {
+    pub async fn delete_mcp_server(&self, server_id: &str) -> Result<serde_json::Value> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/mcp/servers/{}", encode_path(server_id)),
                 query: NO_QUERY,

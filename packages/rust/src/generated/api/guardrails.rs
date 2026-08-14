@@ -32,7 +32,7 @@ impl GuardrailsApi {
     /// `POST /api/v1/guardrails`
     ///
     /// Required scopes: `guardrails:write`.
-    pub async fn create(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create(&self, body: &models::CreateGuardrailRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
                 method: Method::POST,

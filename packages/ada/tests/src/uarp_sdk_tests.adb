@@ -249,7 +249,7 @@ procedure UARP_SDK_Tests is
          Agent : constant UARP.Models.Agent := UARP.API.Agents.Get (Client, "a1");
       begin
          Check_Equal ("a generated getter decodes the model", +Agent.Agent_Id, "a1");
-         Check_Equal ("nested records decode", +Agent.Model.Model_Ref, "gpt-x");
+         Check ("nested records decode", Agent.Model.Has_Capabilities);
          Check ("known enum values map to a kind",
                 Agent.Execution_Mode.Kind = UARP.Models.Agent_Execution_Mode_Worker);
          Check_Equal ("enum text is preserved",
@@ -295,10 +295,9 @@ procedure UARP_SDK_Tests is
          Request : UARP.Models.Create_Agent_Request;
          Created : UARP.Models.Agent;
       begin
+         --  The platform picks the model itself and ignores anything sent for
+         --  it, so a create is just a name.
          Request.Name := +"demo";
-         Request.Model.Provider :=
-           UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
-         Request.Model.Model_Ref := +"gpt-x";
          Created := UARP.API.Agents.Create (Client, Request);
          Check_Equal ("a generated create round-trips", +Created.Agent_Id, "a1");
       end;
@@ -412,20 +411,20 @@ procedure UARP_SDK_Tests is
 
    --  A value the API adds later must round-trip rather than fail.
    procedure Test_Unknown_Enum is
-      use type UARP.Models.Agent_Model_Config_Provider_Kind;
+      use type UARP.Models.Get_Me_Response_Auth_Method_Kind;
 
-      Later : constant UARP.Models.Agent_Model_Config_Provider :=
-        UARP.Models.To_Agent_Model_Config_Provider ("brand_new");
-      Known : constant UARP.Models.Agent_Model_Config_Provider :=
-        UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
+      Later : constant UARP.Models.Get_Me_Response_Auth_Method :=
+        UARP.Models.To_Get_Me_Response_Auth_Method ("brand_new");
+      Known : constant UARP.Models.Get_Me_Response_Auth_Method :=
+        UARP.Models.To_Get_Me_Response_Auth_Method ("api_key");
    begin
       Check ("an unknown enum value is kept",
-             Later.Kind = UARP.Models.Agent_Model_Config_Provider_Unrecognized);
+             Later.Kind = UARP.Models.Get_Me_Response_Auth_Method_Unrecognized);
       Check_Equal ("its text survives", UARP.Models.Image (Later), "brand_new");
       Check ("a known value still maps to its kind",
-             Known.Kind = UARP.Models.Agent_Model_Config_Provider_Openai_Compat);
+             Known.Kind = UARP.Models.Get_Me_Response_Auth_Method_API_Key);
       Check_Equal ("a kind renders its wire text",
-                   UARP.Models.Image (Known), "openai_compat");
+                   UARP.Models.Image (Known), "api_key");
    end Test_Unknown_Enum;
 
    --  A 429 carries its retry and rate-limit hints in headers, not in the body,

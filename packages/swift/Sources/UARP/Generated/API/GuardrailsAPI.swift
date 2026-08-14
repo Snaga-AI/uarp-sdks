@@ -13,7 +13,7 @@ public struct GuardrailsAPI: Sendable {
     /// `POST /api/v1/guardrails`
     ///
     /// Required scopes: `guardrails:write`.
-    public func create(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func create(body: CreateGuardrailRequest, options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/guardrails",

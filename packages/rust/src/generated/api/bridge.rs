@@ -191,7 +191,7 @@ impl BridgeApi {
     /// List bridge agents
     ///
     /// `GET /api/v1/bridge/agents`
-    pub async fn list_bridge_agents(&self) -> Result<models::ListBridgeAgentsResponse> {
+    pub async fn list_bridge_agents(&self) -> Result<Vec<models::BridgeConnection>> {
         self.client
             .request_json(Request {
                 method: Method::GET,

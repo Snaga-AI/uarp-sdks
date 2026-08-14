@@ -4,8 +4,7 @@ import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
-import ai.snaga.uarp.models.AgentModelConfig
-import ai.snaga.uarp.models.AgentModelConfigProvider
+import ai.snaga.uarp.models.GetMeResponseAuthMethod
 import ai.snaga.uarp.models.CreateAgentRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
@@ -34,14 +33,9 @@ private fun agentJson(id: String) = """
     }
 """.trimIndent()
 
-private fun createAgentRequest() = CreateAgentRequest(
-    name = "demo",
-    model = AgentModelConfig(
-        provider = AgentModelConfigProvider.OPENAI_COMPAT,
-        modelRef = "gpt-x",
-        capabilities = kotlinx.serialization.json.JsonObject(emptyMap()),
-    ),
-)
+//  The platform picks the model itself and ignores anything sent for it, so a
+//  create is just a name.
+private fun createAgentRequest() = CreateAgentRequest(name = "demo")
 
 class TransportTest {
     private lateinit var server: MockWebServer
@@ -407,10 +401,10 @@ class TransportTest {
 
     @Test
     fun `decodes unknown enum values`() {
-        val config = uarpJson.decodeFromString<AgentModelConfig>(
-            """{"provider":"brand_new","model_ref":"m","capabilities":{}}""",
+        val decoded = uarpJson.decodeFromString<List<GetMeResponseAuthMethod>>(
+            """["brand_new"]""",
         )
-        assertEquals("brand_new", config.provider.value)
+        assertEquals("brand_new", decoded[0].value)
     }
 
     @Test

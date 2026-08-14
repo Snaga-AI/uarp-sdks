@@ -227,7 +227,7 @@ test('parses the production document into the expected shape', () => {
 
   assert.equal(ops.length, 557);
   assert.equal(spec.groups.length, 43);
-  assert.equal(spec.types.length, 575);
+  assert.equal(spec.types.length, 603);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

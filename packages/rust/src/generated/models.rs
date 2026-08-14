@@ -715,6 +715,8 @@ pub enum AgentExecutionMode {
     Async,
     #[serde(rename = "worker")]
     Worker,
+    #[serde(rename = "bridge")]
+    Bridge,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -726,6 +728,7 @@ impl AgentExecutionMode {
         match self {
             Self::Async => "async",
             Self::Worker => "worker",
+            Self::Bridge => "bridge",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -742,6 +745,7 @@ impl From<&str> for AgentExecutionMode {
         match value {
             "async" => Self::Async,
             "worker" => Self::Worker,
+            "bridge" => Self::Bridge,
             other => Self::Other(other.to_string()),
         }
     }
@@ -756,7 +760,7 @@ pub struct AgentIntegration {
     pub tenant_id: Option<String>,
     pub connector_id: String,
     pub name: String,
-    pub status: AgentIntegrationStatus,
+    pub status: IntegrationStatus,
     /// Redacted config (no secrets)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
@@ -764,50 +768,6 @@ pub struct AgentIntegration {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
-}
-
-/// `AgentIntegrationStatus` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum AgentIntegrationStatus {
-    #[default]
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "inactive")]
-    Inactive,
-    #[serde(rename = "error")]
-    Error,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl AgentIntegrationStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Active => "active",
-            Self::Inactive => "inactive",
-            Self::Error => "error",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for AgentIntegrationStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for AgentIntegrationStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "active" => Self::Active,
-            "inactive" => Self::Inactive,
-            "error" => Self::Error,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `AgentLineage` model.
@@ -824,56 +784,30 @@ pub struct AgentLineage {
     pub spawned_at: Option<String>,
 }
 
-/// `AgentModelConfig` model.
+/// Model capabilities. Deliberately carries no provider or model identifier — see the model
+/// lockdown.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentModelConfig {
-    pub provider: AgentModelConfigProvider,
-    pub model_ref: String,
+    /// Feature flags the client may branch on (e.g. `vision`, `tool_calls`, `streaming`). Absent
+    /// when the platform has published none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// Accepted and IGNORED. The platform default is applied on create and preserved on update, so
+/// sending this changes nothing. Kept so existing clients do not start failing validation.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentModelConfigInput {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model_ref: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub endpoint_url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key_ref: Option<String>,
-    pub capabilities: serde_json::Map<String, serde_json::Value>,
-}
-
-/// `AgentModelConfigProvider` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum AgentModelConfigProvider {
-    #[default]
-    #[serde(rename = "openai_compat")]
-    OpenaiCompat,
-    #[serde(rename = "custom")]
-    Custom,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl AgentModelConfigProvider {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::OpenaiCompat => "openai_compat",
-            Self::Custom => "custom",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for AgentModelConfigProvider {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for AgentModelConfigProvider {
-    fn from(value: &str) -> Self {
-        match value {
-            "openai_compat" => Self::OpenaiCompat,
-            "custom" => Self::Custom,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `AgentPrompts` model.
@@ -953,10 +887,14 @@ impl From<&str> for AgentSummaryBridgeStatus {
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum AgentSummaryExecutionMode {
     #[default]
-    #[serde(rename = "cloud")]
-    Cloud,
+    #[serde(rename = "async")]
+    Async,
+    #[serde(rename = "worker")]
+    Worker,
     #[serde(rename = "bridge")]
     Bridge,
+    #[serde(rename = "cloud")]
+    Cloud,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -966,8 +904,10 @@ impl AgentSummaryExecutionMode {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Cloud => "cloud",
+            Self::Async => "async",
+            Self::Worker => "worker",
             Self::Bridge => "bridge",
+            Self::Cloud => "cloud",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -982,8 +922,83 @@ impl std::fmt::Display for AgentSummaryExecutionMode {
 impl From<&str> for AgentSummaryExecutionMode {
     fn from(value: &str) -> Self {
         match value {
-            "cloud" => Self::Cloud,
+            "async" => Self::Async,
+            "worker" => Self::Worker,
             "bridge" => Self::Bridge,
+            "cloud" => Self::Cloud,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO
+/// CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model
+/// lockdown).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prompts: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<AgentModelConfigInput>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_required_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_approve_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knowledge_base_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knowledge_base_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visibility: Option<AgentUpdateVisibility>,
+}
+
+/// `AgentUpdateVisibility` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentUpdateVisibility {
+    #[default]
+    #[serde(rename = "private")]
+    Private,
+    #[serde(rename = "team")]
+    Team,
+    #[serde(rename = "public")]
+    Public,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentUpdateVisibility {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Private => "private",
+            Self::Team => "team",
+            Self::Public => "public",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentUpdateVisibility {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentUpdateVisibility {
+    fn from(value: &str) -> Self {
+        match value {
+            "private" => Self::Private,
+            "team" => Self::Team,
+            "public" => Self::Public,
             other => Self::Other(other.to_string()),
         }
     }
@@ -1389,13 +1404,15 @@ pub struct BootstrapRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BridgeConnection {
     pub agent_id: String,
-    pub tenant_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
     pub machine_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub machine_name: Option<String>,
     pub capabilities: Vec<String>,
     pub working_directory: String,
-    pub version: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_heartbeat: Option<String>,
     pub status: AgentSummaryBridgeStatus,
@@ -2018,6 +2035,41 @@ pub struct Company {
     pub updated_at: Option<String>,
 }
 
+/// Body for `POST /api/v1/companies` (`CreateCompanySchema`).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyCreate {
+    pub name: String,
+    /// What the company exists to do.
+    pub mission: String,
+    /// Spend ceiling in USD.
+    pub budget: f64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strategic_goals: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+}
+
+/// Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mission: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strategic_goals: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
 /// `CompleteOAuthLoginResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CompleteOAuthLoginResponse {
@@ -2037,26 +2089,140 @@ pub struct Constitution {
 /// `ConstitutionRule` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConstitutionRule {
-    pub rule_id: String,
-    pub principle: String,
+    /// Stable slug, e.g. `no-privilege-escalation`.
+    pub id: String,
+    pub rule_type: ConstitutionRuleRuleType,
+    /// Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+    /// the server has ever emitted.
+    pub scope: ConstitutionRuleScope,
+    /// Agent ids, team ids or role names, depending on `scope`. Absent for `all_agents`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope_targets: Option<Vec<String>>,
+    /// The action the rule governs, e.g. `modify_constitution`.
+    pub action: String,
+    /// For `requirement` rules: the action that must be performed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub obligated_action: Option<String>,
+    pub penalty: ConstitutionRulePenalty,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Genesis rules cannot be amended or removed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub severity: Option<ConstitutionRuleSeverity>,
+    pub immutable: Option<bool>,
+    /// Conflict resolution — higher wins. Defaults to 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scope: Option<ConstitutionRuleScope>,
+    pub priority: Option<i64>,
 }
 
-/// `ConstitutionRuleScope` enumeration.
+/// `ConstitutionRulePenalty` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ConstitutionRulePenalty {
+    #[default]
+    #[serde(rename = "block")]
+    Block,
+    #[serde(rename = "warn")]
+    Warn,
+    #[serde(rename = "log")]
+    Log,
+    #[serde(rename = "terminate_agent")]
+    TerminateAgent,
+    #[serde(rename = "revoke_permissions")]
+    RevokePermissions,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ConstitutionRulePenalty {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Block => "block",
+            Self::Warn => "warn",
+            Self::Log => "log",
+            Self::TerminateAgent => "terminate_agent",
+            Self::RevokePermissions => "revoke_permissions",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ConstitutionRulePenalty {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ConstitutionRulePenalty {
+    fn from(value: &str) -> Self {
+        match value {
+            "block" => Self::Block,
+            "warn" => Self::Warn,
+            "log" => Self::Log,
+            "terminate_agent" => Self::TerminateAgent,
+            "revoke_permissions" => Self::RevokePermissions,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ConstitutionRuleRuleType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ConstitutionRuleRuleType {
+    #[default]
+    #[serde(rename = "prohibition")]
+    Prohibition,
+    #[serde(rename = "requirement")]
+    Requirement,
+    #[serde(rename = "permission")]
+    Permission,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ConstitutionRuleRuleType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Prohibition => "prohibition",
+            Self::Requirement => "requirement",
+            Self::Permission => "permission",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ConstitutionRuleRuleType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ConstitutionRuleRuleType {
+    fn from(value: &str) -> Self {
+        match value {
+            "prohibition" => Self::Prohibition,
+            "requirement" => Self::Requirement,
+            "permission" => Self::Permission,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+/// the server has ever emitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum ConstitutionRuleScope {
     #[default]
-    #[serde(rename = "global")]
-    Global,
-    #[serde(rename = "tenant")]
-    Tenant,
+    #[serde(rename = "all_agents")]
+    AllAgents,
+    #[serde(rename = "team")]
+    Team,
     #[serde(rename = "agent")]
     Agent,
+    #[serde(rename = "role")]
+    Role,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -2066,9 +2232,10 @@ impl ConstitutionRuleScope {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Global => "global",
-            Self::Tenant => "tenant",
+            Self::AllAgents => "all_agents",
+            Self::Team => "team",
             Self::Agent => "agent",
+            Self::Role => "role",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -2083,57 +2250,10 @@ impl std::fmt::Display for ConstitutionRuleScope {
 impl From<&str> for ConstitutionRuleScope {
     fn from(value: &str) -> Self {
         match value {
-            "global" => Self::Global,
-            "tenant" => Self::Tenant,
+            "all_agents" => Self::AllAgents,
+            "team" => Self::Team,
             "agent" => Self::Agent,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `ConstitutionRuleSeverity` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ConstitutionRuleSeverity {
-    #[default]
-    #[serde(rename = "info")]
-    Info,
-    #[serde(rename = "warning")]
-    Warning,
-    #[serde(rename = "error")]
-    Error,
-    #[serde(rename = "blocker")]
-    Blocker,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl ConstitutionRuleSeverity {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Info => "info",
-            Self::Warning => "warning",
-            Self::Error => "error",
-            Self::Blocker => "blocker",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for ConstitutionRuleSeverity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for ConstitutionRuleSeverity {
-    fn from(value: &str) -> Self {
-        match value {
-            "info" => Self::Info,
-            "warning" => Self::Warning,
-            "error" => Self::Error,
-            "blocker" => Self::Blocker,
+            "role" => Self::Role,
             other => Self::Other(other.to_string()),
         }
     }
@@ -2650,6 +2770,75 @@ pub struct CreateA2ATaskRequestMessage {
     pub parts: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
+/// `CreateAgentFriaRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAgentFriaRequest {
+    /// One entry per fundamental right considered.
+    pub rights_assessed: Vec<CreateAgentFriaRequestRightsAssessedItem>,
+    pub mitigations: String,
+    pub assessor: String,
+    /// When the assessment must be revisited.
+    pub next_review: String,
+}
+
+/// `CreateAgentFriaRequestRightsAssessedItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAgentFriaRequestRightsAssessedItem {
+    pub right: String,
+    pub impact: CreateAgentFriaRequestRightsAssessedItemImpact,
+    pub justification: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mitigation: Option<String>,
+}
+
+/// `CreateAgentFriaRequestRightsAssessedItemImpact` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreateAgentFriaRequestRightsAssessedItemImpact {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "low")]
+    Low,
+    #[serde(rename = "medium")]
+    Medium,
+    #[serde(rename = "high")]
+    High,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreateAgentFriaRequestRightsAssessedItemImpact {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => "none",
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreateAgentFriaRequestRightsAssessedItemImpact {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreateAgentFriaRequestRightsAssessedItemImpact {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => Self::None,
+            "low" => Self::Low,
+            "medium" => Self::Medium,
+            "high" => Self::High,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `CreateAgentIntegrationRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAgentIntegrationRequest {
@@ -2663,7 +2852,8 @@ pub struct CreateAgentIntegrationRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAgentRequest {
     pub name: String,
-    pub model: AgentModelConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<AgentModelConfigInput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2815,6 +3005,115 @@ pub struct CreateExperimentRequestVariant {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateGoalRequest {
     pub agent_id: String,
+}
+
+/// `CreateGuardrailRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateGuardrailRequest {
+    pub name: String,
+    /// Where the guardrail is called. Checked against the security-policy denylist and resolved
+    /// through DNS before it is accepted.
+    pub webhook_url: String,
+    pub phase: CreateGuardrailRequestPhase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<CreateGuardrailRequestAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<i64>,
+    /// Shared secret used to sign calls to `webhook_url`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+}
+
+/// `CreateGuardrailRequestAction` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreateGuardrailRequestAction {
+    #[default]
+    #[serde(rename = "block")]
+    Block,
+    #[serde(rename = "redact")]
+    Redact,
+    #[serde(rename = "warn")]
+    Warn,
+    #[serde(rename = "log")]
+    Log,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreateGuardrailRequestAction {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Block => "block",
+            Self::Redact => "redact",
+            Self::Warn => "warn",
+            Self::Log => "log",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreateGuardrailRequestAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreateGuardrailRequestAction {
+    fn from(value: &str) -> Self {
+        match value {
+            "block" => Self::Block,
+            "redact" => Self::Redact,
+            "warn" => Self::Warn,
+            "log" => Self::Log,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `CreateGuardrailRequestPhase` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreateGuardrailRequestPhase {
+    #[default]
+    #[serde(rename = "input")]
+    Input,
+    #[serde(rename = "output")]
+    Output,
+    #[serde(rename = "both")]
+    Both,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreateGuardrailRequestPhase {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Input => "input",
+            Self::Output => "output",
+            Self::Both => "both",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreateGuardrailRequestPhase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreateGuardrailRequestPhase {
+    fn from(value: &str) -> Self {
+        match value {
+            "input" => Self::Input,
+            "output" => Self::Output,
+            "both" => Self::Both,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreateImprovementProposalRequest` model.
@@ -2991,9 +3290,22 @@ pub struct CreateProgramRequest {
     pub name: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listing_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    pub steps: Vec<CreateProgramRequestStep>,
+}
+
+/// `CreateProgramRequestStep` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateProgramRequestStep {
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub listing_id: Option<String>,
+    pub order_index: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub suggested_due_offset_days: Option<f64>,
 }
 
 /// `CreatePublicSessionRequest` model.
@@ -3242,7 +3554,107 @@ pub struct CreateVotingProposalRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateWebhookRequest {
     pub url: String,
-    pub events: Vec<String>,
+    pub events: Vec<CreateWebhookRequestEvent>,
+}
+
+/// `CreateWebhookRequestEvent` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreateWebhookRequestEvent {
+    #[default]
+    #[serde(rename = "run.completed")]
+    RunCompleted,
+    #[serde(rename = "run.failed")]
+    RunFailed,
+    #[serde(rename = "run.cancelled")]
+    RunCancelled,
+    #[serde(rename = "agent.created")]
+    AgentCreated,
+    #[serde(rename = "agent.updated")]
+    AgentUpdated,
+    #[serde(rename = "agent.deleted")]
+    AgentDeleted,
+    #[serde(rename = "quota.threshold")]
+    QuotaThreshold,
+    #[serde(rename = "quota.exceeded")]
+    QuotaExceeded,
+    #[serde(rename = "guardrail.violated")]
+    GuardrailViolated,
+    #[serde(rename = "billing.invoice.created")]
+    BillingInvoiceCreated,
+    #[serde(rename = "billing.payment.failed")]
+    BillingPaymentFailed,
+    #[serde(rename = "eval.auto_rollback")]
+    EvalAutoRollback,
+    #[serde(rename = "company.budget_alert")]
+    CompanyBudgetAlert,
+    #[serde(rename = "company.budget_exceeded")]
+    CompanyBudgetExceeded,
+    #[serde(rename = "company.objective_failed")]
+    CompanyObjectiveFailed,
+    #[serde(rename = "company.goal_completed")]
+    CompanyGoalCompleted,
+    #[serde(rename = "company.paused")]
+    CompanyPaused,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreateWebhookRequestEvent {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunCompleted => "run.completed",
+            Self::RunFailed => "run.failed",
+            Self::RunCancelled => "run.cancelled",
+            Self::AgentCreated => "agent.created",
+            Self::AgentUpdated => "agent.updated",
+            Self::AgentDeleted => "agent.deleted",
+            Self::QuotaThreshold => "quota.threshold",
+            Self::QuotaExceeded => "quota.exceeded",
+            Self::GuardrailViolated => "guardrail.violated",
+            Self::BillingInvoiceCreated => "billing.invoice.created",
+            Self::BillingPaymentFailed => "billing.payment.failed",
+            Self::EvalAutoRollback => "eval.auto_rollback",
+            Self::CompanyBudgetAlert => "company.budget_alert",
+            Self::CompanyBudgetExceeded => "company.budget_exceeded",
+            Self::CompanyObjectiveFailed => "company.objective_failed",
+            Self::CompanyGoalCompleted => "company.goal_completed",
+            Self::CompanyPaused => "company.paused",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreateWebhookRequestEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreateWebhookRequestEvent {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.completed" => Self::RunCompleted,
+            "run.failed" => Self::RunFailed,
+            "run.cancelled" => Self::RunCancelled,
+            "agent.created" => Self::AgentCreated,
+            "agent.updated" => Self::AgentUpdated,
+            "agent.deleted" => Self::AgentDeleted,
+            "quota.threshold" => Self::QuotaThreshold,
+            "quota.exceeded" => Self::QuotaExceeded,
+            "guardrail.violated" => Self::GuardrailViolated,
+            "billing.invoice.created" => Self::BillingInvoiceCreated,
+            "billing.payment.failed" => Self::BillingPaymentFailed,
+            "eval.auto_rollback" => Self::EvalAutoRollback,
+            "company.budget_alert" => Self::CompanyBudgetAlert,
+            "company.budget_exceeded" => Self::CompanyBudgetExceeded,
+            "company.objective_failed" => Self::CompanyObjectiveFailed,
+            "company.goal_completed" => Self::CompanyGoalCompleted,
+            "company.paused" => Self::CompanyPaused,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreateWorkspaceRequest` model.
@@ -3289,6 +3701,40 @@ pub struct Customer {
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+}
+
+/// Body for `PATCH /api/v1/commerce/customers/{id}`. Only the listed fields are applied;
+/// anything else in the body is ignored.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CustomerUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub addresses: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub accepts_marketing: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub verified_email: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tax_exempt: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `DeactivateSafeModeResponse` model.
@@ -3396,24 +3842,53 @@ pub struct DeleteUserResponse {
     pub deleted: Option<bool>,
 }
 
-/// Governance-builder request to design or modify an agent (governance-builder.ts).
+/// Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DesignRequest {
-    pub id: String,
-    pub title: String,
+    pub request_id: String,
+    pub tenant_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
+    pub submitted_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub requested_by: Option<String>,
+    pub agent_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rationale: Option<String>,
     pub status: DesignRequestStatus,
+    /// Set once the request enters a vote.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub design: Option<serde_json::Map<String, serde_json::Value>>,
+    pub proposal_id: Option<String>,
+    /// Set once the approved design has been created.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub result_agent_id: Option<String>,
+    pub spawned_agent_id: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// Body for `POST /api/v1/governance/builder/requests`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DesignRequestCreate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    pub submitted_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
+    pub agent_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rationale: Option<String>,
 }
 
 /// `DesignRequestStatus` enumeration.
@@ -3578,8 +4053,56 @@ pub struct EnforcementResult {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResultViolation {
     pub rule_id: String,
-    pub severity: ConstitutionRuleSeverity,
+    pub severity: EnforcementResultViolationSeverity,
     pub message: String,
+}
+
+/// `EnforcementResultViolationSeverity` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum EnforcementResultViolationSeverity {
+    #[default]
+    #[serde(rename = "info")]
+    Info,
+    #[serde(rename = "warning")]
+    Warning,
+    #[serde(rename = "error")]
+    Error,
+    #[serde(rename = "blocker")]
+    Blocker,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl EnforcementResultViolationSeverity {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Info => "info",
+            Self::Warning => "warning",
+            Self::Error => "error",
+            Self::Blocker => "blocker",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for EnforcementResultViolationSeverity {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for EnforcementResultViolationSeverity {
+    fn from(value: &str) -> Self {
+        match value {
+            "info" => Self::Info,
+            "warning" => Self::Warning,
+            "error" => Self::Error,
+            "blocker" => Self::Blocker,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `Enrollment` model.
@@ -3859,8 +4382,70 @@ pub struct GetAdminGuardrailsResponse {
 /// `GetAdminIntegrationsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAdminIntegrationsResponse {
+    pub integrations: Vec<GetAdminIntegrationsResponseIntegration>,
+}
+
+/// `GetAdminIntegrationsResponseIntegration` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAdminIntegrationsResponseIntegration {
+    pub id: String,
+    pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub integrations: Option<serde_json::Map<String, serde_json::Value>>,
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_type: Option<GetAdminIntegrationsResponseIntegrationAuthType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub beta: Option<bool>,
+    /// `kv` when an operator overrode the shipped default, `default` otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+}
+
+/// `GetAdminIntegrationsResponseIntegrationAuthType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetAdminIntegrationsResponseIntegrationAuthType {
+    #[default]
+    #[serde(rename = "oauth2")]
+    Oauth2,
+    #[serde(rename = "api_key")]
+    APIKey,
+    #[serde(rename = "none")]
+    None,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetAdminIntegrationsResponseIntegrationAuthType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Oauth2 => "oauth2",
+            Self::APIKey => "api_key",
+            Self::None => "none",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetAdminIntegrationsResponseIntegrationAuthType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetAdminIntegrationsResponseIntegrationAuthType {
+    fn from(value: &str) -> Self {
+        match value {
+            "oauth2" => Self::Oauth2,
+            "api_key" => Self::APIKey,
+            "none" => Self::None,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `GetAdminLLMDefaultsResponse` model.
@@ -3873,8 +4458,16 @@ pub struct GetAdminLLMDefaultsResponse {
 /// `GetAdminPlansResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAdminPlansResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plans: Option<serde_json::Map<String, serde_json::Value>>,
+    pub plans: Vec<GetAdminPlansResponsePlan>,
+}
+
+/// `GetAdminPlansResponsePlan` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAdminPlansResponsePlan {
+    pub id: String,
+    pub name: String,
+    /// Per-plan limits (`max_agents`, `max_monthly_tokens`, …).
+    pub quotas: serde_json::Map<String, serde_json::Value>,
 }
 
 /// `GetAdminStatsResponse` model.
@@ -4150,11 +4743,63 @@ pub struct GetGovernanceLedgerResponse {
 /// `GetHealthResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetHealthResponse {
-    /// Always `ok`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
+    pub status: Option<GetHealthResponseStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kv_connected: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uptime_seconds: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    /// Runs waiting to be resumed after a restart.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pending_resumes: Option<i64>,
+}
+
+/// `GetHealthResponseStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetHealthResponseStatus {
+    #[default]
+    #[serde(rename = "healthy")]
+    Healthy,
+    #[serde(rename = "degraded")]
+    Degraded,
+    #[serde(rename = "unhealthy")]
+    Unhealthy,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetHealthResponseStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Healthy => "healthy",
+            Self::Degraded => "degraded",
+            Self::Unhealthy => "unhealthy",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetHealthResponseStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetHealthResponseStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "healthy" => Self::Healthy,
+            "degraded" => Self::Degraded,
+            "unhealthy" => Self::Unhealthy,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `GetImmutableAuditResponse` model.
@@ -4514,7 +5159,8 @@ impl From<&str> for GetReadyResponseStatus {
 /// `GetRootAgentResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRootAgentResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    /// Designated root agent, or null when none is set.
+    #[serde(default)]
     pub root_agent_id: Option<String>,
 }
 
@@ -4792,18 +5438,23 @@ pub struct GoogleOneTapAuthResponse {
 /// `GovernanceLedgerEntry` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GovernanceLedgerEntry {
-    pub id: String,
-    pub kind: String,
+    /// Monotonic position in the tenant's chain.
+    pub seq: i64,
+    /// What happened, e.g. `run_complete`, `constitution_amended`.
+    pub action: String,
+    /// Coarse grouping, e.g. `execution`, `governance`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub actor_agent_id: Option<String>,
+    pub category: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subject_agent_id: Option<String>,
+    pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub rule_id: Option<String>,
+    pub tenant_id: Option<String>,
+    /// Action-specific detail; shape varies by `action`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub details: Option<serde_json::Map<String, serde_json::Value>>,
-    pub ts: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub payload: Option<serde_json::Map<String, serde_json::Value>>,
+    pub timestamp: String,
+    /// Hash of the preceding entry. Null only for the genesis entry.
+    #[serde(default)]
     pub prev_hash: Option<String>,
     pub hash: String,
 }
@@ -4987,9 +5638,15 @@ pub struct IngestMemoryResponseEntry {
 pub struct Integration {
     pub id: String,
     pub tenant_id: String,
-    pub r#type: String,
+    /// Which connector this is: `github`, `slack`, `linear`, …
+    pub connector_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
+    pub name: Option<String>,
+    /// Connector settings. Secrets are replaced with `\<redacted\>`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Map<String, serde_json::Value>>,
+    /// `active` is what the server sends for a working integration; the documented `connected` was
+    /// never emitted.
     pub status: IntegrationStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_sync_at: Option<String>,
@@ -4999,6 +5656,8 @@ pub struct Integration {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub migrated_at: Option<String>,
 }
 
 /// Available integration (connector) type in the catalog
@@ -5064,14 +5723,15 @@ impl From<&str> for IntegrationCatalogItemAuthType {
     }
 }
 
-/// `IntegrationStatus` enumeration.
+/// `active` is what the server sends for a working integration; the documented `connected` was
+/// never emitted.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum IntegrationStatus {
     #[default]
-    #[serde(rename = "connected")]
-    Connected,
-    #[serde(rename = "disconnected")]
-    Disconnected,
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "inactive")]
+    Inactive,
     #[serde(rename = "error")]
     Error,
     /// A value the API introduced after this SDK was generated.
@@ -5083,8 +5743,8 @@ impl IntegrationStatus {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Connected => "connected",
-            Self::Disconnected => "disconnected",
+            Self::Active => "active",
+            Self::Inactive => "inactive",
             Self::Error => "error",
             Self::Other(value) => value.as_str(),
         }
@@ -5100,8 +5760,8 @@ impl std::fmt::Display for IntegrationStatus {
 impl From<&str> for IntegrationStatus {
     fn from(value: &str) -> Self {
         match value {
-            "connected" => Self::Connected,
-            "disconnected" => Self::Disconnected,
+            "active" => Self::Active,
+            "inactive" => Self::Inactive,
             "error" => Self::Error,
             other => Self::Other(other.to_string()),
         }
@@ -5154,6 +5814,25 @@ pub struct KnowledgeBase {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+}
+
+/// Body for `POST /api/v1/knowledge-bases`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct KnowledgeBaseCreate {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub embedding_model: Option<String>,
+}
+
+/// Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct KnowledgeBaseUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 /// `ListA2ATasksResponse` model.
@@ -5340,13 +6019,6 @@ pub struct ListBillingPlansResponsePlan {
     pub price_currency: Option<String>,
 }
 
-/// `ListBridgeAgentsResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct ListBridgeAgentsResponse {
-    pub agents: Vec<BridgeConnection>,
-    pub total: i64,
-}
-
 /// `ListBuilderRequestsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListBuilderRequestsResponse {
@@ -5357,6 +6029,9 @@ pub struct ListBuilderRequestsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListCommerceCustomersResponse {
     pub items: Vec<Customer>,
+    /// Legacy alias for `items`. Will be removed in API v1.x.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub customers: Option<Vec<Customer>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
 }
@@ -6704,6 +7379,25 @@ pub struct OAuthStartResponse {
     pub state: String,
 }
 
+/// Error envelope used by the OpenAI-compatible surface (`/v1/*`). Deliberately NOT RFC 9457:
+/// callers here are OpenAI SDKs pointed at this base URL, and they decode this shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiError {
+    pub error: OpenAiErrorError,
+}
+
+/// `OpenAiErrorError` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiErrorError {
+    /// Human-readable cause, including where an operator fixes it.
+    pub message: String,
+    pub r#type: String,
+    /// Machine-readable code. `embedding_unavailable` = no provider configured (501, permanent).
+    /// `embedding_failed` = the configured provider did not answer (503, retryable).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+}
+
 /// `Order` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Order {
@@ -6946,6 +7640,21 @@ impl From<&str> for ProductType {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProductUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `PublicDomainLookupResponse` model.
@@ -7913,6 +8622,9 @@ impl From<&str> for SearchMarketplaceCategory {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SearchMarketplaceResponse {
     pub items: Vec<MarketplaceListing>,
+    /// Legacy alias for `items`. Will be removed in API v1.x.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listings: Option<Vec<MarketplaceListing>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -8406,6 +9118,46 @@ pub struct SetDataExplorerValueResponse {
     pub success: Option<bool>,
 }
 
+/// `SetLLMProviderKeyProvider` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SetLLMProviderKeyProvider {
+    #[default]
+    #[serde(rename = "openai_compat")]
+    OpenaiCompat,
+    #[serde(rename = "custom")]
+    Custom,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SetLLMProviderKeyProvider {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::OpenaiCompat => "openai_compat",
+            Self::Custom => "custom",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SetLLMProviderKeyProvider {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SetLLMProviderKeyProvider {
+    fn from(value: &str) -> Self {
+        match value {
+            "openai_compat" => Self::OpenaiCompat,
+            "custom" => Self::Custom,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `SetLLMProviderKeyRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetLLMProviderKeyRequest {
@@ -8761,6 +9513,39 @@ pub struct Team {
     pub updated_at: Option<String>,
 }
 
+/// Body for `POST /api/v1/teams` (`CreateTeamSchema`).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamCreate {
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topology: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supervisor_agent_id: Option<String>,
+    /// Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workers: Option<Vec<TeamCreateWorker>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub delegation_strategy: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub merge_strategy: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub orchestration_mode: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workspace_id: Option<String>,
+}
+
+/// `TeamCreateWorker` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamCreateWorker {
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+}
+
 /// `TeamDelegationStrategy` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum TeamDelegationStrategy {
@@ -9023,6 +9808,29 @@ impl From<&str> for TeamTopology {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// Body for `PUT /api/v1/teams/{teamId}`. Every field optional — send only what changes.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamUpdate {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub topology: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supervisor_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workers: Option<Vec<TeamUpdateWorker>>,
+}
+
+/// `TeamUpdateWorker` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamUpdateWorker {
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
 }
 
 /// `Tenant` model.

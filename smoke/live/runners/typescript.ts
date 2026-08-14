@@ -72,7 +72,6 @@ let createdId: string | undefined;
 try {
   const created = await client.agents.create({
     name: AGENT_NAME,
-    model: { provider: 'openai_compat', model_ref: 'gpt-4o-mini', capabilities: {} },
   });
   createdId = (created as Record<string, unknown>).agent_id as string | undefined;
   report.created = typeof createdId === 'string' && createdId.length > 0;
