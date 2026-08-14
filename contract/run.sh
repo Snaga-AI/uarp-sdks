@@ -86,9 +86,16 @@ fi
 if wanted ada && have alr; then
     echo "==> ada"
     curl -fsS "$base/__reset" >/dev/null
-    (cd "$root/packages/ada/examples" && alr -n build >/dev/null 2>&1)
-    (cd "$root/packages/ada/examples" && UARP_CONTRACT_BASE_URL="$base" ./bin/contract >/dev/null)
-    record ada
+    #  The build output used to go to /dev/null, so a failure here ended the
+    #  whole run with `set -e` and no explanation at all. Keep it, and let the
+    #  other four SDKs still be compared if Ada cannot build.
+    if (cd "$root/packages/ada/examples" && alr -n build > "$traces/ada-build.log" 2>&1); then
+        (cd "$root/packages/ada/examples" && UARP_CONTRACT_BASE_URL="$base" ./bin/contract >/dev/null) \
+            && record ada || echo "    ada runner failed" >&2
+    else
+        echo "    ada failed to build:" >&2
+        tail -20 "$traces/ada-build.log" >&2
+    fi
 else
     wanted ada && skipped+=("ada (alr)")
 fi
