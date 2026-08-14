@@ -101,7 +101,7 @@ documents behaviour a caller can rely on.
 - **Publishing is documented and the Swift package is reachable.** SwiftPM
   resolves a git URL and expects `Package.swift` at the repository root, so a
   package in a monorepo subdirectory cannot be depended upon at all. The release
-  now copies `packages/swift` into `snaga-ai/uarp-swift` and tags it there.
+  now copies `packages/swift` into `Snaga-AI/uarp-swift` and tags it there.
   PUBLISHING.md covers the accounts, the DNS record that proves the Maven
   namespace, the signing key, and the order to publish in.
 - **Every package carries its LICENCE.** All five declared MIT in their metadata

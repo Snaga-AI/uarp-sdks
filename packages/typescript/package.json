@@ -33,11 +33,11 @@
     "openapi"
   ],
   "author": "Snaga <support@snaga.ai>",
-  "homepage": "https://github.com/snaga-ai/uarp-sdks/tree/main/packages/typescript#readme",
-  "bugs": "https://github.com/snaga-ai/uarp-sdks/issues",
+  "homepage": "https://github.com/Snaga-AI/uarp-sdks/tree/main/packages/typescript#readme",
+  "bugs": "https://github.com/Snaga-AI/uarp-sdks/issues",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/snaga-ai/uarp-sdks.git",
+    "url": "git+https://github.com/Snaga-AI/uarp-sdks.git",
     "directory": "packages/typescript"
   },
   "scripts": {

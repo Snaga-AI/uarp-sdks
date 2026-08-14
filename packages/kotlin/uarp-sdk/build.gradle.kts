@@ -67,7 +67,7 @@ publishing {
                 description.set(
                     "Kotlin/Android client for the UARP (Snaga) Universal Agent Runtime Platform API",
                 )
-                url.set("https://github.com/snaga-ai/uarp-sdks")
+                url.set("https://github.com/Snaga-AI/uarp-sdks")
                 licenses {
                     license {
                         name.set("MIT")
@@ -82,9 +82,9 @@ publishing {
                     }
                 }
                 scm {
-                    url.set("https://github.com/snaga-ai/uarp-sdks")
-                    connection.set("scm:git:https://github.com/snaga-ai/uarp-sdks.git")
-                    developerConnection.set("scm:git:ssh://git@github.com/snaga-ai/uarp-sdks.git")
+                    url.set("https://github.com/Snaga-AI/uarp-sdks")
+                    connection.set("scm:git:https://github.com/Snaga-AI/uarp-sdks.git")
+                    developerConnection.set("scm:git:ssh://git@github.com/Snaga-AI/uarp-sdks.git")
                 }
             }
         }
