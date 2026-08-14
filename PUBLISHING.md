@@ -59,22 +59,32 @@ Sign in with GitHub, create an API token, store it as
 transferred later without asking the crates.io team, so publish something early
 even if it is a preview.
 
-### Maven Central — the slow one, allow half a day
+### Maven Central — the slow one
 
-Central no longer uses the old OSSRH flow. Through the
-[Central Portal](https://central.sonatype.com):
+Central no longer uses the old OSSRH flow, and it does **not** accept a Maven
+deploy at all: its upload endpoint takes one zip holding the whole repository
+layout, posted in a single request, and answers a per-file `PUT` with 404. The
+Gradle build therefore stages the signed artifacts into a directory and
+`scripts/publish-maven.sh` zips, posts and polls them — validation is
+asynchronous, so a successful upload says nothing about whether the release was
+accepted.
+
+Through the [Central Portal](https://central.sonatype.com):
 
 1. Register the namespace `ai.snaga`. Verification is a **DNS TXT record on
-   `snaga.ai`** containing the code the portal gives you. Propagation is usually
-   minutes, occasionally hours.
+   `snaga.ai`** containing the code the portal gives you. Until this is done
+   every upload fails validation with `Namespace 'ai.snaga' is not allowed`,
+   which is the one step nothing else can work around.
 2. Generate a publishing user token — a username/password pair, not your login.
    Store them as `MAVEN_USERNAME` and `MAVEN_PASSWORD`.
-3. Create a GPG key, publish the public half to `keyserver.ubuntu.com`, and
-   store the **ASCII-armoured private key** as `MAVEN_SIGNING_KEY` and its
-   passphrase as `MAVEN_SIGNING_PASSWORD`. Central rejects unsigned artifacts.
+3. A GPG signing key: Central rejects unsigned artifacts. Store the
+   **ASCII-armoured private key** as `MAVEN_SIGNING_KEY` and its passphrase as
+   `MAVEN_SIGNING_PASSWORD`, and publish the public half to
+   `keyserver.ubuntu.com` so Central can check the signatures.
 
-A released version can never be deleted or replaced. Treat the first publish as
-permanent and dry-run it first.
+A released version can never be deleted or replaced. Upload with
+`publishingType=USER_MANAGED` first if you want validation without publication;
+the release script uses `AUTOMATIC`.
 
 ### SwiftPM — minutes, plus a token
 
