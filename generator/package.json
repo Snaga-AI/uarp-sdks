@@ -1,0 +1,20 @@
+{
+  "name": "@uarp/codegen",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Generates the UARP (Snaga) SDKs for TypeScript, Rust, Swift, Kotlin and Ada from spec/openapi.json",
+  "engines": {
+    "node": ">=22.6"
+  },
+  "scripts": {
+    "generate": "node src/index.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test test/*.test.ts",
+    "test:update-golden": "UPDATE_GOLDEN=1 node --test test/*.test.ts"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.2"
+  }
+}

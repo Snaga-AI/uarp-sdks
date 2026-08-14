@@ -1,0 +1,139 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generator:
+    name: Generator
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      # The fixture-compile tests need a Rust toolchain; without one they skip.
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/rust
+      - run: npm install --prefix generator
+      - name: Type-check the generator
+        run: npx --prefix generator tsc -p generator/tsconfig.json
+      - name: Unit, IR, golden and compile tests
+        run: npm test --prefix generator
+      - name: Checked-in output must match the emitters
+        run: node generator/src/index.ts --check
+
+  typescript:
+    name: TypeScript
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: packages/typescript/package.json
+      - run: npm install
+        working-directory: packages/typescript
+      - run: npm run typecheck
+        working-directory: packages/typescript
+      - run: npm test
+        working-directory: packages/typescript
+
+  rust:
+    name: Rust
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/rust
+      - run: cargo clippy --all-targets --all-features -- -D warnings
+        working-directory: packages/rust
+      - run: cargo test --all-features
+        working-directory: packages/rust
+      - run: cargo build --examples
+        working-directory: packages/rust
+
+  swift:
+    name: Swift
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - run: swift build
+        working-directory: packages/swift
+      - run: swift test
+        working-directory: packages/swift
+      # The fixtures cover edge cases the production spec does not contain, and
+      # Swift is the language most prone to shadowing. This runner already has
+      # the toolchain, so the check rides along here rather than in its own job.
+      - name: Compile the generator fixtures
+        run: |
+          npm install --prefix generator
+          UARP_COMPILE_TARGETS=swift node --test generator/test/compile.test.ts
+
+  kotlin:
+    name: Kotlin
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - run: ./gradlew :uarp-sdk:build
+        working-directory: packages/kotlin
+
+  contract:
+    name: Cross-SDK contract
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: alire-project/setup-alire@v4
+        with:
+          toolchain: gnat_native^15 gprbuild^26
+      - run: npm install
+        working-directory: packages/typescript
+      # Every SDK whose toolchain is present runs the same scenarios; the
+      # script fails if their traffic differs.
+      - run: ./contract/run.sh
+
+  ada:
+    name: Ada
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install libcurl
+        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev
+      - uses: alire-project/setup-alire@v4
+        with:
+          toolchain: gnat_native^15 gprbuild^26
+      - name: Build and test
+        run: ./tests/run-tests.sh
+        working-directory: packages/ada
+      - name: Build the example
+        run: alr -n build
+        working-directory: packages/ada/examples
