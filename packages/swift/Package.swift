@@ -13,8 +13,10 @@ let package = Package(
     products: [
         .library(name: "UARP", targets: ["UARP"]),
         .executable(name: "uarp-example", targets: ["UARPExample"]),
+        // mirror:strip-start  harnesses; scripts/swift-mirror.sh drops them
         .executable(name: "uarp-contract", targets: ["UARPContract"]),
         .executable(name: "uarp-live", targets: ["UARPLive"]),
+        // mirror:strip-end
     ],
     targets: [
         .target(
@@ -26,6 +28,7 @@ let package = Package(
             dependencies: ["UARP"],
             path: "Sources/UARPExample"
         ),
+        // mirror:strip-start  harnesses; scripts/swift-mirror.sh drops them
         .executableTarget(
             name: "UARPContract",
             dependencies: ["UARP"],
@@ -36,6 +39,7 @@ let package = Package(
             dependencies: ["UARP"],
             path: "Sources/UARPLive"
         ),
+        // mirror:strip-end
         .testTarget(
             name: "UARPTests",
             dependencies: ["UARP"],

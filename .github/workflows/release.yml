@@ -164,11 +164,7 @@ jobs:
           remote="https://x-access-token:${TOKEN}@github.com/snaga-ai/uarp-swift.git"
           git clone --quiet "$remote" mirror || { mkdir mirror && git -C mirror init --quiet -b main; }
 
-          # Everything except the mirror's own git metadata is replaced, so a
-          # file deleted upstream also disappears here.
-          find mirror -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
-          cp -R packages/swift/. mirror/
-          cp CHANGELOG.md mirror/
+          ./scripts/swift-mirror.sh mirror
 
           cd mirror
           git config user.name "snaga-ai release"
