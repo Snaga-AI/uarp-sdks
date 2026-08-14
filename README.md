@@ -7,7 +7,7 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | --- | --- | --- | --- |
 | TypeScript / Node | `packages/typescript` | `uarp-sdk` (npm) | Node 18+ |
 | Rust | `packages/rust` | `uarp-sdk` (crates.io) | Rust 1.75+, Tokio |
-| Swift | `packages/swift` | `UARP` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
+| Swift | `packages/swift` | `snaga-ai/uarp-swift` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
 | Kotlin / Android | `packages/kotlin` | `ai.snaga:uarp-sdk` (Maven) | JVM 11+, Android 21+ |
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
 
@@ -209,14 +209,23 @@ git commit -am "Release 0.3.0" && git tag v0.3.0 && git push --follow-tags
 
 The tag triggers `.github/workflows/release.yml`, which re-runs each package's
 tests and then publishes: npm and crates.io directly, Maven Central through the
-publisher API, and a GitHub release with the changelog entry. SwiftPM needs no
-publishing step — the tag *is* the release — so that job just proves the tagged
-commit builds. Alire submissions go through a pull request against the
-community index, so the workflow prepares the tarball and leaves the rest to
-you.
+publisher API, and a GitHub release with the changelog entry.
+
+Swift is the exception worth knowing about. SwiftPM resolves a git URL and
+expects `Package.swift` at the root of the repository — a package in a
+subdirectory is unreachable, so nobody can depend on this monorepo. The release
+therefore copies `packages/swift` into `snaga-ai/uarp-swift` and tags it there,
+and that mirror is what consumers point at. Alire has no upload at all: the
+workflow prepares the tarball and the release lands through a pull request
+against the community index.
 
 `workflow_dispatch` runs the same jobs with `dry_run` on: everything is built
-and packed, nothing is uploaded.
+and packed, the mirror is assembled, nothing is uploaded or pushed.
+
+[PUBLISHING.md](PUBLISHING.md) covers what a workflow cannot do — the accounts,
+the DNS record that proves the Maven namespace, the signing key, and the order
+to publish in so that a packaging mistake surfaces where it is still cheap to
+fix.
 
 ## Design notes
 
