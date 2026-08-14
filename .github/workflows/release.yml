@@ -147,7 +147,7 @@ jobs:
       # SwiftPM has no notion of a package inside a subdirectory: it resolves a
       # git URL and expects Package.swift at the root. A consumer therefore
       # cannot depend on this monorepo at all, so the tagged package is copied
-      # into snaga-ai/uarp-swift, which exists only to be depended upon.
+      # into Snaga-AI/uarp-swift, which exists only to be depended upon.
       #
       # The mirror is cloned rather than recreated: its tags are the released
       # versions, and dropping them would break everyone already pinned to one.
@@ -158,10 +158,10 @@ jobs:
         run: |
           set -euo pipefail
           if [ -z "${TOKEN}" ]; then
-            echo "::warning::SWIFT_MIRROR_TOKEN is not set; snaga-ai/uarp-swift was not updated. See PUBLISHING.md."
+            echo "::warning::SWIFT_MIRROR_TOKEN is not set; Snaga-AI/uarp-swift was not updated. See PUBLISHING.md."
             exit 0
           fi
-          remote="https://x-access-token:${TOKEN}@github.com/snaga-ai/uarp-swift.git"
+          remote="https://x-access-token:${TOKEN}@github.com/Snaga-AI/uarp-swift.git"
           git clone --quiet "$remote" mirror || { mkdir mirror && git -C mirror init --quiet -b main; }
 
           ./scripts/swift-mirror.sh mirror
@@ -174,7 +174,7 @@ jobs:
           git diff --cached --quiet || git commit --quiet -m "uarp-sdk ${VERSION}"
           git tag "${VERSION}"
           if [ "${DRY_RUN}" = "true" ]; then
-            echo "dry run: would push ${VERSION} to snaga-ai/uarp-swift"
+            echo "dry run: would push ${VERSION} to Snaga-AI/uarp-swift"
           else
             git push --quiet "$remote" HEAD:main
             git push --quiet "$remote" "${VERSION}"

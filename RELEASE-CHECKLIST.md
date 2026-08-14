@@ -69,7 +69,7 @@ node -e "import('uarp-sdk').then(m => console.log(m.VERSION))"
 
 - `NPM_TOKEN` (automation token — a classic token with 2FA-required fails in CI).
 - The publish itself, through the release workflow or `npm publish --provenance`.
-  Provenance needs the workflow to run in `snaga-ai/uarp-sdks`, so the repository
+  Provenance needs the workflow to run in `Snaga-AI/uarp-sdks`, so the repository
   has to exist first.
 
 ---

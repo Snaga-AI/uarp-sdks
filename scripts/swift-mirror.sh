@@ -4,7 +4,7 @@
 #
 # SwiftPM resolves a git URL and expects Package.swift at the repository root,
 # so a package inside a monorepo cannot be depended upon at all. This builds the
-# directory that becomes snaga-ai/uarp-swift.
+# directory that becomes Snaga-AI/uarp-swift.
 #
 # The contract and live runners are dropped: they exist to test the SDK against
 # a server, they would appear as executable products to anyone who depends on

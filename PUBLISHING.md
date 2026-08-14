@@ -16,7 +16,7 @@ automated, and one structural quirk that is easy to get wrong.
 | `packages/typescript` | npm | `uarp-sdk` | publishing |
 | `packages/rust` | crates.io | `uarp-sdk` | publishing |
 | `packages/kotlin` | Maven Central | `ai.snaga:uarp-sdk` | namespace verification |
-| `packages/swift` | SwiftPM | `github.com/snaga-ai/uarp-swift` | the repository itself |
+| `packages/swift` | SwiftPM | `github.com/Snaga-AI/uarp-swift` | the repository itself |
 | `packages/ada` | Alire | `uarp_sdk` | a pull request to the index |
 
 ## Swift is the odd one out
@@ -30,11 +30,11 @@ SwiftPM publishes nothing. It resolves a git URL at a tag and expects
 at a subdirectory. A Swift developer therefore cannot depend on this monorepo at
 all.
 
-So the release copies `packages/swift` into `snaga-ai/uarp-swift`, a repository
+So the release copies `packages/swift` into `Snaga-AI/uarp-swift`, a repository
 that exists only to be depended upon, and tags it there:
 
 ```swift
-.package(url: "https://github.com/snaga-ai/uarp-swift", from: "0.2.0")
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.2.0")
 ```
 
 The mirror is cloned and updated rather than recreated, because its tags *are*
@@ -78,7 +78,7 @@ permanent and dry-run it first.
 
 ### SwiftPM — minutes, plus a token
 
-Create `snaga-ai/uarp-swift` (empty, public, no README — the mirror overwrites
+Create `Snaga-AI/uarp-swift` (empty, public, no README — the mirror overwrites
 everything). Store a token with `contents: write` on that repository as
 `SWIFT_MIRROR_TOKEN`; a fine-grained token scoped to the one repository is
 enough.

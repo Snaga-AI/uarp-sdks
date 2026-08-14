@@ -7,7 +7,7 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | --- | --- | --- | --- |
 | TypeScript / Node | `packages/typescript` | `uarp-sdk` (npm) | Node 18+ |
 | Rust | `packages/rust` | `uarp-sdk` (crates.io) | Rust 1.88+, Tokio |
-| Swift | `packages/swift` | `snaga-ai/uarp-swift` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
+| Swift | `packages/swift` | `Snaga-AI/uarp-swift` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
 | Kotlin / Android | `packages/kotlin` | `ai.snaga:uarp-sdk` (Maven) | JVM 11+, Android 21+ |
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
 
@@ -214,7 +214,7 @@ publisher API, and a GitHub release with the changelog entry.
 Swift is the exception worth knowing about. SwiftPM resolves a git URL and
 expects `Package.swift` at the root of the repository — a package in a
 subdirectory is unreachable, so nobody can depend on this monorepo. The release
-therefore copies `packages/swift` into `snaga-ai/uarp-swift` and tags it there,
+therefore copies `packages/swift` into `Snaga-AI/uarp-swift` and tags it there,
 and that mirror is what consumers point at. Alire has no upload at all: the
 workflow prepares the tarball and the release lands through a pull request
 against the community index.
