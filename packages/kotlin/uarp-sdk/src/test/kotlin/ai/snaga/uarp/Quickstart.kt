@@ -2,8 +2,6 @@ package ai.snaga.uarp
 
 import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.api.runs
-import ai.snaga.uarp.models.AgentModelConfig
-import ai.snaga.uarp.models.AgentModelConfigProvider
 import ai.snaga.uarp.models.CreateAgentRequest
 import ai.snaga.uarp.models.CreateRunRequest
 import kotlinx.coroutines.flow.collect
@@ -22,11 +20,6 @@ object Quickstart {
         client.agents.create(
             CreateAgentRequest(
                 name = "quickstart",
-                model = AgentModelConfig(
-                    provider = AgentModelConfigProvider.OPENAI_COMPAT,
-                    modelRef = "gpt-4o-mini",
-                    capabilities = JsonObject(emptyMap()),
-                ),
                 prompts = JsonObject(mapOf("system" to JsonPrimitive("You are concise."))),
             ),
         )

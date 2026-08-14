@@ -46,12 +46,11 @@ export class MCPResource extends APIResource {
    *
    * `DELETE /api/v1/mcp/servers/{serverId}`
    */
-  deleteMCPServer(serverId: string, options?: RequestOptions): Promise<void> {
+  deleteMCPServer(serverId: string, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }

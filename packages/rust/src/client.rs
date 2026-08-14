@@ -128,7 +128,10 @@ impl Client {
     /// A clone of this client that applies `options` to every call made
     /// through it. The connection pool is shared, so this is cheap.
     pub fn with_options(&self, options: RequestOptions) -> Client {
-        Client { inner: self.inner.clone(), options }
+        Client {
+            inner: self.inner.clone(),
+            options,
+        }
     }
 
     /// Reuse a specific idempotency key, e.g. to safely replay a create.
@@ -222,14 +225,20 @@ impl Client {
     }
 
     /// Send a `multipart/form-data` request. The form is rebuilt for each retry.
-    pub async fn request_multipart<Q, R, F>(&self, req: Request<'_, Q, ()>, make_form: F) -> Result<R>
+    pub async fn request_multipart<Q, R, F>(
+        &self,
+        req: Request<'_, Q, ()>,
+        make_form: F,
+    ) -> Result<R>
     where
         Q: Serialize + ?Sized + Sync,
         R: DeserializeOwned,
         F: Fn() -> Result<reqwest::multipart::Form> + Send + Sync,
     {
         let response = self
-            .run(&req, &move |builder: RequestBuilder| Ok(builder.multipart(make_form()?)))
+            .run(&req, &move |builder: RequestBuilder| {
+                Ok(builder.multipart(make_form()?))
+            })
             .await?;
         decode_json(response).await
     }
@@ -252,7 +261,8 @@ impl Client {
         headers.extend(self.options.extra_headers.iter().cloned());
         let url = self.build_url(path, query).map(|mut url| {
             if self.inner.sse_token_in_query {
-                url.query_pairs_mut().append_pair("token", &self.inner.api_key);
+                url.query_pairs_mut()
+                    .append_pair("token", &self.inner.api_key);
             }
             url
         });
@@ -311,7 +321,10 @@ impl Client {
                 .timeout(timeout)
                 .header(reqwest::header::ACCEPT, "application/json")
                 .header(reqwest::header::USER_AGENT, &self.inner.user_agent)
-                .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", self.inner.api_key))
+                .header(
+                    reqwest::header::AUTHORIZATION,
+                    format!("Bearer {}", self.inner.api_key),
+                )
                 .headers(self.inner.default_headers.clone());
 
             for (name, value) in &req.headers {
@@ -337,14 +350,23 @@ impl Client {
                         && attempt < retries;
                     if !should_retry {
                         let problem = read_problem(response).await;
-                        return Err(ApiError { status, problem, headers }.into());
+                        return Err(ApiError {
+                            status,
+                            problem,
+                            headers,
+                        }
+                        .into());
                     }
                     let wait = retry_after.unwrap_or_else(|| backoff(attempt));
                     attempt += 1;
                     tokio::time::sleep(wait.min(Duration::from_secs(60))).await;
                 }
                 Err(err) => {
-                    let mapped = if err.is_timeout() { Error::Timeout } else { Error::Connection(err) };
+                    let mapped = if err.is_timeout() {
+                        Error::Timeout
+                    } else {
+                        Error::Connection(err)
+                    };
                     if !can_retry || attempt >= retries {
                         return Err(mapped);
                     }
@@ -366,7 +388,8 @@ impl Client {
             //  serde_urlencoded turns the params struct into pairs, but writes
             //  them with form-encoding rules. Re-encode strictly so the five
             //  SDKs put the same bytes on the wire.
-            let form = serde_urlencoded::to_string(query).map_err(|err| Error::Encode(err.to_string()))?;
+            let form =
+                serde_urlencoded::to_string(query).map_err(|err| Error::Encode(err.to_string()))?;
             let encoded = form_urlencoded::parse(form.as_bytes())
                 .map(|(name, value)| {
                     format!(
@@ -382,7 +405,11 @@ impl Client {
             }
         }
         for (name, value) in &self.options.extra_query {
-            let pair = format!("{}={}", encode_query_component(name), encode_query_component(value));
+            let pair = format!(
+                "{}={}",
+                encode_query_component(name),
+                encode_query_component(value)
+            );
             let joined = match url.query() {
                 Some(existing) if !existing.is_empty() => format!("{existing}&{pair}"),
                 _ => pair,
@@ -457,8 +484,8 @@ impl ClientBuilder {
     pub fn default_header(mut self, name: &str, value: &str) -> Result<Self> {
         let name = HeaderName::from_bytes(name.as_bytes())
             .map_err(|err| Error::Config(format!("invalid header name: {err}")))?;
-        let value =
-            HeaderValue::from_str(value).map_err(|err| Error::Config(format!("invalid header value: {err}")))?;
+        let value = HeaderValue::from_str(value)
+            .map_err(|err| Error::Config(format!("invalid header value: {err}")))?;
         self.default_headers.insert(name, value);
         Ok(self)
     }
@@ -476,13 +503,14 @@ impl ClientBuilder {
     }
 
     pub fn build(self) -> Result<Client> {
-        let api_key = self
-            .api_key
-            .ok_or_else(|| Error::Config("missing API key: call .api_key(...) or Client::from_env()".into()))?;
+        let api_key = self.api_key.ok_or_else(|| {
+            Error::Config("missing API key: call .api_key(...) or Client::from_env()".into())
+        })?;
         // A trailing slash makes `Url::join` keep the whole base path.
         let mut base = self.base_url.trim_end_matches('/').to_string();
         base.push('/');
-        let base_url = Url::parse(&base).map_err(|err| Error::Config(format!("invalid base URL: {err}")))?;
+        let base_url =
+            Url::parse(&base).map_err(|err| Error::Config(format!("invalid base URL: {err}")))?;
 
         let sdk_agent = format!("uarp-sdk-rust/{}", env!("CARGO_PKG_VERSION"));
         let user_agent = match self.user_agent {
@@ -524,10 +552,12 @@ async fn decode_json<R: DeserializeOwned>(response: reqwest::Response) -> Result
 
 async fn read_problem(response: reqwest::Response) -> Problem {
     match response.bytes().await {
-        Ok(bytes) if !bytes.is_empty() => serde_json::from_slice(&bytes).unwrap_or_else(|_| Problem {
-            detail: Some(String::from_utf8_lossy(&bytes).into_owned()),
-            ..Problem::default()
-        }),
+        Ok(bytes) if !bytes.is_empty() => {
+            serde_json::from_slice(&bytes).unwrap_or_else(|_| Problem {
+                detail: Some(String::from_utf8_lossy(&bytes).into_owned()),
+                ..Problem::default()
+            })
+        }
         _ => Problem::default(),
     }
 }
@@ -535,7 +565,12 @@ async fn read_problem(response: reqwest::Response) -> Problem {
 pub(crate) fn collect_headers(headers: &HeaderMap) -> HashMap<String, String> {
     headers
         .iter()
-        .filter_map(|(name, value)| Some((name.as_str().to_ascii_lowercase(), value.to_str().ok()?.to_string())))
+        .filter_map(|(name, value)| {
+            Some((
+                name.as_str().to_ascii_lowercase(),
+                value.to_str().ok()?.to_string(),
+            ))
+        })
         .collect()
 }
 

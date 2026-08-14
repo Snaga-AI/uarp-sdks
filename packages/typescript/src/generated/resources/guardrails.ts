@@ -3,6 +3,7 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
+  CreateGuardrailRequest,
   DeleteGuardrailResponse,
   JsonObject,
 } from '../models.js';
@@ -18,7 +19,7 @@ export class GuardrailsResource extends APIResource {
    *
    * Required scopes: `guardrails:write`.
    */
-  create(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  create(body: CreateGuardrailRequest, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/guardrails',

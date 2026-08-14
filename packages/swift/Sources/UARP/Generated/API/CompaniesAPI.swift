@@ -13,7 +13,7 @@ public struct CompaniesAPI: Sendable {
     /// `POST /api/v1/companies`
     ///
     /// Required scopes: `agents:write`.
-    public func create(body: Company, options: RequestOptions = .init()) async throws -> Company {
+    public func create(body: CompanyCreate, options: RequestOptions = .init()) async throws -> Company {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/companies",
@@ -135,7 +135,7 @@ public struct CompaniesAPI: Sendable {
     /// `PUT /api/v1/companies/{id}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(id: String, body: Company, options: RequestOptions = .init()) async throws -> Company {
+    public func update(id: String, body: CompanyUpdate, options: RequestOptions = .init()) async throws -> Company {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/companies/\(encodePathSegment(id))",

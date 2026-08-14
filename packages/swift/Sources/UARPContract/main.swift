@@ -32,8 +32,7 @@ _ = try await client.agents.get(agentId: "id with/slash")
 // 3. JSON body and the automatic idempotency key
 _ = try await client.agents.create(
     body: CreateAgentRequest(
-        name: "demo",
-        model: AgentModelConfig(provider: .openaiCompat, modelRef: "gpt-x", capabilities: [:])
+        name: "demo"
     )
 )
 

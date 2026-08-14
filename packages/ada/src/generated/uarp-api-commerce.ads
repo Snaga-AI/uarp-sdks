@@ -187,7 +187,7 @@ package UARP.API.Commerce is
    function Update_Commerce_Customer
      (Self : Client_Type;
       Id : String;
-      Payload : UARP.Models.Customer;
+      Payload : UARP.Models.Customer_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Customer;
 
@@ -199,7 +199,7 @@ package UARP.API.Commerce is
    function Update_Commerce_Product
      (Self : Client_Type;
       Id : String;
-      Payload : UARP.Models.Product;
+      Payload : UARP.Models.Product_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Product;
 

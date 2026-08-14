@@ -38,7 +38,7 @@ package body UARP.API.Agents is
    function Create_Agent_Fria
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Agent_Fria_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -47,7 +47,7 @@ package body UARP.API.Agents is
          (Self,
           "POST",
           "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/fria",
-          Payload => Payload,
+          Payload => UARP.Models.To_JSON (Payload),
           Has_Payload => True,
           Idempotent => True,
           Options => Options);
@@ -448,7 +448,7 @@ package body UARP.API.Agents is
    function Update
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.Models.Agent;
+      Payload : UARP.Models.Agent_Update;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent

@@ -13,7 +13,7 @@ public struct LLMCredentialsAPI: Sendable {
     /// `DELETE /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
-    public func deleteLLMProviderKey(provider: AgentModelConfigProvider, options: RequestOptions = .init()) async throws -> DeleteLLMProviderKeyResponse {
+    public func deleteLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = .init()) async throws -> DeleteLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))",
@@ -40,7 +40,7 @@ public struct LLMCredentialsAPI: Sendable {
     /// `PUT /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
-    public func setLLMProviderKey(provider: AgentModelConfigProvider, body: SetLLMProviderKeyRequest, options: RequestOptions = .init()) async throws -> SetLLMProviderKeyResponse {
+    public func setLLMProviderKey(provider: SetLLMProviderKeyProvider, body: SetLLMProviderKeyRequest, options: RequestOptions = .init()) async throws -> SetLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))",
@@ -55,7 +55,7 @@ public struct LLMCredentialsAPI: Sendable {
     /// `POST /api/v1/llm-credentials/{provider}/test`
     ///
     /// Required scopes: `agents:write`.
-    public func testLLMProviderKey(provider: AgentModelConfigProvider, options: RequestOptions = .init()) async throws -> TestLLMProviderKeyResponse {
+    public func testLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = .init()) async throws -> TestLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))/test",

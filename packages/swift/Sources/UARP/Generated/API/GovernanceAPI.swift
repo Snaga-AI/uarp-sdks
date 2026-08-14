@@ -129,7 +129,7 @@ public struct GovernanceAPI: Sendable {
     /// Create design request
     ///
     /// `POST /api/v1/governance/builder/requests`
-    public func createBuilderRequest(body: DesignRequest, options: RequestOptions = .init()) async throws -> DesignRequest {
+    public func createBuilderRequest(body: DesignRequestCreate, options: RequestOptions = .init()) async throws -> DesignRequest {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/builder/requests",

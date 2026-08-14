@@ -20,6 +20,8 @@ import type {
   ListTeamsResponse,
   StartTeamRunRequest,
   Team,
+  TeamCreate,
+  TeamUpdate,
   UpdateTeamGraphNodeRequest,
 } from '../models.js';
 
@@ -83,7 +85,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  create(body: Team, options?: RequestOptions): Promise<Team> {
+  create(body: TeamCreate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/teams',
@@ -351,7 +353,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  update(teamId: string, body: Team, options?: RequestOptions): Promise<Team> {
+  update(teamId: string, body: TeamUpdate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}`,

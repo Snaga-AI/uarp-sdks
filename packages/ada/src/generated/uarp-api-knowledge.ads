@@ -16,7 +16,7 @@ package UARP.API.Knowledge is
    --  Required scopes: memory:write.
    function Create_Knowledge_Base
      (Self : Client_Type;
-      Payload : UARP.Models.Knowledge_Base;
+      Payload : UARP.Models.Knowledge_Base_Create;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base;
 
@@ -93,7 +93,7 @@ package UARP.API.Knowledge is
    function Update_Knowledge_Base
      (Self : Client_Type;
       Id : String;
-      Payload : UARP.Models.Knowledge_Base;
+      Payload : UARP.Models.Knowledge_Base_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base;
 

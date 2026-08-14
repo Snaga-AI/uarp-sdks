@@ -40,7 +40,7 @@ package body UARP.API.Teams is
 
    function Create
      (Self : Client_Type;
-      Payload : UARP.Models.Team;
+      Payload : UARP.Models.Team_Create;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Team
    is
@@ -321,7 +321,7 @@ package body UARP.API.Teams is
    function Update
      (Self : Client_Type;
       Team_Id : String;
-      Payload : UARP.Models.Team;
+      Payload : UARP.Models.Team_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Team
    is

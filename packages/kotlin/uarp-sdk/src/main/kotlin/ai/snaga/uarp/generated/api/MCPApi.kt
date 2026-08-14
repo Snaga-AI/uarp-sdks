@@ -46,8 +46,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/mcp/servers/{serverId}`
      */
-    public suspend fun deleteMCPServer(serverId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteMCPServer(serverId: String, options: RequestOptions = RequestOptions()): JsonElement {
+        return client.request<JsonElement>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}",

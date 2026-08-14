@@ -68,7 +68,7 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun createAgentFria(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = RequestOptions()): JsonObject {
         return client.request<JsonObject>(
             RequestSpec(
                 method = "POST",
@@ -476,7 +476,7 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(agentId: String, body: Agent? = null, options: RequestOptions = RequestOptions()): Agent {
+    public suspend fun update(agentId: String, body: AgentUpdate? = null, options: RequestOptions = RequestOptions()): Agent {
         return client.request<Agent>(
             RequestSpec(
                 method = "PUT",

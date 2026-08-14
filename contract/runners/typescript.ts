@@ -35,7 +35,6 @@ await client.agents.get('id with/slash');
 // 3. JSON body and the automatic idempotency key
 await client.agents.create({
   name: 'demo',
-  model: { provider: 'openai_compat', model_ref: 'gpt-x', capabilities: {} },
 });
 
 // 4. cursor paging, consumed to the end

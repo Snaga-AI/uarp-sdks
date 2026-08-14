@@ -2,6 +2,8 @@
 
 package body UARP.API.Bridge is
 
+   package JS renames UARP.JSON_Support;
+
    function Bridge_Delegate
      (Self : Client_Type;
       Payload : UARP.Models.Bridge_Delegate_Request;
@@ -151,15 +153,23 @@ package body UARP.API.Bridge is
    function List_Bridge_Agents
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.List_Bridge_Agents_Response
+      return UARP.Models.Bridge_Connection_Vectors.Vector
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "GET",
-             "/api/v1/bridge/agents",
-             Options => Options));
+      declare
+         Payload_Items : constant JS.JSON_Array := JS.JSON.Get
+            (UARP.Client.Call
+               (Self,
+                "GET",
+                "/api/v1/bridge/agents",
+                Options => Options));
+         Collected : UARP.Models.Bridge_Connection_Vectors.Vector;
+      begin
+         for Index in 1 .. JS.JSON.Length (Payload_Items) loop
+            Collected.Append (UARP.Models.Bridge_Connection'(UARP.Models.From_JSON (JS.JSON.Get (Payload_Items, Index))));
+         end loop;
+         return Collected;
+      end;
    end List_Bridge_Agents;
 
    function Push_Bridge_Task_Events

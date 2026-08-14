@@ -7,6 +7,7 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   CreateCommerceProductRequest,
   Customer,
+  CustomerUpdate,
   DeleteCommerceCustomerResponse,
   DeleteCommerceProductResponse,
   Enrollment,
@@ -20,6 +21,7 @@ import type {
   Product,
   ProductStatus,
   ProductType,
+  ProductUpdate,
 } from '../models.js';
 
 /**
@@ -258,7 +260,7 @@ export class CommerceResource extends APIResource {
    *
    * `PATCH /api/v1/commerce/customers/{id}`
    */
-  updateCommerceCustomer(id: string, body: Customer, options?: RequestOptions): Promise<Customer> {
+  updateCommerceCustomer(id: string, body: CustomerUpdate, options?: RequestOptions): Promise<Customer> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/commerce/customers/${encodeURIComponent(String(id))}`,
@@ -275,7 +277,7 @@ export class CommerceResource extends APIResource {
    *
    * `PATCH /api/v1/commerce/products/{id}`
    */
-  updateCommerceProduct(id: string, body: Product, options?: RequestOptions): Promise<Product> {
+  updateCommerceProduct(id: string, body: ProductUpdate, options?: RequestOptions): Promise<Product> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/commerce/products/${encodeURIComponent(String(id))}`,

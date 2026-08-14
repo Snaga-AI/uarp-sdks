@@ -6,6 +6,8 @@ import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   Agent,
+  AgentUpdate,
+  CreateAgentFriaRequest,
   CreateAgentRequest,
   CreateAgentVersionRequest,
   GetAgentActivityStatsResponse,
@@ -117,7 +119,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  createAgentFria(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  createAgentFria(agentId: string, body: CreateAgentFriaRequest, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/fria`,
@@ -471,7 +473,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  update(agentId: string, body?: Agent, options?: RequestOptions): Promise<Agent> {
+  update(agentId: string, body?: AgentUpdate, options?: RequestOptions): Promise<Agent> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}`,

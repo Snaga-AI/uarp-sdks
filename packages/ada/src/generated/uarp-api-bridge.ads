@@ -123,7 +123,7 @@ package UARP.API.Bridge is
    function List_Bridge_Agents
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.List_Bridge_Agents_Response;
+      return UARP.Models.Bridge_Connection_Vectors.Vector;
 
    --  Push task events
    --

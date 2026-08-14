@@ -30,7 +30,7 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun create(body: Company, options: RequestOptions = RequestOptions()): Company {
+    public suspend fun create(body: CompanyCreate, options: RequestOptions = RequestOptions()): Company {
         return client.request<Company>(
             RequestSpec(
                 method = "POST",
@@ -188,7 +188,7 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(id: String, body: Company, options: RequestOptions = RequestOptions()): Company {
+    public suspend fun update(id: String, body: CompanyUpdate, options: RequestOptions = RequestOptions()): Company {
         return client.request<Company>(
             RequestSpec(
                 method = "PUT",

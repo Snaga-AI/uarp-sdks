@@ -24,8 +24,8 @@ public struct MCPAPI: Sendable {
     /// Delete MCP server
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
-    public func deleteMCPServer(serverId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))",
             idempotent: true,

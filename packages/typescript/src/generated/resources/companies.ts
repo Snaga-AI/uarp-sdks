@@ -4,6 +4,8 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   Company,
+  CompanyCreate,
+  CompanyUpdate,
   GetCompanyActivityResponse,
   GetCompanyBudgetResponse,
   GetCompanyObjectivesResponse,
@@ -23,7 +25,7 @@ export class CompaniesResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  create(body: Company, options?: RequestOptions): Promise<Company> {
+  create(body: CompanyCreate, options?: RequestOptions): Promise<Company> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/companies',
@@ -164,7 +166,7 @@ export class CompaniesResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  update(id: string, body: Company, options?: RequestOptions): Promise<Company> {
+  update(id: string, body: CompanyUpdate, options?: RequestOptions): Promise<Company> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/companies/${encodeURIComponent(String(id))}`,

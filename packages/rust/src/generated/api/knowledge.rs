@@ -32,7 +32,7 @@ impl KnowledgeApi {
     /// `POST /api/v1/knowledge-bases`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn create_knowledge_base(&self, body: &models::KnowledgeBase) -> Result<models::KnowledgeBase> {
+    pub async fn create_knowledge_base(&self, body: &models::KnowledgeBaseCreate) -> Result<models::KnowledgeBase> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -158,7 +158,7 @@ impl KnowledgeApi {
     /// `PUT /api/v1/knowledge-bases/{id}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn update_knowledge_base(&self, id: &str, body: &models::KnowledgeBase) -> Result<models::KnowledgeBase> {
+    pub async fn update_knowledge_base(&self, id: &str, body: &models::KnowledgeBaseUpdate) -> Result<models::KnowledgeBase> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

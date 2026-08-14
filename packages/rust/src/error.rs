@@ -78,7 +78,11 @@ pub struct Problem {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub detail: Option<String>,
     /// Request identifier to quote when reporting an incident.
-    #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
+    #[serde(
+        rename = "correlationId",
+        default,
+        skip_serializing_if = "Option::is_none"
+    )]
     pub correlation_id: Option<String>,
     /// Field-level validation failures, present on 422 responses.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]

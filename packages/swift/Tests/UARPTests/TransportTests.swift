@@ -322,10 +322,12 @@ final class TransportTests: XCTestCase {
     }
 
     func testDecodesUnknownEnumValues() throws {
-        let payload = Data(#"{"provider":"brand_new","model_ref":"m","capabilities":{}}"#.utf8)
-        let config = try JSONDecoder().decode(AgentModelConfig.self, from: payload)
-        XCTAssertEqual(config.provider.rawValue, "brand_new")
-        XCTAssertNotEqual(config.provider, .custom)
+        //  Wrapped in an array so the decoder is not asked for a top-level
+        //  fragment; the point is the enum, not the container.
+        let payload = Data(#"["brand_new"]"#.utf8)
+        let decoded = try JSONDecoder().decode([GetMeResponseAuthMethod].self, from: payload)
+        XCTAssertEqual(decoded[0].rawValue, "brand_new")
+        XCTAssertNotEqual(decoded[0], .apiKey)
     }
 
     func testConfigurationFromEnvironmentRequiresAKey() {
@@ -364,8 +366,7 @@ final class Counter: @unchecked Sendable {
 }
 
 func createAgentRequest() -> CreateAgentRequest {
-    CreateAgentRequest(
-        name: "demo",
-        model: AgentModelConfig(provider: .openaiCompat, modelRef: "gpt-x", capabilities: [:])
-    )
+    //  The platform picks the model itself and ignores anything sent for it,
+    //  so a create is just a name.
+    CreateAgentRequest(name: "demo")
 }

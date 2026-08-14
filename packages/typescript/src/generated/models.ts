@@ -310,9 +310,9 @@ export type AgentContextStrategy = 'compaction' | 'summarize' | 'truncate' | 'sl
 
 export const AGENT_CONTEXT_STRATEGY_VALUES = ['compaction', 'summarize', 'truncate', 'sliding_window'] as const;
 
-export type AgentExecutionMode = 'async' | 'worker';
+export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 
-export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker'] as const;
+export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
 
 /**
  * Agent-scoped integration (connection) instance
@@ -323,7 +323,7 @@ export interface AgentIntegration {
   tenant_id?: string;
   connector_id: string;
   name: string;
-  status: AgentIntegrationStatus;
+  status: IntegrationStatus;
   /**
    * Redacted config (no secrets)
    */
@@ -331,10 +331,6 @@ export interface AgentIntegration {
   created_at?: string;
   updated_at?: string;
 }
-
-export type AgentIntegrationStatus = 'active' | 'inactive' | 'error';
-
-export const AGENT_INTEGRATION_STATUS_VALUES = ['active', 'inactive', 'error'] as const;
 
 export interface AgentLineage {
   agent_id: string;
@@ -348,17 +344,29 @@ export interface AgentLineage {
   spawned_at?: string;
 }
 
+/**
+ * Model capabilities. Deliberately carries no provider or model identifier — see the model
+ * lockdown.
+ */
 export interface AgentModelConfig {
-  provider: AgentModelConfigProvider;
-  model_ref: string;
-  endpoint_url?: string;
-  api_key_ref?: string;
-  capabilities: JsonObject;
+  /**
+   * Feature flags the client may branch on (e.g. `vision`, `tool_calls`, `streaming`). Absent
+   * when the platform has published none.
+   */
+  capabilities?: JsonObject;
 }
 
-export type AgentModelConfigProvider = 'openai_compat' | 'custom';
-
-export const AGENT_MODEL_CONFIG_PROVIDER_VALUES = ['openai_compat', 'custom'] as const;
+/**
+ * Accepted and IGNORED. The platform default is applied on create and preserved on update, so
+ * sending this changes nothing. Kept so existing clients do not start failing validation.
+ */
+export interface AgentModelConfigInput {
+  provider?: string;
+  model_ref?: string;
+  endpoint_url?: string;
+  api_key_ref?: string;
+  capabilities?: JsonObject;
+}
 
 export interface AgentPrompts {
   system?: string;
@@ -382,9 +390,32 @@ export type AgentSummaryBridgeStatus = 'online' | 'stale' | 'offline';
 
 export const AGENT_SUMMARY_BRIDGE_STATUS_VALUES = ['online', 'stale', 'offline'] as const;
 
-export type AgentSummaryExecutionMode = 'cloud' | 'bridge';
+export type AgentSummaryExecutionMode = 'async' | 'worker' | 'bridge' | 'cloud';
 
-export const AGENT_SUMMARY_EXECUTION_MODE_VALUES = ['cloud', 'bridge'] as const;
+export const AGENT_SUMMARY_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge', 'cloud'] as const;
+
+/**
+ * Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO
+ * CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model
+ * lockdown).
+ */
+export interface AgentUpdate {
+  name?: string;
+  description?: string;
+  prompts?: JsonObject;
+  model?: AgentModelConfigInput;
+  specs?: JsonObject[];
+  approval_required_tools?: string[];
+  auto_approve_tools?: string[];
+  knowledge_base_id?: string | null;
+  knowledge_base_ids?: string[];
+  workspace_id?: string;
+  visibility?: AgentUpdateVisibility;
+}
+
+export type AgentUpdateVisibility = 'private' | 'team' | 'public';
+
+export const AGENT_UPDATE_VISIBILITY_VALUES = ['private', 'team', 'public'] as const;
 
 export interface Ambassador {
   ambassador_id: string;
@@ -568,12 +599,12 @@ export interface BootstrapRequest {
 
 export interface BridgeConnection {
   agent_id: string;
-  tenant_id: string;
+  tenant_id?: string;
   machine_id: string;
   machine_name?: string;
   capabilities: string[];
   working_directory: string;
-  version: string;
+  version?: string;
   last_heartbeat?: string;
   status: AgentSummaryBridgeStatus;
   registered_at?: string;
@@ -811,6 +842,37 @@ export interface Company {
   updated_at?: string;
 }
 
+/**
+ * Body for `POST /api/v1/companies` (`CreateCompanySchema`).
+ */
+export interface CompanyCreate {
+  name: string;
+  /**
+   * What the company exists to do.
+   */
+  mission: string;
+  /**
+   * Spend ceiling in USD.
+   */
+  budget: number;
+  description?: string;
+  strategic_goals?: string[];
+  config?: JsonObject;
+  workspace_id?: string;
+}
+
+/**
+ * Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.
+ */
+export interface CompanyUpdate {
+  name?: string;
+  mission?: string;
+  budget?: number;
+  description?: string;
+  strategic_goals?: string[];
+  config?: JsonObject;
+}
+
 export interface CompleteOAuthLoginResponse {
   api_key: string;
   email: string;
@@ -823,20 +885,55 @@ export interface Constitution {
 }
 
 export interface ConstitutionRule {
-  rule_id: string;
-  principle: string;
+  /**
+   * Stable slug, e.g. `no-privilege-escalation`.
+   */
+  id: string;
+  rule_type: ConstitutionRuleRuleType;
+  /**
+   * Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+   * the server has ever emitted.
+   */
+  scope: ConstitutionRuleScope;
+  /**
+   * Agent ids, team ids or role names, depending on `scope`. Absent for `all_agents`.
+   */
+  scope_targets?: string[];
+  /**
+   * The action the rule governs, e.g. `modify_constitution`.
+   */
+  action: string;
+  /**
+   * For `requirement` rules: the action that must be performed.
+   */
+  obligated_action?: string;
+  penalty: ConstitutionRulePenalty;
   description?: string;
-  severity?: ConstitutionRuleSeverity;
-  scope?: ConstitutionRuleScope;
+  /**
+   * Genesis rules cannot be amended or removed.
+   */
+  immutable?: boolean;
+  /**
+   * Conflict resolution — higher wins. Defaults to 0.
+   */
+  priority?: number;
 }
 
-export type ConstitutionRuleScope = 'global' | 'tenant' | 'agent';
+export type ConstitutionRulePenalty = 'block' | 'warn' | 'log' | 'terminate_agent' | 'revoke_permissions';
 
-export const CONSTITUTION_RULE_SCOPE_VALUES = ['global', 'tenant', 'agent'] as const;
+export const CONSTITUTION_RULE_PENALTY_VALUES = ['block', 'warn', 'log', 'terminate_agent', 'revoke_permissions'] as const;
 
-export type ConstitutionRuleSeverity = 'info' | 'warning' | 'error' | 'blocker';
+export type ConstitutionRuleRuleType = 'prohibition' | 'requirement' | 'permission';
 
-export const CONSTITUTION_RULE_SEVERITY_VALUES = ['info', 'warning', 'error', 'blocker'] as const;
+export const CONSTITUTION_RULE_RULE_TYPE_VALUES = ['prohibition', 'requirement', 'permission'] as const;
+
+/**
+ * Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+ * the server has ever emitted.
+ */
+export type ConstitutionRuleScope = 'all_agents' | 'team' | 'agent' | 'role';
+
+export const CONSTITUTION_RULE_SCOPE_VALUES = ['all_agents', 'team', 'agent', 'role'] as const;
 
 export interface ContentReport {
   id: string;
@@ -990,6 +1087,30 @@ export interface CreateA2ATaskRequestMessage {
   parts?: JsonObject[];
 }
 
+export interface CreateAgentFriaRequest {
+  /**
+   * One entry per fundamental right considered.
+   */
+  rights_assessed: CreateAgentFriaRequestRightsAssessedItem[];
+  mitigations: string;
+  assessor: string;
+  /**
+   * When the assessment must be revisited.
+   */
+  next_review: string;
+}
+
+export interface CreateAgentFriaRequestRightsAssessedItem {
+  right: string;
+  impact: CreateAgentFriaRequestRightsAssessedItemImpact;
+  justification: string;
+  mitigation?: string;
+}
+
+export type CreateAgentFriaRequestRightsAssessedItemImpact = 'none' | 'low' | 'medium' | 'high';
+
+export const CREATE_AGENT_FRIA_REQUEST_RIGHTS_ASSESSED_ITEM_IMPACT_VALUES = ['none', 'low', 'medium', 'high'] as const;
+
 export interface CreateAgentIntegrationRequest {
   connector_id: string;
   name: string;
@@ -998,7 +1119,7 @@ export interface CreateAgentIntegrationRequest {
 
 export interface CreateAgentRequest {
   name: string;
-  model: AgentModelConfig;
+  model?: AgentModelConfigInput;
   description?: string;
   prompts?: JsonObject;
   skills?: JsonValue[];
@@ -1097,6 +1218,30 @@ export interface CreateGoalRequest {
   agent_id: string;
 }
 
+export interface CreateGuardrailRequest {
+  name: string;
+  /**
+   * Where the guardrail is called. Checked against the security-policy denylist and resolved
+   * through DNS before it is accepted.
+   */
+  webhook_url: string;
+  phase: CreateGuardrailRequestPhase;
+  action?: CreateGuardrailRequestAction;
+  timeout_ms?: number;
+  /**
+   * Shared secret used to sign calls to `webhook_url`.
+   */
+  secret?: string;
+}
+
+export type CreateGuardrailRequestAction = 'block' | 'redact' | 'warn' | 'log';
+
+export const CREATE_GUARDRAIL_REQUEST_ACTION_VALUES = ['block', 'redact', 'warn', 'log'] as const;
+
+export type CreateGuardrailRequestPhase = 'input' | 'output' | 'both';
+
+export const CREATE_GUARDRAIL_REQUEST_PHASE_VALUES = ['input', 'output', 'both'] as const;
+
 export interface CreateImprovementProposalRequest {
   type: string;
 }
@@ -1165,8 +1310,16 @@ export interface CreatePlanStripePriceResponse {
 export interface CreateProgramRequest {
   name: string;
   agent_id: string;
-  description?: string;
   listing_id?: string;
+  description?: string;
+  steps: CreateProgramRequestStep[];
+}
+
+export interface CreateProgramRequestStep {
+  title: string;
+  description?: string;
+  order_index?: number;
+  suggested_due_offset_days?: number;
 }
 
 export interface CreatePublicSessionRequest {
@@ -1308,8 +1461,12 @@ export interface CreateVotingProposalRequest {
 
 export interface CreateWebhookRequest {
   url: string;
-  events: string[];
+  events: CreateWebhookRequestEvent[];
 }
+
+export type CreateWebhookRequestEvent = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
+
+export const CREATE_WEBHOOK_REQUEST_EVENT_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
 
 export interface CreateWorkspaceRequest {
   name?: string;
@@ -1337,6 +1494,27 @@ export interface Customer {
   locale?: string;
   metadata?: JsonObject;
   created_at?: string;
+}
+
+/**
+ * Body for `PATCH /api/v1/commerce/customers/{id}`. Only the listed fields are applied;
+ * anything else in the body is ignored.
+ */
+export interface CustomerUpdate {
+  name?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  status?: string;
+  tags?: string[];
+  note?: string;
+  addresses?: JsonObject[];
+  accepts_marketing?: boolean;
+  verified_email?: boolean;
+  tax_exempt?: boolean;
+  currency?: string;
+  locale?: string;
+  metadata?: JsonObject;
 }
 
 export interface DeactivateSafeModeResponse {
@@ -1399,18 +1577,42 @@ export interface DeleteUserResponse {
 }
 
 /**
- * Governance-builder request to design or modify an agent (governance-builder.ts).
+ * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
  */
 export interface DesignRequest {
-  id: string;
-  title: string;
-  description?: string;
-  requested_by?: string;
+  request_id: string;
+  tenant_id: string;
+  submitted_by?: string;
+  agent_name?: string;
+  agent_description?: string;
+  agent_role?: string;
+  tools?: string[];
+  parent_agent_id?: string | null;
+  rationale?: string;
   status: DesignRequestStatus;
-  design?: JsonObject | null;
-  result_agent_id?: string | null;
-  created_at?: string;
-  updated_at?: string;
+  /**
+   * Set once the request enters a vote.
+   */
+  proposal_id?: string;
+  /**
+   * Set once the approved design has been created.
+   */
+  spawned_agent_id?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * Body for `POST /api/v1/governance/builder/requests`.
+ */
+export interface DesignRequestCreate {
+  submitted_by?: string;
+  agent_name?: string;
+  agent_description?: string;
+  agent_role?: string;
+  tools?: string[];
+  parent_agent_id?: string | null;
+  rationale?: string;
 }
 
 export type DesignRequestStatus = 'pending' | 'voting' | 'approved' | 'rejected' | 'spawned';
@@ -1476,9 +1678,13 @@ export interface EnforcementResult {
 
 export interface EnforcementResultViolation {
   rule_id: string;
-  severity: ConstitutionRuleSeverity;
+  severity: EnforcementResultViolationSeverity;
   message: string;
 }
+
+export type EnforcementResultViolationSeverity = 'info' | 'warning' | 'error' | 'blocker';
+
+export const ENFORCEMENT_RESULT_VIOLATION_SEVERITY_VALUES = ['info', 'warning', 'error', 'blocker'] as const;
 
 export interface Enrollment {
   id: string;
@@ -1591,15 +1797,42 @@ export interface GetAdminGuardrailsResponse {
 }
 
 export interface GetAdminIntegrationsResponse {
-  integrations?: JsonObject;
+  integrations: GetAdminIntegrationsResponseIntegration[];
 }
+
+export interface GetAdminIntegrationsResponseIntegration {
+  id: string;
+  name: string;
+  icon?: string;
+  auth_type?: GetAdminIntegrationsResponseIntegrationAuthType;
+  category?: string;
+  enabled: boolean;
+  beta?: boolean;
+  /**
+   * `kv` when an operator overrode the shipped default, `default` otherwise.
+   */
+  source?: string;
+}
+
+export type GetAdminIntegrationsResponseIntegrationAuthType = 'oauth2' | 'api_key' | 'none';
+
+export const GET_ADMIN_INTEGRATIONS_RESPONSE_INTEGRATION_AUTH_TYPE_VALUES = ['oauth2', 'api_key', 'none'] as const;
 
 export interface GetAdminLLMDefaultsResponse {
   providers?: JsonObject[];
 }
 
 export interface GetAdminPlansResponse {
-  plans?: JsonObject;
+  plans: GetAdminPlansResponsePlan[];
+}
+
+export interface GetAdminPlansResponsePlan {
+  id: string;
+  name: string;
+  /**
+   * Per-plan limits (`max_agents`, `max_monthly_tokens`, …).
+   */
+  quotas: JsonObject;
 }
 
 export interface GetAdminStatsResponse {
@@ -1740,9 +1973,20 @@ export interface GetGovernanceLedgerResponse {
 }
 
 export interface GetHealthResponse {
-  status?: 'ok';
+  status?: GetHealthResponseStatus;
   timestamp?: string;
+  kv_connected?: boolean;
+  uptime_seconds?: number;
+  version?: string;
+  /**
+   * Runs waiting to be resumed after a restart.
+   */
+  pending_resumes?: number;
 }
+
+export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
+
+export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
 export interface GetImmutableAuditResponse {
   entries?: JsonObject[];
@@ -1869,7 +2113,10 @@ export type GetReadyResponseStatus = 'ready' | 'not_ready';
 export const GET_READY_RESPONSE_STATUS_VALUES = ['ready', 'not_ready'] as const;
 
 export interface GetRootAgentResponse {
-  root_agent_id?: string;
+  /**
+   * Designated root agent, or null when none is set.
+   */
+  root_agent_id: string | null;
 }
 
 export interface GetRunQueuePositionResponse {
@@ -1971,14 +2218,29 @@ export interface GoogleOneTapAuthResponse {
 }
 
 export interface GovernanceLedgerEntry {
-  id: string;
-  kind: string;
-  actor_agent_id?: string | null;
-  subject_agent_id?: string | null;
-  rule_id?: string | null;
-  details?: JsonObject;
-  ts: string;
-  prev_hash?: string | null;
+  /**
+   * Monotonic position in the tenant's chain.
+   */
+  seq: number;
+  /**
+   * What happened, e.g. `run_complete`, `constitution_amended`.
+   */
+  action: string;
+  /**
+   * Coarse grouping, e.g. `execution`, `governance`.
+   */
+  category?: string;
+  agent_id?: string | null;
+  tenant_id?: string;
+  /**
+   * Action-specific detail; shape varies by `action`.
+   */
+  payload?: JsonObject;
+  timestamp: string;
+  /**
+   * Hash of the preceding entry. Null only for the genesis entry.
+   */
+  prev_hash: string | null;
   hash: string;
 }
 
@@ -2075,13 +2337,25 @@ export interface IngestMemoryResponseEntry {
 export interface Integration {
   id: string;
   tenant_id: string;
-  type: string;
-  label?: string;
+  /**
+   * Which connector this is: `github`, `slack`, `linear`, …
+   */
+  connector_id: string;
+  name?: string;
+  /**
+   * Connector settings. Secrets are replaced with `<redacted>`.
+   */
+  config?: JsonObject;
+  /**
+   * `active` is what the server sends for a working integration; the documented `connected` was
+   * never emitted.
+   */
   status: IntegrationStatus;
   last_sync_at?: string | null;
   metadata?: JsonObject;
   created_at?: string;
   updated_at?: string;
+  migrated_at?: string;
 }
 
 /**
@@ -2103,9 +2377,13 @@ export type IntegrationCatalogItemAuthType = 'api_key' | 'oauth2' | 'webhook' | 
 
 export const INTEGRATION_CATALOG_ITEM_AUTH_TYPE_VALUES = ['api_key', 'oauth2', 'webhook', 'none'] as const;
 
-export type IntegrationStatus = 'connected' | 'disconnected' | 'error';
+/**
+ * `active` is what the server sends for a working integration; the documented `connected` was
+ * never emitted.
+ */
+export type IntegrationStatus = 'active' | 'inactive' | 'error';
 
-export const INTEGRATION_STATUS_VALUES = ['connected', 'disconnected', 'error'] as const;
+export const INTEGRATION_STATUS_VALUES = ['active', 'inactive', 'error'] as const;
 
 export interface InviteUserRequest {
   email: string;
@@ -2135,6 +2413,23 @@ export interface KnowledgeBase {
   document_count?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+/**
+ * Body for `POST /api/v1/knowledge-bases`.
+ */
+export interface KnowledgeBaseCreate {
+  name: string;
+  description?: string;
+  embedding_model?: string;
+}
+
+/**
+ * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
+ */
+export interface KnowledgeBaseUpdate {
+  name?: string;
+  description?: string;
 }
 
 export interface ListA2ATasksResponse {
@@ -2234,17 +2529,18 @@ export interface ListBillingPlansResponsePlan {
   price_currency?: string;
 }
 
-export interface ListBridgeAgentsResponse {
-  agents: BridgeConnection[];
-  total: number;
-}
-
 export interface ListBuilderRequestsResponse {
   requests: DesignRequest[];
 }
 
 export interface ListCommerceCustomersResponse {
   items: Customer[];
+  /**
+   * Legacy alias for `items`. Will be removed in API v1.x.
+   *
+   * @deprecated
+   */
+  customers?: Customer[];
   cursor?: string;
 }
 
@@ -2961,6 +3257,27 @@ export interface OAuthStartResponse {
   state: string;
 }
 
+/**
+ * Error envelope used by the OpenAI-compatible surface (`/v1/*`). Deliberately NOT RFC 9457:
+ * callers here are OpenAI SDKs pointed at this base URL, and they decode this shape.
+ */
+export interface OpenAiError {
+  error: OpenAiErrorError;
+}
+
+export interface OpenAiErrorError {
+  /**
+   * Human-readable cause, including where an operator fixes it.
+   */
+  message: string;
+  type: string;
+  /**
+   * Machine-readable code. `embedding_unavailable` = no provider configured (501, permanent).
+   * `embedding_failed` = the configured provider did not answer (503, retryable).
+   */
+  code?: string;
+}
+
 export interface Order {
   id: string;
   tenant_id: string;
@@ -3040,6 +3357,17 @@ export const PRODUCT_STATUS_VALUES = ['active', 'archived'] as const;
 export type ProductType = 'course' | 'service' | 'digital' | 'subscription';
 
 export const PRODUCT_TYPE_VALUES = ['course', 'service', 'digital', 'subscription'] as const;
+
+/**
+ * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+ */
+export interface ProductUpdate {
+  title?: string;
+  description?: string;
+  status?: string;
+  tags?: string[];
+  metadata?: JsonObject;
+}
 
 export interface PublicDomainLookupResponse {
   tenant_id?: string;
@@ -3477,6 +3805,12 @@ export const SEARCH_MARKETPLACE_CATEGORY_VALUES = ['coding', 'writing', 'researc
 
 export interface SearchMarketplaceResponse {
   items: MarketplaceListing[];
+  /**
+   * Legacy alias for `items`. Will be removed in API v1.x.
+   *
+   * @deprecated
+   */
+  listings?: MarketplaceListing[];
   total?: number;
 }
 
@@ -3657,6 +3991,10 @@ export interface SetDataExplorerValueResponse {
   success?: boolean;
 }
 
+export type SetLLMProviderKeyProvider = 'openai_compat' | 'custom';
+
+export const SET_LLMPROVIDER_KEY_PROVIDER_VALUES = ['openai_compat', 'custom'] as const;
+
 export interface SetLLMProviderKeyRequest {
   /**
    * Provider API key (stored encrypted)
@@ -3816,6 +4154,30 @@ export interface Team {
   updated_at?: string;
 }
 
+/**
+ * Body for `POST /api/v1/teams` (`CreateTeamSchema`).
+ */
+export interface TeamCreate {
+  name: string;
+  description?: string;
+  topology?: string;
+  supervisor_agent_id?: string;
+  /**
+   * Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.
+   */
+  workers?: TeamCreateWorker[];
+  agent_ids?: string[];
+  delegation_strategy?: string;
+  merge_strategy?: string;
+  orchestration_mode?: string;
+  workspace_id?: string;
+}
+
+export interface TeamCreateWorker {
+  agent_id: string;
+  role?: string;
+}
+
 export type TeamDelegationStrategy = 'supervisor_decides' | 'round_robin' | 'capability_match';
 
 export const TEAM_DELEGATION_STRATEGY_VALUES = ['supervisor_decides', 'round_robin', 'capability_match'] as const;
@@ -3839,6 +4201,22 @@ export const TEAM_SUPERVISOR_MODE_VALUES = ['auto_dispatch', 'tool_driven'] as c
 export type TeamTopology = 'supervisor' | 'round_robin' | 'pipeline' | 'goal_driven' | 'swarm';
 
 export const TEAM_TOPOLOGY_VALUES = ['supervisor', 'round_robin', 'pipeline', 'goal_driven', 'swarm'] as const;
+
+/**
+ * Body for `PUT /api/v1/teams/{teamId}`. Every field optional — send only what changes.
+ */
+export interface TeamUpdate {
+  name?: string;
+  description?: string;
+  topology?: string;
+  supervisor_agent_id?: string;
+  workers?: TeamUpdateWorker[];
+}
+
+export interface TeamUpdateWorker {
+  agent_id: string;
+  role?: string;
+}
 
 export interface Tenant {
   tenant_id?: string;

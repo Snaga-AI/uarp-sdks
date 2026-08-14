@@ -30,7 +30,7 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun createKnowledgeBase(body: KnowledgeBase, options: RequestOptions = RequestOptions()): KnowledgeBase {
+    public suspend fun createKnowledgeBase(body: KnowledgeBaseCreate, options: RequestOptions = RequestOptions()): KnowledgeBase {
         return client.request<KnowledgeBase>(
             RequestSpec(
                 method = "POST",
@@ -155,7 +155,7 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun updateKnowledgeBase(id: String, body: KnowledgeBase, options: RequestOptions = RequestOptions()): KnowledgeBase {
+    public suspend fun updateKnowledgeBase(id: String, body: KnowledgeBaseUpdate, options: RequestOptions = RequestOptions()): KnowledgeBase {
         return client.request<KnowledgeBase>(
             RequestSpec(
                 method = "PUT",

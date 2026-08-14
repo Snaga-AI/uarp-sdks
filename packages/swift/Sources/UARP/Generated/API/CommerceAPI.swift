@@ -208,7 +208,7 @@ public struct CommerceAPI: Sendable {
     /// silently dropped.
     ///
     /// `PATCH /api/v1/commerce/customers/{id}`
-    public func updateCommerceCustomer(id: String, body: Customer, options: RequestOptions = .init()) async throws -> Customer {
+    public func updateCommerceCustomer(id: String, body: CustomerUpdate, options: RequestOptions = .init()) async throws -> Customer {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/commerce/customers/\(encodePathSegment(id))",
@@ -223,7 +223,7 @@ public struct CommerceAPI: Sendable {
     /// Whitelisted fields: same as create plus `stripe_price_id`. Unknown fields silently dropped.
     ///
     /// `PATCH /api/v1/commerce/products/{id}`
-    public func updateCommerceProduct(id: String, body: Product, options: RequestOptions = .init()) async throws -> Product {
+    public func updateCommerceProduct(id: String, body: ProductUpdate, options: RequestOptions = .init()) async throws -> Product {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/commerce/products/\(encodePathSegment(id))",

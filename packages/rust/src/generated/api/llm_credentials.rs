@@ -32,7 +32,7 @@ impl LLMCredentialsApi {
     /// `DELETE /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete_llm_provider_key(&self, provider: &models::AgentModelConfigProvider) -> Result<models::DeleteLLMProviderKeyResponse> {
+    pub async fn delete_llm_provider_key(&self, provider: &models::SetLLMProviderKeyProvider) -> Result<models::DeleteLLMProviderKeyResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -68,7 +68,7 @@ impl LLMCredentialsApi {
     /// `PUT /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn set_llm_provider_key(&self, provider: &models::AgentModelConfigProvider, body: &models::SetLLMProviderKeyRequest) -> Result<models::SetLLMProviderKeyResponse> {
+    pub async fn set_llm_provider_key(&self, provider: &models::SetLLMProviderKeyProvider, body: &models::SetLLMProviderKeyRequest) -> Result<models::SetLLMProviderKeyResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -86,7 +86,7 @@ impl LLMCredentialsApi {
     /// `POST /api/v1/llm-credentials/{provider}/test`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn test_llm_provider_key(&self, provider: &models::AgentModelConfigProvider) -> Result<models::TestLLMProviderKeyResponse> {
+    pub async fn test_llm_provider_key(&self, provider: &models::SetLLMProviderKeyProvider) -> Result<models::TestLLMProviderKeyResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

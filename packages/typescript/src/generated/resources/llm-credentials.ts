@@ -3,9 +3,9 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
-  AgentModelConfigProvider,
   DeleteLLMProviderKeyResponse,
   ListLLMCredentialsProvidersResponse,
+  SetLLMProviderKeyProvider,
   SetLLMProviderKeyRequest,
   SetLLMProviderKeyResponse,
   TestLLMProviderKeyResponse,
@@ -22,7 +22,7 @@ export class LLMCredentialsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  deleteLLMProviderKey(provider: AgentModelConfigProvider, options?: RequestOptions): Promise<DeleteLLMProviderKeyResponse> {
+  deleteLLMProviderKey(provider: SetLLMProviderKeyProvider, options?: RequestOptions): Promise<DeleteLLMProviderKeyResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/llm-credentials/${encodeURIComponent(String(provider))}`,
@@ -53,7 +53,7 @@ export class LLMCredentialsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  setLLMProviderKey(provider: AgentModelConfigProvider, body: SetLLMProviderKeyRequest, options?: RequestOptions): Promise<SetLLMProviderKeyResponse> {
+  setLLMProviderKey(provider: SetLLMProviderKeyProvider, body: SetLLMProviderKeyRequest, options?: RequestOptions): Promise<SetLLMProviderKeyResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/llm-credentials/${encodeURIComponent(String(provider))}`,
@@ -70,7 +70,7 @@ export class LLMCredentialsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  testLLMProviderKey(provider: AgentModelConfigProvider, options?: RequestOptions): Promise<TestLLMProviderKeyResponse> {
+  testLLMProviderKey(provider: SetLLMProviderKeyProvider, options?: RequestOptions): Promise<TestLLMProviderKeyResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/llm-credentials/${encodeURIComponent(String(provider))}/test`,

@@ -260,7 +260,7 @@ public class CommerceApi internal constructor(private val client: UarpClient) {
      *
      * `PATCH /api/v1/commerce/customers/{id}`
      */
-    public suspend fun updateCommerceCustomer(id: String, body: Customer, options: RequestOptions = RequestOptions()): Customer {
+    public suspend fun updateCommerceCustomer(id: String, body: CustomerUpdate, options: RequestOptions = RequestOptions()): Customer {
         return client.request<Customer>(
             RequestSpec(
                 method = "PATCH",
@@ -279,7 +279,7 @@ public class CommerceApi internal constructor(private val client: UarpClient) {
      *
      * `PATCH /api/v1/commerce/products/{id}`
      */
-    public suspend fun updateCommerceProduct(id: String, body: Product, options: RequestOptions = RequestOptions()): Product {
+    public suspend fun updateCommerceProduct(id: String, body: ProductUpdate, options: RequestOptions = RequestOptions()): Product {
         return client.request<Product>(
             RequestSpec(
                 method = "PATCH",

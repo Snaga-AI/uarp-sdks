@@ -6,7 +6,7 @@ package body UARP.API.Knowledge is
 
    function Create_Knowledge_Base
      (Self : Client_Type;
-      Payload : UARP.Models.Knowledge_Base;
+      Payload : UARP.Models.Knowledge_Base_Create;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base
    is
@@ -117,7 +117,7 @@ package body UARP.API.Knowledge is
    function Update_Knowledge_Base
      (Self : Client_Type;
       Id : String;
-      Payload : UARP.Models.Knowledge_Base;
+      Payload : UARP.Models.Knowledge_Base_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base
    is

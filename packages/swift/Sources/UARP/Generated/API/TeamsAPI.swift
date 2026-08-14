@@ -43,7 +43,7 @@ public struct TeamsAPI: Sendable {
     /// `POST /api/v1/teams`
     ///
     /// Required scopes: `agents:write`.
-    public func create(body: Team, options: RequestOptions = .init()) async throws -> Team {
+    public func create(body: TeamCreate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/teams",
@@ -288,7 +288,7 @@ public struct TeamsAPI: Sendable {
     /// `PUT /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(teamId: String, body: Team, options: RequestOptions = .init()) async throws -> Team {
+    public func update(teamId: String, body: TeamUpdate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/teams/\(encodePathSegment(teamId))",

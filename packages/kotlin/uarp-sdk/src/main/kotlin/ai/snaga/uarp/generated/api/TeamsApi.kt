@@ -69,7 +69,7 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun create(body: Team, options: RequestOptions = RequestOptions()): Team {
+    public suspend fun create(body: TeamCreate, options: RequestOptions = RequestOptions()): Team {
         return client.request<Team>(
             RequestSpec(
                 method = "POST",
@@ -378,7 +378,7 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(teamId: String, body: Team, options: RequestOptions = RequestOptions()): Team {
+    public suspend fun update(teamId: String, body: TeamUpdate, options: RequestOptions = RequestOptions()): Team {
         return client.request<Team>(
             RequestSpec(
                 method = "PUT",

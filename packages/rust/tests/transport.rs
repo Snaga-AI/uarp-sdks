@@ -22,14 +22,10 @@ fn agent_json(id: &str) -> serde_json::Value {
 }
 
 fn create_agent_request() -> uarp_sdk::models::CreateAgentRequest {
+    //  The platform picks the model itself and ignores anything sent for it,
+    //  so a create is just a name.
     uarp_sdk::models::CreateAgentRequest {
         name: "demo".into(),
-        model: uarp_sdk::models::AgentModelConfig {
-            provider: uarp_sdk::models::AgentModelConfigProvider::OpenaiCompat,
-            model_ref: "gpt-x".into(),
-            capabilities: Default::default(),
-            ..Default::default()
-        },
         ..Default::default()
     }
 }
@@ -58,12 +54,24 @@ async fn sends_auth_and_user_agent() {
         .await;
 
     let client = client_for(&server).await;
-    let page = client.agents().list(&ListAgentsParams::default()).await.expect("request succeeds");
+    let page = client
+        .agents()
+        .list(&ListAgentsParams::default())
+        .await
+        .expect("request succeeds");
     assert!(page.items.is_empty());
 
     let recorded = &server.received_requests().await.unwrap()[0];
-    let agent = recorded.headers.get("user-agent").unwrap().to_str().unwrap();
-    assert!(agent.starts_with("uarp-sdk-rust/"), "unexpected user agent: {agent}");
+    let agent = recorded
+        .headers
+        .get("user-agent")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(
+        agent.starts_with("uarp-sdk-rust/"),
+        "unexpected user agent: {agent}"
+    );
 }
 
 #[tokio::test]
@@ -80,11 +88,22 @@ async fn serialises_query_parameters_and_skips_none() {
         .await;
 
     let client = client_for(&server).await;
-    let params = ListAgentsParams { limit: Some(25), include_offline: Some(true), ..Default::default() };
-    client.agents().list(&params).await.expect("request succeeds");
+    let params = ListAgentsParams {
+        limit: Some(25),
+        include_offline: Some(true),
+        ..Default::default()
+    };
+    client
+        .agents()
+        .list(&params)
+        .await
+        .expect("request succeeds");
 
     let recorded = &server.received_requests().await.unwrap()[0];
-    assert!(!recorded.url.query().unwrap().contains("cursor"), "None parameters must be omitted");
+    assert!(
+        !recorded.url.query().unwrap().contains("cursor"),
+        "None parameters must be omitted"
+    );
 }
 
 #[tokio::test]
@@ -98,7 +117,11 @@ async fn percent_encodes_path_parameters() {
         .await;
 
     let client = client_for(&server).await;
-    client.agents().get("id with/slash").await.expect("request succeeds");
+    client
+        .agents()
+        .get("id with/slash")
+        .await
+        .expect("request succeeds");
 }
 
 #[tokio::test]
@@ -122,12 +145,26 @@ async fn attaches_idempotency_key_to_writes_only() {
 
     let client = client_for(&server).await;
     let body = create_agent_request();
-    client.agents().create(&body).await.expect("create succeeds");
-    client.agents().list(&ListAgentsParams::default()).await.expect("list succeeds");
+    client
+        .agents()
+        .create(&body)
+        .await
+        .expect("create succeeds");
+    client
+        .agents()
+        .list(&ListAgentsParams::default())
+        .await
+        .expect("list succeeds");
 
     let requests = server.received_requests().await.unwrap();
-    let get = requests.iter().find(|r| r.method == wiremock::http::Method::GET).unwrap();
-    assert!(get.headers.get("idempotency-key").is_none(), "reads must not carry an idempotency key");
+    let get = requests
+        .iter()
+        .find(|r| r.method == wiremock::http::Method::GET)
+        .unwrap();
+    assert!(
+        get.headers.get("idempotency-key").is_none(),
+        "reads must not carry an idempotency key"
+    );
 }
 
 #[tokio::test]
@@ -136,7 +173,9 @@ async fn sends_json_body() {
     Mock::given(method("POST"))
         .and(path("/api/v1/agents"))
         .and(header("content-type", "application/json"))
-        .and(body_json(serde_json::to_value(create_agent_request()).unwrap()))
+        .and(body_json(
+            serde_json::to_value(create_agent_request()).unwrap(),
+        ))
         .respond_with(ResponseTemplate::new(201).set_body_json(agent_json("a1")))
         .expect(1)
         .mount(&server)
@@ -144,7 +183,11 @@ async fn sends_json_body() {
 
     let client = client_for(&server).await;
     let body = create_agent_request();
-    let agent = client.agents().create(&body).await.expect("create succeeds");
+    let agent = client
+        .agents()
+        .create(&body)
+        .await
+        .expect("create succeeds");
     assert_eq!(agent.agent_id, "a1");
 }
 
@@ -158,9 +201,11 @@ async fn retries_429_and_honours_retry_after() {
             let mut count = responses.lock().unwrap();
             *count += 1;
             if *count == 1 {
-                ResponseTemplate::new(429).insert_header("retry-after", "0").set_body_json(json!({
-                    "type": "about:blank", "title": "Too Many Requests", "status": 429
-                }))
+                ResponseTemplate::new(429)
+                    .insert_header("retry-after", "0")
+                    .set_body_json(json!({
+                        "type": "about:blank", "title": "Too Many Requests", "status": 429
+                    }))
             } else {
                 ResponseTemplate::new(200).set_body_json(agent_json("a1"))
             }
@@ -195,7 +240,12 @@ async fn surfaces_rate_limit_hints_from_the_headers() {
         .await;
 
     //  No retries, or the transport would swallow the 429 we want to inspect.
-    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(0).build().unwrap();
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(0)
+        .build()
+        .unwrap();
     let error = client.agents().get("a1").await.expect_err("must fail");
 
     match error {
@@ -227,7 +277,12 @@ async fn maps_404_to_a_typed_error_without_retrying() {
         .mount(&server)
         .await;
 
-    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(3)
+        .build()
+        .unwrap();
     let error = client.agents().get("missing").await.expect_err("must fail");
     match error {
         Error::Api(api) => {
@@ -363,7 +418,10 @@ async fn streams_server_sent_events() {
             break;
         }
     }
-    assert_eq!(names, vec!["llm.chunk".to_string(), "run.completed".to_string()]);
+    assert_eq!(
+        names,
+        vec!["llm.chunk".to_string(), "run.completed".to_string()]
+    );
 }
 
 fn publish_response() -> serde_json::Value {
@@ -399,21 +457,39 @@ async fn builds_a_multipart_body() {
         sha256: Some("abc123".into()),
         ..Default::default()
     };
-    client.registry().registry_publish(&request).await.expect("publish succeeds");
+    client
+        .registry()
+        .registry_publish(&request)
+        .await
+        .expect("publish succeeds");
 
     let recorded = &server.received_requests().await.unwrap()[0];
-    let content_type = recorded.headers.get("content-type").unwrap().to_str().unwrap();
-    assert!(content_type.starts_with("multipart/form-data; boundary="), "{content_type}");
+    let content_type = recorded
+        .headers
+        .get("content-type")
+        .unwrap()
+        .to_str()
+        .unwrap();
+    assert!(
+        content_type.starts_with("multipart/form-data; boundary="),
+        "{content_type}"
+    );
 
     let body = String::from_utf8_lossy(&recorded.body);
     assert!(body.contains("name=\"manifest\""), "{body}");
-    assert!(body.contains("name=\"artifact\"; filename=\"bundle.tar.zst\""), "{body}");
+    assert!(
+        body.contains("name=\"artifact\"; filename=\"bundle.tar.zst\""),
+        "{body}"
+    );
     assert!(body.contains("application/zstd"), "{body}");
     assert!(body.contains("name=\"sha256\""), "{body}");
     //  An optional part the caller left out must not appear at all.
     assert!(!body.contains("attestation"), "{body}");
     //  The raw bytes must survive, NUL and high byte included.
-    assert!(recorded.body.windows(3).any(|w| w == [0x00, 0xFF, 0x41]), "file bytes were altered");
+    assert!(
+        recorded.body.windows(3).any(|w| w == [0x00, 0xFF, 0x41]),
+        "file bytes were altered"
+    );
 }
 
 #[tokio::test]
@@ -430,7 +506,11 @@ async fn downloads_bytes_verbatim() {
         .await;
 
     let client = client_for(&server).await;
-    let bytes = client.files().download_file_content("f1").await.expect("download succeeds");
+    let bytes = client
+        .files()
+        .download_file_content("f1")
+        .await
+        .expect("download succeeds");
     assert_eq!(bytes.as_ref(), &[0x00, 0xFF, 0x41, 0x00, 0x42]);
 }
 
@@ -450,7 +530,12 @@ async fn honours_the_no_retry_hint() {
         .mount(&server)
         .await;
 
-    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(3)
+        .build()
+        .unwrap();
     let error = client.agents().get("a1").await.expect_err("must fail");
     assert!(matches!(error, Error::Api(_)), "{error:?}");
 }
@@ -544,7 +629,12 @@ async fn does_not_retry_a_write_that_carries_no_idempotency_key() {
         .mount(&server)
         .await;
 
-    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(3).build().unwrap();
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(3)
+        .build()
+        .unwrap();
     let error = client
         .raw::<serde_json::Value>(reqwest::Method::POST, "/experimental/thing", None)
         .await
@@ -592,11 +682,21 @@ async fn per_call_overrides_travel_on_a_clone() {
         .await;
 
     let client = client_for(&server).await;
-    let traced = client.with_header("X-Trace", "abc").with_query("debug", "1");
+    let traced = client
+        .with_header("X-Trace", "abc")
+        .with_query("debug", "1");
 
-    traced.agents().get("a1").await.expect("traced call succeeds");
+    traced
+        .agents()
+        .get("a1")
+        .await
+        .expect("traced call succeeds");
     //  The original client keeps its own settings.
-    client.agents().get("a2").await.expect("plain call succeeds");
+    client
+        .agents()
+        .get("a2")
+        .await
+        .expect("plain call succeeds");
 }
 
 #[tokio::test]
@@ -613,7 +713,12 @@ async fn a_clone_can_turn_retries_off() {
         .mount(&server)
         .await;
 
-    let client = Client::builder().api_key("k").base_url(server.uri()).max_retries(5).build().unwrap();
+    let client = Client::builder()
+        .api_key("k")
+        .base_url(server.uri())
+        .max_retries(5)
+        .build()
+        .unwrap();
     client
         .with_max_retries(0)
         .agents()
@@ -625,11 +730,14 @@ async fn a_clone_can_turn_retries_off() {
 #[tokio::test]
 async fn decodes_an_enum_value_it_has_never_seen() {
     //  A value the API adds later must round-trip rather than fail.
-    let decoded: uarp_sdk::models::AgentModelConfigProvider =
+    let decoded: uarp_sdk::models::GetMeResponseAuthMethod =
         serde_json::from_str("\"brand_new\"").expect("decodes");
     assert_eq!(decoded.as_str(), "brand_new");
     assert_eq!(serde_json::to_string(&decoded).unwrap(), "\"brand_new\"");
-    assert_eq!(decoded, uarp_sdk::models::AgentModelConfigProvider::from("brand_new"));
+    assert_eq!(
+        decoded,
+        uarp_sdk::models::GetMeResponseAuthMethod::from("brand_new")
+    );
 }
 
 #[tokio::test]

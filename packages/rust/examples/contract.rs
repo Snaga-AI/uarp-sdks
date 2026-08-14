@@ -9,10 +9,7 @@ use std::pin::pin;
 
 use futures_util::StreamExt;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
-use uarp_sdk::models::{
-    AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest, CreateRunRequest,
-    RegistryPublishRequest,
-};
+use uarp_sdk::models::{CreateAgentRequest, CreateRunRequest, RegistryPublishRequest};
 use uarp_sdk::{Client, Error, FilePart};
 
 /// A quote, a backslash, a newline, a tab, a non-ASCII letter and a character
@@ -29,7 +26,10 @@ async fn main() -> Result<(), Error> {
         .build()?;
 
     // 1. query serialisation
-    let params = ListAgentsParams { limit: Some(2), ..Default::default() };
+    let params = ListAgentsParams {
+        limit: Some(2),
+        ..Default::default()
+    };
     client.agents().list(&params).await?;
 
     // 2. path encoding
@@ -40,12 +40,6 @@ async fn main() -> Result<(), Error> {
         .agents()
         .create(&CreateAgentRequest {
             name: "demo".into(),
-            model: AgentModelConfig {
-                provider: AgentModelConfigProvider::OpenaiCompat,
-                model_ref: "gpt-x".into(),
-                capabilities: Default::default(),
-                ..Default::default()
-            },
             ..Default::default()
         })
         .await?;
@@ -100,7 +94,10 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     // 11. query encoding, spaces and reserved characters included
-    let odd = ListAgentsParams { workspace_id: Some("ы w&x=y+z*!()~".into()), ..Default::default() };
+    let odd = ListAgentsParams {
+        workspace_id: Some("ы w&x=y+z*!()~".into()),
+        ..Default::default()
+    };
     client.agents().list(&odd).await?;
 
     // 12. a multibyte path segment
