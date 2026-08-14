@@ -6,9 +6,43 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.2.0 — 2026-08-14
 
-### Fixed
+First release. Generated from UARP spec version 0.2.0: 557 operations across
+43 resource groups, 575 models, 11 event streams, 14 cursor-paginated
+endpoints.
+
+### Added
+
+- **TypeScript / Node** (`uarp-sdk` on npm) — ESM, no runtime dependencies,
+  Node 18+.
+- **Rust** (`uarp-sdk` on crates.io) — `reqwest` + `serde` + `tokio`, rustls by
+  default, MSRV 1.88.
+- **Swift** (`UARP` via SwiftPM) — `async`/`await` over `URLSession`, macOS 12 /
+  iOS 15 and up, no dependencies.
+- **Kotlin / Android** (`ai.snaga:uarp-sdk`) — coroutines, OkHttp,
+  kotlinx.serialization, Java 11 bytecode.
+- **Ada** (`uarp_sdk` on Alire) — Ada 2022 over libcurl with GNATCOLL.JSON.
+
+Every SDK covers the whole API surface and shares the same behaviour:
+
+- Bearer authentication, falling back to `UARP_API_KEY` / `SNAGA_API_KEY`.
+- An `Idempotency-Key` on every mutating `/api/v1/*` request, which is also
+  what makes a write safe to retry.
+- Retries for `408`, `409`, `429`, `5xx` and dropped connections, with
+  full-jitter backoff honouring `Retry-After` and `X-Should-Retry: false`.
+- RFC 9457 problem documents parsed into typed errors carrying the status,
+  detail, `correlationId` and field-level validation failures.
+- Event streams as a native async type, reconnecting with `Last-Event-ID`.
+- An extra method per paginated endpoint that walks every page.
+- Enum values the server adds later decode instead of failing.
+
+
+### Fixed before release
+
+Nothing below shipped to anyone: these are defects found while building the
+five SDKs against each other and against the live API, kept because each one
+documents behaviour a caller can rely on.
 
 - **Rust:** `rust-version` said 1.75 and the crate had never been built with it.
   The floor is 1.88, set by the `icu_*` crates that `url` pulls in, not by
@@ -62,7 +96,7 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   generator bakes into each package's metadata; `scripts/set-version.sh` sets
   it everywhere at once.
 
-### Added
+### Also in this release
 
 - **Publishing is documented and the Swift package is reachable.** SwiftPM
   resolves a git URL and expects `Package.swift` at the repository root, so a
@@ -125,37 +159,6 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   only when they carry an idempotency key, caller-supplied keys, the cursor
   guard that stops a server which never clears its cursor, and enum values the
   API adds after generation.
-
-## 0.2.0
-
-First release. Generated from UARP spec version 0.2.0: 557 operations across
-43 resource groups, 575 models, 11 event streams, 14 cursor-paginated
-endpoints.
-
-### Added
-
-- **TypeScript / Node** (`uarp-sdk` on npm) — ESM, no runtime dependencies,
-  Node 18+.
-- **Rust** (`uarp-sdk` on crates.io) — `reqwest` + `serde` + `tokio`, rustls by
-  default, MSRV 1.88.
-- **Swift** (`UARP` via SwiftPM) — `async`/`await` over `URLSession`, macOS 12 /
-  iOS 15 and up, no dependencies.
-- **Kotlin / Android** (`ai.snaga:uarp-sdk`) — coroutines, OkHttp,
-  kotlinx.serialization, Java 11 bytecode.
-- **Ada** (`uarp_sdk` on Alire) — Ada 2022 over libcurl with GNATCOLL.JSON.
-
-Every SDK covers the whole API surface and shares the same behaviour:
-
-- Bearer authentication, falling back to `UARP_API_KEY` / `SNAGA_API_KEY`.
-- An `Idempotency-Key` on every mutating `/api/v1/*` request, which is also
-  what makes a write safe to retry.
-- Retries for `408`, `409`, `429`, `5xx` and dropped connections, with
-  full-jitter backoff honouring `Retry-After` and `X-Should-Retry: false`.
-- RFC 9457 problem documents parsed into typed errors carrying the status,
-  detail, `correlationId` and field-level validation failures.
-- Event streams as a native async type, reconnecting with `Last-Event-ID`.
-- An extra method per paginated endpoint that walks every page.
-- Enum values the server adds later decode instead of failing.
 
 ### Tooling
 
