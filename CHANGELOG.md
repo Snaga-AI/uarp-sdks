@@ -59,6 +59,14 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Publishing is documented and the Swift package is reachable.** SwiftPM
+  resolves a git URL and expects `Package.swift` at the repository root, so a
+  package in a monorepo subdirectory cannot be depended upon at all. The release
+  now copies `packages/swift` into `snaga-ai/uarp-swift` and tags it there.
+  PUBLISHING.md covers the accounts, the DNS record that proves the Maven
+  namespace, the signing key, and the order to publish in.
+- **Every package carries its LICENCE.** All five declared MIT in their metadata
+  and shipped no licence text; npm even listed a file that was not there.
 - **Live conformance probe** (`smoke/`, `make smoke`). Calls the whole
   documented surface against a running server in dependency order, validates
   every response against the schema that promised it, and writes a report for

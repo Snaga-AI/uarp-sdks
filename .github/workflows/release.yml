@@ -124,6 +124,48 @@ jobs:
       - run: swift test
         working-directory: packages/swift
 
+  swift-mirror:
+    name: SwiftPM mirror
+    needs: [verify, swift]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      # SwiftPM has no notion of a package inside a subdirectory: it resolves a
+      # git URL and expects Package.swift at the root. A consumer therefore
+      # cannot depend on this monorepo at all, so the tagged package is copied
+      # into snaga-ai/uarp-swift, which exists only to be depended upon.
+      #
+      # The mirror is cloned rather than recreated: its tags are the released
+      # versions, and dropping them would break everyone already pinned to one.
+      - name: Copy the package into the mirror
+        env:
+          TOKEN: ${{ secrets.SWIFT_MIRROR_TOKEN }}
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          set -euo pipefail
+          remote="https://x-access-token:${TOKEN}@github.com/snaga-ai/uarp-swift.git"
+          git clone --quiet "$remote" mirror || { mkdir mirror && git -C mirror init --quiet -b main; }
+
+          # Everything except the mirror's own git metadata is replaced, so a
+          # file deleted upstream also disappears here.
+          find mirror -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -R packages/swift/. mirror/
+          cp CHANGELOG.md mirror/
+
+          cd mirror
+          git config user.name "snaga-ai release"
+          git config user.email "support@snaga.ai"
+          git add -A
+          # A tag with no file changes is still a release worth publishing.
+          git diff --cached --quiet || git commit --quiet -m "uarp-sdk ${VERSION}"
+          git tag "${VERSION}"
+          if [ "${DRY_RUN}" = "true" ]; then
+            echo "dry run: would push ${VERSION} to snaga-ai/uarp-swift"
+          else
+            git push --quiet "$remote" HEAD:main
+            git push --quiet "$remote" "${VERSION}"
+          fi
+
   ada:
     name: Alire
     needs: verify
@@ -144,7 +186,7 @@ jobs:
 
   github-release:
     name: GitHub release
-    needs: [verify, npm, crates, maven, swift, ada]
+    needs: [verify, npm, crates, maven, swift, swift-mirror, ada]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
