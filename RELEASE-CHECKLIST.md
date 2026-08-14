@@ -13,11 +13,11 @@ This file records what was actually verified, and what is left.
 
 | Stage | Package | Registry | State |
 |---|---|---|---|
-| 1 | `packages/typescript` | npm `uarp-sdk` | verified, waiting on a token |
-| 2 | `packages/rust` | crates.io `uarp-sdk` | verified, waiting on the repository |
-| 3 | `packages/swift` | SwiftPM `snaga-ai/uarp-swift` | not started |
+| 1 | `packages/typescript` | npm `uarp-sdk` | **blocked** — the token needs an OTP |
+| 2 | `packages/rust` | crates.io `uarp-sdk` | **blocked** — the account has no verified e-mail |
+| 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **published, 0.2.0** |
 | 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | not started |
-| 5 | `packages/ada` | Alire `uarp_sdk` | not started |
+| 5 | `packages/ada` | Alire `uarp_sdk` | tarball builds; index PR is a human step |
 
 ---
 
@@ -113,3 +113,50 @@ node -e "import('uarp-sdk').then(m => console.log(m.VERSION))"
 - Angle brackets and URLs are escaped for Rust only. Swift DocC and Kotlin KDoc
   render Markdown too and may have the same problem; nothing has demonstrated it
   yet, so nothing has been changed there.
+
+---
+
+## Stage 3 — SwiftPM, `Snaga-AI/uarp-swift` — published
+
+SwiftPM resolves a git URL and expects `Package.swift` at the repository root,
+so nothing in a monorepo subdirectory can be depended upon. `packages/swift` is
+copied into its own repository and tagged there.
+
+```swift
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.2.0")
+```
+
+### Checked
+
+| | |
+|---|---|
+| Assembly | `scripts/swift-mirror.sh` builds the mirror and refuses to finish if a harness target survives the strip |
+| Standalone | the assembled package builds from its own root and passes all 30 tests |
+| Products | the library and the example only; the contract and live runners are stripped |
+| **Resolution** | a fresh package depending on the tag fetched it from GitHub, built, and ran |
+
+### Left to do
+
+- `SWIFT_MIRROR_TOKEN` — a fine-grained token with `contents: write` on
+  `Snaga-AI/uarp-swift`. 0.2.0 was pushed by hand; without the secret the
+  release job warns and skips the mirror.
+- Optionally list it on the Swift Package Index so it is findable.
+
+---
+
+## Blocked on an account, not on the code
+
+Both were found by tagging `v0.2.0` and reading what the registries said.
+
+**npm** — `npm error code EOTP: This operation requires a one-time password.`
+The token in `NPM_TOKEN` is a classic token, and those still demand a 2FA code,
+which CI cannot supply. Create an **automation** token (npmjs.com → Access
+Tokens → Generate → Automation) and replace the secret.
+
+**crates.io** — `A verified email address is required to publish crates`.
+Set and confirm one at <https://crates.io/settings/profile>. The token itself is
+fine.
+
+Nothing else stands between these two and a publish: both packages build, pack
+and install cleanly, and the tag is already in place. Re-running the release
+workflow after fixing the accounts is enough.

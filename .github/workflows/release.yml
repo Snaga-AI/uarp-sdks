@@ -195,11 +195,25 @@ jobs:
           toolchain: gnat_native^15 gprbuild^26
       - run: ./tests/run-tests.sh
         working-directory: packages/ada
-      # Alire releases go through a pull request against the community index,
-      # so this only prepares the manifest; `alr publish` prints the next step.
-      - name: Prepare the Alire submission
-        run: alr publish --tar
+      # Alire has no upload: a release is a pull request against the community
+      # index, pointing at a hosted tarball. `alr publish --tar` builds that
+      # tarball and then asks, on stdin, where it will live — a question with
+      # nobody to answer it here, which used to fail the job after the archive
+      # had already been written. Feed it nothing and keep the archive.
+      - name: Build the Alire submission tarball
         working-directory: packages/ada
+        env:
+          VERSION: ${{ needs.verify.outputs.version }}
+        run: |
+          alr -n publish --tar </dev/null || true
+          archive="alire/archives/uarp_sdk-${VERSION}.tgz"
+          test -f "$archive" || { echo "::error::alr did not produce $archive"; exit 1; }
+          echo "built $archive"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: alire-tarball
+          path: packages/ada/alire/archives/*.tgz
+          if-no-files-found: error
 
   github-release:
     name: GitHub release
