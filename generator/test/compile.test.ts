@@ -206,8 +206,15 @@ test(
     try {
       execFileSync('swift', ['build', '--package-path', root], { encoding: 'utf8', stdio: 'pipe' });
     } catch (error) {
-      const details = error as { stderr?: string; stdout?: string };
-      assert.fail(`generated Swift does not compile:\n${details.stderr ?? details.stdout ?? ''}`);
+      //  Both streams, and neither skipped when the other is empty: `??` only
+      //  falls through on null, so a compiler that writes its diagnostics to
+      //  stdout and leaves stderr as '' used to produce a failure with no
+      //  message at all.
+      const details = error as { stderr?: string; stdout?: string; message?: string };
+      const output = [details.stderr, details.stdout, details.message]
+        .filter((part) => part !== undefined && part !== '')
+        .join('\n');
+      assert.fail(`generated Swift does not compile:\n${output || '(the compiler said nothing)'}`);
     }
   },
 );
