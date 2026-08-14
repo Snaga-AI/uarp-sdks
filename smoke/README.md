@@ -15,9 +15,12 @@ Only this probe asks whether the document tells the truth.
 node smoke/src/run.ts --dry-run          # what would be called, in what order
 UARP_API_KEY=… node smoke/src/run.ts     # the sweep
 node smoke/src/report.ts                 # smoke/out/BACKEND-REPORT.md
+node smoke/src/html.ts                   # smoke/out/backend-report.html
 ```
 
-or `make smoke`, which does all three.
+or `make smoke`, which does the sweep and both reports. The Markdown is for
+reading; the page is for working from — severity encoded in form, the serious
+findings above the fold, the cosmetic ones collapsed.
 
 Useful flags: `--base-url` to aim elsewhere (default `https://api.snaga.ai`),
 `--only <substring>` to restrict to matching routes, `--limit N` to stop early,
