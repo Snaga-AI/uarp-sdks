@@ -173,6 +173,45 @@ test('autoPaginate walks every page', async () => {
   assert.deepEqual(requested, [undefined, 'c1', 'c2']);
 });
 
+test('autoPaginate walks past an empty page that says there is more', async () => {
+  // This API applies the page size before filtering, so a request for two
+  // items can come back with none while `has_more` is still true. Treating
+  // that as the end of the collection loses every item behind it.
+  const pages = [
+    { items: [], cursor: 'c1', has_more: true },
+    { items: [], cursor: 'c2', has_more: true },
+    { items: [1, 2], cursor: null, has_more: false },
+  ];
+  let call = 0;
+  const items = await collect(
+    autoPaginate<number>(
+      async () => pages[call++],
+      'items',
+      'cursor',
+      'has_more',
+    ),
+  );
+
+  assert.deepEqual(items, [1, 2]);
+});
+
+test('autoPaginate gives up on a server that only ever returns empty pages', async () => {
+  let calls = 0;
+  const items = await collect(
+    autoPaginate<number>(
+      async () => ({ items: [], cursor: `c${calls++}`, has_more: true }),
+      'items',
+      'cursor',
+      'has_more',
+    ),
+  );
+
+  assert.deepEqual(items, []);
+  // Bounded: a fresh cursor every time defeats the repeated-cursor guard, so
+  // the run of empty pages has to be what stops it.
+  assert.ok(calls <= 4, `stopped after ${calls} pages`);
+});
+
 test('autoPaginate stops when a server repeats the same cursor', async () => {
   let calls = 0;
   const items = await collect(

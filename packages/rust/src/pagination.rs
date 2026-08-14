@@ -2,11 +2,20 @@
 
 use std::collections::HashSet;
 
-/// Tracks cursors already requested so a server that keeps echoing the same
-/// cursor cannot spin the caller forever.
+/// Consecutive empty pages tolerated before iteration gives up.
+const EMPTY_PAGE_LIMIT: u8 = 3;
+
+/// Decides when to stop walking pages.
+///
+/// A server that keeps echoing the same cursor cannot spin the caller forever,
+/// and neither can one that answers with empty page after empty page. An empty
+/// page on its own is *not* the end: an API that applies the page size before
+/// filtering can answer a request for two items with none and `has_more: true`,
+/// and stopping there loses everything behind it.
 #[derive(Debug, Default)]
 pub(crate) struct CursorGuard {
     seen: HashSet<String>,
+    consecutive_empty: u8,
 }
 
 impl CursorGuard {
@@ -21,7 +30,11 @@ impl CursorGuard {
         has_more: Option<bool>,
         was_empty: bool,
     ) -> Option<String> {
-        if has_more == Some(false) || was_empty {
+        if has_more == Some(false) {
+            return None;
+        }
+        self.consecutive_empty = if was_empty { self.consecutive_empty + 1 } else { 0 };
+        if self.consecutive_empty >= EMPTY_PAGE_LIMIT {
             return None;
         }
         let cursor = cursor?;

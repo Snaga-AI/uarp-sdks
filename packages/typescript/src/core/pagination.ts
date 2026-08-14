@@ -8,12 +8,21 @@ export interface CursorPage<T> {
 
 export type PageFetcher = (cursor: string | undefined) => Promise<unknown>;
 
+/** Consecutive empty pages tolerated before the walk gives up. */
+const EMPTY_PAGE_LIMIT = 3;
+
 /**
  * Walk every page of a cursor-paginated endpoint, yielding individual items.
  *
  * Generated resources expose this as `<method>All(...)`; the loop stops when
- * the server reports `has_more: false`, returns a null cursor, or hands back
- * an empty page (a guard against a server that never clears the cursor).
+ * the server reports `has_more: false` or returns a null cursor.
+ *
+ * An empty page does *not* end the walk. A server that applies the page size
+ * before filtering can answer a request for two items with none at all and
+ * `has_more: true`, and treating that as the end silently loses everything
+ * behind it — this API does exactly that. Runaway protection comes from the
+ * repeated-cursor check below and from a bound on consecutive empty pages,
+ * neither of which mistakes a short page for the end of the collection.
  */
 export async function* autoPaginate<T>(
   fetchPage: PageFetcher,
@@ -23,6 +32,7 @@ export async function* autoPaginate<T>(
 ): AsyncIterableIterator<T> {
   let cursor: string | undefined;
   const seen = new Set<string>();
+  let consecutiveEmpty = 0;
 
   for (;;) {
     const page = (await fetchPage(cursor)) as Record<string, unknown> | undefined;
@@ -31,7 +41,8 @@ export async function* autoPaginate<T>(
     const items = page[itemsProp];
     if (Array.isArray(items)) {
       for (const item of items) yield item as T;
-      if (items.length === 0) return;
+      consecutiveEmpty = items.length === 0 ? consecutiveEmpty + 1 : 0;
+      if (consecutiveEmpty >= EMPTY_PAGE_LIMIT) return;
     }
 
     const hasMore = hasMoreProp ? page[hasMoreProp] : undefined;

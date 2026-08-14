@@ -53,6 +53,9 @@ package body UARP.API.Reports is
       Collected : UARP.Models.Content_Report_Vectors.Vector;
       Page_Params : List_All_Content_Reports_Params := Params;
       Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
    begin
       loop
          declare
@@ -68,7 +71,12 @@ package body UARP.API.Reports is
                   return Collected;
                end if;
             end loop;
-            exit when Page.Items.Is_Empty;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
             exit when not Page.Has_More;
             exit when not Page.Has_Cursor;
             exit when UARP.Types.SU.Length (Page.Cursor) = 0;
@@ -115,6 +123,9 @@ package body UARP.API.Reports is
       Collected : UARP.Models.Content_Report_Vectors.Vector;
       Page_Params : List_Content_Reports_Params := Params;
       Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
    begin
       loop
          declare
@@ -130,7 +141,12 @@ package body UARP.API.Reports is
                   return Collected;
                end if;
             end loop;
-            exit when Page.Items.Is_Empty;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
             exit when not Page.Has_More;
             exit when not Page.Has_Cursor;
             exit when UARP.Types.SU.Length (Page.Cursor) = 0;

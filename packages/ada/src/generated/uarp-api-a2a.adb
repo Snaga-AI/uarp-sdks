@@ -115,6 +115,9 @@ package body UARP.API.A2A is
       Collected : UARP.Models.A2A_Task_Vectors.Vector;
       Page_Params : List_A2A_Tasks_Params := Params;
       Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
    begin
       loop
          declare
@@ -130,7 +133,12 @@ package body UARP.API.A2A is
                   return Collected;
                end if;
             end loop;
-            exit when Page.Tasks.Is_Empty;
+            if Page.Tasks.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
             exit when Page.Has_Has_More and then not Page.Has_More;
             exit when not Page.Has_Cursor;
             exit when UARP.Types.SU.Length (Page.Cursor) = 0;

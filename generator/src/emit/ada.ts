@@ -970,6 +970,9 @@ function emitPaginatedBody(w: Writer, op: Operation, group: Group): void {
     w.line(`Collected : ${paginatedItemType(op)};`);
     w.line(`Page_Params : ${paramsType(op)} := Params;`);
     w.line('Seen : UARP.Types.Text_Vectors.Vector;');
+    w.line('--  Consecutive empty pages tolerated before the walk gives up.');
+    w.line('Empty_Page_Limit : constant := 3;');
+    w.line('Empty_Pages : Natural := 0;');
   });
   w.line('begin');
   w.indent(() => {
@@ -990,7 +993,18 @@ function emitPaginatedBody(w: Writer, op: Operation, group: Group): void {
           w.line('end if;');
         });
         w.line('end loop;');
-        w.line(`exit when Page.${itemsField}.Is_Empty;`);
+        //  An empty page is not the end of the collection: an API that applies
+        //  the page size before filtering answers a request for two items with
+        //  none and `has_more: true`. Stopping there loses everything behind
+        //  it, so only a run of empty pages ends the walk.
+        w.line(`if Page.${itemsField}.Is_Empty then`);
+        w.indent(() => {
+          w.line('Empty_Pages := Empty_Pages + 1;');
+          w.line('exit when Empty_Pages >= Empty_Page_Limit;');
+        });
+        w.line('else');
+        w.indent(() => w.line('Empty_Pages := 0;'));
+        w.line('end if;');
         if (hasMoreProp) {
           w.line(
             pagination.hasMoreOptional
