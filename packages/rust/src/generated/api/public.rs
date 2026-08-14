@@ -187,8 +187,8 @@ impl PublicApi {
 
     /// Tenant custom CSS stylesheet
     ///
-    /// Serves tenant-configured branding CSS as `text/css`. Cached with ETag; safe for `<link
-    /// rel=stylesheet>`.
+    /// Serves tenant-configured branding CSS as `text/css`. Cached with ETag; safe for `\<link
+    /// rel=stylesheet\>`.
     ///
     /// `GET /api/v1/public/tenants/{slug}/style.css`
     pub async fn get_public_tenant_stylesheet(&self, slug: &str) -> Result<()> {

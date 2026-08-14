@@ -156,7 +156,7 @@ impl BridgeApi {
     ///
     /// WebSocket upgrade. Long-lived bidirectional channel between a `snaga serve` CLI and the
     /// platform. Server delivers tasks, client streams capabilities and tool results. Auth via
-    /// `Sec-WebSocket-Protocol: uarp.<base64(api_key)>` subprotocol.
+    /// `Sec-WebSocket-Protocol: uarp.\<base64(api_key)\>` subprotocol.
     ///
     /// `GET /api/v1/bridge/ws`
     pub async fn bridge_web_socket(&self) -> Result<serde_json::Value> {

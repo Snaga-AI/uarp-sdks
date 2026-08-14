@@ -14,7 +14,7 @@ This file records what was actually verified, and what is left.
 | Stage | Package | Registry | State |
 |---|---|---|---|
 | 1 | `packages/typescript` | npm `uarp-sdk` | verified, waiting on a token |
-| 2 | `packages/rust` | crates.io `uarp-sdk` | not started |
+| 2 | `packages/rust` | crates.io `uarp-sdk` | verified, waiting on the repository |
 | 3 | `packages/swift` | SwiftPM `snaga-ai/uarp-swift` | not started |
 | 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | not started |
 | 5 | `packages/ada` | Alire `uarp_sdk` | not started |
@@ -71,3 +71,45 @@ node -e "import('uarp-sdk').then(m => console.log(m.VERSION))"
 - The publish itself, through the release workflow or `npm publish --provenance`.
   Provenance needs the workflow to run in `snaga-ai/uarp-sdks`, so the repository
   has to exist first.
+
+---
+
+## Stage 2 — crates.io, `uarp-sdk`
+
+### Checked
+
+| | |
+|---|---|
+| Manifest | name, version, edition, rust-version, licence, description, repository, homepage, readme, 5 keywords, 2 categories |
+| Package | `cargo publish --dry-run` builds the packaged crate from scratch: 63 files, 110 kB compressed |
+| Contents | `src`, `examples`, `tests`, `README.md`, `LICENSE`, `Cargo.lock` |
+| Docs | `cargo doc --all-features --no-deps` clean, which is how docs.rs will build it |
+| Features | `rustls-tls` (default) and `native-tls`; both enabled together still compile, which is what `all-features = true` asks docs.rs to do |
+
+### Fixed
+
+- **Doc comments were mangled by rustdoc.** Descriptions are Markdown once
+  rustdoc has them, and the spec's prose is full of things Markdown eats:
+  `uarp_<prefix>_<secret>` rendered as `uarp__secret` because `<prefix>` parsed
+  as an HTML tag, and every URL in a description was plain text. Both are now
+  escaped in the emitter. A first attempt swallowed the full stop after a URL
+  into the link itself; trailing punctuation is now left in the sentence.
+- **The fixtures had no prose to break.** `prose.json` covers angle-bracket
+  placeholders, bracketed text and URLs, so the five emitters are pinned on the
+  case that reached production undetected.
+- Added `homepage`.
+
+### Left to do
+
+- `CARGO_REGISTRY_TOKEN` — **done**, in repository secrets.
+- The publish itself. `uarp-sdk` is unclaimed; the first publish takes the name
+  and it cannot be transferred afterwards without asking the crates.io team.
+
+### Known and deliberate
+
+- `docs.rs` builds with `all-features = true`. If it ever fails there, the
+  documentation for that version is broken permanently — only a new version can
+  replace it — so it is checked locally before every release.
+- Angle brackets and URLs are escaped for Rust only. Swift DocC and Kotlin KDoc
+  render Markdown too and may have the same problem; nothing has demonstrated it
+  yet, so nothing has been changed there.
