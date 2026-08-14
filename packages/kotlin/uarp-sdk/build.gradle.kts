@@ -46,6 +46,17 @@ tasks.register<JavaExec>("contract") {
     classpath = sourceSets["test"].runtimeClasspath
 }
 
+//  Same idea for the live runner: it talks to a real server, so it stays in
+//  the test source set and never ships.
+tasks.register<JavaExec>("live") {
+    group = "verification"
+    description = "Run the live scenario against UARP_BASE_URL using UARP_API_KEY"
+    mainClass.set("ai.snaga.uarp.LiveRunnerKt")
+    classpath = sourceSets["test"].runtimeClasspath
+    environment("UARP_API_KEY", System.getenv("UARP_API_KEY") ?: "")
+    environment("UARP_BASE_URL", System.getenv("UARP_BASE_URL") ?: "https://api.snaga.ai")
+}
+
 publishing {
     publications {
         create<MavenPublication>("maven") {

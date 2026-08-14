@@ -1,0 +1,42 @@
+{
+  "$comment": [
+    "Operations the live probe will not call on its own.",
+    "",
+    "Everything else runs, including every DELETE — but a DELETE only ever",
+    "points at a resource this run created. The entries below are different:",
+    "they destroy the account, revoke the credential the run depends on, or",
+    "change state for every tenant on the platform. Running them would end the",
+    "run and could not be undone, so they need a human decision.",
+    "",
+    "Remove an entry, or pass --allow <operationId>, to run it anyway."
+  ],
+  "operations": {
+    "purgeAdminTenant": "deletes an entire tenant and everything in it",
+    "deleteUser": "can delete the owner the API key belongs to",
+    "revokeApiKey": "can revoke the key this run is authenticating with",
+    "revokeMeSession": "can revoke the session this run is authenticating with",
+    "logout": "invalidates the credential mid-run; every later call would 401",
+    "unlinkAuthProvider": "can remove the last way to sign in to the account",
+    "adminDeleteOAuthProvider": "removes a login provider for every user on the platform",
+    "deleteLlmProviderKey": "destroys stored provider credentials that cannot be read back",
+    "activateSafeMode": "halts agent execution platform-wide",
+    "deactivateSafeMode": "changes platform-wide governance state",
+    "setRootAgent": "reassigns the platform root agent",
+    "setRootAttestation": "overwrites the platform root attestation",
+    "deleteSpawnPolicy": "removes the platform-wide agent spawn policy",
+    "clearRateLimits": "drops rate limiting for the whole platform",
+    "deleteDataExplorerValue": "deletes an arbitrary key from live storage",
+    "bulkDeleteNotifications": "deletes notifications this run did not create",
+    "emptyWorkspaceTrash": "permanently destroys items the tenant put in the trash",
+    "adminPutVoicePresets": "overwrites the platform voice presets with synthesised values"
+  },
+  "caution": {
+    "$comment": "These run, but have effects outside the platform and are called out in the report.",
+    "createInvite": "sends a real invitation e-mail",
+    "sendNotification": "delivers a real notification",
+    "createCheckoutSession": "creates a payment session with the billing provider",
+    "publishListing": "makes a listing publicly visible in the marketplace",
+    "createRun": "consumes model tokens, which cost money",
+    "invokeMarketplaceAgent": "consumes model tokens, which cost money"
+  }
+}

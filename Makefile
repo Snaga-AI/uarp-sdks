@@ -6,7 +6,7 @@
 #   make test-rust           just one
 
 .DEFAULT_GOAL := help
-.PHONY: help generate stats check test contract update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
+.PHONY: help generate stats check test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
 
 T ?=
 
@@ -26,6 +26,16 @@ test: test-generator test-typescript test-rust test-swift test-kotlin test-ada #
 
 contract: ## Prove the five SDKs put the same bytes on the wire
 	@./contract/run.sh
+
+smoke: ## Sweep a live server and report where it diverges from the spec (needs UARP_API_KEY)
+	@node smoke/src/run.ts $(ARGS)
+	@node smoke/src/report.ts
+
+smoke-dry: ## Show what the live sweep would call, without sending anything
+	@node smoke/src/run.ts --dry-run
+
+smoke-live: ## Run one scenario through all five SDKs against a live server
+	@./smoke/live/run.sh
 
 test-generator: ## Type-check and test the generator itself
 	@cd generator && npm install --silent && npm run typecheck && npm test
