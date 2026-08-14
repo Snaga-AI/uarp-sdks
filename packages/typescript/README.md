@@ -9,6 +9,12 @@ npm install uarp-sdk
 
 Requires Node 18+ (or any runtime with a global `fetch`).
 
+The package is **ESM only**. `import` works everywhere; `require('uarp-sdk')`
+needs Node 22.12+, where Node learned to require an ES module. On older Node a
+CommonJS caller should use `await import('uarp-sdk')` instead. TypeScript sources
+and declaration maps ship with the package, so go-to-definition lands in the
+real source rather than a `.d.ts`.
+
 ## Quick start
 
 ```ts
