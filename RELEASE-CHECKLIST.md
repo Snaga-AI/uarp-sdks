@@ -13,11 +13,11 @@ This file records what was actually verified, and what is left.
 
 | Stage | Package | Registry | State |
 |---|---|---|---|
-| 1 | `packages/typescript` | npm `uarp-sdk` | **blocked** — the token needs an OTP |
-| 2 | `packages/rust` | crates.io `uarp-sdk` | **blocked** — the account has no verified e-mail |
+| 1 | `packages/typescript` | npm `uarp-sdk` | **published 0.2.0**, with provenance |
+| 2 | `packages/rust` | crates.io `uarp-sdk` | **published 0.2.0** |
 | 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **published, 0.2.0** |
-| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | not started |
-| 5 | `packages/ada` | Alire `uarp_sdk` | tarball builds; index PR is a human step |
+| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **blocked** — namespace not verified |
+| 5 | `packages/ada` | Alire `uarp_sdk` | tarball hosted, manifest ready; index PR pending |
 
 ---
 
@@ -144,19 +144,58 @@ copied into its own repository and tagged there.
 
 ---
 
-## Blocked on an account, not on the code
+## Stage 4 — Maven Central, `ai.snaga:uarp-sdk` — blocked on DNS
 
-Both were found by tagging `v0.2.0` and reading what the registries said.
+Central does not accept a Maven deploy. The upload endpoint takes one zip
+holding the whole repository layout; a per-file `PUT` answers 404, which is what
+the build was doing. Gradle now stages into a directory and
+`scripts/publish-maven.sh` zips, posts and polls.
 
-**npm** — `npm error code EOTP: This operation requires a one-time password.`
-The token in `NPM_TOKEN` is a classic token, and those still demand a 2FA code,
-which CI cannot supply. Create an **automation** token (npmjs.com → Access
-Tokens → Generate → Automation) and replace the secret.
+### Checked
 
-**crates.io** — `A verified email address is required to publish crates`.
-Set and confirm one at <https://crates.io/settings/profile>. The token itself is
-fine.
+| | |
+|---|---|
+| Artifacts | jar, sources, javadoc, pom, module — everything Central requires |
+| Signatures | a 4096-bit RSA key signs every file; `.asc`, `.md5`, `.sha1`, `.sha256`, `.sha512` all present |
+| Bundle | Central accepted the upload (201) and returned a deployment id |
+| Validation | ran, and answered — see below |
 
-Nothing else stands between these two and a publish: both packages build, pack
-and install cleanly, and the tag is already in place. Re-running the release
-workflow after fixing the accounts is enough.
+The upload was tried by hand with `publishingType=USER_MANAGED`, so a mistake
+could not become permanent. It failed with exactly one error:
+
+```
+Namespace 'ai.snaga' is not allowed
+```
+
+### Left to do
+
+- **Register and verify `ai.snaga`** on the Central Portal. Verification is a
+  DNS TXT record on `snaga.ai`. Nothing can work around it, and everything else
+  is already proven working.
+- The signing key is `625840EC DBE162D6 0C5C8C2D C3A2DE60 5591E83E`, RSA 4096,
+  no expiry, public half on `keyserver.ubuntu.com`. Replace it with your own if
+  you would rather hold the private key yourself; the secrets to change are
+  `MAVEN_SIGNING_KEY` and `MAVEN_SIGNING_PASSWORD`.
+
+---
+
+## Stage 5 — Alire, `uarp_sdk` — ready to submit
+
+Alire has no upload: a release is a pull request against the community index
+pointing at a hosted tarball.
+
+| | |
+|---|---|
+| Tarball | attached to the GitHub release, 200 kB |
+| Hash | `sha256:fcc059c5a856feda8d77bae784473549b3d0d0e512b8a237c054035e579ec0a6`, verified against a fresh download |
+| Manifest | `packages/ada/alire-index/uarp_sdk-0.2.0.toml` |
+| Linux | the crate builds and its 93 tests pass on Ubuntu in CI, which is where the index reviewers build it |
+
+### Left to do
+
+Open the pull request against
+[`alire-project/alire-index`](https://github.com/alire-project/alire-index),
+adding the manifest as `index/ua/uarp_sdk/uarp_sdk-0.2.0.toml`. `alr publish`
+can do it, but it forks a third-party repository and opens the PR under your
+account, so it has been left for you to run — or say the word and it can be
+done from here.
