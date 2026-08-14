@@ -74,9 +74,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      # Cargo.toml promises rust-version 1.75. Nothing checked it, so the
-      # promise was only ever as good as the day it was written.
-      - uses: dtolnay/rust-toolchain@1.75.0
+      # Whatever the manifest promises is what gets checked, so the promise and
+      # the check cannot drift apart. The floor is not ours alone: the resolved
+      # dependency tree raises it, and this job is how that becomes visible
+      # rather than becoming a user's build error.
+      - id: msrv
+        run: echo "version=$(grep -m1 '^rust-version' packages/rust/Cargo.toml | cut -d'\"' -f2)" >> "$GITHUB_OUTPUT"
+      - uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ steps.msrv.outputs.version }}
       - run: cargo check --all-features
         working-directory: packages/rust
 

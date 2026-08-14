@@ -10,7 +10,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"   # only if you use streams
 ```
 
-Rust 1.75+. TLS is `rustls` by default; `features = ["native-tls"]` switches.
+Rust 1.88+. TLS is `rustls` by default; `features = ["native-tls"]` switches.
 
 ## Quick start
 
