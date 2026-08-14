@@ -30,6 +30,7 @@ contract: ## Prove the five SDKs put the same bytes on the wire
 smoke: ## Sweep a live server and report where it diverges from the spec (needs UARP_API_KEY)
 	@node smoke/src/run.ts $(ARGS)
 	@node smoke/src/report.ts
+	@node smoke/src/html.ts
 
 smoke-dry: ## Show what the live sweep would call, without sending anything
 	@node smoke/src/run.ts --dry-run
