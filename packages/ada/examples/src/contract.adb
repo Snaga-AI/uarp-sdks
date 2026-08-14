@@ -7,6 +7,7 @@
 --     UARP_CONTRACT_BASE_URL=http://127.0.0.1:8940 alr run contract
 
 with Ada.Command_Line;
+with Ada.Strings.Fixed;
 with Ada.Environment_Variables;
 with Ada.Text_IO;
 
@@ -16,6 +17,7 @@ with UARP.API.Registry;
 with UARP.API.Runs;
 with UARP.Client;
 with UARP.Errors;
+with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 
@@ -25,6 +27,22 @@ procedure Contract is
 
    use UARP.Types;
    package IO renames Ada.Text_IO;
+   package JS renames UARP.JSON_Support;
+   use type JS.JSON.JSON_Value_Type;
+
+   --  GNATCOLL keeps object members in insertion order, so the probe sorts
+   --  metadata keys before reporting them.
+   package Text_Sorting is new UARP.Types.Text_Vectors.Generic_Sorting
+     ("<" => UARP.Types.SU."<");
+
+   --  A quote, a backslash, a newline, a tab, a non-ASCII letter and a
+   --  character outside the basic plane, spelled out so the source stays
+   --  ASCII.
+   Awkward : constant String :=
+     """q"" \ " & ASCII.LF & " " & ASCII.HT & " "
+     & Character'Val (16#D1#) & Character'Val (16#8B#) & " "
+     & Character'Val (16#F0#) & Character'Val (16#9F#)
+     & Character'Val (16#98#) & Character'Val (16#80#);
 
    Base : constant String :=
      (if Ada.Environment_Variables.Exists ("UARP_CONTRACT_BASE_URL")
@@ -181,6 +199,89 @@ begin
          Params.Last_Event_Id := +"42";
          UARP.API.Runs.Stream_Run_Events (Client, "r1", Params => Params, Sink => Events);
       end;
+      --  14. zero and false must survive, not be dropped as falsy
+      declare
+         Params : UARP.API.Agents.List_Agents_Params;
+         Page   : UARP.Models.List_Agents_Response;
+      begin
+         Params.Has_Limit := True;
+         Params.Limit := 0;
+         Params.Has_Include_Offline := True;
+         Params.Include_Offline := False;
+         Page := UARP.API.Agents.List (Client, Params);
+         pragma Unreferenced (Page);
+      end;
+
+      --  15. JSON string escaping and a zero in a body
+      declare
+         Request : UARP.Models.Create_Run_Request;
+         Started : UARP.Models.Run;
+      begin
+         Request.Agent_Id := +Awkward;
+         Request.Has_Session_Id := True;
+         Request.Session_Id := UARP.Types.Empty_Text;
+         Request.Has_Version := True;
+         Request.Version := 0;
+         Started := UARP.API.Runs.Create (Client, Request);
+         pragma Unreferenced (Started);
+      end;
+
+      --  16. how the decoder handles a payload built to strain it
+      declare
+         Probe  : constant UARP.Models.Run := UARP.API.Runs.Get (Client, "probe");
+         Probes : constant JS.JSON_Value := JS.New_Object;
+         Report : constant JS.JSON_Value := JS.New_Object;
+         Keys   : UARP.Types.Text := UARP.Types.Empty_Text;
+         Ignored : JS.JSON_Value;
+
+         function Image (Value : Integer_Value) return String is
+           (Ada.Strings.Fixed.Trim (Integer_Value'Image (Value), Ada.Strings.Both));
+      begin
+         declare
+            Names : UARP.Types.Text_Vectors.Vector;
+
+            procedure Collect (Name : String; Value : JS.JSON_Value);
+
+            procedure Collect (Name : String; Value : JS.JSON_Value) is
+               pragma Unreferenced (Value);
+            begin
+               Names.Append (+Name);
+            end Collect;
+         begin
+            if JS.JSON.Kind (Probe.Metadata) = JS.JSON.JSON_Object_Type then
+               JS.JSON.Map_JSON_Object (Probe.Metadata, Collect'Access);
+            end if;
+            Text_Sorting.Sort (Names);
+            for Name of Names loop
+               if UARP.Types.SU.Length (Keys) > 0 then
+                  UARP.Types.SU.Append (Keys, ",");
+               end if;
+               UARP.Types.SU.Append (Keys, Name);
+            end loop;
+         end;
+
+         JS.Set (Probes, "status", UARP.Models.Image (Probe.Status));
+         JS.Set (Probes, "error_is_absent", (if Probe.Has_Error then "false" else "true"));
+         JS.Set (Probes, "step_seq",
+                 (if Probe.Has_Step_Seq then Image (Probe.Step_Seq) else "absent"));
+         JS.Set (Probes, "artifacts_count", Image (Integer_Value (Probe.Artifacts.Length)));
+         JS.Set (Probes, "metadata_keys", Keys);
+         JS.Set (Probes, "metrics_output_tokens",
+                 (if Probe.Metrics.Has_Output_Tokens
+                  then Image (Probe.Metrics.Output_Tokens) else "absent"));
+         JS.Set (Probes, "metrics_input_tokens",
+                 (if Probe.Metrics.Has_Input_Tokens
+                  then Image (Probe.Metrics.Input_Tokens) else "absent"));
+         JS.Set (Probes, "started_at_is_absent",
+                 (if Probe.Has_Started_At then "false" else "true"));
+
+         JS.Set (Report, "language", String'("ada"));
+         JS.Set (Report, "probes", Probes);
+         Ignored := UARP.Client.Call
+           (Client, "POST", "/__report", Payload => Report, Has_Payload => True);
+         pragma Unreferenced (Ignored);
+      end;
+
    end;
 
    IO.Put_Line ("ada runner done");

@@ -1,0 +1,7 @@
+[
+  {
+    "probe": "step_seq",
+    "languages": ["typescript"],
+    "reason": "A JavaScript number is a double, so an integer beyond 2^53 loses precision. Typing every spec integer as bigint would make the ordinary case worse for a value the platform does not send."
+  }
+]

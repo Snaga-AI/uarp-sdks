@@ -79,10 +79,18 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 - Rate-limit and retry accessors are covered in every SDK, including the
   fallback from the problem document to the `X-Correlation-Id` header.
 - A cross-SDK contract check (`make contract`): all five SDKs run the same
-  fifteen-request scenario against one server, which records what each put on
+  seventeen-request scenario against one server, which records what each put on
   the wire, and the traces must match exactly — raw query string included, so
   `a+b` and `a%20b` are not treated as equal. It found every wire-format
-  difference fixed above, including the Swift `+` bug.
+  difference fixed above, including the Swift `+` bug. The scenario covers
+  percent-encoding, multipart, binary bodies, retries, paging, event streams,
+  falsy values that must not be dropped, and a string with a quote, a
+  backslash, a newline, a tab and a character outside the basic plane. A final
+  scenario compares decoding rather than sending: each SDK reports what it read
+  out of one awkward payload — an unseen enum value, an explicit null, an
+  absent optional, an empty array and an integer beyond 2^53 — and the reports
+  are compared too. Differences that cannot be fixed are recorded in
+  `contract/known-differences.json` with a reason.
 - Every behavioural claim the READMEs make is now backed by a test in every
   SDK that makes it: stream reopening with `Last-Event-ID`, writes retrying
   only when they carry an idempotency key, caller-supplied keys, the cursor

@@ -44,9 +44,33 @@ PUBLISHED = {
     "published_at": "2026-01-01T00:00:00Z",
 }
 
+RUN = {
+    "run_id": "r1",
+    "tenant_id": "t1",
+    "agent_id": "a1",
+    "status": "queued",
+    "created_at": "2026-01-01T00:00:00Z",
+}
+
 BINARY = bytes([0x00, 0xFF, 0x41, 0x00, 0x42])
 
-state = {"trace": [], "retry_seen": 0}
+#  A payload built to strain a decoder: an enum value the SDK has never seen,
+#  an explicit null, an absent optional, an empty array, a nested object, and
+#  an integer larger than a double can hold exactly.
+PROBE_RUN = {
+    "run_id": "probe",
+    "tenant_id": "t1",
+    "agent_id": "a1",
+    "status": "brand_new_status",
+    "created_at": "2026-01-01T00:00:00Z",
+    "error": None,
+    "step_seq": 9007199254740993,
+    "artifacts": [],
+    "metadata": {"b": 2, "a": 1},
+    "metrics": {"input_tokens": 0, "output_tokens": 7},
+}
+
+state = {"trace": [], "retry_seen": 0, "probes": {}}
 lock = threading.Lock()
 
 
@@ -148,6 +172,17 @@ class Handler(BaseHTTPRequestHandler):
                 state["trace"] = []
                 state["retry_seen"] = 0
             return self._json(200, {"ok": True})
+        if path == "/__report":
+            #  A runner reporting what it decoded. Not part of the traffic
+            #  under test, so it is neither recorded nor answered with a body
+            #  the SDK has to understand.
+            report = json.loads(body or b"{}")
+            with lock:
+                state["probes"][report.get("language", "?")] = report.get("probes", {})
+            return self._json(200, {"ok": True})
+        if path == "/__probes":
+            with lock:
+                return self._send(200, json.dumps(state["probes"], indent=2).encode())
 
         self._record(body)
 
@@ -175,6 +210,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(404, {"title": "Not Found", "status": 404, "detail": "no such agent"})
         if path.startswith("/api/v1/agents/"):
             return self._json(200, AGENT)
+        if path == "/api/v1/runs/probe":
+            return self._json(200, PROBE_RUN)
+        if path == "/api/v1/runs" and self.command == "POST":
+            return self._json(201, RUN)
         if path == "/api/v1/registry/publish":
             return self._json(201, PUBLISHED)
         if path == "/api/v1/files/f1/content":
