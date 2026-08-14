@@ -91,19 +91,14 @@ publishing {
     }
 
     repositories {
+        //  Central Portal does not accept a Maven deploy. Its upload endpoint
+        //  takes one zip holding the whole repository layout, posted in a
+        //  single request, and answers a per-file PUT with 404. So the
+        //  artifacts are written to a directory here and the release workflow
+        //  zips and posts them.
         maven {
-            name = "central"
-            url = uri(
-                if (version.toString().endsWith("SNAPSHOT")) {
-                    "https://central.sonatype.com/repository/maven-snapshots/"
-                } else {
-                    "https://central.sonatype.com/api/v1/publisher/upload"
-                },
-            )
-            credentials {
-                username = findProperty("mavenUsername") as String?
-                password = findProperty("mavenPassword") as String?
-            }
+            name = "staging"
+            url = uri(rootProject.layout.buildDirectory.dir("staging"))
         }
     }
 }

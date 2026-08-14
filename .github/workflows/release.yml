@@ -129,19 +129,18 @@ jobs:
             echo "ready=false" >> "$GITHUB_OUTPUT"
             echo "::warning::Maven Central is not configured; see PUBLISHING.md. The jar was built but not published."
           fi
-      - name: Publish
-        if: env.DRY_RUN != 'true' && steps.creds.outputs.ready == 'true'
-        run: ./gradlew :uarp-sdk:publish
+      - name: Stage the signed artifacts
+        run: ./gradlew :uarp-sdk:publishMavenPublicationToStagingRepository
         working-directory: packages/kotlin
         env:
-          ORG_GRADLE_PROJECT_mavenUsername: ${{ secrets.MAVEN_USERNAME }}
-          ORG_GRADLE_PROJECT_mavenPassword: ${{ secrets.MAVEN_PASSWORD }}
           ORG_GRADLE_PROJECT_signingKey: ${{ secrets.MAVEN_SIGNING_KEY }}
           ORG_GRADLE_PROJECT_signingPassword: ${{ secrets.MAVEN_SIGNING_PASSWORD }}
-      - name: Publish locally
-        if: env.DRY_RUN == 'true' || steps.creds.outputs.ready != 'true'
-        run: ./gradlew :uarp-sdk:publishToMavenLocal
-        working-directory: packages/kotlin
+      - name: Upload the bundle to Central
+        if: env.DRY_RUN != 'true' && steps.creds.outputs.ready == 'true'
+        env:
+          MAVEN_USERNAME: ${{ secrets.MAVEN_USERNAME }}
+          MAVEN_PASSWORD: ${{ secrets.MAVEN_PASSWORD }}
+        run: ./scripts/publish-maven.sh "${{ needs.verify.outputs.version }}"
 
   swift:
     name: SwiftPM
