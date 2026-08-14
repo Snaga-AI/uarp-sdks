@@ -6,7 +6,7 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | Language | Package | Artifact | Requirements |
 | --- | --- | --- | --- |
 | TypeScript / Node | `packages/typescript` | `uarp-sdk` (npm) | Node 18+ |
-| Rust | `packages/rust` | `uarp-sdk` (crates.io) | Rust 1.75+, Tokio |
+| Rust | `packages/rust` | `uarp-sdk` (crates.io) | Rust 1.88+, Tokio |
 | Swift | `packages/swift` | `snaga-ai/uarp-swift` (SwiftPM) | Swift 5.9+, macOS 12 / iOS 15 |
 | Kotlin / Android | `packages/kotlin` | `ai.snaga:uarp-sdk` (Maven) | JVM 11+, Android 21+ |
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |

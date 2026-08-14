@@ -10,6 +10,11 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Rust:** `rust-version` said 1.75 and the crate had never been built with it.
+  The floor is 1.88, set by the `icu_*` crates that `url` pulls in, not by
+  anything in this SDK — a caller on 1.75 would have got a failure inside a
+  dependency's manifest. CI now builds the crate with whatever version the
+  manifest promises, so the two cannot drift apart again.
 - **Ada:** streaming is reentrant. The parser and handler used to live in a
   package-level variable, so only one event stream could run per process.
   Handlers are now an `Event_Sink` interface whose state lives on the caller's
@@ -132,7 +137,7 @@ endpoints.
 - **TypeScript / Node** (`uarp-sdk` on npm) — ESM, no runtime dependencies,
   Node 18+.
 - **Rust** (`uarp-sdk` on crates.io) — `reqwest` + `serde` + `tokio`, rustls by
-  default, MSRV 1.75.
+  default, MSRV 1.88.
 - **Swift** (`UARP` via SwiftPM) — `async`/`await` over `URLSession`, macOS 12 /
   iOS 15 and up, no dependencies.
 - **Kotlin / Android** (`ai.snaga:uarp-sdk`) — coroutines, OkHttp,
