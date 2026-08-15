@@ -14,6 +14,16 @@ Java 11 bytecode, so Android `minSdk 21` (with core library desugaring) and up.
 The artifact brings OkHttp 4.12, kotlinx-serialization-json and
 kotlinx-coroutines-core with it.
 
+
+## Requirements
+
+JVM 11 or newer, Android API 21 or newer.
+
+The library is built with **Kotlin 2.2**, and Kotlin's binary metadata is not
+readable by older compilers: a project on Kotlin 2.0 fails with *"Module was
+compiled with an incompatible version of Kotlin"* before it reaches any of the
+API. Use the Kotlin plugin 2.2 or later.
+
 ## Quick start
 
 ```kotlin

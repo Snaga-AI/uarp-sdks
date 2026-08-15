@@ -16,7 +16,7 @@ This file records what was actually verified, and what is left.
 | 1 | `packages/typescript` | npm `uarp-sdk` | **0.3.0 published**; 0.2.0 deprecated |
 | 2 | `packages/rust` | crates.io `uarp-sdk` | **0.3.0 published**; 0.2.0 yanked |
 | 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **0.3.0 tagged** |
-| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **blocked** — namespace not verified |
+| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **0.3.0 published** |
 | 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, now 0.3.0 |
 
 ---
@@ -234,3 +234,27 @@ The Swift mirror still has to be pushed by hand at each release, because
 `SWIFT_MIRROR_TOKEN` is not set. Without it the job warns and skips, so a
 release quietly leaves Swift consumers on the previous version — which is what
 happened here until it was noticed.
+
+---
+
+## Stage 4 — Maven Central, `ai.snaga:uarp-sdk` — published
+
+The namespace verified once the TXT record was picked up, and 0.3.0 went out
+through the release workflow: bundle uploaded, validated, `PUBLISHED`, and
+`repo1.maven.org` serves both the pom and the jar.
+
+Verified the way the others were — from a project that did not build it:
+
+```kotlin
+repositories { mavenCentral() }
+dependencies { implementation("ai.snaga:uarp-sdk:0.3.0") }
+```
+
+resolves, compiles and runs.
+
+That test also turned up something worth documenting rather than fixing: the
+library is built with Kotlin 2.2, and a consumer on Kotlin 2.0 fails with
+*"Module was compiled with an incompatible version of Kotlin"* before reaching
+any of the API. Both READMEs now state the requirement.
+
+All five registries are now published.
