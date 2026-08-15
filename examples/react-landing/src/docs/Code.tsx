@@ -8,14 +8,20 @@
 import { useState } from 'react';
 import { tokenise, type TokenKind } from './highlight';
 
+/*
+ * Highlighting inside the site's palette rather than the usual six-colour
+ * rainbow. snaga.ai spends exactly one accent and keeps everything else in ink,
+ * so a block lit up in emerald, violet and sky would be the loudest thing on
+ * the page — and what a reader is here to trust is the code, not its colours.
+ */
 const COLOURS: Record<TokenKind, string> = {
   plain: '',
-  comment: 'text-slate-400 dark:text-slate-500 italic',
-  string: 'text-emerald-700 dark:text-emerald-300',
-  number: 'text-amber-700 dark:text-amber-300',
-  keyword: 'text-violet-700 dark:text-violet-300',
-  type: 'text-sky-700 dark:text-sky-300',
-  property: 'text-slate-700 dark:text-slate-200',
+  comment: 'text-ink-soft/75 italic',
+  string: 'text-ink-soft',
+  number: 'text-ink-soft',
+  keyword: 'text-accent',
+  type: 'text-ink font-medium',
+  property: 'text-ink',
 };
 
 export function Code({ children, language = 'ts' }: { children: string; language?: string }) {
@@ -25,9 +31,15 @@ export function Code({ children, language = 'ts' }: { children: string; language
   const source = children.trim();
 
   return (
-    <div className="group relative">
-      <div className="absolute top-2 right-2 z-10 flex items-center gap-2">
-        <span className="font-mono text-[0.65rem] tracking-wider text-slate-400 uppercase">{language}</span>
+    <div className="min-w-0 overflow-hidden rounded-lg border border-rule-soft bg-code-bg">
+      {/*
+        A strip rather than a badge floating over the code. Absolutely
+        positioned, it sat on top of the first line as soon as the viewport got
+        narrow, and the copy button only appeared on hover — which a phone does
+        not have, so the button a sample exists for was unreachable there.
+      */}
+      <div className="flex items-center justify-between border-b border-rule-soft px-3 py-1.5">
+        <span className="font-mono text-[0.65rem] tracking-wider text-ink-soft uppercase">{language}</span>
         <button
           type="button"
           onClick={async () => {
@@ -35,7 +47,7 @@ export function Code({ children, language = 'ts' }: { children: string; language
             setCopied(true);
             setTimeout(() => setCopied(false), 1600);
           }}
-          className="rounded border border-slate-300 bg-white/80 px-2 py-0.5 text-xs text-slate-600 opacity-0 transition group-hover:opacity-100 focus:opacity-100 hover:text-slate-900 dark:border-slate-700 dark:bg-slate-900/80 dark:text-slate-300 dark:hover:text-white"
+          className="rounded-sm px-2 py-0.5 text-xs text-ink-soft transition hover:bg-ink/5 hover:text-ink"
         >
           {copied ? 'Copied' : 'Copy'}
         </button>
@@ -47,7 +59,7 @@ export function Code({ children, language = 'ts' }: { children: string; language
         left alone.
       */}
       <pre
-        className="notranslate overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-[0.82rem] leading-relaxed dark:border-slate-800 dark:bg-slate-900/60"
+        className="notranslate overflow-x-auto p-4 font-mono text-[0.82rem] leading-relaxed"
         translate="no"
       >
         <code className="notranslate" translate="no">
@@ -66,8 +78,8 @@ export function Code({ children, language = 'ts' }: { children: string; language
 export function Shell({ children }: { children: string }) {
   const [copied, setCopied] = useState(false);
   return (
-    <div className="group relative flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
-      <span className="text-slate-400 select-none">$</span>
+    <div className="group relative flex min-w-0 items-center gap-3 rounded-lg border border-rule-soft bg-code-bg px-4 py-3">
+      <span className="text-ink-soft select-none">$</span>
       <code
         className="notranslate flex-1 overflow-x-auto font-mono text-[0.85rem] whitespace-nowrap"
         translate="no"
@@ -81,7 +93,7 @@ export function Shell({ children }: { children: string }) {
           setCopied(true);
           setTimeout(() => setCopied(false), 1600);
         }}
-        className="shrink-0 rounded border border-slate-300 px-2 py-0.5 text-xs text-slate-600 opacity-0 transition group-hover:opacity-100 focus:opacity-100 dark:border-slate-700 dark:text-slate-300"
+        className="shrink-0 rounded-sm border border-rule-soft px-2 py-0.5 text-xs text-ink-soft transition hover:bg-ink/5 hover:text-ink"
       >
         {copied ? 'Copied' : 'Copy'}
       </button>
