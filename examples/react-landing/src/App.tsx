@@ -8,6 +8,54 @@ import { useEffect, useState } from 'react';
 import { AgentWidget } from './AgentWidget';
 import { Code, Shell } from './docs/Code';
 import { Note, Section } from './docs/Section';
+import {
+  AUTHENTICATE,
+  CALLING,
+  ERRORS,
+  INSTALL,
+  LANGUAGES,
+  OVERRIDES,
+  PAGINATION,
+  STREAMING,
+  type LanguageId,
+} from './docs/content';
+
+const LANGUAGE_KEY = 'uarp-docs-language';
+
+/** Where each package actually lives, for the link in the header. */
+const REGISTRY_URL: Record<LanguageId, string> = {
+  ts: 'https://www.npmjs.com/package/uarp-sdk',
+  rust: 'https://crates.io/crates/uarp-sdk',
+  swift: 'https://github.com/Snaga-AI/uarp-swift',
+  kotlin: 'https://central.sonatype.com/artifact/ai.snaga/uarp-sdk',
+  ada: 'https://github.com/alire-project/alire-index/pull/2059',
+};
+
+/**
+ * The chosen language sticks.
+ *
+ * Someone who works in Rust should not have to pick it again on every visit,
+ * and a link shared into a Swift team should be able to carry `#swift`.
+ */
+function useLanguage(): [LanguageId, (next: LanguageId) => void] {
+  const [language, setLanguage] = useState<LanguageId>('ts');
+
+  useEffect(() => {
+    const fromHash = window.location.hash.replace('#', '');
+    const known = LANGUAGES.map((entry) => entry.id) as string[];
+    const stored = localStorage.getItem(LANGUAGE_KEY);
+    if (known.includes(fromHash)) setLanguage(fromHash as LanguageId);
+    else if (stored && known.includes(stored)) setLanguage(stored as LanguageId);
+  }, []);
+
+  return [
+    language,
+    (next: LanguageId) => {
+      setLanguage(next);
+      localStorage.setItem(LANGUAGE_KEY, next);
+    },
+  ];
+}
 
 const SECTIONS = [
   ['install', 'Install'],
@@ -45,19 +93,39 @@ function useActiveSection(): string {
 
 export function App() {
   const active = useActiveSection();
+  const [language, setLanguage] = useLanguage();
+  const current = LANGUAGES.find((entry) => entry.id === language)!;
+  const install = INSTALL[language];
 
   return (
     <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
       <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
         <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
-          <span className="font-mono text-sm font-semibold tracking-tight">uarp-sdk</span>
+          <span className="font-mono text-sm font-semibold tracking-tight">UARP SDKs</span>
           <span className="rounded-full border border-slate-300 px-2 py-0.5 font-mono text-[0.7rem] text-slate-500 dark:border-slate-700 dark:text-slate-400">
             0.3.0
           </span>
-          <nav className="ml-auto hidden gap-5 text-sm text-slate-600 sm:flex dark:text-slate-400">
+          <div className="ml-auto flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-800">
+            {LANGUAGES.map((entry) => (
+              <button
+                key={entry.id}
+                onClick={() => setLanguage(entry.id)}
+                className={`rounded px-2 py-1 text-xs transition ${
+                  language === entry.id
+                    ? 'bg-slate-900 font-medium text-white dark:bg-slate-100 dark:text-slate-900'
+                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+                }`}
+              >
+                {entry.name}
+              </button>
+            ))}
+          </div>
+          <nav className="hidden gap-5 text-sm text-slate-600 lg:flex dark:text-slate-400">
             <a className="hover:text-slate-900 dark:hover:text-slate-100" href="#browser">Browser</a>
             <a className="hover:text-slate-900 dark:hover:text-slate-100" href="https://github.com/Snaga-AI/uarp-sdks">GitHub</a>
-            <a className="hover:text-slate-900 dark:hover:text-slate-100" href="https://www.npmjs.com/package/uarp-sdk">npm</a>
+            <a className="hover:text-slate-900 dark:hover:text-slate-100" href={REGISTRY_URL[language]}>
+              {current.registry}
+            </a>
           </nav>
         </div>
       </header>
@@ -65,17 +133,21 @@ export function App() {
       <div className="mx-auto max-w-6xl px-6">
         <section className="py-16 lg:py-20">
           <p className="font-mono text-xs tracking-[0.18em] text-slate-500 uppercase dark:text-slate-400">
-            TypeScript client for the UARP platform
+            Client libraries for the UARP platform
           </p>
           <h1 className="mt-4 max-w-3xl text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl">
             All 557 endpoints, typed, with streaming and retries you do not have to write.
           </h1>
           <p className="mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-            Generated from the platform's OpenAPI document, so every request body, response and
-            enumeration is a named type. No runtime dependencies.
+            Five clients — TypeScript, Rust, Swift, Kotlin and Ada — generated from one OpenAPI
+            document, so every request body, response and enumeration is a named type and all five
+            share a version. Pick a language; the samples below follow.
           </p>
-          <div className="mt-8 max-w-xl">
-            <Shell>npm install uarp-sdk</Shell>
+          <div className="mt-8 max-w-2xl">
+            {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
+            <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">
+              {current.registry} · {install.needs}
+            </p>
           </div>
           <p className="mt-6 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
             The widget in the bottom corner is running against a live tenant using exactly the code
@@ -105,17 +177,41 @@ export function App() {
 
           <main className="flex min-w-0 flex-1 flex-col gap-12">
             <Section id="install" title="Install">
-              <Shell>npm install uarp-sdk</Shell>
+              {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
               <p className="text-slate-600 dark:text-slate-300">
-                Node 18 or newer, or any runtime with a global <code className="rounded bg-slate-100 px-1 font-mono text-[0.85em] dark:bg-slate-800">fetch</code>.
-                The package is ESM only.
+                {current.name} · {current.registry} · needs {install.needs}.
               </p>
-              <Note tone="warn">
-                <strong>ESM only.</strong> <code>import</code> works everywhere.{' '}
-                <code>require('uarp-sdk')</code> needs Node 22.12 or newer, where Node learned to
-                require an ES module; below that a CommonJS caller needs{' '}
-                <code>await import('uarp-sdk')</code>.
-              </Note>
+              {language === 'ts' && (
+                <Note tone="warn">
+                  <strong>ESM only.</strong> <code>import</code> works everywhere.{' '}
+                  <code>require('uarp-sdk')</code> needs Node 22.12 or newer, where Node learned to
+                  require an ES module; below that a CommonJS caller needs{' '}
+                  <code>await import('uarp-sdk')</code>.
+                </Note>
+              )}
+              {language === 'swift' && (
+                <Note>
+                  The package lives in its own repository: SwiftPM expects <code>Package.swift</code>{' '}
+                  at a repository root, so it cannot see one inside a monorepo.{' '}
+                  <code>Snaga-AI/uarp-swift</code> is a mirror published on every release; issues
+                  belong in <code>Snaga-AI/uarp-sdks</code>.
+                </Note>
+              )}
+              {language === 'kotlin' && (
+                <Note tone="warn">
+                  Built with <strong>Kotlin 2.2</strong>. A project on 2.0 fails with "Module was
+                  compiled with an incompatible version of Kotlin" before it reaches any of the API.
+                </Note>
+              )}
+              {language === 'ada' && (
+                <Note tone="warn">
+                  Not in the Alire community index yet — the submission is open as{' '}
+                  <a className="underline" href="https://github.com/alire-project/alire-index/pull/2059">
+                    alire-index#2059
+                  </a>
+                  . Until it lands, depend on the release tarball directly.
+                </Note>
+              )}
             </Section>
 
             <Section id="authenticate" title="Authenticate">
@@ -123,14 +219,7 @@ export function App() {
                 A bearer key in the form <code className="font-mono">uarp_&lt;prefix&gt;_&lt;secret&gt;</code>,
                 passed explicitly or read from the environment.
               </p>
-              <Code>{`import { UarpClient } from 'uarp-sdk';
-
-// Explicit
-const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
-
-// Or from the environment: UARP_API_KEY, then SNAGA_API_KEY.
-// The base URL falls back to UARP_BASE_URL, then production.
-const fromEnv = new UarpClient({});`}</Code>
+              <Code language={language}>{AUTHENTICATE[language]}</Code>
               <Note>
                 <strong>Where a key comes from.</strong> Sign in at{' '}
                 <a className="underline" href="https://snaga.ai">snaga.ai</a> and create one in your
@@ -150,15 +239,7 @@ const fromEnv = new UarpClient({});`}</Code>
                 Operations are grouped by resource. Every argument and every result is typed —
                 there is no <code className="font-mono">any</code> in the generated surface.
               </p>
-              <Code>{`const agent = await client.agents.create({ name: 'support' });
-
-const page = await client.agents.list({ limit: 20 });
-console.log(page.items.length, page.has_more);
-
-const run = await client.runs.create({
-  agent_id: agent.agent_id,
-  input: { message: 'Summarise the last deploy.' },
-});`}</Code>
+              <Code language={language}>{CALLING[language]}</Code>
               <p className="text-slate-600 dark:text-slate-300">
                 The platform selects the model itself, so a create is just a name. Anything sent for{' '}
                 <code className="font-mono">model</code> is accepted and ignored — the document says
@@ -171,24 +252,7 @@ const run = await client.runs.create({
                 Failures arrive as RFC 9457 problem documents and are parsed into typed errors, with
                 a subclass per status so you can catch the one you mean.
               </p>
-              <Code>{`import { APIError, RateLimitError, UnprocessableEntityError } from 'uarp-sdk';
-
-try {
-  await client.agents.get(id);
-} catch (error) {
-  if (error instanceof RateLimitError) {
-    console.warn('retry after', error.retryAfterSeconds);
-  } else if (error instanceof UnprocessableEntityError) {
-    // Field-level failures, when the server sent them
-    for (const failure of error.problem.errors ?? []) {
-      console.error(failure.field, failure.message);
-    }
-  } else if (error instanceof APIError) {
-    console.error(error.status, error.problem.title, error.correlationId);
-  } else {
-    throw error;  // not from the API — a timeout or a dropped connection
-  }
-}`}</Code>
+              <Code language={language}>{ERRORS[language]}</Code>
             </Section>
 
             <Section id="pagination" title="Pagination">
@@ -196,13 +260,7 @@ try {
                 Cursor-paginated endpoints get a second method that walks every page and yields
                 items, so you never write the cursor loop.
               </p>
-              <Code>{`for await (const agent of client.agents.listAll({ limit: 100 })) {
-  console.log(agent.name);
-}
-
-// Or take the first N
-import { collect } from 'uarp-sdk';
-const first50 = await collect(client.agents.listAll(), 50);`}</Code>
+              <Code language={language}>{PAGINATION[language]}</Code>
               <Note>
                 An empty page does not end the walk. This API applies the page size before
                 filtering, so a request for two items can come back with none while there is more
@@ -219,18 +277,7 @@ const first50 = await collect(client.agents.listAll(), 50);`}</Code>
                 connection that delivered at least one event earns a fresh reconnect budget, so a
                 flapping server cannot spin the loop.
               </p>
-              <Code>{`const stream = client.runs.streamRunEvents(runId);
-
-for await (const event of stream) {
-  if (event.event === 'llm.chunk') {
-    const { payload } = event.json<{ payload: { delta: string } }>();
-    process.stdout.write(payload.delta);
-  }
-  if (event.event === 'run.completed') break;  // leaving the loop closes the request
-}
-
-// Or wait for one specific event
-await client.runs.streamRunEvents(runId).until((e) => e.event === 'run.completed');`}</Code>
+              <Code language={language}>{STREAMING[language]}</Code>
               <p className="text-slate-600 dark:text-slate-300">
                 Text arrives as <code className="font-mono">payload.delta</code> on{' '}
                 <code className="font-mono">llm.chunk</code>; the run ends with{' '}
@@ -264,12 +311,7 @@ await client.agents.create({ name: 'support' }, { idempotencyKey: 'onboarding-42
                 Timeout, retry budget, headers and an abort signal can be set for one call without
                 building another client.
               </p>
-              <Code>{`await client.runs.create(body, {
-  timeout: 120_000,
-  maxRetries: 0,
-  headers: { 'X-Request-Id': requestId },
-  signal: controller.signal,
-});`}</Code>
+              <Code language={language}>{OVERRIDES[language]}</Code>
             </Section>
 
             <Section id="browser" title="In the browser">
@@ -389,8 +431,9 @@ for (;;) {
 
       <footer className="border-t border-slate-200 dark:border-slate-800">
         <div className="mx-auto max-w-6xl px-6 py-10 text-sm text-slate-500 dark:text-slate-400">
-          Documentation for <span className="font-mono">uarp-sdk@0.3.0</span>. This page is itself the
-          example: everything it describes is running here.
+          Documentation for the UARP client libraries at <span className="font-mono">0.3.0</span> —
+          one version across all five. This page is itself the example: everything it describes is
+          running here, and the TypeScript samples are compiled on every build.
         </div>
       </footer>
 
