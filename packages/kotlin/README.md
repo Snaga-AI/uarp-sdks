@@ -6,7 +6,7 @@ OkHttp + kotlinx.serialization.
 
 ```kotlin
 dependencies {
-    implementation("ai.snaga:uarp-sdk:0.2.0")
+    implementation("ai.snaga:uarp-sdk:0.3.0")
 }
 ```
 
@@ -91,8 +91,8 @@ try {
         ApiErrorKind.RATE_LIMIT -> retryAfter(error.retryAfterSeconds)
         else -> report(error.status, error.correlationId)
     }
-} catch (error: TimeoutException) {
-    showMessage("Timed out")
+} catch (error: TimeoutException) {   // ai.snaga.uarp.TimeoutException,
+    showMessage("Timed out")           // not the one in java.util.concurrent
 }
 ```
 
