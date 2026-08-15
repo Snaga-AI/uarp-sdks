@@ -32,7 +32,9 @@ test('a visitor can ask the agent and watch the answer stream in', async ({ page
 
 test('the documentation renders and the samples are copyable without a key', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /557 endpoints/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /three lines/i })).toBeVisible();
+  //  The hero's promise has to be on the page, not just in the headline.
+  await expect(page.locator('main, section').first()).toContainText('npm install uarp-sdk');
   //  The page is the documentation, so the sections have to be reachable.
   for (const id of ['install', 'streaming', 'browser', 'limits']) {
     await expect(page.locator(`#${id}`)).toBeAttached();

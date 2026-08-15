@@ -8,12 +8,12 @@ import type { ReactNode } from 'react';
  */
 export function Section({ id, title, children }: { id: string; title: string; children: ReactNode }) {
   return (
-    <section id={id} className="scroll-mt-24 border-t border-slate-200 pt-12 dark:border-slate-800">
+    <section id={id} className="scroll-mt-24 border-t border-rule-soft pt-12">
       <h2 className="group flex items-baseline gap-2 text-2xl font-semibold tracking-tight">
         <a href={`#${id}`} className="hover:underline">
           {title}
         </a>
-        <span className="font-mono text-sm text-slate-300 opacity-0 transition group-hover:opacity-100 dark:text-slate-600">
+        <span className="font-mono text-sm text-ink-soft opacity-0 transition group-hover:opacity-100">
           #
         </span>
       </h2>
@@ -41,12 +41,19 @@ export function Term({ children }: { children: ReactNode }) {
   );
 }
 
+/**
+ * An aside.
+ *
+ * The site has one accent and spends it sparingly, so a warning gets the accent
+ * and an ordinary note gets a plain rule. Two notes that shouted in different
+ * colours would be louder than anything on snaga.ai.
+ */
 export function Note({ tone = 'info', children }: { tone?: 'info' | 'warn'; children: ReactNode }) {
   const styles =
     tone === 'warn'
-      ? 'border-amber-400 bg-amber-50 dark:border-amber-600/60 dark:bg-amber-950/30'
-      : 'border-sky-400 bg-sky-50 dark:border-sky-600/60 dark:bg-sky-950/30';
+      ? 'border-accent bg-accent/5 text-ink'
+      : 'border-rule bg-paper-tint text-ink-soft';
   return (
-    <div className={`rounded-r-md border-l-[3px] px-4 py-3 text-sm leading-relaxed ${styles}`}>{children}</div>
+    <div className={`rounded-r-sm border-l-[3px] px-4 py-3 text-sm leading-relaxed ${styles}`}>{children}</div>
   );
 }

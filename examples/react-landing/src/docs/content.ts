@@ -33,6 +33,35 @@ export const INSTALL: Record<LanguageId, { command: string; shell: boolean; need
   ada: { command: 'alr with uarp_sdk', shell: true, needs: 'GNAT 2022, libcurl' },
 };
 
+/**
+ * The shortest thing that actually does something: ask an agent, get its answer.
+ *
+ * Three statements in every language — `waitRun` polls to a terminal status
+ * server-side, so nothing here has to loop. Streaming, which is what you want
+ * once this works, is further down the page.
+ */
+export const HELLO: Samples = {
+  ts: `const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
+const run = await client.runs.create({ agent_id: agentId, input: { message: 'Summarise the last deploy.' } });
+console.log((await client.runs.waitRun(run.run_id)).output);`,
+
+  rust: `let client = uarp_sdk::Client::from_env()?;
+let run = client.runs().create(&CreateRunRequest { agent_id, ..Default::default() }).await?;
+println!("{:?}", client.runs().wait_run(&run.run_id, &Default::default()).await?.output);`,
+
+  swift: `let client = try UARPClient.fromEnvironment()
+let run = try await client.runs.create(body: CreateRunRequest(agentId: agentId))
+print(try await client.runs.waitRun(runId: run.runId).output as Any)`,
+
+  kotlin: `val client = UarpClient.fromEnvironment()
+val run = client.runs.create(CreateRunRequest(agentId = agentId))
+println(client.runs.waitRun(run.runId).output)`,
+
+  ada: `Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+Run    : constant UARP.Models.Run := UARP.API.Runs.Create (Client, Request);
+Done   : constant UARP.Models.Run := UARP.API.Runs.Wait_Run (Client, +Run.Run_Id);`,
+};
+
 export const AUTHENTICATE: Samples = {
   ts: `import { UarpClient } from 'uarp-sdk';
 

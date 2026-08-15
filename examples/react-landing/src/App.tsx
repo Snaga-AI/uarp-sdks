@@ -5,12 +5,14 @@
  * "In the browser" section below, against whichever tenant's key you give it.
  */
 import { useEffect, useState } from 'react';
+import { VERSION } from 'uarp-sdk';
 import { AgentWidget } from './AgentWidget';
 import { Code, Shell } from './docs/Code';
 import { Note, Section, Term } from './docs/Section';
 import {
   AUTHENTICATE,
   CALLING,
+  HELLO,
   ERRORS,
   INSTALL,
   LANGUAGES,
@@ -98,75 +100,92 @@ export function App() {
   const install = INSTALL[language];
 
   return (
-    <div className="min-h-screen bg-white text-slate-900 dark:bg-slate-950 dark:text-slate-100">
-      <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/85 backdrop-blur dark:border-slate-800 dark:bg-slate-950/85">
-        <div className="mx-auto flex max-w-6xl items-center gap-4 px-6 py-3">
-          <span className="font-mono text-sm font-semibold tracking-tight">UARP SDKs</span>
-          <span className="rounded-full border border-slate-300 px-2 py-0.5 font-mono text-[0.7rem] text-slate-500 dark:border-slate-700 dark:text-slate-400">
-            0.3.0
-          </span>
-          <div className="ml-auto flex items-center gap-1 rounded-md border border-slate-200 p-0.5 dark:border-slate-800">
+    <div className="min-h-screen bg-desk text-ink">
+      {/*
+        The header follows snaga.ai's own: a way back to the site on the left,
+        what this page is in the middle, what you do next on the right. This
+        portal is the "SDKs" entry in that site's sidebar, so crossing over
+        should not feel like arriving at a different product.
+      */}
+      <header className="sticky top-0 z-40 border-b border-rule-soft bg-paper/90 backdrop-blur">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 py-2.5 sm:px-5">
+          <a href="https://snaga.ai" className="flex shrink-0 items-center gap-2 text-sm font-semibold hover:text-accent">
+            <span aria-hidden>←</span> Snaga
+          </a>
+          <div className="hidden min-w-0 flex-1 text-center sm:block">
+            <p className="text-sm font-semibold">SDKs</p>
+            <p className="font-mono text-[0.7rem] text-ink-soft">{VERSION}</p>
+          </div>
+          <div className="ml-auto flex items-center gap-0.5 overflow-x-auto rounded-sm border border-rule-soft p-0.5 sm:ml-0">
             {LANGUAGES.map((entry) => (
               <button
                 key={entry.id}
                 onClick={() => setLanguage(entry.id)}
-                className={`rounded px-2 py-1 text-xs transition ${
+                className={`shrink-0 rounded-sm px-2 py-1 text-xs transition ${
                   language === entry.id
-                    ? 'bg-slate-900 font-medium text-white dark:bg-slate-100 dark:text-slate-900'
-                    : 'text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+                    ? 'bg-ink font-medium text-paper'
+                    : 'text-ink-soft hover:bg-ink/5 hover:text-ink'
                 }`}
               >
                 {entry.name}
               </button>
             ))}
           </div>
-          <nav className="hidden gap-5 text-sm text-slate-600 lg:flex dark:text-slate-400">
-            <a className="hover:text-slate-900 dark:hover:text-slate-100" href="#browser">Browser</a>
-            <a className="hover:text-slate-900 dark:hover:text-slate-100" href="https://github.com/Snaga-AI/uarp-sdks">GitHub</a>
-            <a className="hover:text-slate-900 dark:hover:text-slate-100" href={REGISTRY_URL[language]}>
-              {current.registry}
-            </a>
-          </nav>
+          <a
+            href={REGISTRY_URL[language]}
+            className="hidden shrink-0 rounded-sm border border-rule-soft px-3 py-1.5 text-sm hover:bg-ink/5 lg:block"
+          >
+            {current.registry}
+          </a>
+          <a
+            href="https://github.com/Snaga-AI/uarp-sdks"
+            className="hidden shrink-0 rounded-sm border border-rule-soft px-3 py-1.5 text-sm hover:bg-ink/5 lg:block"
+          >
+            GitHub
+          </a>
         </div>
       </header>
 
-      <div className="mx-auto max-w-6xl px-6">
-        <section className="py-16 lg:py-20">
-          <p className="font-mono text-xs tracking-[0.18em] text-slate-500 uppercase dark:text-slate-400">
+      {/*  Paper on a desk, the way the rest of the site is laid out. */}
+      <div className="mx-auto max-w-6xl p-3 sm:p-5">
+       <div className="rounded-lg border border-rule-soft bg-paper px-5 py-10 sm:px-10 lg:px-12">
+        <section className="pb-14">
+          <p className="font-mono text-xs tracking-[0.18em] text-ink-soft uppercase">
             Client libraries for the UARP platform
           </p>
-          <h1 className="mt-4 max-w-3xl text-4xl leading-[1.08] font-semibold tracking-tight text-balance sm:text-5xl">
-            All 557 endpoints, typed, with streaming and retries you do not have to write.
+          <h1 className="mt-4 max-w-3xl text-4xl leading-[1.08] font-bold tracking-tight text-balance sm:text-5xl">
+            Three lines to an agent that answers.
           </h1>
-          <p className="mt-5 max-w-2xl text-lg text-slate-600 dark:text-slate-300">
-            Five clients — TypeScript, Rust, Swift, Kotlin and Ada — generated from one OpenAPI
-            document, so every request body, response and enumeration is a named type and all five
-            share a version. Pick a language; the samples below follow.
+          <p className="mt-5 max-w-2xl text-lg text-ink-soft">
+            One OpenAPI document, five clients — TypeScript, Rust, Swift, Kotlin and Ada — released
+            together on one version number. Around 95% of each is generated, so they cannot drift
+            from the platform or from each other.
           </p>
-          <div className="mt-8 max-w-2xl">
+          <div className="mt-8 grid max-w-3xl min-w-0 gap-3">
             {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
-            <p className="mt-2 font-mono text-xs text-slate-500 dark:text-slate-400">
+            <Code language={language}>{HELLO[language]}</Code>
+            <p className="font-mono text-xs text-ink-soft">
               {current.registry} · {install.needs}
             </p>
           </div>
-          <p className="mt-6 max-w-2xl text-sm text-slate-500 dark:text-slate-400">
-            The widget in the bottom corner is running against a live tenant using exactly the code
-            in <a className="underline" href="#browser">In the browser</a>. Give it your own key and it
-            will answer from your agents.
+          <p className="mt-6 max-w-2xl text-sm text-ink-soft">
+            The widget in the bottom corner runs exactly the code in{' '}
+            <a className="text-accent underline underline-offset-2" href="#browser">In the browser</a>.
+            Give it your own key and it answers from your agents.
           </p>
         </section>
 
-        <div className="flex gap-12 pb-24">
+        <div className="flex gap-12 pb-8">
           <aside className="hidden w-48 shrink-0 lg:block">
-            <nav className="sticky top-20 flex flex-col gap-1 border-l border-slate-200 dark:border-slate-800">
+            <nav className="sticky top-20 flex flex-col gap-1 border-l border-rule-soft">
               {SECTIONS.map(([id, title]) => (
                 <a
                   key={id}
                   href={`#${id}`}
                   className={`-ml-px border-l py-1 pl-4 text-sm transition ${
                     active === id
-                      ? 'border-slate-900 font-medium text-slate-900 dark:border-slate-100 dark:text-slate-100'
-                      : 'border-transparent text-slate-500 hover:text-slate-900 dark:text-slate-400 dark:hover:text-slate-100'
+                      ? 'border-ink font-medium text-ink'
+                      : 'border-transparent text-ink-soft hover:text-ink'
                   }`}
                 >
                   {title}
@@ -178,7 +197,7 @@ export function App() {
           <main className="flex min-w-0 flex-1 flex-col gap-12">
             <Section id="install" title="Install">
               {install.shell ? <Shell>{install.command}</Shell> : <Code language={language}>{install.command}</Code>}
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 {current.name} · {current.registry} · needs {install.needs}.
               </p>
               {language === 'ts' && (
@@ -215,7 +234,7 @@ export function App() {
             </Section>
 
             <Section id="authenticate" title="Authenticate">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 A bearer key in the form <Term>uarp_&lt;prefix&gt;_&lt;secret&gt;</Term>,
                 passed explicitly or read from the environment.
               </p>
@@ -235,7 +254,7 @@ export function App() {
             </Section>
 
             <Section id="calling" title="Calling the API">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Operations are grouped by resource. Every argument and every result is typed —
                 there is no <Term>any</Term> in the generated surface. Where
                 the API document describes no shape, the SDKs say so instead of inventing one: 60
@@ -243,15 +262,39 @@ export function App() {
                 languages.
               </p>
               <Code language={language}>{CALLING[language]}</Code>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 The platform selects the model itself, so a create is just a name. Anything sent for{' '}
                 <Term>model</Term> is accepted and ignored — the document says
                 so explicitly.
               </p>
+              {/*
+                The size of the surface is a fact about the platform, not a
+                selling point, so it sits here rather than in the headline —
+                and it is broken down, because "557 endpoints" on its own reads
+                as work rather than coverage.
+              */}
+              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t border-rule-soft pt-4 text-sm text-ink-soft">
+                <dt className="font-medium text-ink">557 operations</dt>
+                <dd>
+                  across 412 paths and 43 resource groups. 314 are the ordinary five —
+                  list, create, read, update, delete — on 56 resources; the other 243 are nested
+                  collections and named actions like <Term>cancel</Term>, <Term>approve</Term> and{' '}
+                  <Term>rollback</Term>.
+                </dd>
+                <dt className="font-medium text-ink">114 of them admin</dt>
+                <dd>
+                  the two admin groups, which the{' '}
+                  <a className="text-accent underline underline-offset-2" href="https://snaga.ai/docs">API reference</a>{' '}
+                  leaves out — that is why it counts around 440 where this page counts 557. The SDKs
+                  generate all of them; you only ever see the group you call.
+                </dd>
+                <dt className="font-medium text-ink">603 models</dt>
+                <dd>505 objects and 98 enumerations, each a named type in your language</dd>
+              </dl>
             </Section>
 
             <Section id="errors" title="Errors">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Failures arrive as RFC 9457 problem documents and are parsed into typed errors, with
                 a subclass per status so you can catch the one you mean.
               </p>
@@ -259,7 +302,7 @@ export function App() {
             </Section>
 
             <Section id="pagination" title="Pagination">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Cursor-paginated endpoints get a second method that walks every page and yields
                 items, so you never write the cursor loop.
               </p>
@@ -274,19 +317,19 @@ export function App() {
             </Section>
 
             <Section id="streaming" title="Streaming">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 The eleven server-sent-event endpoints return an async iterable that reopens with{' '}
                 <Term>Last-Event-ID</Term> when a connection drops. A
                 connection that delivered at least one event earns a fresh reconnect budget, so a
                 flapping server cannot spin the loop.
               </p>
               <Code language={language}>{STREAMING[language]}</Code>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
-                <dt className="font-medium text-slate-900 dark:text-slate-100">Text</dt>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-ink-soft">
+                <dt className="font-medium text-ink">Text</dt>
                 <dd>
                   arrives at <Term>payload.delta</Term> on the <Term>llm.chunk</Term> event
                 </dd>
-                <dt className="font-medium text-slate-900 dark:text-slate-100">End of a run</dt>
+                <dt className="font-medium text-ink">End of a run</dt>
                 <dd>
                   <Term>run.completed</Term> or <Term>run.failed</Term>
                 </dd>
@@ -294,22 +337,22 @@ export function App() {
             </Section>
 
             <Section id="idempotency" title="Idempotency and retries">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Every mutating <Term>/api/v1/*</Term> call carries an idempotency key, which is also
                 what makes a write safe to retry. Transient failures are retried with full-jitter
                 backoff.
               </p>
-              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
-                <dt className="font-medium text-slate-900 dark:text-slate-100">Retried</dt>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-ink-soft">
+                <dt className="font-medium text-ink">Retried</dt>
                 <dd>
                   <Term>408 409 429 500 502 503 504</Term>, and dropped connections. Not every 5xx:{' '}
                   <Term>501</Term> is a permanent answer.
                 </dd>
-                <dt className="font-medium text-slate-900 dark:text-slate-100">Header sent</dt>
+                <dt className="font-medium text-ink">Header sent</dt>
                 <dd>
                   <Term>Idempotency-Key</Term>, on every mutating call
                 </dd>
-                <dt className="font-medium text-slate-900 dark:text-slate-100">Headers honoured</dt>
+                <dt className="font-medium text-ink">Headers honoured</dt>
                 <dd>
                   <Term>Retry-After</Term>, and <Term>X-Should-Retry: false</Term> to opt out
                 </dd>
@@ -323,7 +366,7 @@ await client.agents.create({ name: 'support' }, { idempotencyKey: 'onboarding-42
             </Section>
 
             <Section id="overrides" title="Per-call overrides">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Timeout, retry budget, headers and an abort signal can be set for one call without
                 building another client.
               </p>
@@ -331,25 +374,25 @@ await client.agents.create({ name: 'support' }, { idempotencyKey: 'onboarding-42
             </Section>
 
             <Section id="browser" title="In the browser">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 The SDK runs in a browser — but do not put a key there. On a public page, "the front
                 end" means every visitor, and a key they can read is a key they can spend.
               </p>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 There is a second, more mechanical reason. The API sends{' '}
                 <Term>Access-Control-Allow-Origin</Term> only for its own site,
                 so a browser on any other origin has the response blocked before your code sees it:
               </p>
               <Code language="http">{`Origin: https://snaga.ai       → access-control-allow-origin: https://snaga.ai
 Origin: http://localhost:5173  → no header, the browser blocks it`}</Code>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 So the shape below is both the safe way and the only working way. It is what this
                 page's own widget does.
               </p>
               <Code language="text">{`browser  ──POST /api/uarp/chat──▶  your server  ──uarp-sdk──▶  api.snaga.ai
    ▲                                    │
    └──────── text/event-stream ─────────┘        the key lives here, only here`}</Code>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 On the server, consume the SDK's stream and re-emit a smaller one. The browser gets
                 text and state, not the platform's full event envelope — which keeps the front end
                 simple and stops the platform's wire format from setting in it.
@@ -367,7 +410,7 @@ for await (const event of client.runs.streamRunEvents(run.run_id)) {
   if (event.event === 'run.completed') break;
 }
 res.end();`}</Code>
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 In the browser, read it back from an ordinary <Term>fetch</Term>.{' '}
                 <Term>EventSource</Term> cannot send a POST body, and an SSE
                 frame ends at a <em>blank line</em> — which is exactly what naive line-splitting
@@ -407,7 +450,7 @@ for (;;) {
             </Section>
 
             <Section id="limits" title="Limits">
-              <p className="text-slate-600 dark:text-slate-300">
+              <p className="text-ink-soft">
                 Two things that are easier to read here than to discover.
               </p>
               <Note tone="warn">
@@ -424,7 +467,7 @@ for (;;) {
             </Section>
 
             <Section id="next" title="Where to go next">
-              <ul className="ml-4 flex list-disc flex-col gap-2 text-slate-600 dark:text-slate-300">
+              <ul className="ml-4 flex list-disc flex-col gap-2 text-ink-soft">
                 <li>
                   <a className="underline" href="https://github.com/Snaga-AI/uarp-sdks">Snaga-AI/uarp-sdks</a>{' '}
                   — source, changelog, and the same client for Rust, Swift, Kotlin and Ada. All five
@@ -443,15 +486,15 @@ for (;;) {
             </Section>
           </main>
         </div>
-      </div>
 
-      <footer className="border-t border-slate-200 dark:border-slate-800">
-        <div className="mx-auto max-w-6xl px-6 py-10 text-sm text-slate-500 dark:text-slate-400">
-          Documentation for the UARP client libraries at <span className="font-mono">0.3.0</span> —
-          one version across all five. This page is itself the example: everything it describes is
-          running here, and the TypeScript samples are compiled on every build.
-        </div>
-      </footer>
+        <footer className="border-t border-rule-soft pt-8 text-sm text-ink-soft">
+          Documentation for the UARP client libraries at{' '}
+          <span className="font-mono">{VERSION}</span> — one version across all five. This page is
+          itself the example: everything it describes is running here, and the TypeScript and Rust
+          samples are compiled on every build.
+        </footer>
+       </div>
+      </div>
 
       <AgentWidget />
     </div>
