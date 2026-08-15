@@ -22,6 +22,25 @@ export function Section({ id, title, children }: { id: string; title: string; ch
   );
 }
 
+/**
+ * An identifier inside a sentence — a header name, a status code, a field.
+ *
+ * `translate="no"` is not decoration. A browser translating this page rewrites
+ * the sentence in the target language's word order and carries inline elements
+ * along with it; a paragraph holding ten of them ends up with all ten in a heap
+ * at the end, and a reader sees `Idempotency-Key408 409429 500502 503504` and
+ * reasonably asks whose keys those are. Marking them keeps a translator from
+ * touching or moving them — and the prose around them is written so that the
+ * sentence still says something true if one is moved anyway.
+ */
+export function Term({ children }: { children: ReactNode }) {
+  return (
+    <code className="notranslate font-mono" translate="no">
+      {children}
+    </code>
+  );
+}
+
 export function Note({ tone = 'info', children }: { tone?: 'info' | 'warn'; children: ReactNode }) {
   const styles =
     tone === 'warn'
