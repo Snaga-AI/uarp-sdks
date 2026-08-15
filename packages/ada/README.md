@@ -59,9 +59,8 @@ default-initialises and compares with `=`:
 ```ada
 Request : UARP.Models.Create_Agent_Request;
 ...
+--  The platform selects the model itself, so a create is just a name.
 Request.Name := +"demo";                            --  required
-Request.Model.Provider :=
-  UARP.Models.To_Agent_Model_Config_Provider ("openai_compat");
 Request.Has_Description := True;                    --  optional
 Request.Description := +"Answers questions.";
 ```
@@ -93,6 +92,8 @@ is
    Name : constant String := UARP.Types.SU.To_String (Event.Name);
 begin
    if Name = "llm.chunk" then
+      --  Event.Data is the whole JSON envelope; the text of the reply is at
+      --  `payload.delta` inside it. Printed raw here to keep the example short.
       Self.Chunks := Self.Chunks + 1;
       Ada.Text_IO.Put (UARP.Types.SU.To_String (Event.Data));
    end if;
@@ -192,7 +193,7 @@ Options.Timeout_Ms := 5_000;
 UARP.Types.Add (Options.Extra_Headers, "X-Trace", Trace_Id);
 ```
 
-**Retries.** `408`, `409`, `429` and `5xx` retry with full-jitter backoff
+**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504` retry with full-jitter backoff
 (0.5 s → 8 s) and honour `Retry-After`. Reads always retry; writes only when
 they carry an idempotency key, which every mutating `/api/v1/*` call sends.
 

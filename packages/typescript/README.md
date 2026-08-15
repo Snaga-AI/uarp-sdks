@@ -22,10 +22,8 @@ import { UarpClient } from 'uarp-sdk';
 
 const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 
-const agent = await client.agents.create({
-  name: 'demo',
-  model: { provider: 'openai_compat', model_ref: 'gpt-4o-mini', capabilities: {} },
-});
+// The platform selects the model itself, so a create is just a name.
+const agent = await client.agents.create({ name: 'demo' });
 
 const page = await client.agents.list({ limit: 20 });
 console.log(page.items.length, page.has_more);
@@ -47,7 +45,12 @@ with `Last-Event-ID` when a connection drops:
 const stream = client.runs.streamRunEvents(runId);
 
 for await (const event of stream) {
-  if (event.event === 'llm.chunk') process.stdout.write(event.json<{ text: string }>().text);
+  // The text arrives as `payload.delta`; the rest of the envelope is
+  // platform bookkeeping.
+  if (event.event === 'llm.chunk') {
+    const { payload } = event.json<{ payload: { delta: string } }>();
+    process.stdout.write(payload.delta);
+  }
   if (event.event === 'run.completed') break;   // leaving the loop closes the request
 }
 
@@ -122,7 +125,7 @@ await client.agents.create(body, {
 });
 ```
 
-**Retries.** `408`, `409`, `429` and `5xx`, plus connection errors, are retried
+**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, are retried
 with full-jitter backoff (500 ms → 8 s), honouring `Retry-After`. Reads always
 retry; writes only when they carry an idempotency key — which every mutating
 `/api/v1/*` call does automatically.

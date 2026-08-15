@@ -282,7 +282,8 @@ Page   : constant UARP.Models.List_Agents_Response :=
     <h3>Idempotency and retries</h3>
     <p>Every mutating <code>/api/v1/*</code> call carries an <code>Idempotency-Key</code>, which
       is also what makes a write safe to retry. Transient failures — <code>408</code>,
-      <code>409</code>, <code>429</code>, <code>5xx</code>, dropped connections — are retried with
+      <code>409</code>, <code>429</code>, <code>500</code>, <code>502</code>, <code>503</code>,
+      <code>504</code>, dropped connections — are retried with
       full-jitter backoff, honouring <code>Retry-After</code> and the
       <code>X-Should-Retry: false</code> opt-out. Reads always retry; writes only when they carry
       a key. Callers can supply their own key to replay a create deliberately.</p>

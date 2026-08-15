@@ -31,16 +31,8 @@ val client = UarpClient.builder()
     .apiKey(BuildConfig.UARP_API_KEY)
     .build()
 
-val agent = client.agents.create(
-    CreateAgentRequest(
-        name = "demo",
-        model = AgentModelConfig(
-            provider = AgentModelConfigProvider.OPENAI_COMPAT,
-            modelRef = "gpt-4o-mini",
-            capabilities = JsonObject(emptyMap()),
-        ),
-    ),
-)
+// The platform selects the model itself, so a create is just a name.
+val agent = client.agents.create(CreateAgentRequest(name = "demo"))
 
 val page = client.agents.list(limit = 20)
 ```
@@ -60,9 +52,15 @@ SSE endpoints return a cold `Flow<ServerEvent>` that reconnects with
 `Last-Event-ID`:
 
 ```kotlin
+// The text arrives as `payload.delta`; the rest of the envelope is
+// platform bookkeeping.
+@Serializable data class Chunk(val payload: Payload) {
+    @Serializable data class Payload(val delta: String)
+}
+
 client.runs.streamRunEvents(runId)
     .onEach { event ->
-        if (event.event == "llm.chunk") append(event.decode<Chunk>().text)
+        if (event.event == "llm.chunk") append(event.decode<Chunk>().payload.delta)
     }
     .takeWhile { it.event != "run.completed" }
     .flowOn(Dispatchers.IO)
@@ -120,7 +118,7 @@ Per-call overrides go in the trailing `options` argument:
 client.agents.create(request, options = RequestOptions(idempotencyKey = "order-4711"))
 ```
 
-**Retries.** `408`, `409`, `429` and `5xx`, plus connection errors, retry with
+**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (500 ms → 8 s) and honour `Retry-After`. Reads always retry;
 writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.
