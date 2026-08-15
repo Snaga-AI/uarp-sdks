@@ -71,7 +71,8 @@ Every SDK covers the whole API surface and shares the same behaviour:
 - Bearer authentication, falling back to `UARP_API_KEY` / `SNAGA_API_KEY`.
 - An `Idempotency-Key` on every mutating `/api/v1/*` request, which is also
   what makes a write safe to retry.
-- Retries for `408`, `409`, `429`, `5xx` and dropped connections, with
+- Retries for `408`, `409`, `429`, `500`, `502`, `503`, `504` and dropped
+  connections, with
   full-jitter backoff honouring `Retry-After` and `X-Should-Retry: false`.
 - RFC 9457 problem documents parsed into typed errors carrying the status,
   detail, `correlationId` and field-level validation failures.

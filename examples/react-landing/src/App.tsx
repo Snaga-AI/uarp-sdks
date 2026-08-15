@@ -237,7 +237,9 @@ await client.runs.streamRunEvents(runId).until((e) => e.event === 'run.completed
                 <code className="font-mono">Idempotency-Key</code>, which is also what makes a write
                 safe to retry. Transient failures — <code className="font-mono">408</code>,{' '}
                 <code className="font-mono">409</code>, <code className="font-mono">429</code>,{' '}
-                <code className="font-mono">5xx</code>, dropped connections — are retried with
+                <code className="font-mono">500</code>, <code className="font-mono">502</code>,{' '}
+                <code className="font-mono">503</code>, <code className="font-mono">504</code>,
+                dropped connections — are retried with
                 full-jitter backoff, honouring <code className="font-mono">Retry-After</code> and the{' '}
                 <code className="font-mono">X-Should-Retry: false</code> opt-out.
               </p>

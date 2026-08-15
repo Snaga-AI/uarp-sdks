@@ -36,12 +36,8 @@ import UARP
 let client = try UARPClient.fromEnvironment()   // UARP_API_KEY, UARP_BASE_URL
 // or: UARPClient(apiKey: "uarp_...")
 
-let agent = try await client.agents.create(
-    body: CreateAgentRequest(
-        name: "demo",
-        model: AgentModelConfig(provider: .openaiCompat, modelRef: "gpt-4o-mini", capabilities: [:])
-    )
-)
+// The platform selects the model itself, so a create is just a name.
+let agent = try await client.agents.create(body: CreateAgentRequest(name: "demo"))
 
 let page = try await client.agents.list(limit: 20)
 ```
@@ -56,9 +52,16 @@ SSE endpoints return an `EventStream`, an `AsyncSequence` that reconnects with
 `Last-Event-ID`:
 
 ```swift
+// The text arrives as `payload.delta`; the rest of the envelope is
+// platform bookkeeping.
+struct Chunk: Decodable {
+    struct Payload: Decodable { let delta: String }
+    let payload: Payload
+}
+
 for try await event in client.runs.streamRunEvents(runId: id) {
     if event.event == "llm.chunk" {
-        print(try event.json(as: Chunk.self).text, terminator: "")
+        print(try event.json(as: Chunk.self).payload.delta, terminator: "")
     }
     if event.event == "run.completed" { break }   // leaving the loop cancels the request
 }
@@ -116,7 +119,7 @@ try await client.agents.create(
 )
 ```
 
-**Retries.** `408`, `409`, `429` and `5xx`, plus connection errors, retry with
+**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (0.5 s → 8 s) and honour `Retry-After`. Reads always retry;
 writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.

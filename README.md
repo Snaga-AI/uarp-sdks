@@ -24,8 +24,8 @@ endpoints — plus the platform's auth, idempotency and retry semantics.
 - **Idempotency.** Every mutating `/api/v1/*` call sends an `Idempotency-Key`,
   which is also what makes a write safe to retry. You can supply your own key
   to replay a create deliberately.
-- **Retries.** Transient failures (`408`, `409`, `429`, `5xx`, dropped
-  connections) are retried with full-jitter exponential backoff, honouring
+- **Retries.** Transient failures (`408`, `409`, `429`, `500`, `502`, `503`,
+  `504`, dropped connections) are retried with full-jitter exponential backoff, honouring
   `Retry-After` and the `X-Should-Retry: false` opt-out. Reads always retry;
   writes only when they carry an idempotency key.
 - **Typed errors.** RFC 9457 problem documents are parsed into a structured

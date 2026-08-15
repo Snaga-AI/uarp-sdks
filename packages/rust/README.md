@@ -15,7 +15,7 @@ Rust 1.88+. TLS is `rustls` by default; `features = ["native-tls"]` switches.
 ## Quick start
 
 ```rust
-use uarp_sdk::models::{AgentModelConfig, AgentModelConfigProvider, CreateAgentRequest};
+use uarp_sdk::models::CreateAgentRequest;
 
 #[tokio::main]
 async fn main() -> Result<(), uarp_sdk::Error> {
@@ -23,16 +23,8 @@ async fn main() -> Result<(), uarp_sdk::Error> {
 
     let agent = client
         .agents()
-        .create(&CreateAgentRequest {
-            name: "demo".into(),
-            model: AgentModelConfig {
-                provider: AgentModelConfigProvider::OpenaiCompat,
-                model_ref: "gpt-4o-mini".into(),
-                capabilities: Default::default(),
-                ..Default::default()
-            },
-            ..Default::default()
-        })
+        // The platform selects the model itself, so a create is just a name.
+        .create(&CreateAgentRequest { name: "demo".into(), ..Default::default() })
         .await?;
 
     println!("{} {}", agent.agent_id, agent.name);
@@ -58,8 +50,13 @@ let mut events = std::pin::pin!(runs.stream_run_events(&run_id, &params));
 
 while let Some(event) = events.next().await {
     let event = event?;
+    // The text arrives as `payload.delta`; the rest of the envelope is
+    // platform bookkeeping.
     if event.event == "llm.chunk" {
-        print!("{}", event.json::<serde_json::Value>()?["text"]);
+        let chunk = event.json::<serde_json::Value>()?;
+        if let Some(delta) = chunk["payload"]["delta"].as_str() {
+            print!("{delta}");
+        }
     }
     if event.event == "run.completed" { break; }   // dropping the stream closes it
 }
@@ -136,7 +133,7 @@ let mut events = std::pin::pin!(quiet.runs().stream_run_events(&run_id, &Default
 
 `with_options(RequestOptions { .. })` sets several at once.
 
-**Retries.** `408`, `409`, `429` and `5xx`, plus connection errors, retry with
+**Retries.** `408`, `409`, `429`, `500`, `502`, `503` and `504`, plus connection errors, retry with
 full-jitter backoff (500 ms → 8 s) and honour `Retry-After`. Reads always
 retry; writes only when they carry an idempotency key, which every mutating
 `/api/v1/*` call sends automatically.
