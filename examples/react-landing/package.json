@@ -8,7 +8,8 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "typecheck": "tsc -b --noEmit",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "serve": "node server/serve.ts"
   },
   "dependencies": {
     "react": "^19.0.0",
