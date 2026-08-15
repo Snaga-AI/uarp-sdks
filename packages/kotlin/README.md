@@ -31,12 +31,6 @@ val client = UarpClient.builder()
     .apiKey(BuildConfig.UARP_API_KEY)
     .build()
 
-**Getting a key.** Sign in at <https://snaga.ai> and create one in your tenant's
-settings. A key looks like `uarp_<prefix>_<secret>`; the secret half is shown
-once and never again. With a key that carries `tenants:write` you can mint more
-through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
-scopes that does its job.
-
 // The platform selects the model itself, so a create is just a name.
 val agent = client.agents.create(CreateAgentRequest(name = "demo"))
 
@@ -46,6 +40,12 @@ val page = client.agents.list(limit = 20)
 `UarpClient.fromEnvironment()` reads `UARP_API_KEY` / `SNAGA_API_KEY` and
 `UARP_BASE_URL`, which suits server-side use; on Android pass the key
 explicitly.
+
+**Getting a key.** Sign in at <https://snaga.ai> and create one in your tenant's
+settings. A key looks like `uarp_<prefix>_<secret>`; the secret half is shown
+once and never again. With a key that carries `tenants:write` you can mint more
+through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
+scopes that does its job.
 
 Resource groups are extension properties: `client.agents`, `client.runs`,
 `client.sessions`, … 43 in all, in `ai.snaga.uarp.api`. Every call is a
