@@ -22,7 +22,7 @@ stats: ## Report what the vendored spec contains
 check: ## Fail if the checked-in output is stale
 	@node generator/src/index.ts --check
 
-check-docs: ## Type-check the TypeScript samples in the documentation
+check-docs: ## Compile the code samples in the documentation
 	@node scripts/check-docs.ts
 
 test: check-docs test-generator test-typescript test-rust test-swift test-kotlin test-ada ## Build and test everything

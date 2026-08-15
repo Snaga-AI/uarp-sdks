@@ -52,8 +52,10 @@ jobs:
         working-directory: packages/typescript
       # The samples in the READMEs are compiled too. Every documentation error
       # found in this repository read perfectly well; only a compiler could
-      # tell `event.text` from `event.payload.delta`.
-      - run: node scripts/check-docs.ts
+      # tell `event.text` from `event.payload.delta`. Named explicitly, because
+      # the checker skips a language whose compiler is absent and this job has
+      # no Rust — a silent skip here would look exactly like a pass.
+      - run: node scripts/check-docs.ts ts
 
   rust:
     name: Rust
@@ -72,6 +74,13 @@ jobs:
         working-directory: packages/rust
       - run: cargo build --examples
         working-directory: packages/rust
+      # Last, because a toolchain action that ran afterwards would put its own
+      # node on the PATH ahead of this one.
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+      - name: The Rust samples in the READMEs must compile
+        run: node scripts/check-docs.ts rust
 
   msrv:
     name: Rust MSRV
