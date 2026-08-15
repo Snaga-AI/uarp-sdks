@@ -107,6 +107,36 @@ newlines — a detail most hand-rolled parsers get wrong.
   together. It handles comments, strings, numbers, keywords and type names, and
   when it meets something it does not know the worst outcome is a plain word.
 
+## Deployed
+
+This example is running at **<https://dev.snaga.ai>**.
+
+It is the same code, with `server/serve.ts` instead of Vite: that file serves
+the built page and mounts the same `handleUarp`, which is the example's own
+claim about the proxy being ordinary Node put to the test.
+
+```
+Caddy (dev.snaga.ai)  ──▶  snaga-dev-portal:3001  ──uarp-sdk──▶  api.snaga.ai
+```
+
+A container on the same host as the API, behind the same Caddy, in its own
+block — nothing about the existing hosts changed.
+
+Because it is public, `/api/uarp/session` answers "is this key valid?" to
+anyone who asks, which makes it a guessing oracle. It is rate limited to ten
+attempts a minute per address. The keys visitors paste are their own; this
+deployment holds no key of its own.
+
+To redeploy:
+
+```sh
+ssh root@<host> "cd /opt/snaga/dev-portal/repo && git pull -q &&
+  cd examples/react-landing && docker build -q -t snaga-dev-portal:latest . &&
+  docker rm -f snaga-dev-portal &&
+  docker run -d --name snaga-dev-portal --restart unless-stopped \
+    --network snaga-net -e PORT=3001 snaga-dev-portal:latest"
+```
+
 ## Tests
 
 ```sh
