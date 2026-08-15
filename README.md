@@ -164,9 +164,11 @@ reason, and reported without failing the run.
 
 ## Worked examples
 
-[examples/react-landing](examples/react-landing/README.md) is a React, Tailwind
-and TypeScript landing page with an agent answering in the corner — installed
-from npm like any consumer would, not wired to the workspace.
+[examples/react-landing](examples/react-landing/README.md) is the TypeScript
+SDK's documentation as a React, Tailwind and TypeScript page — install, errors,
+pagination, streaming, idempotency, limits — with a live agent answering in the
+corner. It installs `uarp-sdk` from npm like any consumer would, not wired to
+the workspace, and the widget runs the very pattern the page documents.
 
 The point of it is the shape rather than the widget. The browser holds no API
 key and never calls the platform: it posts to a small server in the same

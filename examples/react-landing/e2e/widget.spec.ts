@@ -28,9 +28,15 @@ test('a visitor can ask the agent and watch the answer stream in', async ({ page
   await expect(page.getByRole('button', { name: 'Send' })).toBeVisible();
 });
 
-test('the page renders without a key', async ({ page }) => {
+test('the documentation renders and the samples are copyable without a key', async ({ page }) => {
   await page.goto('/');
-  await expect(page.getByRole('heading', { name: /robot actually knows/i })).toBeVisible();
+  await expect(page.getByRole('heading', { name: /557 endpoints/i })).toBeVisible();
+  //  The page is the documentation, so the sections have to be reachable.
+  for (const id of ['install', 'streaming', 'browser', 'limits']) {
+    await expect(page.locator(`#${id}`)).toBeAttached();
+  }
+  await expect(page.getByRole('heading', { name: 'In the browser' })).toBeVisible();
+
   await page.getByRole('button', { name: 'Ask the agent' }).click();
   await expect(page.getByPlaceholder('uarp_…')).toBeVisible();
 });

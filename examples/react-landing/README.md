@@ -1,7 +1,13 @@
-# React landing page with an agent widget
+# The TypeScript SDK's documentation, which runs the SDK
 
-A marketing page with a UARP agent answering in the corner, and — the part
-worth copying — the small server that keeps the API key away from the browser.
+A React, Tailwind and TypeScript page that documents `uarp-sdk` — install,
+authentication, errors, pagination, streaming, idempotency, per-call overrides
+and the limits — with a live agent answering in the corner.
+
+The widget is not an illustration. It runs the code the page describes, against
+whichever tenant's key you paste into it, which is the point: a documented
+pattern that is also executing on the page it is documented on cannot quietly
+drift out of date.
 
 ```sh
 npm install
@@ -13,7 +19,8 @@ The reply streams in token by token.
 
 ## What this is actually demonstrating
 
-The widget is the visible half. The half that matters is `server/handlers.ts`.
+The page is the documentation; `server/handlers.ts` is the pattern it
+documents.
 
 ```
 browser  ──POST /api/uarp/chat──▶  your server  ──uarp-sdk──▶  api.snaga.ai
@@ -87,6 +94,18 @@ baked into your front end. `EventSource` cannot send a POST body, so the browser
 reads the stream from an ordinary `fetch` response; `useAgent.ts` has the parser,
 which splits on the blank line that terminates an SSE frame rather than on
 newlines — a detail most hand-rolled parsers get wrong.
+
+## How the page is built
+
+- `src/App.tsx` — the documentation itself. Sections carry stable anchors so a
+  reply in a chat can point at one.
+- `src/docs/Code.tsx` — code blocks with a copy button, which is the primary
+  action on a page whose whole purpose is to be taken away.
+- `src/docs/highlight.ts` — a fifty-line TypeScript tokeniser. A highlighter
+  from a CDN would be a third-party script on a page that asks people to paste
+  an API key, and bundling a full one costs more than every sample here put
+  together. It handles comments, strings, numbers, keywords and type names, and
+  when it meets something it does not know the worst outcome is a plain word.
 
 ## Tests
 
