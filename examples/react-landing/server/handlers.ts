@@ -38,6 +38,41 @@ interface Session {
 const sessions = new Map<string, Session>();
 const SESSION_TTL_MS = 60 * 60 * 1000;
 
+/**
+ * Rate limit on exchanging a key for a session.
+ *
+ * This endpoint answers "is this key valid?", which makes it a guessing oracle
+ * the moment the portal is on the public internet. Ten attempts a minute is
+ * generous for a person typing their own key and useless for a machine trying
+ * many.
+ */
+const attempts = new Map<string, number[]>();
+const ATTEMPT_WINDOW_MS = 60 * 1000;
+const ATTEMPT_LIMIT = 10;
+
+function tooManyAttempts(req: Request): boolean {
+  //  Behind a reverse proxy the socket address is the proxy, so prefer the
+  //  forwarded chain when there is one.
+  const forwarded = req.headers['x-forwarded-for'];
+  const who =
+    (typeof forwarded === 'string' ? forwarded.split(',')[0]?.trim() : undefined) ??
+    req.socket.remoteAddress ??
+    'unknown';
+
+  const now = Date.now();
+  const recent = (attempts.get(who) ?? []).filter((at) => at > now - ATTEMPT_WINDOW_MS);
+  recent.push(now);
+  attempts.set(who, recent);
+
+  //  The map would otherwise grow with every address ever seen.
+  if (attempts.size > 5000) {
+    for (const [key, times] of attempts) {
+      if (times.every((at) => at <= now - ATTEMPT_WINDOW_MS)) attempts.delete(key);
+    }
+  }
+  return recent.length > ATTEMPT_LIMIT;
+}
+
 function sweep(): void {
   const cutoff = Date.now() - SESSION_TTL_MS;
   for (const [id, session] of sessions) {
@@ -88,6 +123,9 @@ function describe(error: unknown): { status: number; message: string } {
  * with a readable message, rather than on the first message the visitor sends.
  */
 async function openSession(req: Request, res: Response): Promise<void> {
+  if (tooManyAttempts(req)) {
+    return json(res, 429, { message: 'Too many attempts. Wait a minute and try again.' });
+  }
   const body = await readJson(req);
   const token = typeof body.token === 'string' ? body.token.trim() : '';
   if (!token) return json(res, 400, { message: 'No token supplied.' });
