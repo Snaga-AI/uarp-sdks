@@ -6,7 +6,7 @@ coverage of all 557 endpoints, HTTP over libcurl, JSON via GNATCOLL.
 ```toml
 # alire.toml
 [[depends-on]]
-uarp_sdk = "^0.2.0"
+uarp_sdk = "^0.3.0"
 ```
 
 Needs GNAT (Ada 2022), GNATCOLL, and **libcurl** on the system:
@@ -24,9 +24,10 @@ is enough.
 ## Quick start
 
 ```ada
+with Ada.Text_IO;
+
 with UARP.API.Agents;
 with UARP.Client;
-with UARP.Models;
 with UARP.Types;
 
 procedure Demo is
