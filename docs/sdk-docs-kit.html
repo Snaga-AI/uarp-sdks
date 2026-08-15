@@ -1,0 +1,398 @@
+<title>UARP SDK Docs Kit</title>
+<style>
+/*  Every colour is a token defined on bare :root, so the default "system"
+    theme — which stamps nothing on the root element — still resolves.  */
+:root {
+  --paper: #fbfbfd;
+  --surface: #ffffff;
+  --sunken: #f2f3f7;
+  --ink: #14161c;
+  --muted: #5a5f70;
+  --faint: #8a8fa0;
+  --rule: #e2e4ec;
+  --accent: #1f3a6e;
+  --caveat: #9a4a2f;
+  --caveat-wash: #fdf4f0;
+  --shadow: 0 1px 2px rgb(20 22 28 / 5%);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0f1116;
+    --surface: #161922;
+    --sunken: #1c2029;
+    --ink: #e6e8ef;
+    --muted: #9ba1b2;
+    --faint: #6f7688;
+    --rule: #252936;
+    --accent: #8fb0e8;
+    --caveat: #dd9b78;
+    --caveat-wash: #241a16;
+    --shadow: none;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0f1116;
+  --surface: #161922;
+  --sunken: #1c2029;
+  --ink: #e6e8ef;
+  --muted: #9ba1b2;
+  --faint: #6f7688;
+  --rule: #252936;
+  --accent: #8fb0e8;
+  --caveat: #dd9b78;
+  --caveat-wash: #241a16;
+  --shadow: none;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-size: 16.5px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+.wrap {
+  max-width: 54rem;
+  margin: 0 auto;
+  padding: 4rem 1.5rem 7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3.25rem;
+}
+
+/*  Serif for the document's own voice, sans for instructions, mono for
+    anything that gets typed. Three roles, each doing one job.  */
+h1, h2, h3 {
+  font-family: ui-serif, Georgia, "Iowan Old Style", Palatino, serif;
+  font-weight: 600;
+  margin: 0;
+  text-wrap: balance;
+}
+h1 { font-size: clamp(2rem, 5vw, 2.9rem); line-height: 1.08; letter-spacing: -0.015em; }
+h2 { font-size: 1.5rem; line-height: 1.2; }
+h3 { font-size: 1.1rem; line-height: 1.3; }
+
+code, pre, .label, .chip, th { font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace; }
+
+header { display: flex; flex-direction: column; gap: 1rem; border-bottom: 1px solid var(--rule); padding-bottom: 2rem; }
+.label {
+  font-size: 0.72rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent);
+}
+.lede { margin: 0; font-size: 1.15rem; color: var(--muted); max-width: 60ch; }
+
+section { display: flex; flex-direction: column; gap: 1.1rem; }
+p { margin: 0; max-width: 68ch; }
+ul, ol { margin: 0; padding-left: 1.2rem; max-width: 68ch; display: flex; flex-direction: column; gap: 0.4rem; }
+li::marker { color: var(--faint); }
+a { color: var(--accent); text-underline-offset: 0.15em; }
+
+.scroll { overflow-x: auto; border: 1px solid var(--rule); border-radius: 4px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; }
+th, td { text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--rule); vertical-align: top; }
+th { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-weight: 500; background: var(--sunken); }
+tr:last-child td { border-bottom: none; }
+td.version { font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+pre {
+  margin: 0;
+  padding: 0.9rem 1.1rem;
+  background: var(--sunken);
+  border: 1px solid var(--rule);
+  border-radius: 4px;
+  overflow-x: auto;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+pre code { background: none; padding: 0; font-size: inherit; }
+code { background: var(--sunken); padding: 0.12em 0.36em; border-radius: 3px; font-size: 0.88em; }
+
+/*  A language block: the name is the structure, so it carries the mono chip.  */
+.lang { background: var(--surface); border: 1px solid var(--rule); border-radius: 4px; box-shadow: var(--shadow); overflow: hidden; }
+.lang > header {
+  border-bottom: 1px solid var(--rule);
+  border-radius: 0;
+  padding: 0.75rem 1.1rem;
+  background: var(--sunken);
+  flex-direction: row;
+  align-items: baseline;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+.chip { font-size: 0.78rem; font-weight: 600; color: var(--accent); }
+.lang header .meta { font-size: 0.8rem; color: var(--muted); margin-left: auto; }
+.lang .body { padding: 1.1rem; display: flex; flex-direction: column; gap: 0.8rem; }
+
+/*  Caveats are not decoration: each one is something a reader would be
+    misled by if the docs left it out.  */
+.caveat {
+  border-left: 3px solid var(--caveat);
+  background: var(--caveat-wash);
+  padding: 0.85rem 1.1rem;
+  border-radius: 0 4px 4px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+.caveat strong { color: var(--caveat); }
+
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr)); gap: 1px; background: var(--rule); border: 1px solid var(--rule); border-radius: 4px; overflow: hidden; }
+.cell { background: var(--surface); padding: 0.9rem 1rem; display: flex; flex-direction: column; gap: 0.15rem; }
+.cell .n { font-family: ui-monospace, monospace; font-size: 1.35rem; font-weight: 600; font-variant-numeric: tabular-nums; }
+.cell .k { font-size: 0.78rem; color: var(--muted); }
+
+footer { border-top: 1px solid var(--rule); padding-top: 1.5rem; color: var(--faint); font-size: 0.85rem; }
+</style>
+
+<div class="wrap">
+  <header>
+    <span class="label">For the documentation team</span>
+    <h1>Everything the docs need to say about the UARP SDKs</h1>
+    <p class="lede">Five client libraries are published and installable today. This is the
+      material to turn into pages: what to install, what the first call looks like in each
+      language, the behaviour that is the same everywhere, and the four things that will
+      mislead readers if they are left out.</p>
+  </header>
+
+  <section>
+    <h2>What exists</h2>
+    <p>One OpenAPI document generates all five, so the surface is identical: every endpoint
+      and every model is present in every language, and they were checked against each other
+      and against the live API before release.</p>
+    <div class="grid">
+      <div class="cell"><span class="n">557</span><span class="k">operations, in all five</span></div>
+      <div class="cell"><span class="n">603</span><span class="k">typed models</span></div>
+      <div class="cell"><span class="n">11</span><span class="k">event streams</span></div>
+      <div class="cell"><span class="n">14</span><span class="k">paginated endpoints</span></div>
+    </div>
+    <div class="scroll">
+      <table>
+        <thead><tr><th>Language</th><th>Package</th><th class="version">Version</th><th>Needs</th></tr></thead>
+        <tbody>
+          <tr><td>TypeScript / Node</td><td><code>uarp-sdk</code> · npm</td><td class="version">0.3.0</td><td>Node 18+</td></tr>
+          <tr><td>Rust</td><td><code>uarp-sdk</code> · crates.io</td><td class="version">0.3.0</td><td>Rust 1.88+, Tokio</td></tr>
+          <tr><td>Swift</td><td><code>Snaga-AI/uarp-swift</code> · SwiftPM</td><td class="version">0.3.0</td><td>Swift 5.9+, macOS 12 / iOS 15</td></tr>
+          <tr><td>Kotlin / Android</td><td><code>ai.snaga:uarp-sdk</code> · Maven Central</td><td class="version">0.3.0</td><td>Kotlin 2.2+, JVM 11+, Android 21+</td></tr>
+          <tr><td>Ada</td><td><code>uarp_sdk</code> · Alire</td><td class="version">0.3.0</td><td>GNAT 2022, libcurl</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section>
+    <h2>Installing, and the first call</h2>
+    <p>Each block below is a complete first page for that language. The API key falls back to
+      <code>UARP_API_KEY</code>, then <code>SNAGA_API_KEY</code>; the base URL falls back to
+      <code>UARP_BASE_URL</code>, then production.</p>
+
+    <div class="lang">
+      <header><span class="chip">TypeScript</span><span class="meta">npm · ESM only</span></header>
+      <div class="body">
+<pre><code>npm install uarp-sdk</code></pre>
+<pre><code>import { UarpClient } from 'uarp-sdk';
+
+const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
+
+const agent = await client.agents.create({ name: 'quickstart' });
+
+for await (const item of client.agents.listAll({ limit: 100 })) {
+  console.log(item.name);
+}</code></pre>
+      </div>
+    </div>
+
+    <div class="lang">
+      <header><span class="chip">Rust</span><span class="meta">crates.io · async, Tokio</span></header>
+      <div class="body">
+<pre><code>cargo add uarp-sdk tokio --features tokio/macros,tokio/rt-multi-thread</code></pre>
+<pre><code>use uarp_sdk::models::CreateAgentRequest;
+
+let client = uarp_sdk::Client::from_env()?;
+
+let agent = client
+    .agents()
+    .create(&amp;CreateAgentRequest { name: "quickstart".into(), ..Default::default() })
+    .await?;
+
+let page = client.agents().list(&amp;Default::default()).await?;</code></pre>
+      </div>
+    </div>
+
+    <div class="lang">
+      <header><span class="chip">Swift</span><span class="meta">SwiftPM · async/await</span></header>
+      <div class="body">
+<pre><code>.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.3.0")</code></pre>
+<pre><code>import UARP
+
+let client = try UARPClient.fromEnvironment()
+
+let agent = try await client.agents.create(body: CreateAgentRequest(name: "quickstart"))
+let page = try await client.agents.list(limit: 100)</code></pre>
+      </div>
+    </div>
+
+    <div class="lang">
+      <header><span class="chip">Kotlin / Android</span><span class="meta">Maven Central · coroutines</span></header>
+      <div class="body">
+<pre><code>implementation("ai.snaga:uarp-sdk:0.3.0")</code></pre>
+<pre><code>import ai.snaga.uarp.UarpClient
+import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.models.CreateAgentRequest
+
+val client = UarpClient.fromEnvironment()
+
+val agent = client.agents.create(CreateAgentRequest(name = "quickstart"))
+client.agents.listAll(limit = 100).collect { println(it.name) }</code></pre>
+      </div>
+    </div>
+
+    <div class="lang">
+      <header><span class="chip">Ada</span><span class="meta">Alire · GNAT 2022</span></header>
+      <div class="body">
+<pre><code>alr with uarp_sdk</code></pre>
+<pre><code>Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;
+Page   : constant UARP.Models.List_Agents_Response :=
+  UARP.API.Agents.List (Client);</code></pre>
+        <div class="caveat">
+          <strong>Not in the Alire index yet.</strong>
+          <p>The submission is open as <a href="https://github.com/alire-project/alire-index/pull/2059">alire-index#2059</a>
+            and waiting on the maintainers. Until it lands, <code>alr with uarp_sdk</code> will not
+            resolve — document the pinned-tarball form instead, or hold the Ada page back.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Behaviour that is the same in all five</h2>
+    <p>Worth one shared page rather than repeating per language. The examples are TypeScript;
+      every other SDK does the same thing in its own idiom.</p>
+
+    <h3>Authentication</h3>
+    <p>A bearer key, <code>uarp_&lt;prefix&gt;_&lt;secret&gt;</code>, passed explicitly or read
+      from the environment.</p>
+
+    <h3>Idempotency and retries</h3>
+    <p>Every mutating <code>/api/v1/*</code> call carries an <code>Idempotency-Key</code>, which
+      is also what makes a write safe to retry. Transient failures — <code>408</code>,
+      <code>409</code>, <code>429</code>, <code>5xx</code>, dropped connections — are retried with
+      full-jitter backoff, honouring <code>Retry-After</code> and the
+      <code>X-Should-Retry: false</code> opt-out. Reads always retry; writes only when they carry
+      a key. Callers can supply their own key to replay a create deliberately.</p>
+
+    <h3>Errors</h3>
+    <p>RFC 9457 problem documents become typed errors carrying the status, title, detail,
+      <code>correlationId</code> and any field-level validation failures.</p>
+<pre><code>try {
+  await client.agents.get(id);
+} catch (error) {
+  if (error instanceof APIError) {
+    console.error(error.status, error.problem.title, error.problem.detail);
+  }
+}</code></pre>
+
+    <h3>Streaming</h3>
+    <p>The eleven SSE endpoints return a native async type that reopens with
+      <code>Last-Event-ID</code> when a connection drops. A connection that delivered at least one
+      event earns a fresh reconnect budget, so a flapping server cannot spin the loop.</p>
+<pre><code>for await (const event of client.runs.streamRunEvents(runId)) {
+  if (event.event === 'run.completed') break;  // leaving the loop closes the request
+}</code></pre>
+
+    <h3>Pagination</h3>
+    <p>Paginated endpoints get a second method that walks every page and yields items.</p>
+<pre><code>for await (const agent of client.agents.listAll({ limit: 100 })) { /* … */ }</code></pre>
+
+    <h3>Forward compatibility</h3>
+    <p>An enum value the API adds tomorrow decodes into the existing type rather than failing, so
+      an SDK release does not have to chase every new status or kind.</p>
+
+    <h3>Per-call overrides</h3>
+    <p>Timeout, retry budget, idempotency key and extra headers can be set for a single call.
+      Four SDKs take them as a trailing argument. Rust has no default arguments, so they ride on a
+      cheap clone of the client that shares its connection pool:
+      <code>client.with_timeout(..).agents().get(id)</code>.</p>
+  </section>
+
+  <section>
+    <h2>Four things the docs must say</h2>
+    <p>Each of these has already caught someone out. Leaving any of them implicit turns a
+      five-minute integration into an afternoon.</p>
+
+    <div class="caveat">
+      <strong>TypeScript is ESM only.</strong>
+      <p><code>import</code> works everywhere. <code>require('uarp-sdk')</code> needs Node 22.12 or
+        newer, where Node learned to require an ES module; below that a CommonJS caller has to use
+        <code>await import('uarp-sdk')</code>. The floor for the package itself is Node 18.</p>
+    </div>
+
+    <div class="caveat">
+      <strong>Kotlin consumers need Kotlin 2.2.</strong>
+      <p>The library is built with 2.2, and Kotlin's binary metadata is not readable by older
+        compilers: a project on 2.0 fails with <em>"Module was compiled with an incompatible
+        version of Kotlin"</em> before it reaches any of the API. This is not a runtime
+        requirement — it stops the build.</p>
+    </div>
+
+    <div class="caveat">
+      <strong>Swift event streams are Apple-only.</strong>
+      <p>The package builds on Linux and all 557 request/response operations work there, but the
+        eleven streaming endpoints do not: <code>URLSession.bytes</code> is missing from
+        swift-corelibs-foundation, and every other way of reading a response on that platform
+        buffers it to completion — which never happens on a stream that stays open. Calling one on
+        Linux throws <code>UARPError.stream</code> with that explanation.</p>
+    </div>
+
+    <div class="caveat">
+      <strong>JavaScript cannot hold integers past 2<sup>53</sup>.</strong>
+      <p>If the API ever returns one, the TypeScript SDK silently loses precision — a JavaScript
+        number is a double. No endpoint sends one today. Worth a line in the reference rather than
+        a surprise later.</p>
+    </div>
+  </section>
+
+  <section>
+    <h2>Suggested page structure</h2>
+    <ol>
+      <li><strong>Client libraries</strong> — the table above, with install lines. One page.</li>
+      <li><strong>Getting started</strong>, one page per language — install, authenticate, first
+        call, first stream. The blocks above are ready to lift.</li>
+      <li><strong>Behaviour</strong> — one shared page for authentication, idempotency, retries,
+        errors, streaming, pagination and overrides, with tabs per language rather than five
+        near-identical pages.</li>
+      <li><strong>Reference</strong> — link out to the generated documentation each ecosystem
+        already hosts: docs.rs for Rust, the npm page for TypeScript, javadoc.io for Kotlin.
+        Do not hand-write it; it is generated and will drift.</li>
+      <li><strong>Limits</strong> — the four caveats, stated once, linked from each getting-started
+        page.</li>
+    </ol>
+  </section>
+
+  <section>
+    <h2>Where things are</h2>
+    <ul>
+      <li>Source, issues and the changelog: <a href="https://github.com/Snaga-AI/uarp-sdks">Snaga-AI/uarp-sdks</a>.
+        Every release is described there; the changelog is the place to check before writing about
+        a version.</li>
+      <li>Swift consumers point at <a href="https://github.com/Snaga-AI/uarp-swift">Snaga-AI/uarp-swift</a>,
+        which is a mirror. Issues belong in the main repository.</li>
+      <li>Each package has its own README with the fuller treatment of streaming, pagination,
+        error handling and the escape hatch for calling an endpoint by hand.</li>
+    </ul>
+    <p>The version is shared: all five are cut from one tag, so <code>0.3.0</code> means the same
+      surface everywhere. When one moves, they all move.</p>
+  </section>
+
+  <footer>
+    Prepared from the 0.3.0 release. The TypeScript samples were compiled against the package as
+    published on npm, not just written here; the rest are cut down from the examples each package
+    builds in CI. If any of them stops working, a build breaks before a reader does.
+  </footer>
+</div>
