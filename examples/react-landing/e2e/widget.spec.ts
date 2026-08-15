@@ -40,3 +40,24 @@ test('the documentation renders and the samples are copyable without a key', asy
   await page.getByRole('button', { name: 'Ask the agent' }).click();
   await expect(page.getByPlaceholder('uarp_…')).toBeVisible();
 });
+
+test('the samples follow the language you pick, and the choice sticks', async ({ page }) => {
+  await page.goto('/');
+
+  //  TypeScript is the default, so its install line is what greets you.
+  await expect(page.locator('#install')).toContainText('npm install uarp-sdk');
+
+  await page.getByRole('button', { name: 'Rust', exact: true }).click();
+  await expect(page.locator('#install')).toContainText('cargo add uarp-sdk');
+  await expect(page.locator('#streaming')).toContainText('futures_util');
+
+  await page.getByRole('button', { name: 'Ada', exact: true }).click();
+  await expect(page.locator('#install')).toContainText('alr with uarp_sdk');
+  //  Ada is the one that is not in the community index yet; the page has to
+  //  say so rather than send someone to a command that fails.
+  await expect(page.locator('#install')).toContainText('Not in the Alire community index yet');
+
+  //  A reader who works in one language should not have to pick it again.
+  await page.reload();
+  await expect(page.locator('#install')).toContainText('alr with uarp_sdk');
+});

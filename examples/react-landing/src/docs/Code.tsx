@@ -19,6 +19,8 @@ const COLOURS: Record<TokenKind, string> = {
 };
 
 export function Code({ children, language = 'ts' }: { children: string; language?: string }) {
+  //  The label the reader sees is the language they picked; the tokeniser is
+  //  told the same thing so Ada is not highlighted as if it were TypeScript.
   const [copied, setCopied] = useState(false);
   const source = children.trim();
 
@@ -40,7 +42,7 @@ export function Code({ children, language = 'ts' }: { children: string; language
       </div>
       <pre className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-[0.82rem] leading-relaxed dark:border-slate-800 dark:bg-slate-900/60">
         <code>
-          {tokenise(source).map((token, index) => (
+          {tokenise(source, language).map((token, index) => (
             <span key={index} className={COLOURS[token.kind]}>
               {token.text}
             </span>

@@ -18,17 +18,38 @@ export interface Token {
   text: string;
 }
 
-const KEYWORDS = new Set([
+const SHARED = [
   'import', 'from', 'export', 'const', 'let', 'var', 'function', 'return', 'await', 'async',
   'for', 'of', 'in', 'if', 'else', 'try', 'catch', 'finally', 'throw', 'new', 'class',
   'extends', 'interface', 'type', 'implements', 'instanceof', 'typeof', 'break', 'continue',
   'switch', 'case', 'default', 'this', 'null', 'undefined', 'true', 'false', 'void', 'yield',
-]);
+];
+
+/**
+ * Keywords worth colouring, per language.
+ *
+ * Ada is the one that shares almost nothing with the others, so it gets its own
+ * set rather than being highlighted as if it were TypeScript.
+ */
+const KEYWORDS_BY_LANGUAGE: Record<string, Set<string>> = {
+  ts: new Set(SHARED),
+  rust: new Set([...SHARED, 'fn', 'mut', 'match', 'impl', 'pub', 'use', 'struct', 'enum', 'while', 'loop', 'move', 'Some', 'None', 'Ok', 'Err', 'self']),
+  swift: new Set([...SHARED, 'func', 'guard', 'struct', 'enum', 'var', 'do', 'where', 'some', 'try', 'nil', 'init', 'Decodable']),
+  kotlin: new Set([...SHARED, 'fun', 'val', 'suspend', 'when', 'object', 'data', 'is', 'when', 'it']),
+  ada: new Set([
+    'with', 'use', 'procedure', 'function', 'is', 'begin', 'end', 'declare', 'constant',
+    'loop', 'for', 'of', 'if', 'then', 'else', 'elsif', 'record', 'type', 'new', 'overriding',
+    'in', 'out', 'return', 'exception', 'when', 'others', 'limited', 'null', 'not', 'and', 'or',
+  ]),
+};
+
+let KEYWORDS = KEYWORDS_BY_LANGUAGE.ts!;
 
 /**  `new Foo(` and `: Foo` — the two places a type name appears in these samples. */
 const AFTER_NEW = /^(new|instanceof)\s+$/;
 
-export function tokenise(source: string): Token[] {
+export function tokenise(source: string, language = 'ts'): Token[] {
+  KEYWORDS = KEYWORDS_BY_LANGUAGE[language] ?? KEYWORDS_BY_LANGUAGE.ts!;
   const tokens: Token[] = [];
   let index = 0;
   let pending = '';
@@ -48,7 +69,7 @@ export function tokenise(source: string): Token[] {
     const rest = source.slice(index);
 
     //  Comments run to the end of the line, or to the closing marker.
-    if (rest.startsWith('//')) {
+    if (rest.startsWith('//') || (language === 'ada' && rest.startsWith('--'))) {
       const end = source.indexOf('\n', index);
       const stop = end === -1 ? source.length : end;
       push('comment', source.slice(index, stop));

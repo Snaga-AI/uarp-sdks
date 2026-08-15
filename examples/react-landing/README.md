@@ -1,8 +1,14 @@
-# The TypeScript SDK's documentation, which runs the SDK
+# The SDKs' documentation, which runs an SDK
 
-A React, Tailwind and TypeScript page that documents `uarp-sdk` — install,
-authentication, errors, pagination, streaming, idempotency, per-call overrides
-and the limits — with a live agent answering in the corner.
+A React, Tailwind and TypeScript page documenting all five UARP clients —
+install, authentication, errors, pagination, streaming, idempotency, per-call
+overrides and the limits — with a live agent answering in the corner.
+
+Pick a language in the header and every sample on the page follows it. The
+choice is remembered, and `#rust` in the URL selects one for a link you share.
+The samples are the ones compiled during the audit, per language, against the
+packages as published — not written from memory, which is how this
+documentation was wrong before.
 
 The widget is not an illustration. It runs the code the page describes, against
 whichever tenant's key you paste into it, which is the point: a documented
