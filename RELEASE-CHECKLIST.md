@@ -13,11 +13,11 @@ This file records what was actually verified, and what is left.
 
 | Stage | Package | Registry | State |
 |---|---|---|---|
-| 1 | `packages/typescript` | npm `uarp-sdk` | **published 0.2.0**, with provenance |
-| 2 | `packages/rust` | crates.io `uarp-sdk` | **published 0.2.0** |
-| 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **published, 0.2.0** |
+| 1 | `packages/typescript` | npm `uarp-sdk` | **0.3.0 published**; 0.2.0 deprecated |
+| 2 | `packages/rust` | crates.io `uarp-sdk` | **0.3.0 published**; 0.2.0 yanked |
+| 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **0.3.0 tagged** |
 | 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **blocked** — namespace not verified |
-| 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, awaiting review |
+| 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, now 0.3.0 |
 
 ---
 
@@ -213,3 +213,24 @@ the published archive and checked the hash.
 
 The rest is review by the Alire maintainers, and their CI builds the crate on
 Linux — which this repository's CI already does on every push.
+
+---
+
+## 0.3.0
+
+Cut because 0.2.0 reports an empty collection when it is not one: every `*All`
+walker stopped at the first page with no items, and this API returns exactly
+that while `has_more` is true. Silently — the caller sees an empty list, not an
+error. 0.2.0 is deprecated on npm, yanked on crates.io, and the Alire submission
+was moved to 0.3.0 rather than putting a known-broken release in the index.
+
+A minor bump rather than a patch: the generated surface changed with the API
+document. `AgentModelConfig` no longer carries a provider or model identifier
+and its enumeration is gone; health status became an enumeration; required
+properties moved across five schemas. Code that set a model on create will not
+compile — and the platform had been ignoring that field anyway.
+
+The Swift mirror still has to be pushed by hand at each release, because
+`SWIFT_MIRROR_TOKEN` is not set. Without it the job warns and skips, so a
+release quietly leaves Swift consumers on the previous version — which is what
+happened here until it was noticed.
