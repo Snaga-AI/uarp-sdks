@@ -85,6 +85,11 @@ while let Some(agent) = all.next().await {
 `list_all` follows the cursor until the server reports no further pages, and
 stops if a server ever repeats a cursor.
 
+An empty page does **not** end the walk. This API applies the page limit before
+filtering, so a page can come back with no items and more behind it — reading
+one as the end of the collection is what made 0.2.0 report empty lists. Three
+empty pages in a row do stop it.
+
 ## Errors
 
 ```rust

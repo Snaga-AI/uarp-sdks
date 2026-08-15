@@ -86,6 +86,11 @@ for try await agent in client.agents.listAll(limit: 100) {
 let firstPage = try await client.agents.listAll().collect(limit: 50)
 ```
 
+An empty page does **not** end the walk. This API applies the page limit before
+filtering, so a page can come back with no items and more behind it — reading
+one as the end of the collection is what made 0.2.0 report empty lists. Three
+empty pages in a row do stop it, as does a repeated cursor.
+
 ## Errors
 
 ```swift
