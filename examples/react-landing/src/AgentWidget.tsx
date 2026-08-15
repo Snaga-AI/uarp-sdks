@@ -25,6 +25,19 @@ function KeyForm({ onSubmit, error }: { onSubmit: (token: string) => Promise<boo
       <p className="text-sm text-slate-600 dark:text-slate-300">
         Paste a UARP API key to try this against your own tenant.
       </p>
+      <p className="text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+        Do not have one? Sign in at{' '}
+        <a
+          href="https://snaga.ai"
+          target="_blank"
+          rel="noreferrer"
+          className="underline decoration-slate-400 underline-offset-2 hover:text-slate-900 dark:hover:text-slate-100"
+        >
+          snaga.ai
+        </a>{' '}
+        and create one in your tenant settings. It looks like{' '}
+        <code className="font-mono">uarp_…</code> and is shown once.
+      </p>
       <input
         type="password"
         autoComplete="off"

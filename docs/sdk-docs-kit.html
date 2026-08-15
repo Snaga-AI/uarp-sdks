@@ -191,6 +191,16 @@ footer { border-top: 1px solid var(--rule); padding-top: 1.5rem; color: var(--fa
     <p>Each block below is a complete first page for that language. The API key falls back to
       <code>UARP_API_KEY</code>, then <code>SNAGA_API_KEY</code>; the base URL falls back to
       <code>UARP_BASE_URL</code>, then production.</p>
+    <div class="caveat">
+      <strong>Say where a key comes from.</strong>
+      <p>Every getting-started page needs this and it is the easiest line to forget: sign in at
+        <a href="https://snaga.ai">snaga.ai</a> and create a key in the tenant's settings. It is
+        shaped <code>uarp_&lt;prefix&gt;_&lt;secret&gt;</code> and the secret half is shown once —
+        the platform will not display it again. A key holding <code>tenants:write</code> can mint
+        more through <code>POST /api/v1/tenants/me/keys</code>, which takes a name and an optional
+        list of scopes. Worth adding the advice to give each key the narrowest set of scopes that
+        does its job.</p>
+    </div>
 
     <div class="lang">
       <header><span class="chip">TypeScript</span><span class="meta">npm · ESM only</span></header>
