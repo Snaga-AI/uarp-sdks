@@ -162,6 +162,20 @@ Differences that cannot be fixed are recorded in
 [contract/known-differences.json](contract/known-differences.json) with a
 reason, and reported without failing the run.
 
+## Worked examples
+
+[examples/react-landing](examples/react-landing/README.md) is a React, Tailwind
+and TypeScript landing page with an agent answering in the corner — installed
+from npm like any consumer would, not wired to the workspace.
+
+The point of it is the shape rather than the widget. The browser holds no API
+key and never calls the platform: it posts to a small server in the same
+project, which holds the key and uses the SDK. A key in front-end code is
+readable by every visitor, and the API only allows cross-origin browser calls
+from its own site, so the proxy is both the safe way and the only working way.
+A Playwright test drives the whole path in a real browser against the real API,
+and asserts the key never reaches the browser's storage.
+
 ## Checking the spec against the server
 
 Everything above compares the SDKs with the *document*. None of it can tell you
