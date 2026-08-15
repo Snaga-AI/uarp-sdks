@@ -6,7 +6,7 @@
 #   make test-rust           just one
 
 .DEFAULT_GOAL := help
-.PHONY: help generate stats check test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
+.PHONY: help generate stats check check-docs test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
 
 T ?=
 
@@ -22,7 +22,10 @@ stats: ## Report what the vendored spec contains
 check: ## Fail if the checked-in output is stale
 	@node generator/src/index.ts --check
 
-test: test-generator test-typescript test-rust test-swift test-kotlin test-ada ## Build and test everything
+check-docs: ## Type-check the TypeScript samples in the documentation
+	@node scripts/check-docs.ts
+
+test: check-docs test-generator test-typescript test-rust test-swift test-kotlin test-ada ## Build and test everything
 
 contract: ## Prove the five SDKs put the same bytes on the wire
 	@./contract/run.sh

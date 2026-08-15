@@ -48,6 +48,12 @@ end Demo;
 `From_Environment` reads `UARP_API_KEY` (or `SNAGA_API_KEY`) and
 `UARP_BASE_URL`; `UARP.Client.Create` takes them directly.
 
+**Getting a key.** Sign in at <https://snaga.ai> and create one in your tenant's
+settings. A key looks like `uarp_<prefix>_<secret>`; the secret half is shown
+once and never again. With a key that carries `tenants:write` you can mint more
+through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
+scopes that does its job.
+
 Operations live in one child package per API tag: `UARP.API.Agents`,
 `UARP.API.Runs`, `UARP.API.Sessions`, … 43 in all. Models and their JSON
 conversions are in `UARP.Models`.

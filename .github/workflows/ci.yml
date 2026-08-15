@@ -50,6 +50,10 @@ jobs:
         working-directory: packages/typescript
       - run: npm test
         working-directory: packages/typescript
+      # The samples in the READMEs are compiled too. Every documentation error
+      # found in this repository read perfectly well; only a compiler could
+      # tell `event.text` from `event.payload.delta`.
+      - run: node scripts/check-docs.ts
 
   rust:
     name: Rust

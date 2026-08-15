@@ -36,6 +36,12 @@ import UARP
 let client = try UARPClient.fromEnvironment()   // UARP_API_KEY, UARP_BASE_URL
 // or: UARPClient(apiKey: "uarp_...")
 
+**Getting a key.** Sign in at <https://snaga.ai> and create one in your tenant's
+settings. A key looks like `uarp_<prefix>_<secret>`; the secret half is shown
+once and never again. With a key that carries `tenants:write` you can mint more
+through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
+scopes that does its job.
+
 // The platform selects the model itself, so a create is just a name.
 let agent = try await client.agents.create(body: CreateAgentRequest(name: "demo"))
 

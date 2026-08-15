@@ -131,6 +131,14 @@ const client = new UarpClient({ apiKey: process.env.UARP_API_KEY });
 // Or from the environment: UARP_API_KEY, then SNAGA_API_KEY.
 // The base URL falls back to UARP_BASE_URL, then production.
 const fromEnv = new UarpClient({});`}</Code>
+              <Note>
+                <strong>Where a key comes from.</strong> Sign in at{' '}
+                <a className="underline" href="https://snaga.ai">snaga.ai</a> and create one in your
+                tenant settings; the secret half is shown once. With a key carrying{' '}
+                <code>tenants:write</code> you can mint more from the SDK with{' '}
+                <code>client.tenants.createAPIKey(…)</code>. Give each one the narrowest set of
+                scopes that does its job.
+              </Note>
               <Note tone="warn">
                 Never construct a client with a key in code that reaches a browser. See{' '}
                 <a className="underline" href="#browser">In the browser</a>.

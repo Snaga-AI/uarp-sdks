@@ -32,6 +32,26 @@ console.log(page.items.length, page.has_more);
 The API key falls back to `UARP_API_KEY`, then `SNAGA_API_KEY`. The base URL
 falls back to `UARP_BASE_URL`, then production.
 
+### Getting a key
+
+Sign in at <https://snaga.ai> and create one in your tenant's settings. A key
+looks like `uarp_<prefix>_<secret>`, and the secret half is shown once — the
+platform will not display it again.
+
+With a key that already carries the `tenants:write` scope you can mint more
+through the API itself:
+
+```ts
+const created = await client.tenants.createAPIKey({
+  name: 'ci',
+  scopes: ['agents:read', 'runs:create'],
+});
+console.log(created.raw_key);   // the only time you will see it
+```
+
+Give each key the narrowest set of scopes that does its job; the catalogue is in
+the `bearerAuth` description of the OpenAPI document.
+
 Resources hang off the client by tag: `client.agents`, `client.runs`,
 `client.sessions`, `client.memory`, `client.teams`, … 43 in all. Editor
 completion is the fastest way to browse them.
