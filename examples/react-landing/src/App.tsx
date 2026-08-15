@@ -7,7 +7,7 @@
 import { useEffect, useState } from 'react';
 import { AgentWidget } from './AgentWidget';
 import { Code, Shell } from './docs/Code';
-import { Note, Section } from './docs/Section';
+import { Note, Section, Term } from './docs/Section';
 import {
   AUTHENTICATE,
   CALLING,
@@ -183,18 +183,18 @@ export function App() {
               </p>
               {language === 'ts' && (
                 <Note tone="warn">
-                  <strong>ESM only.</strong> <code>import</code> works everywhere.{' '}
-                  <code>require('uarp-sdk')</code> needs Node 22.12 or newer, where Node learned to
+                  <strong>ESM only.</strong> <Term>import</Term> works everywhere.{' '}
+                  <Term>require('uarp-sdk')</Term> needs Node 22.12 or newer, where Node learned to
                   require an ES module; below that a CommonJS caller needs{' '}
-                  <code>await import('uarp-sdk')</code>.
+                  <Term>await import('uarp-sdk')</Term>.
                 </Note>
               )}
               {language === 'swift' && (
                 <Note>
-                  The package lives in its own repository: SwiftPM expects <code>Package.swift</code>{' '}
+                  The package lives in its own repository: SwiftPM expects <Term>Package.swift</Term>{' '}
                   at a repository root, so it cannot see one inside a monorepo.{' '}
-                  <code>Snaga-AI/uarp-swift</code> is a mirror published on every release; issues
-                  belong in <code>Snaga-AI/uarp-sdks</code>.
+                  <Term>Snaga-AI/uarp-swift</Term> is a mirror published on every release; issues
+                  belong in <Term>Snaga-AI/uarp-sdks</Term>.
                 </Note>
               )}
               {language === 'kotlin' && (
@@ -216,7 +216,7 @@ export function App() {
 
             <Section id="authenticate" title="Authenticate">
               <p className="text-slate-600 dark:text-slate-300">
-                A bearer key in the form <code className="font-mono">uarp_&lt;prefix&gt;_&lt;secret&gt;</code>,
+                A bearer key in the form <Term>uarp_&lt;prefix&gt;_&lt;secret&gt;</Term>,
                 passed explicitly or read from the environment.
               </p>
               <Code language={language}>{AUTHENTICATE[language]}</Code>
@@ -224,8 +224,8 @@ export function App() {
                 <strong>Where a key comes from.</strong> Sign in at{' '}
                 <a className="underline" href="https://snaga.ai">snaga.ai</a> and create one in your
                 tenant settings; the secret half is shown once. With a key carrying{' '}
-                <code>tenants:write</code> you can mint more from the SDK with{' '}
-                <code>client.tenants.createAPIKey(…)</code>. Give each one the narrowest set of
+                <Term>tenants:write</Term> you can mint more from the SDK with{' '}
+                <Term>client.tenants.createAPIKey(…)</Term>. Give each one the narrowest set of
                 scopes that does its job.
               </Note>
               <Note tone="warn">
@@ -237,7 +237,7 @@ export function App() {
             <Section id="calling" title="Calling the API">
               <p className="text-slate-600 dark:text-slate-300">
                 Operations are grouped by resource. Every argument and every result is typed —
-                there is no <code className="font-mono">any</code> in the generated surface. Where
+                there is no <Term>any</Term> in the generated surface. Where
                 the API document describes no shape, the SDKs say so instead of inventing one: 60
                 operations take a free-form body and 243 return one, in the same places in all five
                 languages.
@@ -245,7 +245,7 @@ export function App() {
               <Code language={language}>{CALLING[language]}</Code>
               <p className="text-slate-600 dark:text-slate-300">
                 The platform selects the model itself, so a create is just a name. Anything sent for{' '}
-                <code className="font-mono">model</code> is accepted and ignored — the document says
+                <Term>model</Term> is accepted and ignored — the document says
                 so explicitly.
               </p>
             </Section>
@@ -276,31 +276,44 @@ export function App() {
             <Section id="streaming" title="Streaming">
               <p className="text-slate-600 dark:text-slate-300">
                 The eleven server-sent-event endpoints return an async iterable that reopens with{' '}
-                <code className="font-mono">Last-Event-ID</code> when a connection drops. A
+                <Term>Last-Event-ID</Term> when a connection drops. A
                 connection that delivered at least one event earns a fresh reconnect budget, so a
                 flapping server cannot spin the loop.
               </p>
               <Code language={language}>{STREAMING[language]}</Code>
-              <p className="text-slate-600 dark:text-slate-300">
-                Text arrives as <code className="font-mono">payload.delta</code> on{' '}
-                <code className="font-mono">llm.chunk</code>; the run ends with{' '}
-                <code className="font-mono">run.completed</code> or{' '}
-                <code className="font-mono">run.failed</code>.
-              </p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <dt className="font-medium text-slate-900 dark:text-slate-100">Text</dt>
+                <dd>
+                  arrives at <Term>payload.delta</Term> on the <Term>llm.chunk</Term> event
+                </dd>
+                <dt className="font-medium text-slate-900 dark:text-slate-100">End of a run</dt>
+                <dd>
+                  <Term>run.completed</Term> or <Term>run.failed</Term>
+                </dd>
+              </dl>
             </Section>
 
             <Section id="idempotency" title="Idempotency and retries">
               <p className="text-slate-600 dark:text-slate-300">
-                Every mutating <code className="font-mono">/api/v1/*</code> call carries an{' '}
-                <code className="font-mono">Idempotency-Key</code>, which is also what makes a write
-                safe to retry. Transient failures — <code className="font-mono">408</code>,{' '}
-                <code className="font-mono">409</code>, <code className="font-mono">429</code>,{' '}
-                <code className="font-mono">500</code>, <code className="font-mono">502</code>,{' '}
-                <code className="font-mono">503</code>, <code className="font-mono">504</code>,
-                dropped connections — are retried with
-                full-jitter backoff, honouring <code className="font-mono">Retry-After</code> and the{' '}
-                <code className="font-mono">X-Should-Retry: false</code> opt-out.
+                Every mutating <Term>/api/v1/*</Term> call carries an idempotency key, which is also
+                what makes a write safe to retry. Transient failures are retried with full-jitter
+                backoff.
               </p>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 text-sm text-slate-600 dark:text-slate-300">
+                <dt className="font-medium text-slate-900 dark:text-slate-100">Retried</dt>
+                <dd>
+                  <Term>408 409 429 500 502 503 504</Term>, and dropped connections. Not every 5xx:{' '}
+                  <Term>501</Term> is a permanent answer.
+                </dd>
+                <dt className="font-medium text-slate-900 dark:text-slate-100">Header sent</dt>
+                <dd>
+                  <Term>Idempotency-Key</Term>, on every mutating call
+                </dd>
+                <dt className="font-medium text-slate-900 dark:text-slate-100">Headers honoured</dt>
+                <dd>
+                  <Term>Retry-After</Term>, and <Term>X-Should-Retry: false</Term> to opt out
+                </dd>
+              </dl>
               <Code>{`// Reads always retry. Writes retry only because they carry a key.
 const agent = await client.agents.create({ name: 'support' });
 
@@ -324,7 +337,7 @@ await client.agents.create({ name: 'support' }, { idempotencyKey: 'onboarding-42
               </p>
               <p className="text-slate-600 dark:text-slate-300">
                 There is a second, more mechanical reason. The API sends{' '}
-                <code className="font-mono">Access-Control-Allow-Origin</code> only for its own site,
+                <Term>Access-Control-Allow-Origin</Term> only for its own site,
                 so a browser on any other origin has the response blocked before your code sees it:
               </p>
               <Code language="http">{`Origin: https://snaga.ai       → access-control-allow-origin: https://snaga.ai
@@ -355,8 +368,8 @@ for await (const event of client.runs.streamRunEvents(run.run_id)) {
 }
 res.end();`}</Code>
               <p className="text-slate-600 dark:text-slate-300">
-                In the browser, read it back from an ordinary <code className="font-mono">fetch</code>.{' '}
-                <code className="font-mono">EventSource</code> cannot send a POST body, and an SSE
+                In the browser, read it back from an ordinary <Term>fetch</Term>.{' '}
+                <Term>EventSource</Term> cannot send a POST body, and an SSE
                 frame ends at a <em>blank line</em> — which is exactly what naive line-splitting
                 throws away.
               </p>
@@ -400,13 +413,13 @@ for (;;) {
               <Note tone="warn">
                 <strong>Integers past 2<sup>53</sup> lose precision.</strong> A JavaScript number is
                 a double. No endpoint sends one today, and typing every integer in the document as{' '}
-                <code>bigint</code> would make the ordinary case worse — so this is documented
+                <Term>bigint</Term> would make the ordinary case worse — so this is documented
                 rather than defended against.
               </Note>
               <Note tone="warn">
                 <strong>Enumerations stay open.</strong> A value the API adds tomorrow decodes into
                 the existing type instead of failing, so a{' '}
-                <code>switch</code> over one needs a default branch.
+                <Term>switch</Term> over one needs a default branch.
               </Note>
             </Section>
 

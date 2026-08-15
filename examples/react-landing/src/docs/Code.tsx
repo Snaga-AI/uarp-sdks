@@ -40,8 +40,17 @@ export function Code({ children, language = 'ts' }: { children: string; language
           {copied ? 'Copied' : 'Copy'}
         </button>
       </div>
-      <pre className="overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-[0.82rem] leading-relaxed dark:border-slate-800 dark:bg-slate-900/60">
-        <code>
+      {/*
+        A browser translating this page will happily rewrite a code sample —
+        translating its comments, its string literals, sometimes its keywords —
+        and hand the reader something that does not compile. Marked so it is
+        left alone.
+      */}
+      <pre
+        className="notranslate overflow-x-auto rounded-lg border border-slate-200 bg-slate-50 p-4 font-mono text-[0.82rem] leading-relaxed dark:border-slate-800 dark:bg-slate-900/60"
+        translate="no"
+      >
+        <code className="notranslate" translate="no">
           {tokenise(source, language).map((token, index) => (
             <span key={index} className={COLOURS[token.kind]}>
               {token.text}
@@ -59,7 +68,12 @@ export function Shell({ children }: { children: string }) {
   return (
     <div className="group relative flex items-center gap-3 rounded-lg border border-slate-200 bg-slate-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/60">
       <span className="text-slate-400 select-none">$</span>
-      <code className="flex-1 overflow-x-auto font-mono text-[0.85rem] whitespace-nowrap">{children}</code>
+      <code
+        className="notranslate flex-1 overflow-x-auto font-mono text-[0.85rem] whitespace-nowrap"
+        translate="no"
+      >
+        {children}
+      </code>
       <button
         type="button"
         onClick={async () => {

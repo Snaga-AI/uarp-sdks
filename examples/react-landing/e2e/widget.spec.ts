@@ -2,9 +2,11 @@ import { expect, test } from '@playwright/test';
 
 const key = process.env.UARP_API_KEY;
 
-test.skip(!key, 'set UARP_API_KEY to run this against a real tenant');
-
 test('a visitor can ask the agent and watch the answer stream in', async ({ page }) => {
+  //  Only this one needs a tenant. The skip used to sit at file scope, which
+  //  silently took the two documentation tests with it — a suite that reported
+  //  "3 skipped" and looked like it had run.
+  test.skip(!key, 'set UARP_API_KEY to run this against a real tenant');
   await page.goto('/');
   await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
 
@@ -39,6 +41,28 @@ test('the documentation renders and the samples are copyable without a key', asy
 
   await page.getByRole('button', { name: 'Ask the agent' }).click();
   await expect(page.getByPlaceholder('uarp_…')).toBeVisible();
+});
+
+test('every identifier and sample is marked so a translator leaves it alone', async ({ page }) => {
+  await page.goto('/');
+
+  //  A browser translating this page rewrites each sentence in the target
+  //  language's word order and drags inline elements along, so a paragraph
+  //  holding ten of them ends with all ten in a heap: a reader saw
+  //  `Idempotency-Key408 409429 500502 503504` and asked whose keys those
+  //  were. Samples fare worse — a translated comment or string literal is
+  //  code that does not compile.
+  const unmarked = page.locator('code:not([translate="no"]), pre:not([translate="no"])');
+  expect(
+    await unmarked.count(),
+    'every code element must carry translate="no"',
+  ).toBe(0);
+
+  //  And the facts must survive a fragment being moved anyway, so the ones
+  //  that matter are labelled rather than strung through a sentence.
+  await expect(page.locator('#idempotency')).toContainText('408 409 429 500 502 503 504');
+  await expect(page.locator('#idempotency')).toContainText('Retried');
+  await expect(page.locator('#streaming')).toContainText('payload.delta');
 });
 
 test('the samples follow the language you pick, and the choice sticks', async ({ page }) => {
