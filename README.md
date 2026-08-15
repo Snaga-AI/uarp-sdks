@@ -12,7 +12,7 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
 
 Every SDK covers the **whole** API surface: 557 operations across 43 resource
-groups, 575 models, 11 server-sent-event streams and the cursor-paginated
+groups, 603 models, 11 server-sent-event streams and the cursor-paginated
 endpoints — plus the platform's auth, idempotency and retry semantics.
 
 ## What each SDK gives you
