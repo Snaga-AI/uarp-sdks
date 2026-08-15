@@ -237,7 +237,10 @@ export function App() {
             <Section id="calling" title="Calling the API">
               <p className="text-slate-600 dark:text-slate-300">
                 Operations are grouped by resource. Every argument and every result is typed —
-                there is no <code className="font-mono">any</code> in the generated surface.
+                there is no <code className="font-mono">any</code> in the generated surface. Where
+                the API document describes no shape, the SDKs say so instead of inventing one: 60
+                operations take a free-form body and 243 return one, in the same places in all five
+                languages.
               </p>
               <Code language={language}>{CALLING[language]}</Code>
               <p className="text-slate-600 dark:text-slate-300">

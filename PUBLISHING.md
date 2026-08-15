@@ -34,7 +34,7 @@ So the release copies `packages/swift` into `Snaga-AI/uarp-swift`, a repository
 that exists only to be depended upon, and tags it there:
 
 ```swift
-.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.2.0")
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.3.0")
 ```
 
 The mirror is cloned and updated rather than recreated, because its tags *are*
@@ -139,12 +139,14 @@ reachable by any consumer at all.
 ## Cutting a release
 
 ```sh
-scripts/set-version.sh 0.2.0     # writes VERSION and every manifest, regenerates
+scripts/set-version.sh X.Y.Z     # writes VERSION and every manifest, regenerates
 $EDITOR CHANGELOG.md             # rename Unreleased to the version
-git commit -am "Release 0.2.0"
-git tag v0.2.0
+git commit -am "Release X.Y.Z"
+git tag vX.Y.Z
 git push origin main --tags
 ```
 
-The tag starts the workflow. Alire is the one step that does not finish on its
-own: collect the tarball from the run and open the index pull request.
+The tag starts the workflow. Two steps do not finish on their own: Alire, where
+the tarball from the run goes into an index pull request, and the Swift mirror,
+which is skipped with a warning while `SWIFT_MIRROR_TOKEN` is unset — a release
+that ignores that warning leaves Swift consumers on the previous version.

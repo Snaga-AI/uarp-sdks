@@ -17,8 +17,10 @@ endpoints — plus the platform's auth, idempotency and retry semantics.
 
 ## What each SDK gives you
 
-- **Typed models.** Every request and response body, including the ones the
-  spec declares inline, is a named type in the target language.
+- **Typed models.** Every body the API document describes, including the ones it
+  declares inline, is a named type in the target language. Where it describes
+  nothing the SDKs say so rather than inventing a shape: 60 operations take a
+  free-form request body and 243 return one, identically in all five languages.
 - **Auth.** `Authorization: Bearer uarp_<prefix>_<secret>`, from an explicit key
   or from `UARP_API_KEY` / `SNAGA_API_KEY`.
 - **Idempotency.** Every mutating `/api/v1/*` call sends an `Idempotency-Key`,
@@ -37,8 +39,11 @@ endpoints — plus the platform's auth, idempotency and retry semantics.
   connection ends. A connection that delivered at least one event earns a fresh
   reconnect budget, so a flapping server cannot spin the loop.
 - **Pagination.** Cursor-paginated endpoints get an extra method that walks
-  every page and yields items, stopping on `has_more: false`, a null cursor, an
-  empty page, or a repeated cursor.
+  every page and yields items, stopping on `has_more: false`, a null cursor, or
+  a repeated cursor. An empty page does **not** end the walk: this API applies
+  the page limit before filtering, so a page can come back empty with more
+  items behind it. Three empty pages in a row do stop it, so a server that
+  never advances cannot loop forever.
 - **Forward compatibility.** An enum value the server adds tomorrow decodes
   into the existing type rather than failing.
 - **Per-call overrides.** Timeout, retry budget, idempotency key and extra
@@ -217,10 +222,10 @@ transports against real TLS and real infrastructure rather than a local mock.
 All five packages share one version and one tag.
 
 ```sh
-scripts/set-version.sh 0.3.0   # VERSION, every manifest, then regenerate
+scripts/set-version.sh X.Y.Z   # VERSION, every manifest, then regenerate
 $EDITOR CHANGELOG.md
 make test
-git commit -am "Release 0.3.0" && git tag v0.3.0 && git push --follow-tags
+git commit -am "Release X.Y.Z" && git tag vX.Y.Z && git push --follow-tags
 ```
 
 The tag triggers `.github/workflows/release.yml`, which re-runs each package's
@@ -231,7 +236,10 @@ Swift is the exception worth knowing about. SwiftPM resolves a git URL and
 expects `Package.swift` at the root of the repository — a package in a
 subdirectory is unreachable, so nobody can depend on this monorepo. The release
 therefore copies `packages/swift` into `Snaga-AI/uarp-swift` and tags it there,
-and that mirror is what consumers point at. Alire has no upload at all: the
+and that mirror is what consumers point at. Until `SWIFT_MIRROR_TOKEN` is set
+the job warns and skips instead of pushing, so that copy is made by hand — a
+release that ignores the warning ships four SDKs and leaves Swift behind.
+Alire has no upload at all: the
 workflow prepares the tarball and the release lands through a pull request
 against the community index.
 

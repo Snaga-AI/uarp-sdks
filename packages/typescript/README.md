@@ -95,6 +95,11 @@ import { collect } from 'uarp-sdk';
 const first500 = await collect(client.agents.listAll(), 500);
 ```
 
+An empty page does **not** end the walk. This API applies the page limit before
+filtering, so a page can come back with no items and more behind it — reading
+one as the end of the collection is what made 0.2.0 report empty lists. Three
+empty pages in a row do stop it, as does a repeated cursor.
+
 ## Errors
 
 Every non-2xx response throws a subclass of `APIError` carrying the parsed

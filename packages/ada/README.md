@@ -141,6 +141,11 @@ Everything : constant UARP.Models.Agent_Vectors.Vector :=
 
 `Max_Items => 0` (the default) means no limit.
 
+An empty page does **not** end the walk. This API applies the page limit before
+filtering, so a page can come back with no items and more behind it — reading
+one as the end of the collection is what made 0.2.0 report empty vectors. Three
+empty pages in a row do stop it, as does a repeated cursor.
+
 ## Errors
 
 Generated operations raise on failure:
@@ -213,8 +218,10 @@ directly, for endpoints the generated surface does not fit.
 
 - Each `Character` of a `Text` value is one byte, so binary downloads and
   multipart uploads work without extra encoding.
-- Bodies that are a bare scalar, array or free-form object (62 endpoints) take
-  a `JSON_Value` rather than a generated record.
+- Bodies that are a bare scalar, array or free-form object (60 endpoints) take
+  a `JSON_Value` rather than a generated record, and 243 operations return one
+  for the same reason — the API document describes no schema for their
+  responses. The other SDKs draw the line in exactly the same places.
 - Streaming and unary calls are both safe to run from several tasks at once;
   libcurl's one-time global initialisation is serialised behind a protected
   object.

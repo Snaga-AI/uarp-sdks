@@ -123,7 +123,7 @@ so nothing in a monorepo subdirectory can be depended upon. `packages/swift` is
 copied into its own repository and tagged there.
 
 ```swift
-.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.2.0")
+.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.3.0")
 ```
 
 ### Checked
@@ -138,13 +138,14 @@ copied into its own repository and tagged there.
 ### Left to do
 
 - `SWIFT_MIRROR_TOKEN` — a fine-grained token with `contents: write` on
-  `Snaga-AI/uarp-swift`. 0.2.0 was pushed by hand; without the secret the
-  release job warns and skips the mirror.
+  `Snaga-AI/uarp-swift`. Both tags there, 0.2.0 and 0.3.0, were pushed by hand;
+  without the secret the release job warns and skips the mirror, which leaves
+  Swift consumers on the previous version without failing the release.
 - Optionally list it on the Swift Package Index so it is findable.
 
 ---
 
-## Stage 4 — Maven Central, `ai.snaga:uarp-sdk` — blocked on DNS
+## Stage 4 — Maven Central, `ai.snaga:uarp-sdk` — published
 
 Central does not accept a Maven deploy. The upload endpoint takes one zip
 holding the whole repository layout; a per-file `PUT` answers 404, which is what
@@ -158,20 +159,29 @@ the build was doing. Gradle now stages into a directory and
 | Artifacts | jar, sources, javadoc, pom, module — everything Central requires |
 | Signatures | a 4096-bit RSA key signs every file; `.asc`, `.md5`, `.sha1`, `.sha256`, `.sha512` all present |
 | Bundle | Central accepted the upload (201) and returned a deployment id |
-| Validation | ran, and answered — see below |
+| Namespace | `ai.snaga` verified by a DNS TXT record on `snaga.ai` |
+| Publication | validated, `PUBLISHED`, and `repo1.maven.org` serves both the pom and the jar |
+| **Resolution** | a project that did not build it resolves, compiles and runs against the release |
 
-The upload was tried by hand with `publishingType=USER_MANAGED`, so a mistake
-could not become permanent. It failed with exactly one error:
+The first upload was tried by hand with `publishingType=USER_MANAGED`, so a
+mistake could not become permanent. It failed with exactly one error —
+`Namespace 'ai.snaga' is not allowed` — which is what sent the release through
+namespace verification. Everything else had already passed.
 
+```kotlin
+repositories { mavenCentral() }
+dependencies { implementation("ai.snaga:uarp-sdk:0.3.0") }
 ```
-Namespace 'ai.snaga' is not allowed
-```
+
+### Known and deliberate
+
+That consumer test turned up something worth documenting rather than fixing: the
+library is built with Kotlin 2.2, and a consumer on Kotlin 2.0 fails with
+*"Module was compiled with an incompatible version of Kotlin"* before reaching
+any of the API. Both READMEs state the requirement.
 
 ### Left to do
 
-- **Register and verify `ai.snaga`** on the Central Portal. Verification is a
-  DNS TXT record on `snaga.ai`. Nothing can work around it, and everything else
-  is already proven working.
 - The signing key is `625840EC DBE162D6 0C5C8C2D C3A2DE60 5591E83E`, RSA 4096,
   no expiry, public half on `keyserver.ubuntu.com`. Replace it with your own if
   you would rather hold the private key yourself; the secrets to change are
@@ -179,16 +189,16 @@ Namespace 'ai.snaga' is not allowed
 
 ---
 
-## Stage 5 — Alire, `uarp_sdk` — ready to submit
+## Stage 5 — Alire, `uarp_sdk` — submitted, in review
 
 Alire has no upload: a release is a pull request against the community index
 pointing at a hosted tarball.
 
 | | |
 |---|---|
-| Tarball | attached to the GitHub release, 200 kB |
-| Hash | `sha256:fcc059c5a856feda8d77bae784473549b3d0d0e512b8a237c054035e579ec0a6`, verified against a fresh download |
-| Manifest | `packages/ada/alire-index/uarp_sdk-0.2.0.toml` |
+| Tarball | attached to the GitHub release, 208 kB |
+| Hash | `sha256:5429eca17a131ef980127a8c9e473190047805b0411eda85526a828cefdb638d`, verified against a fresh download |
+| Manifest | `packages/ada/alire-index/uarp_sdk-0.3.0.toml` |
 | Linux | the crate builds and its 93 tests pass on Ubuntu in CI, which is where the index reviewers build it |
 
 ### Submitted
@@ -237,24 +247,4 @@ happened here until it was noticed.
 
 ---
 
-## Stage 4 — Maven Central, `ai.snaga:uarp-sdk` — published
-
-The namespace verified once the TXT record was picked up, and 0.3.0 went out
-through the release workflow: bundle uploaded, validated, `PUBLISHED`, and
-`repo1.maven.org` serves both the pom and the jar.
-
-Verified the way the others were — from a project that did not build it:
-
-```kotlin
-repositories { mavenCentral() }
-dependencies { implementation("ai.snaga:uarp-sdk:0.3.0") }
-```
-
-resolves, compiles and runs.
-
-That test also turned up something worth documenting rather than fixing: the
-library is built with Kotlin 2.2, and a consumer on Kotlin 2.0 fails with
-*"Module was compiled with an incompatible version of Kotlin"* before reaching
-any of the API. Both READMEs now state the requirement.
-
-All five registries are now published.
+All five registries are published. Alire is the one still in review.
