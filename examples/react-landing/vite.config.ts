@@ -3,6 +3,7 @@ import react from '@vitejs/plugin-react';
 import tailwind from '@tailwindcss/vite';
 import { handleUarp } from './server/handlers.js';
 import { writeReferenceIfChanged } from './scripts/gen-reference.ts';
+import { writeWireIfChanged } from './scripts/gen-wire.ts';
 
 /**
  * The proxy runs inside the dev server, so `npm run dev` is the whole setup.
@@ -39,6 +40,12 @@ export default defineConfig({
         if (writeReferenceIfChanged()) {
           console.log('[uarp-reference] wrote public/reference.json');
         }
+      },
+    },
+    {
+      name: 'uarp-wire',
+      buildStart() {
+        writeWireIfChanged();
       },
     },
   ],
