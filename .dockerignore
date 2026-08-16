@@ -1,0 +1,20 @@
+#  The Docker build context is the whole repo (see examples/react-landing/
+#  Dockerfile), so exclude everything the image does not need — above all the
+#  build artifacts that would otherwise be sent to the daemon: Rust target/
+#  (multi-GB), Kotlin/Swift build/, and every node_modules/dist. Source the
+#  generators read (packages/typescript/src/generated, contract/) is NOT
+#  excluded — it has to reach the build.
+**/node_modules
+**/dist
+**/target
+**/build
+**/.gradle
+**/.kotlin
+**/.next
+**/playwright-report
+**/test-results
+**/*.log
+.git
+.github
+.vscode
+.idea
