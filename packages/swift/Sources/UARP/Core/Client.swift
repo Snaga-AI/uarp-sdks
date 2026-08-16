@@ -214,9 +214,33 @@ public final class UARPClient: @unchecked Sendable {
         EventStream(client: self, spec: spec, options: spec.options.stream)
     }
 
+    /// Send a request and return the raw response bytes and HTTP status, WITHOUT
+    /// throwing on a non-2xx body.
+    ///
+    /// Transient failures (the retryable status codes, timeouts, dropped
+    /// connections) still retry up to `maxRetries` exactly as ``send`` does; the
+    /// terminal response — success OR failure — is returned so the caller can
+    /// decode it through its own decoder. This is the transport-only primitive a
+    /// consumer builds its tolerant decoding on: the SDK owns retry,
+    /// idempotency and request-building; the caller owns the response shape and
+    /// turns a non-2xx into whatever error type it already uses.
+    ///
+    /// ``send``/``sendData``/``sendVoid`` thin over this and throw
+    /// ``UARPError``.api`` on a non-2xx; use ``sendRaw`` when you need the body of
+    /// an error response (an API that answers a refusal with a bare
+    /// `{"error":"…"}` rather than an RFC 9457 document, or a problem+json the
+    /// caller decodes with its own keys).
+    ///
+    /// Throws ``UARPError``.connection`` / ``.timeout`` only when no HTTP
+    /// response was ever received — the request never reached the server, or
+    /// it timed out. Any HTTP status, 2xx through 5xx, is returned, not thrown.
+    public func sendRaw(_ spec: RequestSpec) async throws -> (Data, HTTPURLResponse) {
+        try await performRaw(spec)
+    }
+
     // MARK: - Internals
 
-    private func perform(_ spec: RequestSpec) async throws -> (Data, HTTPURLResponse) {
+    private func performRaw(_ spec: RequestSpec) async throws -> (Data, HTTPURLResponse) {
         let maxRetries = spec.options.maxRetries ?? configuration.maxRetries
         let idempotencyKey = spec.idempotent ? (spec.options.idempotencyKey ?? UUID().uuidString) : nil
         let canRetry = spec.method == "GET" || spec.method == "HEAD" || idempotencyKey != nil
@@ -234,14 +258,15 @@ public final class UARPClient: @unchecked Sendable {
                 }
 
                 let headers = Self.normalizedHeaders(http)
-                let apiError = APIError(status: http.statusCode, problem: Self.problem(from: data), headers: headers)
                 let shouldRetry = Self.retryableStatuses.contains(http.statusCode)
                     && headers["x-should-retry"] != "false"
                     && canRetry
                     && attempt < maxRetries
-                if !shouldRetry { throw UARPError.api(apiError) }
+                // A non-retryable failure is still an HTTP response the caller
+                // wants to decode — return it rather than throwing away the body.
+                if !shouldRetry { return (data, http) }
 
-                let wait = apiError.retryAfterSeconds ?? Backoff.delay(attempt: attempt)
+                let wait = headers["retry-after"].flatMap(Double.init) ?? Backoff.delay(attempt: attempt)
                 attempt += 1
                 try await Task.sleep(nanoseconds: UInt64(min(wait, 60) * 1_000_000_000))
             } catch let error as UARPError {
@@ -258,6 +283,13 @@ public final class UARPClient: @unchecked Sendable {
                 try await Task.sleep(nanoseconds: UInt64(Backoff.delay(attempt: attempt) * 1_000_000_000))
             }
         }
+    }
+
+    private func perform(_ spec: RequestSpec) async throws -> (Data, HTTPURLResponse) {
+        let (data, http) = try await performRaw(spec)
+        if (200..<300).contains(http.statusCode) { return (data, http) }
+        let headers = Self.normalizedHeaders(http)
+        throw UARPError.api(APIError(status: http.statusCode, problem: Self.problem(from: data), headers: headers))
     }
 
     func buildRequest(_ spec: RequestSpec, idempotencyKey: String?, accept: String = "application/json") throws -> URLRequest {
@@ -281,7 +313,13 @@ public final class UARPClient: @unchecked Sendable {
         request.timeoutInterval = spec.options.timeout ?? configuration.timeout
         request.setValue(accept, forHTTPHeaderField: "Accept")
         request.setValue(userAgent, forHTTPHeaderField: "User-Agent")
-        request.setValue("Bearer \(configuration.apiKey)", forHTTPHeaderField: "Authorization")
+        // An empty key means "no credentials" (a guest/public client). Sending
+        // `Bearer ` with nothing after it is not the same as sending no header,
+        // and a server that validates the Authorization value can refuse it, so
+        // skip the header entirely when the key is empty.
+        if !configuration.apiKey.isEmpty {
+            request.setValue("Bearer \(configuration.apiKey)", forHTTPHeaderField: "Authorization")
+        }
         for (name, value) in configuration.defaultHeaders {
             request.setValue(value, forHTTPHeaderField: name)
         }
