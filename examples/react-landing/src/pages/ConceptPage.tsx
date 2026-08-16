@@ -2,11 +2,13 @@
 import { useParams } from 'react-router-dom';
 import { Section } from '../docs/Section';
 import { CONCEPTS } from '../content/concepts';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { NotFound } from './NotFound';
 
 export function ConceptPage() {
   const { slug } = useParams();
   const concept = slug ? CONCEPTS[slug] : undefined;
+  usePageTitle(concept?.title);
   if (!concept) return <NotFound />;
 
   const Body = concept.Body;

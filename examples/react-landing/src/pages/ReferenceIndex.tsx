@@ -1,10 +1,12 @@
 /** `/docs/reference` — the 43 resource groups, with method counts. */
 import { Link } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const ADMIN_GROUPS = new Set(['admin', 'adminConfig']);
 
 export function ReferenceIndex() {
+  usePageTitle('API reference');
   const { ref, error } = useReference();
   if (error) return <p className="text-ink-soft">Could not load the reference: {error.message}</p>;
   if (!ref)

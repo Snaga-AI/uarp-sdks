@@ -1,8 +1,10 @@
 /** `/docs/guides` — index of task guides. */
 import { Link } from 'react-router-dom';
 import { GUIDES } from '../content/guides';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export function GuideIndex() {
+  usePageTitle('Guides');
   return (
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-2">

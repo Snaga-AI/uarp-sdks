@@ -1,11 +1,13 @@
 /** `/docs/reference/:group` — the methods in one resource group. */
 import { Link, useParams } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { NotFound } from './NotFound';
 import { MethodBadge } from '../components/MethodBadge';
 
 export function GroupPage() {
   const { group } = useParams();
+  usePageTitle(group ? `${group} · API reference` : 'API reference');
   const { ref, error } = useReference();
 
   if (error) return <p className="text-ink-soft">Could not load the reference: {error.message}</p>;

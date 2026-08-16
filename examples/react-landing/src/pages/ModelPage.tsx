@@ -1,11 +1,13 @@
 /** `/docs/reference/model/:model` — one model's fields or enum values. */
 import { Link, useParams } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { FieldsTable } from '../components/FieldsTable';
 import { NotFound } from './NotFound';
 
 export function ModelPage() {
   const { model } = useParams();
+  usePageTitle(model ? `${model} model` : 'API reference');
   const { ref, error } = useReference();
 
   if (error) return <p className="text-ink-soft">Could not load the reference: {error.message}</p>;

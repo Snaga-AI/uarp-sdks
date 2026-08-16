@@ -4,6 +4,7 @@ import type { ReactNode } from 'react';
 import type { WireData } from '../data/wire';
 import { loadWire } from '../data/wire';
 import { useLanguage } from '../hooks/useLanguage';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Code } from '../docs/Code';
 
 const SCENARIOS_URL =
@@ -79,6 +80,7 @@ function Markdownish({ body }: { body: string }) {
 
 export function WirePage() {
   const { language } = useLanguage();
+  usePageTitle('Wire · contract scenarios');
   const [wire, setWire] = useState<WireData | null>(null);
   const [error, setError] = useState<Error | null>(null);
 

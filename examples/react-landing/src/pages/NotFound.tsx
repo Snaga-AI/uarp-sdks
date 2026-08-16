@@ -1,7 +1,9 @@
 /** A page that does not exist. Used as a route element and inlined by ConceptPage. */
 import { Link } from 'react-router-dom';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 export function NotFound() {
+  usePageTitle('Not found');
   return (
     <section className="flex flex-col gap-4">
       <h2 className="text-2xl font-semibold tracking-tight">Not found</h2>

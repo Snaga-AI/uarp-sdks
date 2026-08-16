@@ -36,3 +36,26 @@ test('a TypeScript guide shows the real method signature from the reference', as
   await expect(page.locator('body')).toContainText('createKnowledgeBase');
   await expect(page.locator('pre').first()).toContainText('name:');
 });
+
+test('a guide links to its neighbours along the ordered list', async ({ page }) => {
+  await page.goto('/docs/guides/run-and-stream');
+  //  run-and-stream is #2: prev is getting-started, next is hitl-run-control.
+  await expect(page.getByRole('link', { name: /Install & authenticate/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Human-in-the-loop run control/ }).first()).toBeVisible();
+});
+
+test('the mobile nav drawer opens and reaches a route', async ({ page }) => {
+  //  Force a mobile viewport so the desktop sidebar is hidden and the Contents
+  //  button is the only way in.
+  await page.setViewportSize({ width: 414, height: 896 });
+  await page.goto('/docs/concepts/install');
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toBeVisible();
+  //  The desktop sidebar is hidden at this width.
+  await expect(page.locator('aside')).toBeHidden();
+  await page.getByRole('button', { name: 'Open navigation' }).click();
+  //  The drawer exposes the guides group; tap a guide and land on its route.
+  await page.getByRole('link', { name: 'Knowledge bases' }).click();
+  await expect(page).toHaveURL(/\/docs\/guides\/knowledge-bases$/);
+  //  Navigation closed the drawer.
+  await expect(page.getByRole('button', { name: 'Close navigation' })).toBeHidden();
+});

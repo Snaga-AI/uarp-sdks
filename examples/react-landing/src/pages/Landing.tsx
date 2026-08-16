@@ -8,6 +8,7 @@ import { VERSION } from 'uarp-sdk';
 import { Code, Shell } from '../docs/Code';
 import { HELLO, INSTALL, LANGUAGES } from '../docs/content';
 import { useLanguage } from '../hooks/useLanguage';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const AREAS = [
   {
@@ -34,6 +35,7 @@ const AREAS = [
 
 export function Landing() {
   const { language } = useLanguage();
+  usePageTitle();
   const install = INSTALL[language];
   const current = LANGUAGES.find((entry) => entry.id === language)!;
 

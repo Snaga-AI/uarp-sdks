@@ -2,6 +2,7 @@
 import { Link, useParams } from 'react-router-dom';
 import { GUIDES, type GuideBlock } from '../content/guides';
 import { useLanguage } from '../hooks/useLanguage';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { Code, Shell } from '../docs/Code';
 import { INSTALL, LANGUAGES } from '../docs/content';
 import { NotFound } from './NotFound';
@@ -54,6 +55,7 @@ function Block({ block }: { block: GuideBlock }) {
 export function GuidePage() {
   const { slug } = useParams();
   const guide = GUIDES.find((g) => g.slug === slug);
+  usePageTitle(guide?.title);
   if (!guide) return <NotFound />;
 
   return (
@@ -73,6 +75,34 @@ export function GuidePage() {
           <Block key={index} block={block} />
         ))}
       </div>
+
+      <PrevNext slug={guide.slug} />
     </section>
+  );
+}
+
+/** Prev/next along the ordered guide list — the same order as the sidebar. */
+function PrevNext({ slug }: { slug: string }) {
+  const idx = GUIDES.findIndex((g) => g.slug === slug);
+  const prev = idx > 0 ? GUIDES[idx - 1] : null;
+  const next = idx >= 0 && idx < GUIDES.length - 1 ? GUIDES[idx + 1] : null;
+  if (!prev && !next) return null;
+  return (
+    <nav className="mt-4 flex justify-between gap-4 border-t border-rule-soft pt-6">
+      {prev ? (
+        <Link to={`/docs/guides/${prev.slug}`} className="group flex flex-col gap-0.5">
+          <span className="font-mono text-[0.65rem] tracking-wider text-ink-soft uppercase">← Previous</span>
+          <span className="text-sm text-ink-soft transition group-hover:text-ink">{prev.title}</span>
+        </Link>
+      ) : (
+        <span />
+      )}
+      {next ? (
+        <Link to={`/docs/guides/${next.slug}`} className="group flex flex-col items-end gap-0.5 text-right">
+          <span className="font-mono text-[0.65rem] tracking-wider text-ink-soft uppercase">Next →</span>
+          <span className="text-sm text-ink-soft transition group-hover:text-ink">{next.title}</span>
+        </Link>
+      ) : null}
+    </nav>
   );
 }

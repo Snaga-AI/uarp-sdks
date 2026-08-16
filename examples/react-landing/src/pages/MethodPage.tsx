@@ -1,6 +1,7 @@
 /** `/docs/reference/:group/:method` — one operation, fully rendered. */
 import { Link, useParams } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
+import { usePageTitle } from '../hooks/usePageTitle';
 import { getModel, isModelName, type MethodInfo } from '../data/reference';
 import { Code } from '../docs/Code';
 import { Term } from '../docs/Section';
@@ -43,6 +44,7 @@ function ScopePills({ scopes }: { scopes: string[] }) {
 
 export function MethodPage() {
   const { group, method } = useParams();
+  usePageTitle(group && method ? `${group}.${method}` : 'API reference');
   const { ref, error } = useReference();
 
   if (error) return <p className="text-ink-soft">Could not load the reference: {error.message}</p>;
