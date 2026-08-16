@@ -253,7 +253,7 @@ impl Client {
     where
         Q: Serialize + ?Sized,
     {
-        let options = self.options.stream.unwrap_or_default();
+        let options = self.options.stream.clone().unwrap_or_default();
         let mut headers: Vec<(String, String)> = headers
             .into_iter()
             .map(|(name, value)| (name.to_string(), value))

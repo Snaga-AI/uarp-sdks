@@ -4,14 +4,24 @@ import Foundation
 /// Serves canned responses so the transport can be exercised without a network.
 final class MockURLProtocol: URLProtocol {
     typealias Handler = (URLRequest) throws -> (HTTPURLResponse, Data)
+    /// Streaming handler: receives the protocol instance so it can drive
+    /// `didReceive`/`didLoad`/`didFinishLoading` itself — used to simulate a
+    /// socket that delivers a frame then goes silent (no `didFinishLoading`).
+    typealias StreamingHandler = (MockURLProtocol, URLRequest) -> Void
 
     private static let lock = NSLock()
     private static var _handler: Handler?
+    private static var _streamingHandler: StreamingHandler?
     private static var _requests: [URLRequest] = []
 
     static var handler: Handler? {
         get { lock.withLock { _handler } }
         set { lock.withLock { _handler = newValue } }
+    }
+
+    static var streamingHandler: StreamingHandler? {
+        get { lock.withLock { _streamingHandler } }
+        set { lock.withLock { _streamingHandler = newValue } }
     }
 
     static var requests: [URLRequest] {
@@ -21,6 +31,7 @@ final class MockURLProtocol: URLProtocol {
     static func reset() {
         lock.withLock {
             _handler = nil
+            _streamingHandler = nil
             _requests = []
         }
     }
@@ -39,6 +50,10 @@ final class MockURLProtocol: URLProtocol {
 
     override func startLoading() {
         Self.lock.withLock { Self._requests.append(request) }
+        if let streaming = Self.streamingHandler {
+            streaming(self, request)
+            return
+        }
         guard let handler = Self.handler else {
             client?.urlProtocol(self, didFailWithError: URLError(.unsupportedURL))
             return
