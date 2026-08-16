@@ -6,7 +6,7 @@ package UARP.Meta is
    Spec_Version : constant String := "0.2.0";
 
    --  Version of this SDK.
-   SDK_Version : constant String := "0.5.0";
+   SDK_Version : constant String := "0.5.1";
 
    --  Production base URL.
    Default_Base_URL : constant String := "https://api.snaga.ai";

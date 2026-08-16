@@ -6,6 +6,30 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.1 — 2026-08-16
+
+### Added — Swift only
+
+- **`UARPClient.sendRaw(_ spec:) -> (Data, HTTPURLResponse)`**, a transport-only
+  primitive that retries transient failures (the retryable status codes, timeouts,
+  dropped connections) exactly as `send` does but returns the terminal response —
+  success OR failure — instead of throwing on a non-2xx. A consumer that decodes
+  responses through its own tolerant decoder (notably the iOS app, which keeps its
+  own model layer) needs the raw bytes of an error body: some endpoints refuse
+  with a bare `{"error":"…"}` rather than an RFC 9457 document, and `send`/`sendData`
+  discard that body when they throw `UARPError.api`. `sendRaw` hands it back. The
+  existing `send`/`sendData`/`sendVoid` thin over the same retry core, unchanged.
+
+### Changed — Swift only
+
+- **An empty `apiKey` now omits the `Authorization` header** instead of sending
+  `Bearer ` with nothing after it. A guest or public client (`Configuration(apiKey:
+  "")`) carries no credentials; `Bearer ` is not the same as no header, and a server
+  that validates the header value can refuse it.
+
+The TypeScript, Rust, Kotlin and Ada packages are re-versioned to 0.5.1 to keep the
+single shared version, with no code change.
+
 ## 0.5.0 — 2026-08-16
 
 ### Changed — breaking (Swift only)

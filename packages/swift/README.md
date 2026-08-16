@@ -7,7 +7,7 @@ beyond Foundation.
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.0"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.1"),
 ],
 targets: [
     .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
@@ -147,6 +147,11 @@ writes only when they carry an idempotency key, which every mutating
 - Timestamps are ISO-8601 `String`s, not `Date`s.
 - Pass `sseTokenInQuery: true` when a proxy strips the `Authorization` header
   from event-stream requests.
+- `sendRaw(_ spec:)` returns the raw `(Data, HTTPURLResponse)` without throwing on
+  a non-2xx, retrying transient failures as `send` does. Use it when you decode
+  responses through your own decoder and need an error body that `send`/`sendData`
+  discard — e.g. an endpoint that refuses with a bare `{"error":"…"}`. An empty
+  `apiKey` sends no `Authorization` header, so a guest client carries no credentials.
 
 ## Development
 
