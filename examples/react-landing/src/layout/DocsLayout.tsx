@@ -4,6 +4,7 @@
  * landing keeps its full-width hero.
  */
 import { Outlet } from 'react-router-dom';
+import { Search } from '../components/Search';
 import { Sidebar } from '../components/Sidebar';
 
 export function DocsLayout() {
@@ -12,7 +13,10 @@ export function DocsLayout() {
       <div className="rounded-lg border border-rule-soft bg-paper px-5 py-10 sm:px-10 lg:px-12">
         <div className="flex gap-12 pb-8">
           <aside className="hidden w-56 shrink-0 lg:block">
-            <Sidebar />
+            <div className="sticky top-20 flex flex-col gap-4">
+              <Search />
+              <Sidebar />
+            </div>
           </aside>
           <main className="flex min-w-0 flex-1 flex-col gap-12">
             <Outlet />

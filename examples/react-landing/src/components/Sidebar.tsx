@@ -38,7 +38,7 @@ function Group({ label, children }: { label: string; children: ReactNode }) {
 
 export function Sidebar() {
   return (
-    <nav className="sticky top-20 flex flex-col gap-4 border-l border-rule-soft">
+    <nav className="flex flex-col gap-4 border-l border-rule-soft">
       <Group label="Concepts">
         {CONCEPT_ORDER.map((slug) => (
           <SideLink key={slug} to={`/docs/concepts/${slug}`}>
