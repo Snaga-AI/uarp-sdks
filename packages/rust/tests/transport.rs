@@ -5,7 +5,7 @@ use std::pin::pin;
 use futures_util::StreamExt;
 use serde_json::json;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
-use uarp_sdk::{ApiErrorKind, Client, Error};
+use uarp_sdk::{ApiErrorKind, Client, Error, StreamOptions, StreamState};
 use wiremock::matchers::{body_json, header, header_exists, method, path, query_param};
 use wiremock::{Mock, MockServer, Request, ResponseTemplate};
 
@@ -745,4 +745,220 @@ async fn from_env_reports_a_missing_key() {
     // `Client::new` requires an explicit key; the builder rejects an empty config.
     let error = Client::builder().build().expect_err("must fail");
     assert!(matches!(error, Error::Config(_)), "{error:?}");
+}
+
+// ------------------------------------------------------------ SSE reconnect
+
+/// A stream client aimed at `server` with no unary retries and the given SSE
+/// options, so the reconnect loop is the only retry surface under test.
+fn stream_client(server: &MockServer, options: StreamOptions) -> Client {
+    Client::builder()
+        .api_key("uarp_test1234_secret")
+        .base_url(server.uri())
+        .max_retries(0)
+        .build()
+        .unwrap()
+        .with_stream_options(options)
+}
+
+fn sse_response(body: &str) -> ResponseTemplate {
+    ResponseTemplate::new(200)
+        .insert_header("content-type", "text/event-stream")
+        .set_body_raw(body.as_bytes().to_vec(), "text/event-stream")
+}
+
+#[tokio::test]
+async fn a_terminal_event_completes_the_stream_without_reconnecting() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .and(header("accept", "text/event-stream"))
+        .respond_with(sse_response(
+            "id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\nevent: run.completed\ndata: {}\n\n",
+        ))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = stream_client(
+        &server,
+        StreamOptions {
+            terminal_events: vec!["run.completed".into()],
+            ..Default::default()
+        },
+    );
+    let mut stream = pin!(client.runs().stream_run_events("r1", &StreamRunEventsParams::default()));
+
+    let mut names = Vec::new();
+    while let Some(event) = stream.next().await {
+        names.push(event.expect("event decodes").event);
+    }
+    assert_eq!(
+        names,
+        vec!["llm.chunk".to_string(), "run.completed".to_string()]
+    );
+}
+
+#[tokio::test]
+async fn a_done_frame_completes_the_stream_without_reconnecting() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .and(header("accept", "text/event-stream"))
+        .respond_with(sse_response(
+            "data: {\"text\":\"hi\"}\n\ndata: [DONE]\n\n",
+        ))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = stream_client(&server, StreamOptions::default());
+    let mut stream = pin!(client.runs().stream_run_events("r1", &StreamRunEventsParams::default()));
+
+    let mut events = Vec::new();
+    while let Some(event) = stream.next().await {
+        events.push(event.expect("event decodes"));
+    }
+    assert_eq!(events.len(), 1, "[DONE] itself emits nothing");
+    assert_eq!(events[0].data, "{\"text\":\"hi\"}");
+}
+
+#[tokio::test]
+async fn a_401_surfaces_without_retrying() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .respond_with(
+            ResponseTemplate::new(401)
+                .set_body_json(json!({"title": "Unauthorized", "status": 401})),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = stream_client(&server, StreamOptions::default());
+    let mut stream = pin!(client.runs().stream_run_events("r1", &StreamRunEventsParams::default()));
+
+    let error = stream
+        .next()
+        .await
+        .expect("one item")
+        .expect_err("401 must surface");
+    match error {
+        Error::Api(api) => {
+            assert_eq!(api.status, 401);
+            assert_eq!(api.kind(), ApiErrorKind::Authentication);
+        }
+        other => panic!("unexpected error: {other:?}"),
+    }
+}
+
+#[tokio::test]
+async fn on_state_reports_the_connection_lifecycle() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .respond_with(sse_response("event: run.completed\ndata: {}\n\n"))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let states = std::sync::Arc::new(std::sync::Mutex::new(Vec::<StreamState>::new()));
+    let captured = states.clone();
+    let client = stream_client(
+        &server,
+        StreamOptions {
+            terminal_events: vec!["run.completed".into()],
+            on_state: Some(std::sync::Arc::new(move |state| {
+                captured.lock().unwrap().push(state);
+            })),
+            ..Default::default()
+        },
+    );
+
+    let mut stream = pin!(client.runs().stream_run_events("r1", &StreamRunEventsParams::default()));
+    while let Some(event) = stream.next().await {
+        let event = event.expect("event decodes");
+        if event.event == "run.completed" {
+            // the stream ends itself on the terminal; just drain the rest
+        }
+    }
+
+    let observed = states.lock().unwrap().clone();
+    assert_eq!(
+        observed,
+        vec![
+            StreamState::Connecting,
+            StreamState::Connected,
+            StreamState::Disconnected
+        ]
+    );
+}
+
+#[tokio::test]
+async fn inactivity_watchdog_reconnects_a_silent_socket_with_last_event_id() {
+    // wiremock serves a complete body and closes, so it cannot model a socket
+    // that goes silent mid-stream. A raw TCP server does: the first connection
+    // sends one frame then holds the socket open with no FIN (a silently-dead
+    // proxy); the second sends a terminal and closes. The watchdog must fire on
+    // the silence and reconnect carrying `Last-Event-ID: 1`.
+    use std::io::{Read, Write};
+    use std::time::Duration;
+
+    let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let first = "id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\n";
+    let second = "event: run.completed\ndata: {}\n\n";
+
+    std::thread::spawn(move || {
+        for attempt in 1..=2u32 {
+            let (mut conn, _) = match listener.accept() {
+                Ok(pair) => pair,
+                Err(_) => break,
+            };
+            let frame = if attempt == 1 { first } else { second };
+            let hold = attempt == 1;
+            std::thread::spawn(move || {
+                // Best-effort drain of the request line + headers.
+                let mut buf = [0u8; 4096];
+                let _ = conn.read(&mut buf);
+                let head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-cache\r\nConnection: keep-alive\r\n\r\n";
+                let _ = conn.write_all(head.as_bytes());
+                let _ = conn.write_all(frame.as_bytes());
+                let _ = conn.flush();
+                if hold {
+                    // Hold the socket open without sending more and without
+                    // closing — a silent-but-not-dead connection. Drop after a
+                    // generous delay so the thread doesn't outlive the test.
+                    std::thread::sleep(Duration::from_secs(10));
+                }
+                // drop conn → the terminal connection sends an EOF.
+            });
+        }
+    });
+
+    let client = Client::builder()
+        .api_key("uarp_test1234_secret")
+        .base_url(format!("http://127.0.0.1:{port}"))
+        .max_retries(0)
+        .build()
+        .unwrap()
+        .with_stream_options(StreamOptions {
+            terminal_events: vec!["run.completed".into()],
+            inactivity_timeout: Some(Duration::from_millis(150)),
+            base_retry: Duration::from_millis(1),
+            max_backoff: Duration::from_millis(2),
+            ..Default::default()
+        });
+    let mut stream = pin!(client.runs().stream_run_events("r1", &StreamRunEventsParams::default()));
+
+    let mut names = Vec::new();
+    while let Some(event) = stream.next().await {
+        names.push(event.expect("event decodes").event);
+    }
+    assert_eq!(
+        names,
+        vec!["llm.chunk".to_string(), "run.completed".to_string()],
+        "the silent socket must reconnect and deliver the terminal"
+    );
 }

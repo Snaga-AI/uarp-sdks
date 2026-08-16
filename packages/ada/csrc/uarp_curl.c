@@ -10,6 +10,12 @@
 #include <stdlib.h>
 #include <string.h>
 
+/* The C shim returns this when the inactivity watchdog
+ * (CURLOPT_LOW_SPEED_TIMEOUT / CURLOPT_LOW_SPEED_LIMIT) fires, so the Ada
+ * side can branch on a soft "silent socket, reconnect" outcome rather than
+ * overloading the CURLcode.  Chosen well outside the CURLcode range (0-99). */
+#define UARP_STREAM_SILENT 1000L
+
 typedef struct {
     char  *data;
     size_t len;
@@ -176,6 +182,12 @@ long uarp_http_request(const char *method,
  *
  * A sink return value other than the chunk length aborts the transfer, which
  * surfaces as CURLE_WRITE_ERROR (23) — the Ada side treats that as a clean stop.
+ *
+ * When `inactivity_timeout_seconds > 0`, the inactivity watchdog
+ * (CURLOPT_LOW_SPEED_TIMEOUT / CURLOPT_LOW_SPEED_LIMIT) aborts the transfer if
+ * the socket goes silent for that many seconds.  That outcome is mapped to
+ * UARP_STREAM_SILENT so the Ada side can reconnect rather than treating the
+ * silence as a finished stream.
  */
 long uarp_http_stream(const char *method,
                       const char *url,
@@ -184,6 +196,7 @@ long uarp_http_stream(const char *method,
                       const char *body,
                       size_t body_len,
                       long timeout_ms,
+                      long inactivity_timeout_seconds,
                       uarp_sink sink,
                       void *ctx,
                       long *out_status,
@@ -204,6 +217,15 @@ long uarp_http_stream(const char *method,
     /* Deliver bytes as they arrive rather than in buffer-sized gulps. */
     curl_easy_setopt(handle, CURLOPT_BUFFERSIZE, 4096L);
 
+    /* Inactivity watchdog: if the transfer speed drops below 1 byte/second
+     * for `inactivity_timeout_seconds` seconds, abort with a soft timeout
+     * that the Ada side maps to a reconnect.  When 0, the options are not
+     * set and EOF owns liveness (the existing behavior). */
+    if (inactivity_timeout_seconds > 0) {
+        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_TIME, inactivity_timeout_seconds);
+        curl_easy_setopt(handle, CURLOPT_LOW_SPEED_LIMIT, 1L);
+    }
+
     CURLcode code = curl_easy_perform(handle);
     long status = 0;
     curl_easy_getinfo(handle, CURLINFO_RESPONSE_CODE, &status);
@@ -211,6 +233,12 @@ long uarp_http_stream(const char *method,
 
     curl_easy_cleanup(handle);
     curl_slist_free_all(header_list);
+
+    /* Map the inactivity-watchdog timeout to a soft "silent socket" outcome
+     * so the Ada side reconnects rather than raising a transport error. */
+    if (code == CURLE_OPERATION_TIMEDOUT && inactivity_timeout_seconds > 0) {
+        return UARP_STREAM_SILENT;
+    }
     return (long) code;
 }
 

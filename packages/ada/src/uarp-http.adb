@@ -17,6 +17,11 @@ package body UARP.HTTP is
 
    Error_Buffer_Size : constant := 256; --  CURL_ERROR_SIZE
 
+   --  The C shim returns this when the inactivity watchdog (CURLOPT_LOW_SPEED_*)
+   --  fires, so the Ada side can branch on a soft "silent socket, reconnect"
+   --  outcome rather than overloading the CURLcode.
+   Stream_Silent_Code : constant C.long := 1000;
+
    ------------------------------
    -- Imports from uarp_curl.c --
    ------------------------------
@@ -51,17 +56,18 @@ package body UARP.HTTP is
      with Convention => C;
 
    function Curl_Stream
-     (Method         : CS.chars_ptr;
-      URL            : CS.chars_ptr;
-      Headers        : System.Address;
-      Header_Count   : C.int;
-      Payload        : CS.chars_ptr;
-      Payload_Length : C.size_t;
-      Timeout_Ms     : C.long;
-      Sink           : Sink_Function;
-      Context        : System.Address;
-      Out_Status     : System.Address;
-      Error          : System.Address) return C.long
+     (Method             : CS.chars_ptr;
+      URL                : CS.chars_ptr;
+      Headers            : System.Address;
+      Header_Count       : C.int;
+      Payload            : CS.chars_ptr;
+      Payload_Length     : C.size_t;
+      Timeout_Ms         : C.long;
+      Inactivity_Seconds : C.long;
+      Sink               : Sink_Function;
+      Context            : System.Address;
+      Out_Status         : System.Address;
+      Error              : System.Address) return C.long
      with Import, Convention => C, External_Name => "uarp_http_stream";
 
    -----------------
@@ -264,13 +270,15 @@ package body UARP.HTTP is
    ------------
 
    procedure Stream
-     (Method     : String;
-      URL        : String;
-      Headers    : Pair_Vectors.Vector;
-      Timeout_Ms : Natural;
-      Handler    : Chunk_Handler;
-      Context    : System.Address;
-      Status     : out Natural)
+     (Method             : String;
+      URL                : String;
+      Headers            : Pair_Vectors.Vector;
+      Timeout_Ms         : Natural;
+      Inactivity_Seconds : Natural;
+      Handler            : Chunk_Handler;
+      Context            : System.Address;
+      Status             : out Natural;
+      Result             : out Stream_Result)
    is
       C_Method  : CS.chars_ptr := CS.New_String (Method);
       C_URL     : CS.chars_ptr := CS.New_String (URL);
@@ -284,17 +292,18 @@ package body UARP.HTTP is
       Curl_Setup.Ensure;
 
       Code := Curl_Stream
-        (Method         => C_Method,
-         URL            => C_URL,
-         Headers        => C_Headers (C_Headers'First)'Address,
-         Header_Count   => C.int (Headers.Length),
-         Payload        => CS.Null_Ptr,
-         Payload_Length => 0,
-         Timeout_Ms     => C.long (Timeout_Ms),
-         Sink           => Sink'Access,
-         Context        => State'Address,
-         Out_Status     => Raw_Status'Address,
-         Error          => Error'Address);
+        (Method             => C_Method,
+         URL                => C_URL,
+         Headers            => C_Headers (C_Headers'First)'Address,
+         Header_Count       => C.int (Headers.Length),
+         Payload            => CS.Null_Ptr,
+         Payload_Length     => 0,
+         Timeout_Ms         => C.long (Timeout_Ms),
+         Inactivity_Seconds => C.long (Inactivity_Seconds),
+         Sink               => Sink'Access,
+         Context            => State'Address,
+         Out_Status         => Raw_Status'Address,
+         Error              => Error'Address);
 
       CS.Free (C_Method);
       CS.Free (C_URL);
@@ -305,9 +314,18 @@ package body UARP.HTTP is
       if State.Failed then
          raise UARP.Errors.Transport_Error with +State.Failure;
       end if;
-      --  CURLE_WRITE_ERROR (23) is how a caller-requested stop reaches us.
-      if Code /= 0 and then not (Code = 23 and then State.Stopped) then
+
+      --  The C shim maps an inactivity-watchdog timeout to Stream_Silent_Code
+      --  so we can branch without overloading the CURLcode.
+      if Code = Stream_Silent_Code then
+         Result := Stream_Silent;
+      elsif Code = 23 and then State.Stopped then
+         --  CURLE_WRITE_ERROR (23) is how a caller-requested stop reaches us.
+         Result := Stream_Stopped;
+      elsif Code /= 0 then
          raise UARP.Errors.Transport_Error with Error_Text (Code, Error);
+      else
+         Result := Stream_OK;
       end if;
    end Stream;
 

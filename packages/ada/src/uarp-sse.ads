@@ -13,10 +13,12 @@ package UARP.SSE is
 
    --  One decoded `text/event-stream` frame.
    type Server_Event is record
-      --  `id:` field, replayed as `Last-Event-ID` when the stream reconnects.
+      --  `id:` field (or the `event_id` inside a JSON payload), replayed as
+      --  `Last-Event-ID` when the stream reconnects.
       Id        : Text;
       Has_Id    : Boolean := False;
-      --  `event:` field; defaults to "message".
+      --  `event:` field; defaults to "message" or, when absent, to the `type`
+      --  field inside a JSON data payload.
       Name      : Text;
       --  Concatenated `data:` lines, without the trailing newline.
       Data      : Text;
@@ -27,6 +29,12 @@ package UARP.SSE is
 
    package Event_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Server_Event);
+
+   --  An optional string: the result of peeking a JSON field without decoding.
+   type Optional_Text is record
+      Value     : Text;
+      Has_Value : Boolean := False;
+   end record;
 
    --  Receives every event of a stream.
    --
@@ -64,6 +72,20 @@ package UARP.SSE is
       Event     : out Server_Event;
       Has_Event : out Boolean);
 
+   --  True once a ``data: [DONE]`` frame arrived — the stream terminates
+   --  without reconnecting.
+   function Is_Done (Self : Parser) return Boolean;
+
+   --  Pull one string field out of a JSON body WITHOUT fully decoding it —
+   --  the stream carries thousands of frames a minute, and a full parse per
+   --  frame to learn its ``type`` is the difference between a smooth stream
+   --  and a stuttering one.  Honours escaped quotes so a ``"`` inside a value
+   --  can't fool it.
+   function Extract_Field (JSON : String; Field : String) return Optional_Text;
+
+   --  The ``type`` field of a JSON frame, peeked without decoding.
+   function Extract_Event_Type (JSON : String) return Optional_Text;
+
 private
 
    type Parser is limited record
@@ -76,6 +98,7 @@ private
       Retry_Ms   : Natural := 0;
       Has_Retry  : Boolean := False;
       Has_Fields : Boolean := False;
+      Done       : Boolean := False;
    end record;
 
 end UARP.SSE;

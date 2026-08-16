@@ -81,6 +81,8 @@ final class StreamingTests: XCTestCase {
     }
 
     func testStreamSurfacesHTTPErrors() async throws {
+        // Non-401 HTTP errors now retry within the reconnect budget before
+        // surfacing, so disable reconnect to assert the error is raised at all.
         let client = makeClient()
         MockURLProtocol.handler = { request in
             (MockURLProtocol.response(request, status: 403),
@@ -88,11 +90,15 @@ final class StreamingTests: XCTestCase {
         }
 
         do {
-            for try await _ in client.runs.streamRunEvents(runId: "r1") {}
+            for try await _ in client.runs.streamRunEvents(
+                runId: "r1",
+                options: RequestOptions(stream: StreamOptions(reconnect: false))
+            ) {}
             XCTFail("expected a failure")
         } catch let UARPError.api(error) {
             XCTAssertEqual(error.kind, .permissionDenied)
         }
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
     }
 
     func testReopensAFinishedStreamWithTheLastEventId() async throws {
@@ -176,5 +182,167 @@ final class StreamingTests: XCTestCase {
 
         let event = try await client.runs.streamRunEvents(runId: "r1").until { $0.event == "done" }
         XCTAssertEqual(event?.data, "2")
+    }
+
+    // MARK: - Decode parity (Kotlin-locked fixture)
+
+    func testDecodesMixedFormatFixtureToLockedExpectedOutput() throws {
+        // contract/sse-fixtures/mixed.txt + .expected.json is the cross-language
+        // decode-parity subject: every SDK port replays the same bytes and must
+        // match. Kotlin locks the expected file; if this test fails, the decoder
+        // diverged — fix the decoder, not the expected file.
+        //
+        // This test file lives at apps/sdk/packages/swift/Tests/UARPTests/; the
+        // fixture at apps/sdk/contract/sse-fixtures/ — five directories up.
+        let fixtureDir = URL(fileURLWithPath: #file)
+            .deletingLastPathComponent()  // UARPTests
+            .deletingLastPathComponent()  // Tests
+            .deletingLastPathComponent()  // swift
+            .deletingLastPathComponent()  // packages
+            .deletingLastPathComponent()  // sdk
+            .appendingPathComponent("contract/sse-fixtures")
+        let mixedBytes = try Data(contentsOf: fixtureDir.appendingPathComponent("mixed.txt"))
+        let expectedData = try Data(contentsOf: fixtureDir.appendingPathComponent("mixed.expected.json"))
+
+        struct ExpectedEvent: Decodable {
+            let id: String?
+            let event: String
+            let data: String
+            let retry: Int?
+        }
+        let expected = try JSONDecoder().decode([ExpectedEvent].self, from: expectedData)
+
+        var parser = SSEParser()
+        var actual: [ServerEvent] = []
+        for line in String(decoding: mixedBytes, as: UTF8.self)
+            .split(separator: "\n", omittingEmptySubsequences: false) {
+            if let event = parser.feed(String(line)) { actual.append(event) }
+        }
+        if let event = parser.finish() { actual.append(event) }
+
+        XCTAssertEqual(actual.count, expected.count, "event count")
+        for (i, (a, e)) in zip(actual, expected).enumerated() {
+            XCTAssertEqual(a.id, e.id, "event[\(i)].id")
+            XCTAssertEqual(a.event, e.event, "event[\(i)].event")
+            XCTAssertEqual(a.data, e.data, "event[\(i)].data")
+            XCTAssertEqual(a.retry, e.retry, "event[\(i)].retry")
+        }
+        // The fixture closes with `data: [DONE]`; the decoder must signal it.
+        XCTAssertTrue(parser.isDone, "fixture should terminate with [DONE]")
+    }
+
+    // MARK: - Reconnect behaviour
+
+    private func sseResponse(for request: URLRequest) -> HTTPURLResponse {
+        HTTPURLResponse(
+            url: request.url!,
+            statusCode: 200,
+            httpVersion: "HTTP/1.1",
+            headerFields: ["Content-Type": "text/event-stream"]
+        )!
+    }
+
+    func testTerminalEventCompletesWithoutReconnecting() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (self.sseResponse(for: request), Data("event: run.completed\ndata: {}\n\n".utf8))
+        }
+
+        var names: [String] = []
+        for try await event in client.runs.streamRunEvents(
+            runId: "r1",
+            options: RequestOptions(stream: StreamOptions(terminalEvents: ["run.completed"]))
+        ) {
+            names.append(event.event)
+        }
+
+        XCTAssertEqual(names, ["run.completed"])
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "terminal event must not reconnect")
+    }
+
+    func testDoneFrameTerminatesWithoutReconnecting() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (self.sseResponse(for: request), Data("data: {\"text\":\"hi\"}\n\ndata: [DONE]\n\n".utf8))
+        }
+
+        var datas: [String] = []
+        for try await event in client.runs.streamRunEvents(runId: "r1") {
+            datas.append(event.data)
+        }
+
+        XCTAssertEqual(datas, ["{\"text\":\"hi\"}"])
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "[DONE] must not reconnect")
+    }
+
+    func testInactivityWatchdogReconnectsSilentSocketWithLastEventId() async throws {
+        // A socket that delivers one frame then goes silent (never finishes
+        // loading, never sends more) must be presumed dead by the watchdog and
+        // reconnected, replaying the last delivered id as `Last-Event-ID`.
+        let client = makeClient()
+        let firstFrame = Data("id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\n".utf8)
+        let secondFrame = Data("event: run.completed\ndata: {}\n\n".utf8)
+        MockURLProtocol.streamingHandler = { proto, request in
+            proto.client?.urlProtocol(proto, didReceive: self.sseResponse(for: request), cacheStoragePolicy: .notAllowed)
+            if MockURLProtocol.requests.count == 1 {
+                proto.client?.urlProtocol(proto, didLoad: firstFrame)
+                // Silent: deliberately do NOT call didFinishLoading.
+            } else {
+                proto.client?.urlProtocol(proto, didLoad: secondFrame)
+                proto.client?.urlProtocolDidFinishLoading(proto)
+            }
+        }
+
+        var names: [String] = []
+        for try await event in client.runs.streamRunEvents(
+            runId: "r1",
+            options: RequestOptions(stream: StreamOptions(
+                terminalEvents: ["run.completed"],
+                inactivityTimeoutMillis: 50,
+                baseRetryMillis: 1,
+                maxBackoffMillis: 2
+            ))
+        ) {
+            names.append(event.event)
+        }
+
+        XCTAssertEqual(names, ["llm.chunk", "run.completed"])
+        XCTAssertEqual(MockURLProtocol.requests.count, 2, "silent socket must trigger a reconnect")
+        XCTAssertNil(MockURLProtocol.requests[0].value(forHTTPHeaderField: "Last-Event-ID"), "first attempt carries no resume id")
+        XCTAssertEqual(MockURLProtocol.requests[1].value(forHTTPHeaderField: "Last-Event-ID"), "1", "reconnect replays the last delivered id")
+    }
+
+    func test401SurfacesWithoutRetrying() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 401),
+             jsonData(["type": "about:blank", "title": "Unauthorized", "status": 401]))
+        }
+
+        do {
+            for try await _ in client.runs.streamRunEvents(runId: "r1") {}
+            XCTFail("expected a failure")
+        } catch let UARPError.api(error) {
+            XCTAssertEqual(error.status, 401)
+        }
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "401 must not retry")
+    }
+
+    func testReportsConnectionLifecycleViaOnState() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (self.sseResponse(for: request), Data("event: run.completed\ndata: {}\n\n".utf8))
+        }
+
+        var states: [StreamState] = []
+        for try await _ in client.runs.streamRunEvents(
+            runId: "r1",
+            options: RequestOptions(stream: StreamOptions(
+                terminalEvents: ["run.completed"],
+                onState: { states.append($0) }
+            ))
+        ) {}
+
+        XCTAssertEqual(states, [.connecting, .connected, .disconnected])
     }
 }

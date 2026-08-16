@@ -1,0 +1,7 @@
+[
+  {"id": "1", "event": "run.started", "data": "{\"run_id\":\"r1\"}", "retry": null},
+  {"id": "2", "event": "progress", "data": "{\"type\":\"progress\",\"event_id\":\"2\",\"pct\":10}", "retry": null},
+  {"id": "3", "event": "progress", "data": "{\"type\":\"progress\",\"event_id\":\"3\",\"pct\":20}", "retry": null},
+  {"id": "4", "event": "llm.chunk", "data": "hello\nworld", "retry": null},
+  {"id": null, "event": "final", "data": "{\"type\":\"final\",\"event_id\":\"6\"}", "retry": null}
+]

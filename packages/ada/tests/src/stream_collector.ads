@@ -9,6 +9,7 @@ with UARP.SSE;
 
 package Stream_Collector is
 
+   --  Stops on `run.completed`, exactly as a caller would.
    type Collector is limited new UARP.SSE.Event_Sink with private;
 
    overriding procedure Handle
@@ -21,9 +22,28 @@ package Stream_Collector is
    --  Comma-separated event names, in arrival order.
    function Names (Self : Collector) return String;
 
+   --  Collects every event without stopping — the terminal-event set or
+   --  `data: [DONE]` is what ends the stream, not the sink.
+   type All_Collector is limited new UARP.SSE.Event_Sink with private;
+
+   overriding procedure Handle
+     (Self     : in out All_Collector;
+      Event    : UARP.SSE.Server_Event;
+      Continue : in out Boolean);
+
+   function All_Count (Self : All_Collector) return Natural;
+
+   --  Comma-separated event names, in arrival order.
+   function All_Names (Self : All_Collector) return String;
+
 private
 
    type Collector is limited new UARP.SSE.Event_Sink with record
+      Seen  : Natural := 0;
+      Order : Ada.Strings.Unbounded.Unbounded_String;
+   end record;
+
+   type All_Collector is limited new UARP.SSE.Event_Sink with record
       Seen  : Natural := 0;
       Order : Ada.Strings.Unbounded.Unbounded_String;
    end record;
