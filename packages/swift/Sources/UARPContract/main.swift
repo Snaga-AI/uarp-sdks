@@ -6,7 +6,7 @@
 //
 //   UARP_CONTRACT_BASE_URL=http://127.0.0.1:8940 swift run uarp-contract
 import Foundation
-import UARP
+import UARPSDK
 
 guard let base = ProcessInfo.processInfo.environment["UARP_CONTRACT_BASE_URL"],
       let baseURL = URL(string: base)

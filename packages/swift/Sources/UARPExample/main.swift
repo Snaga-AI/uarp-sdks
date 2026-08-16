@@ -2,7 +2,7 @@
 //
 //   UARP_API_KEY=uarp_... swift run uarp-example
 import Foundation
-import UARP
+import UARPSDK
 
 func createAgent(_ client: UARPClient) async throws -> Agent {
     try await client.agents.create(

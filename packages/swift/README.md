@@ -1,4 +1,4 @@
-# UARP (Swift)
+# UARPSDK (Swift)
 
 Swift client for the **UARP — Universal Agent Runtime Platform** API. Full
 coverage of all 557 endpoints, `async`/`await` throughout, no dependencies
@@ -7,10 +7,10 @@ beyond Foundation.
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.3.0"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.0"),
 ],
 targets: [
-    .target(name: "App", dependencies: [.product(name: "UARP", package: "uarp-swift")]),
+    .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
 ]
 ```
 
@@ -31,7 +31,7 @@ never happens on a stream that stays open. Calling one on Linux throws
 ## Quick start
 
 ```swift
-import UARP
+import UARPSDK
 
 let client = try UARPClient.fromEnvironment()   // UARP_API_KEY, UARP_BASE_URL
 // or: UARPClient(apiKey: "uarp_...")

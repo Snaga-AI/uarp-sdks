@@ -1,5 +1,5 @@
 import Foundation
-@testable import UARP
+@testable import UARPSDK
 
 /// Serves canned responses so the transport can be exercised without a network.
 final class MockURLProtocol: URLProtocol {

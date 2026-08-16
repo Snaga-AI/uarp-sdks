@@ -1,5 +1,5 @@
 import XCTest
-@testable import UARP
+@testable import UARPSDK
 
 final class TransportTests: XCTestCase {
     override func tearDown() {
