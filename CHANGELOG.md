@@ -6,6 +6,23 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.0 — 2026-08-16
+
+### Changed — breaking (Swift only)
+
+- **The Swift package's module is now `UARPSDK`.** It was `UARP`, the same name
+  as the iOS app target that is its first consumer — a Swift app cannot `import`
+  a module with the same name as its own module, so the two could not coexist.
+  Renaming the SDK module (rather than the app) is the cheaper fix and aligns
+  Swift with the other four SDKs, which all ship as `uarp-sdk` / `uarp_sdk` /
+  `ai.snaga:uarp-sdk`. `import UARP` becomes `import UARPSDK`. There were no
+  Swift consumers before this release, so nothing breaks. The package directory
+  (`Sources/UARP`), the generated output and the request wire are unchanged; the
+  rename is compile-time only.
+
+The TypeScript, Rust, Kotlin and Ada packages are re-versioned to 0.5.0 to keep
+the single shared version, with no code change.
+
 ## 0.4.0 — 2026-08-16
 
 Every SDK now reads the platform's real event stream. Until this release only

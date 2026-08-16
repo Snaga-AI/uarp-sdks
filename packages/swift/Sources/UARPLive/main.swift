@@ -7,7 +7,7 @@
 //    UARP_API_KEY=… swift run uarp-live
 
 import Foundation
-import UARP
+import UARPSDK
 
 let language = "swift"
 let agentName = "smoke-live-\(language)"
