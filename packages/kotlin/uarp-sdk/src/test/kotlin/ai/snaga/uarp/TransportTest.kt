@@ -400,6 +400,138 @@ class TransportTest {
     }
 
     @Test
+    fun `a terminal event completes the flow without reconnecting`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("event: run.completed\ndata: {}\n\n"),
+        )
+
+        val options = RequestOptions(
+            stream = StreamOptions(terminalEvents = setOf("run.completed")),
+        )
+        val events = client().runs.streamRunEvents("r1", options = options).toList()
+
+        assertEquals(listOf("run.completed"), events.map { it.event })
+        // Reconnect is on by default, but the terminal frame must win — one request.
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `reports connection lifecycle via onState`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("event: run.completed\ndata: {}\n\n"),
+        )
+        val states = mutableListOf<StreamState>()
+        val options = RequestOptions(
+            stream = StreamOptions(
+                terminalEvents = setOf("run.completed"),
+                onState = { states += it },
+            ),
+        )
+        client().runs.streamRunEvents("r1", options = options).toList()
+
+        assertEquals(
+            listOf(StreamState.Connecting, StreamState.Connected, StreamState.Disconnected),
+            states,
+        )
+    }
+
+    @Test
+    fun `a DONE frame terminates without reconnecting`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("data: {\"text\":\"hi\"}\n\ndata: [DONE]\n\n"),
+        )
+
+        val options = RequestOptions(stream = StreamOptions())
+        val events = client().runs.streamRunEvents("r1", options = options).toList()
+
+        assertEquals(1, events.size)
+        assertEquals("""{"text":"hi"}""", events[0].data)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `decodes a mixed-format platform trace through the full flow`() = runTest {
+        // The platform interleaves three wire shapes on one socket — a JSON
+        // object in an SSE comment, a bare NDJSON line, a standard frame — and
+        // closes with `data: [DONE]`. All three must decode to events with the
+        // right type and id, and `[DONE]` must terminate without a reconnect.
+        // This is the no-device proof that the SSE migration lost no frame: a
+        // parser that dropped comments or unknown lines (the stock SDK parser)
+        // would emit only the standard frame here.
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(
+                    """
+                    :{"type":"status","event_id":"evt_1","status":"running"}
+                    {"type":"token","event_id":"evt_2","text":"hi"}
+                    event: token
+                    data: {"text":"there"}
+
+                    data: [DONE]
+
+                    """.trimIndent(),
+                ),
+        )
+
+        val events = client().runs.streamRunEvents("r1").toList()
+
+        assertEquals(3, events.size)
+        // comment-JSON: type and id live inside the JSON body.
+        assertEquals("status", events[0].event)
+        assertEquals("evt_1", events[0].id)
+        // bare NDJSON: likewise.
+        assertEquals("token", events[1].event)
+        assertEquals("evt_2", events[1].id)
+        // standard frame: `event:` line + `data:` line; id is per-frame only.
+        assertEquals("token", events[2].event)
+        assertEquals("""{"text":"there"}""", events[2].data)
+        assertNull(events[2].id)
+        // `[DONE]` terminated the flow — no reconnect attempt.
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `resumes from the last event id after a mid-stream drop`() = runTest {
+        // First response: two standard frames carrying ids, then a clean EOF
+        // with no terminal frame — a proxy drop mid-run, not a finished stream.
+        // The flow reconnects and replays the last delivered id as
+        // `Last-Event-ID`; the second response's terminal frame ends the flow.
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("id: a\ndata: one\n\nid: b\ndata: two\n\n"),
+        )
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("event: run.completed\ndata: {}\n\n"),
+        )
+
+        val options = RequestOptions(stream = StreamOptions(terminalEvents = setOf("run.completed")))
+        val events = client().runs.streamRunEvents("r1", options = options).toList()
+
+        assertEquals(listOf("one", "two", "{}"), events.map { it.data })
+        assertEquals(2, server.requestCount)
+        // The reconnect carried the last delivered id, not the spec's original.
+        server.takeRequest() // original
+        val replay = server.takeRequest()
+        assertEquals("b", replay.getHeader("Last-Event-ID"))
+    }
+
+    // The inactivity watchdog is exercised only on a real blocking socket; under
+    // `runTest` the test scheduler owns virtual time while the flow blocks on a
+    // real `readUtf8Line` on Dispatchers.IO, so the two clocks never meet. It is
+    // a faithful port of the production app's proven 300 s watchdog and is left
+    // to integration coverage rather than a flaky virtual-time test.
+
+    @Test
     fun `decodes unknown enum values`() {
         val decoded = uarpJson.decodeFromString<List<GetMeResponseAuthMethod>>(
             """["brand_new"]""",
@@ -477,5 +609,80 @@ class SseParserTest {
         val events = parse(listOf("event: partial", "data: x"))
         assertEquals(1, events.size)
         assertEquals("partial", events[0].event)
+    }
+
+    @Test
+    fun `decodes a json payload carried in a comment`() {
+        val body = """{"type":"llm.chunk","event_id":"e7","text":"hi"}"""
+        val events = parse(listOf(":$body"))
+        assertEquals(1, events.size)
+        assertEquals("llm.chunk", events[0].event)
+        assertEquals("e7", events[0].id)
+        assertEquals(body, events[0].data)
+    }
+
+    @Test
+    fun `decodes a bare ndjson line`() {
+        val body = """{"type":"tool.started","event_id":"e9"}"""
+        val events = parse(listOf(body))
+        assertEquals(1, events.size)
+        assertEquals("tool.started", events[0].event)
+        assertEquals("e9", events[0].id)
+        assertEquals(body, events[0].data)
+    }
+
+    @Test
+    fun `falls back to the type field inside data when no event line`() {
+        val events = parse(listOf("""data: {"type":"run.completed"}""", ""))
+        assertEquals(1, events.size)
+        assertEquals("run.completed", events[0].event)
+    }
+
+    @Test
+    fun `data DONE flushes a pending event and signals done`() {
+        val parser = SseParser()
+        // A `data:` line alone does not dispatch (no blank line); it accumulates.
+        assertNull(parser.feed("""data: {"text":"he"}"""))
+        // `[DONE]` flushes the accumulated chunk and signals done.
+        val flushed = parser.feed("data: [DONE]")
+        assertEquals("""{"text":"he"}""", flushed?.data)
+        // Nothing is left unterminated.
+        assertNull(parser.finish())
+        assertTrue(parser.isDone)
+    }
+
+    @Test
+    fun `data DONE with nothing pending emits nothing`() {
+        val parser = SseParser()
+        val done = parser.feed("data: [DONE]")
+        assertNull(done)
+        assertNull(parser.finish())
+        assertTrue(parser.isDone)
+    }
+
+    @Test
+    fun `an id-only frame emits nothing`() {
+        val events = parse(listOf("id: 5", ""))
+        assertEquals(0, events.size)
+    }
+
+    @Test
+    fun `id is per frame not persisted across frames`() {
+        val events = parse(listOf("id: 1", """data: {"x":1}""", "", """data: {"x":2}""", ""))
+        assertEquals(2, events.size)
+        assertEquals("1", events[0].id)
+        assertNull(events[1].id)
+    }
+
+    @Test
+    fun `streamBackoff climbs with attempts and stays bounded`() {
+        val max = 8_000L
+        // attempt 1: base*2^0 = 2000 -> maxSleep 2000 -> [1000, 2000)
+        val a1 = streamBackoff(1, 2_000, max)
+        // attempt 5: base*2^4 = 32000, capped at max -> maxSleep 8000 -> [4000, 8000)
+        val a5 = streamBackoff(5, 2_000, max)
+        assertTrue(a1 in 1_000 until 2_000, a1.toString())
+        assertTrue(a5 in 4_000 until 8_000, a5.toString())
+        assertTrue(a5 > a1)
     }
 }
