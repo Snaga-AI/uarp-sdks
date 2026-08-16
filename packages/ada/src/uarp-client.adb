@@ -7,6 +7,9 @@ with System.Address_To_Access_Conversions;
 with UARP.HTTP;
 package body UARP.Client is
 
+   use Ada.Calendar;
+   use type UARP.HTTP.Stream_Result;
+
    package JS renames UARP.JSON_Support;
 
    Retryable_Statuses : constant array (Positive range <>) of Natural :=
@@ -22,8 +25,15 @@ package body UARP.Client is
 
    function New_Idempotency_Key return String;
    function Backoff_Delay (Attempt : Natural) return Duration;
+   function Stream_Backoff_Delay
+     (Attempt : Natural; Base_Ms : Positive; Max_Ms : Positive) return Duration;
    function Retry_After (Headers : Pair_Vectors.Vector) return Duration;
    function Is_Retryable_Status (Status : Natural) return Boolean;
+
+   function To_Lower (C : Character) return Character;
+   function Equal_CI (A, B : String) return Boolean;
+   procedure Remove_Header (Headers : in out Pair_Vectors.Vector; Name : String);
+   function Is_Terminal (Set : Event_Name_Set; Name : String) return Boolean;
 
    function Request_Headers
      (Self         : Client_Type;
@@ -69,6 +79,88 @@ package body UARP.Client is
       --  Full jitter: half the cap plus a random share of the other half.
       return Half + Duration (Float (Half) * Fraction);
    end Backoff_Delay;
+
+   ------------------------
+   -- Stream_Backoff_Delay --
+   ------------------------
+
+   --  Half-deterministic, half-random backoff: `maxSleep/2 + rand(0..maxSleep/2)`,
+   --  so it climbs with attempts but clients don't all wake on the same boundary.
+   function Stream_Backoff_Delay
+     (Attempt : Natural; Base_Ms : Positive; Max_Ms : Positive) return Duration
+   is
+      Power     : constant Integer := Integer'Max (0, Integer (Attempt) - 1);
+      Exponential : constant Long_Float :=
+        Long_Float (Base_Ms) * Long_Float (2) ** Power;
+      Max_Sleep : constant Long_Float :=
+        Long_Float'Min (Long_Float (Max_Ms), Exponential);
+      Half      : constant Long_Float := Long_Float'Max (1.0, Max_Sleep / 2.0);
+      Fraction  : constant Long_Float :=
+        Long_Float (Hex_Random.Random (Key_Generator)) / 15.0;
+      Total_Ms  : constant Long_Float := Half + Half * Fraction;
+   begin
+      return Duration (Total_Ms / 1000.0);
+   end Stream_Backoff_Delay;
+
+   --------------
+   -- To_Lower --
+   --------------
+
+   function To_Lower (C : Character) return Character is
+   begin
+      if C in 'A' .. 'Z' then
+         return Character'Val (Character'Pos (C) + 32);
+      end if;
+      return C;
+   end To_Lower;
+
+   --------------
+   -- Equal_CI --
+   --------------
+
+   function Equal_CI (A, B : String) return Boolean is
+   begin
+      if A'Length /= B'Length then
+         return False;
+      end if;
+      for I in 0 .. A'Length - 1 loop
+         if To_Lower (A (A'First + I)) /= To_Lower (B (B'First + I)) then
+            return False;
+         end if;
+      end loop;
+      return True;
+   end Equal_CI;
+
+   --------------------
+   -- Remove_Header --
+   --------------------
+
+   procedure Remove_Header (Headers : in out Pair_Vectors.Vector; Name : String) is
+      use Pair_Vectors;
+      C : Cursor := Headers.First;
+   begin
+      while Has_Element (C) loop
+         if Equal_CI (+Element (C).Name, Name) then
+            Headers.Delete (C);
+            return; --  Only the first match.
+         end if;
+         Next (C);
+      end loop;
+   end Remove_Header;
+
+   ----------------
+   -- Is_Terminal --
+   ----------------
+
+   function Is_Terminal (Set : Event_Name_Set; Name : String) return Boolean is
+   begin
+      for Item of Set loop
+         if +Item = Name then
+            return True;
+         end if;
+      end loop;
+      return False;
+   end Is_Terminal;
 
    -----------------
    -- Retry_After --
@@ -390,9 +482,9 @@ package body UARP.Client is
    function Call_Raw
      (Self         : Client_Type;
       Method       : String;
-      Path         : String;
-      Query        : Pair_Vectors.Vector := No_Pairs;
-      Headers      : Pair_Vectors.Vector := No_Pairs;
+      Path        : String;
+      Query       : Pair_Vectors.Vector := No_Pairs;
+      Headers     : Pair_Vectors.Vector := No_Pairs;
       Payload      : String := "";
       Has_Payload  : Boolean := False;
       Content_Type : String := "application/json";
@@ -440,6 +532,24 @@ package body UARP.Client is
       --  Whether this connection produced anything, which is what earns a
       --  fresh reconnect budget.
       Delivered : Boolean := False;
+      --  Set when a terminal event or `data: [DONE]` arrives — exit without
+      --  reconnecting.
+      Terminal : Boolean := False;
+      --  Fire `Connected` on the first chunk (the HTTP status was 200).
+      Fired_Connected : Boolean := False;
+      --  Reconnect attempt counter, accessible from On_Chunk for the stability
+      --  reset.
+      Attempt : Natural := 0;
+      --  When the current connection was established, for the stability reset.
+      Connected_At : Ada.Calendar.Time;
+      --  Stability window in seconds.
+      Stability_Reset : Duration := 60.0;
+      --  Base retry interval, overridable by a `retry:` field.
+      Base_Retry : Positive := 2_000;
+      --  Event names that complete the stream without reconnecting.
+      Terminal_Events : Text_Vectors.Vector;
+      --  Connection-lifecycle observer.
+      On_State : State_Callback := null;
    end record;
 
    package Stream_Conversions is
@@ -456,16 +566,51 @@ package body UARP.Client is
       if State = null or else State.Sink = null then
          return False;
       end if;
+
+      --  Fire Connected on the first chunk (the HTTP status was 200).
+      if not State.Fired_Connected then
+         State.Fired_Connected := True;
+         if State.On_State /= null then
+            State.On_State.all ((Kind => State_Connected, others => <>));
+         end if;
+      end if;
+
+      --  Stability reset: a healthy connection that survived the stability
+      --  window shouldn't carry "this is the Nth retry" baggage.
+      if State.Attempt > 0
+        and then Ada.Calendar.Clock - State.Connected_At >= State.Stability_Reset
+      then
+         State.Attempt := 0;
+      end if;
+
       UARP.SSE.Feed (State.Parser, Data, Events);
       for Event of Events loop
          if Event.Has_Id then
             State.Last_Id := Event.Id;
             State.Has_Last_Id := True;
          end if;
+         if Event.Has_Retry and then Event.Retry_Ms > 0 then
+            State.Base_Retry := Event.Retry_Ms;
+         end if;
          State.Delivered := True;
          State.Sink.Handle (Event, State.Active);
+
+         --  Terminal event: stop without reconnect.
+         if Is_Terminal (State.Terminal_Events, +Event.Name) then
+            State.Terminal := True;
+            State.Active := False;
+            exit;
+         end if;
+
          exit when not State.Active;
       end loop;
+
+      --  `data: [DONE]` is a hard terminal: no reconnect.
+      if UARP.SSE.Is_Done (State.Parser) then
+         State.Terminal := True;
+         State.Active := False;
+      end if;
+
       return State.Active;
    end On_Chunk;
 
@@ -479,14 +624,25 @@ package body UARP.Client is
    is
       --  The reference never outlives this call, so the accessibility check
       --  the compiler would apply is not the one that matters here.
-      State      : aliased Stream_Context := (Sink => Sink'Unchecked_Access, others => <>);
+      State      : aliased Stream_Context :=
+        (Sink             => Sink'Unchecked_Access,
+         Connected_At     => Ada.Calendar.Clock,
+         On_State         => Options.On_State,
+         Stability_Reset  => Duration (Options.Stability_Reset_Millis) / 1000.0,
+         Base_Retry       => Options.Base_Retry_Millis,
+         Terminal_Events  => Options.Terminal_Events,
+         others           => <>);
       Full_Query : Pair_Vectors.Vector := Query;
       Status     : Natural;
+      Result     : UARP.HTTP.Stream_Result;
       Timeout    : constant Natural :=
         (if Options.Timeout_Ms > 0 then Options.Timeout_Ms else 0);
       Last_Event : UARP.SSE.Server_Event;
       Has_Last   : Boolean;
       Attempt    : Natural := 0;
+      Transport_Failed : Boolean := False;
+      Caller_Aborted   : Boolean := False;
+      Terminal_Fired    : Boolean := False;
    begin
       for Item of Options.Extra_Query loop
          Full_Query.Append (Item);
@@ -495,58 +651,137 @@ package body UARP.Client is
          Add (Full_Query, "token", +Self.API_Key);
       end if;
 
+      --  Fire Connecting before the first attempt.
+      if State.On_State /= null then
+         State.On_State.all ((Kind => State_Connecting, others => <>));
+      end if;
+
       loop
          State.Delivered := False;
+         State.Terminal := False;
+         State.Fired_Connected := False;
          UARP.SSE.Reset (State.Parser);
+
+         --  Backoff before reconnect (not on the first attempt).
+         if Attempt > 0 then
+            if State.On_State /= null then
+               State.On_State.all
+                 ((Kind => State_Reconnecting, Attempt => Attempt));
+            end if;
+            delay Stream_Backoff_Delay
+              (Attempt, State.Base_Retry, Options.Max_Backoff_Millis);
+         end if;
+
+         Transport_Failed := False;
 
          declare
             Attempt_Headers : Pair_Vectors.Vector := Headers;
          begin
+            --  On reconnect, replace any spec-supplied `Last-Event-ID` with
+            --  the id the last delivered event carried, so the stream resumes
+            --  from there.  On the first attempt (no event delivered yet) the
+            --  caller-supplied id stays untouched — stripping it here would drop
+            --  a caller-supplied resume id (contract scenario 13 sends
+            --  `Last-Event-ID: 42` and it must reach the wire on attempt 1).
             if State.Has_Last_Id then
+               Remove_Header (Attempt_Headers, "Last-Event-ID");
                Add (Attempt_Headers, "Last-Event-ID", State.Last_Id);
             end if;
 
+            State.Connected_At := Ada.Calendar.Clock;
+            State.Attempt := Attempt;
+
             UARP.HTTP.Stream
-              (Method     => "GET",
-               URL        => Join_URL (+Self.Base, Path) & Build_Query (Full_Query),
-               Headers    => Request_Headers
-                 (Self, Attempt_Headers, Options, "text/event-stream", "application/json",
-                  False, ""),
-               Timeout_Ms => Timeout,
-               Handler    => On_Chunk'Access,
-               Context    => State'Address,
-               Status     => Status);
+              (Method             => "GET",
+               URL                => Join_URL (+Self.Base, Path) & Build_Query (Full_Query),
+               Headers            => Request_Headers
+                 (Self, Attempt_Headers, Options, "text/event-stream",
+                  "application/json", False, ""),
+               Timeout_Ms         => Timeout,
+               Inactivity_Seconds => Options.Inactivity_Timeout_Seconds,
+               Handler            => On_Chunk'Access,
+               Context            => State'Address,
+               Status             => Status,
+               Result             => Result);
+         exception
+            when UARP.Errors.Transport_Error =>
+               --  401 always surfaces; any other connector error retries like
+               --  a dropped connection while the reconnect budget lasts.
+               if not Options.Reconnect or else Attempt >= Options.Max_Reconnects then
+                  raise;
+               end if;
+               Transport_Failed := True;
          end;
 
-         if Status not in 200 .. 299 then
-            raise UARP.Errors.API_Error
-              with UARP.Errors.Image (UARP.Errors.Empty_Problem, Status);
-         end if;
-
-         --  A frame the connection cut short still counts.
-         if State.Active then
-            UARP.SSE.Finish (State.Parser, Last_Event, Has_Last);
-            if Has_Last then
-               if Last_Event.Has_Id then
-                  State.Last_Id := Last_Event.Id;
-                  State.Has_Last_Id := True;
+         if not Transport_Failed then
+            --  Handle HTTP status.
+            if Status = 401 then
+               --  401 always surfaces so the caller can act on it.
+               raise UARP.Errors.API_Error
+                 with UARP.Errors.Image (UARP.Errors.Empty_Problem, Status);
+            elsif Status not in 200 .. 299 then
+               --  Other non-2xx: retry within budget, then surface.
+               if not Options.Reconnect or else Attempt >= Options.Max_Reconnects then
+                  raise UARP.Errors.API_Error
+                    with UARP.Errors.Image (UARP.Errors.Empty_Problem, Status);
                end if;
-               State.Delivered := True;
-               Sink.Handle (Last_Event, State.Active);
+               Transport_Failed := True;
             end if;
          end if;
 
-         exit when not State.Active;
-         exit when not Options.Reconnect;
+         if not Transport_Failed then
+            --  A frame the connection cut short still counts — but only on a
+            --  clean EOF, not when the inactivity watchdog aborted the transfer.
+            if State.Active and then Result = UARP.HTTP.Stream_OK then
+               UARP.SSE.Finish (State.Parser, Last_Event, Has_Last);
+               if Has_Last then
+                  if Last_Event.Has_Id then
+                     State.Last_Id := Last_Event.Id;
+                     State.Has_Last_Id := True;
+                  end if;
+                  State.Delivered := True;
+                  Sink.Handle (Last_Event, State.Active);
+               end if;
+            end if;
 
-         if State.Delivered then
-            Attempt := 0;
+            --  `data: [DONE]` is a hard terminal: no reconnect.
+            if UARP.SSE.Is_Done (State.Parser) then
+               State.Terminal := True;
+            end if;
+
+            if State.Terminal then
+               if State.On_State /= null then
+                  State.On_State.all ((Kind => State_Disconnected, others => <>));
+               end if;
+               Terminal_Fired := True;
+               exit;
+            end if;
+
+            --  Caller abort: exit without Disconnected.
+            if not State.Active then
+               Caller_Aborted := True;
+               exit;
+            end if;
+
+            exit when not Options.Reconnect;
+
+            --  A connection that delivered at least one event counts as
+            --  progress and resets the reconnect budget.
+            if State.Delivered then
+               Attempt := 0;
+            end if;
+            exit when Attempt >= Options.Max_Reconnects;
          end if;
-         exit when Attempt >= Options.Max_Reconnects;
 
-         delay Backoff_Delay (Attempt);
          Attempt := Attempt + 1;
       end loop;
+
+      --  Fire Disconnected on a natural end (not caller abort, not terminal).
+      if not Caller_Aborted and then not Terminal_Fired
+        and then State.On_State /= null
+      then
+         State.On_State.all ((Kind => State_Disconnected, others => <>));
+      end if;
    end Stream;
 
 begin

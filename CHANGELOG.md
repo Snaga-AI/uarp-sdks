@@ -6,6 +6,32 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.4.0 — 2026-08-16
+
+Every SDK now reads the platform's real event stream. Until this release only
+the Kotlin parser handled the three wire shapes the platform emits; the other
+four silently dropped everything that was not a standard `text/event-stream`
+frame, so a run that looked complete on Kotlin was empty on TypeScript, Rust,
+Swift and Ada.
+
+### Added
+
+- **SSE parser parity across all five SDKs.** The TypeScript, Rust, Swift and
+  Ada parsers now handle the three wire shapes the platform emits — standard
+  `text/event-stream`; a JSON object carried in an SSE comment
+  (`:{"type":"…","event_id":"…"}`); and bare NDJSON (`{"type":"…","event_id":"…"}`)
+  — plus the `data: [DONE]` hard terminal. A shared decode-parity fixture
+  (`contract/sse-fixtures/`) is replayed field-by-field by every SDK and locked
+  against the Kotlin reference, so the five cannot drift apart again.
+- **Reconnect loop, opt-in.** `StreamOptions` (each language's idiomatic name)
+  adds: terminal events that stop the stream without reconnect; an inactivity
+  watchdog that reconnects on a silent-but-open socket; HTTP 401 surfacing
+  without retry; `Last-Event-ID` resume that replaces a caller-supplied id only
+  once an event has been delivered; a stability reset of the reconnect attempt
+  counter; and a `Connecting → Connected → Reconnecting → Disconnected` state
+  callback. Defaults preserve standard-SSE behaviour, so existing callers see
+  no change.
+
 ## 0.3.0 — 2026-08-14
 
 Regenerated from a corrected API document, and one fix that matters more

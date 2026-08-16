@@ -48,7 +48,16 @@ export type { ClientOptions, RequestOptions, RequestSpec };
 export { DEFAULT_BASE_URL, SPEC_VERSION, SCOPES, type Scope } from './generated/meta.js';
 export * from './core/errors.js';
 export type { BinaryInput, FileInput, JsonObject, JsonValue, JsonPrimitive } from './core/json.js';
-export { EventStream, parseEventStream, type EventStreamOptions, type UarpEvent } from './core/sse.js';
+export {
+  EventStream,
+  parseEventStream,
+  DecoderState,
+  extractField,
+  extractEventType,
+  type EventStreamOptions,
+  type StreamState,
+  type UarpEvent,
+} from './core/sse.js';
 export { autoPaginate, collect, type CursorPage } from './core/pagination.js';
 export { APIResource } from './core/resource.js';
 export * from './generated/models.js';

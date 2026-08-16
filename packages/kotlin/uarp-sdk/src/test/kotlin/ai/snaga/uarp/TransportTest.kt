@@ -19,6 +19,10 @@ import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.encodeToString
 import kotlinx.coroutines.test.runTest
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
+import java.io.File
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
 
@@ -685,4 +689,50 @@ class SseParserTest {
         assertTrue(a5 in 4_000 until 8_000, a5.toString())
         assertTrue(a5 > a1)
     }
+
+    @Test
+    fun `decodes the shared mixed-format fixture to the locked expected output`() {
+        // contract/sse-fixtures/mixed.txt + .expected.json is the cross-language
+        // decode-parity subject: the four other SDK ports replay the same bytes
+        // and must match this output. Kotlin is the source of truth, so this test
+        // locks the expected file — if either drifts, the other ports disagree.
+        val parser = SseParser()
+        val actual = fixtureText("mixed.txt").split('\n')
+            .mapNotNull { parser.feed(it) }
+            .toMutableList<ServerEvent>()
+        parser.finish()?.let { actual += it }
+
+        val expected = Json { ignoreUnknownKeys = true }
+            .decodeFromString<List<ExpectedEvent>>(fixtureText("mixed.expected.json"))
+
+        assertEquals(expected.size, actual.size, "event count")
+        actual.zip(expected).forEachIndexed { i, (a, e) ->
+            assertEquals(e.id, a.id, "event[$i].id")
+            assertEquals(e.event, a.event, "event[$i].event")
+            assertEquals(e.data, a.data, "event[$i].data")
+            assertEquals(e.retry, a.retry, "event[$i].retry")
+        }
+        // The fixture closes with `data: [DONE]`; the decoder must signal it.
+        assertTrue(parser.isDone, "fixture should terminate with [DONE]")
+    }
+}
+
+/** One row of the shared decode-parity fixture's expected output. */
+@Serializable
+private data class ExpectedEvent(
+    val id: String? = null,
+    val event: String,
+    val data: String,
+    val retry: Long? = null,
+)
+
+/** Read a file from contract/sse-fixtures, searching a few likely working dirs. */
+private fun fixtureText(name: String): String {
+    val candidates = listOf(
+        File("contract/sse-fixtures", name),
+        File("../../contract/sse-fixtures", name),
+        File("../../../contract/sse-fixtures", name),
+    )
+    return candidates.firstOrNull { it.exists() }?.readText()
+        ?: error("SSE fixture $name not found; tried ${candidates.map { it.absolutePath }}")
 }

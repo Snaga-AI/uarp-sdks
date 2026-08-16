@@ -13,6 +13,9 @@ from urllib.parse import urlparse
 
 FLAKY_STATE = {"attempts": 0}
 WRITE_STATE = {"attempts": 0}
+#  How many times the 401 stream route has been hit — proves the client did
+#  not retry an Unauthorized.
+STREAM_401_STATE = {"n": 0}
 
 #  A complete Agent, since the SDK models decode strictly-typed fields.
 AGENT = {
@@ -160,6 +163,69 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(frames)))
             self.end_headers()
             return self.wfile.write(frames)
+        if path == "/events/terminal":
+            #  Emits a terminal event and then MORE data.  A client that
+            #  treats `run.completed` as terminal must stop after it and never
+            #  deliver `after`; a client that ignores terminal events would
+            #  also deliver `after`.
+            frames = (
+                b"event: chunk\ndata: {}\n\n"
+                b"event: run.completed\ndata: {}\n\n"
+                b"event: after\ndata: {}\n\n"
+            )
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(frames)))
+            self.end_headers()
+            return self.wfile.write(frames)
+        if path == "/events/done":
+            #  A real frame, then the hard `data: [DONE]` terminal.  The client
+            #  must stop without reconnecting and without emitting `[DONE]`.
+            frames = b"event: chunk\ndata: {}\n\ndata: [DONE]\n\n"
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(frames)))
+            self.end_headers()
+            return self.wfile.write(frames)
+        if path == "/events/silent":
+            #  One frame, then the socket goes silent — held open with no
+            #  further bytes and no close.  The inactivity watchdog must abort
+            #  and the client reconnects with `Last-Event-ID`.
+            resumed = self.headers.get("Last-Event-ID")
+            if resumed is None:
+                chunk = b"id: 1\nevent: llm.chunk\ndata: {}\n\n"
+                self.send_response(200)
+                self.send_header("Content-Type", "text/event-stream")
+                self.send_header("Cache-Control", "no-cache")
+                #  Chunked so the connection stays open after the frame; a
+                #  Content-Length would let curl see a clean EOF at the frame.
+                self.send_header("Transfer-Encoding", "chunked")
+                self.end_headers()
+                self.wfile.write(b"%x\r\n%s\r\n" % (len(chunk), chunk))
+                self.wfile.flush()
+                #  Hold the socket open far longer than the watchdog window.
+                time.sleep(3)
+                return
+            #  Reconnect with Last-Event-ID: replay it in the event name, then
+            #  end on a terminal so the client returns.
+            frames = (
+                f"event: resumed.{resumed}\ndata: {{}}\n\n"
+                "event: run.completed\ndata: {}\n\n"
+            ).encode()
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Content-Length", str(len(frames)))
+            self.end_headers()
+            return self.wfile.write(frames)
+        if path == "/events/401/count":
+            return self._send(200, json.dumps({"n": STREAM_401_STATE["n"]}).encode())
+        if path == "/events/401":
+            STREAM_401_STATE["n"] += 1
+            return self._send(
+                401,
+                json.dumps({"title": "Unauthorized", "status": 401}).encode(),
+                content_type="application/problem+json",
+            )
         if path == "/flaky":
             FLAKY_STATE["attempts"] += 1
             if FLAKY_STATE["attempts"] == 1:

@@ -37,7 +37,7 @@ mod generated;
 pub use client::{Client, ClientBuilder, Request, RequestOptions, NO_BODY, NO_QUERY};
 pub use error::{ApiError, ApiErrorKind, Error, FieldError, Problem, Result};
 pub use multipart::FilePart;
-pub use sse::{Event, EventStream, StreamOptions};
+pub use sse::{Event, EventStream, StreamOptions, StreamState};
 
 pub use generated::meta::{DEFAULT_BASE_URL, SCOPES, SPEC_VERSION};
 pub use generated::models;

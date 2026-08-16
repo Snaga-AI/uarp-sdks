@@ -34,6 +34,30 @@ package UARP.Client is
 
    function Base_URL (Self : Client_Type) return String;
 
+   --  Connection-lifecycle states reported by ``Stream`` via ``On_State``.
+   type Stream_State_Kind is
+     (State_Connecting,   --  About to open (or reopen) the HTTP connection.
+      State_Connected,    --  The server answered 200 and the stream is being read.
+      State_Reconnecting, --  Waiting on backoff before a reconnect attempt.
+      State_Disconnected); --  The stream ended without the caller aborting it.
+
+   type Stream_State is record
+      Kind    : Stream_State_Kind := State_Connecting;
+      --  1-based attempt number; only meaningful when Kind = State_Reconnecting.
+      Attempt : Natural := 0;
+   end record;
+
+   --  Optional connection-lifecycle observer.  ``Disconnected`` is NOT fired
+   --  when the caller aborts the stream — only on a natural end.
+   type State_Callback is access procedure (State : Stream_State);
+
+   --  A set of event names that complete the stream WITHOUT reconnecting.
+   --  Empty by default: a generic stream reconnects on end and lets the caller
+   --  stop it.  The platform's run stream passes ``done``, ``run.completed``,
+   --  ``run.failed``, ``team_run_done``.
+   subtype Event_Name_Set is Text_Vectors.Vector;
+   Empty_Event_Set : constant Event_Name_Set := Text_Vectors.Empty_Vector;
+
    --  Per-call overrides. ``Max_Retries`` of -1 keeps the client default.
    type Request_Options is record
       Timeout_Ms      : Natural := 0;
@@ -47,6 +71,20 @@ package UARP.Client is
       --  least one event resets the budget.
       Reconnect       : Boolean := True;
       Max_Reconnects  : Natural := 5;
+      --  Event names that complete the stream WITHOUT reconnecting.
+      Terminal_Events : Event_Name_Set := Empty_Event_Set;
+      --  Max silence (in SECONDS — libcurl is seconds-granularity only) before
+      --  the socket is presumed dead and a reconnect is attempted.  0 disables
+      --  the watchdog (EOF owns liveness).
+      Inactivity_Timeout_Seconds : Natural := 0;
+      --  Base reconnect interval in ms; a `retry:` field overrides it per stream.
+      Base_Retry_Millis : Positive := 2_000;
+      --  Cap on the reconnect backoff.
+      Max_Backoff_Millis : Positive := 8_000;
+      --  Reconnect budget resets after this long connected without a disconnect.
+      Stability_Reset_Millis : Positive := 60_000;
+      --  Optional connection-lifecycle observer.
+      On_State : State_Callback := null;
    end record;
 
    Default_Options : constant Request_Options;
@@ -84,9 +122,9 @@ package UARP.Client is
    function Call_Raw
      (Self         : Client_Type;
       Method       : String;
-      Path         : String;
-      Query        : Pair_Vectors.Vector := No_Pairs;
-      Headers      : Pair_Vectors.Vector := No_Pairs;
+      Path        : String;
+      Query       : Pair_Vectors.Vector := No_Pairs;
+      Headers     : Pair_Vectors.Vector := No_Pairs;
       Payload      : String := "";
       Has_Payload  : Boolean := False;
       Content_Type : String := "application/json";
@@ -104,16 +142,17 @@ package UARP.Client is
       Payload     : String := "";
       Has_Payload : Boolean := False;
       Content_Type : String := "application/json";
-      Idempotent  : Boolean := False;
-      Options     : Request_Options := Default_Options;
+      Idempotent   : Boolean := False;
+      Options      : Request_Options := Default_Options;
       Status      : out Natural;
       Body_Text   : out Text;
       Problem     : out UARP.Errors.Problem);
 
    --  Open a server-sent event stream, dispatching every event to ``Sink``.
    --
-   --  Returns when the sink asks to stop, or when the stream ends and the
-   --  reconnect budget in ``Options`` is spent.
+   --  Returns when the sink asks to stop, when a terminal event or
+   --  ``data: [DONE]`` arrives, or when the stream ends and the reconnect
+   --  budget in ``Options`` is spent.
    --
    --  The sink may be a local variable and two tasks may stream at once; no
    --  state is shared between calls.
@@ -146,6 +185,12 @@ private
       Extra_Headers   => Pair_Vectors.Empty_Vector,
       Extra_Query     => Pair_Vectors.Empty_Vector,
       Reconnect       => True,
-      Max_Reconnects  => 5);
+      Max_Reconnects  => 5,
+      Terminal_Events => Empty_Event_Set,
+      Inactivity_Timeout_Seconds => 0,
+      Base_Retry_Millis => 2_000,
+      Max_Backoff_Millis => 8_000,
+      Stability_Reset_Millis => 60_000,
+      On_State => null);
 
 end UARP.Client;

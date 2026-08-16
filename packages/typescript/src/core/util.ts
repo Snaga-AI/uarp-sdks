@@ -112,3 +112,20 @@ export function backoffDelay(attempt: number): number {
   const capped = Math.min(8000, 500 * 2 ** attempt);
   return Math.round(capped * (0.5 + Math.random() * 0.5));
 }
+
+/**
+ * Half-deterministic backoff for SSE reconnects: `maxSleep/2 + rand(0..maxSleep/2)`,
+ * so it climbs with attempts but clients don't all wake on the same boundary.
+ * Mirrors the Kotlin `streamBackoff`. Separate from `backoffDelay` (unary retries).
+ */
+export function streamBackoffDelay(
+  attempt: number,
+  baseIntervalMs: number,
+  maxDelayMs: number,
+  random: () => number = Math.random,
+): number {
+  const exponential = baseIntervalMs * 2 ** Math.max(attempt - 1, 0);
+  const maxSleep = Math.min(maxDelayMs, exponential);
+  const half = Math.max(maxSleep / 2, 1);
+  return Math.round(half + random() * half);
+}

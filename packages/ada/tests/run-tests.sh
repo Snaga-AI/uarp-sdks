@@ -25,4 +25,6 @@ for _ in $(seq 1 50); do
     sleep 0.1
 done
 
-UARP_TEST_BASE_URL="http://127.0.0.1:$port" "$here/bin/uarp_sdk_tests"
+UARP_TEST_BASE_URL="http://127.0.0.1:$port" \
+UARP_SSE_FIXTURE_DIR="$root/../../contract/sse-fixtures" \
+"$here/bin/uarp_sdk_tests"

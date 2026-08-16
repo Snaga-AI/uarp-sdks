@@ -6,8 +6,10 @@
 
 with Ada.Calendar;
 with Ada.Command_Line;
+with Ada.Directories;
 with Ada.Environment_Variables;
 with Ada.Exceptions;
+with Ada.Streams.Stream_IO;
 with Ada.Strings.Fixed;
 with Ada.Text_IO;
 
@@ -50,6 +52,66 @@ procedure UARP_SDK_Tests is
    begin
       Check (Name, Actual = Expected, "expected """ & Expected & """, got """ & Actual & """");
    end Check_Equal;
+
+   --  Records the connection-lifecycle states a stream reports via On_State,
+   --  as a string of one-letter codes in arrival order (C=Connecting,
+   --  c=Connected, R=Reconnecting, D=Disconnected).  A string encodes both the
+   --  count and the order, and avoids needing a container of Stream_State
+   --  (whose predefined equality is not directly visible here).
+   Recorded_Sequence : Text := Empty_Text;
+
+   procedure Record_State (S : UARP.Client.Stream_State);
+   procedure Record_State (S : UARP.Client.Stream_State) is
+   begin
+      case S.Kind is
+         when UARP.Client.State_Connecting   =>
+            Recorded_Sequence := +(+Recorded_Sequence & "C");
+         when UARP.Client.State_Connected    =>
+            Recorded_Sequence := +(+Recorded_Sequence & "c");
+         when UARP.Client.State_Reconnecting =>
+            Recorded_Sequence := +(+Recorded_Sequence & "R");
+         when UARP.Client.State_Disconnected =>
+            Recorded_Sequence := +(+Recorded_Sequence & "D");
+      end case;
+   end Record_State;
+
+   --  Resolve the shared SSE fixture directory.  run-tests.sh exports
+   --  UARP_SSE_FIXTURE_DIR; otherwise fall back to the paths that work when the
+   --  test runs from packages/ada or packages/ada/tests.
+   function Fixture_Dir return String is
+     ((if Ada.Environment_Variables.Exists ("UARP_SSE_FIXTURE_DIR")
+       then Ada.Environment_Variables.Value ("UARP_SSE_FIXTURE_DIR")
+       elsif Ada.Directories.Exists ("../../contract/sse-fixtures/mixed.txt")
+       then "../../contract/sse-fixtures"
+       elsif Ada.Directories.Exists ("../../../contract/sse-fixtures/mixed.txt")
+       then "../../../contract/sse-fixtures"
+       else "contract/sse-fixtures"));
+
+   function Read_File (Path : String) return String;
+
+   function Read_File (Path : String) return String is
+      use Ada.Streams.Stream_IO;
+      use type Ada.Streams.Stream_Element_Offset;
+      File   : File_Type;
+      Size   : constant Ada.Streams.Stream_Element_Offset :=
+        Ada.Streams.Stream_Element_Offset (Ada.Directories.Size (Path));
+      Buffer : Ada.Streams.Stream_Element_Array (1 .. Size);
+      Last   : Ada.Streams.Stream_Element_Offset;
+   begin
+      Open (File, In_File, Path);
+      Read (File, Buffer, Last);
+      Close (File);
+      --  Each stream element is one byte; map straight onto a String so the
+      --  decoder sees the exact bytes (no Text_IO line-ending translation).
+      declare
+         Result : String (1 .. Natural (Last));
+      begin
+         for I in 1 .. Natural (Last) loop
+            Result (I) := Character'Val (Buffer (Ada.Streams.Stream_Element_Offset (I)));
+         end loop;
+         return Result;
+      end;
+   end Read_File;
 
    ----------------------
    -- URL and encoding --
@@ -132,6 +194,54 @@ procedure UARP_SDK_Tests is
          Check_Equal ("the CR is stripped", +Events.First_Element.Data, "split");
       end if;
    end Test_SSE;
+
+   --  The shared mixed-format fixture is locked by the Kotlin reference parser
+   --  (mixed.expected.json).  Every SDK replays the same bytes and must match.
+   --  This is the real proof of decoder parity: a parser that dropped comments,
+   --  bare NDJSON, or `data: [DONE]` (the stock SDK decoder) would diverge here.
+   --  Runs without the mock server — it exercises the pure decoder.
+   procedure Test_SSE_Decode_Parity is
+      Parser   : UARP.SSE.Parser;
+      Events   : UARP.SSE.Event_Vectors.Vector;
+      Last_E   : UARP.SSE.Server_Event;
+      Has_Last : Boolean;
+      Expected : constant JS.JSON_Array :=
+        JS.JSON.Get (JS.Parse (Read_File (Fixture_Dir & "/mixed.expected.json")));
+   begin
+      IO.Put_Line ("sse decode parity");
+      UARP.SSE.Feed (Parser, Read_File (Fixture_Dir & "/mixed.txt"), Events);
+      UARP.SSE.Finish (Parser, Last_E, Has_Last);
+      if Has_Last then
+         Events.Append (Last_E);
+      end if;
+
+      Check ("the fixture decodes to the locked event count",
+             Natural (Events.Length) = JS.JSON.Length (Expected),
+             "got" & Natural'Image (Natural (Events.Length))
+             & " expected" & Natural'Image (JS.JSON.Length (Expected)));
+
+      for I in 1 .. Natural'Min (Natural (Events.Length), JS.JSON.Length (Expected)) loop
+         declare
+            Ev  : constant UARP.SSE.Server_Event := Events (Positive (I));
+            Ex  : constant JS.JSON_Value := JS.JSON.Get (Expected, Positive (I));
+            Tag : constant String :=
+              "event[" & Ada.Strings.Fixed.Trim (Integer'Image (I), Ada.Strings.Both) & "]";
+         begin
+            Check (Tag & ".id matches",
+                   Ev.Has_Id = JS.Present (Ex, "id")
+                   and then (if Ev.Has_Id then +Ev.Id = +JS.Get_Text (Ex, "id") else True));
+            Check_Equal (Tag & ".event", +Ev.Name, +JS.Get_Text (Ex, "event"));
+            Check_Equal (Tag & ".data", +Ev.Data, +JS.Get_Text (Ex, "data"));
+            Check (Tag & ".retry matches",
+                   Ev.Has_Retry = JS.Present (Ex, "retry")
+                   and then (if Ev.Has_Retry
+                             then Ev.Retry_Ms = Natural (JS.Get_Integer (Ex, "retry"))
+                             else True));
+         end;
+      end loop;
+
+      Check ("data: [DONE] was recognised", UARP.SSE.Is_Done (Parser));
+   end Test_SSE_Decode_Parity;
 
    ----------------------------
    -- JSON helper robustness --
@@ -490,6 +600,93 @@ procedure UARP_SDK_Tests is
       Check_Equal ("reconnection can be turned off", Events.Names, "first");
    end Test_No_Reconnect;
 
+   --  A terminal event completes the stream WITHOUT reconnecting.  The mock
+   --  emits more data after the terminal event; an All_Collector never stops on
+   --  its own, so the only way `after` is absent is the terminal-event handling.
+   procedure Test_Terminal_Event_Stops (Client : UARP.Client.Client_Type) is
+      Events  : Stream_Collector.All_Collector;
+      Options : UARP.Client.Request_Options;
+   begin
+      Options.Terminal_Events.Append (+"run.completed");
+      UARP.Client.Stream (Client, "/events/terminal", Events, Options => Options);
+
+      Check_Equal ("a terminal event stops the stream without reconnect",
+                   Stream_Collector.All_Names (Events), "chunk,run.completed");
+   end Test_Terminal_Event_Stops;
+
+   --  `data: [DONE]` is a hard terminal: no reconnect, and [DONE] itself is
+   --  not a deliverable event.
+   procedure Test_Done_Frame_Stops (Client : UARP.Client.Client_Type) is
+      Events : Stream_Collector.All_Collector;
+   begin
+      --  Default options: Reconnect = True, no terminal set.  Only [DONE] ends it.
+      UARP.Client.Stream (Client, "/events/done", Events);
+
+      Check_Equal ("a DONE frame stops the stream without reconnect",
+                   Stream_Collector.All_Names (Events), "chunk");
+   end Test_Done_Frame_Stops;
+
+   --  The inactivity watchdog reconnects a socket that went silent (held open
+   --  with no further bytes) rather than treating the silence as a clean EOF.
+   --  The reconnect replays the last delivered id as `Last-Event-ID`, which the
+   --  mock echoes back in the event name.  libcurl is seconds-granularity, so
+   --  the watchdog window is 1 s (the test takes just over a second).
+   procedure Test_Watchdog_Reconnects_Silent_Socket
+     (Client : UARP.Client.Client_Type) is
+      Events  : Stream_Collector.All_Collector;
+      Options : UARP.Client.Request_Options;
+   begin
+      Options.Inactivity_Timeout_Seconds := 1;
+      Options.Base_Retry_Millis := 10;
+      Options.Max_Backoff_Millis := 20;
+      Options.Terminal_Events.Append (+"run.completed");
+      UARP.Client.Stream (Client, "/events/silent", Events, Options => Options);
+
+      Check_Equal ("the watchdog reconnects a silent socket with Last-Event-ID",
+                   Stream_Collector.All_Names (Events), "llm.chunk,resumed.1,run.completed");
+   end Test_Watchdog_Reconnects_Silent_Socket;
+
+   --  A 401 always surfaces and is never retried, even with Reconnect on.
+   procedure Test_401_Surfaces_Without_Retry (Client : UARP.Client.Client_Type) is
+      Events : Stream_Collector.All_Collector;
+   begin
+      begin
+         UARP.Client.Stream (Client, "/events/401", Events);
+         Check ("a 401 stream surfaces API_Error", False, "no exception raised");
+      exception
+         when UARP.Errors.API_Error =>
+            Check ("a 401 stream surfaces API_Error", True);
+      end;
+
+      --  The mock counts 401 hits; exactly one proves there was no retry.
+      declare
+         Count : constant JS.JSON_Value :=
+           UARP.Client.Call (Client, "GET", "/events/401/count");
+      begin
+         Check ("a 401 stream is attempted exactly once",
+                JS.Get_Integer (Count, "n") = Integer_Value'(1),
+                "got" & Integer_Value'Image (JS.Get_Integer (Count, "n")));
+      end;
+   end Test_401_Surfaces_Without_Retry;
+
+   --  On_State reports Connecting -> Connected -> Disconnected on a stream that
+   --  ends on a terminal event (a terminal end is a natural end, not a cancel).
+   procedure Test_Reports_Lifecycle_Via_On_State
+     (Client : UARP.Client.Client_Type) is
+      Events  : Stream_Collector.All_Collector;
+      Options : UARP.Client.Request_Options;
+   begin
+      Recorded_Sequence := Empty_Text;
+      Options.Terminal_Events.Append (+"run.completed");
+      --  Record_State is local to this main subprogram; Stream runs it
+      --  synchronously before returning, so the unrestricted access is safe.
+      Options.On_State := Record_State'Unrestricted_Access;
+      UARP.Client.Stream (Client, "/events/terminal", Events, Options => Options);
+
+      Check_Equal ("On_State reported Connecting -> Connected -> Disconnected",
+                   +Recorded_Sequence, "CcD");
+   end Test_Reports_Lifecycle_Via_On_State;
+
    --  The multipart body is assembled by hand in UARP.Multipart, so this walks
    --  it all the way to a server that parses it back apart.
    procedure Test_Multipart (Client : UARP.Client.Client_Type) is
@@ -626,6 +823,11 @@ procedure UARP_SDK_Tests is
       Test_Unknown_Enum;
       Test_Reconnect (Client);
       Test_No_Reconnect (Client);
+      Test_Terminal_Event_Stops (Client);
+      Test_Done_Frame_Stops (Client);
+      Test_Watchdog_Reconnects_Silent_Socket (Client);
+      Test_401_Surfaces_Without_Retry (Client);
+      Test_Reports_Lifecycle_Via_On_State (Client);
       Test_Multipart (Client);
       Test_Binary (Client);
    end Test_HTTP;
@@ -636,6 +838,7 @@ begin
 
    Test_Encoding;
    Test_SSE;
+   Test_SSE_Decode_Parity;
    Test_JSON;
    Test_Errors;
    Test_Client_Configuration;
