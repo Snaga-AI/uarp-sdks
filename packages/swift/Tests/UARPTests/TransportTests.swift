@@ -337,6 +337,77 @@ final class TransportTests: XCTestCase {
         }
     }
 
+    func testSendRawReturnsTheNon2xxBodyWithoutThrowing() async throws {
+        // The whole point of sendRaw: a refusal answered with a bare
+        // `{"error":"…"}` (not an RFC 9457 document) is returned, not thrown,
+        // so the caller can decode it through its own decoder.
+        let client = makeClient()
+        let body = jsonData(["error": "Insufficient role: \"developer\" does not meet required \"admin\""])
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 403), body)
+        }
+
+        let (data, http) = try await client.sendRaw(
+            RequestSpec(method: "GET", path: "/api/v1/mcp/servers")
+        )
+        XCTAssertEqual(http.statusCode, 403)
+        XCTAssertEqual(data, body)
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+    }
+
+    func testSendRawRetriesTransientFailuresThenReturnsTheTerminalResponse() async throws {
+        let client = makeClient(maxRetries: 2)
+        let counter = Counter()
+        MockURLProtocol.handler = { request in
+            if counter.next() == 1 {
+                return (MockURLProtocol.response(request, status: 503, headers: ["Retry-After": "0"]),
+                        jsonData(["title": "unavailable", "status": 503]))
+            }
+            return (MockURLProtocol.response(request, status: 200), jsonData(agentJSON(id: "a1")))
+        }
+
+        let (data, http) = try await client.sendRaw(
+            RequestSpec(method: "GET", path: "/api/v1/agents/a1", idempotent: false)
+        )
+        XCTAssertEqual(http.statusCode, 200)
+        XCTAssertFalse(data.isEmpty)
+        XCTAssertEqual(MockURLProtocol.requests.count, 2)
+    }
+
+    func testSendRawDoesNotRetryANonRetryableStatus() async throws {
+        let client = makeClient(maxRetries: 3)
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 422),
+             jsonData(["title": "Unprocessable Entity", "status": 422]))
+        }
+
+        let (data, http) = try await client.sendRaw(
+            RequestSpec(method: "POST", path: "/api/v1/agents", body: .json(Data("{}".utf8)))
+        )
+        XCTAssertEqual(http.statusCode, 422)
+        XCTAssertFalse(data.isEmpty)
+        // A non-retryable status is returned after one attempt, not replayed.
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+    }
+
+    func testEmptyApiKeyOmitsTheAuthorizationHeader() async throws {
+        // A guest/public client carries no credentials: an empty apiKey must
+        // produce NO Authorization header, not a `Bearer ` with nothing after it.
+        let configuration = Configuration(
+            apiKey: "",
+            baseURL: URL(string: "https://api.example.test")!,
+            maxRetries: 0
+        )
+        let client = UARPClient(configuration: configuration, session: MockURLProtocol.session())
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200), jsonData(agentJSON(id: "a1")))
+        }
+
+        _ = try await client.sendRaw(RequestSpec(method: "GET", path: "/api/v1/agents/a1"))
+
+        XCTAssertNil(MockURLProtocol.requests[0].value(forHTTPHeaderField: "Authorization"))
+    }
+
     private func readAll(_ stream: InputStream) -> Data {
         stream.open()
         defer { stream.close() }
