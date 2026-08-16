@@ -6,6 +6,7 @@
 import { NavLink } from 'react-router-dom';
 import type { ReactNode } from 'react';
 import { CONCEPT_ORDER, CONCEPTS } from '../content/concepts';
+import { GUIDES } from '../content/guides';
 
 function SideLink({ to, children }: { to: string; children: ReactNode }) {
   return (
@@ -48,6 +49,11 @@ export function Sidebar() {
       </Group>
       <Group label="Guides">
         <SideLink to="/docs/guides">All guides</SideLink>
+        {GUIDES.map((g) => (
+          <SideLink key={g.slug} to={`/docs/guides/${g.slug}`}>
+            {g.title}
+          </SideLink>
+        ))}
       </Group>
       <Group label="Reference">
         <SideLink to="/docs/reference">All 43 groups</SideLink>
