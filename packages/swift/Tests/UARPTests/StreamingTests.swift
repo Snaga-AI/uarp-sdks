@@ -334,15 +334,42 @@ final class StreamingTests: XCTestCase {
             (self.sseResponse(for: request), Data("event: run.completed\ndata: {}\n\n".utf8))
         }
 
-        var states: [StreamState] = []
+        // `onState` is a `@Sendable` closure, so it cannot capture a mutable
+        // `var` — Swift 6 strict concurrency (the CI runner's language mode)
+        // rejects that even when a looser local toolchain does not. A small
+        // `NSLock`-backed `Sendable` cell locks synchronously, which a
+        // non-async callback needs, and is available at the package's
+        // deployment target (macOS 12 / iOS 15), unlike `OSAllocatedUnfairLock`.
+        let states = LockedBox([StreamState]())
         for try await _ in client.runs.streamRunEvents(
             runId: "r1",
             options: RequestOptions(stream: StreamOptions(
                 terminalEvents: ["run.completed"],
-                onState: { states.append($0) }
+                onState: { state in states.mutate { $0.append(state) } }
             ))
         ) {}
 
-        XCTAssertEqual(states, [.connecting, .connected, .disconnected])
+        XCTAssertEqual(states.snapshot, [.connecting, .connected, .disconnected])
+    }
+}
+
+/// A tiny `Sendable` mutable cell for capturing stream-lifecycle state from a
+/// `@Sendable` callback in tests. `NSLock` is available at the package's
+/// deployment target (macOS 12 / iOS 15); `@unchecked Sendable` is sound
+/// because every access goes through `lock`.
+private final class LockedBox<T>: @unchecked Sendable {
+    private var value: T
+    private let lock = NSLock()
+
+    init(_ value: T) { self.value = value }
+
+    func mutate(_ body: (inout T) -> Void) {
+        lock.lock(); defer { lock.unlock() }
+        body(&value)
+    }
+
+    var snapshot: T {
+        lock.lock(); defer { lock.unlock() }
+        return value
     }
 }
