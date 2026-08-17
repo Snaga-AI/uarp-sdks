@@ -962,3 +962,124 @@ async fn inactivity_watchdog_reconnects_a_silent_socket_with_last_event_id() {
         "the silent socket must reconnect and deliver the terminal"
     );
 }
+
+/// A client whose credentials travel another way.
+///
+/// `Bearer ` with nothing after it is NOT the same as sending no header: a
+/// server that validates the value can refuse it. TypeScript and Swift already
+/// draw this line; these pin it for Rust so the family stays consistent.
+///
+/// Omitted still fails at `build()` — "forgot to set the key" is the common
+/// mistake and a 401 is a much worse way to learn about it.
+#[tokio::test]
+async fn an_empty_api_key_sends_no_authorization_header() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .and(wiremock::matchers::header_regex("authorization", ".*"))
+        .respond_with(ResponseTemplate::new(500))
+        .expect(0)
+        .mount(&server)
+        .await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({"items": [], "cursor": null, "has_more": false})))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder()
+        .api_key("")
+        .base_url(server.uri())
+        .build()
+        .expect("an explicitly empty key is a statement, not a mistake");
+    let params = ListAgentsParams::default();
+    client.agents().list(&params).await.expect("request succeeds");
+}
+
+#[tokio::test]
+async fn a_real_api_key_is_still_sent() {
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/agents"))
+        .and(header("authorization", "Bearer uarp_secret"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({"items": [], "cursor": null, "has_more": false})))
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder()
+        .api_key("uarp_secret")
+        .base_url(server.uri())
+        .build()
+        .unwrap();
+    let params = ListAgentsParams::default();
+    client.agents().list(&params).await.expect("request succeeds");
+}
+
+#[tokio::test]
+async fn a_keyless_client_puts_no_token_in_the_sse_query() {
+    let server = MockServer::start().await;
+    //  `?token=` empty is a credential the server then rejects, so a keyless
+    //  client must omit the parameter entirely.
+    Mock::given(method("GET"))
+        .and(path("/api/v1/runs/r1/events"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .insert_header("content-type", "text/event-stream")
+                .set_body_raw("event: run.completed\ndata: {}\n\n", "text/event-stream"),
+        )
+        .expect(1)
+        .mount(&server)
+        .await;
+
+    let client = Client::builder()
+        .api_key("")
+        .base_url(server.uri())
+        .sse_token_in_query(true)
+        .build()
+        .unwrap();
+    let runs = client.runs();
+    let params = StreamRunEventsParams::default();
+    let mut stream = pin!(runs.stream_run_events("r1", &params));
+    let first = stream.next().await.expect("one event").expect("decodes");
+    assert_eq!(first.event, "run.completed");
+
+    //  Assert on the request the server actually received, rather than on a
+    //  matcher having matched — an empty `token=` would still satisfy a
+    //  "has the parameter" style check.
+    let requests = server.received_requests().await.expect("requests recorded");
+    let sse = requests
+        .iter()
+        .find(|r| r.url.path() == "/api/v1/runs/r1/events")
+        .expect("the stream request reached the server");
+    assert!(
+        sse.url.query_pairs().all(|(name, _)| name != "token"),
+        "a keyless client must omit ?token= entirely, got {:?}",
+        sse.url.query()
+    );
+}
+
+#[test]
+fn a_set_but_empty_env_var_is_still_a_missing_key() {
+    //  Going keyless is a deliberate act on the builder. An empty env var is
+    //  the environment's version of forgetting to set it.
+    let previous = std::env::var("UARP_API_KEY").ok();
+    let previous_snaga = std::env::var("SNAGA_API_KEY").ok();
+    std::env::set_var("UARP_API_KEY", "");
+    std::env::remove_var("SNAGA_API_KEY");
+
+    let result = Client::from_env();
+    assert!(
+        matches!(result, Err(Error::Config(_))),
+        "an empty UARP_API_KEY must be refused, not silently keyless"
+    );
+
+    match previous {
+        Some(value) => std::env::set_var("UARP_API_KEY", value),
+        None => std::env::remove_var("UARP_API_KEY"),
+    }
+    if let Some(value) = previous_snaga {
+        std::env::set_var("SNAGA_API_KEY", value);
+    }
+}
