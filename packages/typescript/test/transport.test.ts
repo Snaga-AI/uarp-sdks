@@ -415,3 +415,38 @@ test('throws a helpful error when no API key is configured', () => {
     if (previousSnaga !== undefined) process.env.SNAGA_API_KEY = previousSnaga;
   }
 });
+
+/**
+ * A client whose credentials travel another way.
+ *
+ * The browser app is authenticated by an HttpOnly cookie: it never sees a key,
+ * so it could not construct a client at all — the constructor threw. And had it
+ * passed an empty string, the transport would have sent `Authorization: Bearer `
+ * with nothing after it, which is NOT the same as sending no header: a server
+ * that validates the value can refuse it, and it overrides the cookie the
+ * browser would otherwise attach.
+ *
+ * The distinction being pinned here is omitted-vs-empty. Omitted stays an error,
+ * because "forgot to set UARP_API_KEY" is the common mistake and a 401 is a
+ * much worse way to learn about it.
+ */
+test('an explicitly empty apiKey sends no Authorization header', async () => {
+  const { client, calls } = clientWith([json({ ok: true })], { apiKey: '' });
+  await client.transport.request({ method: 'GET', path: '/api/v1/me' });
+  const headers = new Headers(calls[0]!.init.headers as HeadersInit);
+  assert.equal(headers.get('Authorization'), null);
+});
+
+test('a real apiKey is still sent — the guard must not silence every client', async () => {
+  const { client, calls } = clientWith([json({ ok: true })]);
+  await client.transport.request({ method: 'GET', path: '/api/v1/me' });
+  const headers = new Headers(calls[0]!.init.headers as HeadersInit);
+  assert.equal(headers.get('Authorization'), 'Bearer uarp_test1234_secret');
+});
+
+test('an omitted apiKey still throws, and says what to pass instead', () => {
+  assert.throws(
+    () => new UarpClient({ baseURL: 'https://api.example.test', fetch: async () => json({}) }),
+    (err: Error) => /Missing API key/.test(err.message) && /apiKey: ""/.test(err.message),
+  );
+});
