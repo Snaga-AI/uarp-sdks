@@ -408,6 +408,58 @@ final class TransportTests: XCTestCase {
         XCTAssertNil(MockURLProtocol.requests[0].value(forHTTPHeaderField: "Authorization"))
     }
 
+    /// Regression: `UARPClient.buildRequest` used to assign `path` straight to
+    /// `URLComponents.percentEncodedPath`. When a caller passed query inline
+    /// (e.g. `"runs?limit=50"`), the setter saw a string with a `?` in it,
+    /// which is not a valid path, and tripped Foundation's precondition →
+    /// `EXC_BAD_INSTRUCTION (SIGILL)` and killed the app at boot. The Client
+    /// must strip the query portion before joining the path so the precondition
+    /// never fires, and the query string the caller actually wanted is left to
+    /// ride on `spec.query` (or in the meantime, silently dropped — better than
+    /// a crash).
+    func testBuildRequestDoesNotCrashOnInlineQueryInPath() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200),
+             jsonData(["items": [], "cursor": NSNull(), "has_more": false]))
+        }
+
+        // The caller — historically some iOS convenience wrappers — bundled
+        // the query in `path`. Pre-fix this SIGILL'd before the request ever
+        // landed; post-fix the SDK must survive the malformed path and emit
+        // a URL whose path contains no `?` at all.
+        _ = try await client.sendRaw(RequestSpec(method: "GET", path: "runs?limit=50"))
+
+        let recorded = MockURLProtocol.requests[0]
+        XCTAssertEqual(recorded.url?.path, "/runs",
+                       "inline query string must NOT leak into the URL path")
+        XCTAssertEqual(recorded.url?.query, nil,
+                       "and nothing survives as a query string either — the inline form is silently dropped")
+    }
+
+    /// Companion to the regression above: if the caller supplies the query
+    /// explicitly via `RequestSpec.query`, it must reach the wire as a
+    /// properly-encoded query string. `URLQueryItem` leaves `+` alone, so the
+    /// SDK encodes by hand — these assertions pin that ordering.
+    func testBuildRequestAppliesExplicitQueryItems() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200),
+             jsonData(["items": [], "cursor": NSNull(), "has_more": false]))
+        }
+
+        _ = try await client.sendRaw(RequestSpec(
+            method: "GET",
+            path: "runs",
+            query: [URLQueryItem(name: "limit", value: "50")]
+        ))
+
+        let recorded = MockURLProtocol.requests[0]
+        let components = try XCTUnwrap(URLComponents(url: recorded.url!, resolvingAgainstBaseURL: false))
+        let param = try XCTUnwrap(components.queryItems?.first { $0.name == "limit" })
+        XCTAssertEqual(param.value, "50")
+    }
+
     private func readAll(_ stream: InputStream) -> Data {
         stream.open()
         defer { stream.close() }
