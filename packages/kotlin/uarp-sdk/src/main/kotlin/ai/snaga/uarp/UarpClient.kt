@@ -175,8 +175,12 @@ public class UarpClient internal constructor(
 
         /** Read `UARP_API_KEY` (or `SNAGA_API_KEY`) and `UARP_BASE_URL` from the environment. */
         public fun fromEnvironment(): UarpClient {
-            val key = System.getenv("UARP_API_KEY")
-                ?: System.getenv("SNAGA_API_KEY")
+            // A set-but-empty variable is the environment's version of the
+            // mistake an omitted key is, so it is refused here rather than
+            // quietly building a credential-less client. Going keyless is a
+            // deliberate act: `apiKey("")` on the builder, never an empty env.
+            val key = System.getenv("UARP_API_KEY")?.takeIf { it.isNotEmpty() }
+                ?: System.getenv("SNAGA_API_KEY")?.takeIf { it.isNotEmpty() }
                 ?: throw ConfigurationException("UARP_API_KEY is not set")
             val builder = builder().apiKey(key)
             System.getenv("UARP_BASE_URL")?.let { builder.baseUrl(it) }
@@ -273,7 +277,11 @@ public class UarpClient internal constructor(
             .url(url)
             .header("Accept", accept)
             .header("User-Agent", userAgent)
-            .header("Authorization", "Bearer $apiKey")
+        // An empty key means "no credentials" — a guest/public client, or one
+        // whose credentials travel another way. `Bearer ` with nothing after
+        // it is NOT the same as sending no header: a server that validates the
+        // value can refuse it. TypeScript and Swift already draw this line.
+        if (apiKey.isNotEmpty()) builder.header("Authorization", "Bearer $apiKey")
         for ((name, value) in defaultHeaders) builder.header(name, value)
         for ((name, value) in spec.headers) builder.header(name, value)
         idempotencyKey?.let { builder.header("Idempotency-Key", it) }

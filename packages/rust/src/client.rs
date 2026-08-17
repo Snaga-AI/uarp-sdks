@@ -105,9 +105,15 @@ impl Client {
     /// Read the API key from `UARP_API_KEY` (or `SNAGA_API_KEY`) and the base
     /// URL from `UARP_BASE_URL`.
     pub fn from_env() -> Result<Self> {
+        // A set-but-empty variable is the environment's version of the mistake
+        // an omitted key is, so it is refused here rather than quietly building
+        // a credential-less client. Going keyless is a deliberate act:
+        // `.api_key("")` on the builder, never an empty env var.
         let api_key = std::env::var("UARP_API_KEY")
             .or_else(|_| std::env::var("SNAGA_API_KEY"))
-            .map_err(|_| Error::Config("UARP_API_KEY is not set".into()))?;
+            .ok()
+            .filter(|key| !key.is_empty())
+            .ok_or_else(|| Error::Config("UARP_API_KEY is not set".into()))?;
         let mut builder = ClientBuilder::new().api_key(api_key);
         if let Ok(base) = std::env::var("UARP_BASE_URL") {
             builder = builder.base_url(base);
@@ -260,7 +266,9 @@ impl Client {
             .collect();
         headers.extend(self.options.extra_headers.iter().cloned());
         let url = self.build_url(path, query).map(|mut url| {
-            if self.inner.sse_token_in_query {
+            // A keyless client has no token to put in the query either, and
+            // `?token=` empty is a credential the server then rejects.
+            if self.inner.sse_token_in_query && !self.inner.api_key.is_empty() {
                 url.query_pairs_mut()
                     .append_pair("token", &self.inner.api_key);
             }
@@ -321,11 +329,20 @@ impl Client {
                 .timeout(timeout)
                 .header(reqwest::header::ACCEPT, "application/json")
                 .header(reqwest::header::USER_AGENT, &self.inner.user_agent)
-                .header(
+                .headers(self.inner.default_headers.clone());
+
+            // An empty key means "no credentials" — the client's credentials
+            // travel another way, or it is a guest/public client. `Bearer `
+            // with nothing after it is NOT the same as sending no header: a
+            // server that validates the value can refuse it. TypeScript and
+            // Swift already draw this distinction; this keeps the family
+            // consistent for anyone who builds a client with `.api_key("")`.
+            if !self.inner.api_key.is_empty() {
+                builder = builder.header(
                     reqwest::header::AUTHORIZATION,
                     format!("Bearer {}", self.inner.api_key),
-                )
-                .headers(self.inner.default_headers.clone());
+                );
+            }
 
             for (name, value) in &req.headers {
                 builder = builder.header(*name, value);
