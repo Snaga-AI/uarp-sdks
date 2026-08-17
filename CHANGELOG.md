@@ -6,6 +6,30 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.3 — 2026-08-17
+
+### Fixed — Swift only
+
+- **A path carrying an inline query no longer crashes the process.**
+  `UARPClient.buildRequest` assigned `spec.path` straight to
+  `URLComponents.percentEncodedPath`. A caller passing the query inline
+  (`"runs?limit=50"`) tripped Foundation's precondition and raised
+  `EXC_BAD_INSTRUCTION` — the iOS app died at boot. `joinPaths` now strips
+  everything from the first `?`, so malformed input degrades to "the request is
+  sent without the query" instead of killing the process. `spec.query` (or
+  `spec.options.query`) remains the correct way to pass one.
+
+### Notes
+
+This fix reached the published Swift package in 0.5.2 but not this repository:
+it had been committed directly to the generated `Snaga-AI/uarp-swift` mirror,
+which is rebuilt from here on every release and would have silently dropped it.
+0.5.3 restores the invariant that the tag, the source and the mirror describe
+the same code. The 0.5.2 tag is left exactly as published.
+
+The TypeScript, Rust, Kotlin and Ada packages are re-versioned to 0.5.3 to keep
+the single shared version, with no code change.
+
 ## 0.5.2 — 2026-08-17
 
 Swift drew a line in 0.5.1: an empty `apiKey` means "this client carries no
