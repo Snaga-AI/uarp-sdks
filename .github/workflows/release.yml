@@ -174,12 +174,27 @@ jobs:
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
+          # A missing token used to warn and `exit 0`. That made this job GREEN
+          # while publishing nothing, and it stayed green through 0.3.0, 0.4.0,
+          # 0.5.0 and 0.5.1 — four releases in which Swift consumers got no
+          # update at all and the release reported success. The mirror was then
+          # filled in by hand, which is how a SIGILL fix came to exist only
+          # there and nearly got overwritten by the first release that did run.
+          #
+          # A release that cannot publish one of its five packages is a failed
+          # release. Say so.
           if [ -z "${TOKEN}" ]; then
-            echo "::warning::SWIFT_MIRROR_TOKEN is not set; Snaga-AI/uarp-swift was not updated. See PUBLISHING.md."
-            exit 0
+            echo "::error::SWIFT_MIRROR_TOKEN is not set, so Snaga-AI/uarp-swift cannot be updated and Swift consumers would silently stay on the previous version. See PUBLISHING.md."
+            exit 1
           fi
           remote="https://x-access-token:${TOKEN}@github.com/Snaga-AI/uarp-swift.git"
-          git clone --quiet "$remote" mirror || { mkdir mirror && git -C mirror init --quiet -b main; }
+          # Fail with the reason rather than falling back to an empty repo: a
+          # 403 here means the token cannot write to the mirror, and silently
+          # re-creating the history would drop every published tag.
+          if ! git clone --quiet "$remote" mirror; then
+            echo "::error::could not clone Snaga-AI/uarp-swift with SWIFT_MIRROR_TOKEN. If this is a 403, the token lacks write access to the repository (a fine-grained PAT needs Contents: write on Snaga-AI/uarp-swift, and organisation approval)."
+            exit 1
+          fi
 
           ./scripts/swift-mirror.sh mirror
 
