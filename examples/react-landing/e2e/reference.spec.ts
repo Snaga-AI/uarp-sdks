@@ -62,6 +62,37 @@ test('search finds a method by name', async ({ page }) => {
   await expect(page).toHaveURL(/\/docs\/reference\/tenants\/createAPIKey$/);
 });
 
+test('method sections are deep-linkable and the TOC matches what is rendered', async ({ page }) => {
+  await page.goto('/docs/reference/agents/create');
+
+  //  A POST with a body has every block: signature, scopes, returns, request
+  //  body, response, example. The anchor ids are what a bug report pastes.
+  for (const id of ['signature', 'scopes', 'returns', 'request-body', 'example']) {
+    await expect(page.locator(`#${id}`)).toBeAttached();
+  }
+
+  //  The TOC and the blocks are built from one array — this asserts they agree,
+  //  which is the whole reason for that array. A block gaining a condition
+  //  without a TOC entry would otherwise look like "does not apply here".
+  const tocTargets = await page
+    .locator('nav[aria-label="On this page"] a')
+    .evaluateAll((links) => links.map((a) => a.getAttribute('href')));
+  expect(tocTargets.length).toBeGreaterThan(2);
+  for (const href of tocTargets) {
+    await expect(page.locator(href!)).toBeAttached();
+  }
+
+  //  Following an anchor moves the browser to that section.
+  await page.locator('nav[aria-label="On this page"] a[href="#example"]').click();
+  await expect(page).toHaveURL(/#example$/);
+
+  //  A GET with no request body drops that block — from the page AND the TOC.
+  await page.goto('/docs/reference/agents/list');
+  await expect(page.locator('#request-body')).toHaveCount(0);
+  await expect(page.locator('nav[aria-label="On this page"] a[href="#request-body"]')).toHaveCount(0);
+  await expect(page.locator('#signature')).toBeAttached();
+});
+
 test('a model page renders its fields', async ({ page }) => {
   await page.goto('/docs/reference/model/Agent');
   await expect(page.getByRole('heading', { name: 'Agent', exact: true })).toBeVisible();
