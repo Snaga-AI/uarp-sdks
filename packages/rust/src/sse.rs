@@ -184,8 +184,16 @@ impl EventStream {
                     .request(reqwest::Method::GET, url.clone())
                     .header(reqwest::header::ACCEPT, "text/event-stream")
                     .header(reqwest::header::USER_AGENT, &client.user_agent)
-                    .header(reqwest::header::AUTHORIZATION, format!("Bearer {}", client.api_key))
                     .headers(client.default_headers.clone());
+                // Same rule as the unary path: an empty key means "no
+                // credentials", and `Bearer ` with nothing after it is a
+                // credential a validating server can refuse.
+                if !client.api_key.is_empty() {
+                    builder = builder.header(
+                        reqwest::header::AUTHORIZATION,
+                        format!("Bearer {}", client.api_key),
+                    );
+                }
                 // On reconnect, replace any spec-supplied `Last-Event-ID` with
                 // the id the last delivered event carried. On the FIRST attempt
                 // (no event delivered yet) the caller-supplied id stays — a

@@ -128,7 +128,13 @@ public fun sseFlow(client: UarpClient, spec: RequestSpec): Flow<ServerEvent> = f
             }
             resumed?.let { add("Last-Event-ID" to it) }
         }
-        val query = if (client.sseTokenInQuery) spec.query + ("token" to client.apiKey) else spec.query
+        // A keyless client has no token to put in the query either, and
+        // `?token=` empty is a credential the server then rejects.
+        val query = if (client.sseTokenInQuery && client.apiKey.isNotEmpty()) {
+            spec.query + ("token" to client.apiKey)
+        } else {
+            spec.query
+        }
         // Streams are long-lived: the unary call timeout would cut them short.
         val attemptSpec = spec.copy(
             headers = headers,

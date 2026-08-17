@@ -281,6 +281,59 @@ class TransportTest {
         assertEquals("uarp_secret", server.takeRequest().requestUrl!!.queryParameter("token"))
     }
 
+    /**
+     * A client whose credentials travel another way.
+     *
+     * `Bearer ` with nothing after it is NOT the same as sending no header: a
+     * server that validates the value can refuse it. TypeScript and Swift
+     * already draw this line; these pin it for Kotlin so the family agrees.
+     */
+    @Test
+    fun `an explicitly empty apiKey sends no Authorization header`() = runTest {
+        server.enqueue(json("""{"items":[],"cursor":null,"has_more":false}"""))
+
+        val keyless = UarpClient.builder()
+            .apiKey("")
+            .baseUrl(server.url("/").toString().trimEnd('/'))
+            .build()
+        keyless.agents.list()
+
+        assertNull(server.takeRequest().getHeader("Authorization"))
+    }
+
+    @Test
+    fun `a keyless client puts no token in the SSE query`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("event: run.completed\ndata: {}\n\n"),
+        )
+
+        val keyless = UarpClient.builder()
+            .apiKey("")
+            .baseUrl(server.url("/").toString().trimEnd('/'))
+            .sseTokenInQuery(true)
+            .build()
+        val options = RequestOptions(stream = StreamOptions(reconnect = false))
+        keyless.runs.streamRunEvents("r1", options = options).toList()
+
+        //  `?token=` empty is a credential the server then rejects, so the
+        //  parameter must be absent entirely rather than present and blank.
+        assertNull(server.takeRequest().requestUrl!!.queryParameter("token"))
+    }
+
+    @Test
+    fun `a set but empty UARP_API_KEY is still a missing key`() {
+        //  Going keyless is a deliberate act on the builder. An empty env var
+        //  is the environment's version of forgetting to set it. Only assert
+        //  when the ambient environment actually has it empty-or-unset, since
+        //  a test cannot portably mutate its own environment on the JVM.
+        val ambient = System.getenv("UARP_API_KEY")
+        if (ambient == null || ambient.isEmpty()) {
+            assertFailsWith<ConfigurationException> { UarpClient.fromEnvironment() }
+        }
+    }
+
     @Test
     fun `leaves the key out of the query by default`() = runTest {
         server.enqueue(
