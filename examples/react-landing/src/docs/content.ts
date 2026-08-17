@@ -103,6 +103,45 @@ val client = UarpClient.builder().apiKey(key).build()`,
 Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;`,
 };
 
+/**
+ * A client that carries no credentials of its own (0.5.2+ in TypeScript, Rust
+ * and Kotlin; 0.5.1 in Swift).
+ *
+ * Ada is absent on purpose: its constructor refuses an empty key outright, so
+ * there is no keyless client to show. Documenting one would be documenting a
+ * call that raises.
+ */
+export const KEYLESS: Samples = {
+  ts: `// A browser app authenticated by an HttpOnly cookie never sees a key.
+// An EXPLICITLY empty key says so: no Authorization header is sent.
+const client = new UarpClient({ apiKey: '', baseURL: '/api/uarp' });
+
+// An OMITTED key still throws — "forgot to set UARP_API_KEY" is the
+// common mistake, and a 401 is a much worse way to find out.`,
+
+  rust: `// No credentials of its own: the header is omitted, not sent empty.
+let client = uarp_sdk::Client::builder()
+    .api_key("")
+    .base_url(base)
+    .build()?;
+
+// \`from_env\` refuses a set-but-empty UARP_API_KEY — going keyless is
+// a deliberate act on the builder, not an accident of the environment.`,
+
+  swift: `// A guest or public client: no Authorization header is sent.
+let client = UARPClient(apiKey: "", baseURL: base)`,
+
+  kotlin: `// No credentials of its own: the header is omitted, not sent empty.
+val client = UarpClient.builder().apiKey("").baseUrl(base).build()
+
+// fromEnvironment() refuses a set-but-empty UARP_API_KEY.`,
+
+  ada: `--  Ada has no keyless client: the constructor refuses an empty key
+--  ("the API key must not be empty"), so credentials always travel
+--  with the client itself.
+Client : constant UARP.Client.Client_Type := UARP.Client.From_Environment;`,
+};
+
 export const CALLING: Samples = {
   ts: `// The platform selects the model itself, so a create is just a name.
 const agent = await client.agents.create({ name: 'support' });
