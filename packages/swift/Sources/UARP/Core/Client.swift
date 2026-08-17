@@ -352,8 +352,22 @@ public final class UARPClient: @unchecked Sendable {
     }
 
     static func joinPaths(_ base: String, _ path: String) -> String {
+        // Some callers historically passed query inline (e.g. "runs?limit=50")
+        // because the public API surface has no separate `query` parameter on
+        // every convenience path. The query belongs in `spec.query` (or
+        // `spec.options.query`), NOT in `percentEncodedPath` — assigning
+        // `/v1/runs?limit=50` to `percentEncodedPath` trips Foundation's
+        // URLComponents precondition and crashes the app at boot. Strip the
+        // query portion here so a malformed input degrades to "sends a request
+        // without the query" rather than a SIGILL.
+        let pathOnly: String
+        if let queryStart = path.firstIndex(of: "?") {
+            pathOnly = String(path[..<queryStart])
+        } else {
+            pathOnly = path
+        }
         let trimmedBase = base.hasSuffix("/") ? String(base.dropLast()) : base
-        let normalized = path.hasPrefix("/") ? path : "/" + path
+        let normalized = pathOnly.hasPrefix("/") ? pathOnly : "/" + pathOnly
         return trimmedBase + normalized
     }
 

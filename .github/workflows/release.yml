@@ -189,11 +189,32 @@ jobs:
           git add -A
           # A tag with no file changes is still a release worth publishing.
           git diff --cached --quiet || git commit --quiet -m "uarp-sdk ${VERSION}"
-          git tag "${VERSION}"
+
+          # Re-running this job must not fail on a tag it created itself. A
+          # rerun is the normal way to recover when a SIBLING job failed for
+          # an unrelated reason — 0.5.2 was published with Maven Central down
+          # on a 429, and `git tag` being unconditional then failed the whole
+          # release a second time over work that was already done correctly.
+          #
+          # An existing tag that points somewhere ELSE is a different matter:
+          # that means this version was already published from other content,
+          # and moving it would change what a pinned consumer resolves. Refuse
+          # loudly instead.
+          if existing="$(git rev-parse -q --verify "refs/tags/${VERSION}")"; then
+            if [ "$existing" != "$(git rev-parse HEAD)" ]; then
+              echo "::error::${VERSION} already exists in the mirror and points at $existing, not at the content this release built. Refusing to move a published tag."
+              exit 1
+            fi
+            echo "${VERSION} already tagged at this exact content; nothing to re-tag."
+          else
+            git tag "${VERSION}"
+          fi
+
           if [ "${DRY_RUN}" = "true" ]; then
             echo "dry run: would push ${VERSION} to Snaga-AI/uarp-swift"
           else
             git push --quiet "$remote" HEAD:main
+            # Already-present tag → "Everything up-to-date", not an error.
             git push --quiet "$remote" "${VERSION}"
           fi
 
