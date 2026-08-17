@@ -89,13 +89,21 @@ export class Transport {
 
   constructor(options: ClientOptions, defaults: { baseURL: string; userAgent: string }) {
     const env = readEnv();
+    // An OMITTED key is a mistake and still throws — that error catches the
+    // common "forgot to set UARP_API_KEY" and is worth keeping. An EXPLICIT
+    // empty string is a statement: this client carries no credentials of its
+    // own. Swift made the same distinction in 0.5.1; TypeScript needs it for
+    // a different reason — a browser app authenticated by an HttpOnly cookie
+    // never sees a key, so it could not construct a client at all.
+    const explicitlyKeyless = options.apiKey === '';
     const apiKey = options.apiKey ?? env('UARP_API_KEY') ?? env('SNAGA_API_KEY');
-    if (!apiKey) {
+    if (!apiKey && !explicitlyKeyless) {
       throw new Error(
-        'Missing API key. Pass `new UarpClient({ apiKey })` or set the UARP_API_KEY environment variable.',
+        'Missing API key. Pass `new UarpClient({ apiKey })` or set the UARP_API_KEY environment variable. ' +
+          'For a client whose credentials travel another way (a browser session cookie), pass `apiKey: ""`.',
       );
     }
-    this.apiKey = apiKey;
+    this.apiKey = apiKey ?? '';
     this.baseURL = (options.baseURL ?? env('UARP_BASE_URL') ?? defaults.baseURL).replace(/\/+$/, '');
     this.timeout = options.timeout ?? 60_000;
     this.maxRetries = options.maxRetries ?? 2;
@@ -166,7 +174,12 @@ export class Transport {
     return new EventStream(async (lastEventId, signal) => {
       const headers: Record<string, unknown> = { ...spec.headers, Accept: 'text/event-stream' };
       if (lastEventId) headers['Last-Event-ID'] = lastEventId;
-      const query = this.#sseTokenInQuery ? { ...spec.query, token: this.apiKey } : spec.query;
+      // Same rule as the Authorization header: a keyless client has no token
+      // to put in the query either, and `?token=` empty would be sent as a
+      // credential the server then rejects.
+      const query = this.#sseTokenInQuery && this.apiKey
+        ? { ...spec.query, token: this.apiKey }
+        : spec.query;
       const response = await this.#send({ ...spec, headers, query }, signal, undefined);
       if (!response.ok) {
         throw errorForStatus(response.status, await readProblem(response), response.headers);
@@ -185,7 +198,10 @@ export class Transport {
     const headers = new Headers();
     headers.set('Accept', 'application/json');
     headers.set('User-Agent', this.#userAgent);
-    headers.set('Authorization', `Bearer ${this.apiKey}`);
+    // `Bearer ` with nothing after it is not the same as no header: a server
+    // that validates the value can refuse it, and it overrides a cookie the
+    // browser would otherwise send. A keyless client sends no credentials.
+    if (this.apiKey) headers.set('Authorization', `Bearer ${this.apiKey}`);
     for (const [key, value] of Object.entries(this.defaultHeaders)) headers.set(key, value);
     for (const [key, value] of Object.entries(spec.headers ?? {})) {
       if (value !== undefined && value !== null) headers.set(key, String(value));
