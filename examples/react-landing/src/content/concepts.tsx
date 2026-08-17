@@ -15,6 +15,7 @@ import {
   CALLING,
   ERRORS,
   INSTALL,
+  KEYLESS,
   LANGUAGES,
   OVERRIDES,
   PAGINATION,
@@ -93,6 +94,23 @@ function AuthenticateBody(): ReactElement {
       <Note tone="warn">
         Never construct a client with a key in code that reaches a browser. See{' '}
         <a className="underline" href="/docs/concepts/browser">In the browser</a>.
+      </Note>
+
+      <p className="text-ink-soft">
+        <strong className="text-ink">When the credentials travel another way.</strong> A
+        browser app authenticated by a session cookie never sees a key, and a guest or
+        public client has none to see. Passing an <em>explicitly empty</em> key says so:
+        no <Term>Authorization</Term> header is sent, and no token is added to the
+        streaming query.
+      </p>
+      <Code language={language}>{KEYLESS[language]}</Code>
+      <Note>
+        Empty is not the same as absent. An <strong>omitted</strong> key still fails at
+        construction, because forgetting to set <Term>UARP_API_KEY</Term> is the common
+        mistake and a 401 much later is a worse way to learn about it. And{' '}
+        <Term>Bearer </Term> with nothing after it is not the same as sending no header —
+        a server that validates the value can refuse it, and in a browser it overrides
+        the cookie that would otherwise be attached.
       </Note>
     </>
   );
