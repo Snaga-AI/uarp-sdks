@@ -1,4 +1,5 @@
 /** `/docs/reference/:group/:method` — one operation, fully rendered. */
+import type { ReactNode } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useReference } from '../hooks/useReference';
 import { usePageTitle } from '../hooks/usePageTitle';
@@ -27,6 +28,76 @@ function usageSnippet(group: string, m: MethodInfo): string {
     return `const result = await ${call};\n// result: ${m.returnType}`;
   }
   return `await ${call};`;
+}
+
+/**
+ * One anchored block on a method page.
+ *
+ * A method page has up to eight blocks and they come and go with the operation
+ * — a GET has no request body, a non-paginated call has no query parameters. So
+ * the blocks and the "On this page" list are built from ONE array below rather
+ * than written twice: a hand-kept list would go stale the first time a block
+ * gained a condition, and would do it silently, since a missing TOC entry looks
+ * exactly like a section that legitimately does not apply here.
+ *
+ * The heading is the link target, matching the concept pages' `Section`.
+ */
+interface Block {
+  id: string;
+  title: ReactNode;
+  /** What the "On this page" list shows — plain text, since `title` may be a link. */
+  label: string;
+  body: ReactNode;
+}
+
+function AnchoredBlock({ block }: { block: Block }) {
+  return (
+    <div id={block.id} className="scroll-mt-24">
+      <h3 className="group mb-2 flex items-baseline gap-2 font-mono text-xs tracking-wider text-ink-soft uppercase">
+        {block.title}
+        <a
+          href={`#${block.id}`}
+          aria-label={`Link to ${block.label}`}
+          className="opacity-0 transition group-hover:opacity-100 focus:opacity-100"
+        >
+          #
+        </a>
+      </h3>
+      {block.body}
+    </div>
+  );
+}
+
+/**
+ * The "On this page" list.
+ *
+ * Rendered only when there is more than one place to go — a two-entry page
+ * navigates faster by scrolling than by reading a list of two.
+ */
+function OnThisPage({ blocks }: { blocks: Block[] }) {
+  if (blocks.length < 3) return null;
+  return (
+    <nav
+      aria-label="On this page"
+      className="rounded-sm border border-rule-soft bg-paper-tint px-4 py-3"
+    >
+      <p className="mb-2 font-mono text-[0.6rem] tracking-wider text-ink-soft uppercase">
+        On this page
+      </p>
+      <ul className="flex flex-wrap gap-x-4 gap-y-1">
+        {blocks.map((b) => (
+          <li key={b.id}>
+            <a
+              href={`#${b.id}`}
+              className="text-xs text-ink-soft underline-offset-2 transition hover:text-ink hover:underline"
+            >
+              {b.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+    </nav>
+  );
 }
 
 function ScopePills({ scopes }: { scopes: string[] }) {
@@ -59,6 +130,113 @@ export function MethodPage() {
   const bodyModel = m.bodyType ? getModel(ref, m.bodyType) : undefined;
   const responseModel = isModelName(ref, m.returnType) ? getModel(ref, m.returnType) : undefined;
 
+  //  Every block this operation actually has, in reading order. The TOC below
+  //  and the page body both come from this one list.
+  const blocks: Block[] = [
+    {
+      id: 'signature',
+      title: <>Signature</>,
+      label: 'Signature',
+      body: <Code language="ts">{m.signature}</Code>,
+    },
+    {
+      id: 'scopes',
+      title: <>Required scopes</>,
+      label: 'Scopes',
+      body: <ScopePills scopes={m.scopes} />,
+    },
+    {
+      id: 'returns',
+      title: <>Returns</>,
+      label: 'Returns',
+      body: (
+        <p className="text-sm text-ink-soft">
+          {m.returnKind === 'sse' ? (
+            <>a server-sent event stream — iterate with <Term>for await</Term></>
+          ) : m.returnKind === 'iterator' ? (
+            <>
+              an async iterable of{' '}
+              {isModelName(ref, m.returnType) ? (
+                <Link className="text-accent underline underline-offset-2" to={toModel(m.returnType)}>
+                  {m.returnType}
+                </Link>
+              ) : (
+                <Term>{m.returnType}</Term>
+              )}{' '}
+              (the <Term>listAll</Term> walker)
+            </>
+          ) : (
+            <>
+              {isModelName(ref, m.returnType) ? (
+                <Link className="text-accent underline underline-offset-2" to={toModel(m.returnType)}>
+                  {m.returnType}
+                </Link>
+              ) : (
+                <Term>{m.returnType}</Term>
+              )}
+              {m.returnType === 'void' && ' — nothing'}
+            </>
+          )}
+        </p>
+      ),
+    },
+  ];
+
+  if (m.pathParams.length > 0) {
+    blocks.push({
+      id: 'path-parameters',
+      title: <>Path parameters</>,
+      label: 'Path parameters',
+      body: <ParamsRows params={m.pathParams} />,
+    });
+  }
+
+  if (m.queryParams.length > 0) {
+    blocks.push({
+      id: 'query-parameters',
+      title: <>Query &amp; header parameters</>,
+      label: 'Query parameters',
+      body: <FieldsTable fields={m.queryParams} toModel={toModel} hasModel={hasModel} />,
+    });
+  }
+
+  if (m.bodyType) {
+    blocks.push({
+      id: 'request-body',
+      title: <>Request body — {modelRef(m.bodyType, toModel, hasModel)}</>,
+      label: 'Request body',
+      body:
+        bodyModel && bodyModel.kind === 'object' ? (
+          <FieldsTable fields={bodyModel.fields} toModel={toModel} hasModel={hasModel} />
+        ) : bodyModel?.kind === 'enum' ? (
+          <EnumValues values={bodyModel.values} />
+        ) : (
+          <p className="text-sm text-ink-soft">Free-form <Term>{m.bodyType}</Term> — no fixed shape.</p>
+        ),
+    });
+  }
+
+  if (responseModel) {
+    blocks.push({
+      id: 'response',
+      title: <>Response — {modelRef(m.returnType, toModel, hasModel)}</>,
+      label: 'Response',
+      body:
+        responseModel.kind === 'object' ? (
+          <FieldsTable fields={responseModel.fields} toModel={toModel} hasModel={hasModel} />
+        ) : (
+          <EnumValues values={responseModel.values} />
+        ),
+    });
+  }
+
+  blocks.push({
+    id: 'example',
+    title: <>Example</>,
+    label: 'Example',
+    body: <Code language="ts">{usageSnippet(g.accessor, m)}</Code>,
+  });
+
   return (
     <section className="flex flex-col gap-6">
       <header className="flex flex-col gap-2 border-b border-rule-soft pb-4">
@@ -86,95 +264,11 @@ export function MethodPage() {
         </div>
       )}
 
-      <div>
-        <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Signature</h3>
-        <Code language="ts">{m.signature}</Code>
-      </div>
+      <OnThisPage blocks={blocks} />
 
-      <div className="grid gap-4 sm:grid-cols-2">
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Required scopes</h3>
-          <ScopePills scopes={m.scopes} />
-        </div>
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Returns</h3>
-          <p className="text-sm text-ink-soft">
-            {m.returnKind === 'sse' ? (
-              <>a server-sent event stream — iterate with <Term>for await</Term></>
-            ) : m.returnKind === 'iterator' ? (
-              <>
-                an async iterable of{' '}
-                {isModelName(ref, m.returnType) ? (
-                  <Link className="text-accent underline underline-offset-2" to={toModel(m.returnType)}>
-                    {m.returnType}
-                  </Link>
-                ) : (
-                  <Term>{m.returnType}</Term>
-                )}{' '}
-                (the <Term>listAll</Term> walker)
-              </>
-            ) : (
-              <>
-                {isModelName(ref, m.returnType) ? (
-                  <Link className="text-accent underline underline-offset-2" to={toModel(m.returnType)}>
-                    {m.returnType}
-                  </Link>
-                ) : (
-                  <Term>{m.returnType}</Term>
-                )}
-                {m.returnType === 'void' && ' — nothing'}
-              </>
-            )}
-          </p>
-        </div>
-      </div>
-
-      {m.pathParams.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Path parameters</h3>
-          <ParamsRows params={m.pathParams} />
-        </div>
-      )}
-
-      {m.queryParams.length > 0 && (
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Query &amp; header parameters</h3>
-          <FieldsTable fields={m.queryParams} toModel={toModel} hasModel={hasModel} />
-        </div>
-      )}
-
-      {m.bodyType && (
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">
-            Request body — {modelRef(m.bodyType, toModel, hasModel)}
-          </h3>
-          {bodyModel && bodyModel.kind === 'object' ? (
-            <FieldsTable fields={bodyModel.fields} toModel={toModel} hasModel={hasModel} />
-          ) : bodyModel?.kind === 'enum' ? (
-            <EnumValues values={bodyModel.values} />
-          ) : (
-            <p className="text-sm text-ink-soft">Free-form <Term>{m.bodyType}</Term> — no fixed shape.</p>
-          )}
-        </div>
-      )}
-
-      {responseModel && (
-        <div>
-          <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">
-            Response — {modelRef(m.returnType, toModel, hasModel)}
-          </h3>
-          {responseModel.kind === 'object' ? (
-            <FieldsTable fields={responseModel.fields} toModel={toModel} hasModel={hasModel} />
-          ) : (
-            <EnumValues values={responseModel.values} />
-          )}
-        </div>
-      )}
-
-      <div>
-        <h3 className="mb-2 text-xs font-mono tracking-wider text-ink-soft uppercase">Example</h3>
-        <Code language="ts">{usageSnippet(g.accessor, m)}</Code>
-      </div>
+      {blocks.map((block) => (
+        <AnchoredBlock key={block.id} block={block} />
+      ))}
     </section>
   );
 }
