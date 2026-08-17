@@ -1044,7 +1044,6 @@ async fn a_keyless_client_puts_no_token_in_the_sse_query() {
     let mut stream = pin!(runs.stream_run_events("r1", &params));
     let first = stream.next().await.expect("one event").expect("decodes");
     assert_eq!(first.event, "run.completed");
-    drop(stream);
 
     //  Assert on the request the server actually received, rather than on a
     //  matcher having matched — an empty `token=` would still satisfy a
