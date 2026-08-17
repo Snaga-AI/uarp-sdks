@@ -6,6 +6,45 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.2 — 2026-08-17
+
+Swift drew a line in 0.5.1: an empty `apiKey` means "this client carries no
+credentials", and sending `Bearer ` with nothing after it is not the same as
+sending no header — a server that validates the value can refuse it, and in a
+browser it overrides the cookie that would otherwise be attached. This release
+brings TypeScript, Rust and Kotlin to that same behaviour.
+
+The immediate consumer is the browser app, which is authenticated by an HttpOnly
+`uarp_auth_token` cookie: it never sees an API key, so it could not construct a
+client at all.
+
+### Added — TypeScript, Rust, Kotlin
+
+- **A client whose credentials travel another way.** An *explicitly empty*
+  `apiKey` (`apiKey: ""`, `.api_key("")`, `.apiKey("")`) is now a statement
+  rather than a mistake: no `Authorization` header is sent, and no `?token=` is
+  appended on the SSE query. An *omitted* key still throws — "forgot to set
+  `UARP_API_KEY`" is the common mistake and a 401 is a much worse way to learn
+  about it. The TypeScript error message now names the alternative.
+
+### Changed — Rust, Kotlin
+
+- **`from_env` / `fromEnvironment` refuse a set-but-empty variable.**
+  `UARP_API_KEY=""` is a variable that *exists*, so both previously built a
+  credential-less client from it. That used to surface as a visible 401; with
+  the guard above it would have become a silent unauthenticated request
+  instead. Going keyless stays a deliberate act on the builder.
+
+### Notes
+
+Ada is deliberately unchanged: its constructor already refuses an empty key
+outright ("the API key must not be empty"), so neither `Bearer ` nor an empty
+`?token=` is reachable there. A guard for a state that cannot occur would be
+dead code.
+
+No existing caller changes behaviour — a real key is sent exactly as before,
+and every path that previously threw still throws.
+
 ## 0.5.1 — 2026-08-16
 
 ### Added — Swift only
