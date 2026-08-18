@@ -2967,11 +2967,11 @@
                     "workers": {
                         "type": "array",
                         "items": {
-                            "type": "object"
+                            "$ref": "#/components/schemas/TeamWorker"
                         }
                     },
                     "policies": {
-                        "type": "object"
+                        "$ref": "#/components/schemas/TeamPolicies"
                     },
                     "goal_config": {
                         "type": [
@@ -3004,6 +3004,217 @@
                     "topology",
                     "supervisor_agent_id",
                     "workers"
+                ]
+            },
+            "TeamWorkerPermissions": {
+                "type": "object",
+                "description": "What a worker may do inside a team run.",
+                "properties": {
+                    "tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Tool names this worker may invoke. Defaults to the agent's own allowed_tools."
+                    },
+                    "can_read_other_results": {
+                        "type": "boolean"
+                    },
+                    "can_delegate": {
+                        "type": "boolean"
+                    },
+                    "can_abort": {
+                        "type": "boolean"
+                    },
+                    "max_tokens": {
+                        "type": "integer"
+                    },
+                    "max_steps_per_subtask": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "tools",
+                    "can_read_other_results",
+                    "can_delegate",
+                    "can_abort"
+                ]
+            },
+            "TeamWorkerExternalA2A": {
+                "type": "object",
+                "description": "Delegate this worker to another platform over the A2A protocol.",
+                "properties": {
+                    "endpoint": {
+                        "type": "string"
+                    },
+                    "agent_card_url": {
+                        "type": "string"
+                    },
+                    "auth": {
+                        "type": "object",
+                        "properties": {
+                            "type": {
+                                "type": "string"
+                            },
+                            "token_ref": {
+                                "type": "string"
+                            }
+                        },
+                        "required": [
+                            "type"
+                        ]
+                    }
+                },
+                "required": [
+                    "endpoint",
+                    "agent_card_url"
+                ]
+            },
+            "TeamWorker": {
+                "type": "object",
+                "description": "An agent acting in a team, with a role and permissions.",
+                "properties": {
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "permissions": {
+                        "$ref": "#/components/schemas/TeamWorkerPermissions"
+                    },
+                    "external_a2a": {
+                        "$ref": "#/components/schemas/TeamWorkerExternalA2A"
+                    }
+                },
+                "required": [
+                    "agent_id",
+                    "role",
+                    "permissions"
+                ]
+            },
+            "ValidationCriterion": {
+                "type": "object",
+                "description": "One rubric line for LLM-as-judge validation.",
+                "properties": {
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "weight": {
+                        "type": "number",
+                        "description": "0.0-1.0; weights should sum to ~1.0."
+                    }
+                },
+                "required": [
+                    "name",
+                    "description",
+                    "weight"
+                ]
+            },
+            "ValidationPolicy": {
+                "type": "object",
+                "description": "Optional gate scoring worker outputs before synthesis.",
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "criteria": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ValidationCriterion"
+                        }
+                    },
+                    "min_score": {
+                        "type": "number",
+                        "description": "Pass threshold 0.0-1.0 (default 0.7)."
+                    },
+                    "max_revision_rounds": {
+                        "type": "integer"
+                    },
+                    "validator_agent_id": {
+                        "type": "string",
+                        "description": "Dedicated validator; omitted means the supervisor judges its own workers."
+                    }
+                },
+                "required": [
+                    "enabled",
+                    "criteria",
+                    "min_score",
+                    "max_revision_rounds"
+                ]
+            },
+            "TeamPolicies": {
+                "type": "object",
+                "description": "Limits and failure handling for a team run.",
+                "properties": {
+                    "max_rounds": {
+                        "type": "integer"
+                    },
+                    "timeout_ms": {
+                        "type": "integer"
+                    },
+                    "early_termination": {
+                        "type": "boolean"
+                    },
+                    "consensus_threshold": {
+                        "type": "number"
+                    },
+                    "effort": {
+                        "type": "string",
+                        "enum": [
+                            "low",
+                            "medium",
+                            "high",
+                            "max"
+                        ]
+                    },
+                    "max_delegation_depth": {
+                        "type": "integer",
+                        "description": "supervisor -> worker -> sub-worker."
+                    },
+                    "subtask_timeout_ms": {
+                        "type": "integer"
+                    },
+                    "on_worker_failure": {
+                        "type": "string",
+                        "enum": [
+                            "retry",
+                            "skip",
+                            "abort_team"
+                        ],
+                        "description": "Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the supervisor as a tool result instead, and this policy does not run."
+                    },
+                    "max_worker_retries": {
+                        "type": "integer"
+                    },
+                    "require_all_workers": {
+                        "type": "boolean"
+                    },
+                    "validation": {
+                        "$ref": "#/components/schemas/ValidationPolicy"
+                    },
+                    "max_graph_nodes": {
+                        "type": "integer",
+                        "description": "Default 50."
+                    },
+                    "max_concurrency": {
+                        "type": "integer",
+                        "description": "Concurrent worker runs in a fan-out (default 8)."
+                    }
+                },
+                "required": [
+                    "max_rounds",
+                    "timeout_ms",
+                    "early_termination",
+                    "effort",
+                    "max_delegation_depth",
+                    "subtask_timeout_ms",
+                    "on_worker_failure",
+                    "max_worker_retries",
+                    "require_all_workers"
                 ]
             },
             "Company": {

@@ -17,6 +17,6 @@ package UARP is
    --  Version of this SDK. The authoritative copy lives in UARP.Meta, which the
    --  generator writes from the repository VERSION file; this constant exists so
    --  the hand-written client can name it without depending on generated code.
-   SDK_Version : constant String := "0.5.4";
+   SDK_Version : constant String := "0.5.5";
 
 end UARP;
