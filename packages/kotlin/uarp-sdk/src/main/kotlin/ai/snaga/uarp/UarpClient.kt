@@ -10,6 +10,8 @@ import kotlin.math.pow
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.Json as KJson
 import okhttp3.Call
 import okhttp3.Callback
@@ -332,12 +334,44 @@ private fun emptyBodyFor(method: String): RequestBody? =
 internal fun okhttp3.Headers.toMap(): Map<String, String> =
     (0 until size).associate { index -> name(index).lowercase() to value(index) }
 
-internal fun parseProblem(body: String): Problem =
-    if (body.isBlank()) {
-        Problem()
-    } else {
-        runCatching { uarpJson.decodeFromString<Problem>(body) }.getOrElse { Problem(detail = body.take(2_000)) }
+/**
+ * RFC 9457 keys. A body carrying none of them is not a problem document,
+ * however well-formed its JSON is.
+ */
+private val PROBLEM_KEYS = setOf("type", "title", "status", "detail", "correlationId", "errors")
+
+/**
+ * Extract the failure message, whatever shape the server used to send it.
+ *
+ * Every field of [Problem] is nullable with a default and `uarpJson` sets
+ * `ignoreUnknownKeys = true`, so `{"error": "Insufficient role"}` DECODED
+ * SUCCESSFULLY into an all-null `Problem` — and the `getOrElse` branch that
+ * preserves the raw body never ran, because it only fires when decoding throws.
+ * It was dead code for exactly the input it was written for. The API answers 32
+ * places with that bare shape.
+ *
+ * Diagnosed by the iOS session against the Swift client; the same hole exists
+ * in TypeScript, Rust and here.
+ */
+internal fun parseProblem(body: String): Problem {
+    if (body.isBlank()) return Problem()
+    val element = runCatching { uarpJson.parseToJsonElement(body) }.getOrNull()
+    val obj = element as? JsonObject ?: return Problem(detail = body.take(2_000))
+    if (obj.keys.any { it in PROBLEM_KEYS }) {
+        runCatching { uarpJson.decodeFromString<Problem>(body) }.getOrNull()?.let { return it }
     }
+    return Problem(detail = messageFrom(obj) ?: body.take(2_000))
+}
+
+/** `{"error": "..."}`, `{"error": {"message": "..."}}` and `{"message": "..."}`. */
+private fun messageFrom(obj: JsonObject): String? {
+    (obj["error"] as? JsonPrimitive)?.let { if (it.isString) return it.content }
+    ((obj["error"] as? JsonObject)?.get("message") as? JsonPrimitive)?.let {
+        if (it.isString) return it.content
+    }
+    (obj["message"] as? JsonPrimitive)?.let { if (it.isString) return it.content }
+    return null
+}
 
 /** Full-jitter exponential backoff capped at 8 s. */
 internal fun backoffMillis(attempt: Int): Long {

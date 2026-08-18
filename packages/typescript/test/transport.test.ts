@@ -450,3 +450,66 @@ test('an omitted apiKey still throws, and says what to pass instead', () => {
     (err: Error) => /Missing API key/.test(err.message) && /apiKey: ""/.test(err.message),
   );
 });
+
+/**
+ * A failure the server did not phrase as RFC 9457 must still reach the caller.
+ *
+ * 32 handlers answer with a bare `{"error": "..."}`. Before this, `readProblem`
+ * cast any JSON object to a problem document, so those arrived with no title
+ * and no detail and `formatMessage` rendered `403 HTTP 403` — the reason was
+ * discarded inside the SDK, before any application code could show it. The
+ * raw-text fallback existed but a cast cannot throw, so it was unreachable for
+ * precisely these inputs.
+ */
+test('a bare {"error"} body keeps its message', async () => {
+  const { client } = clientWith([problem(403, { error: 'Insufficient role: owner required' })]);
+  await assert.rejects(
+    () => client.request({ method: 'GET', path: '/api/v1/mcp/servers' }),
+    (err: APIError) => {
+      assert.equal(err.problem.detail, 'Insufficient role: owner required');
+      assert.match(err.message, /Insufficient role/);
+      return true;
+    },
+  );
+});
+
+test('a nested {"error": {"message"}} body keeps its message', async () => {
+  const { client } = clientWith([problem(502, { error: { message: 'Upstream error' } })]);
+  await assert.rejects(
+    () => client.request({ method: 'GET', path: '/api/v1/llm/chat' }),
+    (err: APIError) => {
+      assert.equal(err.problem.detail, 'Upstream error');
+      return true;
+    },
+  );
+});
+
+test('a real problem document is still used as-is', async () => {
+  const { client } = clientWith([
+    problem(404, { type: 'about:blank', title: 'Not Found', status: 404, detail: 'no such agent' }),
+  ]);
+  await assert.rejects(
+    () => client.request({ method: 'GET', path: '/api/v1/agents/x' }),
+    (err: APIError) => {
+      assert.equal(err.problem.title, 'Not Found');
+      assert.equal(err.problem.detail, 'no such agent');
+      return true;
+    },
+  );
+});
+
+test('a non-JSON error body is not thrown away either', async () => {
+  const { client } = clientWith([
+    new Response('<html><body>502 Bad Gateway</body></html>', {
+      status: 502,
+      headers: { 'content-type': 'text/html' },
+    }),
+  ]);
+  await assert.rejects(
+    () => client.request({ method: 'GET', path: '/api/v1/agents' }),
+    (err: APIError) => {
+      assert.match(err.problem.detail ?? '', /Bad Gateway/);
+      return true;
+    },
+  );
+});
