@@ -4210,8 +4210,8 @@ export interface Team {
   orchestration_mode?: TeamOrchestrationMode;
   supervisor_mode?: TeamSupervisorMode;
   supervisor_agent_id: string;
-  workers: JsonObject[];
-  policies?: JsonObject;
+  workers: TeamWorker[];
+  policies?: TeamPolicies;
   goal_config?: JsonObject | null;
   swarm_config?: JsonObject | null;
   workspace_id?: string;
@@ -4259,6 +4259,50 @@ export type TeamOrchestrationMode = 'strict_addressed' | 'peer_collab' | 'vote_b
 
 export const TEAM_ORCHESTRATION_MODE_VALUES = ['strict_addressed', 'peer_collab', 'vote_based'] as const;
 
+/**
+ * Limits and failure handling for a team run.
+ */
+export interface TeamPolicies {
+  max_rounds: number;
+  timeout_ms: number;
+  early_termination: boolean;
+  consensus_threshold?: number;
+  effort: TeamPoliciesEffort;
+  /**
+   * supervisor -> worker -> sub-worker.
+   */
+  max_delegation_depth: number;
+  subtask_timeout_ms: number;
+  /**
+   * Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+   * supervisor as a tool result instead, and this policy does not run.
+   */
+  on_worker_failure: TeamPoliciesOnWorkerFailure;
+  max_worker_retries: number;
+  require_all_workers: boolean;
+  validation?: ValidationPolicy;
+  /**
+   * Default 50.
+   */
+  max_graph_nodes?: number;
+  /**
+   * Concurrent worker runs in a fan-out (default 8).
+   */
+  max_concurrency?: number;
+}
+
+export type TeamPoliciesEffort = 'low' | 'medium' | 'high' | 'max';
+
+export const TEAM_POLICIES_EFFORT_VALUES = ['low', 'medium', 'high', 'max'] as const;
+
+/**
+ * Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+ * supervisor as a tool result instead, and this policy does not run.
+ */
+export type TeamPoliciesOnWorkerFailure = 'retry' | 'skip' | 'abort_team';
+
+export const TEAM_POLICIES_ON_WORKER_FAILURE_VALUES = ['retry', 'skip', 'abort_team'] as const;
+
 export type TeamSupervisorMode = 'auto_dispatch' | 'tool_driven';
 
 export const TEAM_SUPERVISOR_MODE_VALUES = ['auto_dispatch', 'tool_driven'] as const;
@@ -4281,6 +4325,45 @@ export interface TeamUpdate {
 export interface TeamUpdateWorker {
   agent_id: string;
   role?: string;
+}
+
+/**
+ * An agent acting in a team, with a role and permissions.
+ */
+export interface TeamWorker {
+  agent_id: string;
+  role: string;
+  permissions: TeamWorkerPermissions;
+  external_a2a?: TeamWorkerExternalA2A;
+}
+
+/**
+ * Delegate this worker to another platform over the A2A protocol.
+ */
+export interface TeamWorkerExternalA2A {
+  endpoint: string;
+  agent_card_url: string;
+  auth?: TeamWorkerExternalA2AAuth;
+}
+
+export interface TeamWorkerExternalA2AAuth {
+  type: string;
+  token_ref?: string;
+}
+
+/**
+ * What a worker may do inside a team run.
+ */
+export interface TeamWorkerPermissions {
+  /**
+   * Tool names this worker may invoke. Defaults to the agent's own allowed_tools.
+   */
+  tools: string[];
+  can_read_other_results: boolean;
+  can_delegate: boolean;
+  can_abort: boolean;
+  max_tokens?: number;
+  max_steps_per_subtask?: number;
 }
 
 export interface Tenant {
@@ -4470,6 +4553,35 @@ export interface UploadFileRequest {
   data: BinaryInput;
   mime_type: string;
   filename?: string;
+}
+
+/**
+ * One rubric line for LLM-as-judge validation.
+ */
+export interface ValidationCriterion {
+  name: string;
+  description: string;
+  /**
+   * 0.0-1.0; weights should sum to ~1.0.
+   */
+  weight: number;
+}
+
+/**
+ * Optional gate scoring worker outputs before synthesis.
+ */
+export interface ValidationPolicy {
+  enabled: boolean;
+  criteria: ValidationCriterion[];
+  /**
+   * Pass threshold 0.0-1.0 (default 0.7).
+   */
+  min_score: number;
+  max_revision_rounds: number;
+  /**
+   * Dedicated validator; omitted means the supervisor judges its own workers.
+   */
+  validator_agent_id?: string;
 }
 
 export interface Value {

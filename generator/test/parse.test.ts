@@ -232,7 +232,13 @@ test('parses the production document into the expected shape', () => {
   // `metadata`, each nested object becoming its own named type. The server had
   // always sent all five; the document named none of them, so every generated
   // model was blind to `agent.specs` in particular.
-  assert.equal(spec.types.length, 608);
+  // 608 -> 617 on 2026-08-18: `Team.workers` and `Team.policies` stopped being
+  // `{"type": "object"}` and gained described schemas (TeamWorker,
+  // TeamWorkerPermissions, TeamWorkerExternalA2A, TeamPolicies,
+  // ValidationPolicy, ValidationCriterion), each nested object becoming its own
+  // named type. Before that the generator could only render them as free-form
+  // JSON bags, which made the models poorer than the wire they describe.
+  assert.equal(spec.types.length, 617);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

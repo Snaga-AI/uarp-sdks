@@ -1,6 +1,6 @@
 {
   "name": "uarp-sdk",
-  "version": "0.5.4",
+  "version": "0.5.5",
   "description": "TypeScript/Node client for the UARP (Snaga) Universal Agent Runtime Platform API",
   "license": "MIT",
   "type": "module",
