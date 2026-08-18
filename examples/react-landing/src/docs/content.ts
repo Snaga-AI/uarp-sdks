@@ -25,11 +25,11 @@ export const INSTALL: Record<LanguageId, { command: string; shell: boolean; need
   ts: { command: 'npm install uarp-sdk', shell: true, needs: 'Node 18+' },
   rust: { command: 'cargo add uarp-sdk tokio --features tokio/macros,tokio/rt-multi-thread', shell: true, needs: 'Rust 1.88+' },
   swift: {
-    command: '.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.3")',
+    command: '.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.6")',
     shell: false,
     needs: 'Swift 5.9+, macOS 12 / iOS 15',
   },
-  kotlin: { command: 'implementation("ai.snaga:uarp-sdk:0.5.3")', shell: false, needs: 'Kotlin 2.2+, JVM 11+, Android 21+' },
+  kotlin: { command: 'implementation("ai.snaga:uarp-sdk:0.5.6")', shell: false, needs: 'Kotlin 2.2+, JVM 11+, Android 21+' },
   ada: { command: 'alr with uarp_sdk', shell: true, needs: 'GNAT 2022, libcurl' },
 };
 

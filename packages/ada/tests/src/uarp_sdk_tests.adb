@@ -316,6 +316,34 @@ procedure UARP_SDK_Tests is
       begin
          Check_Equal ("a non-JSON body is preserved verbatim",
                       +Non_JSON.Raw, "upstream exploded");
+         --  Preserved is not the same as delivered. The check above passed
+         --  while `Image` ignored `Raw` entirely, so the text was kept in a
+         --  field nothing read.
+         Check ("a non-JSON body reaches the rendered message",
+                Ada.Strings.Fixed.Index (Image (Non_JSON, 502), "upstream exploded") > 0);
+      end;
+
+      --  A refusal the server did not phrase as RFC 9457. Valid JSON, so
+      --  parsing SUCCEEDS and every documented field stays empty; before this
+      --  the rendered message was "403 HTTP error" and the reason was lost.
+      --  32 API handlers answer in exactly this shape.
+      declare
+         Bare : constant Problem :=
+           UARP.Client.To_Problem ("{""error"":""Insufficient role: owner required""}");
+      begin
+         Check ("a bare error body reaches the rendered message",
+                Ada.Strings.Fixed.Index
+                  (Image (Bare, 403), "Insufficient role: owner required") > 0);
+      end;
+
+      --  And the fallback must not fire when the document did say something.
+      declare
+         Proper : constant Problem :=
+           UARP.Client.To_Problem
+             ("{""title"":""Not Found"",""detail"":""no such agent""}");
+      begin
+         Check ("a real problem document is rendered without the raw body",
+                Ada.Strings.Fixed.Index (Image (Proper, 404), "{") = 0);
       end;
    end Test_Errors;
 
