@@ -542,6 +542,21 @@ pub struct AdminReplayWebhookDLQResponse {
 /// `Agent` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Agent {
+    /// SPECs installed on this agent, with version pin and granted permissions.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<AgentSpec>>,
+    /// Tools this agent may call without a human-in-the-loop prompt.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_approve_tools: Option<Vec<String>>,
+    /// Command hierarchy (MVP: opcon only).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command_relationships: Option<AgentCommandRelationships>,
+    /// Security clearance and compartment access.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_control: Option<AgentAccessControl>,
+    /// Free-form caller-supplied metadata.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
     pub agent_id: String,
     pub tenant_id: String,
     pub name: String,
@@ -608,6 +623,17 @@ pub struct Agent {
     pub updated_at: Option<String>,
 }
 
+/// Security clearance and compartment access.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentAccessControl {
+    /// 0=public, 1=internal, 2=restricted, 3=confidential, 4=secret.
+    pub clearance: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compartments: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub caveats: Option<Vec<String>>,
+}
+
 /// Output of summariseAgents (analytics.ts) — same shape for /admin/analytics/agents and
 /// /analytics/agents (tenant-scoped).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -657,6 +683,16 @@ pub struct AgentAnalyticsSummaryByExecutionMode {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentAnalyticsSummaryRange {
     pub days: i64,
+}
+
+/// Command hierarchy (MVP: opcon only).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentCommandRelationships {
+    /// Agent ID holding operational control.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub opcon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub coordinates_with: Option<Vec<String>>,
 }
 
 /// `AgentContextStrategy` enumeration.
@@ -817,6 +853,79 @@ pub struct AgentPrompts {
     pub system: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub developer: Option<String>,
+}
+
+/// `AgentSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentSpec {
+    pub spec_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    /// Soft-disable. false keeps the install history but skips injection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub permissions_granted: Option<Vec<AgentSpecPermissionsGrantedItem>>,
+}
+
+/// `AgentSpecPermissionsGrantedItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentSpecPermissionsGrantedItem {
+    pub cap: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scope: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    pub granted_by: AgentSpecPermissionsGrantedItemGrantedBy,
+    pub granted_at: String,
+}
+
+/// `AgentSpecPermissionsGrantedItemGrantedBy` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentSpecPermissionsGrantedItemGrantedBy {
+    #[default]
+    #[serde(rename = "wizard")]
+    Wizard,
+    #[serde(rename = "admin")]
+    Admin,
+    #[serde(rename = "bootstrap")]
+    Bootstrap,
+    #[serde(rename = "migrated")]
+    Migrated,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentSpecPermissionsGrantedItemGrantedBy {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Wizard => "wizard",
+            Self::Admin => "admin",
+            Self::Bootstrap => "bootstrap",
+            Self::Migrated => "migrated",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentSpecPermissionsGrantedItemGrantedBy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentSpecPermissionsGrantedItemGrantedBy {
+    fn from(value: &str) -> Self {
+        match value {
+            "wizard" => Self::Wizard,
+            "admin" => Self::Admin,
+            "bootstrap" => Self::Bootstrap,
+            "migrated" => Self::Migrated,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `AgentSummary` model.

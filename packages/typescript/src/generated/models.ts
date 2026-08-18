@@ -214,6 +214,26 @@ export interface AdminReplayWebhookDLQResponse {
 }
 
 export interface Agent {
+  /**
+   * SPECs installed on this agent, with version pin and granted permissions.
+   */
+  specs?: AgentSpec[];
+  /**
+   * Tools this agent may call without a human-in-the-loop prompt.
+   */
+  auto_approve_tools?: string[];
+  /**
+   * Command hierarchy (MVP: opcon only).
+   */
+  command_relationships?: AgentCommandRelationships;
+  /**
+   * Security clearance and compartment access.
+   */
+  access_control?: AgentAccessControl;
+  /**
+   * Free-form caller-supplied metadata.
+   */
+  metadata?: JsonObject;
   agent_id: string;
   tenant_id: string;
   name: string;
@@ -274,6 +294,18 @@ export interface Agent {
 }
 
 /**
+ * Security clearance and compartment access.
+ */
+export interface AgentAccessControl {
+  /**
+   * 0=public, 1=internal, 2=restricted, 3=confidential, 4=secret.
+   */
+  clearance: number;
+  compartments?: string[];
+  caveats?: string[];
+}
+
+/**
  * Output of summariseAgents (analytics.ts) — same shape for /admin/analytics/agents and
  * /analytics/agents (tenant-scoped).
  */
@@ -304,6 +336,17 @@ export interface AgentAnalyticsSummaryByExecutionMode {
 
 export interface AgentAnalyticsSummaryRange {
   days: number;
+}
+
+/**
+ * Command hierarchy (MVP: opcon only).
+ */
+export interface AgentCommandRelationships {
+  /**
+   * Agent ID holding operational control.
+   */
+  opcon?: string;
+  coordinates_with?: string[];
 }
 
 export type AgentContextStrategy = 'compaction' | 'summarize' | 'truncate' | 'sliding_window';
@@ -372,6 +415,28 @@ export interface AgentPrompts {
   system?: string;
   developer?: string;
 }
+
+export interface AgentSpec {
+  spec_id: string;
+  version?: string;
+  /**
+   * Soft-disable. false keeps the install history but skips injection.
+   */
+  enabled?: boolean;
+  permissions_granted?: AgentSpecPermissionsGrantedItem[];
+}
+
+export interface AgentSpecPermissionsGrantedItem {
+  cap: string;
+  scope?: string;
+  reason?: string;
+  granted_by: AgentSpecPermissionsGrantedItemGrantedBy;
+  granted_at: string;
+}
+
+export type AgentSpecPermissionsGrantedItemGrantedBy = 'wizard' | 'admin' | 'bootstrap' | 'migrated';
+
+export const AGENT_SPEC_PERMISSIONS_GRANTED_ITEM_GRANTED_BY_VALUES = ['wizard', 'admin', 'bootstrap', 'migrated'] as const;
 
 export interface AgentSummary {
   agent_id: string;
