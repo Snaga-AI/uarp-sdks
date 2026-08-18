@@ -6733,6 +6733,64 @@ package UARP.Models is
    function To_JSON (Model : Team_Policies) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies;
 
+   --  Ceiling for a goal-driven team's pursuit of its objective.
+   type Team_Objective_Budget is record
+      Has_Max_Runs : Boolean := False;
+      Max_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_Tokens : Boolean := False;
+      Max_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Max_Cost_Usd : Boolean := False;
+      Max_Cost_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Team_Objective_Budget) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Objective_Budget;
+
+   --  Goal-driven topology: the objective, the review cadence, the budget.
+   type Team_Goal_Config is record
+      Root_Objective_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Review_Interval_Ms : Boolean := False;
+      Review_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Iterations : Boolean := False;
+      Max_Iterations : UARP.Types.Integer_Value := 0;
+      Has_Budget : Boolean := False;
+      Budget : UARP.Models.Team_Objective_Budget;
+   end record;
+
+   function To_JSON (Model : Team_Goal_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Goal_Config;
+
+   --  Values of `TeamSwarmConfigHandoffContextStrategy`.
+   --  A value the API introduces later decodes as Team_Swarm_Config_Handoff_Context_Strategy_Unrecognized
+   --  with the original text kept in Raw.
+   type Team_Swarm_Config_Handoff_Context_Strategy_Kind is
+     (Team_Swarm_Config_Handoff_Context_Strategy_Full,
+   Team_Swarm_Config_Handoff_Context_Strategy_Summary,
+   Team_Swarm_Config_Handoff_Context_Strategy_Unrecognized);
+
+   type Team_Swarm_Config_Handoff_Context_Strategy is record
+      Kind : Team_Swarm_Config_Handoff_Context_Strategy_Kind := Team_Swarm_Config_Handoff_Context_Strategy_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Team_Swarm_Config_Handoff_Context_Strategy (Value : String) return Team_Swarm_Config_Handoff_Context_Strategy;
+   function To_Team_Swarm_Config_Handoff_Context_Strategy (Kind : Team_Swarm_Config_Handoff_Context_Strategy_Kind) return Team_Swarm_Config_Handoff_Context_Strategy;
+   function Image (Model : Team_Swarm_Config_Handoff_Context_Strategy) return String;
+   function To_JSON (Model : Team_Swarm_Config_Handoff_Context_Strategy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Swarm_Config_Handoff_Context_Strategy;
+
+   --  Swarm topology: who starts, and how context travels on handoff.
+   type Team_Swarm_Config is record
+      Initial_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Max_Handoffs : Boolean := False;
+      Max_Handoffs : UARP.Types.Integer_Value := 0;
+      Has_Handoff_Context_Strategy : Boolean := False;
+      Handoff_Context_Strategy : UARP.Models.Team_Swarm_Config_Handoff_Context_Strategy;
+   end record;
+
+   function To_JSON (Model : Team_Swarm_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Swarm_Config;
+
    --  Multi-agent collaboration unit (tenant-scoped).
    type Team is record
       Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -6753,12 +6811,11 @@ package UARP.Models is
       Supervisor_Mode : UARP.Models.Team_Supervisor_Mode;
       Supervisor_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Workers : UARP.Models.Team_Worker_Vectors.Vector;
-      Has_Policies : Boolean := False;
       Policies : UARP.Models.Team_Policies;
       Has_Goal_Config : Boolean := False;
-      Goal_Config : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Goal_Config : UARP.Models.Team_Goal_Config;
       Has_Swarm_Config : Boolean := False;
-      Swarm_Config : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Swarm_Config : UARP.Models.Team_Swarm_Config;
       Has_Workspace_Id : Boolean := False;
       Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Created_At : Boolean := False;
@@ -7457,18 +7514,47 @@ package UARP.Models is
    function To_JSON (Model : Permission_Check_Result) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Permission_Check_Result;
 
-   --  Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+   --  Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
+   --  dropped without error, so a typo answers 200 and changes nothing.
    type Product_Update is record
-      Has_Title : Boolean := False;
-      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Price_Cents : Boolean := False;
+      Price_Cents : UARP.Types.Integer_Value := 0;
+      Has_Currency : Boolean := False;
+      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
+      Has_Knowledge_Base_Ids : Boolean := False;
+      Knowledge_Base_Ids : UARP.Types.Text_Vectors.Vector;
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Course_Structure : Boolean := False;
+      Course_Structure : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Stripe_Price_Id : Boolean := False;
+      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Metadata : Boolean := False;
       Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Slug : Boolean := False;
+      Slug : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tags : Boolean := False;
+      Tags : UARP.Types.Text_Vectors.Vector;
+      Has_Category : Boolean := False;
+      Category : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Vendor : Boolean := False;
+      Vendor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Images : Boolean := False;
+      Images : UARP.Types.Text_Vectors.Vector;
+      Has_Variants : Boolean := False;
+      Variants : UARP.JSON_Support.JSON_Value;
+      Has_Compare_At_Price_Cents : Boolean := False;
+      Compare_At_Price_Cents : UARP.Types.Integer_Value := 0;
+      Has_Body_Html : Boolean := False;
+      Body_Html : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Options : Boolean := False;
+      Options : UARP.JSON_Support.JSON_Value;
    end record;
 
    function To_JSON (Model : Product_Update) return UARP.JSON_Support.JSON_Value;
@@ -8017,6 +8103,85 @@ package UARP.Models is
 
    function To_JSON (Model : Revoke_Me_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Me_Session_Response;
+
+   --  Values of `RiskClassificationUpdateLevel`.
+   --  A value the API introduces later decodes as Risk_Classification_Update_Level_Unrecognized
+   --  with the original text kept in Raw.
+   type Risk_Classification_Update_Level_Kind is
+     (Risk_Classification_Update_Level_Minimal,
+   Risk_Classification_Update_Level_Limited,
+   Risk_Classification_Update_Level_High,
+   Risk_Classification_Update_Level_Unacceptable,
+   Risk_Classification_Update_Level_Unrecognized);
+
+   type Risk_Classification_Update_Level is record
+      Kind : Risk_Classification_Update_Level_Kind := Risk_Classification_Update_Level_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Risk_Classification_Update_Level (Value : String) return Risk_Classification_Update_Level;
+   function To_Risk_Classification_Update_Level (Kind : Risk_Classification_Update_Level_Kind) return Risk_Classification_Update_Level;
+   function Image (Model : Risk_Classification_Update_Level) return String;
+   function To_JSON (Model : Risk_Classification_Update_Level) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Level;
+
+   --  Set when level is `high`.
+   --  A value the API introduces later decodes as Risk_Classification_Update_Annex_Iii_Category_Unrecognized
+   --  with the original text kept in Raw.
+   type Risk_Classification_Update_Annex_Iii_Category_Kind is
+     (Risk_Classification_Update_Annex_Iii_Category_Biometric,
+   Risk_Classification_Update_Annex_Iii_Category_Critical_Infrastructure,
+   Risk_Classification_Update_Annex_Iii_Category_Education,
+   Risk_Classification_Update_Annex_Iii_Category_Employment,
+   Risk_Classification_Update_Annex_Iii_Category_Essential_Services,
+   Risk_Classification_Update_Annex_Iii_Category_Law_Enforcement,
+   Risk_Classification_Update_Annex_Iii_Category_Migration,
+   Risk_Classification_Update_Annex_Iii_Category_Democratic_Processes,
+   Risk_Classification_Update_Annex_Iii_Category_Unrecognized);
+
+   type Risk_Classification_Update_Annex_Iii_Category is record
+      Kind : Risk_Classification_Update_Annex_Iii_Category_Kind := Risk_Classification_Update_Annex_Iii_Category_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Risk_Classification_Update_Annex_Iii_Category (Value : String) return Risk_Classification_Update_Annex_Iii_Category;
+   function To_Risk_Classification_Update_Annex_Iii_Category (Kind : Risk_Classification_Update_Annex_Iii_Category_Kind) return Risk_Classification_Update_Annex_Iii_Category;
+   function Image (Model : Risk_Classification_Update_Annex_Iii_Category) return String;
+   function To_JSON (Model : Risk_Classification_Update_Annex_Iii_Category) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Annex_Iii_Category;
+
+   --  EU AI Act (Article 9) classification for an agent.
+   type Risk_Classification is record
+      Level : UARP.Models.Risk_Classification_Update_Level;
+      --  Set when level is `high`.
+      Has_Annex_Iii_Category : Boolean := False;
+      Annex_Iii_Category : UARP.Models.Risk_Classification_Update_Annex_Iii_Category;
+      Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Key ID or user ID of whoever classified.
+      Assessor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Assessed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Review_Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Risk_Classification) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification;
+
+   --  Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
+   type Risk_Classification_Update is record
+      Level : UARP.Models.Risk_Classification_Update_Level;
+      --  Set when level is `high`.
+      Has_Annex_Iii_Category : Boolean := False;
+      Annex_Iii_Category : UARP.Models.Risk_Classification_Update_Annex_Iii_Category;
+      Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      Assessor : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Defaults to now when omitted.
+      Has_Assessed_At : Boolean := False;
+      Assessed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Review_Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Risk_Classification_Update) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update;
 
    --  `RollbackAgentRequest` model.
    type Rollback_Agent_Request is record

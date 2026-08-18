@@ -7751,19 +7751,48 @@ impl From<&str> for ProductType {
     }
 }
 
-/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
+/// dropped without error, so a typo answers 200 and changes nothing.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ProductUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
+    pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_cents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub currency: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub knowledge_base_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub course_structure: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stripe_price_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub vendor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub images: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub variants: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub compare_at_price_cents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub body_html: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
 /// `PublicDomainLookupResponse` model.
@@ -8298,6 +8327,147 @@ pub struct RevokeMeSessionResponse {
     pub key_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub already_revoked: Option<bool>,
+}
+
+/// EU AI Act (Article 9) classification for an agent.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RiskClassification {
+    pub level: RiskClassificationUpdateLevel,
+    /// Set when level is `high`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub annex_iii_category: Option<RiskClassificationUpdateAnnexIiiCategory>,
+    pub justification: String,
+    /// Key ID or user ID of whoever classified.
+    pub assessor: String,
+    pub assessed_at: String,
+    pub review_due_at: String,
+}
+
+/// Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RiskClassificationUpdate {
+    pub level: RiskClassificationUpdateLevel,
+    /// Set when level is `high`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub annex_iii_category: Option<RiskClassificationUpdateAnnexIiiCategory>,
+    pub justification: String,
+    pub assessor: String,
+    /// Defaults to now when omitted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assessed_at: Option<String>,
+    pub review_due_at: String,
+}
+
+/// Set when level is `high`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RiskClassificationUpdateAnnexIiiCategory {
+    #[default]
+    #[serde(rename = "biometric")]
+    Biometric,
+    #[serde(rename = "critical-infrastructure")]
+    CriticalInfrastructure,
+    #[serde(rename = "education")]
+    Education,
+    #[serde(rename = "employment")]
+    Employment,
+    #[serde(rename = "essential-services")]
+    EssentialServices,
+    #[serde(rename = "law-enforcement")]
+    LawEnforcement,
+    #[serde(rename = "migration")]
+    Migration,
+    #[serde(rename = "democratic-processes")]
+    DemocraticProcesses,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RiskClassificationUpdateAnnexIiiCategory {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Biometric => "biometric",
+            Self::CriticalInfrastructure => "critical-infrastructure",
+            Self::Education => "education",
+            Self::Employment => "employment",
+            Self::EssentialServices => "essential-services",
+            Self::LawEnforcement => "law-enforcement",
+            Self::Migration => "migration",
+            Self::DemocraticProcesses => "democratic-processes",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RiskClassificationUpdateAnnexIiiCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RiskClassificationUpdateAnnexIiiCategory {
+    fn from(value: &str) -> Self {
+        match value {
+            "biometric" => Self::Biometric,
+            "critical-infrastructure" => Self::CriticalInfrastructure,
+            "education" => Self::Education,
+            "employment" => Self::Employment,
+            "essential-services" => Self::EssentialServices,
+            "law-enforcement" => Self::LawEnforcement,
+            "migration" => Self::Migration,
+            "democratic-processes" => Self::DemocraticProcesses,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RiskClassificationUpdateLevel` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RiskClassificationUpdateLevel {
+    #[default]
+    #[serde(rename = "minimal")]
+    Minimal,
+    #[serde(rename = "limited")]
+    Limited,
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "unacceptable")]
+    Unacceptable,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RiskClassificationUpdateLevel {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Minimal => "minimal",
+            Self::Limited => "limited",
+            Self::High => "high",
+            Self::Unacceptable => "unacceptable",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RiskClassificationUpdateLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RiskClassificationUpdateLevel {
+    fn from(value: &str) -> Self {
+        match value {
+            "minimal" => Self::Minimal,
+            "limited" => Self::Limited,
+            "high" => Self::High,
+            "unacceptable" => Self::Unacceptable,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `RollbackAgentRequest` model.
@@ -9608,12 +9778,11 @@ pub struct Team {
     pub supervisor_mode: Option<TeamSupervisorMode>,
     pub supervisor_agent_id: String,
     pub workers: Vec<TeamWorker>,
+    pub policies: TeamPolicies,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub policies: Option<TeamPolicies>,
+    pub goal_config: Option<TeamGoalConfig>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub goal_config: Option<serde_json::Map<String, serde_json::Value>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub swarm_config: Option<serde_json::Map<String, serde_json::Value>>,
+    pub swarm_config: Option<TeamSwarmConfig>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9699,6 +9868,18 @@ impl From<&str> for TeamDelegationStrategy {
     }
 }
 
+/// Goal-driven topology: the objective, the review cadence, the budget.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamGoalConfig {
+    pub root_objective_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub review_interval_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_iterations: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<TeamObjectiveBudget>,
+}
+
 /// `TeamMergeStrategy` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum TeamMergeStrategy {
@@ -9781,6 +9962,17 @@ impl From<&str> for TeamMessageProtocol {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// Ceiling for a goal-driven team's pursuit of its objective.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamObjectiveBudget {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_cost_usd: Option<f64>,
 }
 
 /// `TeamOrchestrationMode` enumeration.
@@ -9982,6 +10174,56 @@ impl From<&str> for TeamSupervisorMode {
         match value {
             "auto_dispatch" => Self::AutoDispatch,
             "tool_driven" => Self::ToolDriven,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Swarm topology: who starts, and how context travels on handoff.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamSwarmConfig {
+    pub initial_agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_handoffs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub handoff_context_strategy: Option<TeamSwarmConfigHandoffContextStrategy>,
+}
+
+/// `TeamSwarmConfigHandoffContextStrategy` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TeamSwarmConfigHandoffContextStrategy {
+    #[default]
+    #[serde(rename = "full")]
+    Full,
+    #[serde(rename = "summary")]
+    Summary,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TeamSwarmConfigHandoffContextStrategy {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Full => "full",
+            Self::Summary => "summary",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TeamSwarmConfigHandoffContextStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TeamSwarmConfigHandoffContextStrategy {
+    fn from(value: &str) -> Self {
+        match value {
+            "full" => Self::Full,
+            "summary" => Self::Summary,
             other => Self::Other(other.to_string()),
         }
     }

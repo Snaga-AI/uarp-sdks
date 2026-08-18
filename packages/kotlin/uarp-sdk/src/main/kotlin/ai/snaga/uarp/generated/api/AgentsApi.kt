@@ -225,6 +225,23 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Read the EU AI Act risk classification
+     *
+     * `GET /api/v1/agents/{agentId}/risk-classification`
+     *
+     * Required scopes: `agents:read`.
+     */
+    public suspend fun getAgentRiskClassification(agentId: String, options: RequestOptions = RequestOptions()): RiskClassification {
+        return client.request<RiskClassification>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/risk-classification",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get EU AI Act Annex IV system card
      *
      * `GET /api/v1/agents/{agentId}/system-card`
@@ -495,7 +512,7 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun updateAgentRiskClassification(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun updateAgentRiskClassification(agentId: String, body: RiskClassificationUpdate, options: RequestOptions = RequestOptions()): JsonObject {
         return client.request<JsonObject>(
             RequestSpec(
                 method = "PATCH",

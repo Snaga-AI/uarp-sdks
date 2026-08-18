@@ -7221,15 +7221,37 @@ public object ProductTypeSerializer : KSerializer<ProductType> {
 }
 
 /**
- * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+ * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
+ * dropped without error, so a typo answers 200 and changes nothing.
  */
 @Serializable
 public data class ProductUpdate(
-    public val title: String? = null,
+    public val name: String? = null,
     public val description: String? = null,
+    @SerialName("price_cents")
+    public val priceCents: Long? = null,
+    public val currency: String? = null,
     public val status: String? = null,
-    public val tags: List<String>? = null,
+    @SerialName("knowledge_base_ids")
+    public val knowledgeBaseIds: List<String>? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("course_structure")
+    public val courseStructure: JsonObject? = null,
+    @SerialName("stripe_price_id")
+    public val stripePriceId: String? = null,
     public val metadata: JsonObject? = null,
+    public val slug: String? = null,
+    public val tags: List<String>? = null,
+    public val category: String? = null,
+    public val vendor: String? = null,
+    public val images: List<String>? = null,
+    public val variants: List<JsonObject>? = null,
+    @SerialName("compare_at_price_cents")
+    public val compareAtPriceCents: Long? = null,
+    @SerialName("body_html")
+    public val bodyHtml: String? = null,
+    public val options: List<JsonObject>? = null,
 )
 
 /**
@@ -7769,6 +7791,114 @@ public data class RevokeMeSessionResponse(
     @SerialName("already_revoked")
     public val alreadyRevoked: Boolean? = null,
 )
+
+/**
+ * EU AI Act (Article 9) classification for an agent.
+ */
+@Serializable
+public data class RiskClassification(
+    public val level: RiskClassificationUpdateLevel,
+    /**
+     * Set when level is `high`.
+     */
+    @SerialName("annex_iii_category")
+    public val annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory? = null,
+    public val justification: String,
+    /**
+     * Key ID or user ID of whoever classified.
+     */
+    public val assessor: String,
+    @SerialName("assessed_at")
+    public val assessedAt: String,
+    @SerialName("review_due_at")
+    public val reviewDueAt: String,
+)
+
+/**
+ * Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
+ */
+@Serializable
+public data class RiskClassificationUpdate(
+    public val level: RiskClassificationUpdateLevel,
+    /**
+     * Set when level is `high`.
+     */
+    @SerialName("annex_iii_category")
+    public val annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory? = null,
+    public val justification: String,
+    public val assessor: String,
+    /**
+     * Defaults to now when omitted.
+     */
+    @SerialName("assessed_at")
+    public val assessedAt: String? = null,
+    @SerialName("review_due_at")
+    public val reviewDueAt: String,
+)
+
+/**
+ * Set when level is `high`.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RiskClassificationUpdateAnnexIiiCategorySerializer::class)
+@JvmInline
+public value class RiskClassificationUpdateAnnexIiiCategory(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val BIOMETRIC: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("biometric")
+        public val CRITICAL_INFRASTRUCTURE: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("critical-infrastructure")
+        public val EDUCATION: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("education")
+        public val EMPLOYMENT: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("employment")
+        public val ESSENTIAL_SERVICES: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("essential-services")
+        public val LAW_ENFORCEMENT: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("law-enforcement")
+        public val MIGRATION: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("migration")
+        public val DEMOCRATIC_PROCESSES: RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory("democratic-processes")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RiskClassificationUpdateAnnexIiiCategory> = listOf(BIOMETRIC, CRITICAL_INFRASTRUCTURE, EDUCATION, EMPLOYMENT, ESSENTIAL_SERVICES, LAW_ENFORCEMENT, MIGRATION, DEMOCRATIC_PROCESSES)
+    }
+}
+
+public object RiskClassificationUpdateAnnexIiiCategorySerializer : KSerializer<RiskClassificationUpdateAnnexIiiCategory> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RiskClassificationUpdateAnnexIiiCategory", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RiskClassificationUpdateAnnexIiiCategory): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RiskClassificationUpdateAnnexIiiCategory = RiskClassificationUpdateAnnexIiiCategory(decoder.decodeString())
+}
+
+/**
+ * `RiskClassificationUpdateLevel` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RiskClassificationUpdateLevelSerializer::class)
+@JvmInline
+public value class RiskClassificationUpdateLevel(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MINIMAL: RiskClassificationUpdateLevel = RiskClassificationUpdateLevel("minimal")
+        public val LIMITED: RiskClassificationUpdateLevel = RiskClassificationUpdateLevel("limited")
+        public val HIGH: RiskClassificationUpdateLevel = RiskClassificationUpdateLevel("high")
+        public val UNACCEPTABLE: RiskClassificationUpdateLevel = RiskClassificationUpdateLevel("unacceptable")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RiskClassificationUpdateLevel> = listOf(MINIMAL, LIMITED, HIGH, UNACCEPTABLE)
+    }
+}
+
+public object RiskClassificationUpdateLevelSerializer : KSerializer<RiskClassificationUpdateLevel> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RiskClassificationUpdateLevel", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RiskClassificationUpdateLevel): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RiskClassificationUpdateLevel = RiskClassificationUpdateLevel(decoder.decodeString())
+}
 
 /**
  * `RollbackAgentRequest` model.
@@ -8910,11 +9040,11 @@ public data class Team(
     @SerialName("supervisor_agent_id")
     public val supervisorAgentId: String,
     public val workers: List<TeamWorker>,
-    public val policies: TeamPolicies? = null,
+    public val policies: TeamPolicies,
     @SerialName("goal_config")
-    public val goalConfig: JsonObject? = null,
+    public val goalConfig: TeamGoalConfig? = null,
     @SerialName("swarm_config")
-    public val swarmConfig: JsonObject? = null,
+    public val swarmConfig: TeamSwarmConfig? = null,
     @SerialName("workspace_id")
     public val workspaceId: String? = null,
     @SerialName("created_at")
@@ -8989,6 +9119,20 @@ public object TeamDelegationStrategySerializer : KSerializer<TeamDelegationStrat
 }
 
 /**
+ * Goal-driven topology: the objective, the review cadence, the budget.
+ */
+@Serializable
+public data class TeamGoalConfig(
+    @SerialName("root_objective_id")
+    public val rootObjectiveId: String,
+    @SerialName("review_interval_ms")
+    public val reviewIntervalMs: Long? = null,
+    @SerialName("max_iterations")
+    public val maxIterations: Long? = null,
+    public val budget: TeamObjectiveBudget? = null,
+)
+
+/**
  * `TeamMergeStrategy` values.
  */
 ///
@@ -9044,6 +9188,19 @@ public object TeamMessageProtocolSerializer : KSerializer<TeamMessageProtocol> {
     override fun serialize(encoder: Encoder, value: TeamMessageProtocol): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): TeamMessageProtocol = TeamMessageProtocol(decoder.decodeString())
 }
+
+/**
+ * Ceiling for a goal-driven team's pursuit of its objective.
+ */
+@Serializable
+public data class TeamObjectiveBudget(
+    @SerialName("max_runs")
+    public val maxRuns: Long? = null,
+    @SerialName("max_tokens")
+    public val maxTokens: Long? = null,
+    @SerialName("max_cost_usd")
+    public val maxCostUsd: Double? = null,
+)
 
 /**
  * `TeamOrchestrationMode` values.
@@ -9204,6 +9361,47 @@ public object TeamSupervisorModeSerializer : KSerializer<TeamSupervisorMode> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamSupervisorMode", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: TeamSupervisorMode): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): TeamSupervisorMode = TeamSupervisorMode(decoder.decodeString())
+}
+
+/**
+ * Swarm topology: who starts, and how context travels on handoff.
+ */
+@Serializable
+public data class TeamSwarmConfig(
+    @SerialName("initial_agent_id")
+    public val initialAgentId: String,
+    @SerialName("max_handoffs")
+    public val maxHandoffs: Long? = null,
+    @SerialName("handoff_context_strategy")
+    public val handoffContextStrategy: TeamSwarmConfigHandoffContextStrategy? = null,
+)
+
+/**
+ * `TeamSwarmConfigHandoffContextStrategy` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamSwarmConfigHandoffContextStrategySerializer::class)
+@JvmInline
+public value class TeamSwarmConfigHandoffContextStrategy(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FULL: TeamSwarmConfigHandoffContextStrategy = TeamSwarmConfigHandoffContextStrategy("full")
+        public val SUMMARY: TeamSwarmConfigHandoffContextStrategy = TeamSwarmConfigHandoffContextStrategy("summary")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamSwarmConfigHandoffContextStrategy> = listOf(FULL, SUMMARY)
+    }
+}
+
+public object TeamSwarmConfigHandoffContextStrategySerializer : KSerializer<TeamSwarmConfigHandoffContextStrategy> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamSwarmConfigHandoffContextStrategy", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamSwarmConfigHandoffContextStrategy): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamSwarmConfigHandoffContextStrategy = TeamSwarmConfigHandoffContextStrategy(decoder.decodeString())
 }
 
 /**

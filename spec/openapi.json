@@ -429,15 +429,44 @@
             },
             "ProductUpdate": {
                 "type": "object",
-                "description": "Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.",
+                "description": "Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are dropped without error, so a typo answers 200 and changes nothing.",
                 "properties": {
-                    "title": {
+                    "name": {
                         "type": "string"
                     },
                     "description": {
                         "type": "string"
                     },
+                    "price_cents": {
+                        "type": "integer"
+                    },
+                    "currency": {
+                        "type": "string"
+                    },
                     "status": {
+                        "type": "string"
+                    },
+                    "knowledge_base_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "course_structure": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "stripe_price_id": {
+                        "type": "string"
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "slug": {
                         "type": "string"
                     },
                     "tags": {
@@ -446,9 +475,37 @@
                             "type": "string"
                         }
                     },
-                    "metadata": {
-                        "type": "object",
-                        "additionalProperties": true
+                    "category": {
+                        "type": "string"
+                    },
+                    "vendor": {
+                        "type": "string"
+                    },
+                    "images": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "variants": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
+                    },
+                    "compare_at_price_cents": {
+                        "type": "integer"
+                    },
+                    "body_html": {
+                        "type": "string"
+                    },
+                    "options": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "additionalProperties": true
+                        }
                     }
                 }
             },
@@ -2974,16 +3031,10 @@
                         "$ref": "#/components/schemas/TeamPolicies"
                     },
                     "goal_config": {
-                        "type": [
-                            "object",
-                            "null"
-                        ]
+                        "$ref": "#/components/schemas/TeamGoalConfig"
                     },
                     "swarm_config": {
-                        "type": [
-                            "object",
-                            "null"
-                        ]
+                        "$ref": "#/components/schemas/TeamSwarmConfig"
                     },
                     "workspace_id": {
                         "type": "string"
@@ -3003,7 +3054,8 @@
                     "name",
                     "topology",
                     "supervisor_agent_id",
-                    "workers"
+                    "workers",
+                    "policies"
                 ]
             },
             "TeamWorkerPermissions": {
@@ -3215,6 +3267,165 @@
                     "on_worker_failure",
                     "max_worker_retries",
                     "require_all_workers"
+                ]
+            },
+            "TeamSwarmConfig": {
+                "type": "object",
+                "description": "Swarm topology: who starts, and how context travels on handoff.",
+                "properties": {
+                    "initial_agent_id": {
+                        "type": "string"
+                    },
+                    "max_handoffs": {
+                        "type": "integer"
+                    },
+                    "handoff_context_strategy": {
+                        "type": "string",
+                        "enum": [
+                            "full",
+                            "summary"
+                        ]
+                    }
+                },
+                "required": [
+                    "initial_agent_id"
+                ]
+            },
+            "TeamObjectiveBudget": {
+                "type": "object",
+                "description": "Ceiling for a goal-driven team's pursuit of its objective.",
+                "properties": {
+                    "max_runs": {
+                        "type": "integer"
+                    },
+                    "max_tokens": {
+                        "type": "integer"
+                    },
+                    "max_cost_usd": {
+                        "type": "number"
+                    }
+                }
+            },
+            "TeamGoalConfig": {
+                "type": "object",
+                "description": "Goal-driven topology: the objective, the review cadence, the budget.",
+                "properties": {
+                    "root_objective_id": {
+                        "type": "string"
+                    },
+                    "review_interval_ms": {
+                        "type": "integer"
+                    },
+                    "max_iterations": {
+                        "type": "integer"
+                    },
+                    "budget": {
+                        "$ref": "#/components/schemas/TeamObjectiveBudget"
+                    }
+                },
+                "required": [
+                    "root_objective_id"
+                ]
+            },
+            "RiskClassificationUpdate": {
+                "type": "object",
+                "description": "Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.",
+                "properties": {
+                    "level": {
+                        "type": "string",
+                        "enum": [
+                            "minimal",
+                            "limited",
+                            "high",
+                            "unacceptable"
+                        ]
+                    },
+                    "annex_iii_category": {
+                        "type": "string",
+                        "enum": [
+                            "biometric",
+                            "critical-infrastructure",
+                            "education",
+                            "employment",
+                            "essential-services",
+                            "law-enforcement",
+                            "migration",
+                            "democratic-processes"
+                        ],
+                        "description": "Set when level is `high`."
+                    },
+                    "justification": {
+                        "type": "string"
+                    },
+                    "assessor": {
+                        "type": "string"
+                    },
+                    "assessed_at": {
+                        "type": "string",
+                        "format": "date-time",
+                        "description": "Defaults to now when omitted."
+                    },
+                    "review_due_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "level",
+                    "justification",
+                    "assessor",
+                    "review_due_at"
+                ]
+            },
+            "RiskClassification": {
+                "type": "object",
+                "description": "EU AI Act (Article 9) classification for an agent.",
+                "properties": {
+                    "level": {
+                        "type": "string",
+                        "enum": [
+                            "minimal",
+                            "limited",
+                            "high",
+                            "unacceptable"
+                        ]
+                    },
+                    "annex_iii_category": {
+                        "type": "string",
+                        "enum": [
+                            "biometric",
+                            "critical-infrastructure",
+                            "education",
+                            "employment",
+                            "essential-services",
+                            "law-enforcement",
+                            "migration",
+                            "democratic-processes"
+                        ],
+                        "description": "Set when level is `high`."
+                    },
+                    "justification": {
+                        "type": "string"
+                    },
+                    "assessor": {
+                        "type": "string",
+                        "description": "Key ID or user ID of whoever classified."
+                    },
+                    "assessed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "review_due_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "level",
+                    "justification",
+                    "assessor",
+                    "assessed_at",
+                    "review_due_at"
                 ]
             },
             "Company": {
@@ -22901,6 +23112,76 @@
             }
         },
         "/api/v1/agents/{agentId}/risk-classification": {
+            "get": {
+                "operationId": "getAgentRiskClassification",
+                "tags": [
+                    "Agents"
+                ],
+                "summary": "Read the EU AI Act risk classification",
+                "parameters": [
+                    {
+                        "name": "agentId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The classification",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/RiskClassification"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No classification set for this agent",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [
+                            "agents:read"
+                        ]
+                    }
+                ]
+            },
             "patch": {
                 "operationId": "updateAgentRiskClassification",
                 "tags": [
@@ -22926,7 +23207,7 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object"
+                                "$ref": "#/components/schemas/RiskClassificationUpdate"
                             }
                         }
                     }
