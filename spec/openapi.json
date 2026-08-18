@@ -1,7 +1,7 @@
 {
     "openapi": "3.1.0",
     "info": {
-        "title": "UARP \u2014 Universal Agent Runtime Platform",
+        "title": "UARP — Universal Agent Runtime Platform",
         "version": "0.2.0",
         "description": "API for managing AI agents, runs, sessions, and supporting infrastructure.\n\nAuth: bearer API key (`Authorization: Bearer uarp_<prefix>_<secret>`). Browser SSE/WebSocket clients that cannot set headers may pass the same key as `?token=<api_key>` query param or `uarp_auth_token` cookie.\n\nIdempotency: every mutating `/api/v1/*` request accepts an `Idempotency-Key` header; replays within 24 h return the cached response with `X-Idempotency-Replayed: true`.",
         "license": {
@@ -164,7 +164,7 @@
             },
             "CompanyUpdate": {
                 "type": "object",
-                "description": "Body for `PUT /api/v1/companies/{id}`. Every field optional \u2014 send only what changes.",
+                "description": "Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.",
                 "properties": {
                     "name": {
                         "type": "string"
@@ -208,7 +208,7 @@
                     },
                     "workers": {
                         "type": "array",
-                        "description": "Each entry REQUIRES `agent_id` \u2014 omitting it answers `422 workers.0.agent_id: Required`.",
+                        "description": "Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.",
                         "items": {
                             "type": "object",
                             "properties": {
@@ -249,7 +249,7 @@
             },
             "TeamUpdate": {
                 "type": "object",
-                "description": "Body for `PUT /api/v1/teams/{teamId}`. Every field optional \u2014 send only what changes.",
+                "description": "Body for `PUT /api/v1/teams/{teamId}`. Every field optional — send only what changes.",
                 "properties": {
                     "name": {
                         "type": "string"
@@ -284,7 +284,7 @@
             },
             "AgentUpdate": {
                 "type": "object",
-                "description": "Body for `PUT /api/v1/agents/{agentId}`. Every field optional \u2014 an omitted field means NO CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model lockdown).",
+                "description": "Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model lockdown).",
                 "properties": {
                     "name": {
                         "type": "string"
@@ -488,6 +488,116 @@
             "Agent": {
                 "type": "object",
                 "properties": {
+                    "specs": {
+                        "type": "array",
+                        "description": "SPECs installed on this agent, with version pin and granted permissions.",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "spec_id": {
+                                    "type": "string"
+                                },
+                                "version": {
+                                    "type": "string"
+                                },
+                                "enabled": {
+                                    "type": "boolean",
+                                    "description": "Soft-disable. false keeps the install history but skips injection."
+                                },
+                                "permissions_granted": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "cap": {
+                                                "type": "string"
+                                            },
+                                            "scope": {
+                                                "type": "string"
+                                            },
+                                            "reason": {
+                                                "type": "string"
+                                            },
+                                            "granted_by": {
+                                                "type": "string",
+                                                "enum": [
+                                                    "wizard",
+                                                    "admin",
+                                                    "bootstrap",
+                                                    "migrated"
+                                                ]
+                                            },
+                                            "granted_at": {
+                                                "type": "string",
+                                                "format": "date-time"
+                                            }
+                                        },
+                                        "required": [
+                                            "cap",
+                                            "granted_by",
+                                            "granted_at"
+                                        ]
+                                    }
+                                }
+                            },
+                            "required": [
+                                "spec_id"
+                            ]
+                        }
+                    },
+                    "auto_approve_tools": {
+                        "type": "array",
+                        "description": "Tools this agent may call without a human-in-the-loop prompt.",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "command_relationships": {
+                        "type": "object",
+                        "description": "Command hierarchy (MVP: opcon only).",
+                        "properties": {
+                            "opcon": {
+                                "type": "string",
+                                "description": "Agent ID holding operational control."
+                            },
+                            "coordinates_with": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    },
+                    "access_control": {
+                        "type": "object",
+                        "description": "Security clearance and compartment access.",
+                        "properties": {
+                            "clearance": {
+                                "type": "integer",
+                                "description": "0=public, 1=internal, 2=restricted, 3=confidential, 4=secret."
+                            },
+                            "compartments": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            },
+                            "caveats": {
+                                "type": "array",
+                                "items": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "required": [
+                            "clearance"
+                        ]
+                    },
+                    "metadata": {
+                        "type": "object",
+                        "description": "Free-form caller-supplied metadata.",
+                        "additionalProperties": true
+                    },
                     "agent_id": {
                         "type": "string",
                         "format": "uuid"
@@ -665,7 +775,7 @@
             },
             "AgentModelConfig": {
                 "type": "object",
-                "description": "Model capabilities. Deliberately carries no provider or model identifier \u2014 see the model lockdown.",
+                "description": "Model capabilities. Deliberately carries no provider or model identifier — see the model lockdown.",
                 "properties": {
                     "capabilities": {
                         "type": "object",
@@ -988,7 +1098,7 @@
                     "model_override": {
                         "type": "object",
                         "nullable": true,
-                        "description": "Per-conversation model override (in-chat model switcher). When set, runs in this session resolve their LLM from this config instead of the agent's default. Absent \u2192 agent default.",
+                        "description": "Per-conversation model override (in-chat model switcher). When set, runs in this session resolve their LLM from this config instead of the agent's default. Absent → agent default.",
                         "properties": {
                             "provider": {
                                 "type": "string"
@@ -1135,7 +1245,7 @@
             },
             "AgentAnalyticsSummary": {
                 "type": "object",
-                "description": "Output of summariseAgents (analytics.ts) \u2014 same shape for /admin/analytics/agents and /analytics/agents (tenant-scoped).",
+                "description": "Output of summariseAgents (analytics.ts) — same shape for /admin/analytics/agents and /analytics/agents (tenant-scoped).",
                 "properties": {
                     "range": {
                         "type": "object",
@@ -1325,7 +1435,7 @@
                     },
                     "priority": {
                         "type": "integer",
-                        "description": "Conflict resolution \u2014 higher wins. Defaults to 0."
+                        "description": "Conflict resolution — higher wins. Defaults to 0."
                     }
                 },
                 "required": [
@@ -2096,7 +2206,7 @@
             },
             "PermissionSet": {
                 "type": "object",
-                "description": "Per-agent capability envelope. Invariant: PermissionSet(child) \u2286 PermissionSet(parent).",
+                "description": "Per-agent capability envelope. Invariant: PermissionSet(child) ⊆ PermissionSet(parent).",
                 "properties": {
                     "agent_id": {
                         "type": "string"
@@ -2511,7 +2621,7 @@
             },
             "ImprovementProposal": {
                 "type": "object",
-                "description": "Self-improvement proposal \u2014 multi-stage state machine (proposed \u2192 arbiter_review \u2192 voting \u2192 sandbox_testing \u2192 approved \u2192 applied | rejected at any step).",
+                "description": "Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting → sandbox_testing → approved → applied | rejected at any step).",
                 "properties": {
                     "agent_id": {
                         "type": "string"
@@ -2898,7 +3008,7 @@
             },
             "Company": {
                 "type": "object",
-                "description": "Autonomous agent company \u2014 strategist + teams pursuing strategic goals.",
+                "description": "Autonomous agent company — strategist + teams pursuing strategic goals.",
                 "properties": {
                     "company_id": {
                         "type": "string"
@@ -3072,7 +3182,7 @@
                             "spam",
                             "other"
                         ],
-                        "description": "Closed vocabulary \u2014 unknown values are rejected with 422. `self_harm` raises the resulting operator notification to critical priority."
+                        "description": "Closed vocabulary — unknown values are rejected with 422. `self_harm` raises the resulting operator notification to critical priority."
                     },
                     "details": {
                         "type": "string",
@@ -3141,7 +3251,7 @@
                     },
                     "tenant_id": {
                         "type": "string",
-                        "description": "Tenant that owns the reported content \u2014 the queue this report lands in."
+                        "description": "Tenant that owns the reported content — the queue this report lands in."
                     },
                     "agent_id": {
                         "type": "string"
@@ -3318,7 +3428,7 @@
                     },
                     "connector_id": {
                         "type": "string",
-                        "description": "Which connector this is: `github`, `slack`, `linear`, \u2026"
+                        "description": "Which connector this is: `github`, `slack`, `linear`, …"
                     },
                     "name": {
                         "type": "string"
@@ -3795,7 +3905,7 @@
             },
             "OAuthLoginProviderItem": {
                 "type": "object",
-                "description": "Public-safe descriptor for an OAuth login (identity) provider. Surfaces only what the login page needs to decide which buttons to render \u2014 never exposes client_secret.",
+                "description": "Public-safe descriptor for an OAuth login (identity) provider. Surfaces only what the login page needs to decide which buttons to render — never exposes client_secret.",
                 "properties": {
                     "id": {
                         "type": "string",
@@ -3859,7 +3969,7 @@
                     "client_secret_hint": {
                         "type": "string",
                         "nullable": true,
-                        "description": "Masked tail of the stored secret (e.g. \"\u2022\u2022\u2022\u2022a1b2\"). null if no secret on file."
+                        "description": "Masked tail of the stored secret (e.g. \"••••a1b2\"). null if no secret on file."
                     },
                     "scopes": {
                         "type": "array",
@@ -3903,7 +4013,7 @@
             },
             "OAuthLoginProviderConfigUpdateResponse": {
                 "type": "object",
-                "description": "Result after PUT \u2014 confirms the persisted state",
+                "description": "Result after PUT — confirms the persisted state",
                 "properties": {
                     "provider": {
                         "type": "string",
@@ -3927,7 +4037,7 @@
             },
             "OAuthLoginProviderConfigDeleted": {
                 "type": "object",
-                "description": "Result after DELETE \u2014 record removed from admin KV",
+                "description": "Result after DELETE — record removed from admin KV",
                 "properties": {
                     "provider": {
                         "type": "string",
@@ -4264,7 +4374,7 @@
                 }
             },
             "OpenAiNotImplemented": {
-                "description": "The capability is not enabled on this deployment \u2014 a permanent configuration state, not an outage. Do NOT retry: only an operator change can resolve it. `error.code` names the missing capability (e.g. `embedding_unavailable`) and `error.message` says where to enable it.",
+                "description": "The capability is not enabled on this deployment — a permanent configuration state, not an outage. Do NOT retry: only an operator change can resolve it. `error.code` names the missing capability (e.g. `embedding_unavailable`) and `error.message` says where to enable it.",
                 "content": {
                     "application/json": {
                         "schema": {
@@ -4274,7 +4384,7 @@
                 }
             },
             "OpenAiServiceUnavailable": {
-                "description": "The configured upstream provider failed to answer. Genuinely transient \u2014 retry after `Retry-After` seconds.",
+                "description": "The configured upstream provider failed to answer. Genuinely transient — retry after `Retry-After` seconds.",
                 "headers": {
                     "Retry-After": {
                         "description": "Seconds to wait before retrying.",
@@ -4579,7 +4689,7 @@
         "/api/v1/bootstrap": {
             "post": {
                 "operationId": "bootstrap",
-                "x-auth-note": "One-time install bootstrap. Answers 401 once a tenant exists \u2014 an API key cannot re-run it, by design.",
+                "x-auth-note": "One-time install bootstrap. Answers 401 once a tenant exists — an API key cannot re-run it, by design.",
                 "summary": "Bootstrap the platform (first-time setup)",
                 "tags": [
                     "Bootstrap"
@@ -8187,7 +8297,7 @@
             "get": {
                 "operationId": "streamRunEvents",
                 "summary": "Stream run events via SSE",
-                "description": "Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for reconnection. Stream closes when run reaches terminal status. Each event payload includes `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other \u2014 use it to filter client-side. Browsers using EventSource (which cannot set Authorization headers) should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.",
+                "description": "Real-time event stream for a run. Supports `Last-Event-ID` header (or `?last_event_id=`) for reconnection. Stream closes when run reaches terminal status. Each event payload includes `stream_type`: lifecycle (run.*), assistant (llm.chunk), tool (tool.*), or other — use it to filter client-side. Browsers using EventSource (which cannot set Authorization headers) should mint a 60-s SSE token via `POST /api/v1/auth/sse-tokens` and pass it as `?token=`.",
                 "tags": [
                     "Runs"
                 ],
@@ -10332,7 +10442,7 @@
             "get": {
                 "operationId": "getCurrentTenant",
                 "summary": "Get current tenant",
-                "description": "Returns the calling tenant's profile. Any authenticated key passes \u2014 no scope required.",
+                "description": "Returns the calling tenant's profile. Any authenticated key passes — no scope required.",
                 "tags": [
                     "Tenants"
                 ],
@@ -11784,7 +11894,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -12118,7 +12228,7 @@
             "post": {
                 "operationId": "embeddings",
                 "summary": "OpenAI-compatible embeddings",
-                "description": "Generate embedding vectors for input text. Per Standats-Protocols \u00a76.1. Uses platform-configured model (text-embedding-3-small).",
+                "description": "Generate embedding vectors for input text. Per Standats-Protocols §6.1. Uses platform-configured model (text-embedding-3-small).",
                 "tags": [
                     "OpenAI-Compat"
                 ],
@@ -12584,7 +12694,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -13361,7 +13471,7 @@
                 "operationId": "handleStripeWebhook",
                 "x-auth-note": "Authenticated by Stripe's HMAC signature (`Stripe-Signature`), not by a bearer token. A tenant API key is rejected with 401.",
                 "summary": "Handle Stripe webhook events",
-                "description": "Processes incoming Stripe events (invoice.paid, invoice.payment_failed, customer.subscription.deleted). Bypasses normal auth \u2014 `Stripe-Signature` header is HMAC-verified against the webhook signing secret.",
+                "description": "Processes incoming Stripe events (invoice.paid, invoice.payment_failed, customer.subscription.deleted). Bypasses normal auth — `Stripe-Signature` header is HMAC-verified against the webhook signing secret.",
                 "tags": [
                     "Billing"
                 ],
@@ -14290,7 +14400,7 @@
             "get": {
                 "operationId": "listOAuthLoginProviders",
                 "summary": "List OAuth identity providers (for login UI)",
-                "description": "Public, IP-rate-limited (60/min). Returns the list of configured OAuth login providers with their enabled status \u2014 UI uses this to render only the buttons that will work. `apple` is always advertised as enabled (App Store Guideline 4.8 placement requirement); `github`/`google` enabled depends on whether super-admin has provisioned client_id+client_secret.",
+                "description": "Public, IP-rate-limited (60/min). Returns the list of configured OAuth login providers with their enabled status — UI uses this to render only the buttons that will work. `apple` is always advertised as enabled (App Store Guideline 4.8 placement requirement); `github`/`google` enabled depends on whether super-admin has provisioned client_id+client_secret.",
                 "tags": [
                     "Auth"
                 ],
@@ -14432,7 +14542,7 @@
         "/api/v1/auth/oauth/{provider}/callback": {
             "get": {
                 "operationId": "completeOAuthLogin",
-                "summary": "OAuth callback \u2014 exchange code, mint session",
+                "summary": "OAuth callback — exchange code, mint session",
                 "description": "Provider redirects here. Server validates state (one-shot, 10 min TTL, provider-bound), exchanges `code` for tokens, fetches verified email + IdP `sub`, then mints a session via the shared post-verify path. On success: 302 to `${return_to}#api_key=...&email=...` if a return_to was stored, else JSON `{api_key, email}`. Refuses to mint for super-admin email (Guideline-style separation: super-admin must use OTP).",
                 "tags": [
                     "Auth"
@@ -14567,8 +14677,8 @@
         "/api/v1/auth/oauth/apple/native": {
             "post": {
                 "operationId": "appleNativeAuth",
-                "summary": "Sign in with Apple \u2014 native iOS handshake",
-                "description": "iOS drives the Apple authorization sheet via `ASAuthorizationController` and POSTs the resulting `identity_token` (Apple-signed JWT, RS256) here. Server fetches Apple JWKS (cached 24h), verifies signature/iss/aud/exp, extracts `sub` + `email`, then mints a session. The `email` is only present on first login \u2014 subsequent logins reuse the stored `apple_sub_to_email` mapping. `is_private_email` (`@privaterelay.appleid.com`) is honoured: relay address is stored as the canonical email.",
+                "summary": "Sign in with Apple — native iOS handshake",
+                "description": "iOS drives the Apple authorization sheet via `ASAuthorizationController` and POSTs the resulting `identity_token` (Apple-signed JWT, RS256) here. Server fetches Apple JWKS (cached 24h), verifies signature/iss/aud/exp, extracts `sub` + `email`, then mints a session. The `email` is only present on first login — subsequent logins reuse the stored `apple_sub_to_email` mapping. `is_private_email` (`@privaterelay.appleid.com`) is honoured: relay address is stored as the canonical email.",
                 "tags": [
                     "Auth"
                 ],
@@ -14586,7 +14696,7 @@
                                     },
                                     "user": {
                                         "type": "string",
-                                        "description": "Apple's stable `userIdentifier` (informational only \u2014 server reads `sub` from the JWT)."
+                                        "description": "Apple's stable `userIdentifier` (informational only — server reads `sub` from the JWT)."
                                     },
                                     "name": {
                                         "type": "string",
@@ -14675,7 +14785,7 @@
         "/api/v1/auth/oauth/google/onetap": {
             "post": {
                 "operationId": "googleOneTapAuth",
-                "summary": "Sign in with Google \u2014 One Tap (FedCM) credential exchange",
+                "summary": "Sign in with Google — One Tap (FedCM) credential exchange",
                 "description": "The browser-side Google Identity Services (GSI) script renders a FedCM One Tap prompt on `/login` and POSTs the resulting `credential` (a Google-signed JWT, RS256) here. Server fetches Google JWKS (cached 24h), verifies signature/iss/aud/exp against the configured Google OAuth client_id from admin KV, extracts `sub` + `email`, then mints a session via the shared post-verify path. Same session shape the `/oauth/google/callback` redirect flow returns.",
                 "tags": [
                     "Auth"
@@ -14917,7 +15027,7 @@
             "delete": {
                 "operationId": "revokeMeSession",
                 "summary": "Revoke a specific device session",
-                "description": "Revokes one of the user's api_keys. Refuses to revoke another user's key (403). Idempotent \u2014 re-revoking a revoked key returns `{ok: true, already_revoked: true}`.",
+                "description": "Revokes one of the user's api_keys. Refuses to revoke another user's key (403). Idempotent — re-revoking a revoked key returns `{ok: true, already_revoked: true}`.",
                 "tags": [
                     "Auth"
                 ],
@@ -15001,7 +15111,7 @@
             "post": {
                 "operationId": "logout",
                 "summary": "Revoke the calling api_key",
-                "description": "Revokes the api_key used to make this call. Idempotent \u2014 re-call returns 200 with `already_revoked: true`. Cookie/JWT-only sessions return `{ok: true, key_id: null}` since there's no server-side key to revoke.",
+                "description": "Revokes the api_key used to make this call. Idempotent — re-call returns 200 with `already_revoked: true`. Cookie/JWT-only sessions return `{ok: true, key_id: null}` since there's no server-side key to revoke.",
                 "tags": [
                     "Auth"
                 ],
@@ -15161,7 +15271,7 @@
             "delete": {
                 "operationId": "unlinkAuthProvider",
                 "summary": "Unlink an OAuth provider from the user",
-                "description": "Refuses to drop the user's last sign-in factor (counts other linked providers + OTP recovery email). Idempotent \u2014 unlinking an already-unlinked provider returns 200 with `already_unlinked: true`.",
+                "description": "Refuses to drop the user's last sign-in factor (counts other linked providers + OTP recovery email). Idempotent — unlinking an already-unlinked provider returns 200 with `already_unlinked: true`.",
                 "tags": [
                     "Auth"
                 ],
@@ -15713,7 +15823,7 @@
         "/.well-known/apple-app-site-association": {
             "get": {
                 "operationId": "getAppleAppSiteAssociation",
-                "summary": "Apple App Site Association \u2014 Universal Links manifest",
+                "summary": "Apple App Site Association — Universal Links manifest",
                 "description": "Apple iOS fetches this to verify that the app on the user's device is allowed to claim Universal Links on this domain. Served as `application/json`, also at `/apple-app-site-association` for legacy iOS. Configured via `APPLE_TEAM_ID` + `APPLE_BUNDLE_ID` (+ optional `APPLE_EXTRA_BUNDLE_IDS` comma-list for TestFlight/dev).",
                 "tags": [
                     "Meta"
@@ -15854,7 +15964,7 @@
                                                 "string",
                                                 "null"
                                             ],
-                                            "description": "`\u2022\u2022\u2022\u2022XXXX` form \u2014 last 4 chars only."
+                                            "description": "`••••XXXX` form — last 4 chars only."
                                         },
                                         "scopes": {
                                             "type": [
@@ -16285,7 +16395,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -16394,7 +16504,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -20507,7 +20617,7 @@
                                     "properties": {
                                         "provider": {
                                             "type": "string",
-                                            "description": "Registered provider id (admin \u2192 Providers)."
+                                            "description": "Registered provider id (admin → Providers)."
                                         },
                                         "endpoint_url": {
                                             "type": "string",
@@ -26300,7 +26410,7 @@
         "/api/v1/workspaces/{workspaceId}/trash": {
             "get": {
                 "operationId": "listWorkspaceTrash",
-                "x-auth-note": "Requires a USER SESSION (JWT), not an API key \u2014 soft-delete records are written by the agent runtime and read back under a user identity. An api-key caller gets 403 no matter which scopes it holds; `files:read` will not help.",
+                "x-auth-note": "Requires a USER SESSION (JWT), not an API key — soft-delete records are written by the agent runtime and read back under a user identity. An api-key caller gets 403 no matter which scopes it holds; `files:read` will not help.",
                 "tags": [
                     "Workspaces"
                 ],
@@ -29470,7 +29580,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -29646,7 +29756,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -31682,7 +31792,7 @@
         "/api/v1/public/sessions/{sessionId}": {
             "get": {
                 "operationId": "getPublicSession",
-                "x-auth-note": "Anonymous, but NOT unauthenticated: the caller must present the session's own token (`X-Public-Session-Token`), issued when the session was created. A tenant API key is rejected with 401 \u2014 it addresses the wrong subject.",
+                "x-auth-note": "Anonymous, but NOT unauthenticated: the caller must present the session's own token (`X-Public-Session-Token`), issued when the session was created. A tenant API key is rejected with 401 — it addresses the wrong subject.",
                 "tags": [
                     "Public"
                 ],
@@ -31904,7 +32014,7 @@
                     "Reports"
                 ],
                 "summary": "Report abusive content from a public chat session",
-                "description": "Anonymous abuse report filed by a public-chat visitor. Requires no authentication of any kind \u2014 the session id in the path is the scope, and it must resolve in the public-session index. Rate limited per session (5/hour) and per IP (10/hour). The report lands in the moderation queue of the tenant that owns the agent and raises an in-product notification there.",
+                "description": "Anonymous abuse report filed by a public-chat visitor. Requires no authentication of any kind — the session id in the path is the scope, and it must resolve in the public-session index. Rate limited per session (5/hour) and per IP (10/hour). The report lands in the moderation queue of the tenant that owns the agent and raises an in-product notification there.",
                 "security": [],
                 "parameters": [
                     {
@@ -31980,7 +32090,7 @@
                     "Reports"
                 ],
                 "summary": "File a content report",
-                "description": "Report a message, session or agent. Available to any authenticated principal \u2014 deliberately not role- or scope-gated, since reporting abuse must never be blocked by RBAC. Rate limited to 10/minute per caller. `self_harm` is still accepted with 202 but raises the operator notification to critical priority.",
+                "description": "Report a message, session or agent. Available to any authenticated principal — deliberately not role- or scope-gated, since reporting abuse must never be blocked by RBAC. Rate limited to 10/minute per caller. `self_harm` is still accepted with 202 but raises the operator notification to critical priority.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -32051,7 +32161,7 @@
                     "Reports"
                 ],
                 "summary": "List content reports for this tenant (admin+)",
-                "description": "Moderation queue for the tenant that owns the reported content, newest first. Requires the admin role \u2014 reports carry reporter free text and there is no moderation duty below admin.",
+                "description": "Moderation queue for the tenant that owns the reported content, newest first. Requires the admin role — reports carry reporter free text and there is no moderation duty below admin.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -32381,7 +32491,7 @@
                     "Webhooks"
                 ],
                 "summary": "Shopify webhook",
-                "description": "Shopify webhook receiver. Bypasses normal auth \u2014 `X-Shopify-Hmac-Sha256` header is HMAC-verified against the per-shop secret.",
+                "description": "Shopify webhook receiver. Bypasses normal auth — `X-Shopify-Hmac-Sha256` header is HMAC-verified against the per-shop secret.",
                 "security": [],
                 "parameters": [
                     {
@@ -32435,7 +32545,7 @@
                         }
                     },
                     "404": {
-                        "description": "The Shopify integration is not enabled on this deployment (`SHOPIFY_OAUTH_CLIENT_SECRET` unset), so no receiver exists at this address. Permanent until an operator configures it \u2014 deliberately NOT a 5xx, which would make Shopify re-deliver every event for ~48 hours against a state no retry can change. `code` is `shopify_not_configured`.",
+                        "description": "The Shopify integration is not enabled on this deployment (`SHOPIFY_OAUTH_CLIENT_SECRET` unset), so no receiver exists at this address. Permanent until an operator configures it — deliberately NOT a 5xx, which would make Shopify re-deliver every event for ~48 hours against a state no retry can change. `code` is `shopify_not_configured`.",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -32460,7 +32570,7 @@
                     "Webhooks"
                 ],
                 "summary": "Sensor webhook (HMAC-authenticated, triggers an agent run)",
-                "description": "External-system webhook. Bypasses normal auth \u2014 `X-Sensor-Signature` header is HMAC-verified against the per-subscription secret. On valid signature, fires an agent run with the request body as input.",
+                "description": "External-system webhook. Bypasses normal auth — `X-Sensor-Signature` header is HMAC-verified against the per-subscription secret. On valid signature, fires an agent run with the request body as input.",
                 "security": [],
                 "parameters": [
                     {
@@ -32560,7 +32670,7 @@
                 ],
                 "responses": {
                     "101": {
-                        "description": "Switching Protocols \u2014 WebSocket connection established.",
+                        "description": "Switching Protocols — WebSocket connection established.",
                         "headers": {
                             "Upgrade": {
                                 "schema": {
@@ -33727,7 +33837,7 @@
                                                     "quotas": {
                                                         "type": "object",
                                                         "additionalProperties": true,
-                                                        "description": "Per-plan limits (`max_agents`, `max_monthly_tokens`, \u2026)."
+                                                        "description": "Per-plan limits (`max_agents`, `max_monthly_tokens`, …)."
                                                     }
                                                 },
                                                 "required": [
@@ -38021,7 +38131,7 @@
                 "summary": "Bulk download of every admin-config KV override",
                 "responses": {
                     "200": {
-                        "description": "Snapshot \u2014 sections only present when override exists",
+                        "description": "Snapshot — sections only present when override exists",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -39638,7 +39748,7 @@
                     "Bridge"
                 ],
                 "summary": "Register bridge agent (Snaga CLI handshake)",
-                "description": "Registers a long-lived bridge agent for the calling tenant. Returns 201 on first registration, 200 on reconnect of an existing machine_id. Tenant-scoped only \u2014 no scope enforcement.",
+                "description": "Registers a long-lived bridge agent for the calling tenant. Returns 201 on first registration, 200 on reconnect of an existing machine_id. Tenant-scoped only — no scope enforcement.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -39883,7 +39993,7 @@
                     "Bridge"
                 ],
                 "summary": "Bridge heartbeat",
-                "description": "Idempotent liveness ping for the bridge connection. **404 on missing connection is intentional** \u2014 drives the client to re-register rather than reusing a stale identity.",
+                "description": "Idempotent liveness ping for the bridge connection. **404 on missing connection is intentional** — drives the client to re-register rather than reusing a stale identity.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -41041,7 +41151,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -41183,7 +41293,7 @@
                         }
                     },
                     "202": {
-                        "description": "Accepted \u2014 the work is queued and completes asynchronously.",
+                        "description": "Accepted — the work is queued and completes asynchronously.",
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -42613,7 +42723,7 @@
                                         "type": "number",
                                         "exclusiveMinimum": 0,
                                         "maximum": 100,
-                                        "description": "Voting weight; 0 < w \u2264 100."
+                                        "description": "Voting weight; 0 < w ≤ 100."
                                     },
                                     "reasoning": {
                                         "type": "string"
@@ -46012,7 +46122,7 @@
                     "Governance"
                 ],
                 "summary": "Update proposal status (state machine enforced)",
-                "description": "Allowed transitions:\n- `proposed` \u2192 `arbiter_review` | `rejected`\n- `arbiter_review` \u2192 `voting` | `rejected`\n- `voting` \u2192 `sandbox_testing` | `rejected`\n- `sandbox_testing` \u2192 `approved` | `rejected`\n- `approved` \u2192 `applied`\n\nAny other transition returns 400. Requires admin/founder role.",
+                "description": "Allowed transitions:\n- `proposed` → `arbiter_review` | `rejected`\n- `arbiter_review` → `voting` | `rejected`\n- `voting` → `sandbox_testing` | `rejected`\n- `sandbox_testing` → `approved` | `rejected`\n- `approved` → `applied`\n\nAny other transition returns 400. Requires admin/founder role.",
                 "parameters": [
                     {
                         "name": "agentId",
@@ -47012,7 +47122,7 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Sparse index \u2014 version listing optimised for resolver clients.",
+                        "description": "Sparse index — version listing optimised for resolver clients.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -49706,7 +49816,7 @@
     "tags": [
         {
             "name": "Registry",
-            "description": "Spec registry \u2014 publish, search, yank, share spec artifacts"
+            "description": "Spec registry — publish, search, yank, share spec artifacts"
         },
         {
             "name": "Admin",
@@ -49882,7 +49992,7 @@
         },
         {
             "name": "Reports",
-            "description": "Content reports \u2014 abuse/moderation reporting for authenticated users and anonymous public-chat visitors, plus the operator inbox"
+            "description": "Content reports — abuse/moderation reporting for authenticated users and anonymous public-chat visitors, plus the operator inbox"
         }
     ]
 }

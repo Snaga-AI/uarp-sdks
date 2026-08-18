@@ -227,7 +227,12 @@ test('parses the production document into the expected shape', () => {
 
   assert.equal(ops.length, 557);
   assert.equal(spec.groups.length, 43);
-  assert.equal(spec.types.length, 603);
+  // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
+  // `auto_approve_tools`, `command_relationships`, `access_control` and
+  // `metadata`, each nested object becoming its own named type. The server had
+  // always sent all five; the document named none of them, so every generated
+  // model was blind to `agent.specs` in particular.
+  assert.equal(spec.types.length, 608);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

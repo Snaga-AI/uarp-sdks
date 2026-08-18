@@ -1201,6 +1201,231 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Agent_Spec_Permissions_Granted_Item_Granted_By (Value : String) return Agent_Spec_Permissions_Granted_Item_Granted_By is
+   begin
+      if Value = "wizard" then
+         return (Kind => Agent_Spec_Permissions_Granted_Item_Granted_By_Wizard, Raw => UARP.Types."+" (Value));
+      elsif Value = "admin" then
+         return (Kind => Agent_Spec_Permissions_Granted_Item_Granted_By_Admin, Raw => UARP.Types."+" (Value));
+      elsif Value = "bootstrap" then
+         return (Kind => Agent_Spec_Permissions_Granted_Item_Granted_By_Bootstrap, Raw => UARP.Types."+" (Value));
+      elsif Value = "migrated" then
+         return (Kind => Agent_Spec_Permissions_Granted_Item_Granted_By_Migrated, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Agent_Spec_Permissions_Granted_Item_Granted_By;
+
+   function To_Agent_Spec_Permissions_Granted_Item_Granted_By (Kind : Agent_Spec_Permissions_Granted_Item_Granted_By_Kind) return Agent_Spec_Permissions_Granted_Item_Granted_By is
+   begin
+      case Kind is
+         when Agent_Spec_Permissions_Granted_Item_Granted_By_Wizard =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("wizard"));
+         when Agent_Spec_Permissions_Granted_Item_Granted_By_Admin =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("admin"));
+         when Agent_Spec_Permissions_Granted_Item_Granted_By_Bootstrap =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("bootstrap"));
+         when Agent_Spec_Permissions_Granted_Item_Granted_By_Migrated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("migrated"));
+         when Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Agent_Spec_Permissions_Granted_Item_Granted_By;
+
+   function Image (Model : Agent_Spec_Permissions_Granted_Item_Granted_By) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Agent_Spec_Permissions_Granted_Item_Granted_By (Model.Kind).Raw));
+
+   function To_JSON (Model : Agent_Spec_Permissions_Granted_Item_Granted_By) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec_Permissions_Granted_Item_Granted_By is
+      (To_Agent_Spec_Permissions_Granted_Item_Granted_By (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Agent_Spec_Permissions_Granted_Item) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "cap", JS.JSON.Create (Model.Cap));
+      if Model.Has_Scope then
+         JS.Set (Result, "scope", JS.JSON.Create (Model.Scope));
+      end if;
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
+      JS.Set (Result, "granted_by", To_JSON (Model.Granted_By));
+      JS.Set (Result, "granted_at", JS.JSON.Create (Model.Granted_At));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec_Permissions_Granted_Item is
+      Result : Agent_Spec_Permissions_Granted_Item;
+   begin
+      if JS.Present (Node, "cap") then
+         Result.Cap := JS.As_Text (JS.Get_Value (Node, "cap"));
+      end if;
+      if JS.Present (Node, "scope") then
+         Result.Has_Scope := True;
+         Result.Scope := JS.As_Text (JS.Get_Value (Node, "scope"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
+      if JS.Present (Node, "granted_by") then
+         Result.Granted_By := From_JSON (JS.Get_Value (Node, "granted_by"));
+      end if;
+      if JS.Present (Node, "granted_at") then
+         Result.Granted_At := JS.As_Text (JS.Get_Value (Node, "granted_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Agent_Spec) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "spec_id", JS.JSON.Create (Model.Spec_Id));
+      if Model.Has_Version then
+         JS.Set (Result, "version", JS.JSON.Create (Model.Version));
+      end if;
+      if Model.Has_Enabled then
+         JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      end if;
+      if Model.Has_Permissions_Granted then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Permissions_Granted loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "permissions_granted", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec is
+      Result : Agent_Spec;
+   begin
+      if JS.Present (Node, "spec_id") then
+         Result.Spec_Id := JS.As_Text (JS.Get_Value (Node, "spec_id"));
+      end if;
+      if JS.Present (Node, "version") then
+         Result.Has_Version := True;
+         Result.Version := JS.As_Text (JS.Get_Value (Node, "version"));
+      end if;
+      if JS.Present (Node, "enabled") then
+         Result.Has_Enabled := True;
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "permissions_granted") then
+         Result.Has_Permissions_Granted := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "permissions_granted");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Permissions_Granted.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Agent_Command_Relationships) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Opcon then
+         JS.Set (Result, "opcon", JS.JSON.Create (Model.Opcon));
+      end if;
+      if Model.Has_Coordinates_With then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Coordinates_With loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "coordinates_with", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Command_Relationships is
+      Result : Agent_Command_Relationships;
+   begin
+      if JS.Present (Node, "opcon") then
+         Result.Has_Opcon := True;
+         Result.Opcon := JS.As_Text (JS.Get_Value (Node, "opcon"));
+      end if;
+      if JS.Present (Node, "coordinates_with") then
+         Result.Has_Coordinates_With := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "coordinates_with");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Coordinates_With.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Agent_Access_Control) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "clearance", JS.JSON.Create (Model.Clearance));
+      if Model.Has_Compartments then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Compartments loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "compartments", Items);
+         end;
+      end if;
+      if Model.Has_Caveats then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Caveats loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "caveats", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Access_Control is
+      Result : Agent_Access_Control;
+   begin
+      if JS.Present (Node, "clearance") then
+         Result.Clearance := JS.As_Integer (JS.Get_Value (Node, "clearance"));
+      end if;
+      if JS.Present (Node, "compartments") then
+         Result.Has_Compartments := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "compartments");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Compartments.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "caveats") then
+         Result.Has_Caveats := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "caveats");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Caveats.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Agent_Model_Config) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -1329,6 +1554,35 @@ package body UARP.Models is
    function To_JSON (Model : Agent) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Specs then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Specs loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "specs", Items);
+         end;
+      end if;
+      if Model.Has_Auto_Approve_Tools then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Auto_Approve_Tools loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "auto_approve_tools", Items);
+         end;
+      end if;
+      if Model.Has_Command_Relationships then
+         JS.Set (Result, "command_relationships", To_JSON (Model.Command_Relationships));
+      end if;
+      if Model.Has_Access_Control then
+         JS.Set (Result, "access_control", To_JSON (Model.Access_Control));
+      end if;
+      if Model.Has_Metadata then
+         JS.Set (Result, "metadata", Model.Metadata);
+      end if;
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
       JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
@@ -1429,6 +1683,38 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent is
       Result : Agent;
    begin
+      if JS.Present (Node, "specs") then
+         Result.Has_Specs := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "specs");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Specs.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "auto_approve_tools") then
+         Result.Has_Auto_Approve_Tools := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "auto_approve_tools");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Auto_Approve_Tools.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "command_relationships") then
+         Result.Has_Command_Relationships := True;
+         Result.Command_Relationships := From_JSON (JS.Get_Value (Node, "command_relationships"));
+      end if;
+      if JS.Present (Node, "access_control") then
+         Result.Has_Access_Control := True;
+         Result.Access_Control := From_JSON (JS.Get_Value (Node, "access_control"));
+      end if;
+      if JS.Present (Node, "metadata") then
+         Result.Has_Metadata := True;
+         Result.Metadata := JS.Get_Value (Node, "metadata");
+      end if;
       if JS.Present (Node, "agent_id") then
          Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
       end if;
