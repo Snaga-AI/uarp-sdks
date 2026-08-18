@@ -6,6 +6,32 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.4 — 2026-08-18
+
+### Added — every SDK
+
+- **`Agent` gains five fields that were on the wire and in no model.**
+  `specs`, `auto_approve_tools`, `command_relationships`, `access_control` and
+  `metadata`. The server has always sent them; the OpenAPI document never named
+  them; and an undeclared field is absent from generated code, so no caller in
+  any of the five languages could read `agent.specs` — the field that drives
+  installed SPECs — however correctly it was written.
+
+  Fixed upstream in the API document (chabanov/uarp#135) and pulled here with
+  `scripts/update-spec.sh`. `Agent` goes from 30 to 35 properties.
+
+### Notes
+
+- The gap survived because the API's conformance walk checked only the top
+  level of a response. For a list endpoint that is the `{items, cursor,
+  has_more}` envelope — three keys that have never drifted — while everything an
+  SDK actually models sits inside `items`. The walk now descends one level; a
+  future field added to a list item will fail CI upstream rather than reaching
+  this repository as a silently poorer model.
+
+- No behaviour changed. The additions are optional properties, so code written
+  against 0.5.3 compiles unchanged in every language.
+
 ## 0.5.3 — 2026-08-17
 
 ### Fixed — Swift only
