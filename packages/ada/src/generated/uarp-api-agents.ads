@@ -180,6 +180,17 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Agent_Identity_Response;
 
+   --  Read the EU AI Act risk classification
+   --
+   --  GET /api/v1/agents/{agentId}/risk-classification
+   --
+   --  Required scopes: agents:read.
+   function Get_Agent_Risk_Classification
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Risk_Classification;
+
    --  Get EU AI Act Annex IV system card
    --
    --  GET /api/v1/agents/{agentId}/system-card
@@ -354,7 +365,7 @@ package UARP.API.Agents is
    function Update_Agent_Risk_Classification
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Risk_Classification_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

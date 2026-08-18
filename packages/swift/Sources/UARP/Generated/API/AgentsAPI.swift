@@ -166,6 +166,19 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Read the EU AI Act risk classification
+    ///
+    /// `GET /api/v1/agents/{agentId}/risk-classification`
+    ///
+    /// Required scopes: `agents:read`.
+    public func getAgentRiskClassification(agentId: String, options: RequestOptions = .init()) async throws -> RiskClassification {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/risk-classification",
+            options: options
+        ))
+    }
+
     /// Get EU AI Act Annex IV system card
     ///
     /// `GET /api/v1/agents/{agentId}/system-card`
@@ -394,7 +407,7 @@ public struct AgentsAPI: Sendable {
     /// `PATCH /api/v1/agents/{agentId}/risk-classification`
     ///
     /// Required scopes: `agents:write`.
-    public func updateAgentRiskClassification(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAgentRiskClassification(agentId: String, body: RiskClassificationUpdate, options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/risk-classification",

@@ -3424,14 +3424,29 @@ export type ProductType = 'course' | 'service' | 'digital' | 'subscription';
 export const PRODUCT_TYPE_VALUES = ['course', 'service', 'digital', 'subscription'] as const;
 
 /**
- * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+ * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
+ * dropped without error, so a typo answers 200 and changes nothing.
  */
 export interface ProductUpdate {
-  title?: string;
+  name?: string;
   description?: string;
+  price_cents?: number;
+  currency?: string;
   status?: string;
-  tags?: string[];
+  knowledge_base_ids?: string[];
+  agent_id?: string;
+  course_structure?: JsonObject;
+  stripe_price_id?: string;
   metadata?: JsonObject;
+  slug?: string;
+  tags?: string[];
+  category?: string;
+  vendor?: string;
+  images?: string[];
+  variants?: JsonObject[];
+  compare_at_price_cents?: number;
+  body_html?: string;
+  options?: JsonObject[];
 }
 
 export interface PublicDomainLookupResponse {
@@ -3722,6 +3737,53 @@ export interface RevokeMeSessionResponse {
   key_id: string;
   already_revoked?: boolean;
 }
+
+/**
+ * EU AI Act (Article 9) classification for an agent.
+ */
+export interface RiskClassification {
+  level: RiskClassificationUpdateLevel;
+  /**
+   * Set when level is `high`.
+   */
+  annex_iii_category?: RiskClassificationUpdateAnnexIiiCategory;
+  justification: string;
+  /**
+   * Key ID or user ID of whoever classified.
+   */
+  assessor: string;
+  assessed_at: string;
+  review_due_at: string;
+}
+
+/**
+ * Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
+ */
+export interface RiskClassificationUpdate {
+  level: RiskClassificationUpdateLevel;
+  /**
+   * Set when level is `high`.
+   */
+  annex_iii_category?: RiskClassificationUpdateAnnexIiiCategory;
+  justification: string;
+  assessor: string;
+  /**
+   * Defaults to now when omitted.
+   */
+  assessed_at?: string;
+  review_due_at: string;
+}
+
+/**
+ * Set when level is `high`.
+ */
+export type RiskClassificationUpdateAnnexIiiCategory = 'biometric' | 'critical-infrastructure' | 'education' | 'employment' | 'essential-services' | 'law-enforcement' | 'migration' | 'democratic-processes';
+
+export const RISK_CLASSIFICATION_UPDATE_ANNEX_III_CATEGORY_VALUES = ['biometric', 'critical-infrastructure', 'education', 'employment', 'essential-services', 'law-enforcement', 'migration', 'democratic-processes'] as const;
+
+export type RiskClassificationUpdateLevel = 'minimal' | 'limited' | 'high' | 'unacceptable';
+
+export const RISK_CLASSIFICATION_UPDATE_LEVEL_VALUES = ['minimal', 'limited', 'high', 'unacceptable'] as const;
 
 export interface RollbackAgentRequest {
   /**
@@ -4211,9 +4273,9 @@ export interface Team {
   supervisor_mode?: TeamSupervisorMode;
   supervisor_agent_id: string;
   workers: TeamWorker[];
-  policies?: TeamPolicies;
-  goal_config?: JsonObject | null;
-  swarm_config?: JsonObject | null;
+  policies: TeamPolicies;
+  goal_config?: TeamGoalConfig;
+  swarm_config?: TeamSwarmConfig;
   workspace_id?: string;
   created_at?: string;
   updated_at?: string;
@@ -4247,6 +4309,16 @@ export type TeamDelegationStrategy = 'supervisor_decides' | 'round_robin' | 'cap
 
 export const TEAM_DELEGATION_STRATEGY_VALUES = ['supervisor_decides', 'round_robin', 'capability_match'] as const;
 
+/**
+ * Goal-driven topology: the objective, the review cadence, the budget.
+ */
+export interface TeamGoalConfig {
+  root_objective_id: string;
+  review_interval_ms?: number;
+  max_iterations?: number;
+  budget?: TeamObjectiveBudget;
+}
+
 export type TeamMergeStrategy = 'supervisor_merges' | 'concatenate' | 'vote';
 
 export const TEAM_MERGE_STRATEGY_VALUES = ['supervisor_merges', 'concatenate', 'vote'] as const;
@@ -4254,6 +4326,15 @@ export const TEAM_MERGE_STRATEGY_VALUES = ['supervisor_merges', 'concatenate', '
 export type TeamMessageProtocol = 'shared_context' | 'message_passing';
 
 export const TEAM_MESSAGE_PROTOCOL_VALUES = ['shared_context', 'message_passing'] as const;
+
+/**
+ * Ceiling for a goal-driven team's pursuit of its objective.
+ */
+export interface TeamObjectiveBudget {
+  max_runs?: number;
+  max_tokens?: number;
+  max_cost_usd?: number;
+}
 
 export type TeamOrchestrationMode = 'strict_addressed' | 'peer_collab' | 'vote_based';
 
@@ -4306,6 +4387,19 @@ export const TEAM_POLICIES_ON_WORKER_FAILURE_VALUES = ['retry', 'skip', 'abort_t
 export type TeamSupervisorMode = 'auto_dispatch' | 'tool_driven';
 
 export const TEAM_SUPERVISOR_MODE_VALUES = ['auto_dispatch', 'tool_driven'] as const;
+
+/**
+ * Swarm topology: who starts, and how context travels on handoff.
+ */
+export interface TeamSwarmConfig {
+  initial_agent_id: string;
+  max_handoffs?: number;
+  handoff_context_strategy?: TeamSwarmConfigHandoffContextStrategy;
+}
+
+export type TeamSwarmConfigHandoffContextStrategy = 'full' | 'summary';
+
+export const TEAM_SWARM_CONFIG_HANDOFF_CONTEXT_STRATEGY_VALUES = ['full', 'summary'] as const;
 
 export type TeamTopology = 'supervisor' | 'round_robin' | 'pipeline' | 'goal_driven' | 'swarm';
 

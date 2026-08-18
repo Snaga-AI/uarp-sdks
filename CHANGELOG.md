@@ -6,6 +6,43 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.6 — 2026-08-18
+
+### Fixed — every SDK
+
+- **`ProductUpdate` named a field the server does not accept.** It declared
+  `title`; the handler's whitelist contains `name` and copies only whitelisted
+  keys before answering 200 either way. A client renaming a product through the
+  generated model sent `title`, received a success, and the name never changed.
+  The model now declares the nineteen fields the handler accepts, copied from
+  the code rather than composed.
+
+### Added — every SDK
+
+- **`getAgentRiskClassification`.** The server has served
+  `GET /agents/{agentId}/risk-classification` since the sub-resource was split
+  out, but the document never declared it, so the EU AI Act classification could
+  be WRITTEN through the SDK and never read back — a compliance field clients
+  could set but not verify. Returns `RiskClassification`.
+
+- **`RiskClassificationUpdate`** as the PATCH body, replacing an untyped
+  `JsonObject`. `level` and `annex_iii_category` are the unions they have always
+  been in the platform types; `assessed_at` is optional because the handler
+  defaults it, which is the one field where the request and the stored record
+  genuinely differ.
+
+- **`TeamGoalConfig`, `TeamSwarmConfig`, `TeamObjectiveBudget`.** `goal_config`
+  and `swarm_config` were `{"type": ["object", "null"]}`, so reading
+  `swarm_config.handoff_context_strategy` or `goal_config.budget.max_cost_usd`
+  gave `JsonValue`. These landed in the document after 0.5.5 was cut.
+
+### Notes
+
+- Both fixes come from clients that found the gaps by BUILDING against the
+  generated code — the playground client reached 203 of 287 operations and
+  diffed every body it sent against the handlers. Neither gap was visible from
+  the document, because the document was the thing that was wrong.
+
 ## 0.5.5 — 2026-08-18
 
 ### Fixed — every SDK

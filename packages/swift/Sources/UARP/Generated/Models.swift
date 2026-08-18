@@ -9966,28 +9966,71 @@ public struct ProductType: RawRepresentable, Codable, Hashable, Sendable, Expres
     public static let knownValues: [ProductType] = [.course, .service, .digital, .subscription]
 }
 
-/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional.
+/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
+/// dropped without error, so a typo answers 200 and changes nothing.
 public struct ProductUpdate: Codable, Hashable, Sendable {
-    public var title: String?
+    public var name: String?
     public var `description`: String?
+    public var priceCents: Int?
+    public var currency: String?
     public var status: String?
-    public var tags: [String]?
+    public var knowledgeBaseIds: [String]?
+    public var agentId: String?
+    public var courseStructure: JSONObject?
+    public var stripePriceId: String?
     public var metadata: JSONObject?
+    public var slug: String?
+    public var tags: [String]?
+    public var category: String?
+    public var vendor: String?
+    public var images: [String]?
+    public var variants: [JSONObject]?
+    public var compareAtPriceCents: Int?
+    public var bodyHtml: String?
+    public var options: [JSONObject]?
 
-    public init(title: String? = nil, `description`: String? = nil, status: String? = nil, tags: [String]? = nil, metadata: JSONObject? = nil) {
-        self.title = title
+    public init(name: String? = nil, `description`: String? = nil, priceCents: Int? = nil, currency: String? = nil, status: String? = nil, knowledgeBaseIds: [String]? = nil, agentId: String? = nil, courseStructure: JSONObject? = nil, stripePriceId: String? = nil, metadata: JSONObject? = nil, slug: String? = nil, tags: [String]? = nil, category: String? = nil, vendor: String? = nil, images: [String]? = nil, variants: [JSONObject]? = nil, compareAtPriceCents: Int? = nil, bodyHtml: String? = nil, options: [JSONObject]? = nil) {
+        self.name = name
         self.`description` = `description`
+        self.priceCents = priceCents
+        self.currency = currency
         self.status = status
-        self.tags = tags
+        self.knowledgeBaseIds = knowledgeBaseIds
+        self.agentId = agentId
+        self.courseStructure = courseStructure
+        self.stripePriceId = stripePriceId
         self.metadata = metadata
+        self.slug = slug
+        self.tags = tags
+        self.category = category
+        self.vendor = vendor
+        self.images = images
+        self.variants = variants
+        self.compareAtPriceCents = compareAtPriceCents
+        self.bodyHtml = bodyHtml
+        self.options = options
     }
 
     private enum CodingKeys: String, CodingKey {
-        case title = "title"
+        case name = "name"
         case `description` = "description"
+        case priceCents = "price_cents"
+        case currency = "currency"
         case status = "status"
-        case tags = "tags"
+        case knowledgeBaseIds = "knowledge_base_ids"
+        case agentId = "agent_id"
+        case courseStructure = "course_structure"
+        case stripePriceId = "stripe_price_id"
         case metadata = "metadata"
+        case slug = "slug"
+        case tags = "tags"
+        case category = "category"
+        case vendor = "vendor"
+        case images = "images"
+        case variants = "variants"
+        case compareAtPriceCents = "compare_at_price_cents"
+        case bodyHtml = "body_html"
+        case options = "options"
     }
 }
 
@@ -10870,6 +10913,120 @@ public struct RevokeMeSessionResponse: Codable, Hashable, Sendable {
         case keyId = "key_id"
         case alreadyRevoked = "already_revoked"
     }
+}
+
+/// EU AI Act (Article 9) classification for an agent.
+public struct RiskClassification: Codable, Hashable, Sendable {
+    public var level: RiskClassificationUpdateLevel
+    /// Set when level is `high`.
+    public var annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory?
+    public var justification: String
+    /// Key ID or user ID of whoever classified.
+    public var assessor: String
+    public var assessedAt: String
+    public var reviewDueAt: String
+
+    public init(level: RiskClassificationUpdateLevel, annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory? = nil, justification: String, assessor: String, assessedAt: String, reviewDueAt: String) {
+        self.level = level
+        self.annexIiiCategory = annexIiiCategory
+        self.justification = justification
+        self.assessor = assessor
+        self.assessedAt = assessedAt
+        self.reviewDueAt = reviewDueAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case level = "level"
+        case annexIiiCategory = "annex_iii_category"
+        case justification = "justification"
+        case assessor = "assessor"
+        case assessedAt = "assessed_at"
+        case reviewDueAt = "review_due_at"
+    }
+}
+
+/// Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
+public struct RiskClassificationUpdate: Codable, Hashable, Sendable {
+    public var level: RiskClassificationUpdateLevel
+    /// Set when level is `high`.
+    public var annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory?
+    public var justification: String
+    public var assessor: String
+    /// Defaults to now when omitted.
+    public var assessedAt: String?
+    public var reviewDueAt: String
+
+    public init(level: RiskClassificationUpdateLevel, annexIiiCategory: RiskClassificationUpdateAnnexIiiCategory? = nil, justification: String, assessor: String, assessedAt: String? = nil, reviewDueAt: String) {
+        self.level = level
+        self.annexIiiCategory = annexIiiCategory
+        self.justification = justification
+        self.assessor = assessor
+        self.assessedAt = assessedAt
+        self.reviewDueAt = reviewDueAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case level = "level"
+        case annexIiiCategory = "annex_iii_category"
+        case justification = "justification"
+        case assessor = "assessor"
+        case assessedAt = "assessed_at"
+        case reviewDueAt = "review_due_at"
+    }
+}
+
+/// Set when level is `high`.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RiskClassificationUpdateAnnexIiiCategory: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let biometric = RiskClassificationUpdateAnnexIiiCategory(rawValue: "biometric")
+    public static let criticalInfrastructure = RiskClassificationUpdateAnnexIiiCategory(rawValue: "critical-infrastructure")
+    public static let education = RiskClassificationUpdateAnnexIiiCategory(rawValue: "education")
+    public static let employment = RiskClassificationUpdateAnnexIiiCategory(rawValue: "employment")
+    public static let essentialServices = RiskClassificationUpdateAnnexIiiCategory(rawValue: "essential-services")
+    public static let lawEnforcement = RiskClassificationUpdateAnnexIiiCategory(rawValue: "law-enforcement")
+    public static let migration = RiskClassificationUpdateAnnexIiiCategory(rawValue: "migration")
+    public static let democraticProcesses = RiskClassificationUpdateAnnexIiiCategory(rawValue: "democratic-processes")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RiskClassificationUpdateAnnexIiiCategory] = [.biometric, .criticalInfrastructure, .education, .employment, .essentialServices, .lawEnforcement, .migration, .democraticProcesses]
+}
+
+/// `RiskClassificationUpdateLevel` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RiskClassificationUpdateLevel: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let minimal = RiskClassificationUpdateLevel(rawValue: "minimal")
+    public static let limited = RiskClassificationUpdateLevel(rawValue: "limited")
+    public static let high = RiskClassificationUpdateLevel(rawValue: "high")
+    public static let unacceptable = RiskClassificationUpdateLevel(rawValue: "unacceptable")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RiskClassificationUpdateLevel] = [.minimal, .limited, .high, .unacceptable]
 }
 
 /// `RollbackAgentRequest` model.
@@ -12267,14 +12424,14 @@ public struct Team: Codable, Hashable, Sendable {
     public var supervisorMode: TeamSupervisorMode?
     public var supervisorAgentId: String
     public var workers: [TeamWorker]
-    public var policies: TeamPolicies?
-    public var goalConfig: JSONObject?
-    public var swarmConfig: JSONObject?
+    public var policies: TeamPolicies
+    public var goalConfig: TeamGoalConfig?
+    public var swarmConfig: TeamSwarmConfig?
     public var workspaceId: String?
     public var createdAt: String?
     public var updatedAt: String?
 
-    public init(teamId: String, tenantId: String, name: String, `description`: String? = nil, topology: TeamTopology, delegationStrategy: TeamDelegationStrategy? = nil, mergeStrategy: TeamMergeStrategy? = nil, messageProtocol: TeamMessageProtocol? = nil, orchestrationMode: TeamOrchestrationMode? = nil, supervisorMode: TeamSupervisorMode? = nil, supervisorAgentId: String, workers: [TeamWorker], policies: TeamPolicies? = nil, goalConfig: JSONObject? = nil, swarmConfig: JSONObject? = nil, workspaceId: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
+    public init(teamId: String, tenantId: String, name: String, `description`: String? = nil, topology: TeamTopology, delegationStrategy: TeamDelegationStrategy? = nil, mergeStrategy: TeamMergeStrategy? = nil, messageProtocol: TeamMessageProtocol? = nil, orchestrationMode: TeamOrchestrationMode? = nil, supervisorMode: TeamSupervisorMode? = nil, supervisorAgentId: String, workers: [TeamWorker], policies: TeamPolicies, goalConfig: TeamGoalConfig? = nil, swarmConfig: TeamSwarmConfig? = nil, workspaceId: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
         self.teamId = teamId
         self.tenantId = tenantId
         self.name = name
@@ -12398,6 +12555,28 @@ public struct TeamDelegationStrategy: RawRepresentable, Codable, Hashable, Senda
     public static let knownValues: [TeamDelegationStrategy] = [.supervisorDecides, .roundRobin, .capabilityMatch]
 }
 
+/// Goal-driven topology: the objective, the review cadence, the budget.
+public struct TeamGoalConfig: Codable, Hashable, Sendable {
+    public var rootObjectiveId: String
+    public var reviewIntervalMs: Int?
+    public var maxIterations: Int?
+    public var budget: TeamObjectiveBudget?
+
+    public init(rootObjectiveId: String, reviewIntervalMs: Int? = nil, maxIterations: Int? = nil, budget: TeamObjectiveBudget? = nil) {
+        self.rootObjectiveId = rootObjectiveId
+        self.reviewIntervalMs = reviewIntervalMs
+        self.maxIterations = maxIterations
+        self.budget = budget
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case rootObjectiveId = "root_objective_id"
+        case reviewIntervalMs = "review_interval_ms"
+        case maxIterations = "max_iterations"
+        case budget = "budget"
+    }
+}
+
 /// `TeamMergeStrategy` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -12443,6 +12622,25 @@ public struct TeamMessageProtocol: RawRepresentable, Codable, Hashable, Sendable
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [TeamMessageProtocol] = [.sharedContext, .messagePassing]
+}
+
+/// Ceiling for a goal-driven team's pursuit of its objective.
+public struct TeamObjectiveBudget: Codable, Hashable, Sendable {
+    public var maxRuns: Int?
+    public var maxTokens: Int?
+    public var maxCostUsd: Double?
+
+    public init(maxRuns: Int? = nil, maxTokens: Int? = nil, maxCostUsd: Double? = nil) {
+        self.maxRuns = maxRuns
+        self.maxTokens = maxTokens
+        self.maxCostUsd = maxCostUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxRuns = "max_runs"
+        case maxTokens = "max_tokens"
+        case maxCostUsd = "max_cost_usd"
+    }
 }
 
 /// `TeamOrchestrationMode` values.
@@ -12594,6 +12792,48 @@ public struct TeamSupervisorMode: RawRepresentable, Codable, Hashable, Sendable,
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [TeamSupervisorMode] = [.autoDispatch, .toolDriven]
+}
+
+/// Swarm topology: who starts, and how context travels on handoff.
+public struct TeamSwarmConfig: Codable, Hashable, Sendable {
+    public var initialAgentId: String
+    public var maxHandoffs: Int?
+    public var handoffContextStrategy: TeamSwarmConfigHandoffContextStrategy?
+
+    public init(initialAgentId: String, maxHandoffs: Int? = nil, handoffContextStrategy: TeamSwarmConfigHandoffContextStrategy? = nil) {
+        self.initialAgentId = initialAgentId
+        self.maxHandoffs = maxHandoffs
+        self.handoffContextStrategy = handoffContextStrategy
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case initialAgentId = "initial_agent_id"
+        case maxHandoffs = "max_handoffs"
+        case handoffContextStrategy = "handoff_context_strategy"
+    }
+}
+
+/// `TeamSwarmConfigHandoffContextStrategy` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct TeamSwarmConfigHandoffContextStrategy: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let full = TeamSwarmConfigHandoffContextStrategy(rawValue: "full")
+    public static let summary = TeamSwarmConfigHandoffContextStrategy(rawValue: "summary")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [TeamSwarmConfigHandoffContextStrategy] = [.full, .summary]
 }
 
 /// `TeamTopology` values.

@@ -5,7 +5,7 @@ export const SPEC_VERSION = '0.2.0';
 /**
  * Version of this SDK.
  */
-export const SDK_VERSION = '0.5.5';
+export const SDK_VERSION = '0.5.6';
 export const DEFAULT_BASE_URL = 'https://api.snaga.ai';
 
 /**
