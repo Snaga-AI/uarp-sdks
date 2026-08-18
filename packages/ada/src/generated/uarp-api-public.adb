@@ -123,13 +123,14 @@ package body UARP.API.Public is
           Options => Options);
    end Get_Public_Tenant_Profile;
 
-   procedure Get_Public_Tenant_Stylesheet
+   function Get_Public_Tenant_Stylesheet
      (Self : Client_Type;
       Slug : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
    is
    begin
-      UARP.Client.Call_And_Discard
+      return UARP.Client.Call_Raw
          (Self,
           "GET",
           "/api/v1/public/tenants/" & UARP.Types.Encode_Path_Segment (Slug) & "/style.css",

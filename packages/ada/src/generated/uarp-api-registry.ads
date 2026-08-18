@@ -58,12 +58,13 @@ package UARP.API.Registry is
    --  Download tarball/artifact bundle for a spec version
    --
    --  GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact
-   procedure Registry_Get_Artifact
+   function Registry_Get_Artifact
      (Self : Client_Type;
       Scope : String;
       Name : String;
       Version : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  Get a single file from inside a spec version artifact
    --

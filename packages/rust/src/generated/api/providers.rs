@@ -200,9 +200,9 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_synthesize_speech(&self, body: &models::LLMSynthesizeSpeechRequest) -> Result<()> {
+    pub async fn llm_synthesize_speech(&self, body: &models::LLMSynthesizeSpeechRequest) -> Result<bytes::Bytes> {
         self.client
-            .request_empty(Request {
+            .request_bytes(Request {
                 method: Method::POST,
                 path: "/api/v1/llm/audio/speech".to_string(),
                 query: NO_QUERY,

@@ -48,8 +48,8 @@ public class RegistryApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact`
      */
-    public suspend fun registryGetArtifact(scope: String, name: String, version: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun registryGetArtifact(scope: String, name: String, version: String, options: RequestOptions = RequestOptions()): ByteArray {
+        return client.requestBytes(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/registry/spec/${encodePathSegment(scope)}/${encodePathSegment(name)}/${encodePathSegment(version)}/artifact",

@@ -376,11 +376,13 @@ function emitOperation(w: Writer, op: Operation): void {
   }, '}');
 }
 
-type CallKind = 'json' | 'unit' | 'bytes' | 'stream';
+type CallKind = 'json' | 'unit' | 'bytes' | 'text' | 'stream';
 
 function callKind(op: Operation): CallKind {
   if (!op.response.type) return 'unit';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'bytes';
+  // `requestText` already existed on the client; nothing had ever selected it.
+  if (op.response.encoding === 'text') return 'text';
   return 'json';
 }
 
@@ -418,7 +420,9 @@ function emitBody(w: Writer, op: Operation, args: Arg[], kind: CallKind): void {
         ? 'client.requestUnit'
         : kind === 'bytes'
           ? 'return client.requestBytes'
-          : `return client.request<${returnType(op)}>`;
+          : kind === 'text'
+            ? 'return client.requestText'
+            : `return client.request<${returnType(op)}>`;
 
   w.line(`${call}(`);
   w.indent(() => {

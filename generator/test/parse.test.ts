@@ -355,3 +355,60 @@ test('parsing is deterministic', () => {
   const again = fixture('nullability');
   assert.equal(JSON.stringify(first), JSON.stringify(again));
 });
+
+/**
+ * A documented response body must reach the emitters.
+ *
+ * This is written against the production document rather than a fixture on
+ * purpose. The defect it guards was not a wrong decision — it was a list of
+ * media types that the real API outgrew, and a fixture would have to be
+ * updated by the same person who forgot the list. The production document is
+ * updated by the platform, so this assertion goes red on its own.
+ *
+ * Without the rule in `#response`, four operations fail this: the run-event
+ * export, a registry artifact, a tenant stylesheet, and speech synthesis —
+ * each documented as returning a payload, each parsed as returning nothing,
+ * and each therefore emitted with `responseType: 'void'`, which makes the
+ * TypeScript transport cancel the body on a successful 200.
+ */
+test('no documented response body is parsed away', () => {
+  const spec = productionSpec();
+  const empty: string[] = [];
+  for (const group of spec.groups) {
+    for (const op of group.operations) {
+      const status = op.response.status;
+      // 204/205/304 genuinely carry no body; everything else claimed one.
+      if (status === 204 || status === 205 || status === 304) continue;
+      if (!op.response.type) empty.push(`${op.id} (${status})`);
+    }
+  }
+  assert.deepEqual(empty, [], `these operations answer with a body the parser dropped: ${empty.join(', ')}`);
+});
+
+/**
+ * The rule that replaced the list, stated as behaviour rather than as the
+ * media types that happen to be in the document today.
+ */
+test('a response media type decodes to text only when every declared type is text', () => {
+  const spec = productionSpec();
+  const byId = new Map<string, string>();
+  for (const group of spec.groups) {
+    for (const op of group.operations) {
+      const type = op.response.type;
+      if (type?.kind === 'prim') byId.set(op.id, type.prim);
+    }
+  }
+  // JSONL and CSS are text; a compressed artifact and audio keep their bytes.
+  const expectations: Array<[string, string]> = [
+    ['exportRunEvents', 'string'],
+    ['getPublicTenantStylesheet', 'string'],
+    ['registryGetArtifact', 'binary'],
+    ['llmSynthesizeSpeech', 'binary'],
+  ];
+  for (const [id, prim] of expectations) {
+    // Skip rather than fail if the platform retires an operation: the
+    // invariant above is what must hold, this test only illustrates it.
+    if (!byId.has(id)) continue;
+    assert.equal(byId.get(id), prim, `${id} should decode as ${prim}`);
+  }
+});

@@ -314,12 +314,15 @@ function emitOperation(w: Writer, op: Operation): void {
   }, '}');
 }
 
-type CallKind = 'json' | 'empty' | 'bytes' | 'multipart' | 'stream';
+type CallKind = 'json' | 'empty' | 'bytes' | 'text' | 'multipart' | 'stream';
 
 function callKind(op: Operation): CallKind {
   if (op.body?.encoding === 'multipart') return 'multipart';
   if (!op.response.type) return 'empty';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'bytes';
+  // A text media type yields a `String` that is not JSON; decoding it as JSON
+  // fails outright on JSONL or CSS.
+  if (op.response.encoding === 'text') return 'text';
   return 'json';
 }
 
@@ -361,7 +364,13 @@ function emitCall(w: Writer, op: Operation, kind: CallKind): void {
     return;
   }
 
-  const method = kind === 'json' ? 'request_json' : kind === 'bytes' ? 'request_bytes' : 'request_empty';
+  const method = kind === 'json'
+    ? 'request_json'
+    : kind === 'bytes'
+    ? 'request_bytes'
+    : kind === 'text'
+    ? 'request_text'
+    : 'request_empty';
   w.line('self.client');
   w.indent(() => {
     w.line(`.${method}(Request {`);

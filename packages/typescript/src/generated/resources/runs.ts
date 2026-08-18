@@ -164,11 +164,11 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  exportRunEvents(runId: string, options?: RequestOptions): Promise<void> {
+  exportRunEvents(runId: string, options?: RequestOptions): Promise<string> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/events/export`,
-      responseType: 'void',
+      responseType: 'text',
       options,
     });
   }

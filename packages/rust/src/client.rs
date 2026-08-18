@@ -230,6 +230,27 @@ impl Client {
         response.bytes().await.map_err(Error::Connection)
     }
 
+    /// Send a request and return the response body as text.
+    ///
+    /// Separate from `request_json` because a text payload is not JSON that
+    /// happens to be a string: deserialising JSONL or CSS into a `String`
+    /// fails, and on the one input where it would succeed — a body that is a
+    /// single quoted JSON string — it would silently strip the quotes.
+    pub async fn request_text<Q, B>(&self, req: Request<'_, Q, B>) -> Result<String>
+    where
+        Q: Serialize + ?Sized + Sync,
+        B: Serialize + ?Sized + Sync,
+    {
+        let body = req.body;
+        let response = self
+            .run(&req, &move |builder: RequestBuilder| match body {
+                Some(value) => Ok(builder.json(value)),
+                None => Ok(builder),
+            })
+            .await?;
+        response.text().await.map_err(Error::Connection)
+    }
+
     /// Send a `multipart/form-data` request. The form is rebuilt for each retry.
     pub async fn request_multipart<Q, R, F>(
         &self,

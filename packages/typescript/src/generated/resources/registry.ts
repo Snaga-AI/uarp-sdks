@@ -73,11 +73,11 @@ export class RegistryResource extends APIResource {
    *
    * `GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact`
    */
-  registryGetArtifact(scope: string, name: string, version: string, options?: RequestOptions): Promise<void> {
+  registryGetArtifact(scope: string, name: string, version: string, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/registry/spec/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/${encodeURIComponent(String(version))}/artifact`,
-      responseType: 'void',
+      responseType: 'binary',
       options,
     });
   }

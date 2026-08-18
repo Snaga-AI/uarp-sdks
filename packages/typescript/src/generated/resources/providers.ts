@@ -162,13 +162,13 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options?: RequestOptions): Promise<void> {
+  llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/audio/speech',
       body,
       idempotent: true,
-      responseType: 'void',
+      responseType: 'binary',
       options,
     });
   }
