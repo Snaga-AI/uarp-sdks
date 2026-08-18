@@ -135,9 +135,24 @@ deployment holds no key of its own.
 
 To redeploy:
 
+Two things in that command are not stylistic, and the previous version of it
+could not work:
+
+**Built from the repo root**, with `-f`, not from this directory. The Dockerfile
+says so in its own header — the build-time generators read SDK sources that live
+outside the landing (`packages/typescript/src/generated/`, `contract/SCENARIOS.md`
+and the five runners). Running `docker build .` from here fails with
+`"/examples/react-landing/package.json": not found`.
+
+**`fetch` + `reset --hard`, not `pull`.** The checkout on the droplet has twice
+been found with its working tree deleted — 547 files staged as `D`, HEAD intact.
+`git pull` reports success on such a tree and changes nothing, so the build runs
+against files that are not there.
+
 ```sh
-ssh root@<host> "cd /opt/snaga/dev-portal/repo && git pull -q &&
-  cd examples/react-landing && docker build -q -t snaga-dev-portal:latest . &&
+ssh root@<host> "cd /opt/snaga/dev-portal/repo &&
+  git fetch -q origin && git reset --hard origin/main &&
+  docker build -q -f examples/react-landing/Dockerfile -t snaga-dev-portal:latest . &&
   docker rm -f snaga-dev-portal &&
   docker run -d --name snaga-dev-portal --restart unless-stopped \
     --network snaga-net -e PORT=3001 snaga-dev-portal:latest"
