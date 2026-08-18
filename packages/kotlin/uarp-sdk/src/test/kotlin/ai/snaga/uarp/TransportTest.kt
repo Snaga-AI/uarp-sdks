@@ -789,3 +789,38 @@ private fun fixtureText(name: String): String {
     return candidates.firstOrNull { it.exists() }?.readText()
         ?: error("SSE fixture $name not found; tried ${candidates.map { it.absolutePath }}")
 }
+
+/**
+ * A failure the server did not phrase as RFC 9457 must still reach the caller.
+ *
+ * Every field of [Problem] is nullable with a default and the decoder ignores
+ * unknown keys, so a bare `{"error": "..."}` decoded successfully into an empty
+ * `Problem` and the raw-body fallback was unreachable for exactly the input it
+ * was written for. 32 API handlers answer with that shape.
+ */
+class ProblemDecodingTest {
+    @Test
+    fun `bare error key keeps its message`() {
+        val p = parseProblem("""{"error": "Insufficient role: owner required"}""")
+        assertEquals("Insufficient role: owner required", p.detail)
+    }
+
+    @Test
+    fun `nested error message keeps its message`() {
+        assertEquals("Upstream error", parseProblem("""{"error": {"message": "Upstream error"}}""").detail)
+    }
+
+    @Test
+    fun `a real problem document is used as is`() {
+        val p = parseProblem("""{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}""")
+        assertEquals("Not Found", p.title)
+        assertEquals("no such agent", p.detail)
+        assertEquals(404, p.status)
+    }
+
+    @Test
+    fun `a non-JSON body is not thrown away`() {
+        val p = parseProblem("<html><body>502 Bad Gateway</body></html>")
+        assertTrue(p.detail!!.contains("Bad Gateway"))
+    }
+}

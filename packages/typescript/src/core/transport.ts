@@ -298,16 +298,59 @@ async function decodeBody(response: Response, type: ResponseType): Promise<unkno
   }
 }
 
+/**
+ * RFC 9457 keys. A body carrying none of them is not a problem document,
+ * however well-formed its JSON is.
+ */
+const PROBLEM_KEYS = ['type', 'title', 'status', 'detail', 'correlationId', 'errors'] as const;
+
+/**
+ * Extract the failure message, whatever shape the server used to send it.
+ *
+ * This used to be `return parsed as ProblemDocument` — a cast, so ANY JSON
+ * object became a "problem document". The API answers 32 places with a bare
+ * `{"error": "..."}` instead of RFC 9457, and every one of them arrived here as
+ * a document with no `title` and no `detail`. `formatMessage` then rendered
+ * `403 HTTP 403` and the actual reason — "Insufficient role: ..." — was gone
+ * before any caller could see it.
+ *
+ * The bug is the shape of the guard, not the parsing: a cast cannot fail, so
+ * the raw-text branch below was unreachable for exactly the inputs it was
+ * written for. Diagnosed by the iOS session against the Swift client, where
+ * the same all-optional decode succeeds and makes its own fallback dead code.
+ */
 async function readProblem(response: Response): Promise<ProblemDocument> {
   try {
     const text = await response.text();
     if (!text) return { status: response.status };
-    const parsed = JSON.parse(text) as unknown;
-    if (parsed && typeof parsed === 'object') return parsed as ProblemDocument;
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(text);
+    } catch {
+      // Not JSON at all — an HTML error page, a proxy banner. Still a message.
+      return { status: response.status, detail: text.slice(0, 2000) };
+    }
+    if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+      const body = parsed as Record<string, unknown>;
+      if (PROBLEM_KEYS.some((k) => k in body)) return body as ProblemDocument;
+      return { status: response.status, detail: messageFrom(body) ?? text.slice(0, 2000) };
+    }
     return { status: response.status, detail: String(parsed) };
   } catch {
     return { status: response.status };
   }
+}
+
+/** `{"error": "..."}`, `{"error": {"message": "..."}}` and `{"message": "..."}`. */
+function messageFrom(body: Record<string, unknown>): string | undefined {
+  const { error, message } = body;
+  if (typeof error === 'string') return error;
+  if (error && typeof error === 'object') {
+    const nested = (error as Record<string, unknown>).message;
+    if (typeof nested === 'string') return nested;
+  }
+  if (typeof message === 'string') return message;
+  return undefined;
 }
 
 function readEnv(): (name: string) => string | undefined {

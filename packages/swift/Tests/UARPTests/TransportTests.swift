@@ -493,3 +493,39 @@ func createAgentRequest() -> CreateAgentRequest {
     //  so a create is just a name.
     CreateAgentRequest(name: "demo")
 }
+
+/// A failure the server did not phrase as RFC 9457 must still reach the caller.
+///
+/// Every field of `Problem` is optional, so a bare `{"error": "..."}` decoded
+/// successfully into an empty `Problem` and the raw-text fallback was
+/// unreachable for exactly the input it was written for. 32 API handlers answer
+/// with that shape; each one arrived as a failure carrying no message.
+final class ProblemDecodingTests: XCTestCase {
+    func testBareErrorKeyKeepsItsMessage() {
+        let data = Data(#"{"error": "Insufficient role: owner required"}"#.utf8)
+        let problem = UARPClient.problem(from: data)
+        XCTAssertEqual(problem.detail, "Insufficient role: owner required")
+    }
+
+    func testNestedErrorMessageKeepsItsMessage() {
+        let data = Data(#"{"error": {"message": "Upstream error"}}"#.utf8)
+        XCTAssertEqual(UARPClient.problem(from: data).detail, "Upstream error")
+    }
+
+    func testRealProblemDocumentIsUsedAsIs() {
+        let data = Data(#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#.utf8)
+        let problem = UARPClient.problem(from: data)
+        XCTAssertEqual(problem.title, "Not Found")
+        XCTAssertEqual(problem.detail, "no such agent")
+        XCTAssertEqual(problem.status, 404)
+    }
+
+    func testNonJSONBodyIsNotThrownAway() {
+        let data = Data("<html><body>502 Bad Gateway</body></html>".utf8)
+        XCTAssertTrue(UARPClient.problem(from: data).detail?.contains("Bad Gateway") == true)
+    }
+
+    func testEmptyBodyStaysEmpty() {
+        XCTAssertNil(UARPClient.problem(from: Data()).detail)
+    }
+}
