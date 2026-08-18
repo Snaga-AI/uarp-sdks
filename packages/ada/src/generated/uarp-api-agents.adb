@@ -180,6 +180,21 @@ package body UARP.API.Agents is
              Options => Options));
    end Get_Agent_Identity;
 
+   function Get_Agent_Risk_Classification
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Risk_Classification
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/risk-classification",
+             Options => Options));
+   end Get_Agent_Risk_Classification;
+
    function Get_Agent_System_Card
      (Self : Client_Type;
       Agent_Id : String;
@@ -476,7 +491,7 @@ package body UARP.API.Agents is
    function Update_Agent_Risk_Classification
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Risk_Classification_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -485,7 +500,7 @@ package body UARP.API.Agents is
          (Self,
           "PATCH",
           "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/risk-classification",
-          Payload => Payload,
+          Payload => UARP.Models.To_JSON (Payload),
           Has_Payload => True,
           Idempotent => True,
           Options => Options);

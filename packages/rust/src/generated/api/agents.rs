@@ -268,6 +268,24 @@ impl AgentsApi {
             .await
     }
 
+    /// Read the EU AI Act risk classification
+    ///
+    /// `GET /api/v1/agents/{agentId}/risk-classification`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_agent_risk_classification(&self, agent_id: &str) -> Result<models::RiskClassification> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/agents/{}/risk-classification", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get EU AI Act Annex IV system card
     ///
     /// `GET /api/v1/agents/{agentId}/system-card`
@@ -533,7 +551,7 @@ impl AgentsApi {
     /// `PATCH /api/v1/agents/{agentId}/risk-classification`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update_agent_risk_classification(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_agent_risk_classification(&self, agent_id: &str, body: &models::RiskClassificationUpdate) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

@@ -19,6 +19,8 @@ import type {
   JsonValue,
   ListAgentVersionsResponse,
   ListAgentsResponse,
+  RiskClassification,
+  RiskClassificationUpdate,
   RollbackAgentRequest,
   RotateAgentIdentityResponse,
   SetAgentCapabilitiesResponse,
@@ -251,6 +253,21 @@ export class AgentsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/identity`,
+      options,
+    });
+  }
+
+  /**
+   * Read the EU AI Act risk classification
+   *
+   * `GET /api/v1/agents/{agentId}/risk-classification`
+   *
+   * Required scopes: `agents:read`.
+   */
+  getAgentRiskClassification(agentId: string, options?: RequestOptions): Promise<RiskClassification> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/risk-classification`,
       options,
     });
   }
@@ -490,7 +507,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  updateAgentRiskClassification(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAgentRiskClassification(agentId: string, body: RiskClassificationUpdate, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/risk-classification`,

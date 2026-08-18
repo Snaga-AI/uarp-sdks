@@ -225,7 +225,11 @@ test('parses the production document into the expected shape', () => {
   const spec = productionSpec();
   const ops = spec.groups.flatMap((g) => g.operations);
 
-  assert.equal(ops.length, 557);
+  // 557 -> 558 on 2026-08-18: `GET /agents/{agentId}/risk-classification` was
+  // added to the document. The handler had served it all along; undeclared, it
+  // was absent from every SDK, so the EU AI Act classification could be written
+  // through the client and never read back.
+  assert.equal(ops.length, 558);
   assert.equal(spec.groups.length, 43);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
@@ -238,7 +242,13 @@ test('parses the production document into the expected shape', () => {
   // ValidationPolicy, ValidationCriterion), each nested object becoming its own
   // named type. Before that the generator could only render them as free-form
   // JSON bags, which made the models poorer than the wire they describe.
-  assert.equal(spec.types.length, 617);
+  // 617 -> 625 on 2026-08-18: eight named types across two document fixes —
+  // `TeamGoalConfig`, `TeamObjectiveBudget`, `TeamSwarmConfig` and its handoff
+  // enum (the team configs stopped being `{"type": "object"}`), plus
+  // `RiskClassification`, `RiskClassificationUpdate` and their two enums. The
+  // team configs land here for the first time because 0.5.5 was cut before that
+  // API change deployed.
+  assert.equal(spec.types.length, 625);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);
