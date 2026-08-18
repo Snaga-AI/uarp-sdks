@@ -8909,8 +8909,8 @@ public data class Team(
     public val supervisorMode: TeamSupervisorMode? = null,
     @SerialName("supervisor_agent_id")
     public val supervisorAgentId: String,
-    public val workers: List<JsonObject>,
-    public val policies: JsonObject? = null,
+    public val workers: List<TeamWorker>,
+    public val policies: TeamPolicies? = null,
     @SerialName("goal_config")
     public val goalConfig: JsonObject? = null,
     @SerialName("swarm_config")
@@ -9075,6 +9075,110 @@ public object TeamOrchestrationModeSerializer : KSerializer<TeamOrchestrationMod
 }
 
 /**
+ * Limits and failure handling for a team run.
+ */
+@Serializable
+public data class TeamPolicies(
+    @SerialName("max_rounds")
+    public val maxRounds: Long,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long,
+    @SerialName("early_termination")
+    public val earlyTermination: Boolean,
+    @SerialName("consensus_threshold")
+    public val consensusThreshold: Double? = null,
+    public val effort: TeamPoliciesEffort,
+    /**
+     * supervisor -> worker -> sub-worker.
+     */
+    @SerialName("max_delegation_depth")
+    public val maxDelegationDepth: Long,
+    @SerialName("subtask_timeout_ms")
+    public val subtaskTimeoutMs: Long,
+    /**
+     * Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+     * supervisor as a tool result instead, and this policy does not run.
+     */
+    @SerialName("on_worker_failure")
+    public val onWorkerFailure: TeamPoliciesOnWorkerFailure,
+    @SerialName("max_worker_retries")
+    public val maxWorkerRetries: Long,
+    @SerialName("require_all_workers")
+    public val requireAllWorkers: Boolean,
+    public val validation: ValidationPolicy? = null,
+    /**
+     * Default 50.
+     */
+    @SerialName("max_graph_nodes")
+    public val maxGraphNodes: Long? = null,
+    /**
+     * Concurrent worker runs in a fan-out (default 8).
+     */
+    @SerialName("max_concurrency")
+    public val maxConcurrency: Long? = null,
+)
+
+/**
+ * `TeamPoliciesEffort` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamPoliciesEffortSerializer::class)
+@JvmInline
+public value class TeamPoliciesEffort(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LOW: TeamPoliciesEffort = TeamPoliciesEffort("low")
+        public val MEDIUM: TeamPoliciesEffort = TeamPoliciesEffort("medium")
+        public val HIGH: TeamPoliciesEffort = TeamPoliciesEffort("high")
+        public val MAX: TeamPoliciesEffort = TeamPoliciesEffort("max")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamPoliciesEffort> = listOf(LOW, MEDIUM, HIGH, MAX)
+    }
+}
+
+public object TeamPoliciesEffortSerializer : KSerializer<TeamPoliciesEffort> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamPoliciesEffort", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamPoliciesEffort): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamPoliciesEffort = TeamPoliciesEffort(decoder.decodeString())
+}
+
+/**
+ * Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+ * supervisor as a tool result instead, and this policy does not run.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamPoliciesOnWorkerFailureSerializer::class)
+@JvmInline
+public value class TeamPoliciesOnWorkerFailure(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RETRY: TeamPoliciesOnWorkerFailure = TeamPoliciesOnWorkerFailure("retry")
+        public val SKIP: TeamPoliciesOnWorkerFailure = TeamPoliciesOnWorkerFailure("skip")
+        public val ABORT_TEAM: TeamPoliciesOnWorkerFailure = TeamPoliciesOnWorkerFailure("abort_team")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamPoliciesOnWorkerFailure> = listOf(RETRY, SKIP, ABORT_TEAM)
+    }
+}
+
+public object TeamPoliciesOnWorkerFailureSerializer : KSerializer<TeamPoliciesOnWorkerFailure> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamPoliciesOnWorkerFailure", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamPoliciesOnWorkerFailure): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamPoliciesOnWorkerFailure = TeamPoliciesOnWorkerFailure(decoder.decodeString())
+}
+
+/**
  * `TeamSupervisorMode` values.
  */
 ///
@@ -9154,6 +9258,61 @@ public data class TeamUpdateWorker(
     @SerialName("agent_id")
     public val agentId: String,
     public val role: String? = null,
+)
+
+/**
+ * An agent acting in a team, with a role and permissions.
+ */
+@Serializable
+public data class TeamWorker(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val role: String,
+    public val permissions: TeamWorkerPermissions,
+    @SerialName("external_a2a")
+    public val externalA2A: TeamWorkerExternalA2A? = null,
+)
+
+/**
+ * Delegate this worker to another platform over the A2A protocol.
+ */
+@Serializable
+public data class TeamWorkerExternalA2A(
+    public val endpoint: String,
+    @SerialName("agent_card_url")
+    public val agentCardURL: String,
+    public val auth: TeamWorkerExternalA2AAuth? = null,
+)
+
+/**
+ * `TeamWorkerExternalA2AAuth` model.
+ */
+@Serializable
+public data class TeamWorkerExternalA2AAuth(
+    public val type: String,
+    @SerialName("token_ref")
+    public val tokenRef: String? = null,
+)
+
+/**
+ * What a worker may do inside a team run.
+ */
+@Serializable
+public data class TeamWorkerPermissions(
+    /**
+     * Tool names this worker may invoke. Defaults to the agent's own allowed_tools.
+     */
+    public val tools: List<String>,
+    @SerialName("can_read_other_results")
+    public val canReadOtherResults: Boolean,
+    @SerialName("can_delegate")
+    public val canDelegate: Boolean,
+    @SerialName("can_abort")
+    public val canAbort: Boolean,
+    @SerialName("max_tokens")
+    public val maxTokens: Long? = null,
+    @SerialName("max_steps_per_subtask")
+    public val maxStepsPerSubtask: Long? = null,
 )
 
 /**
@@ -9566,6 +9725,40 @@ public data class UploadFileRequest(
     @SerialName("mime_type")
     public val mimeType: String,
     public val filename: String? = null,
+)
+
+/**
+ * One rubric line for LLM-as-judge validation.
+ */
+@Serializable
+public data class ValidationCriterion(
+    public val name: String,
+    public val description: String,
+    /**
+     * 0.0-1.0; weights should sum to ~1.0.
+     */
+    public val weight: Double,
+)
+
+/**
+ * Optional gate scoring worker outputs before synthesis.
+ */
+@Serializable
+public data class ValidationPolicy(
+    public val enabled: Boolean,
+    public val criteria: List<ValidationCriterion>,
+    /**
+     * Pass threshold 0.0-1.0 (default 0.7).
+     */
+    @SerialName("min_score")
+    public val minScore: Double,
+    @SerialName("max_revision_rounds")
+    public val maxRevisionRounds: Long,
+    /**
+     * Dedicated validator; omitted means the supervisor judges its own workers.
+     */
+    @SerialName("validator_agent_id")
+    public val validatorAgentId: String? = null,
 )
 
 /**

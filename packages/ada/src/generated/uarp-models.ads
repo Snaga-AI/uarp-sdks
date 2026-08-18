@@ -6581,6 +6581,158 @@ package UARP.Models is
    function To_JSON (Model : Team_Supervisor_Mode) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Supervisor_Mode;
 
+   --  What a worker may do inside a team run.
+   type Team_Worker_Permissions is record
+      --  Tool names this worker may invoke. Defaults to the agent's own allowed_tools.
+      Tools : UARP.Types.Text_Vectors.Vector;
+      Can_Read_Other_Results : Standard.Boolean := False;
+      Can_Delegate : Standard.Boolean := False;
+      Can_Abort : Standard.Boolean := False;
+      Has_Max_Tokens : Boolean := False;
+      Max_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Max_Steps_Per_Subtask : Boolean := False;
+      Max_Steps_Per_Subtask : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Team_Worker_Permissions) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_Permissions;
+
+   --  `TeamWorkerExternalA2AAuth` model.
+   type Team_Worker_External_A2A_Auth is record
+      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Token_Ref : Boolean := False;
+      Token_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Team_Worker_External_A2A_Auth) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_External_A2A_Auth;
+
+   --  Delegate this worker to another platform over the A2A protocol.
+   type Team_Worker_External_A2A is record
+      Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Card_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Auth : Boolean := False;
+      Auth : UARP.Models.Team_Worker_External_A2A_Auth;
+   end record;
+
+   function To_JSON (Model : Team_Worker_External_A2A) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_External_A2A;
+
+   --  An agent acting in a team, with a role and permissions.
+   type Team_Worker is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Role : UARP.Types.Text := UARP.Types.Empty_Text;
+      Permissions : UARP.Models.Team_Worker_Permissions;
+      Has_External_A2A : Boolean := False;
+      External_A2A : UARP.Models.Team_Worker_External_A2A;
+   end record;
+
+   function To_JSON (Model : Team_Worker) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker;
+
+   package Team_Worker_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Team_Worker);
+
+   --  Values of `TeamPoliciesEffort`.
+   --  A value the API introduces later decodes as Team_Policies_Effort_Unrecognized
+   --  with the original text kept in Raw.
+   type Team_Policies_Effort_Kind is
+     (Team_Policies_Effort_Low,
+   Team_Policies_Effort_Medium,
+   Team_Policies_Effort_High,
+   Team_Policies_Effort_Max,
+   Team_Policies_Effort_Unrecognized);
+
+   type Team_Policies_Effort is record
+      Kind : Team_Policies_Effort_Kind := Team_Policies_Effort_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Team_Policies_Effort (Value : String) return Team_Policies_Effort;
+   function To_Team_Policies_Effort (Kind : Team_Policies_Effort_Kind) return Team_Policies_Effort;
+   function Image (Model : Team_Policies_Effort) return String;
+   function To_JSON (Model : Team_Policies_Effort) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies_Effort;
+
+   --  Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+   --  supervisor as a tool result instead, and this policy does not run.
+   --  A value the API introduces later decodes as Team_Policies_On_Worker_Failure_Unrecognized
+   --  with the original text kept in Raw.
+   type Team_Policies_On_Worker_Failure_Kind is
+     (Team_Policies_On_Worker_Failure_Retry,
+   Team_Policies_On_Worker_Failure_Skip,
+   Team_Policies_On_Worker_Failure_Abort_Team,
+   Team_Policies_On_Worker_Failure_Unrecognized);
+
+   type Team_Policies_On_Worker_Failure is record
+      Kind : Team_Policies_On_Worker_Failure_Kind := Team_Policies_On_Worker_Failure_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Team_Policies_On_Worker_Failure (Value : String) return Team_Policies_On_Worker_Failure;
+   function To_Team_Policies_On_Worker_Failure (Kind : Team_Policies_On_Worker_Failure_Kind) return Team_Policies_On_Worker_Failure;
+   function Image (Model : Team_Policies_On_Worker_Failure) return String;
+   function To_JSON (Model : Team_Policies_On_Worker_Failure) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies_On_Worker_Failure;
+
+   --  One rubric line for LLM-as-judge validation.
+   type Validation_Criterion is record
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  0.0-1.0; weights should sum to ~1.0.
+      Weight : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Validation_Criterion) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Validation_Criterion;
+
+   package Validation_Criterion_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Validation_Criterion);
+
+   --  Optional gate scoring worker outputs before synthesis.
+   type Validation_Policy is record
+      Enabled : Standard.Boolean := False;
+      Criteria : UARP.Models.Validation_Criterion_Vectors.Vector;
+      --  Pass threshold 0.0-1.0 (default 0.7).
+      Min_Score : UARP.Types.Float_Value := 0.0;
+      Max_Revision_Rounds : UARP.Types.Integer_Value := 0;
+      --  Dedicated validator; omitted means the supervisor judges its own workers.
+      Has_Validator_Agent_Id : Boolean := False;
+      Validator_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Validation_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Validation_Policy;
+
+   --  Limits and failure handling for a team run.
+   type Team_Policies is record
+      Max_Rounds : UARP.Types.Integer_Value := 0;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Early_Termination : Standard.Boolean := False;
+      Has_Consensus_Threshold : Boolean := False;
+      Consensus_Threshold : UARP.Types.Float_Value := 0.0;
+      Effort : UARP.Models.Team_Policies_Effort;
+      --  supervisor -> worker -> sub-worker.
+      Max_Delegation_Depth : UARP.Types.Integer_Value := 0;
+      Subtask_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      --  Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+      --  supervisor as a tool result instead, and this policy does not run.
+      On_Worker_Failure : UARP.Models.Team_Policies_On_Worker_Failure;
+      Max_Worker_Retries : UARP.Types.Integer_Value := 0;
+      Require_All_Workers : Standard.Boolean := False;
+      Has_Validation : Boolean := False;
+      Validation : UARP.Models.Validation_Policy;
+      --  Default 50.
+      Has_Max_Graph_Nodes : Boolean := False;
+      Max_Graph_Nodes : UARP.Types.Integer_Value := 0;
+      --  Concurrent worker runs in a fan-out (default 8).
+      Has_Max_Concurrency : Boolean := False;
+      Max_Concurrency : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Team_Policies) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies;
+
    --  Multi-agent collaboration unit (tenant-scoped).
    type Team is record
       Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -6600,9 +6752,9 @@ package UARP.Models is
       Has_Supervisor_Mode : Boolean := False;
       Supervisor_Mode : UARP.Models.Team_Supervisor_Mode;
       Supervisor_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Workers : UARP.JSON_Support.JSON_Value;
+      Workers : UARP.Models.Team_Worker_Vectors.Vector;
       Has_Policies : Boolean := False;
-      Policies : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Policies : UARP.Models.Team_Policies;
       Has_Goal_Config : Boolean := False;
       Goal_Config : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Swarm_Config : Boolean := False;

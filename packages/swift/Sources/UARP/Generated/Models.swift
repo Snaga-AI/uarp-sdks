@@ -12266,15 +12266,15 @@ public struct Team: Codable, Hashable, Sendable {
     public var orchestrationMode: TeamOrchestrationMode?
     public var supervisorMode: TeamSupervisorMode?
     public var supervisorAgentId: String
-    public var workers: [JSONObject]
-    public var policies: JSONObject?
+    public var workers: [TeamWorker]
+    public var policies: TeamPolicies?
     public var goalConfig: JSONObject?
     public var swarmConfig: JSONObject?
     public var workspaceId: String?
     public var createdAt: String?
     public var updatedAt: String?
 
-    public init(teamId: String, tenantId: String, name: String, `description`: String? = nil, topology: TeamTopology, delegationStrategy: TeamDelegationStrategy? = nil, mergeStrategy: TeamMergeStrategy? = nil, messageProtocol: TeamMessageProtocol? = nil, orchestrationMode: TeamOrchestrationMode? = nil, supervisorMode: TeamSupervisorMode? = nil, supervisorAgentId: String, workers: [JSONObject], policies: JSONObject? = nil, goalConfig: JSONObject? = nil, swarmConfig: JSONObject? = nil, workspaceId: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
+    public init(teamId: String, tenantId: String, name: String, `description`: String? = nil, topology: TeamTopology, delegationStrategy: TeamDelegationStrategy? = nil, mergeStrategy: TeamMergeStrategy? = nil, messageProtocol: TeamMessageProtocol? = nil, orchestrationMode: TeamOrchestrationMode? = nil, supervisorMode: TeamSupervisorMode? = nil, supervisorAgentId: String, workers: [TeamWorker], policies: TeamPolicies? = nil, goalConfig: JSONObject? = nil, swarmConfig: JSONObject? = nil, workspaceId: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
         self.teamId = teamId
         self.tenantId = tenantId
         self.name = name
@@ -12469,6 +12469,110 @@ public struct TeamOrchestrationMode: RawRepresentable, Codable, Hashable, Sendab
     public static let knownValues: [TeamOrchestrationMode] = [.strictAddressed, .peerCollab, .voteBased]
 }
 
+/// Limits and failure handling for a team run.
+public struct TeamPolicies: Codable, Hashable, Sendable {
+    public var maxRounds: Int
+    public var timeoutMs: Int
+    public var earlyTermination: Bool
+    public var consensusThreshold: Double?
+    public var effort: TeamPoliciesEffort
+    /// supervisor -> worker -> sub-worker.
+    public var maxDelegationDepth: Int
+    public var subtaskTimeoutMs: Int
+    /// Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+    /// supervisor as a tool result instead, and this policy does not run.
+    public var onWorkerFailure: TeamPoliciesOnWorkerFailure
+    public var maxWorkerRetries: Int
+    public var requireAllWorkers: Bool
+    public var validation: ValidationPolicy?
+    /// Default 50.
+    public var maxGraphNodes: Int?
+    /// Concurrent worker runs in a fan-out (default 8).
+    public var maxConcurrency: Int?
+
+    public init(maxRounds: Int, timeoutMs: Int, earlyTermination: Bool, consensusThreshold: Double? = nil, effort: TeamPoliciesEffort, maxDelegationDepth: Int, subtaskTimeoutMs: Int, onWorkerFailure: TeamPoliciesOnWorkerFailure, maxWorkerRetries: Int, requireAllWorkers: Bool, validation: ValidationPolicy? = nil, maxGraphNodes: Int? = nil, maxConcurrency: Int? = nil) {
+        self.maxRounds = maxRounds
+        self.timeoutMs = timeoutMs
+        self.earlyTermination = earlyTermination
+        self.consensusThreshold = consensusThreshold
+        self.effort = effort
+        self.maxDelegationDepth = maxDelegationDepth
+        self.subtaskTimeoutMs = subtaskTimeoutMs
+        self.onWorkerFailure = onWorkerFailure
+        self.maxWorkerRetries = maxWorkerRetries
+        self.requireAllWorkers = requireAllWorkers
+        self.validation = validation
+        self.maxGraphNodes = maxGraphNodes
+        self.maxConcurrency = maxConcurrency
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxRounds = "max_rounds"
+        case timeoutMs = "timeout_ms"
+        case earlyTermination = "early_termination"
+        case consensusThreshold = "consensus_threshold"
+        case effort = "effort"
+        case maxDelegationDepth = "max_delegation_depth"
+        case subtaskTimeoutMs = "subtask_timeout_ms"
+        case onWorkerFailure = "on_worker_failure"
+        case maxWorkerRetries = "max_worker_retries"
+        case requireAllWorkers = "require_all_workers"
+        case validation = "validation"
+        case maxGraphNodes = "max_graph_nodes"
+        case maxConcurrency = "max_concurrency"
+    }
+}
+
+/// `TeamPoliciesEffort` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct TeamPoliciesEffort: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let low = TeamPoliciesEffort(rawValue: "low")
+    public static let medium = TeamPoliciesEffort(rawValue: "medium")
+    public static let high = TeamPoliciesEffort(rawValue: "high")
+    public static let max = TeamPoliciesEffort(rawValue: "max")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [TeamPoliciesEffort] = [.low, .medium, .high, .max]
+}
+
+/// Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+/// supervisor as a tool result instead, and this policy does not run.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct TeamPoliciesOnWorkerFailure: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let retry = TeamPoliciesOnWorkerFailure(rawValue: "retry")
+    public static let skip = TeamPoliciesOnWorkerFailure(rawValue: "skip")
+    public static let abortTeam = TeamPoliciesOnWorkerFailure(rawValue: "abort_team")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [TeamPoliciesOnWorkerFailure] = [.retry, .skip, .abortTeam]
+}
+
 /// `TeamSupervisorMode` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -12556,6 +12660,92 @@ public struct TeamUpdateWorker: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
         case role = "role"
+    }
+}
+
+/// An agent acting in a team, with a role and permissions.
+public struct TeamWorker: Codable, Hashable, Sendable {
+    public var agentId: String
+    public var role: String
+    public var permissions: TeamWorkerPermissions
+    public var externalA2A: TeamWorkerExternalA2A?
+
+    public init(agentId: String, role: String, permissions: TeamWorkerPermissions, externalA2A: TeamWorkerExternalA2A? = nil) {
+        self.agentId = agentId
+        self.role = role
+        self.permissions = permissions
+        self.externalA2A = externalA2A
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case role = "role"
+        case permissions = "permissions"
+        case externalA2A = "external_a2a"
+    }
+}
+
+/// Delegate this worker to another platform over the A2A protocol.
+public struct TeamWorkerExternalA2A: Codable, Hashable, Sendable {
+    public var endpoint: String
+    public var agentCardURL: String
+    public var auth: TeamWorkerExternalA2AAuth?
+
+    public init(endpoint: String, agentCardURL: String, auth: TeamWorkerExternalA2AAuth? = nil) {
+        self.endpoint = endpoint
+        self.agentCardURL = agentCardURL
+        self.auth = auth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case endpoint = "endpoint"
+        case agentCardURL = "agent_card_url"
+        case auth = "auth"
+    }
+}
+
+/// `TeamWorkerExternalA2AAuth` model.
+public struct TeamWorkerExternalA2AAuth: Codable, Hashable, Sendable {
+    public var type: String
+    public var tokenRef: String?
+
+    public init(type: String, tokenRef: String? = nil) {
+        self.type = type
+        self.tokenRef = tokenRef
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type = "type"
+        case tokenRef = "token_ref"
+    }
+}
+
+/// What a worker may do inside a team run.
+public struct TeamWorkerPermissions: Codable, Hashable, Sendable {
+    /// Tool names this worker may invoke. Defaults to the agent's own allowed_tools.
+    public var tools: [String]
+    public var canReadOtherResults: Bool
+    public var canDelegate: Bool
+    public var canAbort: Bool
+    public var maxTokens: Int?
+    public var maxStepsPerSubtask: Int?
+
+    public init(tools: [String], canReadOtherResults: Bool, canDelegate: Bool, canAbort: Bool, maxTokens: Int? = nil, maxStepsPerSubtask: Int? = nil) {
+        self.tools = tools
+        self.canReadOtherResults = canReadOtherResults
+        self.canDelegate = canDelegate
+        self.canAbort = canAbort
+        self.maxTokens = maxTokens
+        self.maxStepsPerSubtask = maxStepsPerSubtask
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tools = "tools"
+        case canReadOtherResults = "can_read_other_results"
+        case canDelegate = "can_delegate"
+        case canAbort = "can_abort"
+        case maxTokens = "max_tokens"
+        case maxStepsPerSubtask = "max_steps_per_subtask"
     }
 }
 
@@ -13156,6 +13346,53 @@ public struct UploadFileRequest: Codable, Hashable, Sendable {
         case data = "data"
         case mimeType = "mime_type"
         case filename = "filename"
+    }
+}
+
+/// One rubric line for LLM-as-judge validation.
+public struct ValidationCriterion: Codable, Hashable, Sendable {
+    public var name: String
+    public var `description`: String
+    /// 0.0-1.0; weights should sum to ~1.0.
+    public var weight: Double
+
+    public init(name: String, `description`: String, weight: Double) {
+        self.name = name
+        self.`description` = `description`
+        self.weight = weight
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case `description` = "description"
+        case weight = "weight"
+    }
+}
+
+/// Optional gate scoring worker outputs before synthesis.
+public struct ValidationPolicy: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var criteria: [ValidationCriterion]
+    /// Pass threshold 0.0-1.0 (default 0.7).
+    public var minScore: Double
+    public var maxRevisionRounds: Int
+    /// Dedicated validator; omitted means the supervisor judges its own workers.
+    public var validatorAgentId: String?
+
+    public init(enabled: Bool, criteria: [ValidationCriterion], minScore: Double, maxRevisionRounds: Int, validatorAgentId: String? = nil) {
+        self.enabled = enabled
+        self.criteria = criteria
+        self.minScore = minScore
+        self.maxRevisionRounds = maxRevisionRounds
+        self.validatorAgentId = validatorAgentId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case criteria = "criteria"
+        case minScore = "min_score"
+        case maxRevisionRounds = "max_revision_rounds"
+        case validatorAgentId = "validator_agent_id"
     }
 }
 

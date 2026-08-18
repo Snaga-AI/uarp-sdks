@@ -6,6 +6,44 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.5 — 2026-08-18
+
+### Fixed — every SDK
+
+- **A failure the server did not phrase as RFC 9457 is no longer thrown away.**
+  `{"error": "Insufficient role: owner required"}` reached callers as a failure
+  carrying no message at all. Every field of `Problem` is optional, so that body
+  DECODES SUCCESSFULLY into an empty document, and each client fell back to the
+  raw bytes only when decoding THREW — which it never did. The fallback was dead
+  code for exactly the input it was written for, in TypeScript, Swift, Rust and
+  Kotlin alike. 32 API handlers answer with that bare shape.
+
+  Each client now checks for RFC 9457 keys before treating a body as a problem
+  document, and otherwise keeps the message: `error` as a string,
+  `error.message` nested, `message`, or the raw text. A genuine problem document
+  is still used as-is; an HTML gateway page keeps its text.
+
+  Ada is NOT covered — its error path was not inspected, so it is unknown
+  rather than clean.
+
+### Added — every SDK
+
+- **`Team.workers` and `Team.policies` are described types.** They were
+  `{"type": "object"}` in the document, so the generator could only render them
+  as free-form JSON — `JsonObject[]` and `JsonObject`. Consumers that model
+  those shapes precisely had to keep hand-written types, and adopting the
+  generated `Team` would have DELETED type information rather than added it.
+  Now `workers: TeamWorker[]` and `policies: TeamPolicies`, with
+  `TeamWorkerPermissions`, `TeamWorkerExternalA2A`, `ValidationPolicy` and
+  `ValidationCriterion` alongside.
+
+### Notes
+
+- `required` on the new schemas is the intersection of what the platform types
+  mark mandatory and what a production response actually carries. Marking a
+  field required that the server sometimes omits makes Rust, Swift, Kotlin and
+  Ada throw on a successful 200.
+
 ## 0.5.4 — 2026-08-18
 
 ### Added — every SDK

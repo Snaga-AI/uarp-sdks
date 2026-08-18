@@ -16967,6 +16967,370 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Supervisor_Mode is
       (To_Team_Supervisor_Mode (UARP.Types."+" (JS.As_Text (Node))));
 
+   function To_JSON (Model : Team_Worker_Permissions) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Tools loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "tools", Items);
+      end;
+      JS.Set (Result, "can_read_other_results", JS.JSON.Create (Model.Can_Read_Other_Results));
+      JS.Set (Result, "can_delegate", JS.JSON.Create (Model.Can_Delegate));
+      JS.Set (Result, "can_abort", JS.JSON.Create (Model.Can_Abort));
+      if Model.Has_Max_Tokens then
+         JS.Set (Result, "max_tokens", JS.JSON.Create (Model.Max_Tokens));
+      end if;
+      if Model.Has_Max_Steps_Per_Subtask then
+         JS.Set (Result, "max_steps_per_subtask", JS.JSON.Create (Model.Max_Steps_Per_Subtask));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_Permissions is
+      Result : Team_Worker_Permissions;
+   begin
+      if JS.Present (Node, "tools") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tools");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tools.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "can_read_other_results") then
+         Result.Can_Read_Other_Results := JS.As_Boolean (JS.Get_Value (Node, "can_read_other_results"));
+      end if;
+      if JS.Present (Node, "can_delegate") then
+         Result.Can_Delegate := JS.As_Boolean (JS.Get_Value (Node, "can_delegate"));
+      end if;
+      if JS.Present (Node, "can_abort") then
+         Result.Can_Abort := JS.As_Boolean (JS.Get_Value (Node, "can_abort"));
+      end if;
+      if JS.Present (Node, "max_tokens") then
+         Result.Has_Max_Tokens := True;
+         Result.Max_Tokens := JS.As_Integer (JS.Get_Value (Node, "max_tokens"));
+      end if;
+      if JS.Present (Node, "max_steps_per_subtask") then
+         Result.Has_Max_Steps_Per_Subtask := True;
+         Result.Max_Steps_Per_Subtask := JS.As_Integer (JS.Get_Value (Node, "max_steps_per_subtask"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Team_Worker_External_A2A_Auth) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "type", JS.JSON.Create (Model.Type_K));
+      if Model.Has_Token_Ref then
+         JS.Set (Result, "token_ref", JS.JSON.Create (Model.Token_Ref));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_External_A2A_Auth is
+      Result : Team_Worker_External_A2A_Auth;
+   begin
+      if JS.Present (Node, "type") then
+         Result.Type_K := JS.As_Text (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "token_ref") then
+         Result.Has_Token_Ref := True;
+         Result.Token_Ref := JS.As_Text (JS.Get_Value (Node, "token_ref"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Team_Worker_External_A2A) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "endpoint", JS.JSON.Create (Model.Endpoint));
+      JS.Set (Result, "agent_card_url", JS.JSON.Create (Model.Agent_Card_URL));
+      if Model.Has_Auth then
+         JS.Set (Result, "auth", To_JSON (Model.Auth));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker_External_A2A is
+      Result : Team_Worker_External_A2A;
+   begin
+      if JS.Present (Node, "endpoint") then
+         Result.Endpoint := JS.As_Text (JS.Get_Value (Node, "endpoint"));
+      end if;
+      if JS.Present (Node, "agent_card_url") then
+         Result.Agent_Card_URL := JS.As_Text (JS.Get_Value (Node, "agent_card_url"));
+      end if;
+      if JS.Present (Node, "auth") then
+         Result.Has_Auth := True;
+         Result.Auth := From_JSON (JS.Get_Value (Node, "auth"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Team_Worker) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      JS.Set (Result, "role", JS.JSON.Create (Model.Role));
+      JS.Set (Result, "permissions", To_JSON (Model.Permissions));
+      if Model.Has_External_A2A then
+         JS.Set (Result, "external_a2a", To_JSON (Model.External_A2A));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Worker is
+      Result : Team_Worker;
+   begin
+      if JS.Present (Node, "agent_id") then
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "role") then
+         Result.Role := JS.As_Text (JS.Get_Value (Node, "role"));
+      end if;
+      if JS.Present (Node, "permissions") then
+         Result.Permissions := From_JSON (JS.Get_Value (Node, "permissions"));
+      end if;
+      if JS.Present (Node, "external_a2a") then
+         Result.Has_External_A2A := True;
+         Result.External_A2A := From_JSON (JS.Get_Value (Node, "external_a2a"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Team_Policies_Effort (Value : String) return Team_Policies_Effort is
+   begin
+      if Value = "low" then
+         return (Kind => Team_Policies_Effort_Low, Raw => UARP.Types."+" (Value));
+      elsif Value = "medium" then
+         return (Kind => Team_Policies_Effort_Medium, Raw => UARP.Types."+" (Value));
+      elsif Value = "high" then
+         return (Kind => Team_Policies_Effort_High, Raw => UARP.Types."+" (Value));
+      elsif Value = "max" then
+         return (Kind => Team_Policies_Effort_Max, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Team_Policies_Effort_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Team_Policies_Effort;
+
+   function To_Team_Policies_Effort (Kind : Team_Policies_Effort_Kind) return Team_Policies_Effort is
+   begin
+      case Kind is
+         when Team_Policies_Effort_Low =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("low"));
+         when Team_Policies_Effort_Medium =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("medium"));
+         when Team_Policies_Effort_High =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("high"));
+         when Team_Policies_Effort_Max =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("max"));
+         when Team_Policies_Effort_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Team_Policies_Effort;
+
+   function Image (Model : Team_Policies_Effort) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Team_Policies_Effort (Model.Kind).Raw));
+
+   function To_JSON (Model : Team_Policies_Effort) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies_Effort is
+      (To_Team_Policies_Effort (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Team_Policies_On_Worker_Failure (Value : String) return Team_Policies_On_Worker_Failure is
+   begin
+      if Value = "retry" then
+         return (Kind => Team_Policies_On_Worker_Failure_Retry, Raw => UARP.Types."+" (Value));
+      elsif Value = "skip" then
+         return (Kind => Team_Policies_On_Worker_Failure_Skip, Raw => UARP.Types."+" (Value));
+      elsif Value = "abort_team" then
+         return (Kind => Team_Policies_On_Worker_Failure_Abort_Team, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Team_Policies_On_Worker_Failure_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Team_Policies_On_Worker_Failure;
+
+   function To_Team_Policies_On_Worker_Failure (Kind : Team_Policies_On_Worker_Failure_Kind) return Team_Policies_On_Worker_Failure is
+   begin
+      case Kind is
+         when Team_Policies_On_Worker_Failure_Retry =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("retry"));
+         when Team_Policies_On_Worker_Failure_Skip =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("skip"));
+         when Team_Policies_On_Worker_Failure_Abort_Team =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("abort_team"));
+         when Team_Policies_On_Worker_Failure_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Team_Policies_On_Worker_Failure;
+
+   function Image (Model : Team_Policies_On_Worker_Failure) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Team_Policies_On_Worker_Failure (Model.Kind).Raw));
+
+   function To_JSON (Model : Team_Policies_On_Worker_Failure) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies_On_Worker_Failure is
+      (To_Team_Policies_On_Worker_Failure (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Validation_Criterion) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      JS.Set (Result, "weight", JS.JSON.Create (Model.Weight));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Validation_Criterion is
+      Result : Validation_Criterion;
+   begin
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "weight") then
+         Result.Weight := JS.As_Float (JS.Get_Value (Node, "weight"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Validation_Policy) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Criteria loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "criteria", Items);
+      end;
+      JS.Set (Result, "min_score", JS.JSON.Create (Model.Min_Score));
+      JS.Set (Result, "max_revision_rounds", JS.JSON.Create (Model.Max_Revision_Rounds));
+      if Model.Has_Validator_Agent_Id then
+         JS.Set (Result, "validator_agent_id", JS.JSON.Create (Model.Validator_Agent_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Validation_Policy is
+      Result : Validation_Policy;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "criteria") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "criteria");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Criteria.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "min_score") then
+         Result.Min_Score := JS.As_Float (JS.Get_Value (Node, "min_score"));
+      end if;
+      if JS.Present (Node, "max_revision_rounds") then
+         Result.Max_Revision_Rounds := JS.As_Integer (JS.Get_Value (Node, "max_revision_rounds"));
+      end if;
+      if JS.Present (Node, "validator_agent_id") then
+         Result.Has_Validator_Agent_Id := True;
+         Result.Validator_Agent_Id := JS.As_Text (JS.Get_Value (Node, "validator_agent_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Team_Policies) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "max_rounds", JS.JSON.Create (Model.Max_Rounds));
+      JS.Set (Result, "timeout_ms", JS.JSON.Create (Model.Timeout_Ms));
+      JS.Set (Result, "early_termination", JS.JSON.Create (Model.Early_Termination));
+      if Model.Has_Consensus_Threshold then
+         JS.Set (Result, "consensus_threshold", JS.JSON.Create (Model.Consensus_Threshold));
+      end if;
+      JS.Set (Result, "effort", To_JSON (Model.Effort));
+      JS.Set (Result, "max_delegation_depth", JS.JSON.Create (Model.Max_Delegation_Depth));
+      JS.Set (Result, "subtask_timeout_ms", JS.JSON.Create (Model.Subtask_Timeout_Ms));
+      JS.Set (Result, "on_worker_failure", To_JSON (Model.On_Worker_Failure));
+      JS.Set (Result, "max_worker_retries", JS.JSON.Create (Model.Max_Worker_Retries));
+      JS.Set (Result, "require_all_workers", JS.JSON.Create (Model.Require_All_Workers));
+      if Model.Has_Validation then
+         JS.Set (Result, "validation", To_JSON (Model.Validation));
+      end if;
+      if Model.Has_Max_Graph_Nodes then
+         JS.Set (Result, "max_graph_nodes", JS.JSON.Create (Model.Max_Graph_Nodes));
+      end if;
+      if Model.Has_Max_Concurrency then
+         JS.Set (Result, "max_concurrency", JS.JSON.Create (Model.Max_Concurrency));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Policies is
+      Result : Team_Policies;
+   begin
+      if JS.Present (Node, "max_rounds") then
+         Result.Max_Rounds := JS.As_Integer (JS.Get_Value (Node, "max_rounds"));
+      end if;
+      if JS.Present (Node, "timeout_ms") then
+         Result.Timeout_Ms := JS.As_Integer (JS.Get_Value (Node, "timeout_ms"));
+      end if;
+      if JS.Present (Node, "early_termination") then
+         Result.Early_Termination := JS.As_Boolean (JS.Get_Value (Node, "early_termination"));
+      end if;
+      if JS.Present (Node, "consensus_threshold") then
+         Result.Has_Consensus_Threshold := True;
+         Result.Consensus_Threshold := JS.As_Float (JS.Get_Value (Node, "consensus_threshold"));
+      end if;
+      if JS.Present (Node, "effort") then
+         Result.Effort := From_JSON (JS.Get_Value (Node, "effort"));
+      end if;
+      if JS.Present (Node, "max_delegation_depth") then
+         Result.Max_Delegation_Depth := JS.As_Integer (JS.Get_Value (Node, "max_delegation_depth"));
+      end if;
+      if JS.Present (Node, "subtask_timeout_ms") then
+         Result.Subtask_Timeout_Ms := JS.As_Integer (JS.Get_Value (Node, "subtask_timeout_ms"));
+      end if;
+      if JS.Present (Node, "on_worker_failure") then
+         Result.On_Worker_Failure := From_JSON (JS.Get_Value (Node, "on_worker_failure"));
+      end if;
+      if JS.Present (Node, "max_worker_retries") then
+         Result.Max_Worker_Retries := JS.As_Integer (JS.Get_Value (Node, "max_worker_retries"));
+      end if;
+      if JS.Present (Node, "require_all_workers") then
+         Result.Require_All_Workers := JS.As_Boolean (JS.Get_Value (Node, "require_all_workers"));
+      end if;
+      if JS.Present (Node, "validation") then
+         Result.Has_Validation := True;
+         Result.Validation := From_JSON (JS.Get_Value (Node, "validation"));
+      end if;
+      if JS.Present (Node, "max_graph_nodes") then
+         Result.Has_Max_Graph_Nodes := True;
+         Result.Max_Graph_Nodes := JS.As_Integer (JS.Get_Value (Node, "max_graph_nodes"));
+      end if;
+      if JS.Present (Node, "max_concurrency") then
+         Result.Has_Max_Concurrency := True;
+         Result.Max_Concurrency := JS.As_Integer (JS.Get_Value (Node, "max_concurrency"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Team) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -16993,9 +17357,16 @@ package body UARP.Models is
          JS.Set (Result, "supervisor_mode", To_JSON (Model.Supervisor_Mode));
       end if;
       JS.Set (Result, "supervisor_agent_id", JS.JSON.Create (Model.Supervisor_Agent_Id));
-      JS.Set (Result, "workers", Model.Workers);
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Workers loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "workers", Items);
+      end;
       if Model.Has_Policies then
-         JS.Set (Result, "policies", Model.Policies);
+         JS.Set (Result, "policies", To_JSON (Model.Policies));
       end if;
       if Model.Has_Goal_Config then
          JS.Set (Result, "goal_config", Model.Goal_Config);
@@ -17058,11 +17429,17 @@ package body UARP.Models is
          Result.Supervisor_Agent_Id := JS.As_Text (JS.Get_Value (Node, "supervisor_agent_id"));
       end if;
       if JS.Present (Node, "workers") then
-         Result.Workers := JS.Get_Value (Node, "workers");
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "workers");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Workers.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "policies") then
          Result.Has_Policies := True;
-         Result.Policies := JS.Get_Value (Node, "policies");
+         Result.Policies := From_JSON (JS.Get_Value (Node, "policies"));
       end if;
       if JS.Present (Node, "goal_config") then
          Result.Has_Goal_Config := True;

@@ -9607,9 +9607,9 @@ pub struct Team {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub supervisor_mode: Option<TeamSupervisorMode>,
     pub supervisor_agent_id: String,
-    pub workers: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub workers: Vec<TeamWorker>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub policies: Option<serde_json::Map<String, serde_json::Value>>,
+    pub policies: Option<TeamPolicies>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goal_config: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9827,6 +9827,126 @@ impl From<&str> for TeamOrchestrationMode {
     }
 }
 
+/// Limits and failure handling for a team run.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamPolicies {
+    pub max_rounds: i64,
+    pub timeout_ms: i64,
+    pub early_termination: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub consensus_threshold: Option<f64>,
+    pub effort: TeamPoliciesEffort,
+    /// supervisor -\> worker -\> sub-worker.
+    pub max_delegation_depth: i64,
+    pub subtask_timeout_ms: i64,
+    /// Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+    /// supervisor as a tool result instead, and this policy does not run.
+    pub on_worker_failure: TeamPoliciesOnWorkerFailure,
+    pub max_worker_retries: i64,
+    pub require_all_workers: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub validation: Option<ValidationPolicy>,
+    /// Default 50.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_graph_nodes: Option<i64>,
+    /// Concurrent worker runs in a fan-out (default 8).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_concurrency: Option<i64>,
+}
+
+/// `TeamPoliciesEffort` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TeamPoliciesEffort {
+    #[default]
+    #[serde(rename = "low")]
+    Low,
+    #[serde(rename = "medium")]
+    Medium,
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "max")]
+    Max,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TeamPoliciesEffort {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Low => "low",
+            Self::Medium => "medium",
+            Self::High => "high",
+            Self::Max => "max",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TeamPoliciesEffort {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TeamPoliciesEffort {
+    fn from(value: &str) -> Self {
+        match value {
+            "low" => Self::Low,
+            "medium" => Self::Medium,
+            "high" => Self::High,
+            "max" => Self::Max,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Applied by the auto_dispatch supervisor. Under tool_driven the failure is returned to the
+/// supervisor as a tool result instead, and this policy does not run.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TeamPoliciesOnWorkerFailure {
+    #[default]
+    #[serde(rename = "retry")]
+    Retry,
+    #[serde(rename = "skip")]
+    Skip,
+    #[serde(rename = "abort_team")]
+    AbortTeam,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TeamPoliciesOnWorkerFailure {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Retry => "retry",
+            Self::Skip => "skip",
+            Self::AbortTeam => "abort_team",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TeamPoliciesOnWorkerFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TeamPoliciesOnWorkerFailure {
+    fn from(value: &str) -> Self {
+        match value {
+            "retry" => Self::Retry,
+            "skip" => Self::Skip,
+            "abort_team" => Self::AbortTeam,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `TeamSupervisorMode` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum TeamSupervisorMode {
@@ -9940,6 +10060,47 @@ pub struct TeamUpdateWorker {
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
+}
+
+/// An agent acting in a team, with a role and permissions.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamWorker {
+    pub agent_id: String,
+    pub role: String,
+    pub permissions: TeamWorkerPermissions,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub external_a2a: Option<TeamWorkerExternalA2A>,
+}
+
+/// Delegate this worker to another platform over the A2A protocol.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamWorkerExternalA2A {
+    pub endpoint: String,
+    pub agent_card_url: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<TeamWorkerExternalA2AAuth>,
+}
+
+/// `TeamWorkerExternalA2AAuth` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamWorkerExternalA2AAuth {
+    pub r#type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_ref: Option<String>,
+}
+
+/// What a worker may do inside a team run.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamWorkerPermissions {
+    /// Tool names this worker may invoke. Defaults to the agent's own allowed_tools.
+    pub tools: Vec<String>,
+    pub can_read_other_results: bool,
+    pub can_delegate: bool,
+    pub can_abort: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_steps_per_subtask: Option<i64>,
 }
 
 /// `Tenant` model.
@@ -10364,6 +10525,28 @@ pub struct UploadFileRequest {
     pub mime_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
+}
+
+/// One rubric line for LLM-as-judge validation.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ValidationCriterion {
+    pub name: String,
+    pub description: String,
+    /// 0.0-1.0; weights should sum to ~1.0.
+    pub weight: f64,
+}
+
+/// Optional gate scoring worker outputs before synthesis.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ValidationPolicy {
+    pub enabled: bool,
+    pub criteria: Vec<ValidationCriterion>,
+    /// Pass threshold 0.0-1.0 (default 0.7).
+    pub min_score: f64,
+    pub max_revision_rounds: i64,
+    /// Dedicated validator; omitted means the supervisor judges its own workers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub validator_agent_id: Option<String>,
 }
 
 /// `Value` model.
