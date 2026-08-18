@@ -92,6 +92,37 @@ package body UARP.Errors is
       for Failure of Item.Errors loop
          SU.Append (Result, "; " & (+Failure.Field) & ": " & (+Failure.Message));
       end loop;
+
+      --  Nothing above produced a word about what went wrong, and the body is
+      --  not empty: fall back to it verbatim.
+      --
+      --  32 API handlers answer with a bare `{"error": "Insufficient role"}`
+      --  instead of RFC 9457. `To_Problem` parses that SUCCESSFULLY — it is
+      --  valid JSON — and every field of `Problem` stays empty, so this
+      --  function returned "403 HTTP error" while the sentence explaining the
+      --  refusal sat in `Raw`, assigned on the first line of `To_Problem` and
+      --  read by nobody. Localised by the Ada session, which checked the whole
+      --  source: `Raw` was written once and never used.
+      --
+      --  Truncated because a gateway can answer with a page of HTML, and an
+      --  exception message is not the place for it.
+      if SU.Length (Item.Title) = 0
+        and then SU.Length (Item.Detail) = 0
+        and then Item.Errors.Is_Empty
+        and then SU.Length (Item.Raw) > 0
+      then
+         declare
+            Body_Text : constant String := +Item.Raw;
+            Limit     : constant Natural := 200;
+            Shown     : constant String :=
+              (if Body_Text'Length > Limit
+               then Body_Text (Body_Text'First .. Body_Text'First + Limit - 1) & "..."
+               else Body_Text);
+         begin
+            SU.Append (Result, " - " & Shown);
+         end;
+      end if;
+
       return +Result;
    end Image;
 
