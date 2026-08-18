@@ -466,6 +466,87 @@ package UARP.Models is
    function To_JSON (Model : Admin_Replay_Webhook_DLQ_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Replay_Webhook_DLQ_Response;
 
+   --  Values of `AgentSpecPermissionsGrantedItemGrantedBy`.
+   --  A value the API introduces later decodes as Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized
+   --  with the original text kept in Raw.
+   type Agent_Spec_Permissions_Granted_Item_Granted_By_Kind is
+     (Agent_Spec_Permissions_Granted_Item_Granted_By_Wizard,
+   Agent_Spec_Permissions_Granted_Item_Granted_By_Admin,
+   Agent_Spec_Permissions_Granted_Item_Granted_By_Bootstrap,
+   Agent_Spec_Permissions_Granted_Item_Granted_By_Migrated,
+   Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized);
+
+   type Agent_Spec_Permissions_Granted_Item_Granted_By is record
+      Kind : Agent_Spec_Permissions_Granted_Item_Granted_By_Kind := Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Agent_Spec_Permissions_Granted_Item_Granted_By (Value : String) return Agent_Spec_Permissions_Granted_Item_Granted_By;
+   function To_Agent_Spec_Permissions_Granted_Item_Granted_By (Kind : Agent_Spec_Permissions_Granted_Item_Granted_By_Kind) return Agent_Spec_Permissions_Granted_Item_Granted_By;
+   function Image (Model : Agent_Spec_Permissions_Granted_Item_Granted_By) return String;
+   function To_JSON (Model : Agent_Spec_Permissions_Granted_Item_Granted_By) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec_Permissions_Granted_Item_Granted_By;
+
+   --  `AgentSpecPermissionsGrantedItem` model.
+   type Agent_Spec_Permissions_Granted_Item is record
+      Cap : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Scope : Boolean := False;
+      Scope : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Granted_By : UARP.Models.Agent_Spec_Permissions_Granted_Item_Granted_By;
+      Granted_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Agent_Spec_Permissions_Granted_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec_Permissions_Granted_Item;
+
+   package Agent_Spec_Permissions_Granted_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Agent_Spec_Permissions_Granted_Item);
+
+   --  `AgentSpec` model.
+   type Agent_Spec is record
+      Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Soft-disable. false keeps the install history but skips injection.
+      Has_Enabled : Boolean := False;
+      Enabled : Standard.Boolean := False;
+      Has_Permissions_Granted : Boolean := False;
+      Permissions_Granted : UARP.Models.Agent_Spec_Permissions_Granted_Item_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Agent_Spec) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Spec;
+
+   package Agent_Spec_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Agent_Spec);
+
+   --  Command hierarchy (MVP: opcon only).
+   type Agent_Command_Relationships is record
+      --  Agent ID holding operational control.
+      Has_Opcon : Boolean := False;
+      Opcon : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Coordinates_With : Boolean := False;
+      Coordinates_With : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Agent_Command_Relationships) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Command_Relationships;
+
+   --  Security clearance and compartment access.
+   type Agent_Access_Control is record
+      --  0=public, 1=internal, 2=restricted, 3=confidential, 4=secret.
+      Clearance : UARP.Types.Integer_Value := 0;
+      Has_Compartments : Boolean := False;
+      Compartments : UARP.Types.Text_Vectors.Vector;
+      Has_Caveats : Boolean := False;
+      Caveats : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Agent_Access_Control) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Access_Control;
+
    --  Model capabilities. Deliberately carries no provider or model identifier - see the model
    --  lockdown.
    type Agent_Model_Config is record
@@ -532,6 +613,21 @@ package UARP.Models is
 
    --  `Agent` model.
    type Agent is record
+      --  SPECs installed on this agent, with version pin and granted permissions.
+      Has_Specs : Boolean := False;
+      Specs : UARP.Models.Agent_Spec_Vectors.Vector;
+      --  Tools this agent may call without a human-in-the-loop prompt.
+      Has_Auto_Approve_Tools : Boolean := False;
+      Auto_Approve_Tools : UARP.Types.Text_Vectors.Vector;
+      --  Command hierarchy (MVP: opcon only).
+      Has_Command_Relationships : Boolean := False;
+      Command_Relationships : UARP.Models.Agent_Command_Relationships;
+      --  Security clearance and compartment access.
+      Has_Access_Control : Boolean := False;
+      Access_Control : UARP.Models.Agent_Access_Control;
+      --  Free-form caller-supplied metadata.
+      Has_Metadata : Boolean := False;
+      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;

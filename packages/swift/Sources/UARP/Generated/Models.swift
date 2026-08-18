@@ -691,6 +691,16 @@ public struct AdminReplayWebhookDLQResponse: Codable, Hashable, Sendable {
 
 /// `Agent` model.
 public struct Agent: Codable, Hashable, Sendable {
+    /// SPECs installed on this agent, with version pin and granted permissions.
+    public var specs: [AgentSpec]?
+    /// Tools this agent may call without a human-in-the-loop prompt.
+    public var autoApproveTools: [String]?
+    /// Command hierarchy (MVP: opcon only).
+    public var commandRelationships: AgentCommandRelationships?
+    /// Security clearance and compartment access.
+    public var accessControl: AgentAccessControl?
+    /// Free-form caller-supplied metadata.
+    public var metadata: JSONObject?
     public var agentId: String
     public var tenantId: String
     public var name: String
@@ -731,7 +741,12 @@ public struct Agent: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, skills: [JSONObject]? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(specs: [AgentSpec]? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: JSONObject? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, skills: [JSONObject]? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.specs = specs
+        self.autoApproveTools = autoApproveTools
+        self.commandRelationships = commandRelationships
+        self.accessControl = accessControl
+        self.metadata = metadata
         self.agentId = agentId
         self.tenantId = tenantId
         self.name = name
@@ -765,6 +780,11 @@ public struct Agent: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case specs = "specs"
+        case autoApproveTools = "auto_approve_tools"
+        case commandRelationships = "command_relationships"
+        case accessControl = "access_control"
+        case metadata = "metadata"
         case agentId = "agent_id"
         case tenantId = "tenant_id"
         case name = "name"
@@ -795,6 +815,26 @@ public struct Agent: Codable, Hashable, Sendable {
         case contextWindowSize = "context_window_size"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+}
+
+/// Security clearance and compartment access.
+public struct AgentAccessControl: Codable, Hashable, Sendable {
+    /// 0=public, 1=internal, 2=restricted, 3=confidential, 4=secret.
+    public var clearance: Int
+    public var compartments: [String]?
+    public var caveats: [String]?
+
+    public init(clearance: Int, compartments: [String]? = nil, caveats: [String]? = nil) {
+        self.clearance = clearance
+        self.compartments = compartments
+        self.caveats = caveats
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clearance = "clearance"
+        case compartments = "compartments"
+        case caveats = "caveats"
     }
 }
 
@@ -887,6 +927,23 @@ public struct AgentAnalyticsSummaryRange: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case days = "days"
+    }
+}
+
+/// Command hierarchy (MVP: opcon only).
+public struct AgentCommandRelationships: Codable, Hashable, Sendable {
+    /// Agent ID holding operational control.
+    public var opcon: String?
+    public var coordinatesWith: [String]?
+
+    public init(opcon: String? = nil, coordinatesWith: [String]? = nil) {
+        self.opcon = opcon
+        self.coordinatesWith = coordinatesWith
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case opcon = "opcon"
+        case coordinatesWith = "coordinates_with"
     }
 }
 
@@ -1062,6 +1119,79 @@ public struct AgentPrompts: Codable, Hashable, Sendable {
         case system = "system"
         case developer = "developer"
     }
+}
+
+/// `AgentSpec` model.
+public struct AgentSpec: Codable, Hashable, Sendable {
+    public var specId: String
+    public var version: String?
+    /// Soft-disable. false keeps the install history but skips injection.
+    public var enabled: Bool?
+    public var permissionsGranted: [AgentSpecPermissionsGrantedItem]?
+
+    public init(specId: String, version: String? = nil, enabled: Bool? = nil, permissionsGranted: [AgentSpecPermissionsGrantedItem]? = nil) {
+        self.specId = specId
+        self.version = version
+        self.enabled = enabled
+        self.permissionsGranted = permissionsGranted
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case specId = "spec_id"
+        case version = "version"
+        case enabled = "enabled"
+        case permissionsGranted = "permissions_granted"
+    }
+}
+
+/// `AgentSpecPermissionsGrantedItem` model.
+public struct AgentSpecPermissionsGrantedItem: Codable, Hashable, Sendable {
+    public var cap: String
+    public var scope: String?
+    public var reason: String?
+    public var grantedBy: AgentSpecPermissionsGrantedItemGrantedBy
+    public var grantedAt: String
+
+    public init(cap: String, scope: String? = nil, reason: String? = nil, grantedBy: AgentSpecPermissionsGrantedItemGrantedBy, grantedAt: String) {
+        self.cap = cap
+        self.scope = scope
+        self.reason = reason
+        self.grantedBy = grantedBy
+        self.grantedAt = grantedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case cap = "cap"
+        case scope = "scope"
+        case reason = "reason"
+        case grantedBy = "granted_by"
+        case grantedAt = "granted_at"
+    }
+}
+
+/// `AgentSpecPermissionsGrantedItemGrantedBy` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentSpecPermissionsGrantedItemGrantedBy: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let wizard = AgentSpecPermissionsGrantedItemGrantedBy(rawValue: "wizard")
+    public static let admin = AgentSpecPermissionsGrantedItemGrantedBy(rawValue: "admin")
+    public static let bootstrap = AgentSpecPermissionsGrantedItemGrantedBy(rawValue: "bootstrap")
+    public static let migrated = AgentSpecPermissionsGrantedItemGrantedBy(rawValue: "migrated")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentSpecPermissionsGrantedItemGrantedBy] = [.wizard, .admin, .bootstrap, .migrated]
 }
 
 /// `AgentSummary` model.

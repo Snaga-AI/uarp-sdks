@@ -504,6 +504,29 @@ public data class AdminReplayWebhookDLQResponse(
  */
 @Serializable
 public data class Agent(
+    /**
+     * SPECs installed on this agent, with version pin and granted permissions.
+     */
+    public val specs: List<AgentSpec>? = null,
+    /**
+     * Tools this agent may call without a human-in-the-loop prompt.
+     */
+    @SerialName("auto_approve_tools")
+    public val autoApproveTools: List<String>? = null,
+    /**
+     * Command hierarchy (MVP: opcon only).
+     */
+    @SerialName("command_relationships")
+    public val commandRelationships: AgentCommandRelationships? = null,
+    /**
+     * Security clearance and compartment access.
+     */
+    @SerialName("access_control")
+    public val accessControl: AgentAccessControl? = null,
+    /**
+     * Free-form caller-supplied metadata.
+     */
+    public val metadata: JsonObject? = null,
     @SerialName("agent_id")
     public val agentId: String,
     @SerialName("tenant_id")
@@ -581,6 +604,19 @@ public data class Agent(
 )
 
 /**
+ * Security clearance and compartment access.
+ */
+@Serializable
+public data class AgentAccessControl(
+    /**
+     * 0=public, 1=internal, 2=restricted, 3=confidential, 4=secret.
+     */
+    public val clearance: Long,
+    public val compartments: List<String>? = null,
+    public val caveats: List<String>? = null,
+)
+
+/**
  * Output of summariseAgents (analytics.ts) — same shape for /admin/analytics/agents and
  * /analytics/agents (tenant-scoped).
  */
@@ -631,6 +667,19 @@ public data class AgentAnalyticsSummaryByExecutionMode(
 @Serializable
 public data class AgentAnalyticsSummaryRange(
     public val days: Long,
+)
+
+/**
+ * Command hierarchy (MVP: opcon only).
+ */
+@Serializable
+public data class AgentCommandRelationships(
+    /**
+     * Agent ID holding operational control.
+     */
+    public val opcon: String? = null,
+    @SerialName("coordinates_with")
+    public val coordinatesWith: List<String>? = null,
 )
 
 /**
@@ -773,6 +822,66 @@ public data class AgentPrompts(
     public val system: String? = null,
     public val developer: String? = null,
 )
+
+/**
+ * `AgentSpec` model.
+ */
+@Serializable
+public data class AgentSpec(
+    @SerialName("spec_id")
+    public val specId: String,
+    public val version: String? = null,
+    /**
+     * Soft-disable. false keeps the install history but skips injection.
+     */
+    public val enabled: Boolean? = null,
+    @SerialName("permissions_granted")
+    public val permissionsGranted: List<AgentSpecPermissionsGrantedItem>? = null,
+)
+
+/**
+ * `AgentSpecPermissionsGrantedItem` model.
+ */
+@Serializable
+public data class AgentSpecPermissionsGrantedItem(
+    public val cap: String,
+    public val scope: String? = null,
+    public val reason: String? = null,
+    @SerialName("granted_by")
+    public val grantedBy: AgentSpecPermissionsGrantedItemGrantedBy,
+    @SerialName("granted_at")
+    public val grantedAt: String,
+)
+
+/**
+ * `AgentSpecPermissionsGrantedItemGrantedBy` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AgentSpecPermissionsGrantedItemGrantedBySerializer::class)
+@JvmInline
+public value class AgentSpecPermissionsGrantedItemGrantedBy(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val WIZARD: AgentSpecPermissionsGrantedItemGrantedBy = AgentSpecPermissionsGrantedItemGrantedBy("wizard")
+        public val ADMIN: AgentSpecPermissionsGrantedItemGrantedBy = AgentSpecPermissionsGrantedItemGrantedBy("admin")
+        public val BOOTSTRAP: AgentSpecPermissionsGrantedItemGrantedBy = AgentSpecPermissionsGrantedItemGrantedBy("bootstrap")
+        public val MIGRATED: AgentSpecPermissionsGrantedItemGrantedBy = AgentSpecPermissionsGrantedItemGrantedBy("migrated")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AgentSpecPermissionsGrantedItemGrantedBy> = listOf(WIZARD, ADMIN, BOOTSTRAP, MIGRATED)
+    }
+}
+
+public object AgentSpecPermissionsGrantedItemGrantedBySerializer : KSerializer<AgentSpecPermissionsGrantedItemGrantedBy> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentSpecPermissionsGrantedItemGrantedBy", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AgentSpecPermissionsGrantedItemGrantedBy): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AgentSpecPermissionsGrantedItemGrantedBy = AgentSpecPermissionsGrantedItemGrantedBy(decoder.decodeString())
+}
 
 /**
  * `AgentSummary` model.
