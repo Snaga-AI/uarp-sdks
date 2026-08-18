@@ -157,14 +157,15 @@ package body UARP.API.Workspaces is
    function List
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Workspaces_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/workspaces",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/workspaces",
+             Options => Options));
    end List;
 
    function List_Agent_Workspace_Files

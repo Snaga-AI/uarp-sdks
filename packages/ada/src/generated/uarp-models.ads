@@ -1199,6 +1199,27 @@ package UARP.Models is
    function To_JSON (Model : API_Key_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return API_Key_Response;
 
+   --  An API key as listed. The secret is shown once, at creation, and never here.
+   type API_Key_Summary is record
+      Key_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Prefix : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Kind : Boolean := False;
+      Kind : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Scopes : Boolean := False;
+      Scopes : UARP.Types.Text_Vectors.Vector;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Created_At : Boolean := False;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : API_Key_Summary) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return API_Key_Summary;
+
+   package API_Key_Summary_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => API_Key_Summary);
+
    --  `AppleNativeAuthRequest` model.
    type Apple_Native_Auth_Request is record
       --  Apple-signed JWT from `ASAuthorizationAppleIDCredential.identityToken`.
@@ -2667,46 +2688,46 @@ package UARP.Models is
    function To_JSON (Model : Create_Goal_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Goal_Request;
 
-   --  Values of `CreateGuardrailRequestPhase`.
-   --  A value the API introduces later decodes as Create_Guardrail_Request_Phase_Unrecognized
+   --  Values of `GuardrailPhase`.
+   --  A value the API introduces later decodes as Guardrail_Phase_Unrecognized
    --  with the original text kept in Raw.
-   type Create_Guardrail_Request_Phase_Kind is
-     (Create_Guardrail_Request_Phase_Input,
-   Create_Guardrail_Request_Phase_Output,
-   Create_Guardrail_Request_Phase_Both,
-   Create_Guardrail_Request_Phase_Unrecognized);
+   type Guardrail_Phase_Kind is
+     (Guardrail_Phase_Input,
+   Guardrail_Phase_Output,
+   Guardrail_Phase_Both,
+   Guardrail_Phase_Unrecognized);
 
-   type Create_Guardrail_Request_Phase is record
-      Kind : Create_Guardrail_Request_Phase_Kind := Create_Guardrail_Request_Phase_Unrecognized;
+   type Guardrail_Phase is record
+      Kind : Guardrail_Phase_Kind := Guardrail_Phase_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Create_Guardrail_Request_Phase (Value : String) return Create_Guardrail_Request_Phase;
-   function To_Create_Guardrail_Request_Phase (Kind : Create_Guardrail_Request_Phase_Kind) return Create_Guardrail_Request_Phase;
-   function Image (Model : Create_Guardrail_Request_Phase) return String;
-   function To_JSON (Model : Create_Guardrail_Request_Phase) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Guardrail_Request_Phase;
+   function To_Guardrail_Phase (Value : String) return Guardrail_Phase;
+   function To_Guardrail_Phase (Kind : Guardrail_Phase_Kind) return Guardrail_Phase;
+   function Image (Model : Guardrail_Phase) return String;
+   function To_JSON (Model : Guardrail_Phase) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Guardrail_Phase;
 
-   --  Values of `CreateGuardrailRequestAction`.
-   --  A value the API introduces later decodes as Create_Guardrail_Request_Action_Unrecognized
+   --  Values of `GuardrailAction`.
+   --  A value the API introduces later decodes as Guardrail_Action_Unrecognized
    --  with the original text kept in Raw.
-   type Create_Guardrail_Request_Action_Kind is
-     (Create_Guardrail_Request_Action_Block,
-   Create_Guardrail_Request_Action_Redact,
-   Create_Guardrail_Request_Action_Warn,
-   Create_Guardrail_Request_Action_Log,
-   Create_Guardrail_Request_Action_Unrecognized);
+   type Guardrail_Action_Kind is
+     (Guardrail_Action_Block,
+   Guardrail_Action_Redact,
+   Guardrail_Action_Warn,
+   Guardrail_Action_Log,
+   Guardrail_Action_Unrecognized);
 
-   type Create_Guardrail_Request_Action is record
-      Kind : Create_Guardrail_Request_Action_Kind := Create_Guardrail_Request_Action_Unrecognized;
+   type Guardrail_Action is record
+      Kind : Guardrail_Action_Kind := Guardrail_Action_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Create_Guardrail_Request_Action (Value : String) return Create_Guardrail_Request_Action;
-   function To_Create_Guardrail_Request_Action (Kind : Create_Guardrail_Request_Action_Kind) return Create_Guardrail_Request_Action;
-   function Image (Model : Create_Guardrail_Request_Action) return String;
-   function To_JSON (Model : Create_Guardrail_Request_Action) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Guardrail_Request_Action;
+   function To_Guardrail_Action (Value : String) return Guardrail_Action;
+   function To_Guardrail_Action (Kind : Guardrail_Action_Kind) return Guardrail_Action;
+   function Image (Model : Guardrail_Action) return String;
+   function To_JSON (Model : Guardrail_Action) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Guardrail_Action;
 
    --  `CreateGuardrailRequest` model.
    type Create_Guardrail_Request is record
@@ -2714,9 +2735,9 @@ package UARP.Models is
       --  Where the guardrail is called. Checked against the security-policy denylist and resolved
       --  through DNS before it is accepted.
       Webhook_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      Phase : UARP.Models.Create_Guardrail_Request_Phase;
+      Phase : UARP.Models.Guardrail_Phase;
       Has_Action : Boolean := False;
-      Action : UARP.Models.Create_Guardrail_Request_Action;
+      Action : UARP.Models.Guardrail_Action;
       Has_Timeout_Ms : Boolean := False;
       Timeout_Ms : UARP.Types.Integer_Value := 0;
       --  Shared secret used to sign calls to `webhook_url`.
@@ -4978,6 +4999,27 @@ package UARP.Models is
    function To_JSON (Model : Google_One_Tap_Auth_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Google_One_Tap_Auth_Response;
 
+   --  A webhook called before or after a run to allow, redact or block it.
+   type Guardrail is record
+      Guardrail_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Webhook_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Phase : UARP.Models.Guardrail_Phase;
+      Has_Action : Boolean := False;
+      Action : UARP.Models.Guardrail_Action;
+      Has_Timeout_Ms : Boolean := False;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Created_At : Boolean := False;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Guardrail) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Guardrail;
+
+   package Guardrail_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Guardrail);
+
    --  `HandleStripeWebhookRequest` model.
    type Handle_Stripe_Webhook_Request is record
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -5419,6 +5461,16 @@ package UARP.Models is
    function To_JSON (Model : List_Ambassador_Vetoes_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Ambassador_Vetoes_Response;
 
+   --  `ListAPIKeysResponse` model.
+   type List_API_Keys_Response is record
+      Keys : UARP.Models.API_Key_Summary_Vectors.Vector;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_API_Keys_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_API_Keys_Response;
+
    --  `ListArbiterCasesResponse` model.
    type List_Arbiter_Cases_Response is record
       Cases : UARP.Models.Arbiter_Case_Vectors.Vector;
@@ -5757,6 +5809,16 @@ package UARP.Models is
 
    function To_JSON (Model : List_Goals_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Goals_Response;
+
+   --  `ListGuardrailsResponse` model.
+   type List_Guardrails_Response is record
+      Guardrails : UARP.Models.Guardrail_Vectors.Vector;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Guardrails_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Guardrails_Response;
 
    --  `ListIntegrationsCatalogResponse` model.
    type List_Integrations_Catalog_Response is record
@@ -6132,6 +6194,51 @@ package UARP.Models is
    function To_JSON (Model : List_O_Auth_Login_Providers_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_O_Auth_Login_Providers_Response;
 
+   --  `ProgramStep` model.
+   type Program_Step is record
+      --  Generated by the server.
+      Step_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Order_Index : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Program_Step) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Program_Step;
+
+   package Program_Step_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Program_Step);
+
+   --  An ordered curriculum an agent delivers.
+   type Program is record
+      Program_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Listing_Id : Boolean := False;
+      Listing_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Steps : UARP.Models.Program_Step_Vectors.Vector;
+      Has_Created_At : Boolean := False;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Program) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Program;
+
+   package Program_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Program);
+
+   --  `ListProgramsResponse` model.
+   type List_Programs_Response is record
+      Programs : UARP.Models.Program_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : List_Programs_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Programs_Response;
+
    --  `ListProviderModelsResponseModel` model.
    type List_Provider_Models_Response_Model is record
       Has_Id : Boolean := False;
@@ -6164,6 +6271,37 @@ package UARP.Models is
 
    function To_JSON (Model : List_Provider_Models_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Provider_Models_Response;
+
+   --  An LLM provider the platform knows about, and whether a key is configured.
+   type LLM_Provider is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Canonical : Boolean := False;
+      Canonical : UARP.Types.Text := UARP.Types.Empty_Text;
+      Configured : Standard.Boolean := False;
+      Has_Configured_Level : Boolean := False;
+      Configured_Level : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Default_Endpoint : Boolean := False;
+      Default_Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_API_Key_Env : Boolean := False;
+      API_Key_Env : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Local : Boolean := False;
+      Local : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : LLM_Provider) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return LLM_Provider;
+
+   package LLM_Provider_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => LLM_Provider);
+
+   --  `ListProvidersResponse` model.
+   type List_Providers_Response is record
+      Providers : UARP.Models.LLM_Provider_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : List_Providers_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Providers_Response;
 
    --  `ListPublicPlansResponse` model.
    type List_Public_Plans_Response is record
@@ -7066,6 +7204,65 @@ package UARP.Models is
 
    function To_JSON (Model : List_Webhooks_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Webhooks_Response;
+
+   --  Values of `WorkspaceOwnerType`.
+   --  A value the API introduces later decodes as Workspace_Owner_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Workspace_Owner_Type_Kind is
+     (Workspace_Owner_Type_Agent,
+   Workspace_Owner_Type_Team,
+   Workspace_Owner_Type_Standalone,
+   Workspace_Owner_Type_Unrecognized);
+
+   type Workspace_Owner_Type is record
+      Kind : Workspace_Owner_Type_Kind := Workspace_Owner_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Workspace_Owner_Type (Value : String) return Workspace_Owner_Type;
+   function To_Workspace_Owner_Type (Kind : Workspace_Owner_Type_Kind) return Workspace_Owner_Type;
+   function Image (Model : Workspace_Owner_Type) return String;
+   function To_JSON (Model : Workspace_Owner_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Workspace_Owner_Type;
+
+   --  `Workspace` model.
+   type Workspace is record
+      Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Owner_Type : Boolean := False;
+      Owner_Type : UARP.Models.Workspace_Owner_Type;
+      Has_Owner_Id : Boolean := False;
+      Owner_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Shared_With : Boolean := False;
+      Shared_With : UARP.Types.Text_Vectors.Vector;
+      Has_Assigned_Agents : Boolean := False;
+      Assigned_Agents : UARP.Types.Text_Vectors.Vector;
+      Has_Assigned_Teams : Boolean := False;
+      Assigned_Teams : UARP.Types.Text_Vectors.Vector;
+      Has_Assigned_Companies : Boolean := False;
+      Assigned_Companies : UARP.Types.Text_Vectors.Vector;
+      Has_Created_At : Boolean := False;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Workspace) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Workspace;
+
+   package Workspace_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Workspace);
+
+   --  `ListWorkspacesResponse` model.
+   type List_Workspaces_Response is record
+      Workspaces : UARP.Models.Workspace_Vectors.Vector;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Workspaces_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Workspaces_Response;
 
    --  `ListWorkspaceTrashResponse` model.
    type List_Workspace_Trash_Response is record
@@ -9545,52 +9742,6 @@ package UARP.Models is
 
    function To_JSON (Model : Veto_Proposal_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Proposal_Response;
-
-   --  Values of `WorkspaceOwnerType`.
-   --  A value the API introduces later decodes as Workspace_Owner_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Workspace_Owner_Type_Kind is
-     (Workspace_Owner_Type_Agent,
-   Workspace_Owner_Type_Team,
-   Workspace_Owner_Type_Standalone,
-   Workspace_Owner_Type_Unrecognized);
-
-   type Workspace_Owner_Type is record
-      Kind : Workspace_Owner_Type_Kind := Workspace_Owner_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Workspace_Owner_Type (Value : String) return Workspace_Owner_Type;
-   function To_Workspace_Owner_Type (Kind : Workspace_Owner_Type_Kind) return Workspace_Owner_Type;
-   function Image (Model : Workspace_Owner_Type) return String;
-   function To_JSON (Model : Workspace_Owner_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Workspace_Owner_Type;
-
-   --  `Workspace` model.
-   type Workspace is record
-      Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Owner_Type : Boolean := False;
-      Owner_Type : UARP.Models.Workspace_Owner_Type;
-      Has_Owner_Id : Boolean := False;
-      Owner_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Shared_With : Boolean := False;
-      Shared_With : UARP.Types.Text_Vectors.Vector;
-      Has_Assigned_Agents : Boolean := False;
-      Assigned_Agents : UARP.Types.Text_Vectors.Vector;
-      Has_Assigned_Teams : Boolean := False;
-      Assigned_Teams : UARP.Types.Text_Vectors.Vector;
-      Has_Assigned_Companies : Boolean := False;
-      Assigned_Companies : UARP.Types.Text_Vectors.Vector;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Workspace) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Workspace;
 
    --  `WorkspaceFile` model.
    type Workspace_File is record

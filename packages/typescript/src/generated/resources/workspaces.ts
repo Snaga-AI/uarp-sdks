@@ -12,6 +12,7 @@ import type {
   JsonObject,
   JsonValue,
   ListWorkspaceTrashResponse,
+  ListWorkspacesResponse,
   MoveWorkspaceFileRequest,
   RunWorkspaceCommandRequest,
   RunWorkspaceCommandResponse,
@@ -237,7 +238,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:read`.
    */
-  list(options?: RequestOptions): Promise<JsonObject> {
+  list(options?: RequestOptions): Promise<ListWorkspacesResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/workspaces',

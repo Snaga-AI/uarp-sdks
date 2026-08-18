@@ -5,8 +5,8 @@ import type { RequestOptions } from '../../core/transport.js';
 import type {
   ApplyProgramRequest,
   CreateProgramRequest,
-  JsonObject,
   JsonValue,
+  ListProgramsResponse,
 } from '../models.js';
 
 /**
@@ -69,7 +69,7 @@ export class ProgramsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  list(options?: RequestOptions): Promise<JsonObject> {
+  list(options?: RequestOptions): Promise<ListProgramsResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/programs',

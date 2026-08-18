@@ -6,6 +6,7 @@ import type {
   CreateGuardrailRequest,
   DeleteGuardrailResponse,
   JsonObject,
+  ListGuardrailsResponse,
 } from '../models.js';
 
 /**
@@ -52,7 +53,7 @@ export class GuardrailsResource extends APIResource {
    *
    * Required scopes: `guardrails:read`.
    */
-  list(options?: RequestOptions): Promise<JsonObject> {
+  list(options?: RequestOptions): Promise<ListGuardrailsResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/guardrails',

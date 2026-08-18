@@ -241,7 +241,7 @@ impl WorkspacesApi {
     /// `GET /api/v1/workspaces`
     ///
     /// Required scopes: `files:read`.
-    pub async fn list(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list(&self) -> Result<models::ListWorkspacesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

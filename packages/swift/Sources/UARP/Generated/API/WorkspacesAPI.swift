@@ -147,7 +147,7 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/workspaces`
     ///
     /// Required scopes: `files:read`.
-    public func list(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func list(options: RequestOptions = .init()) async throws -> ListWorkspacesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/workspaces",

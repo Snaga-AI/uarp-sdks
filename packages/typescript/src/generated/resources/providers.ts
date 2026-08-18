@@ -8,6 +8,7 @@ import type {
   LLMTranscribeAudioRequest,
   ListLLMModelsResponse,
   ListProviderModelsResponse,
+  ListProvidersResponse,
   ListVideoProvidersResponse,
 } from '../models.js';
 
@@ -63,7 +64,7 @@ export class ProvidersResource extends APIResource {
    *
    * `GET /api/v1/providers`
    */
-  list(options?: RequestOptions): Promise<JsonObject> {
+  list(options?: RequestOptions): Promise<ListProvidersResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/providers',

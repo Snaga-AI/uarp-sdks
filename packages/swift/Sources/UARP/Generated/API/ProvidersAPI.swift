@@ -48,7 +48,7 @@ public struct ProvidersAPI: Sendable {
     /// List configured LLM providers
     ///
     /// `GET /api/v1/providers`
-    public func list(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func list(options: RequestOptions = .init()) async throws -> ListProvidersResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/providers",

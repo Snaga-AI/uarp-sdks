@@ -44,7 +44,7 @@ package UARP.API.Providers is
    function List
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Providers_Response;
 
    --  List image generation providers and models
    --

@@ -40,13 +40,14 @@ package body UARP.API.Guardrails is
    function List
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Guardrails_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/guardrails",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/guardrails",
+             Options => Options));
    end List;
 end UARP.API.Guardrails;
