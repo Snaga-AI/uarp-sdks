@@ -567,14 +567,48 @@ async fn decode_json<R: DeserializeOwned>(response: reqwest::Response) -> Result
     serde_json::from_slice(slice).map_err(Error::Decode)
 }
 
+/// RFC 9457 keys. A body carrying none of them is not a problem document,
+/// however well-formed its JSON is.
+const PROBLEM_KEYS: [&str; 6] = ["type", "title", "status", "detail", "correlationId", "errors"];
+
+/// Extract the failure message, whatever shape the server used to send it.
+///
+/// Every field of `Problem` is `Option` with `#[serde(default)]` and nothing
+/// denies unknown keys, so `{"error": "Insufficient role"}` deserialized
+/// SUCCESSFULLY into an all-`None` `Problem` — and the `unwrap_or_else` branch
+/// that preserves the raw body never ran, because it only fires on a decode
+/// error. It was dead code for exactly the input it was written for. The API
+/// answers 32 places with that bare shape.
+///
+/// Diagnosed by the iOS session against the Swift client; the same hole exists
+/// in TypeScript, Kotlin and here.
+pub(crate) fn problem_from_slice(bytes: &[u8]) -> Problem {
+    let raw = || String::from_utf8_lossy(bytes).into_owned();
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+        return Problem { detail: Some(raw()), ..Problem::default() };
+    };
+    let Some(object) = value.as_object() else {
+        return Problem { detail: Some(raw()), ..Problem::default() };
+    };
+    if PROBLEM_KEYS.iter().any(|k| object.contains_key(*k)) {
+        if let Ok(problem) = serde_json::from_slice::<Problem>(bytes) {
+            return problem;
+        }
+    }
+    let message = object
+        .get("error")
+        .and_then(|e| {
+            e.as_str()
+                .map(str::to_owned)
+                .or_else(|| e.get("message").and_then(|m| m.as_str()).map(str::to_owned))
+        })
+        .or_else(|| object.get("message").and_then(|m| m.as_str()).map(str::to_owned));
+    Problem { detail: Some(message.unwrap_or_else(raw)), ..Problem::default() }
+}
+
 async fn read_problem(response: reqwest::Response) -> Problem {
     match response.bytes().await {
-        Ok(bytes) if !bytes.is_empty() => {
-            serde_json::from_slice(&bytes).unwrap_or_else(|_| Problem {
-                detail: Some(String::from_utf8_lossy(&bytes).into_owned()),
-                ..Problem::default()
-            })
-        }
+        Ok(bytes) if !bytes.is_empty() => problem_from_slice(&bytes),
         _ => Problem::default(),
     }
 }
@@ -605,4 +639,40 @@ pub(crate) fn backoff(attempt: u32) -> Duration {
     // No RNG dependency: the low bits of a v4 UUID are already random.
     let jitter = (uuid::Uuid::new_v4().as_u128() as u64) % (base / 2 + 1);
     Duration::from_millis(base / 2 + jitter)
+}
+
+#[cfg(test)]
+mod problem_decoding_tests {
+    use super::problem_from_slice;
+
+    /// A failure the server did not phrase as RFC 9457 must still reach the
+    /// caller. 32 API handlers answer with a bare `{"error": "..."}`, and every
+    /// one of them used to deserialize into an all-`None` `Problem`.
+    #[test]
+    fn bare_error_key_keeps_its_message() {
+        let p = problem_from_slice(br#"{"error": "Insufficient role: owner required"}"#);
+        assert_eq!(p.detail.as_deref(), Some("Insufficient role: owner required"));
+    }
+
+    #[test]
+    fn nested_error_message_keeps_its_message() {
+        let p = problem_from_slice(br#"{"error": {"message": "Upstream error"}}"#);
+        assert_eq!(p.detail.as_deref(), Some("Upstream error"));
+    }
+
+    #[test]
+    fn real_problem_document_is_used_as_is() {
+        let p = problem_from_slice(
+            br#"{"type":"about:blank","title":"Not Found","status":404,"detail":"no such agent"}"#,
+        );
+        assert_eq!(p.title.as_deref(), Some("Not Found"));
+        assert_eq!(p.detail.as_deref(), Some("no such agent"));
+        assert_eq!(p.status, Some(404));
+    }
+
+    #[test]
+    fn non_json_body_is_not_thrown_away() {
+        let p = problem_from_slice(b"<html><body>502 Bad Gateway</body></html>");
+        assert!(p.detail.unwrap().contains("Bad Gateway"));
+    }
 }

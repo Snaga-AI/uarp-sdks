@@ -380,10 +380,42 @@ public final class UARPClient: @unchecked Sendable {
         return headers
     }
 
+    /// RFC 9457 keys. A body carrying none of them is not a problem document,
+    /// however well-formed its JSON is.
+    private static let problemKeys: Set<String> = [
+        "type", "title", "status", "detail", "correlationId", "errors",
+    ]
+
+    /// Extract the failure message, whatever shape the server used to send it.
+    ///
+    /// Every field of `Problem` is optional, so `{"error": "Insufficient role"}`
+    /// DECODED SUCCESSFULLY into an all-nil `Problem` and the raw-text fallback
+    /// below never ran — it was dead code for exactly the input it was written
+    /// for. The API answers 32 places with that bare shape, and each one reached
+    /// callers as a failure with no message at all.
+    ///
+    /// Diagnosed by the iOS session, which had been carrying its own
+    /// `ProblemError` with an `error` key since 2026-08-13 to work around it.
     static func problem(from data: Data) -> Problem {
         guard !data.isEmpty else { return Problem() }
-        if let problem = try? JSONDecoder().decode(Problem.self, from: data) { return problem }
-        return Problem(detail: String(data: data, encoding: .utf8))
+        let raw = String(data: data, encoding: .utf8)
+        if let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+            if !problemKeys.isDisjoint(with: object.keys),
+               let problem = try? JSONDecoder().decode(Problem.self, from: data) {
+                return problem
+            }
+            return Problem(detail: message(from: object) ?? raw)
+        }
+        return Problem(detail: raw)
+    }
+
+    /// `{"error": "..."}`, `{"error": {"message": "..."}}` and `{"message": "..."}`.
+    private static func message(from object: [String: Any]) -> String? {
+        if let error = object["error"] as? String { return error }
+        if let nested = object["error"] as? [String: Any], let text = nested["message"] as? String {
+            return text
+        }
+        return object["message"] as? String
     }
 
     static func encodeMultipart(_ parts: [MultipartPart], boundary: String) -> Data {
