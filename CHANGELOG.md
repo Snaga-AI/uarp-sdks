@@ -6,6 +6,54 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.7 — 2026-08-19
+
+### Fixed — every SDK
+
+- **A documented response body decoded to nothing.** The generator chose the
+  payload type by walking a list of media types, and anything the list did not
+  name fell past every branch and arrived with no type at all. The emitters
+  read that as "this operation answers with nothing", and the TypeScript
+  transport then cancelled a response that had already arrived intact.
+
+  Four operations were affected, measured against the live document rather
+  than guessed: `exportRunEvents` (`application/x-ndjson`),
+  `registryGetArtifact` (`application/zstd`), `getPublicTenantStylesheet`
+  (`text/css`), and `llmSynthesizeSpeech` (`audio/*`). The last one is the
+  expensive one — speech synthesis called a paid provider, received the audio,
+  and dropped every byte of it without failing.
+
+  The list is gone; one rule decides, and the branch that produced an empty
+  type no longer exists, so a media type the generator has never seen cannot
+  become nothing again.
+
+- **The text path was missing in four of the five languages.** Fixing the type
+  alone would have been a half-fix that reads as a whole one: the signatures
+  would have said `String` while the body was still decoded as JSON. The
+  payload encoding is now carried through the IR, because the type cannot say
+  it — a `string` reaches the emitters both from a JSON schema of
+  `{"type": "string"}`, whose body must be parsed, and from a text media type,
+  whose body must not be.
+
+  TypeScript emits `responseType: 'text'`; Rust gained `request_text` and
+  Swift `sendText`, neither of which existed; Kotlin's `requestText` already
+  existed and nothing had ever selected it; Ada was already correct.
+
+  Concretely, this is why it mattered: a JSONL export holding exactly one
+  event is valid JSON, so the default path parsed it cleanly and returned an
+  object from a method declared to return a string. It lied on short runs and
+  behaved on long ones.
+
+- **`getMetrics` (`text/plain`) had the same defect before any of this.** It
+  survived because Prometheus text nearly always throws on parse — it was not
+  working, it was lucky.
+
+### Changed
+
+- `scripts/update-spec.sh` pulls the document from `api.snaga.ai` rather than
+  from the website that mirrors it, and refuses to write a document with fewer
+  paths or schemas than the vendored one, naming the url it fetched.
+
 ## 0.5.6 — 2026-08-18
 
 ### Fixed — every SDK
