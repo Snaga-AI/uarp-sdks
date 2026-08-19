@@ -175,9 +175,9 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}/events/export`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn export_run_events(&self, run_id: &str) -> Result<()> {
+    pub async fn export_run_events(&self, run_id: &str) -> Result<String> {
         self.client
-            .request_empty(Request {
+            .request_text(Request {
                 method: Method::GET,
                 path: format!("/api/v1/runs/{}/events/export", encode_path(run_id)),
                 query: NO_QUERY,

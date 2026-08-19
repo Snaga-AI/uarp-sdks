@@ -162,8 +162,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/tenants/{slug}/style.css`
      */
-    public suspend fun getPublicTenantStylesheet(slug: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun getPublicTenantStylesheet(slug: String, options: RequestOptions = RequestOptions()): String {
+        return client.requestText(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/tenants/${encodePathSegment(slug)}/style.css",

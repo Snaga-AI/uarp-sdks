@@ -83,13 +83,14 @@ package body UARP.API.Runs is
           Options => Options);
    end Create_Run_Checkpoint;
 
-   procedure Export_Run_Events
+   function Export_Run_Events
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
    is
    begin
-      UARP.Client.Call_And_Discard
+      return UARP.Client.Call_Raw
          (Self,
           "GET",
           "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/events/export",

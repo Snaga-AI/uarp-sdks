@@ -30,8 +30,8 @@ public struct RegistryAPI: Sendable {
     /// Download tarball/artifact bundle for a spec version
     ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact`
-    public func registryGetArtifact(scope: String, name: String, version: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func registryGetArtifact(scope: String, name: String, version: String, options: RequestOptions = .init()) async throws -> Data {
+        return try await client.sendData(RequestSpec(
             method: "GET",
             path: "/api/v1/registry/spec/\(encodePathSegment(scope))/\(encodePathSegment(name))/\(encodePathSegment(version))/artifact",
             options: options

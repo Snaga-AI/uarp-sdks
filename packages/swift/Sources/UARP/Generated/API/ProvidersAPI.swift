@@ -133,8 +133,8 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.
-    public func llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = .init()) async throws -> Data {
+        return try await client.sendData(RequestSpec(
             method: "POST",
             path: "/api/v1/llm/audio/speech",
             body: try client.encode(body),

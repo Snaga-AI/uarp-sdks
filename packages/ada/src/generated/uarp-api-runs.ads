@@ -127,10 +127,11 @@ package UARP.API.Runs is
    --  GET /api/v1/runs/{runId}/events/export
    --
    --  Required scopes: runs:read.
-   procedure Export_Run_Events
+   function Export_Run_Events
      (Self : Client_Type;
       Run_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  Get run status and result
    --

@@ -167,11 +167,11 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/tenants/{slug}/style.css`
    */
-  getPublicTenantStylesheet(slug: string, options?: RequestOptions): Promise<void> {
+  getPublicTenantStylesheet(slug: string, options?: RequestOptions): Promise<string> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/tenants/${encodeURIComponent(String(slug))}/style.css`,
-      responseType: 'void',
+      responseType: 'text',
       options,
     });
   }

@@ -30,15 +30,16 @@ package body UARP.API.Registry is
              Options => Options));
    end Registry_Admin_List_Specs;
 
-   procedure Registry_Get_Artifact
+   function Registry_Get_Artifact
      (Self : Client_Type;
       Scope : String;
       Name : String;
       Version : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
    is
    begin
-      UARP.Client.Call_And_Discard
+      return UARP.Client.Call_Raw
          (Self,
           "GET",
           "/api/v1/registry/spec/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/" & UARP.Types.Encode_Path_Segment (Version) & "/artifact",

@@ -41,6 +41,45 @@ const VERBS = new Set([
 export const PRIM_JSON: TypeRef = { kind: 'prim', prim: 'json' };
 const PRIM_JSON_OBJECT: TypeRef = { kind: 'prim', prim: 'jsonObject' };
 const PRIM_STRING: TypeRef = { kind: 'prim', prim: 'string' };
+const PRIM_BINARY: TypeRef = { kind: 'prim', prim: 'binary' };
+
+/**
+ * Media types whose payload is text even though the type does not start with
+ * `text/`. Suffix rules (`+json`, `+xml`) cover the registered structured
+ * syntaxes without naming each vendor type.
+ */
+const TEXTUAL_APPLICATION_TYPES = new Set([
+  'application/x-ndjson',
+  'application/ndjson',
+  'application/jsonl',
+  'application/xml',
+  'application/javascript',
+  'application/ecmascript',
+  'application/yaml',
+  'application/x-yaml',
+  'application/graphql',
+  'application/sql',
+]);
+
+function isTextualMediaType(media: string): boolean {
+  const type = (media.split(';')[0] ?? media).trim().toLowerCase();
+  if (type.startsWith('text/')) return true;
+  if (type.endsWith('+json') || type.endsWith('+xml')) return true;
+  return TEXTUAL_APPLICATION_TYPES.has(type);
+}
+
+/**
+ * A string is only chosen when every declared type is text, and the asymmetry
+ * is deliberate: a `Blob` that happens to hold text is merely inconvenient,
+ * while a string decoded from bytes that are not text is corrupt in a way that
+ * surfaces far from the call that produced it. Reading every key rather than
+ * the first also keeps the answer independent of key order, which JSON does
+ * not promise to preserve.
+ */
+function everyMediaTypeIsText(content: Json): boolean {
+  const media = Object.keys(content);
+  return media.length > 0 && media.every(isTextualMediaType);
+}
 
 export function parse(doc: Json): Spec {
   return new Parser(doc).run();
@@ -501,17 +540,35 @@ class Parser {
         errorStatuses,
       };
     }
-    if (content['application/octet-stream'] || content['application/pdf'] || content['image/png']) {
-      return {
-        response: { status, type: { kind: 'prim', prim: 'binary' }, description: node.description },
-        sse: false,
-        errorStatuses,
-      };
-    }
-    if (content['text/plain'] || content['text/csv'] || content['text/html']) {
-      return { response: { status, type: PRIM_STRING, description: node.description }, sse: false, errorStatuses };
-    }
-    return { response: { status, description: node.description }, sse: false, errorStatuses };
+    // Everything that is not JSON or an event stream is decided by one rule
+    // rather than by a list of media types someone remembered to extend.
+    //
+    // The list is how this went wrong. A documented type that nobody had added
+    // to it fell past every branch and returned with no `type` at all, which
+    // the emitters read as "this operation answers with nothing" — and the
+    // TypeScript transport then cancelled the response body outright. Four
+    // live operations lost their payload that way: the run-event export
+    // (`application/x-ndjson`), a registry artifact (`application/zstd`), a
+    // tenant stylesheet (`text/css`), and speech synthesis (`audio/*`), which
+    // called a paid provider for audio and dropped every byte of it. Nothing
+    // failed; the methods returned `void` on a 200.
+    //
+    // The instinct was already written twenty lines above, where a response
+    // with no `content` at all falls back to raw JSON rather than throwing the
+    // payload away. It was simply never applied to the case where the document
+    // *does* say what it sends. Now the empty-`type` branch is gone, so a
+    // media type this file has never seen cannot silently become nothing.
+    const text = everyMediaTypeIsText(content);
+    return {
+      response: {
+        status,
+        type: text ? PRIM_STRING : PRIM_BINARY,
+        encoding: text ? 'text' : 'binary',
+        description: node.description,
+      },
+      sse: false,
+      errorStatuses,
+    };
   }
 
   /** Detect the `{ <items>, cursor, has_more }` envelope so emitters can auto-paginate. */

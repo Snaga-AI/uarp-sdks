@@ -191,9 +191,9 @@ impl PublicApi {
     /// rel=stylesheet\>`.
     ///
     /// `GET /api/v1/public/tenants/{slug}/style.css`
-    pub async fn get_public_tenant_stylesheet(&self, slug: &str) -> Result<()> {
+    pub async fn get_public_tenant_stylesheet(&self, slug: &str) -> Result<String> {
         self.client
-            .request_empty(Request {
+            .request_text(Request {
                 method: Method::GET,
                 path: format!("/api/v1/public/tenants/{}/style.css", encode_path(slug)),
                 query: NO_QUERY,

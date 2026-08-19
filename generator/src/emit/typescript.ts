@@ -269,8 +269,15 @@ function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream'): 
       else w.line('body,');
     }
     if (op.idempotent) w.line('idempotent: true,');
-    if (kind === 'request' && op.response.type?.kind === 'prim' && op.response.type.prim === 'binary') {
+    const binaryResponse = op.response.encoding === 'binary' ||
+      (op.response.type?.kind === 'prim' && op.response.type.prim === 'binary');
+    if (kind === 'request' && binaryResponse) {
       w.line("responseType: 'binary',");
+    } else if (kind === 'request' && op.response.encoding === 'text') {
+      // Not `json`: the default path tries `JSON.parse` and keeps the raw text
+      // only when it throws, so a single-line JSONL body would parse cleanly
+      // and hand back an object from a method typed to return a string.
+      w.line("responseType: 'text',");
     } else if (kind === 'request' && !op.response.type) {
       w.line("responseType: 'void',");
     }

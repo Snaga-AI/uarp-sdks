@@ -209,6 +209,16 @@ public final class UARPClient: @unchecked Sendable {
         return data
     }
 
+    /// Send a request and return the response body as text.
+    ///
+    /// `send` would route this through `JSONDecoder`, which rejects JSONL or
+    /// CSS outright and, on a body that is one quoted JSON string, would
+    /// quietly return it with the quotes removed.
+    public func sendText(_ spec: RequestSpec) async throws -> String {
+        let (data, _) = try await perform(spec)
+        return String(decoding: data, as: UTF8.self)
+    }
+
     /// Open a server-sent event stream.
     public func sendStream(_ spec: RequestSpec) -> EventStream {
         EventStream(client: self, spec: spec, options: spec.options.stream)

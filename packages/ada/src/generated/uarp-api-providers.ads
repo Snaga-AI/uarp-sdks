@@ -5,6 +5,7 @@
 with UARP.Client;
 with UARP.JSON_Support;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.Providers is
 
    subtype Client_Type is UARP.Client.Client_Type;
@@ -105,10 +106,11 @@ package UARP.API.Providers is
    --  POST /api/v1/llm/audio/speech
    --
    --  Required scopes: agents:read.
-   procedure LLM_Synthesize_Speech
+   function LLM_Synthesize_Speech
      (Self : Client_Type;
       Payload : UARP.Models.LLM_Synthesize_Speech_Request;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  Transcribe audio (Whisper) via the LLM proxy
    --

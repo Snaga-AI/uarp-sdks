@@ -99,6 +99,15 @@ export interface ResponseInfo {
   status: number;
   /** undefined for 204/no-content responses. */
   type?: TypeRef;
+  /**
+   * How the payload is carried, which `type` alone cannot say. A `string`
+   * reaches here from two different places — a JSON schema of `{"type":
+   * "string"}`, whose body must still be parsed, and a text media type, whose
+   * body must not be. Deciding by type alone gets one of them wrong: parsing a
+   * JSONL export succeeds whenever it happens to hold exactly one line, and
+   * then returns an object from a method declared to return a string.
+   */
+  encoding?: 'json' | 'text' | 'binary';
   description?: string;
 }
 
