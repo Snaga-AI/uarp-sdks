@@ -67,7 +67,7 @@ package UARP.API.Tenants is
    function List_API_Keys
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_API_Keys_Response;
 
    --  List the caller's tenant memberships + pending invites
    --

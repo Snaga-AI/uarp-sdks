@@ -86,7 +86,7 @@ impl ProgramsApi {
     /// `GET /api/v1/programs`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn list(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list(&self) -> Result<models::ListProgramsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

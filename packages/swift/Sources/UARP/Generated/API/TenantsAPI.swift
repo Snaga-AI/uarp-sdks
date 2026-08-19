@@ -76,7 +76,7 @@ public struct TenantsAPI: Sendable {
     /// `GET /api/v1/tenants/me/keys`
     ///
     /// Required scopes: `api_keys:read`.
-    public func listAPIKeys(options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listAPIKeys(options: RequestOptions = .init()) async throws -> ListAPIKeysResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/tenants/me/keys",

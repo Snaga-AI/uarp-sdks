@@ -1567,6 +1567,37 @@ public struct APIKeyResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// An API key as listed. The secret is shown once, at creation, and never here.
+public struct APIKeySummary: Codable, Hashable, Sendable {
+    public var keyId: String
+    public var name: String?
+    public var prefix: String
+    public var kind: String?
+    public var scopes: [String]?
+    public var status: String
+    public var createdAt: String?
+
+    public init(keyId: String, name: String? = nil, prefix: String, kind: String? = nil, scopes: [String]? = nil, status: String, createdAt: String? = nil) {
+        self.keyId = keyId
+        self.name = name
+        self.prefix = prefix
+        self.kind = kind
+        self.scopes = scopes
+        self.status = status
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case keyId = "key_id"
+        case name = "name"
+        case prefix = "prefix"
+        case kind = "kind"
+        case scopes = "scopes"
+        case status = "status"
+        case createdAt = "created_at"
+    }
+}
+
 /// `AppleNativeAuthRequest` model.
 public struct AppleNativeAuthRequest: Codable, Hashable, Sendable {
     /// Apple-signed JWT from `ASAuthorizationAppleIDCredential.identityToken`.
@@ -3764,13 +3795,13 @@ public struct CreateGuardrailRequest: Codable, Hashable, Sendable {
     /// Where the guardrail is called. Checked against the security-policy denylist and resolved
     /// through DNS before it is accepted.
     public var webhookURL: String
-    public var phase: CreateGuardrailRequestPhase
-    public var action: CreateGuardrailRequestAction?
+    public var phase: GuardrailPhase
+    public var action: GuardrailAction?
     public var timeoutMs: Int?
     /// Shared secret used to sign calls to `webhook_url`.
     public var secret: String?
 
-    public init(name: String, webhookURL: String, phase: CreateGuardrailRequestPhase, action: CreateGuardrailRequestAction? = nil, timeoutMs: Int? = nil, secret: String? = nil) {
+    public init(name: String, webhookURL: String, phase: GuardrailPhase, action: GuardrailAction? = nil, timeoutMs: Int? = nil, secret: String? = nil) {
         self.name = name
         self.webhookURL = webhookURL
         self.phase = phase
@@ -3787,55 +3818,6 @@ public struct CreateGuardrailRequest: Codable, Hashable, Sendable {
         case timeoutMs = "timeout_ms"
         case secret = "secret"
     }
-}
-
-/// `CreateGuardrailRequestAction` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct CreateGuardrailRequestAction: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let block = CreateGuardrailRequestAction(rawValue: "block")
-    public static let redact = CreateGuardrailRequestAction(rawValue: "redact")
-    public static let warn = CreateGuardrailRequestAction(rawValue: "warn")
-    public static let log = CreateGuardrailRequestAction(rawValue: "log")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [CreateGuardrailRequestAction] = [.block, .redact, .warn, .log]
-}
-
-/// `CreateGuardrailRequestPhase` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct CreateGuardrailRequestPhase: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let input = CreateGuardrailRequestPhase(rawValue: "input")
-    public static let output = CreateGuardrailRequestPhase(rawValue: "output")
-    public static let both = CreateGuardrailRequestPhase(rawValue: "both")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [CreateGuardrailRequestPhase] = [.input, .output, .both]
 }
 
 /// `CreateImprovementProposalRequest` model.
@@ -6903,6 +6885,89 @@ public struct GovernanceLedgerEntry: Codable, Hashable, Sendable {
     }
 }
 
+/// A webhook called before or after a run to allow, redact or block it.
+public struct Guardrail: Codable, Hashable, Sendable {
+    public var guardrailId: String
+    public var tenantId: String
+    public var name: String
+    public var webhookURL: String
+    public var phase: GuardrailPhase
+    public var action: GuardrailAction?
+    public var timeoutMs: Int?
+    public var createdAt: String?
+
+    public init(guardrailId: String, tenantId: String, name: String, webhookURL: String, phase: GuardrailPhase, action: GuardrailAction? = nil, timeoutMs: Int? = nil, createdAt: String? = nil) {
+        self.guardrailId = guardrailId
+        self.tenantId = tenantId
+        self.name = name
+        self.webhookURL = webhookURL
+        self.phase = phase
+        self.action = action
+        self.timeoutMs = timeoutMs
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case guardrailId = "guardrail_id"
+        case tenantId = "tenant_id"
+        case name = "name"
+        case webhookURL = "webhook_url"
+        case phase = "phase"
+        case action = "action"
+        case timeoutMs = "timeout_ms"
+        case createdAt = "created_at"
+    }
+}
+
+/// `GuardrailAction` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GuardrailAction: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let block = GuardrailAction(rawValue: "block")
+    public static let redact = GuardrailAction(rawValue: "redact")
+    public static let warn = GuardrailAction(rawValue: "warn")
+    public static let log = GuardrailAction(rawValue: "log")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GuardrailAction] = [.block, .redact, .warn, .log]
+}
+
+/// `GuardrailPhase` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GuardrailPhase: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let input = GuardrailPhase(rawValue: "input")
+    public static let output = GuardrailPhase(rawValue: "output")
+    public static let both = GuardrailPhase(rawValue: "both")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GuardrailPhase] = [.input, .output, .both]
+}
+
 /// `HandleStripeWebhookRequest` model.
 public struct HandleStripeWebhookRequest: Codable, Hashable, Sendable {
     public var type: String
@@ -7550,6 +7615,22 @@ public struct ListAmbassadorVetoesResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListAPIKeysResponse` model.
+public struct ListAPIKeysResponse: Codable, Hashable, Sendable {
+    public var keys: [APIKeySummary]
+    public var total: Int?
+
+    public init(keys: [APIKeySummary], total: Int? = nil) {
+        self.keys = keys
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case keys = "keys"
+        case total = "total"
+    }
+}
+
 /// `ListArbiterCasesResponse` model.
 public struct ListArbiterCasesResponse: Codable, Hashable, Sendable {
     public var cases: [ArbiterCase]
@@ -7874,6 +7955,22 @@ public struct ListGoalsResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case goals = "goals"
+    }
+}
+
+/// `ListGuardrailsResponse` model.
+public struct ListGuardrailsResponse: Codable, Hashable, Sendable {
+    public var guardrails: [Guardrail]
+    public var total: Int?
+
+    public init(guardrails: [Guardrail], total: Int? = nil) {
+        self.guardrails = guardrails
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case guardrails = "guardrails"
+        case total = "total"
     }
 }
 
@@ -8313,6 +8410,19 @@ public struct ListOAuthLoginProvidersResponseProviderId: RawRepresentable, Codab
     public static let knownValues: [ListOAuthLoginProvidersResponseProviderId] = [.github, .google, .apple]
 }
 
+/// `ListProgramsResponse` model.
+public struct ListProgramsResponse: Codable, Hashable, Sendable {
+    public var programs: [Program]
+
+    public init(programs: [Program]) {
+        self.programs = programs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case programs = "programs"
+    }
+}
+
 /// `ListProviderModelsResponse` model.
 public struct ListProviderModelsResponse: Codable, Hashable, Sendable {
     /// Registered provider id (admin → Providers).
@@ -8357,6 +8467,19 @@ public struct ListProviderModelsResponseModel: Codable, Hashable, Sendable {
         case name = "name"
         case created = "created"
         case capabilities = "capabilities"
+    }
+}
+
+/// `ListProvidersResponse` model.
+public struct ListProvidersResponse: Codable, Hashable, Sendable {
+    public var providers: [LLMProvider]
+
+    public init(providers: [LLMProvider]) {
+        self.providers = providers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case providers = "providers"
     }
 }
 
@@ -8867,6 +8990,22 @@ public struct ListWebhooksResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListWorkspacesResponse` model.
+public struct ListWorkspacesResponse: Codable, Hashable, Sendable {
+    public var workspaces: [Workspace]
+    public var total: Int?
+
+    public init(workspaces: [Workspace], total: Int? = nil) {
+        self.workspaces = workspaces
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case workspaces = "workspaces"
+        case total = "total"
+    }
+}
+
 /// `ListWorkspaceTrashResponse` model.
 public struct ListWorkspaceTrashResponse: Codable, Hashable, Sendable {
     public var items: [JSONObject]?
@@ -8912,6 +9051,40 @@ public struct LLMCredential: Codable, Hashable, Sendable {
         case endpointURL = "endpoint_url"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+}
+
+/// An LLM provider the platform knows about, and whether a key is configured.
+public struct LLMProvider: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var canonical: String?
+    public var configured: Bool
+    public var configuredLevel: String?
+    public var defaultEndpoint: String?
+    public var apiKeyEnv: String?
+    public var local: Bool?
+
+    public init(id: String, name: String, canonical: String? = nil, configured: Bool, configuredLevel: String? = nil, defaultEndpoint: String? = nil, apiKeyEnv: String? = nil, local: Bool? = nil) {
+        self.id = id
+        self.name = name
+        self.canonical = canonical
+        self.configured = configured
+        self.configuredLevel = configuredLevel
+        self.defaultEndpoint = defaultEndpoint
+        self.apiKeyEnv = apiKeyEnv
+        self.local = local
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case canonical = "canonical"
+        case configured = "configured"
+        case configuredLevel = "configured_level"
+        case defaultEndpoint = "default_endpoint"
+        case apiKeyEnv = "api_key_env"
+        case local = "local"
     }
 }
 
@@ -10031,6 +10204,63 @@ public struct ProductUpdate: Codable, Hashable, Sendable {
         case compareAtPriceCents = "compare_at_price_cents"
         case bodyHtml = "body_html"
         case options = "options"
+    }
+}
+
+/// An ordered curriculum an agent delivers.
+public struct Program: Codable, Hashable, Sendable {
+    public var programId: String
+    public var tenantId: String
+    public var agentId: String
+    public var name: String
+    public var `description`: String?
+    public var listingId: String?
+    public var steps: [ProgramStep]
+    public var createdAt: String?
+    public var updatedAt: String?
+
+    public init(programId: String, tenantId: String, agentId: String, name: String, `description`: String? = nil, listingId: String? = nil, steps: [ProgramStep], createdAt: String? = nil, updatedAt: String? = nil) {
+        self.programId = programId
+        self.tenantId = tenantId
+        self.agentId = agentId
+        self.name = name
+        self.`description` = `description`
+        self.listingId = listingId
+        self.steps = steps
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case programId = "program_id"
+        case tenantId = "tenant_id"
+        case agentId = "agent_id"
+        case name = "name"
+        case `description` = "description"
+        case listingId = "listing_id"
+        case steps = "steps"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// `ProgramStep` model.
+public struct ProgramStep: Codable, Hashable, Sendable {
+    /// Generated by the server.
+    public var stepId: String
+    public var title: String
+    public var orderIndex: Int
+
+    public init(stepId: String, title: String, orderIndex: Int) {
+        self.stepId = stepId
+        self.title = title
+        self.orderIndex = orderIndex
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stepId = "step_id"
+        case title = "title"
+        case orderIndex = "order_index"
     }
 }
 

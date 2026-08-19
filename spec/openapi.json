@@ -3428,6 +3428,271 @@
                     "review_due_at"
                 ]
             },
+            "Guardrail": {
+                "type": "object",
+                "description": "A webhook called before or after a run to allow, redact or block it.",
+                "properties": {
+                    "guardrail_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "webhook_url": {
+                        "type": "string",
+                        "format": "uri"
+                    },
+                    "phase": {
+                        "type": "string",
+                        "enum": [
+                            "input",
+                            "output",
+                            "both"
+                        ]
+                    },
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "block",
+                            "redact",
+                            "warn",
+                            "log"
+                        ]
+                    },
+                    "timeout_ms": {
+                        "type": "integer"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "guardrail_id",
+                    "tenant_id",
+                    "name",
+                    "webhook_url",
+                    "phase"
+                ]
+            },
+            "ListGuardrailsResponse": {
+                "type": "object",
+                "properties": {
+                    "guardrails": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Guardrail"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "guardrails"
+                ]
+            },
+            "ListWorkspacesResponse": {
+                "type": "object",
+                "properties": {
+                    "workspaces": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Workspace"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "workspaces"
+                ]
+            },
+            "ApiKeySummary": {
+                "type": "object",
+                "description": "An API key as listed. The secret is shown once, at creation, and never here.",
+                "properties": {
+                    "key_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "prefix": {
+                        "type": "string"
+                    },
+                    "kind": {
+                        "type": "string"
+                    },
+                    "scopes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "key_id",
+                    "prefix",
+                    "status"
+                ]
+            },
+            "ListApiKeysResponse": {
+                "type": "object",
+                "properties": {
+                    "keys": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ApiKeySummary"
+                        }
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "keys"
+                ]
+            },
+            "LLMProvider": {
+                "type": "object",
+                "description": "An LLM provider the platform knows about, and whether a key is configured.",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "canonical": {
+                        "type": "string"
+                    },
+                    "configured": {
+                        "type": "boolean"
+                    },
+                    "configured_level": {
+                        "type": "string"
+                    },
+                    "default_endpoint": {
+                        "type": "string"
+                    },
+                    "api_key_env": {
+                        "type": "string"
+                    },
+                    "local": {
+                        "type": "boolean"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "configured"
+                ]
+            },
+            "ListProvidersResponse": {
+                "type": "object",
+                "properties": {
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/LLMProvider"
+                        }
+                    }
+                },
+                "required": [
+                    "providers"
+                ]
+            },
+            "ProgramStep": {
+                "type": "object",
+                "properties": {
+                    "step_id": {
+                        "type": "string",
+                        "description": "Generated by the server."
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "order_index": {
+                        "type": "integer"
+                    }
+                },
+                "required": [
+                    "step_id",
+                    "title",
+                    "order_index"
+                ]
+            },
+            "Program": {
+                "type": "object",
+                "description": "An ordered curriculum an agent delivers.",
+                "properties": {
+                    "program_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "listing_id": {
+                        "type": "string"
+                    },
+                    "steps": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ProgramStep"
+                        }
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                },
+                "required": [
+                    "program_id",
+                    "tenant_id",
+                    "agent_id",
+                    "name",
+                    "steps"
+                ]
+            },
+            "ListProgramsResponse": {
+                "type": "object",
+                "properties": {
+                    "programs": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/Program"
+                        }
+                    }
+                },
+                "required": [
+                    "programs"
+                ]
+            },
             "Company": {
                 "type": "object",
                 "description": "Autonomous agent company — strategist + teams pursuing strategic goals.",
@@ -11190,6 +11455,13 @@
                 "responses": {
                     "200": {
                         "description": "API key list",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/ListApiKeysResponse"
+                                }
+                            }
+                        },
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -19075,7 +19347,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ListGuardrailsResponse"
                                 }
                             }
                         },
@@ -19390,7 +19662,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ListWorkspacesResponse"
                                 }
                             }
                         },
@@ -20609,7 +20881,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ListProgramsResponse"
                                 }
                             }
                         },
@@ -20961,7 +21233,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ListProvidersResponse"
                                 }
                             }
                         },

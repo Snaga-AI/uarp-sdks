@@ -77,8 +77,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/providers`
      */
-    public suspend fun list(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun list(options: RequestOptions = RequestOptions()): ListProvidersResponse {
+        return client.request<ListProvidersResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/providers",

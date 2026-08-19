@@ -67,8 +67,8 @@ public class GuardrailsApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `guardrails:read`.
      */
-    public suspend fun list(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun list(options: RequestOptions = RequestOptions()): ListGuardrailsResponse {
+        return client.request<ListGuardrailsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/guardrails",

@@ -200,8 +200,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun list(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun list(options: RequestOptions = RequestOptions()): ListWorkspacesResponse {
+        return client.request<ListWorkspacesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/workspaces",

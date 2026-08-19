@@ -85,8 +85,8 @@ public class ProgramsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun list(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun list(options: RequestOptions = RequestOptions()): ListProgramsResponse {
+        return client.request<ListProgramsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/programs",

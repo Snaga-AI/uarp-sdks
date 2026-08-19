@@ -82,7 +82,7 @@ impl ProvidersApi {
     /// List configured LLM providers
     ///
     /// `GET /api/v1/providers`
-    pub async fn list(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list(&self) -> Result<models::ListProvidersResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
