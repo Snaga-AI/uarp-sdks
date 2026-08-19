@@ -10,6 +10,7 @@ import type {
   GetMyHeadAgentTemplateResponse,
   JsonObject,
   JsonValue,
+  ListAPIKeysResponse,
   ListMyTenantsResponse,
   LocateMyAgentResponse,
   Tenant,
@@ -99,7 +100,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `api_keys:read`.
    */
-  listAPIKeys(options?: RequestOptions): Promise<JsonValue> {
+  listAPIKeys(options?: RequestOptions): Promise<ListAPIKeysResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/tenants/me/keys',

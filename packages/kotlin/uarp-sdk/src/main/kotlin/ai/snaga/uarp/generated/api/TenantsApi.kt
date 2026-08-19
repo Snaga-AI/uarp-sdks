@@ -109,8 +109,8 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `api_keys:read`.
      */
-    public suspend fun listAPIKeys(options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun listAPIKeys(options: RequestOptions = RequestOptions()): ListAPIKeysResponse {
+        return client.request<ListAPIKeysResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/tenants/me/keys",

@@ -1175,6 +1175,22 @@ public data class APIKeyResponse(
 )
 
 /**
+ * An API key as listed. The secret is shown once, at creation, and never here.
+ */
+@Serializable
+public data class APIKeySummary(
+    @SerialName("key_id")
+    public val keyId: String,
+    public val name: String? = null,
+    public val prefix: String,
+    public val kind: String? = null,
+    public val scopes: List<String>? = null,
+    public val status: String,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+)
+
+/**
  * `AppleNativeAuthRequest` model.
  */
 @Serializable
@@ -2877,8 +2893,8 @@ public data class CreateGuardrailRequest(
      */
     @SerialName("webhook_url")
     public val webhookURL: String,
-    public val phase: CreateGuardrailRequestPhase,
-    public val action: CreateGuardrailRequestAction? = null,
+    public val phase: GuardrailPhase,
+    public val action: GuardrailAction? = null,
     @SerialName("timeout_ms")
     public val timeoutMs: Long? = null,
     /**
@@ -2886,65 +2902,6 @@ public data class CreateGuardrailRequest(
      */
     public val secret: String? = null,
 )
-
-/**
- * `CreateGuardrailRequestAction` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = CreateGuardrailRequestActionSerializer::class)
-@JvmInline
-public value class CreateGuardrailRequestAction(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val BLOCK: CreateGuardrailRequestAction = CreateGuardrailRequestAction("block")
-        public val REDACT: CreateGuardrailRequestAction = CreateGuardrailRequestAction("redact")
-        public val WARN: CreateGuardrailRequestAction = CreateGuardrailRequestAction("warn")
-        public val LOG: CreateGuardrailRequestAction = CreateGuardrailRequestAction("log")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<CreateGuardrailRequestAction> = listOf(BLOCK, REDACT, WARN, LOG)
-    }
-}
-
-public object CreateGuardrailRequestActionSerializer : KSerializer<CreateGuardrailRequestAction> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateGuardrailRequestAction", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CreateGuardrailRequestAction): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): CreateGuardrailRequestAction = CreateGuardrailRequestAction(decoder.decodeString())
-}
-
-/**
- * `CreateGuardrailRequestPhase` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = CreateGuardrailRequestPhaseSerializer::class)
-@JvmInline
-public value class CreateGuardrailRequestPhase(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val INPUT: CreateGuardrailRequestPhase = CreateGuardrailRequestPhase("input")
-        public val OUTPUT: CreateGuardrailRequestPhase = CreateGuardrailRequestPhase("output")
-        public val BOTH: CreateGuardrailRequestPhase = CreateGuardrailRequestPhase("both")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<CreateGuardrailRequestPhase> = listOf(INPUT, OUTPUT, BOTH)
-    }
-}
-
-public object CreateGuardrailRequestPhaseSerializer : KSerializer<CreateGuardrailRequestPhase> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateGuardrailRequestPhase", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CreateGuardrailRequestPhase): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): CreateGuardrailRequestPhase = CreateGuardrailRequestPhase(decoder.decodeString())
-}
 
 /**
  * `CreateImprovementProposalRequest` model.
@@ -5108,6 +5065,85 @@ public data class GovernanceLedgerEntry(
 )
 
 /**
+ * A webhook called before or after a run to allow, redact or block it.
+ */
+@Serializable
+public data class Guardrail(
+    @SerialName("guardrail_id")
+    public val guardrailId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val name: String,
+    @SerialName("webhook_url")
+    public val webhookURL: String,
+    public val phase: GuardrailPhase,
+    public val action: GuardrailAction? = null,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long? = null,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+)
+
+/**
+ * `GuardrailAction` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GuardrailActionSerializer::class)
+@JvmInline
+public value class GuardrailAction(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val BLOCK: GuardrailAction = GuardrailAction("block")
+        public val REDACT: GuardrailAction = GuardrailAction("redact")
+        public val WARN: GuardrailAction = GuardrailAction("warn")
+        public val LOG: GuardrailAction = GuardrailAction("log")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GuardrailAction> = listOf(BLOCK, REDACT, WARN, LOG)
+    }
+}
+
+public object GuardrailActionSerializer : KSerializer<GuardrailAction> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GuardrailAction", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GuardrailAction): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GuardrailAction = GuardrailAction(decoder.decodeString())
+}
+
+/**
+ * `GuardrailPhase` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GuardrailPhaseSerializer::class)
+@JvmInline
+public value class GuardrailPhase(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INPUT: GuardrailPhase = GuardrailPhase("input")
+        public val OUTPUT: GuardrailPhase = GuardrailPhase("output")
+        public val BOTH: GuardrailPhase = GuardrailPhase("both")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GuardrailPhase> = listOf(INPUT, OUTPUT, BOTH)
+    }
+}
+
+public object GuardrailPhaseSerializer : KSerializer<GuardrailPhase> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GuardrailPhase", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GuardrailPhase): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GuardrailPhase = GuardrailPhase(decoder.decodeString())
+}
+
+/**
  * `HandleStripeWebhookRequest` model.
  */
 @Serializable
@@ -5550,6 +5586,15 @@ public data class ListAmbassadorVetoesResponse(
 )
 
 /**
+ * `ListAPIKeysResponse` model.
+ */
+@Serializable
+public data class ListAPIKeysResponse(
+    public val keys: List<APIKeySummary>,
+    public val total: Long? = null,
+)
+
+/**
  * `ListArbiterCasesResponse` model.
  */
 @Serializable
@@ -5753,6 +5798,15 @@ public data class ListFilesResponse(
 @Serializable
 public data class ListGoalsResponse(
     public val goals: List<Goal>? = null,
+)
+
+/**
+ * `ListGuardrailsResponse` model.
+ */
+@Serializable
+public data class ListGuardrailsResponse(
+    public val guardrails: List<Guardrail>,
+    public val total: Long? = null,
 )
 
 /**
@@ -6042,6 +6096,14 @@ public object ListOAuthLoginProvidersResponseProviderIdSerializer : KSerializer<
 }
 
 /**
+ * `ListProgramsResponse` model.
+ */
+@Serializable
+public data class ListProgramsResponse(
+    public val programs: List<Program>,
+)
+
+/**
  * `ListProviderModelsResponse` model.
  */
 @Serializable
@@ -6071,6 +6133,14 @@ public data class ListProviderModelsResponseModel(
     public val name: String? = null,
     public val created: Long? = null,
     public val capabilities: JsonObject? = null,
+)
+
+/**
+ * `ListProvidersResponse` model.
+ */
+@Serializable
+public data class ListProvidersResponse(
+    public val providers: List<LLMProvider>,
 )
 
 /**
@@ -6386,6 +6456,15 @@ public data class ListWebhooksResponse(
 )
 
 /**
+ * `ListWorkspacesResponse` model.
+ */
+@Serializable
+public data class ListWorkspacesResponse(
+    public val workspaces: List<Workspace>,
+    public val total: Long? = null,
+)
+
+/**
  * `ListWorkspaceTrashResponse` model.
  */
 @Serializable
@@ -6414,6 +6493,24 @@ public data class LLMCredential(
     public val createdAt: String? = null,
     @SerialName("updated_at")
     public val updatedAt: String? = null,
+)
+
+/**
+ * An LLM provider the platform knows about, and whether a key is configured.
+ */
+@Serializable
+public data class LLMProvider(
+    public val id: String,
+    public val name: String,
+    public val canonical: String? = null,
+    public val configured: Boolean,
+    @SerialName("configured_level")
+    public val configuredLevel: String? = null,
+    @SerialName("default_endpoint")
+    public val defaultEndpoint: String? = null,
+    @SerialName("api_key_env")
+    public val apiKeyEnv: String? = null,
+    public val local: Boolean? = null,
 )
 
 /**
@@ -7252,6 +7349,43 @@ public data class ProductUpdate(
     @SerialName("body_html")
     public val bodyHtml: String? = null,
     public val options: List<JsonObject>? = null,
+)
+
+/**
+ * An ordered curriculum an agent delivers.
+ */
+@Serializable
+public data class Program(
+    @SerialName("program_id")
+    public val programId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val name: String,
+    public val description: String? = null,
+    @SerialName("listing_id")
+    public val listingId: String? = null,
+    public val steps: List<ProgramStep>,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
+ * `ProgramStep` model.
+ */
+@Serializable
+public data class ProgramStep(
+    /**
+     * Generated by the server.
+     */
+    @SerialName("step_id")
+    public val stepId: String,
+    public val title: String,
+    @SerialName("order_index")
+    public val orderIndex: Long,
 )
 
 /**

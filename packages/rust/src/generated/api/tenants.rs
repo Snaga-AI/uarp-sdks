@@ -111,7 +111,7 @@ impl TenantsApi {
     /// `GET /api/v1/tenants/me/keys`
     ///
     /// Required scopes: `api_keys:read`.
-    pub async fn list_api_keys(&self) -> Result<serde_json::Value> {
+    pub async fn list_api_keys(&self) -> Result<models::ListAPIKeysResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

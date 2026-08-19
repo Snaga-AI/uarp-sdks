@@ -68,7 +68,7 @@ impl GuardrailsApi {
     /// `GET /api/v1/guardrails`
     ///
     /// Required scopes: `guardrails:read`.
-    pub async fn list(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list(&self) -> Result<models::ListGuardrailsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

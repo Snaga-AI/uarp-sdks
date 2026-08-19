@@ -1288,6 +1288,22 @@ pub struct APIKeyResponse {
     pub warning: Option<String>,
 }
 
+/// An API key as listed. The secret is shown once, at creation, and never here.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct APIKeySummary {
+    pub key_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    pub prefix: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scopes: Option<Vec<String>>,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+}
+
 /// `AppleNativeAuthRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AppleNativeAuthRequest {
@@ -3123,106 +3139,14 @@ pub struct CreateGuardrailRequest {
     /// Where the guardrail is called. Checked against the security-policy denylist and resolved
     /// through DNS before it is accepted.
     pub webhook_url: String,
-    pub phase: CreateGuardrailRequestPhase,
+    pub phase: GuardrailPhase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub action: Option<CreateGuardrailRequestAction>,
+    pub action: Option<GuardrailAction>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeout_ms: Option<i64>,
     /// Shared secret used to sign calls to `webhook_url`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub secret: Option<String>,
-}
-
-/// `CreateGuardrailRequestAction` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum CreateGuardrailRequestAction {
-    #[default]
-    #[serde(rename = "block")]
-    Block,
-    #[serde(rename = "redact")]
-    Redact,
-    #[serde(rename = "warn")]
-    Warn,
-    #[serde(rename = "log")]
-    Log,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl CreateGuardrailRequestAction {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Block => "block",
-            Self::Redact => "redact",
-            Self::Warn => "warn",
-            Self::Log => "log",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for CreateGuardrailRequestAction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for CreateGuardrailRequestAction {
-    fn from(value: &str) -> Self {
-        match value {
-            "block" => Self::Block,
-            "redact" => Self::Redact,
-            "warn" => Self::Warn,
-            "log" => Self::Log,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `CreateGuardrailRequestPhase` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum CreateGuardrailRequestPhase {
-    #[default]
-    #[serde(rename = "input")]
-    Input,
-    #[serde(rename = "output")]
-    Output,
-    #[serde(rename = "both")]
-    Both,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl CreateGuardrailRequestPhase {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Input => "input",
-            Self::Output => "output",
-            Self::Both => "both",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for CreateGuardrailRequestPhase {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for CreateGuardrailRequestPhase {
-    fn from(value: &str) -> Self {
-        match value {
-            "input" => Self::Input,
-            "output" => Self::Output,
-            "both" => Self::Both,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `CreateImprovementProposalRequest` model.
@@ -5568,6 +5492,114 @@ pub struct GovernanceLedgerEntry {
     pub hash: String,
 }
 
+/// A webhook called before or after a run to allow, redact or block it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Guardrail {
+    pub guardrail_id: String,
+    pub tenant_id: String,
+    pub name: String,
+    pub webhook_url: String,
+    pub phase: GuardrailPhase,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<GuardrailAction>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+}
+
+/// `GuardrailAction` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GuardrailAction {
+    #[default]
+    #[serde(rename = "block")]
+    Block,
+    #[serde(rename = "redact")]
+    Redact,
+    #[serde(rename = "warn")]
+    Warn,
+    #[serde(rename = "log")]
+    Log,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GuardrailAction {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Block => "block",
+            Self::Redact => "redact",
+            Self::Warn => "warn",
+            Self::Log => "log",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GuardrailAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GuardrailAction {
+    fn from(value: &str) -> Self {
+        match value {
+            "block" => Self::Block,
+            "redact" => Self::Redact,
+            "warn" => Self::Warn,
+            "log" => Self::Log,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GuardrailPhase` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GuardrailPhase {
+    #[default]
+    #[serde(rename = "input")]
+    Input,
+    #[serde(rename = "output")]
+    Output,
+    #[serde(rename = "both")]
+    Both,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GuardrailPhase {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Input => "input",
+            Self::Output => "output",
+            Self::Both => "both",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GuardrailPhase {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GuardrailPhase {
+    fn from(value: &str) -> Self {
+        match value {
+            "input" => Self::Input,
+            "output" => Self::Output,
+            "both" => Self::Both,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `HandleStripeWebhookRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct HandleStripeWebhookRequest {
@@ -6019,6 +6051,14 @@ pub struct ListAmbassadorVetoesResponse {
     pub vetoes: Option<Vec<Veto>>,
 }
 
+/// `ListAPIKeysResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAPIKeysResponse {
+    pub keys: Vec<APIKeySummary>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+}
+
 /// `ListArbiterCasesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListArbiterCasesResponse {
@@ -6226,6 +6266,14 @@ pub struct ListFilesResponse {
 pub struct ListGoalsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub goals: Option<Vec<Goal>>,
+}
+
+/// `ListGuardrailsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListGuardrailsResponse {
+    pub guardrails: Vec<Guardrail>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
 }
 
 /// `ListIntegrationsCatalogResponse` model.
@@ -6507,6 +6555,12 @@ impl From<&str> for ListOAuthLoginProvidersResponseProviderId {
     }
 }
 
+/// `ListProgramsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListProgramsResponse {
+    pub programs: Vec<Program>,
+}
+
 /// `ListProviderModelsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListProviderModelsResponse {
@@ -6531,6 +6585,12 @@ pub struct ListProviderModelsResponseModel {
     pub created: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub capabilities: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `ListProvidersResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListProvidersResponse {
+    pub providers: Vec<LLMProvider>,
 }
 
 /// `ListPublicPlansResponse` model.
@@ -6813,6 +6873,14 @@ pub struct ListWebhooksResponse {
     pub total: i64,
 }
 
+/// `ListWorkspacesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListWorkspacesResponse {
+    pub workspaces: Vec<Workspace>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+}
+
 /// `ListWorkspaceTrashResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListWorkspaceTrashResponse {
@@ -6836,6 +6904,24 @@ pub struct LLMCredential {
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+}
+
+/// An LLM provider the platform knows about, and whether a key is configured.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMProvider {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canonical: Option<String>,
+    pub configured: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured_level: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_endpoint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_env: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub local: Option<bool>,
 }
 
 /// `LLMSynthesizeSpeechRequest` model.
@@ -7793,6 +7879,33 @@ pub struct ProductUpdate {
     pub body_html: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub options: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
+/// An ordered curriculum an agent delivers.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Program {
+    pub program_id: String,
+    pub tenant_id: String,
+    pub agent_id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub listing_id: Option<String>,
+    pub steps: Vec<ProgramStep>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
+/// `ProgramStep` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ProgramStep {
+    /// Generated by the server.
+    pub step_id: String,
+    pub title: String,
+    pub order_index: i64,
 }
 
 /// `PublicDomainLookupResponse` model.

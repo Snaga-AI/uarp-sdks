@@ -42,7 +42,7 @@ public struct GuardrailsAPI: Sendable {
     /// `GET /api/v1/guardrails`
     ///
     /// Required scopes: `guardrails:read`.
-    public func list(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func list(options: RequestOptions = .init()) async throws -> ListGuardrailsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/guardrails",

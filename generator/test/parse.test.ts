@@ -248,7 +248,12 @@ test('parses the production document into the expected shape', () => {
   // `RiskClassification`, `RiskClassificationUpdate` and their two enums. The
   // team configs land here for the first time because 0.5.5 was cut before that
   // API change deployed.
-  assert.equal(spec.types.length, 625);
+  // 625 -> 635: ten named types from two document fixes, all of them list
+  // shapes that were `{"type": "object"}` before. Seven from the four lists
+  // that did not say what they return (`Guardrail`, `ApiKeySummary`,
+  // `LLMProvider` and four envelopes), three from programs (`ProgramStep`,
+  // `Program`, `ListProgramsResponse`).
+  assert.equal(spec.types.length, 635);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);
