@@ -95,20 +95,21 @@ package body UARP.API.Sessions is
    function Create_Session_Branch
      (Self : Client_Type;
       Session_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Session_Branch_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Session_Branch
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/branch",
-          Payload => Payload,
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/branch",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Create_Session_Branch;
 
    function Create_Session_Share

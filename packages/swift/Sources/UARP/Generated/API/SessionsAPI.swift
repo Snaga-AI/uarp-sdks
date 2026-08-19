@@ -88,7 +88,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/branch`
     ///
     /// Required scopes: `sessions:write`.
-    public func createSessionBranch(sessionId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createSessionBranch(sessionId: String, body: CreateSessionBranchRequest? = nil, options: RequestOptions = .init()) async throws -> SessionBranch {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

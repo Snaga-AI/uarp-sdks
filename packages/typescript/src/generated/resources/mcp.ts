@@ -9,6 +9,8 @@ import type {
   JsonObject,
   JsonValue,
   ListMCPServersResponse,
+  MCPServer,
+  MCPServerWithConnectResult,
   McpjsonRpcRequest,
 } from '../models.js';
 
@@ -31,7 +33,7 @@ export class MCPResource extends APIResource {
    *
    * `POST /api/v1/mcp/servers`
    */
-  createMCPServer(body: CreateMCPServerRequest, options?: RequestOptions): Promise<JsonObject> {
+  createMCPServer(body: CreateMCPServerRequest, options?: RequestOptions): Promise<MCPServer> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/mcp/servers',
@@ -60,7 +62,7 @@ export class MCPResource extends APIResource {
    *
    * `GET /api/v1/mcp/servers/{serverId}`
    */
-  getMCPServer(serverId: string, options?: RequestOptions): Promise<JsonObject> {
+  getMCPServer(serverId: string, options?: RequestOptions): Promise<MCPServer> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}`,
@@ -121,7 +123,7 @@ export class MCPResource extends APIResource {
    *
    * `PATCH /api/v1/mcp/servers/{serverId}`
    */
-  updateMCPServer(serverId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateMCPServer(serverId: string, body: JsonObject, options?: RequestOptions): Promise<MCPServerWithConnectResult> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}`,

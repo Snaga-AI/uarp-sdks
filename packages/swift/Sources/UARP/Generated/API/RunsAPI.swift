@@ -10,13 +10,18 @@ public struct RunsAPI: Sendable {
 
     /// Approve a pending tool call (HITL)
     ///
+    /// The body is optional; sending none approves without a message. `reject` has always taken a
+    /// body, and the asymmetry was an omission rather than a design.
+    ///
     /// `POST /api/v1/runs/{runId}/approve`
     ///
     /// Required scopes: `runs:create`.
-    public func approveRun(runId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func approveRun(runId: String, body: RunApproveRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/approve",
+            body: encodedBody,
             idempotent: true,
             options: options
         ))
@@ -205,10 +210,10 @@ public struct RunsAPI: Sendable {
 
     /// Stream every item returned by `listRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
         autoPaginate(
             fetch: { cursor in try await self.list(agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, options: options) },
-            items: { $0.items ?? [] },
+            items: { $0.items },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }
         )

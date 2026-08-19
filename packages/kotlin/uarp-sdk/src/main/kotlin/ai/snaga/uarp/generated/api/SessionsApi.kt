@@ -124,8 +124,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun createSessionBranch(sessionId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createSessionBranch(sessionId: String, body: CreateSessionBranchRequest? = null, options: RequestOptions = RequestOptions()): SessionBranch {
+        return client.request<SessionBranch>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/branch",
