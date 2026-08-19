@@ -23,7 +23,7 @@ public struct HealthAPI: Sendable {
     ///
     /// `GET /metrics`
     public func getMetrics(options: RequestOptions = .init()) async throws -> String {
-        return try await client.send(RequestSpec(
+        return try await client.sendText(RequestSpec(
             method: "GET",
             path: "/metrics",
             options: options

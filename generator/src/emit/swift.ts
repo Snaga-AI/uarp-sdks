@@ -358,11 +358,13 @@ function emitOperation(w: Writer, op: Operation): void {
   }, '}');
 }
 
-type CallKind = 'json' | 'void' | 'data' | 'stream';
+type CallKind = 'json' | 'void' | 'data' | 'text' | 'stream';
 
 function callKind(op: Operation): CallKind {
   if (!op.response.type) return 'void';
   if (op.response.type.kind === 'prim' && op.response.type.prim === 'binary') return 'data';
+  // A text media type is not JSON; `JSONDecoder` cannot read it.
+  if (op.response.encoding === 'text') return 'text';
   return 'json';
 }
 
@@ -412,7 +414,9 @@ function emitSpec(w: Writer, op: Operation, args: Arg[], kind: CallKind): void {
         ? 'try await client.sendVoid'
         : kind === 'data'
           ? 'try await client.sendData'
-          : 'try await client.send';
+          : kind === 'text'
+            ? 'try await client.sendText'
+            : 'try await client.send';
 
   // Multi-statement bodies need an explicit `return`.
   const prefix = kind === 'void' ? '' : 'return ';

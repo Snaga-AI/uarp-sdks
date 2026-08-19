@@ -37,6 +37,7 @@ export class HealthResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/metrics',
+      responseType: 'text',
       options,
     });
   }

@@ -45,7 +45,7 @@ public class HealthApi internal constructor(private val client: UarpClient) {
      * `GET /metrics`
      */
     public suspend fun getMetrics(options: RequestOptions = RequestOptions()): String {
-        return client.request<String>(
+        return client.requestText(
             RequestSpec(
                 method = "GET",
                 path = "/metrics",

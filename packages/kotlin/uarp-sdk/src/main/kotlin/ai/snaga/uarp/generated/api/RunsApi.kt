@@ -130,8 +130,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun exportRunEvents(runId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun exportRunEvents(runId: String, options: RequestOptions = RequestOptions()): String {
+        return client.requestText(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/events/export",

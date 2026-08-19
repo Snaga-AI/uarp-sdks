@@ -92,8 +92,8 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}/events/export`
     ///
     /// Required scopes: `runs:read`.
-    public func exportRunEvents(runId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func exportRunEvents(runId: String, options: RequestOptions = .init()) async throws -> String {
+        return try await client.sendText(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))/events/export",
             options: options

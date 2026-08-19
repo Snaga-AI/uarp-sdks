@@ -79,9 +79,9 @@ impl RegistryApi {
     /// Download tarball/artifact bundle for a spec version
     ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact`
-    pub async fn registry_get_artifact(&self, scope: &str, name: &str, version: &str) -> Result<()> {
+    pub async fn registry_get_artifact(&self, scope: &str, name: &str, version: &str) -> Result<bytes::Bytes> {
         self.client
-            .request_empty(Request {
+            .request_bytes(Request {
                 method: Method::GET,
                 path: format!("/api/v1/registry/spec/{}/{}/{}/artifact", encode_path(scope), encode_path(name), encode_path(version)),
                 query: NO_QUERY,

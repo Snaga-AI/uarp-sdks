@@ -119,10 +119,11 @@ package UARP.API.Public is
    --  rel=stylesheet>`.
    --
    --  GET /api/v1/public/tenants/{slug}/style.css
-   procedure Get_Public_Tenant_Stylesheet
+   function Get_Public_Tenant_Stylesheet
      (Self : Client_Type;
       Slug : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  List public plans
    --

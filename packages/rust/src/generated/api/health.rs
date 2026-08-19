@@ -49,7 +49,7 @@ impl HealthApi {
     /// `GET /metrics`
     pub async fn get_metrics(&self) -> Result<String> {
         self.client
-            .request_json(Request {
+            .request_text(Request {
                 method: Method::GET,
                 path: "/metrics".to_string(),
                 query: NO_QUERY,

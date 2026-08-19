@@ -190,8 +190,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = RequestOptions()): ByteArray {
+        return client.requestBytes(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/audio/speech",
