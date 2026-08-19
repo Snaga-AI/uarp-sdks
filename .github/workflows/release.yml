@@ -37,6 +37,14 @@ jobs:
       - name: CHANGELOG must mention this version
         run: grep -q "## ${{ steps.version.outputs.value }}" CHANGELOG.md
 
+      # 0.5.7 was cut from a document last refreshed for 0.5.6: the generator
+      # ran faithfully against stale input, every job went green, and ten
+      # merged schema changes were missing from the packages. Two consuming
+      # sessions found it by reading a published tarball. This is the step
+      # that would have refused.
+      - name: The vendored spec must be what the platform serves
+        run: ./scripts/check-spec-freshness.sh --strict
+
   npm:
     name: npm
     needs: verify
