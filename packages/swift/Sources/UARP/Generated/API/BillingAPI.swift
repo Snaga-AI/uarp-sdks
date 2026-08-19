@@ -60,7 +60,7 @@ public struct BillingAPI: Sendable {
     /// `GET /api/v1/usage`
     ///
     /// Required scopes: `billing:read`.
-    public func getUsage(period: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getUsage(period: String? = nil, options: RequestOptions = .init()) async throws -> UsageSummary {
         var query: [URLQueryItem] = []
         if let period {
             query.append(URLQueryItem(name: "period", value: period))

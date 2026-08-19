@@ -88,11 +88,11 @@ public class BillingApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `billing:read`.
      */
-    public suspend fun getUsage(period: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun getUsage(period: String? = null, options: RequestOptions = RequestOptions()): UsageSummary {
         val query = buildList {
             if (period != null) add("period" to period)
         }
-        return client.request<JsonElement>(
+        return client.request<UsageSummary>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/usage",

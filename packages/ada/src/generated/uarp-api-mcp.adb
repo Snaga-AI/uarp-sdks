@@ -6,17 +6,18 @@ package body UARP.API.MCP is
      (Self : Client_Type;
       Payload : UARP.Models.Create_MCP_Server_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.MCP_Server
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/mcp/servers",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp/servers",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_MCP_Server;
 
    function Delete_MCP_Server
@@ -38,14 +39,15 @@ package body UARP.API.MCP is
      (Self : Client_Type;
       Server_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.MCP_Server
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
+             Options => Options));
    end Get_MCP_Server;
 
    function List_MCP_Servers
@@ -101,16 +103,17 @@ package body UARP.API.MCP is
       Server_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.MCP_Server_With_Connect_Result
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_MCP_Server;
 end UARP.API.MCP;

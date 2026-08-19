@@ -542,6 +542,83 @@
                     }
                 }
             },
+            "AgentPublicConfig": {
+                "type": "object",
+                "required": [
+                    "enabled"
+                ],
+                "properties": {
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "system_prompt": {
+                        "type": "string"
+                    },
+                    "greeting": {
+                        "type": "string"
+                    },
+                    "allowed_tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "max_messages_per_session": {
+                        "type": "integer"
+                    },
+                    "max_concurrent_sessions": {
+                        "type": "integer"
+                    },
+                    "rate_limit_sessions_per_ip": {
+                        "type": "integer"
+                    },
+                    "rate_limit_messages_per_min": {
+                        "type": "integer"
+                    },
+                    "daily_message_limit": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "AgentBridgeState": {
+                "type": "object",
+                "properties": {
+                    "online_machines": {
+                        "type": "integer"
+                    },
+                    "total_machines": {
+                        "type": "integer"
+                    },
+                    "platforms": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "working_directories": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "machine_names": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "latest_heartbeat": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "installed_specs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    }
+                }
+            },
             "Agent": {
                 "type": "object",
                 "properties": {
@@ -753,7 +830,88 @@
                             "string",
                             "null"
                         ],
-                        "description": "Linked knowledge base ID"
+                        "deprecated": true,
+                        "description": "Deprecated in `packages/types/agent.ts:296`; kept for pre-migration records. Use `knowledge_base_ids`. Documenting only the singular is why a client reading this schema could link one base to an agent that supports several."
+                    },
+                    "knowledge_base_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Every knowledge base linked to the agent. `search_kb` searches all of them by default."
+                    },
+                    "visibility": {
+                        "type": "string",
+                        "enum": [
+                            "private",
+                            "team",
+                            "public"
+                        ],
+                        "description": "Who can reach the agent. The publication screen is built on this field."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "suspended",
+                            "terminated",
+                            "deposed"
+                        ],
+                        "description": "Governance state, distinct from a run's status."
+                    },
+                    "status_changed_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "status_reason": {
+                        "type": "string"
+                    },
+                    "autonomy": {
+                        "type": "object",
+                        "required": [
+                            "level"
+                        ],
+                        "properties": {
+                            "level": {
+                                "type": "string",
+                                "enum": [
+                                    "manual",
+                                    "approve_risky",
+                                    "full_auto"
+                                ]
+                            }
+                        }
+                    },
+                    "tool_overrides": {
+                        "type": "array",
+                        "description": "Per-tool trust, overriding the agent's default approval policy.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "tool_name",
+                                "trust_level"
+                            ],
+                            "properties": {
+                                "tool_name": {
+                                    "type": "string"
+                                },
+                                "trust_level": {
+                                    "type": "string",
+                                    "enum": [
+                                        "always_allow",
+                                        "ask_first",
+                                        "never_allow"
+                                    ]
+                                }
+                            }
+                        }
+                    },
+                    "public_config": {
+                        "$ref": "#/components/schemas/AgentPublicConfig"
+                    },
+                    "bridge": {
+                        "$ref": "#/components/schemas/AgentBridgeState",
+                        "description": "Present only on `GET /agents/{id}`, and only for a bridge agent. Computed at read time from the machines currently registered, never stored on the record."
                     },
                     "fallback_model": {
                         "type": [
@@ -1070,6 +1228,114 @@
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
+                    }
+                }
+            },
+            "SessionBranch": {
+                "type": "object",
+                "required": [
+                    "branch_id",
+                    "name",
+                    "fork_point_run_id",
+                    "fork_point_step_seq",
+                    "runs",
+                    "status",
+                    "created_at"
+                ],
+                "properties": {
+                    "branch_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "parent_branch_id": {
+                        "type": "string",
+                        "description": "Absent on the main branch."
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "fork_point_run_id": {
+                        "type": "string",
+                        "description": "The run this branch forked after. Empty when the session had no runs yet."
+                    },
+                    "fork_point_step_seq": {
+                        "type": "integer"
+                    },
+                    "runs": {
+                        "type": "array",
+                        "items": {
+                            "type": "string",
+                            "format": "uuid"
+                        }
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "abandoned",
+                            "merged"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "CreateSessionBranchRequest": {
+                "type": "object",
+                "properties": {
+                    "fork_point_run_id": {
+                        "type": "string",
+                        "format": "uuid",
+                        "description": "Defaults to the session's most recent run."
+                    },
+                    "fork_point_step_seq": {
+                        "type": "integer",
+                        "description": "Defaults to 0."
+                    },
+                    "parent_branch_id": {
+                        "type": "string",
+                        "description": "Defaults to the session's active branch."
+                    },
+                    "name": {
+                        "type": "string",
+                        "description": "Defaults to `branch-<first 8 characters of the branch id>`."
+                    }
+                }
+            },
+            "ListSessionBranchesResponse": {
+                "type": "object",
+                "required": [
+                    "session_id",
+                    "branches",
+                    "total"
+                ],
+                "properties": {
+                    "session_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "branches": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/SessionBranch"
+                        }
+                    },
+                    "active_branch": {
+                        "type": "string"
+                    },
+                    "total": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "RunApproveRequest": {
+                "type": "object",
+                "properties": {
+                    "response": {
+                        "type": "string",
+                        "maxLength": 10000
                     }
                 }
             },
@@ -1660,57 +1926,196 @@
                     "status"
                 ]
             },
+            "UsageSummary": {
+                "type": "object",
+                "description": "Tenant usage for one billing period. Flat — the counters are top-level, not nested under a `usage` object.",
+                "properties": {
+                    "plan": {
+                        "type": "string"
+                    },
+                    "period": {
+                        "type": "string",
+                        "description": "`YYYY-MM`."
+                    },
+                    "period_days": {
+                        "type": "integer"
+                    },
+                    "input_tokens": {
+                        "type": "integer"
+                    },
+                    "output_tokens": {
+                        "type": "integer"
+                    },
+                    "thinking_tokens": {
+                        "type": "integer"
+                    },
+                    "total_tokens": {
+                        "type": "integer"
+                    },
+                    "runs_count": {
+                        "type": "integer"
+                    },
+                    "tool_calls_count": {
+                        "type": "integer"
+                    },
+                    "bridge_tasks": {
+                        "type": "integer"
+                    },
+                    "storage_bytes": {
+                        "type": "integer"
+                    },
+                    "total_cost": {
+                        "type": "number",
+                        "description": "What the tenant is billed, in USD."
+                    },
+                    "provider_cost": {
+                        "type": "number",
+                        "description": "What the upstream providers charged, in USD."
+                    },
+                    "non_run_cost": {
+                        "type": "number"
+                    },
+                    "margin_summary": {
+                        "$ref": "#/components/schemas/UsageMarginSummary"
+                    }
+                },
+                "required": [
+                    "plan",
+                    "period",
+                    "period_days",
+                    "input_tokens",
+                    "output_tokens",
+                    "thinking_tokens",
+                    "total_tokens",
+                    "runs_count",
+                    "tool_calls_count",
+                    "storage_bytes",
+                    "total_cost",
+                    "provider_cost",
+                    "non_run_cost"
+                ]
+            },
+            "UsageMarginSummary": {
+                "type": "object",
+                "properties": {
+                    "platform_markup_percent": {
+                        "type": "number"
+                    },
+                    "provider_cost_usd": {
+                        "type": "number"
+                    },
+                    "user_cost_usd": {
+                        "type": "number"
+                    },
+                    "margin_usd": {
+                        "type": "number"
+                    },
+                    "effective_margin_percent": {
+                        "type": "number"
+                    }
+                }
+            },
+            "OAuthAppExchangeRequest": {
+                "type": "object",
+                "required": [
+                    "code",
+                    "code_verifier"
+                ],
+                "properties": {
+                    "code": {
+                        "type": "string",
+                        "description": "The value delivered in the callback fragment."
+                    },
+                    "code_verifier": {
+                        "type": "string",
+                        "description": "The secret whose SHA-256, base64url-encoded, was sent as `app_code_challenge` when the flow started. It never leaves the app, which is what makes an intercepted code worthless."
+                    }
+                }
+            },
+            "OAuthAppExchangeResponse": {
+                "type": "object",
+                "required": [
+                    "api_key"
+                ],
+                "properties": {
+                    "api_key": {
+                        "type": "string"
+                    },
+                    "email": {
+                        "type": "string",
+                        "format": "email"
+                    }
+                }
+            },
             "VotingProposal": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "proposal_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "type": {
                         "type": "string"
                     },
                     "title": {
                         "type": "string"
                     },
-                    "body": {
+                    "description": {
                         "type": "string"
                     },
-                    "proposer_agent_id": {
+                    "proposed_by": {
                         "type": "string"
+                    },
+                    "payload": {
+                        "type": "object",
+                        "additionalProperties": true
+                    },
+                    "quorum": {
+                        "type": "number"
                     },
                     "status": {
                         "type": "string",
                         "enum": [
-                            "draft",
                             "open",
-                            "closed",
-                            "vetoed",
-                            "executed"
+                            "passed",
+                            "rejected",
+                            "expired",
+                            "vetoed"
                         ]
                     },
-                    "opens_at": {
+                    "deadline": {
                         "type": "string",
                         "format": "date-time"
                     },
-                    "closes_at": {
+                    "created_at": {
                         "type": "string",
                         "format": "date-time"
                     },
-                    "result": {
-                        "type": [
-                            "object",
-                            "null"
-                        ]
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 },
                 "required": [
-                    "id",
-                    "status"
+                    "proposal_id",
+                    "tenant_id",
+                    "type",
+                    "title",
+                    "description",
+                    "proposed_by",
+                    "payload",
+                    "quorum",
+                    "status",
+                    "deadline",
+                    "created_at",
+                    "updated_at"
                 ]
             },
             "Ballot": {
                 "type": "object",
                 "properties": {
-                    "id": {
-                        "type": "string"
-                    },
                     "proposal_id": {
                         "type": "string"
                     },
@@ -1720,15 +2125,13 @@
                     "vote": {
                         "type": "string",
                         "enum": [
-                            "yes",
-                            "no",
+                            "approve",
+                            "reject",
                             "abstain"
                         ]
                     },
                     "weight": {
-                        "type": "number",
-                        "minimum": 0,
-                        "maximum": 100
+                        "type": "number"
                     },
                     "reasoning": {
                         "type": "string"
@@ -1742,17 +2145,20 @@
                     }
                 },
                 "required": [
-                    "id",
                     "proposal_id",
                     "agent_id",
                     "vote",
+                    "weight",
                     "cast_at"
                 ]
             },
             "ArbiterCase": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "case_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
                         "type": "string"
                     },
                     "filed_by": {
@@ -1761,35 +2167,57 @@
                     "against_agent_id": {
                         "type": "string"
                     },
-                    "reason": {
+                    "rule_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "description": {
                         "type": "string"
+                    },
+                    "evidence": {
+                        "type": "object",
+                        "additionalProperties": true
                     },
                     "status": {
                         "type": "string",
                         "enum": [
-                            "filed",
-                            "in_review",
+                            "open",
+                            "under_review",
                             "ruled",
                             "appealed",
                             "closed"
                         ]
                     },
-                    "ruling": {
-                        "type": [
-                            "object",
-                            "null"
-                        ]
+                    "assigned_arbiter_id": {
+                        "type": "string"
                     },
-                    "filed_at": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     }
                 },
                 "required": [
-                    "id",
+                    "case_id",
+                    "tenant_id",
                     "filed_by",
                     "against_agent_id",
-                    "status"
+                    "rule_ids",
+                    "description",
+                    "evidence",
+                    "status",
+                    "created_at",
+                    "deadline",
+                    "updated_at"
                 ]
             },
             "Veto": {
@@ -1862,14 +2290,23 @@
             "AmbassadorRequest": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "request_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
                         "type": "string"
                     },
                     "from_agent_id": {
                         "type": "string"
                     },
                     "type": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                            "clarification",
+                            "approval",
+                            "escalation",
+                            "report"
+                        ]
                     },
                     "subject": {
                         "type": "string"
@@ -1886,30 +2323,26 @@
                         ]
                     },
                     "response": {
-                        "type": [
-                            "string",
-                            "null"
-                        ]
+                        "type": "string"
                     },
                     "created_at": {
                         "type": "string",
                         "format": "date-time"
                     },
                     "resolved_at": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
+                        "type": "string",
                         "format": "date-time"
                     }
                 },
                 "required": [
-                    "id",
+                    "request_id",
+                    "tenant_id",
                     "from_agent_id",
                     "type",
                     "subject",
                     "body",
-                    "status"
+                    "status",
+                    "created_at"
                 ]
             },
             "Schedule": {
@@ -3189,13 +3622,23 @@
                     "validator_agent_id": {
                         "type": "string",
                         "description": "Dedicated validator; omitted means the supervisor judges its own workers."
+                    },
+                    "auto_revise": {
+                        "type": "boolean",
+                        "description": "Re-run the workers with the validator's feedback when a round fails, up to `max_revision_rounds`. Defaults to true — the server treats only an explicit `false` as off."
+                    },
+                    "selective": {
+                        "type": "boolean",
+                        "description": "Re-run only the workers whose output failed, rather than the whole round. Defaults to false."
                     }
                 },
                 "required": [
                     "enabled",
                     "criteria",
                     "min_score",
-                    "max_revision_rounds"
+                    "max_revision_rounds",
+                    "auto_revise",
+                    "selective"
                 ]
             },
             "TeamPolicies": {
@@ -3691,6 +4134,121 @@
                 },
                 "required": [
                     "programs"
+                ]
+            },
+            "McpServer": {
+                "type": "object",
+                "description": "An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is disclosed.",
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "transport": {
+                        "$ref": "#/components/schemas/McpTransport"
+                    },
+                    "command": {
+                        "type": "string",
+                        "description": "stdio only."
+                    },
+                    "args": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "url": {
+                        "type": "string",
+                        "description": "http / streamable_http only."
+                    },
+                    "api_key_ref": {
+                        "type": "string"
+                    },
+                    "env_count": {
+                        "type": "integer",
+                        "description": "How many env vars are set. The values are never returned."
+                    },
+                    "egress_allowlist": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "enabled": {
+                        "type": "boolean"
+                    },
+                    "capabilities": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Tool names and resource URIs discovered from the server."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "error",
+                            "disabled"
+                        ]
+                    },
+                    "last_synced": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                },
+                "required": [
+                    "id",
+                    "name",
+                    "transport",
+                    "enabled"
+                ]
+            },
+            "McpTransport": {
+                "type": "string",
+                "enum": [
+                    "stdio",
+                    "http",
+                    "streamable_http"
+                ],
+                "description": "`stdio` is blocked in production unless UARP_ALLOW_MCP_STDIO=true."
+            },
+            "McpServerWithConnectResult": {
+                "allOf": [
+                    {
+                        "$ref": "#/components/schemas/McpServer"
+                    },
+                    {
+                        "type": "object",
+                        "properties": {
+                            "connect_error": {
+                                "type": [
+                                    "string",
+                                    "null"
+                                ],
+                                "description": "Set when the record saved but the session could not be reconnected. This is the only field distinguishing 'saved' from 'saved and working', and it arrives on a 200."
+                            }
+                        }
+                    }
+                ]
+            },
+            "ListMcpServersResponse": {
+                "type": "object",
+                "properties": {
+                    "servers": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/McpServer"
+                        }
+                    }
+                },
+                "required": [
+                    "servers"
                 ]
             },
             "Company": {
@@ -4225,7 +4783,26 @@
                     "chunk_size": {
                         "type": "integer"
                     },
+                    "chunk_overlap": {
+                        "type": "integer"
+                    },
                     "document_count": {
+                        "type": "integer"
+                    },
+                    "total_chunks": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string",
+                        "description": "Deliberately not an enum. The routes write several values for different notions of readiness, and publishing a guessed list is how a client comes to reject a state the server legitimately sends. `ready` is the one observed on a healthy base."
+                    },
+                    "attached_agents": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/KnowledgeBaseAttachedAgent"
+                        }
+                    },
+                    "attached_agent_count": {
                         "type": "integer"
                     },
                     "created_at": {
@@ -4242,6 +4819,108 @@
                     "tenant_id",
                     "name"
                 ]
+            },
+            "KnowledgeBaseAttachedAgent": {
+                "type": "object",
+                "required": [
+                    "agent_id"
+                ],
+                "properties": {
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "TeamRunSummary": {
+                "type": "object",
+                "required": [
+                    "team_run_id",
+                    "run_id",
+                    "agent_id",
+                    "status",
+                    "created_at"
+                ],
+                "properties": {
+                    "team_run_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "run_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "agent_id": {
+                        "type": "string",
+                        "format": "uuid"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ActiveSession": {
+                "type": "object",
+                "required": [
+                    "key_id",
+                    "name",
+                    "prefix",
+                    "scopes",
+                    "status",
+                    "is_current"
+                ],
+                "properties": {
+                    "key_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "prefix": {
+                        "type": "string"
+                    },
+                    "scopes": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "active",
+                            "revoked"
+                        ]
+                    },
+                    "is_current": {
+                        "type": "boolean"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "expires_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    },
+                    "last_used_at": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "format": "date-time"
+                    }
+                }
             },
             "A2ATask": {
                 "type": "object",
@@ -8648,11 +9327,15 @@
                             "application/json": {
                                 "schema": {
                                     "type": "object",
+                                    "required": [
+                                        "items",
+                                        "has_more"
+                                    ],
                                     "properties": {
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Run"
                                             }
                                         },
                                         "cursor": {
@@ -8660,9 +9343,6 @@
                                         },
                                         "has_more": {
                                             "type": "boolean"
-                                        },
-                                        "total": {
-                                            "type": "integer"
                                         }
                                     }
                                 }
@@ -12188,6 +12868,13 @@
                 "responses": {
                     "200": {
                         "description": "Aggregated usage data",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/UsageSummary"
+                                }
+                            }
+                        },
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -14728,6 +15415,7 @@
             "post": {
                 "operationId": "approveRun",
                 "summary": "Approve a pending tool call (HITL)",
+                "description": "The body is optional; sending none approves without a message. `reject` has always taken a body, and the asymmetry was an omission rather than a design.",
                 "tags": [
                     "Runs"
                 ],
@@ -14745,6 +15433,16 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/RunApproveRequest"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "Run approved and resumed",
@@ -14760,6 +15458,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
@@ -14771,6 +15472,16 @@
                     },
                     "409": {
                         "description": "Run not in awaiting_approval status",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -15150,6 +15861,76 @@
                             },
                             "X-RateLimit-Reset": {
                                 "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/auth/oauth/exchange": {
+            "post": {
+                "operationId": "exchangeOAuthAppCode",
+                "summary": "Trade a mobile hand-off code for the session",
+                "description": "Second half of the mobile sign-in hand-off. When `start` is called with `app_code_challenge`, the callback redirects to the app with `#code=` instead of `#api_key=`, and the key is only released here, to a caller that presents the matching verifier. Single-use and short-lived: the code is consumed on the first attempt, successful or not.",
+                "tags": [
+                    "Auth"
+                ],
+                "security": [],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "$ref": "#/components/schemas/OAuthAppExchangeRequest"
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Session released to the app that started the flow",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/OAuthAppExchangeResponse"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Code unknown, already used, expired, or the verifier does not match. Deliberately one message for all four — distinguishing them would tell a caller which half it got right.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
                             }
                         }
                     },
@@ -15605,69 +16386,16 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "key_id": {
-                                                        "type": "string"
-                                                    },
-                                                    "name": {
-                                                        "type": "string"
-                                                    },
-                                                    "prefix": {
-                                                        "type": "string"
-                                                    },
-                                                    "scopes": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "status": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "active",
-                                                            "revoked"
-                                                        ]
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string",
-                                                        "format": "date-time"
-                                                    },
-                                                    "expires_at": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ],
-                                                        "format": "date-time"
-                                                    },
-                                                    "last_used_at": {
-                                                        "type": [
-                                                            "string",
-                                                            "null"
-                                                        ],
-                                                        "format": "date-time"
-                                                    },
-                                                    "is_current": {
-                                                        "type": "boolean"
-                                                    }
-                                                },
-                                                "required": [
-                                                    "key_id",
-                                                    "name",
-                                                    "prefix",
-                                                    "scopes",
-                                                    "status",
-                                                    "is_current"
-                                                ]
+                                                "$ref": "#/components/schemas/ActiveSession"
                                             }
                                         },
                                         "sessions": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ActiveSession"
                                             },
                                             "deprecated": true,
-                                            "description": "Legacy alias for `items`."
+                                            "description": "Legacy alias for `items`, byte-identical to it on the wire. It was described as a formless array while `items` carried the full shape, so a generated client saw one usable list and one bag of JSON for the same data."
                                         },
                                         "total": {
                                             "type": "integer"
@@ -18753,13 +19481,13 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/KnowledgeBase"
                                             }
                                         },
                                         "knowledge_bases": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/KnowledgeBase"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`. Will be removed in API v1.x."
@@ -24293,10 +25021,11 @@
                     }
                 ],
                 "requestBody": {
+                    "required": false,
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object"
+                                "$ref": "#/components/schemas/CreateSessionBranchRequest"
                             }
                         }
                     }
@@ -24307,7 +25036,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/SessionBranch"
                                 }
                             }
                         },
@@ -24385,29 +25114,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "branches": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object",
-                                                "properties": {
-                                                    "branch_id": {
-                                                        "type": "string"
-                                                    },
-                                                    "name": {
-                                                        "type": "string"
-                                                    },
-                                                    "created_at": {
-                                                        "type": "string"
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        "active_branch": {
-                                            "type": "string"
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/ListSessionBranchesResponse"
                                 }
                             }
                         },
@@ -27456,7 +28163,7 @@
                                         "runs": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamRunSummary"
                                             }
                                         },
                                         "total": {
@@ -29177,7 +29884,12 @@
                                         "type": "string"
                                     },
                                     "role": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "enum": [
+                                            "orchestrator",
+                                            "worker",
+                                            "arbiter"
+                                        ]
                                     },
                                     "spawned_by": {
                                         "type": "string"
@@ -29341,7 +30053,12 @@
                                 "type": "object",
                                 "properties": {
                                     "status": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "enum": [
+                                            "active",
+                                            "idle",
+                                            "terminated"
+                                        ]
                                     },
                                     "goal_summary": {
                                         "type": "string"
@@ -29590,7 +30307,12 @@
                                         "type": "string"
                                     },
                                     "type": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "enum": [
+                                            "delegation",
+                                            "supervision",
+                                            "peer"
+                                        ]
                                     },
                                     "task_id": {
                                         "type": "string"
@@ -31460,15 +32182,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "servers": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/ListMcpServersResponse"
                                 }
                             }
                         },
@@ -31515,7 +32229,7 @@
                                         "type": "string"
                                     },
                                     "transport": {
-                                        "type": "string"
+                                        "$ref": "#/components/schemas/McpTransport"
                                     },
                                     "url": {
                                         "type": "string"
@@ -31550,7 +32264,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/McpServer"
                                 }
                             }
                         },
@@ -31622,7 +32336,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/McpServer"
                                 }
                             }
                         },
@@ -31677,7 +32391,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/McpServerWithConnectResult"
                                 }
                             }
                         },

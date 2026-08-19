@@ -56,19 +56,20 @@ package body UARP.API.Billing is
      (Self : Client_Type;
       Params : Get_Usage_Params := No_Get_Usage_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Usage_Summary
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Period then
          UARP.Types.Add (Query, "period", Params.Period);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/usage",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/usage",
+             Query => Query,
+             Options => Options));
    end Get_Usage;
 
    function Get_Usage_Timeseries

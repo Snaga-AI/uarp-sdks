@@ -46,19 +46,43 @@ export interface ActivateSafeModeRequest {
   deadline_hours?: number;
 }
 
+export interface ActiveSession {
+  key_id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  status: ActiveSessionStatus;
+  is_current: boolean;
+  created_at?: string;
+  expires_at?: string | null;
+  last_used_at?: string | null;
+}
+
+export type ActiveSessionStatus = 'active' | 'revoked';
+
+export const ACTIVE_SESSION_STATUS_VALUES = ['active', 'revoked'] as const;
+
 export interface AddTeamGraphEdgeRequest {
   from: string;
   to: string;
-  type: string;
+  type: AddTeamGraphEdgeRequestType;
   task_id?: string;
 }
 
+export type AddTeamGraphEdgeRequestType = 'delegation' | 'supervision' | 'peer';
+
+export const ADD_TEAM_GRAPH_EDGE_REQUEST_TYPE_VALUES = ['delegation', 'supervision', 'peer'] as const;
+
 export interface AddTeamGraphNodeRequest {
   agent_id: string;
-  role: string;
+  role: AddTeamGraphNodeRequestRole;
   spawned_by?: string;
   goal_summary?: string;
 }
+
+export type AddTeamGraphNodeRequestRole = 'orchestrator' | 'worker' | 'arbiter';
+
+export const ADD_TEAM_GRAPH_NODE_REQUEST_ROLE_VALUES = ['orchestrator', 'worker', 'arbiter'] as const;
 
 export interface AdminAnalyticsEventsResponse {
   items: AdminAnalyticsEventsResponseItem[];
@@ -262,9 +286,38 @@ export interface Agent {
    */
   image_generation?: JsonObject | null;
   /**
-   * Linked knowledge base ID
+   * Deprecated in `packages/types/agent.ts:296`; kept for pre-migration records. Use
+   * `knowledge_base_ids`. Documenting only the singular is why a client reading this schema
+   * could link one base to an agent that supports several.
+   *
+   * @deprecated
    */
   knowledge_base_id?: string | null;
+  /**
+   * Every knowledge base linked to the agent. `search_kb` searches all of them by default.
+   */
+  knowledge_base_ids?: string[];
+  /**
+   * Who can reach the agent. The publication screen is built on this field.
+   */
+  visibility?: AgentUpdateVisibility;
+  /**
+   * Governance state, distinct from a run's status.
+   */
+  status?: AgentStatus;
+  status_changed_at?: string;
+  status_reason?: string;
+  autonomy?: AgentAutonomy;
+  /**
+   * Per-tool trust, overriding the agent's default approval policy.
+   */
+  tool_overrides?: AgentToolOverride[];
+  public_config?: AgentPublicConfig;
+  /**
+   * Present only on `GET /agents/{id}`, and only for a bridge agent. Computed at read time from
+   * the machines currently registered, never stored on the record.
+   */
+  bridge?: AgentBridgeState;
   /**
    * Fallback model configuration
    */
@@ -336,6 +389,24 @@ export interface AgentAnalyticsSummaryByExecutionMode {
 
 export interface AgentAnalyticsSummaryRange {
   days: number;
+}
+
+export interface AgentAutonomy {
+  level: AgentAutonomyLevel;
+}
+
+export type AgentAutonomyLevel = 'manual' | 'approve_risky' | 'full_auto';
+
+export const AGENT_AUTONOMY_LEVEL_VALUES = ['manual', 'approve_risky', 'full_auto'] as const;
+
+export interface AgentBridgeState {
+  online_machines?: number;
+  total_machines?: number;
+  platforms?: string[];
+  working_directories?: string[];
+  machine_names?: string[];
+  latest_heartbeat?: string;
+  installed_specs?: string[];
 }
 
 /**
@@ -416,6 +487,18 @@ export interface AgentPrompts {
   developer?: string;
 }
 
+export interface AgentPublicConfig {
+  enabled: boolean;
+  system_prompt?: string;
+  greeting?: string;
+  allowed_tools?: string[];
+  max_messages_per_session?: number;
+  max_concurrent_sessions?: number;
+  rate_limit_sessions_per_ip?: number;
+  rate_limit_messages_per_min?: number;
+  daily_message_limit?: number;
+}
+
 export interface AgentSpec {
   spec_id: string;
   version?: string;
@@ -438,6 +521,13 @@ export type AgentSpecPermissionsGrantedItemGrantedBy = 'wizard' | 'admin' | 'boo
 
 export const AGENT_SPEC_PERMISSIONS_GRANTED_ITEM_GRANTED_BY_VALUES = ['wizard', 'admin', 'bootstrap', 'migrated'] as const;
 
+/**
+ * Governance state, distinct from a run's status.
+ */
+export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed';
+
+export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed'] as const;
+
 export interface AgentSummary {
   agent_id: string;
   tenant_id: string;
@@ -458,6 +548,15 @@ export const AGENT_SUMMARY_BRIDGE_STATUS_VALUES = ['online', 'stale', 'offline']
 export type AgentSummaryExecutionMode = 'async' | 'worker' | 'bridge' | 'cloud';
 
 export const AGENT_SUMMARY_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge', 'cloud'] as const;
+
+export interface AgentToolOverride {
+  tool_name: string;
+  trust_level: AgentToolOverrideTrustLevel;
+}
+
+export type AgentToolOverrideTrustLevel = 'always_allow' | 'ask_first' | 'never_allow';
+
+export const AGENT_TOOL_OVERRIDE_TRUST_LEVEL_VALUES = ['always_allow', 'ask_first', 'never_allow'] as const;
 
 /**
  * Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO
@@ -496,20 +595,25 @@ export interface AmbassadorPermissions {
 }
 
 export interface AmbassadorRequest {
-  id: string;
+  request_id: string;
+  tenant_id: string;
   from_agent_id: string;
-  type: string;
+  type: AmbassadorRequestType;
   subject: string;
   body: string;
   status: AmbassadorRequestStatus;
-  response?: string | null;
-  created_at?: string;
-  resolved_at?: string | null;
+  response?: string;
+  created_at: string;
+  resolved_at?: string;
 }
 
 export type AmbassadorRequestStatus = 'pending' | 'acknowledged' | 'resolved';
 
 export const AMBASSADOR_REQUEST_STATUS_VALUES = ['pending', 'acknowledged', 'resolved'] as const;
+
+export type AmbassadorRequestType = 'clarification' | 'approval' | 'escalation' | 'report';
+
+export const AMBASSADOR_REQUEST_TYPE_VALUES = ['clarification', 'approval', 'escalation', 'report'] as const;
 
 export type AmbassadorRole = 'founder' | 'ambassador' | 'observer';
 
@@ -591,18 +695,23 @@ export interface ApplyProgramRequest {
 }
 
 export interface ArbiterCase {
-  id: string;
+  case_id: string;
+  tenant_id: string;
   filed_by: string;
   against_agent_id: string;
-  reason?: string;
+  rule_ids: string[];
+  description: string;
+  evidence: JsonObject;
   status: ArbiterCaseStatus;
-  ruling?: JsonObject | null;
-  filed_at?: string;
+  assigned_arbiter_id?: string;
+  created_at: string;
+  deadline: string;
+  updated_at: string;
 }
 
-export type ArbiterCaseStatus = 'filed' | 'in_review' | 'ruled' | 'appealed' | 'closed';
+export type ArbiterCaseStatus = 'open' | 'under_review' | 'ruled' | 'appealed' | 'closed';
 
-export const ARBITER_CASE_STATUS_VALUES = ['filed', 'in_review', 'ruled', 'appealed', 'closed'] as const;
+export const ARBITER_CASE_STATUS_VALUES = ['open', 'under_review', 'ruled', 'appealed', 'closed'] as const;
 
 export interface Artifact {
   artifact_id: string;
@@ -646,19 +755,18 @@ export interface AuthVerifyCodeResponse {
 }
 
 export interface Ballot {
-  id: string;
   proposal_id: string;
   agent_id: string;
   vote: BallotVote;
-  weight?: number;
+  weight: number;
   reasoning?: string;
   signature?: string;
   cast_at: string;
 }
 
-export type BallotVote = 'yes' | 'no' | 'abstain';
+export type BallotVote = 'approve' | 'reject' | 'abstain';
 
-export const BALLOT_VOTE_VALUES = ['yes', 'no', 'abstain'] as const;
+export const BALLOT_VOTE_VALUES = ['approve', 'reject', 'abstain'] as const;
 
 export interface BootstrapAmbassadorResponse {
   ambassador_id?: string;
@@ -1325,7 +1433,7 @@ export interface CreateIntegrationRequest {
 
 export interface CreateMCPServerRequest {
   name: string;
-  transport: string;
+  transport: MCPTransport;
   url?: string;
   command?: string;
   args?: string[];
@@ -1470,6 +1578,25 @@ export interface CreateSessionAnnotationResponse {
   author?: string;
   created_at?: string;
   resolved?: boolean;
+}
+
+export interface CreateSessionBranchRequest {
+  /**
+   * Defaults to the session's most recent run.
+   */
+  fork_point_run_id?: string;
+  /**
+   * Defaults to 0.
+   */
+  fork_point_step_seq?: number;
+  /**
+   * Defaults to the session's active branch.
+   */
+  parent_branch_id?: string;
+  /**
+   * Defaults to `branch-<first 8 characters of the branch id>`.
+   */
+  name?: string;
 }
 
 export interface CreateSessionRequest {
@@ -2502,9 +2629,24 @@ export interface KnowledgeBase {
   description?: string;
   embedding_model?: string;
   chunk_size?: number;
+  chunk_overlap?: number;
   document_count?: number;
+  total_chunks?: number;
+  /**
+   * Deliberately not an enum. The routes write several values for different notions of
+   * readiness, and publishing a guessed list is how a client comes to reject a state the server
+   * legitimately sends. `ready` is the one observed on a healthy base.
+   */
+  status?: string;
+  attached_agents?: KnowledgeBaseAttachedAgent[];
+  attached_agent_count?: number;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface KnowledgeBaseAttachedAgent {
+  agent_id: string;
+  name?: string;
 }
 
 /**
@@ -2724,13 +2866,13 @@ export interface ListKbDocumentsResponse {
 }
 
 export interface ListKnowledgeBasesResponse {
-  items: JsonObject[];
+  items: KnowledgeBase[];
   /**
    * Legacy alias for `items`. Will be removed in API v1.x.
    *
    * @deprecated
    */
-  knowledge_bases?: JsonObject[];
+  knowledge_bases?: KnowledgeBase[];
   total: number;
 }
 
@@ -2754,35 +2896,21 @@ export interface ListLLMModelsResponse {
 }
 
 export interface ListMCPServersResponse {
-  servers?: JsonObject[];
+  servers: MCPServer[];
 }
 
 export interface ListMeSessionsResponse {
-  items: ListMeSessionsResponseItem[];
+  items: ActiveSession[];
   /**
-   * Legacy alias for `items`.
+   * Legacy alias for `items`, byte-identical to it on the wire. It was described as a formless
+   * array while `items` carried the full shape, so a generated client saw one usable list and
+   * one bag of JSON for the same data.
    *
    * @deprecated
    */
-  sessions?: JsonObject[];
+  sessions?: ActiveSession[];
   total: number;
 }
-
-export interface ListMeSessionsResponseItem {
-  key_id: string;
-  name: string;
-  prefix: string;
-  scopes: string[];
-  status: ListMeSessionsResponseItemStatus;
-  created_at?: string;
-  expires_at?: string | null;
-  last_used_at?: string | null;
-  is_current: boolean;
-}
-
-export type ListMeSessionsResponseItemStatus = 'active' | 'revoked';
-
-export const LIST_ME_SESSIONS_RESPONSE_ITEM_STATUS_VALUES = ['active', 'revoked'] as const;
 
 export interface ListModelsResponse {
   object: 'list';
@@ -2895,10 +3023,9 @@ export interface ListRunCheckpointsResponse {
 }
 
 export interface ListRunsResponse {
-  items?: JsonObject[];
+  items: Run[];
   cursor?: string;
-  has_more?: boolean;
-  total?: number;
+  has_more: boolean;
 }
 
 export interface ListSessionAnnotationsResponse {
@@ -2919,14 +3046,10 @@ export interface ListSessionArtifactsResponse {
 }
 
 export interface ListSessionBranchesResponse {
-  branches?: ListSessionBranchesResponseBranch[];
+  session_id: string;
+  branches: SessionBranch[];
   active_branch?: string;
-}
-
-export interface ListSessionBranchesResponseBranch {
-  branch_id?: string;
-  name?: string;
-  created_at?: string;
+  total: number;
 }
 
 export interface ListSessionsResponse {
@@ -3011,7 +3134,7 @@ export interface ListTeamGraphNodesResponse {
 
 export interface ListTeamRunsResponse {
   team_id?: string;
-  runs?: JsonObject[];
+  runs?: TeamRunSummary[];
   total?: number;
 }
 
@@ -3200,6 +3323,84 @@ export interface McpjsonRpcRequest {
   id?: JsonValue;
 }
 
+/**
+ * An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
+ * disclosed.
+ */
+export interface MCPServer {
+  id: string;
+  name: string;
+  transport: MCPTransport;
+  /**
+   * stdio only.
+   */
+  command?: string;
+  args?: string[];
+  /**
+   * http / streamable_http only.
+   */
+  url?: string;
+  api_key_ref?: string;
+  /**
+   * How many env vars are set. The values are never returned.
+   */
+  env_count?: number;
+  egress_allowlist?: JsonObject[];
+  enabled: boolean;
+  /**
+   * Tool names and resource URIs discovered from the server.
+   */
+  capabilities?: string[];
+  status?: MCPServerStatus;
+  last_synced?: string;
+  tenant_id?: string;
+}
+
+export type MCPServerStatus = 'active' | 'error' | 'disabled';
+
+export const MCPSERVER_STATUS_VALUES = ['active', 'error', 'disabled'] as const;
+
+export interface MCPServerWithConnectResult {
+  id: string;
+  name: string;
+  transport: MCPTransport;
+  /**
+   * stdio only.
+   */
+  command?: string;
+  args?: string[];
+  /**
+   * http / streamable_http only.
+   */
+  url?: string;
+  api_key_ref?: string;
+  /**
+   * How many env vars are set. The values are never returned.
+   */
+  env_count?: number;
+  egress_allowlist?: JsonObject[];
+  enabled: boolean;
+  /**
+   * Tool names and resource URIs discovered from the server.
+   */
+  capabilities?: string[];
+  status?: MCPServerStatus;
+  last_synced?: string;
+  tenant_id?: string;
+  /**
+   * Set when the record saved but the session could not be reconnected. This is the only field
+   * distinguishing 'saved' from 'saved and working', and it arrives on a 200.
+   */
+  connect_error?: string | null;
+}
+
+/**
+ * `stdio` is blocked in production unless UARP_ALLOW_MCP_STDIO=true.
+ */
+export type MCPTransport = 'stdio' | 'http' | 'streamable_http';
+
+export const MCPTRANSPORT_VALUES = ['stdio', 'http', 'streamable_http'] as const;
+
 export interface MemoryEntry {
   entry_id: string;
   type?: MemoryEntryType;
@@ -3264,6 +3465,23 @@ export interface NotificationSource {
 export type NotificationSourceKind = 'run' | 'agent' | 'bridge' | 'budget' | 'team' | 'task';
 
 export const NOTIFICATION_SOURCE_KIND_VALUES = ['run', 'agent', 'bridge', 'budget', 'team', 'task'] as const;
+
+export interface OAuthAppExchangeRequest {
+  /**
+   * The value delivered in the callback fragment.
+   */
+  code: string;
+  /**
+   * The secret whose SHA-256, base64url-encoded, was sent as `app_code_challenge` when the flow
+   * started. It never leaves the app, which is what makes an intercepted code worthless.
+   */
+  code_verifier: string;
+}
+
+export interface OAuthAppExchangeResponse {
+  api_key: string;
+  email?: string;
+}
 
 /**
  * Body to complete OAuth after callback
@@ -3920,6 +4138,10 @@ export interface Run {
   resource_limits?: RunResourceLimits;
 }
 
+export interface RunApproveRequest {
+  response?: string;
+}
+
 export interface RunEvaluationRequest {
   dataset_id: string;
   agent_version?: string;
@@ -4143,6 +4365,27 @@ export interface Session {
    */
   model_override?: SessionModelOverride | null;
 }
+
+export interface SessionBranch {
+  branch_id: string;
+  /**
+   * Absent on the main branch.
+   */
+  parent_branch_id?: string;
+  name: string;
+  /**
+   * The run this branch forked after. Empty when the session had no runs yet.
+   */
+  fork_point_run_id: string;
+  fork_point_step_seq: number;
+  runs: string[];
+  status: SessionBranchStatus;
+  created_at: string;
+}
+
+export type SessionBranchStatus = 'active' | 'abandoned' | 'merged';
+
+export const SESSION_BRANCH_STATUS_VALUES = ['active', 'abandoned', 'merged'] as const;
 
 /**
  * Per-conversation model override (in-chat model switcher). When set, runs in this session
@@ -4472,6 +4715,14 @@ export type TeamPoliciesOnWorkerFailure = 'retry' | 'skip' | 'abort_team';
 
 export const TEAM_POLICIES_ON_WORKER_FAILURE_VALUES = ['retry', 'skip', 'abort_team'] as const;
 
+export interface TeamRunSummary {
+  team_run_id: string;
+  run_id: string;
+  agent_id: string;
+  status: string;
+  created_at: string;
+}
+
 export type TeamSupervisorMode = 'auto_dispatch' | 'tool_driven';
 
 export const TEAM_SUPERVISOR_MODE_VALUES = ['auto_dispatch', 'tool_driven'] as const;
@@ -4707,9 +4958,13 @@ export interface UpdateSessionRequestModelOverride {
 }
 
 export interface UpdateTeamGraphNodeRequest {
-  status?: string;
+  status?: UpdateTeamGraphNodeRequestStatus;
   goal_summary?: string;
 }
+
+export type UpdateTeamGraphNodeRequestStatus = 'active' | 'idle' | 'terminated';
+
+export const UPDATE_TEAM_GRAPH_NODE_REQUEST_STATUS_VALUES = ['active', 'idle', 'terminated'] as const;
 
 export interface UpdateTenantRequest {
   name?: string;
@@ -4735,6 +4990,45 @@ export interface UploadFileRequest {
   data: BinaryInput;
   mime_type: string;
   filename?: string;
+}
+
+export interface UsageMarginSummary {
+  platform_markup_percent?: number;
+  provider_cost_usd?: number;
+  user_cost_usd?: number;
+  margin_usd?: number;
+  effective_margin_percent?: number;
+}
+
+/**
+ * Tenant usage for one billing period. Flat — the counters are top-level, not nested under a
+ * `usage` object.
+ */
+export interface UsageSummary {
+  plan: string;
+  /**
+   * `YYYY-MM`.
+   */
+  period: string;
+  period_days: number;
+  input_tokens: number;
+  output_tokens: number;
+  thinking_tokens: number;
+  total_tokens: number;
+  runs_count: number;
+  tool_calls_count: number;
+  bridge_tasks?: number;
+  storage_bytes: number;
+  /**
+   * What the tenant is billed, in USD.
+   */
+  total_cost: number;
+  /**
+   * What the upstream providers charged, in USD.
+   */
+  provider_cost: number;
+  non_run_cost: number;
+  margin_summary?: UsageMarginSummary;
 }
 
 /**
@@ -4764,6 +5058,15 @@ export interface ValidationPolicy {
    * Dedicated validator; omitted means the supervisor judges its own workers.
    */
   validator_agent_id?: string;
+  /**
+   * Re-run the workers with the validator's feedback when a round fails, up to
+   * `max_revision_rounds`. Defaults to true — the server treats only an explicit `false` as off.
+   */
+  auto_revise: boolean;
+  /**
+   * Re-run only the workers whose output failed, rather than the whole round. Defaults to false.
+   */
+  selective: boolean;
 }
 
 export interface Value {
@@ -4824,19 +5127,23 @@ export interface VetoProposalResponse {
 }
 
 export interface VotingProposal {
-  id: string;
-  title?: string;
-  body?: string;
-  proposer_agent_id?: string;
+  proposal_id: string;
+  tenant_id: string;
+  type: string;
+  title: string;
+  description: string;
+  proposed_by: string;
+  payload: JsonObject;
+  quorum: number;
   status: VotingProposalStatus;
-  opens_at?: string;
-  closes_at?: string;
-  result?: JsonObject | null;
+  deadline: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export type VotingProposalStatus = 'draft' | 'open' | 'closed' | 'vetoed' | 'executed';
+export type VotingProposalStatus = 'open' | 'passed' | 'rejected' | 'expired' | 'vetoed';
 
-export const VOTING_PROPOSAL_STATUS_VALUES = ['draft', 'open', 'closed', 'vetoed', 'executed'] as const;
+export const VOTING_PROPOSAL_STATUS_VALUES = ['open', 'passed', 'rejected', 'expired', 'vetoed'] as const;
 
 export interface WebhookSubscription {
   webhook_id: string;

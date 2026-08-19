@@ -229,7 +229,11 @@ test('parses the production document into the expected shape', () => {
   // added to the document. The handler had served it all along; undeclared, it
   // was absent from every SDK, so the EU AI Act classification could be written
   // through the client and never read back.
-  assert.equal(ops.length, 558);
+  // 558 -> 559 on 2026-08-19: `POST /auth/oauth/exchange`, the second half of
+  // the mobile sign-in hand-off. The callback used to put the session key in a
+  // fragment on `snaga://callback` — a custom scheme any installed app can
+  // claim — so the key is now released only to a caller holding the verifier.
+  assert.equal(ops.length, 559);
   assert.equal(spec.groups.length, 43);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
@@ -253,7 +257,16 @@ test('parses the production document into the expected shape', () => {
   // that did not say what they return (`Guardrail`, `ApiKeySummary`,
   // `LLMProvider` and four envelopes), three from programs (`ProgramStep`,
   // `Program`, `ListProgramsResponse`).
-  assert.equal(spec.types.length, 635);
+  // 635 -> 659 on 2026-08-19: twenty-four named types from one night of
+  // document work — the governance block rewritten from the platform types
+  // (`VotingProposal`, `ArbitrationCase`, `Ballot`, `AmbassadorRequest` had
+  // invented keys and status values the server never sends), `UsageSummary`
+  // and its margin block (the operation declared no response body at all),
+  // `Run` referenced from the runs list instead of a bare object, plus
+  // `SessionBranch`, `CreateSessionBranchRequest`, `RunApproveRequest`,
+  // `KnowledgeBaseAttachedAgent`, `TeamRunSummary`, `ActiveSession`,
+  // `AgentPublicConfig`, `AgentBridgeState` and the OAuth exchange pair.
+  assert.equal(spec.types.length, 659);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

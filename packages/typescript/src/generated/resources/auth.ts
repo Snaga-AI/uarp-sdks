@@ -24,6 +24,8 @@ import type {
   ListOAuthLoginProvidersResponseProviderId,
   LogoutResponse,
   MintSSETokenResponse,
+  OAuthAppExchangeRequest,
+  OAuthAppExchangeResponse,
   OAuthLoginProviderItemId,
   RevokeMeSessionResponse,
   UnlinkAuthProviderResponse,
@@ -133,6 +135,27 @@ export class AuthResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/auth/mfa/enrol',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Trade a mobile hand-off code for the session
+   *
+   * Second half of the mobile sign-in hand-off. When `start` is called with
+   * `app_code_challenge`, the callback redirects to the app with `#code=` instead of
+   * `#api_key=`, and the key is only released here, to a caller that presents the matching
+   * verifier. Single-use and short-lived: the code is consumed on the first attempt, successful
+   * or not.
+   *
+   * `POST /api/v1/auth/oauth/exchange`
+   */
+  exchangeOAuthAppCode(body: OAuthAppExchangeRequest, options?: RequestOptions): Promise<OAuthAppExchangeResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/auth/oauth/exchange',
       body,
       idempotent: true,
       options,

@@ -6,6 +6,50 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.8 — 2026-08-19
+
+### Fixed — every SDK
+
+- **0.5.7 shipped the fixed generator against a stale document.** The
+  generator change and the platform's document work both landed, and they did
+  not meet in that artifact: `spec/openapi.json` had last been refreshed for
+  0.5.6, so none of the night's schema work reached the packages. Reported by
+  the Playground session, which updated to 0.5.7, checked each promise
+  separately, and found two of three missing — `approveRun` still had no body
+  parameter and `createSessionBranch` still took a `JsonObject`.
+
+  Nothing is wrong with 0.5.7's code. This release is the same generator run
+  against the current document, which is why it carries no generator change of
+  its own.
+
+### Added — every SDK
+
+- Typed request bodies where the document previously described none:
+  `RunApproveRequest` (an operator's note when approving a paused tool call —
+  the asymmetry with `rejectRun` was an omission) and
+  `CreateSessionBranchRequest`.
+- `SessionBranch` as a described response, eight fields rather than three, and
+  `ListSessionBranchesResponse` with the `session_id` and `total` the envelope
+  actually carries.
+- The governance block rewritten from the platform types. `VotingProposal`
+  shared two of its five status values with the server and was keyed on an
+  invented `id`; `ArbitrationCase` and `AmbassadorRequest` had the same defect.
+  A client generated from the old document could not recognise a proposal that
+  had passed, been rejected, or expired, and `Ballot.vote` sent `yes` where the
+  server accepts `approve`.
+- `UsageSummary` — the operation declared no response body at all, so every
+  consumer hand-wrote the shape.
+- `Agent` gained `visibility`, `status`, `autonomy`, `tool_overrides`,
+  `public_config`, `bridge`, and `knowledge_base_ids`. The document had carried
+  only the deprecated singular `knowledge_base_id`, so a client could link one
+  knowledge base to an agent that supports several and never know.
+- `ValidationPolicy` gained `auto_revise` and `selective`. The first drives the
+  revision loop; without it declared, a client could not turn the loop off.
+- List elements that were bare objects now name their type: `Run` in the runs
+  list, `KnowledgeBase`, `ActiveSession`, `TeamRunSummary`.
+- `POST /auth/oauth/exchange` — the second half of the mobile sign-in
+  hand-off, which releases the session only to a caller holding the verifier.
+
 ## 0.5.7 — 2026-08-19
 
 ### Fixed — every SDK

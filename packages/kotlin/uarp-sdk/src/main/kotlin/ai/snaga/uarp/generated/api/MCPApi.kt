@@ -29,8 +29,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/mcp/servers`
      */
-    public suspend fun createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = RequestOptions()): MCPServer {
+        return client.request<MCPServer>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/mcp/servers",
@@ -62,8 +62,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/mcp/servers/{serverId}`
      */
-    public suspend fun getMCPServer(serverId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getMCPServer(serverId: String, options: RequestOptions = RequestOptions()): MCPServer {
+        return client.request<MCPServer>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}",
@@ -134,8 +134,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `PATCH /api/v1/mcp/servers/{serverId}`
      */
-    public suspend fun updateMCPServer(serverId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateMCPServer(serverId: String, body: JsonObject, options: RequestOptions = RequestOptions()): MCPServerWithConnectResult {
+        return client.request<MCPServerWithConnectResult>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}",

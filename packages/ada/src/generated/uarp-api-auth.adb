@@ -77,6 +77,24 @@ package body UARP.API.Auth is
              Options => Options));
    end Enrol_Mfa;
 
+   function Exchange_O_Auth_App_Code
+     (Self : Client_Type;
+      Payload : UARP.Models.O_Auth_App_Exchange_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.O_Auth_App_Exchange_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/auth/oauth/exchange",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Exchange_O_Auth_App_Code;
+
    function Get_Me
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

@@ -61,12 +61,17 @@ package UARP.API.Runs is
 
    --  Approve a pending tool call (HITL)
    --
+   --  The body is optional; sending none approves without a message. `reject` has always taken a
+   --  body, and the asymmetry was an omission rather than a design.
+   --
    --  POST /api/v1/runs/{runId}/approve
    --
    --  Required scopes: runs:create.
    function Approve_Run
      (Self : Client_Type;
       Run_Id : String;
+      Payload : UARP.Models.Run_Approve_Request;
+      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -202,6 +207,15 @@ package UARP.API.Runs is
       Params : List_Runs_Params := No_List_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Runs_Response;
+
+   --  Collect every item `listRuns` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_All
+     (Self : Client_Type;
+      Params : List_Runs_Params := No_List_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Run_Vectors.Vector;
 
    --  List run artifacts
    --

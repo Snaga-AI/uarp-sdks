@@ -112,6 +112,29 @@ public class AuthApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Trade a mobile hand-off code for the session
+     *
+     * Second half of the mobile sign-in hand-off. When `start` is called with
+     * `app_code_challenge`, the callback redirects to the app with `#code=` instead of
+     * `#api_key=`, and the key is only released here, to a caller that presents the matching
+     * verifier. Single-use and short-lived: the code is consumed on the first attempt, successful
+     * or not.
+     *
+     * `POST /api/v1/auth/oauth/exchange`
+     */
+    public suspend fun exchangeOAuthAppCode(body: OAuthAppExchangeRequest, options: RequestOptions = RequestOptions()): OAuthAppExchangeResponse {
+        return client.request<OAuthAppExchangeResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/auth/oauth/exchange",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get the calling user + tenant context
      *
      * Single source of truth for the browser to render account state, role badges, and the tenant

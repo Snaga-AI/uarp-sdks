@@ -117,7 +117,7 @@ impl BillingApi {
     /// `GET /api/v1/usage`
     ///
     /// Required scopes: `billing:read`.
-    pub async fn get_usage(&self, params: &GetUsageParams) -> Result<serde_json::Value> {
+    pub async fn get_usage(&self, params: &GetUsageParams) -> Result<models::UsageSummary> {
         self.client
             .request_json(Request {
                 method: Method::GET,
