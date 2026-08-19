@@ -75,16 +75,19 @@ impl Client {
 impl RunsApi {
     /// Approve a pending tool call (HITL)
     ///
+    /// The body is optional; sending none approves without a message. `reject` has always taken a
+    /// body, and the asymmetry was an omission rather than a design.
+    ///
     /// `POST /api/v1/runs/{runId}/approve`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn approve_run(&self, run_id: &str) -> Result<serde_json::Value> {
+    pub async fn approve_run(&self, run_id: &str, body: &models::RunApproveRequest) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/runs/{}/approve", encode_path(run_id)),
                 query: NO_QUERY,
-                body: NO_BODY,
+                body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
             })
@@ -301,7 +304,7 @@ impl RunsApi {
 
     /// Stream every item returned by `listRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
-    pub fn list_all<'a>(&'a self, params: &'a ListRunsParams) -> impl Stream<Item = Result<serde_json::Map<String, serde_json::Value>>> + 'a {
+    pub fn list_all<'a>(&'a self, params: &'a ListRunsParams) -> impl Stream<Item = Result<models::Run>> + 'a {
         async_stream::try_stream! {
             let mut guard = CursorGuard::new();
             let mut cursor = params.cursor.clone();
@@ -309,12 +312,12 @@ impl RunsApi {
                 let mut page_params = params.clone();
                 page_params.cursor = cursor.clone();
                 let page = self.list(&page_params).await?;
-                let items = page.items.unwrap_or_default();
+                let items = page.items;
                 let was_empty = items.is_empty();
                 for item in items {
                     yield item;
                 }
-                match guard.advance(page.cursor, page.has_more, was_empty) {
+                match guard.advance(page.cursor, Some(page.has_more), was_empty) {
                     Some(next) => cursor = Some(next),
                     None => break,
                 }

@@ -39,7 +39,7 @@ impl MCPApi {
     /// Create MCP server
     ///
     /// `POST /api/v1/mcp/servers`
-    pub async fn create_mcp_server(&self, body: &models::CreateMCPServerRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_mcp_server(&self, body: &models::CreateMCPServerRequest) -> Result<models::MCPServer> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -71,7 +71,7 @@ impl MCPApi {
     /// Get MCP server
     ///
     /// `GET /api/v1/mcp/servers/{serverId}`
-    pub async fn get_mcp_server(&self, server_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_mcp_server(&self, server_id: &str) -> Result<models::MCPServer> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -138,7 +138,7 @@ impl MCPApi {
     /// Update MCP server
     ///
     /// `PATCH /api/v1/mcp/servers/{serverId}`
-    pub async fn update_mcp_server(&self, server_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_mcp_server(&self, server_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::MCPServerWithConnectResult> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

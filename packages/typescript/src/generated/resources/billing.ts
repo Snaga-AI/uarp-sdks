@@ -13,6 +13,7 @@ import type {
   HandleStripeWebhookRequest,
   JsonValue,
   ListBillingPlansResponse,
+  UsageSummary,
 } from '../models.js';
 
 /**
@@ -108,7 +109,7 @@ export class BillingResource extends APIResource {
    *
    * Required scopes: `billing:read`.
    */
-  getUsage(params?: GetUsageParams, options?: RequestOptions): Promise<JsonValue> {
+  getUsage(params?: GetUsageParams, options?: RequestOptions): Promise<UsageSummary> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/usage',

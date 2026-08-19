@@ -11,7 +11,7 @@ public struct MCPAPI: Sendable {
     /// Create MCP server
     ///
     /// `POST /api/v1/mcp/servers`
-    public func createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = .init()) async throws -> MCPServer {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/mcp/servers",
@@ -36,7 +36,7 @@ public struct MCPAPI: Sendable {
     /// Get MCP server
     ///
     /// `GET /api/v1/mcp/servers/{serverId}`
-    public func getMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> MCPServer {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))",
@@ -91,7 +91,7 @@ public struct MCPAPI: Sendable {
     /// Update MCP server
     ///
     /// `PATCH /api/v1/mcp/servers/{serverId}`
-    public func updateMCPServer(serverId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateMCPServer(serverId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> MCPServerWithConnectResult {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))",

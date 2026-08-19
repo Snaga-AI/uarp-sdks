@@ -167,7 +167,7 @@ impl SessionsApi {
     /// `POST /api/v1/sessions/{sessionId}/branch`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn create_session_branch(&self, session_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_session_branch(&self, session_id: &str, body: &models::CreateSessionBranchRequest) -> Result<models::SessionBranch> {
         self.client
             .request_json(Request {
                 method: Method::POST,

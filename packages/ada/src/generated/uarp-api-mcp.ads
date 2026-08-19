@@ -27,7 +27,7 @@ package UARP.API.MCP is
      (Self : Client_Type;
       Payload : UARP.Models.Create_MCP_Server_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.MCP_Server;
 
    --  Delete MCP server
    --
@@ -45,7 +45,7 @@ package UARP.API.MCP is
      (Self : Client_Type;
       Server_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.MCP_Server;
 
    --  List MCP servers
    --
@@ -87,6 +87,6 @@ package UARP.API.MCP is
       Server_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.MCP_Server_With_Connect_Result;
 
 end UARP.API.MCP;

@@ -8,6 +8,7 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   CreateSessionAnnotationRequest,
   CreateSessionAnnotationResponse,
+  CreateSessionBranchRequest,
   CreateSessionRequest,
   CreateSessionShareRequest,
   CreateSessionShareResponse,
@@ -28,6 +29,7 @@ import type {
   SendSessionMessageRequest,
   SendSessionMessageResponse,
   Session,
+  SessionBranch,
   UpdateSessionAnnotationRequest,
   UpdateSessionRequest,
 } from '../models.js';
@@ -172,7 +174,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  createSessionBranch(sessionId: string, body?: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  createSessionBranch(sessionId: string, body?: CreateSessionBranchRequest, options?: RequestOptions): Promise<SessionBranch> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/branch`,

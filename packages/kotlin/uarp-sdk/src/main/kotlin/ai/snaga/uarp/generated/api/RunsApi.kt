@@ -27,15 +27,19 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     /**
      * Approve a pending tool call (HITL)
      *
+     * The body is optional; sending none approves without a message. `reject` has always taken a
+     * body, and the asymmetry was an omission rather than a design.
+     *
      * `POST /api/v1/runs/{runId}/approve`
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun approveRun(runId: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun approveRun(runId: String, body: RunApproveRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/approve",
+                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
                 idempotent = true,
                 options = options,
             )
@@ -261,9 +265,9 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listRuns`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
         fetch = { pageCursor -> list(agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, options = options) },
-        items = { it.items ?: emptyList() },
+        items = { it.items },
         cursor = { it.cursor },
         hasMore = { it.hasMore },
     )

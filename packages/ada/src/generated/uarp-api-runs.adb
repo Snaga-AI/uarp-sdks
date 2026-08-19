@@ -5,6 +5,8 @@ package body UARP.API.Runs is
    function Approve_Run
      (Self : Client_Type;
       Run_Id : String;
+      Payload : UARP.Models.Run_Approve_Request;
+      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -13,6 +15,8 @@ package body UARP.API.Runs is
          (Self,
           "POST",
           "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/approve",
+          Payload => UARP.Models.To_JSON (Payload),
+          Has_Payload => Include_Payload,
           Idempotent => True,
           Options => Options);
    end Approve_Run;
@@ -207,6 +211,53 @@ package body UARP.API.Runs is
              Query => Query,
              Options => Options));
    end List;
+
+   function List_All
+     (Self : Client_Type;
+      Params : List_Runs_Params := No_List_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Run_Vectors.Vector
+   is
+      Collected : UARP.Models.Run_Vectors.Vector;
+      Page_Params : List_Runs_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Runs_Response :=
+               List
+                  (Self,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_All;
 
    function List_Run_Artifacts
      (Self : Client_Type;

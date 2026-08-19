@@ -86,7 +86,7 @@ package UARP.API.Billing is
      (Self : Client_Type;
       Params : Get_Usage_Params := No_Get_Usage_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Usage_Summary;
 
    --  Get usage analytics over time
    --

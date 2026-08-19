@@ -18,6 +18,7 @@ import type {
   RespondToRunRequest,
   RespondToRunResponse,
   Run,
+  RunApproveRequest,
 } from '../models.js';
 
 /**
@@ -71,14 +72,18 @@ export class RunsResource extends APIResource {
   /**
    * Approve a pending tool call (HITL)
    *
+   * The body is optional; sending none approves without a message. `reject` has always taken a
+   * body, and the asymmetry was an omission rather than a design.
+   *
    * `POST /api/v1/runs/{runId}/approve`
    *
    * Required scopes: `runs:create`.
    */
-  approveRun(runId: string, options?: RequestOptions): Promise<JsonValue> {
+  approveRun(runId: string, body?: RunApproveRequest, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/approve`,
+      body,
       idempotent: true,
       options,
     });
@@ -272,8 +277,8 @@ export class RunsResource extends APIResource {
    * Iterate every item returned by `listRuns`, following the `cursor` cursor until the server
    * reports no further pages.
    */
-  listAll(params?: ListRunsParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  listAll(params?: ListRunsParams, options?: RequestOptions): AsyncIterableIterator<Run> {
+    return autoPaginate<Run>(
       (cursor) => this.list({ ...params, cursor }, options),
       'items',
       'cursor',

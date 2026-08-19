@@ -127,10 +127,10 @@ package UARP.API.Sessions is
    function Create_Session_Branch
      (Self : Client_Type;
       Session_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Session_Branch_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Session_Branch;
 
    --  Create session share link
    --
