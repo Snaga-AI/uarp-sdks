@@ -94,7 +94,7 @@ impl MetaApi {
     /// Get public landing page statistics
     ///
     /// `GET /api/v1/public/landing-stats`
-    pub async fn get_public_landing_stats(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_public_landing_stats(&self) -> Result<models::LandingStats> {
         self.client
             .request_json(Request {
                 method: Method::GET,

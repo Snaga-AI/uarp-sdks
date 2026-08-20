@@ -114,7 +114,7 @@ impl FilesApi {
 
     /// Stream every item returned by `listFiles`, following the `cursor` cursor until the server
     /// reports no further pages.
-    pub fn list_all<'a>(&'a self, params: &'a ListFilesParams) -> impl Stream<Item = Result<serde_json::Map<String, serde_json::Value>>> + 'a {
+    pub fn list_all<'a>(&'a self, params: &'a ListFilesParams) -> impl Stream<Item = Result<models::FileEntry>> + 'a {
         async_stream::try_stream! {
             let mut guard = CursorGuard::new();
             let mut cursor = params.cursor.clone();

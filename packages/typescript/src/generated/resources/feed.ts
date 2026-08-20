@@ -6,8 +6,8 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  FeedEntry,
   GetActivityFeedResponse,
-  JsonObject,
 } from '../models.js';
 
 /**
@@ -57,8 +57,8 @@ export class FeedResource extends APIResource {
    * Iterate every item returned by `getActivityFeed`, following the `cursor` cursor until the
    * server reports no further pages.
    */
-  getActivityFeedAll(params?: GetActivityFeedParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  getActivityFeedAll(params?: GetActivityFeedParams, options?: RequestOptions): AsyncIterableIterator<FeedEntry> {
+    return autoPaginate<FeedEntry>(
       (cursor) => this.getActivityFeed({ ...params, cursor }, options),
       'entries',
       'cursor',

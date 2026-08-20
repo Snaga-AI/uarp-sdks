@@ -254,7 +254,7 @@ impl PublicApi {
 
     /// Stream every item returned by `listPublicTenants`, following the `cursor` cursor until the
     /// server reports no further pages.
-    pub fn list_public_tenants_all<'a>(&'a self, params: &'a ListPublicTenantsParams) -> impl Stream<Item = Result<serde_json::Map<String, serde_json::Value>>> + 'a {
+    pub fn list_public_tenants_all<'a>(&'a self, params: &'a ListPublicTenantsParams) -> impl Stream<Item = Result<models::PublicTenant>> + 'a {
         async_stream::try_stream! {
             let mut guard = CursorGuard::new();
             let mut cursor = params.cursor.clone();

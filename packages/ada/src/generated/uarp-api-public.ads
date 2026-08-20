@@ -150,6 +150,15 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Public_Tenants_Response;
 
+   --  Collect every item `listPublicTenants` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function List_Public_Tenants_All
+     (Self : Client_Type;
+      Params : List_Public_Tenants_Params := No_List_Public_Tenants_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Public_Tenant_Vectors.Vector;
+
    --  Domain lookup
    --
    --  GET /api/v1/public/domain-lookup

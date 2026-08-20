@@ -367,14 +367,15 @@ package body UARP.API.Governance is
    function Get_Arbiter_Registry
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Arbiter_Registry
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/governance/arbiter/registry",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/governance/arbiter/registry",
+             Options => Options));
    end Get_Arbiter_Registry;
 
    function Get_Builder_Request

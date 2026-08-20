@@ -32,7 +32,7 @@ impl ProvidersApi {
     /// `GET /api/v1/llm/usage`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_llm_usage(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_llm_usage(&self) -> Result<models::LLMUsageSummary> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -50,7 +50,7 @@ impl ProvidersApi {
     /// `GET /api/v1/llm/voice-config`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_llm_voice_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_llm_voice_config(&self) -> Result<models::VoiceConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -66,7 +66,7 @@ impl ProvidersApi {
     /// Get platform default providers
     ///
     /// `GET /api/v1/providers/platform-defaults`
-    pub async fn get_platform_defaults(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_platform_defaults(&self) -> Result<models::PlatformLLMDefaults> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -98,7 +98,7 @@ impl ProvidersApi {
     /// List image generation providers and models
     ///
     /// `GET /api/v1/providers/image-providers`
-    pub async fn list_image_providers(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list_image_providers(&self) -> Result<models::ImageProviderList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -164,7 +164,7 @@ impl ProvidersApi {
     /// List available STT/TTS voice providers + models
     ///
     /// `GET /api/v1/providers/voice-providers`
-    pub async fn list_voice_providers(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn list_voice_providers(&self) -> Result<models::VoiceProviderList> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -13,7 +13,7 @@ public struct ProvidersAPI: Sendable {
     /// `GET /api/v1/llm/usage`
     ///
     /// Required scopes: `agents:read`.
-    public func getLLMUsage(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getLLMUsage(options: RequestOptions = .init()) async throws -> LLMUsageSummary {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/llm/usage",
@@ -26,7 +26,7 @@ public struct ProvidersAPI: Sendable {
     /// `GET /api/v1/llm/voice-config`
     ///
     /// Required scopes: `agents:read`.
-    public func getLLMVoiceConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getLLMVoiceConfig(options: RequestOptions = .init()) async throws -> VoiceConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/llm/voice-config",
@@ -37,7 +37,7 @@ public struct ProvidersAPI: Sendable {
     /// Get platform default providers
     ///
     /// `GET /api/v1/providers/platform-defaults`
-    public func getPlatformDefaults(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPlatformDefaults(options: RequestOptions = .init()) async throws -> PlatformLLMDefaults {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/providers/platform-defaults",
@@ -59,7 +59,7 @@ public struct ProvidersAPI: Sendable {
     /// List image generation providers and models
     ///
     /// `GET /api/v1/providers/image-providers`
-    public func listImageProviders(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func listImageProviders(options: RequestOptions = .init()) async throws -> ImageProviderList {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/providers/image-providers",
@@ -105,7 +105,7 @@ public struct ProvidersAPI: Sendable {
     /// List available STT/TTS voice providers + models
     ///
     /// `GET /api/v1/providers/voice-providers`
-    public func listVoiceProviders(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func listVoiceProviders(options: RequestOptions = .init()) async throws -> VoiceProviderList {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/providers/voice-providers",

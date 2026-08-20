@@ -424,7 +424,7 @@ impl GovernanceApi {
     /// Get arbiter registry
     ///
     /// `GET /api/v1/governance/arbiter/registry`
-    pub async fn get_arbiter_registry(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_arbiter_registry(&self) -> Result<models::ArbiterRegistry> {
         self.client
             .request_json(Request {
                 method: Method::GET,

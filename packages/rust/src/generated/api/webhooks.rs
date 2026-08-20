@@ -189,10 +189,19 @@ impl WebhooksApi {
 
     /// Send test delivery
     ///
+    /// Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the
+    /// endpoint works before relying on it.
+    ///
+    /// Only an **active** subscription is delivered to — `WebhookManager.dispatch` filters on
+    /// status and silently matches nothing otherwise. A disabled subscription therefore answers
+    /// **422**, not 200: until 2026-08-20 it answered `{"test_sent": true}` with nothing sent, no
+    /// delivery row written and no dispatch line in the server log, which turns a misconfigured
+    /// integration into a confirmed one.
+    ///
     /// `POST /api/v1/webhooks/{webhookId}/test`
     ///
     /// Required scopes: `webhooks:write`.
-    pub async fn test_webhook(&self, webhook_id: &str) -> Result<serde_json::Value> {
+    pub async fn test_webhook(&self, webhook_id: &str) -> Result<models::TestWebhookResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

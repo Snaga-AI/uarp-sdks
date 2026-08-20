@@ -277,7 +277,16 @@ test('parses the production document into the expected shape', () => {
   // `LedgerIntegrity` (which #166 defined and referenced from nothing until
   // #168 wired it to the verify operation), `GovernanceLedgerHead` (declared
   // `string`, `{seq, hash}` on the wire) and `AgentVersion`.
-  assert.equal(spec.types.length, 674);
+  // 674 -> 705 on 2026-08-20: twenty-five schemas the document gained in the
+  // uarp list-element and agent-field fixes (#159, #161, #164, #165, #173) —
+  // `Todo`, `KnowledgeBaseDocument`, `ConstitutionViolation`, `TeamGraphNode`,
+  // `TeamGraphEdge`, `FeedEntry`, `FileEntry`, `Invite`, `TenantUser`,
+  // `RunCheckpoint`, `LlmModel`, `PublicState`/`PublicTenant`/`PublicPlan`,
+  // `LandingStats`, `VoiceConfig`, `AgentScorer`, `ArbiterRegistry` and the
+  // rest — plus the enums and nested objects they carry. Twenty-five of these
+  // the web client held as hand-written types; five of them (the first five
+  // above) it asked for by name.
+  assert.equal(spec.types.length, 705);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);
