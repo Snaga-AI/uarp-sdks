@@ -19,6 +19,18 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   and tested at both ends: 26.0.0 (what the range still picks on its own) and
   25.0.0 pinned, both 0 warnings. Found by the Svitlo migration (#35).
 
+- **The Ada client no longer follows redirects.** `uarp_curl.c` set
+  `CURLOPT_FOLLOWLOCATION` with five hops and no host check, so a 302 from
+  the API host would have carried the bearer token to whatever host the
+  `Location` named — a hop nobody authorised. The API documents exactly
+  three 3xx answers and all three are browser-side OAuth hops
+  (`/auth/oauth/{provider}/start` and the two callbacks); no data endpoint
+  redirects. A 302 now reaches the caller as a 302 with `Location` in
+  `Problem.Headers`, and a test against the mock proves it (and fails when
+  the old flag is put back). Also corrected: `Problem.Headers` claimed its
+  names were lower-cased; they arrive as the server sent them, and
+  `UARP.Types.Lookup` does the case-insensitive match (#36).
+
 ### Added — every SDK
 
 - **Twenty-five schemas the document gained since 0.5.10 was cut**, regenerated
