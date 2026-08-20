@@ -94,8 +94,24 @@ static CURL *make_handle(const char *method,
     curl_easy_setopt(handle, CURLOPT_URL, url);
     curl_easy_setopt(handle, CURLOPT_CUSTOMREQUEST, method);
     curl_easy_setopt(handle, CURLOPT_HTTPHEADER, header_list);
-    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 1L);
-    curl_easy_setopt(handle, CURLOPT_MAXREDIRS, 5L);
+    /* Redirects are NOT followed, and that is a decision about the wire.
+     *
+     * The API documents exactly three 3xx responses, all of them browser
+     * OAuth hops (`/auth/oauth/{provider}/start`, both callbacks); no data
+     * endpoint redirects. Following one therefore never serves an SDK
+     * caller -- but it does hand libcurl a destination the caller never
+     * named, on a host the caller never named, which is precisely what a
+     * client sitting behind an egress policy must not do. A caller that
+     * wants the hop reads `location` out of the response headers and
+     * decides for itself.
+     *
+     * CURLOPT_REDIR_PROTOCOLS is deliberately NOT set instead: it guards
+     * the scheme, never the host, so it would leave the actual gap open
+     * while looking like it had been closed.
+     *
+     * If you turn this back on, `Test_Redirect_Not_Followed` fails.
+     */
+    curl_easy_setopt(handle, CURLOPT_FOLLOWLOCATION, 0L);
     curl_easy_setopt(handle, CURLOPT_NOSIGNAL, 1L);
     curl_easy_setopt(handle, CURLOPT_ERRORBUFFER, err);
     curl_easy_setopt(handle, CURLOPT_ACCEPT_ENCODING, "");

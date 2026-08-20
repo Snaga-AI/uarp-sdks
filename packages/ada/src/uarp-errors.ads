@@ -33,8 +33,9 @@ package UARP.Errors is
       Errors         : Field_Error_Vectors.Vector;
       --  The raw body, in case it was not a problem document at all.
       Raw            : Text;
-      --  Response headers, names lower-cased. They carry the retry and rate
-      --  limit hints, which the problem document itself does not.
+      --  Response headers, names exactly as the server sent them (look one
+      --  up with UARP.Types.Lookup, which folds case). They carry the retry
+      --  and rate limit hints, which the problem document itself does not.
       Headers        : Pair_Vectors.Vector;
    end record;
 

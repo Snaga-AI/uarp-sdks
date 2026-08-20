@@ -567,6 +567,38 @@ procedure UARP_SDK_Tests is
 
    --  A 429 carries its retry and rate-limit hints in headers, not in the body,
    --  so the non-raising path has to surface them.
+   --  A redirect is a destination the caller never named, on a host the
+   --  caller never named.  A client that follows one silently defeats any
+   --  egress policy wrapped around it, because only the first hop was ever
+   --  inspected.  The API documents three 3xx responses and all three are
+   --  browser OAuth hops, so nothing here loses an answer by stopping.
+   --
+   --  This test is the guard on `CURLOPT_FOLLOWLOCATION` in
+   --  `csrc/uarp_curl.c`: turn it back on and this fails, loudly, rather
+   --  than the property quietly disappearing.
+   procedure Test_Redirect_Not_Followed (Client : UARP.Client.Client_Type) is
+      Status    : Natural;
+      Body_Text : Text;
+      Problem   : UARP.Errors.Problem;
+      Options   : UARP.Client.Request_Options;
+   begin
+      --  302 is not in the retryable set, but pinning this to 0 keeps the
+      --  test about redirects and nothing else.
+      Options.Max_Retries := 0;
+      UARP.Client.Execute
+        (Client, "GET", "/redirect/offsite", Options => Options,
+         Status => Status, Body_Text => Body_Text, Problem => Problem);
+
+      Check ("a redirect reaches the caller as a 302", Status = 302,
+             Natural'Image (Status));
+      Check ("the redirect target was not fetched",
+             Ada.Strings.Fixed.Index (+Body_Text, "followed") = 0,
+             +Body_Text);
+
+      Check_Equal ("the caller is handed the Location to decide for itself",
+                   Lookup (Problem.Headers, "location"), "/redirect/target");
+   end Test_Redirect_Not_Followed;
+
    procedure Test_Rate_Limit_Hints (Client : UARP.Client.Client_Type) is
       use type UARP.Errors.Error_Kind;
 
@@ -846,6 +878,7 @@ procedure UARP_SDK_Tests is
 
       Test_Concurrent_Streams (Client);
       Test_SSE_Token (Base);
+      Test_Redirect_Not_Followed (Client);
       Test_Rate_Limit_Hints (Client);
       Test_Idempotency (Client);
       Test_Unknown_Enum;
