@@ -68,7 +68,7 @@ package UARP.API.Sessions is
       Session_Id : String;
       Branch_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Session;
+      return UARP.Models.Activate_Session_Branch_Response;
 
    --  Close a session
    --

@@ -31,8 +31,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun activateSessionBranch(sessionId: String, branchId: String, options: RequestOptions = RequestOptions()): Session {
-        return client.request<Session>(
+    public suspend fun activateSessionBranch(sessionId: String, branchId: String, options: RequestOptions = RequestOptions()): ActivateSessionBranchResponse {
+        return client.request<ActivateSessionBranchResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/branches/${encodePathSegment(branchId)}/activate",

@@ -77,7 +77,7 @@ impl SessionsApi {
     /// `PUT /api/v1/sessions/{sessionId}/branches/{branchId}/activate`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn activate_session_branch(&self, session_id: &str, branch_id: &str) -> Result<models::Session> {
+    pub async fn activate_session_branch(&self, session_id: &str, branch_id: &str) -> Result<models::ActivateSessionBranchResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

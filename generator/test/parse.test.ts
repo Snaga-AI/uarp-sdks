@@ -286,7 +286,19 @@ test('parses the production document into the expected shape', () => {
   // rest — plus the enums and nested objects they carry. Twenty-five of these
   // the web client held as hand-written types; five of them (the first five
   // above) it asked for by name.
-  assert.equal(spec.types.length, 705);
+  // 705 -> 723 on 2026-08-20 (second cut of the day): six schemas and the
+  // types they carry — `AISystemCard` (+ its technical_specifications),
+  // `FRIAReport`/`FRIARight` (the AI Act documents, which the document had
+  // answered as bare objects), `RegistryVersionEntry`/`ResolvedDep` (the
+  // registry's `versions[]` element, whose dependencies are an ARRAY of
+  // {scope,name,version_req}, not the manifest's name→range map),
+  // `ConnectorConfigField` (the value type of a connector's config_schema,
+  // previously the generator's `Value` placeholder) — plus the enums that
+  // uarp #178/#181 added to existing list elements (Todo.status,
+  // FeedEntry.event_type, KnowledgeBaseDocument.type/status/embedding_status,
+  // TeamGraph role/status/type, ConstitutionViolation rule_type/penalty,
+  // ApiKeySummary.kind/status, AgentScorer.config.type).
+  assert.equal(spec.types.length, 723);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

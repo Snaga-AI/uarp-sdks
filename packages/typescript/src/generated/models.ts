@@ -46,43 +46,36 @@ export interface ActivateSafeModeRequest {
   deadline_hours?: number;
 }
 
+export interface ActivateSessionBranchResponse {
+  session_id: string;
+  active_branch: string;
+}
+
 export interface ActiveSession {
   key_id: string;
   name: string;
   prefix: string;
   scopes: string[];
-  status: ActiveSessionStatus;
+  status: APIKeySummaryStatus;
   is_current: boolean;
   created_at?: string;
   expires_at?: string | null;
   last_used_at?: string | null;
 }
 
-export type ActiveSessionStatus = 'active' | 'revoked';
-
-export const ACTIVE_SESSION_STATUS_VALUES = ['active', 'revoked'] as const;
-
 export interface AddTeamGraphEdgeRequest {
   from: string;
   to: string;
-  type: AddTeamGraphEdgeRequestType;
+  type: TeamGraphEdgeType;
   task_id?: string;
 }
 
-export type AddTeamGraphEdgeRequestType = 'delegation' | 'supervision' | 'peer';
-
-export const ADD_TEAM_GRAPH_EDGE_REQUEST_TYPE_VALUES = ['delegation', 'supervision', 'peer'] as const;
-
 export interface AddTeamGraphNodeRequest {
   agent_id: string;
-  role: AddTeamGraphNodeRequestRole;
+  role: TeamGraphNodeRole;
   spawned_by?: string;
   goal_summary?: string;
 }
-
-export type AddTeamGraphNodeRequestRole = 'orchestrator' | 'worker' | 'arbiter';
-
-export const ADD_TEAM_GRAPH_NODE_REQUEST_ROLE_VALUES = ['orchestrator', 'worker', 'arbiter'] as const;
 
 export interface AdminAnalyticsEventsResponse {
   items: AdminAnalyticsEventsResponseItem[];
@@ -400,13 +393,13 @@ export type AgentAutonomyLevel = 'manual' | 'approve_risky' | 'full_auto';
 export const AGENT_AUTONOMY_LEVEL_VALUES = ['manual', 'approve_risky', 'full_auto'] as const;
 
 export interface AgentBridgeState {
-  online_machines?: number;
-  total_machines?: number;
-  platforms?: string[];
-  working_directories?: string[];
-  machine_names?: string[];
-  latest_heartbeat?: string;
-  installed_specs?: BridgeInstalledSpec[];
+  online_machines: number;
+  total_machines: number;
+  platforms: string[];
+  working_directories: string[];
+  machine_names: string[];
+  latest_heartbeat: string;
+  installed_specs: BridgeInstalledSpec[];
 }
 
 /**
@@ -489,24 +482,45 @@ export interface AgentPrompts {
 
 export interface AgentPublicConfig {
   enabled: boolean;
-  system_prompt?: string;
-  greeting?: string;
+  system_prompt?: string | null;
+  greeting?: string | null;
   allowed_tools?: string[];
   max_messages_per_session?: number;
   max_concurrent_sessions?: number;
   rate_limit_sessions_per_ip?: number;
   rate_limit_messages_per_min?: number;
-  daily_message_limit?: number;
+  /**
+   * Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+   * ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+   * `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+   * Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+   * default of 15.
+   */
+  daily_message_limit?: number | null;
 }
 
 export interface AgentScorer {
-  agent_id?: string;
-  config?: JsonObject;
-  created_at?: string;
-  name?: string;
-  scorer_id?: string;
-  tenant_id?: string;
+  scorer_id: string;
+  agent_id: string;
+  tenant_id: string;
+  name: string;
+  config: AgentScorerConfig;
+  created_at: string;
 }
+
+export interface AgentScorerConfig {
+  type: AgentScorerConfigType;
+  url: string;
+  timeout_ms?: number;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export type AgentScorerConfigType = 'webhook';
+
+export const AGENT_SCORER_CONFIG_TYPE_VALUES = ['webhook'] as const;
 
 export interface AgentSpec {
   spec_id: string;
@@ -605,6 +619,30 @@ export interface AgentVersion {
   config?: JsonObject;
 }
 
+export interface AiSystemCard {
+  system_name: string;
+  provider: string;
+  version: string;
+  risk_classification?: RiskClassification;
+  intended_purpose: string;
+  technical_specifications: AiSystemCardTechnicalSpecifications;
+  training_data_summary?: string;
+  performance_metrics?: JsonObject;
+  limitations: string[];
+  guardrails_summary: string[];
+  human_oversight_measures: string[];
+  generated_at: string;
+}
+
+export interface AiSystemCardTechnicalSpecifications {
+  model_provider?: string;
+  model_ref?: string;
+  max_context_tokens?: number;
+  built_in_tools?: string[];
+  guardrails_enabled?: boolean;
+  guardrail_ids?: string[];
+}
+
 export interface Ambassador {
   ambassador_id: string;
   name?: string;
@@ -681,13 +719,31 @@ export interface APIKeyResponse {
  */
 export interface APIKeySummary {
   key_id: string;
-  name?: string;
+  name: string;
   prefix: string;
-  kind?: string;
-  scopes?: string[];
-  status: string;
-  created_at?: string;
+  /**
+   * What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+   * `api_key` was created deliberately from Settings or the CLI.
+   */
+  kind: APIKeySummaryKind;
+  scopes: string[];
+  status: APIKeySummaryStatus;
+  created_at: string;
+  expires_at?: string;
+  last_used_at?: string;
 }
+
+/**
+ * What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+ * `api_key` was created deliberately from Settings or the CLI.
+ */
+export type APIKeySummaryKind = 'session' | 'api_key';
+
+export const APIKEY_SUMMARY_KIND_VALUES = ['session', 'api_key'] as const;
+
+export type APIKeySummaryStatus = 'active' | 'revoked';
+
+export const APIKEY_SUMMARY_STATUS_VALUES = ['active', 'revoked'] as const;
 
 export interface AppleNativeAuthRequest {
   /**
@@ -833,8 +889,8 @@ export interface BridgeConnection {
   machine_name?: string;
   capabilities: string[];
   working_directory: string;
-  version?: string;
-  last_heartbeat?: string;
+  version: string;
+  last_heartbeat: string;
   status: AgentSummaryBridgeStatus;
   registered_at?: string;
   os?: string;
@@ -1132,6 +1188,12 @@ export interface CompleteOAuthLoginResponse {
   email: string;
 }
 
+export interface ConnectorConfigField {
+  type: string;
+  required?: boolean;
+  description?: string;
+}
+
 export interface Constitution {
   rules: ConstitutionRule[];
   version: number;
@@ -1224,13 +1286,13 @@ export type ConstitutionRuleScope = 'all_agents' | 'team' | 'agent' | 'role';
 export const CONSTITUTION_RULE_SCOPE_VALUES = ['all_agents', 'team', 'agent', 'role'] as const;
 
 export interface ConstitutionViolation {
-  rule_id?: string;
-  rule_type?: ConstitutionRuleRuleType;
-  action?: string;
-  agent_id?: string;
-  penalty?: ConstitutionRulePenalty;
+  rule_id: string;
+  rule_type: ConstitutionRuleRuleType;
+  action: string;
+  agent_id: string;
+  penalty: ConstitutionRulePenalty;
   description?: string;
-  timestamp?: string;
+  timestamp: string;
 }
 
 export interface ContentReport {
@@ -1400,14 +1462,10 @@ export interface CreateAgentFriaRequest {
 
 export interface CreateAgentFriaRequestRightsAssessedItem {
   right: string;
-  impact: CreateAgentFriaRequestRightsAssessedItemImpact;
+  impact: FriaRightImpact;
   justification: string;
   mitigation?: string;
 }
-
-export type CreateAgentFriaRequestRightsAssessedItemImpact = 'none' | 'low' | 'medium' | 'high';
-
-export const CREATE_AGENT_FRIA_REQUEST_RIGHTS_ASSESSED_ITEM_IMPACT_VALUES = ['none', 'low', 'medium', 'high'] as const;
 
 export interface CreateAgentIntegrationRequest {
   connector_id: string;
@@ -1723,8 +1781,8 @@ export interface CreateSessionShareRequest {
 }
 
 export interface CreateSessionShareResponse {
-  share_url?: string;
-  role?: GetSessionShareResponseRole;
+  share_url?: string | null;
+  role?: GetSessionShareResponseRole | null;
   expires_at?: string | null;
 }
 
@@ -1749,13 +1807,9 @@ export interface CreateTaskRequest {
 }
 
 export interface CreateTaskRequestDelivery {
-  channels?: CreateTaskRequestDeliveryChannel[];
+  channels?: TodoDeliveryChannel[];
   target?: string;
 }
-
-export type CreateTaskRequestDeliveryChannel = 'email' | 'telegram' | 'whatsapp';
-
-export const CREATE_TASK_REQUEST_DELIVERY_CHANNEL_VALUES = ['email', 'telegram', 'whatsapp'] as const;
 
 export interface CreateTaskRequestRecurrence {
   cron?: string;
@@ -2091,22 +2145,41 @@ export interface ExperimentVariant {
 }
 
 export interface ExportAdminConfigResponse {
-  exported_at?: string;
-  section_count?: number;
-  sections?: JsonObject;
+  exported_at: string;
+  section_count: number;
+  sections: JsonObject;
 }
 
 export interface FeedEntry {
-  agent_id: string;
-  agent_name: string;
-  event_type: string;
   feed_id: string;
-  metrics?: JsonObject;
-  run_id: string;
-  status?: string;
   tenant_id: string;
   timestamp: string;
+  event_type: FeedEntryEventType;
   title: string;
+  summary?: string;
+  agent_id?: string;
+  agent_name?: string;
+  company_id?: string;
+  company_name?: string;
+  team_id?: string;
+  team_name?: string;
+  session_id?: string;
+  run_id?: string;
+  status?: string;
+  metrics?: FeedEntryMetrics;
+  error?: string;
+}
+
+export type FeedEntryEventType = 'run.started' | 'run.completed' | 'run.failed' | 'run.timeout' | 'run.cancelled' | 'session.created' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.escalation' | 'team.round_start' | 'team.round_end' | 'objective.created' | 'objective.completed' | 'agent.created';
+
+export const FEED_ENTRY_EVENT_TYPE_VALUES = ['run.started', 'run.completed', 'run.failed', 'run.timeout', 'run.cancelled', 'session.created', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.escalation', 'team.round_start', 'team.round_end', 'objective.created', 'objective.completed', 'agent.created'] as const;
+
+export interface FeedEntryMetrics {
+  duration_ms?: number;
+  tokens_used?: number;
+  cost_usd?: number;
+  steps?: number;
+  tool_calls?: number;
 }
 
 export interface FileArbiterAppealRequest {
@@ -2129,6 +2202,27 @@ export interface FileEntry {
   size_bytes: number;
   tenant_id: string;
 }
+
+export interface FriaReport {
+  agent_id: string;
+  risk_level: string;
+  rights_assessed: FriaRight[];
+  mitigations: string;
+  assessor: string;
+  assessed_at: string;
+  next_review: string;
+}
+
+export interface FriaRight {
+  right: string;
+  impact: FriaRightImpact;
+  justification: string;
+  mitigation?: string;
+}
+
+export type FriaRightImpact = 'none' | 'low' | 'medium' | 'high';
+
+export const FRIA_RIGHT_IMPACT_VALUES = ['none', 'low', 'medium', 'high'] as const;
 
 export interface GetActivityFeedResponse {
   entries?: FeedEntry[];
@@ -2225,7 +2319,7 @@ export interface GetAgentVersionDiffResponse {
   agent_id?: string;
   version_from?: number;
   version_to?: number;
-  diff?: Record<string, Value2>;
+  diff?: Record<string, Value>;
   changed_fields?: string[];
 }
 
@@ -2314,9 +2408,15 @@ export interface GetGovernanceLedgerResponse {
    * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
    * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
    * same ledger a second later. Rendering this as "events recorded" understates the ledger by
-   * three orders of magnitude.
+   * three orders of magnitude. For the size, read `tenant_total`.
    */
   total: number;
+  /**
+   * How many entries in the whole ledger belong to the calling tenant — the number to render as
+   * "ledger entries". Independent of `count`/`from`/`to`. Not `entries_checked` from
+   * `/governance/ledger/verify` (that walks every tenant) and not `head.seq` (global sequence).
+   */
+  tenant_total: number;
 }
 
 export interface GetHealthResponse {
@@ -2484,8 +2584,8 @@ export interface GetRuntimeConfigResponse {
 }
 
 export interface GetSessionShareResponse {
-  share_url?: string;
-  role?: GetSessionShareResponseRole;
+  share_url?: string | null;
+  role?: GetSessionShareResponseRole | null;
   expires_at?: string | null;
 }
 
@@ -2566,7 +2666,10 @@ export interface GoogleOneTapAuthResponse {
 
 export interface GovernanceLedgerEntry {
   /**
-   * Monotonic position in the tenant's chain.
+   * Position in the ONE global chain shared by all tenants — not a per-tenant sequence.
+   * Consecutive rows in a tenant's page usually have gaps here; the missing numbers are other
+   * tenants' entries (see the /governance/ledger description). For the tenant's own count use
+   * `tenant_total` on the list response.
    */
   seq: number;
   /**
@@ -2770,10 +2873,22 @@ export interface IntegrationCatalogItem {
    */
   id: string;
   name: string;
-  description?: string;
-  icon?: string;
+  description: string;
+  icon: string;
   auth_type: IntegrationCatalogItemAuthType;
-  config_schema?: Record<string, Value>;
+  /**
+   * Present when the connector authorises through another connector's OAuth provider
+   * (google_calendar, gmail, google_drive and google_sheets all say `google`). A client builds
+   * the authorize URL from this when set, from `id` otherwise. Absent for every other connector.
+   */
+  oauth_provider?: string;
+  /**
+   * The OAuth scopes the connector needs, so a client can show them BEFORE the visitor clicks
+   * Connect rather than leaving the IdP consent screen to be the first place they are seen.
+   * Absent — not empty — for api_key connectors and for OAuth connectors that declare none.
+   */
+  required_oauth_scopes?: string[];
+  config_schema: Record<string, ConnectorConfigField>;
 }
 
 export type IntegrationCatalogItemAuthType = 'api_key' | 'oauth2' | 'webhook' | 'none';
@@ -2855,19 +2970,40 @@ export interface KnowledgeBaseCreate {
 }
 
 export interface KnowledgeBaseDocument {
-  chunk_count?: number;
-  chunk_preview?: string;
-  created_at?: string;
-  embedding_status?: string;
-  id?: string;
-  kb_id?: string;
-  name?: string;
-  size_bytes?: number;
-  status?: string;
-  tenant_id?: string;
-  type?: string;
-  updated_at?: string;
+  id: string;
+  kb_id: string;
+  tenant_id: string;
+  name: string;
+  type: KnowledgeBaseDocumentType;
+  size_bytes: number;
+  chunk_count: number;
+  status: KnowledgeBaseDocumentStatus;
+  error_message?: string;
+  created_at: string;
+  updated_at: string;
+  chunk_preview: string | null;
+  /**
+   * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+   * provider answered and the document is searchable by keywords only.
+   */
+  embedding_status: KnowledgeBaseDocumentEmbeddingStatus;
 }
+
+/**
+ * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+ * provider answered and the document is searchable by keywords only.
+ */
+export type KnowledgeBaseDocumentEmbeddingStatus = 'embedded' | 'keyword_only';
+
+export const KNOWLEDGE_BASE_DOCUMENT_EMBEDDING_STATUS_VALUES = ['embedded', 'keyword_only'] as const;
+
+export type KnowledgeBaseDocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
+
+export const KNOWLEDGE_BASE_DOCUMENT_STATUS_VALUES = ['uploading', 'processing', 'ready', 'error'] as const;
+
+export type KnowledgeBaseDocumentType = 'pdf' | 'markdown' | 'csv' | 'html' | 'plain' | 'docx' | 'image';
+
+export const KNOWLEDGE_BASE_DOCUMENT_TYPE_VALUES = ['pdf', 'markdown', 'csv', 'html', 'plain', 'docx', 'image'] as const;
 
 /**
  * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
@@ -2953,7 +3089,7 @@ export interface ListAmbassadorVetoesResponse {
 
 export interface ListAPIKeysResponse {
   keys: APIKeySummary[];
-  total?: number;
+  total: number;
 }
 
 export interface ListArbiterCasesResponse {
@@ -3171,8 +3307,8 @@ export interface ListMyTenantsResponseMembership {
   plan?: string;
   logo_url?: string;
   role: string;
-  is_sole_owner?: boolean;
-  member_count?: number;
+  is_sole_owner: boolean;
+  member_count: number;
   joined_at?: string;
 }
 
@@ -3181,7 +3317,7 @@ export interface ListMyTenantsResponsePendingInvite {
   tenant_id: string;
   tenant_name: string;
   role: string;
-  expires_at?: string;
+  expires_at: string;
   invited_by_name?: string;
   secret?: string;
 }
@@ -3535,6 +3671,12 @@ export interface MarketplaceInvocation {
   tenant_id?: string;
   caller_tenant_id?: string;
   input?: JsonObject;
+  metrics?: JsonObject;
+  /**
+   * Set when the run succeeded but paying the publisher failed — a different thing from a failed
+   * run.
+   */
+  revenue_error?: string;
   status: MarketplaceInvocationStatus;
   result?: JsonObject | null;
   created_at: string;
@@ -4174,13 +4316,13 @@ export interface RegistryGetSparseIndexResponse {
 }
 
 export interface RegistryGetSparseIndexResponseVersion {
-  version?: string;
-  sha256?: string;
-  dependencies?: JsonObject[];
-  yanked?: boolean;
+  version: string;
+  sha256: string;
+  dependencies: ResolvedDep[];
+  yanked: boolean;
   yank_reason?: string;
   size?: number;
-  published_at?: string;
+  published_at: string;
 }
 
 export interface RegistryGetSpecMetadataResponse {
@@ -4196,7 +4338,7 @@ export interface RegistryGetSpecMetadataResponse {
   shared_with?: string[];
   owner_tenant_id: string;
   latest_version: string;
-  versions?: JsonObject[];
+  versions?: RegistryVersionEntry[];
   created_at?: string;
   updated_at?: string;
   tool_count?: number;
@@ -4303,6 +4445,16 @@ export interface RegistrySetShareResponse {
   updated_at?: string;
 }
 
+export interface RegistryVersionEntry {
+  version: string;
+  sha256: string;
+  dependencies: ResolvedDep[];
+  yanked: boolean;
+  yank_reason?: string;
+  size?: number;
+  published_at: string;
+}
+
 export interface RegistryYankVersionRequest {
   reason?: string;
 }
@@ -4326,6 +4478,12 @@ export interface ResendInviteResponse {
 
 export interface ResolveAmbassadorRequestRequest {
   response: string;
+}
+
+export interface ResolvedDep {
+  scope: string;
+  name: string;
+  version_req: string;
 }
 
 export interface ResolveSharedSessionResponse {
@@ -5005,21 +5163,34 @@ export interface TeamGoalConfig {
 }
 
 export interface TeamGraphEdge {
-  created_at?: string;
-  edge_id?: string;
-  from?: string;
-  to?: string;
-  type?: string;
+  edge_id: string;
+  from: string;
+  to: string;
+  type: TeamGraphEdgeType;
+  task_id?: string;
+  created_at: string;
 }
 
+export type TeamGraphEdgeType = 'delegation' | 'supervision' | 'peer';
+
+export const TEAM_GRAPH_EDGE_TYPE_VALUES = ['delegation', 'supervision', 'peer'] as const;
+
 export interface TeamGraphNode {
-  agent_id?: string;
-  goal_summary?: string;
-  role?: string;
-  spawned_at?: string;
-  spawned_by?: string;
-  status?: string;
+  agent_id: string;
+  role: TeamGraphNodeRole;
+  status: TeamGraphNodeStatus;
+  spawned_by: string;
+  spawned_at: string;
+  goal_summary: string;
 }
+
+export type TeamGraphNodeRole = 'orchestrator' | 'worker' | 'arbiter';
+
+export const TEAM_GRAPH_NODE_ROLE_VALUES = ['orchestrator', 'worker', 'arbiter'] as const;
+
+export type TeamGraphNodeStatus = 'active' | 'idle' | 'terminated';
+
+export const TEAM_GRAPH_NODE_STATUS_VALUES = ['active', 'idle', 'terminated'] as const;
 
 export type TeamMergeStrategy = 'supervisor_merges' | 'concatenate' | 'vote';
 
@@ -5231,22 +5402,50 @@ export interface TestWebhookResponse {
 }
 
 export interface Todo {
-  agent_name: string;
-  assign_agent_id?: string;
-  created_at: string;
-  due_at?: string;
-  last_fired_at?: string;
-  last_run_status?: string;
-  order_index?: number;
-  require_confirmation?: boolean;
-  run_id?: string;
+  todo_id: string;
   session_id: string;
-  status: string;
   tenant_id: string;
   title: string;
-  todo_id: string;
+  instructions?: string;
+  due_at?: string;
+  assign_agent_id?: string;
+  assign_team_id?: string;
+  status: TodoStatus;
+  created_at: string;
   updated_at: string;
+  run_id?: string;
+  team_run_id?: string;
+  recurrence?: TodoRecurrence;
+  next_fire_at?: string;
+  last_fired_at?: string;
+  last_run_status?: string;
+  require_confirmation?: boolean;
+  delivery?: TodoDelivery;
+  order_index?: number;
+  parent_task_id?: string;
+  /**
+   * Present only on the session-scoped list; absent from GET /todos.
+   */
+  agent_name?: string;
 }
+
+export interface TodoDelivery {
+  channels: TodoDeliveryChannel[];
+  target?: string;
+}
+
+export type TodoDeliveryChannel = 'email' | 'telegram' | 'whatsapp';
+
+export const TODO_DELIVERY_CHANNEL_VALUES = ['email', 'telegram', 'whatsapp'] as const;
+
+export interface TodoRecurrence {
+  cron: string;
+  timezone?: string;
+}
+
+export type TodoStatus = 'pending' | 'pending_confirmation' | 'in_progress' | 'done' | 'cancelled';
+
+export const TODO_STATUS_VALUES = ['pending', 'pending_confirmation', 'in_progress', 'done', 'cancelled'] as const;
 
 export interface TransferTenantOwnershipResponse {
   ok?: boolean;
@@ -5367,13 +5566,9 @@ export interface UpdateSessionRequestModelOverride {
 }
 
 export interface UpdateTeamGraphNodeRequest {
-  status?: UpdateTeamGraphNodeRequestStatus;
+  status?: TeamGraphNodeStatus;
   goal_summary?: string;
 }
-
-export type UpdateTeamGraphNodeRequestStatus = 'active' | 'idle' | 'terminated';
-
-export const UPDATE_TEAM_GRAPH_NODE_REQUEST_STATUS_VALUES = ['active', 'idle', 'terminated'] as const;
 
 export interface UpdateTenantRequest {
   name?: string;
@@ -5402,11 +5597,11 @@ export interface UploadFileRequest {
 }
 
 export interface UsageMarginSummary {
-  platform_markup_percent?: number;
-  provider_cost_usd?: number;
-  user_cost_usd?: number;
-  margin_usd?: number;
-  effective_margin_percent?: number;
+  platform_markup_percent: number;
+  provider_cost_usd: number;
+  user_cost_usd: number;
+  margin_usd: number;
+  effective_margin_percent: number;
 }
 
 /**
@@ -5479,12 +5674,6 @@ export interface ValidationPolicy {
 }
 
 export interface Value {
-  type?: string;
-  required?: boolean;
-  description?: string;
-}
-
-export interface Value2 {
   from?: JsonValue;
   to?: JsonValue;
 }
@@ -5632,10 +5821,10 @@ export interface Workspace {
   owner_id?: string;
   name: string;
   shared_with?: string[];
-  assigned_agents?: string[];
+  assigned_agents: string[];
   assigned_teams?: string[];
   assigned_companies?: string[];
-  created_at?: string;
+  created_at: string;
   updated_at?: string;
 }
 

@@ -7,9 +7,11 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   Agent,
   AgentUpdate,
+  AiSystemCard,
   CreateAgentFriaRequest,
   CreateAgentRequest,
   CreateAgentVersionRequest,
+  FriaReport,
   GetAgentActivityStatsResponse,
   GetAgentIdentityResponse,
   GetAgentSystemCardFormat,
@@ -121,7 +123,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  createAgentFria(agentId: string, body: CreateAgentFriaRequest, options?: RequestOptions): Promise<JsonObject> {
+  createAgentFria(agentId: string, body: CreateAgentFriaRequest, options?: RequestOptions): Promise<FriaReport> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/fria`,
@@ -234,7 +236,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getAgentFria(agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  getAgentFria(agentId: string, options?: RequestOptions): Promise<FriaReport> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/fria`,
@@ -279,7 +281,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getAgentSystemCard(agentId: string, params?: GetAgentSystemCardParams, options?: RequestOptions): Promise<JsonObject> {
+  getAgentSystemCard(agentId: string, params?: GetAgentSystemCardParams, options?: RequestOptions): Promise<AiSystemCard> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/system-card`,
