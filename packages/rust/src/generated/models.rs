@@ -922,7 +922,7 @@ pub struct AgentBridgeState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub latest_heartbeat: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub installed_specs: Option<Vec<String>>,
+    pub installed_specs: Option<Vec<BridgeInstalledSpec>>,
 }
 
 /// Command hierarchy (MVP: opcon only).
@@ -1480,14 +1480,22 @@ pub struct Ambassador {
     pub ambassador_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
-    pub role: AmbassadorRole,
+    pub role: HumanAmbassadorRole,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub permissions: Option<AmbassadorPermissions>,
+    pub permissions: Option<AmbassadorPermissions2>,
 }
 
 /// `AmbassadorPermissions` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AmbassadorPermissions {
+    pub can_veto: bool,
+    pub can_audit: bool,
+    pub can_propose: bool,
+}
+
+/// `AmbassadorPermissions2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AmbassadorPermissions2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub can_veto: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -1600,50 +1608,6 @@ impl From<&str> for AmbassadorRequestType {
             "approval" => Self::Approval,
             "escalation" => Self::Escalation,
             "report" => Self::Report,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `AmbassadorRole` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum AmbassadorRole {
-    #[default]
-    #[serde(rename = "founder")]
-    Founder,
-    #[serde(rename = "ambassador")]
-    Ambassador,
-    #[serde(rename = "observer")]
-    Observer,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl AmbassadorRole {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Founder => "founder",
-            Self::Ambassador => "ambassador",
-            Self::Observer => "observer",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for AmbassadorRole {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for AmbassadorRole {
-    fn from(value: &str) -> Self {
-        match value {
-            "founder" => Self::Founder,
-            "ambassador" => Self::Ambassador,
-            "observer" => Self::Observer,
             other => Self::Other(other.to_string()),
         }
     }
@@ -2003,6 +1967,65 @@ pub struct BridgeHeartbeatResponse {
     pub ok: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timestamp: Option<String>,
+}
+
+/// `BridgeInstalledSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct BridgeInstalledSpec {
+    /// `@scope/name`.
+    pub spec_id: String,
+    /// Resolved exactly, never a range.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+    /// Tool names the SPEC registered into the local runtime.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<String>>,
+    pub status: BridgeInstalledSpecStatus,
+    /// Failure detail when `status` is `failed` — artifact 404, SHA mismatch, capability conflict.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reported_at: Option<String>,
+}
+
+/// `BridgeInstalledSpecStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum BridgeInstalledSpecStatus {
+    #[default]
+    #[serde(rename = "installed")]
+    Installed,
+    #[serde(rename = "failed")]
+    Failed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl BridgeInstalledSpecStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Installed => "installed",
+            Self::Failed => "failed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for BridgeInstalledSpecStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for BridgeInstalledSpecStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "installed" => Self::Installed,
+            "failed" => Self::Failed,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `BridgePendingTask` model.
@@ -2619,6 +2642,79 @@ pub struct Constitution {
     pub version: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
+}
+
+/// `ConstitutionAmendment` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConstitutionAmendment {
+    pub amendment_id: String,
+    pub rule_id: String,
+    pub action: ConstitutionAmendmentAction,
+    /// The new rule, for `add` and `modify`. Absent on `remove`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rule: Option<ConstitutionRule>,
+    pub proposed_by: String,
+    /// The founder, or the consensus that carried it.
+    pub approved_by: String,
+    pub rationale: String,
+    pub applied_at: String,
+}
+
+/// `ConstitutionAmendmentAction` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ConstitutionAmendmentAction {
+    #[default]
+    #[serde(rename = "add")]
+    Add,
+    #[serde(rename = "modify")]
+    Modify,
+    #[serde(rename = "remove")]
+    Remove,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ConstitutionAmendmentAction {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Add => "add",
+            Self::Modify => "modify",
+            Self::Remove => "remove",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ConstitutionAmendmentAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ConstitutionAmendmentAction {
+    fn from(value: &str) -> Self {
+        match value {
+            "add" => Self::Add,
+            "modify" => Self::Modify,
+            "remove" => Self::Remove,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ConstitutionDocument` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConstitutionDocument {
+    pub tenant_id: String,
+    pub version: i64,
+    pub rules: Vec<ConstitutionRule>,
+    pub amendments: Vec<ConstitutionAmendment>,
+    /// Who created the genesis document.
+    pub founder_id: String,
+    pub created_at: String,
+    pub updated_at: String,
 }
 
 /// `ConstitutionRule` model.
@@ -6046,6 +6142,61 @@ pub struct HealthLiveResponse {
 pub struct HealthzAliasResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+}
+
+/// `HumanAmbassador` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct HumanAmbassador {
+    pub ambassador_id: String,
+    pub tenant_id: String,
+    pub name: String,
+    pub role: HumanAmbassadorRole,
+    pub permissions: AmbassadorPermissions,
+    pub created_at: String,
+}
+
+/// `HumanAmbassadorRole` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum HumanAmbassadorRole {
+    #[default]
+    #[serde(rename = "founder")]
+    Founder,
+    #[serde(rename = "ambassador")]
+    Ambassador,
+    #[serde(rename = "observer")]
+    Observer,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl HumanAmbassadorRole {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Founder => "founder",
+            Self::Ambassador => "ambassador",
+            Self::Observer => "observer",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for HumanAmbassadorRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for HumanAmbassadorRole {
+    fn from(value: &str) -> Self {
+        match value {
+            "founder" => Self::Founder,
+            "ambassador" => Self::Ambassador,
+            "observer" => Self::Observer,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `ImportAdminConfigRequest` model.
@@ -11713,6 +11864,127 @@ pub struct VetoProposalRequest {
 pub struct VetoProposalResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ok: Option<bool>,
+}
+
+/// `VetoRecord` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VetoRecord {
+    pub veto_id: String,
+    /// `ambassador_id` of the human who issued it.
+    pub issued_by: String,
+    pub target_type: VetoRecordTargetType,
+    pub target_id: String,
+    pub reason: String,
+    pub issued_at: String,
+}
+
+/// `VetoRecordTargetType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum VetoRecordTargetType {
+    #[default]
+    #[serde(rename = "proposal")]
+    Proposal,
+    #[serde(rename = "action")]
+    Action,
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "case")]
+    Case,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl VetoRecordTargetType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Proposal => "proposal",
+            Self::Action => "action",
+            Self::Agent => "agent",
+            Self::Case => "case",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for VetoRecordTargetType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for VetoRecordTargetType {
+    fn from(value: &str) -> Self {
+        match value {
+            "proposal" => Self::Proposal,
+            "action" => Self::Action,
+            "agent" => Self::Agent,
+            "case" => Self::Case,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `VoteResult` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoteResult {
+    pub proposal_id: String,
+    pub status: VoteResultStatus,
+    pub total_votes: i64,
+    pub approve_weight: f64,
+    pub reject_weight: f64,
+    pub abstain_weight: f64,
+    pub quorum_met: bool,
+    pub tallied_at: String,
+}
+
+/// `VoteResultStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum VoteResultStatus {
+    #[default]
+    #[serde(rename = "passed")]
+    Passed,
+    #[serde(rename = "rejected")]
+    Rejected,
+    #[serde(rename = "expired")]
+    Expired,
+    #[serde(rename = "vetoed")]
+    Vetoed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl VoteResultStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Passed => "passed",
+            Self::Rejected => "rejected",
+            Self::Expired => "expired",
+            Self::Vetoed => "vetoed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for VoteResultStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for VoteResultStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "passed" => Self::Passed,
+            "rejected" => Self::Rejected,
+            "expired" => Self::Expired,
+            "vetoed" => Self::Vetoed,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `VotingProposal` model.

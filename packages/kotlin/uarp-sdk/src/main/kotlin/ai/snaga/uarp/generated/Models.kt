@@ -862,7 +862,7 @@ public data class AgentBridgeState(
     @SerialName("latest_heartbeat")
     public val latestHeartbeat: String? = null,
     @SerialName("installed_specs")
-    public val installedSpecs: List<String>? = null,
+    public val installedSpecs: List<BridgeInstalledSpec>? = null,
 )
 
 /**
@@ -1316,8 +1316,8 @@ public data class Ambassador(
     @SerialName("ambassador_id")
     public val ambassadorId: String,
     public val name: String? = null,
-    public val role: AmbassadorRole,
-    public val permissions: AmbassadorPermissions? = null,
+    public val role: HumanAmbassadorRole,
+    public val permissions: AmbassadorPermissions2? = null,
 )
 
 /**
@@ -1325,6 +1325,19 @@ public data class Ambassador(
  */
 @Serializable
 public data class AmbassadorPermissions(
+    @SerialName("can_veto")
+    public val canVeto: Boolean,
+    @SerialName("can_audit")
+    public val canAudit: Boolean,
+    @SerialName("can_propose")
+    public val canPropose: Boolean,
+)
+
+/**
+ * `AmbassadorPermissions2` model.
+ */
+@Serializable
+public data class AmbassadorPermissions2(
     @SerialName("can_veto")
     public val canVeto: Boolean? = null,
     @SerialName("can_audit")
@@ -1412,35 +1425,6 @@ public object AmbassadorRequestTypeSerializer : KSerializer<AmbassadorRequestTyp
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AmbassadorRequestType", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: AmbassadorRequestType): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AmbassadorRequestType = AmbassadorRequestType(decoder.decodeString())
-}
-
-/**
- * `AmbassadorRole` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = AmbassadorRoleSerializer::class)
-@JvmInline
-public value class AmbassadorRole(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val FOUNDER: AmbassadorRole = AmbassadorRole("founder")
-        public val AMBASSADOR: AmbassadorRole = AmbassadorRole("ambassador")
-        public val OBSERVER: AmbassadorRole = AmbassadorRole("observer")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<AmbassadorRole> = listOf(FOUNDER, AMBASSADOR, OBSERVER)
-    }
-}
-
-public object AmbassadorRoleSerializer : KSerializer<AmbassadorRole> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AmbassadorRole", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: AmbassadorRole): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): AmbassadorRole = AmbassadorRole(decoder.decodeString())
 }
 
 /**
@@ -1829,6 +1813,61 @@ public data class BridgeHeartbeatResponse(
     public val ok: Boolean,
     public val timestamp: String? = null,
 )
+
+/**
+ * `BridgeInstalledSpec` model.
+ */
+@Serializable
+public data class BridgeInstalledSpec(
+    /**
+     * `@scope/name`.
+     */
+    @SerialName("spec_id")
+    public val specId: String,
+    /**
+     * Resolved exactly, never a range.
+     */
+    public val version: String? = null,
+    /**
+     * Tool names the SPEC registered into the local runtime.
+     */
+    public val tools: List<String>? = null,
+    public val status: BridgeInstalledSpecStatus,
+    /**
+     * Failure detail when `status` is `failed` — artifact 404, SHA mismatch, capability conflict.
+     */
+    public val error: String? = null,
+    @SerialName("reported_at")
+    public val reportedAt: String? = null,
+)
+
+/**
+ * `BridgeInstalledSpecStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = BridgeInstalledSpecStatusSerializer::class)
+@JvmInline
+public value class BridgeInstalledSpecStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INSTALLED: BridgeInstalledSpecStatus = BridgeInstalledSpecStatus("installed")
+        public val FAILED: BridgeInstalledSpecStatus = BridgeInstalledSpecStatus("failed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<BridgeInstalledSpecStatus> = listOf(INSTALLED, FAILED)
+    }
+}
+
+public object BridgeInstalledSpecStatusSerializer : KSerializer<BridgeInstalledSpecStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.BridgeInstalledSpecStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: BridgeInstalledSpecStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): BridgeInstalledSpecStatus = BridgeInstalledSpecStatus(decoder.decodeString())
+}
 
 /**
  * `BridgePendingTask` model.
@@ -2421,6 +2460,82 @@ public data class Constitution(
     public val version: Long,
     @SerialName("updated_at")
     public val updatedAt: String? = null,
+)
+
+/**
+ * `ConstitutionAmendment` model.
+ */
+@Serializable
+public data class ConstitutionAmendment(
+    @SerialName("amendment_id")
+    public val amendmentId: String,
+    @SerialName("rule_id")
+    public val ruleId: String,
+    public val action: ConstitutionAmendmentAction,
+    /**
+     * The new rule, for `add` and `modify`. Absent on `remove`.
+     */
+    public val rule: ConstitutionRule? = null,
+    @SerialName("proposed_by")
+    public val proposedBy: String,
+    /**
+     * The founder, or the consensus that carried it.
+     */
+    @SerialName("approved_by")
+    public val approvedBy: String,
+    public val rationale: String,
+    @SerialName("applied_at")
+    public val appliedAt: String,
+)
+
+/**
+ * `ConstitutionAmendmentAction` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ConstitutionAmendmentActionSerializer::class)
+@JvmInline
+public value class ConstitutionAmendmentAction(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADD: ConstitutionAmendmentAction = ConstitutionAmendmentAction("add")
+        public val MODIFY: ConstitutionAmendmentAction = ConstitutionAmendmentAction("modify")
+        public val REMOVE: ConstitutionAmendmentAction = ConstitutionAmendmentAction("remove")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ConstitutionAmendmentAction> = listOf(ADD, MODIFY, REMOVE)
+    }
+}
+
+public object ConstitutionAmendmentActionSerializer : KSerializer<ConstitutionAmendmentAction> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ConstitutionAmendmentAction", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ConstitutionAmendmentAction): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ConstitutionAmendmentAction = ConstitutionAmendmentAction(decoder.decodeString())
+}
+
+/**
+ * `ConstitutionDocument` model.
+ */
+@Serializable
+public data class ConstitutionDocument(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val version: Long,
+    public val rules: List<ConstitutionRule>,
+    public val amendments: List<ConstitutionAmendment>,
+    /**
+     * Who created the genesis document.
+     */
+    @SerialName("founder_id")
+    public val founderId: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
 )
 
 /**
@@ -5524,6 +5639,51 @@ public data class HealthLiveResponse(
 public data class HealthzAliasResponse(
     public val status: String? = null,
 )
+
+/**
+ * `HumanAmbassador` model.
+ */
+@Serializable
+public data class HumanAmbassador(
+    @SerialName("ambassador_id")
+    public val ambassadorId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val name: String,
+    public val role: HumanAmbassadorRole,
+    public val permissions: AmbassadorPermissions,
+    @SerialName("created_at")
+    public val createdAt: String,
+)
+
+/**
+ * `HumanAmbassadorRole` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = HumanAmbassadorRoleSerializer::class)
+@JvmInline
+public value class HumanAmbassadorRole(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FOUNDER: HumanAmbassadorRole = HumanAmbassadorRole("founder")
+        public val AMBASSADOR: HumanAmbassadorRole = HumanAmbassadorRole("ambassador")
+        public val OBSERVER: HumanAmbassadorRole = HumanAmbassadorRole("observer")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<HumanAmbassadorRole> = listOf(FOUNDER, AMBASSADOR, OBSERVER)
+    }
+}
+
+public object HumanAmbassadorRoleSerializer : KSerializer<HumanAmbassadorRole> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.HumanAmbassadorRole", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: HumanAmbassadorRole): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): HumanAmbassadorRole = HumanAmbassadorRole(decoder.decodeString())
+}
 
 /**
  * `ImportAdminConfigRequest` model.
@@ -10871,6 +11031,109 @@ public data class VetoProposalRequest(
 public data class VetoProposalResponse(
     public val ok: Boolean? = null,
 )
+
+/**
+ * `VetoRecord` model.
+ */
+@Serializable
+public data class VetoRecord(
+    @SerialName("veto_id")
+    public val vetoId: String,
+    /**
+     * `ambassador_id` of the human who issued it.
+     */
+    @SerialName("issued_by")
+    public val issuedBy: String,
+    @SerialName("target_type")
+    public val targetType: VetoRecordTargetType,
+    @SerialName("target_id")
+    public val targetId: String,
+    public val reason: String,
+    @SerialName("issued_at")
+    public val issuedAt: String,
+)
+
+/**
+ * `VetoRecordTargetType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = VetoRecordTargetTypeSerializer::class)
+@JvmInline
+public value class VetoRecordTargetType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PROPOSAL: VetoRecordTargetType = VetoRecordTargetType("proposal")
+        public val ACTION: VetoRecordTargetType = VetoRecordTargetType("action")
+        public val AGENT: VetoRecordTargetType = VetoRecordTargetType("agent")
+        public val CASE: VetoRecordTargetType = VetoRecordTargetType("case")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<VetoRecordTargetType> = listOf(PROPOSAL, ACTION, AGENT, CASE)
+    }
+}
+
+public object VetoRecordTargetTypeSerializer : KSerializer<VetoRecordTargetType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.VetoRecordTargetType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: VetoRecordTargetType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): VetoRecordTargetType = VetoRecordTargetType(decoder.decodeString())
+}
+
+/**
+ * `VoteResult` model.
+ */
+@Serializable
+public data class VoteResult(
+    @SerialName("proposal_id")
+    public val proposalId: String,
+    public val status: VoteResultStatus,
+    @SerialName("total_votes")
+    public val totalVotes: Long,
+    @SerialName("approve_weight")
+    public val approveWeight: Double,
+    @SerialName("reject_weight")
+    public val rejectWeight: Double,
+    @SerialName("abstain_weight")
+    public val abstainWeight: Double,
+    @SerialName("quorum_met")
+    public val quorumMet: Boolean,
+    @SerialName("tallied_at")
+    public val talliedAt: String,
+)
+
+/**
+ * `VoteResultStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = VoteResultStatusSerializer::class)
+@JvmInline
+public value class VoteResultStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PASSED: VoteResultStatus = VoteResultStatus("passed")
+        public val REJECTED: VoteResultStatus = VoteResultStatus("rejected")
+        public val EXPIRED: VoteResultStatus = VoteResultStatus("expired")
+        public val VETOED: VoteResultStatus = VoteResultStatus("vetoed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<VoteResultStatus> = listOf(PASSED, REJECTED, EXPIRED, VETOED)
+    }
+}
+
+public object VoteResultStatusSerializer : KSerializer<VoteResultStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.VoteResultStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: VoteResultStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): VoteResultStatus = VoteResultStatus(decoder.decodeString())
+}
 
 /**
  * `VotingProposal` model.
