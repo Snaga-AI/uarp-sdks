@@ -1117,6 +1117,23 @@ pub struct AgentPublicConfig {
     pub daily_message_limit: Option<i64>,
 }
 
+/// `AgentScorer` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentScorer {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub scorer_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+
 /// `AgentSpec` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentSpec {
@@ -1800,6 +1817,23 @@ impl From<&str> for ArbiterCaseStatus {
     }
 }
 
+/// `ArbiterRegistry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ArbiterRegistry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub arbiter_agent_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_appeals: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub panel_size: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ruling_deadline_hours: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
 /// `Artifact` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Artifact {
@@ -1824,6 +1858,18 @@ pub struct AssignWorkspaceRequest {
     pub team_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub company_id: Option<String>,
+}
+
+/// `AuthProvider` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AuthProvider {
+    pub email: String,
+    pub id: String,
+    pub linked: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub linked_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sub: Option<String>,
 }
 
 /// Body for POST /api/v1/auth/verify-code. No request_id; code is bound to email only.
@@ -2564,7 +2610,7 @@ pub struct CheckGovernanceResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allowed: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub violations: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub violations: Option<Vec<ConstitutionViolation>>,
 }
 
 /// `CheckSpawnPermissionRequest` model.
@@ -2907,6 +2953,25 @@ impl From<&str> for ConstitutionRuleScope {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `ConstitutionViolation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConstitutionViolation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rule_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rule_type: Option<ConstitutionRuleRuleType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub penalty: Option<ConstitutionRulePenalty>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timestamp: Option<String>,
 }
 
 /// `ContentReport` model.
@@ -4982,6 +5047,23 @@ pub struct ExportAdminConfigResponse {
     pub sections: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
+/// `FeedEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FeedEntry {
+    pub agent_id: String,
+    pub agent_name: String,
+    pub event_type: String,
+    pub feed_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Map<String, serde_json::Value>>,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    pub tenant_id: String,
+    pub timestamp: String,
+    pub title: String,
+}
+
 /// `FileArbiterAppealRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FileArbiterAppealRequest {
@@ -4998,11 +5080,23 @@ pub struct FileArbiterCaseRequest {
     pub reason: Option<String>,
 }
 
+/// `FileEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FileEntry {
+    pub created_at: String,
+    pub file_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub sha256: String,
+    pub size_bytes: i64,
+    pub tenant_id: String,
+}
+
 /// `GetActivityFeedResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetActivityFeedResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub entries: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub entries: Option<Vec<FeedEntry>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5237,7 +5331,7 @@ pub struct GetAgentViolationsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub violations: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub violations: Option<Vec<ConstitutionViolation>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
 }
@@ -5885,7 +5979,7 @@ pub struct GetTeamChatHistoryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub team_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub conversation_history: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub conversation_history: Option<Vec<TeamChatTurn>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5896,9 +5990,9 @@ pub struct GetTeamChatHistoryResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTeamGraphResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub nodes: Option<Vec<TeamGraphNode>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub edges: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub edges: Option<Vec<TeamGraphEdge>>,
 }
 
 /// `GetTeamRunMessagesResponse` model.
@@ -6294,6 +6388,13 @@ impl From<&str> for HumanAmbassadorRole {
     }
 }
 
+/// `ImageProviderList` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ImageProviderList {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
 /// `ImportAdminConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ImportAdminConfigRequest {
@@ -6587,6 +6688,29 @@ impl From<&str> for IntegrationStatus {
     }
 }
 
+/// `Invite` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Invite {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub invited_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+}
+
 /// `InviteUserRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct InviteUserRequest {
@@ -6666,6 +6790,35 @@ pub struct KnowledgeBaseCreate {
     pub embedding_model: Option<String>,
 }
 
+/// `KnowledgeBaseDocument` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct KnowledgeBaseDocument {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chunk_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chunk_preview: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub embedding_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kb_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
 /// Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct KnowledgeBaseUpdate {
@@ -6673,6 +6826,25 @@ pub struct KnowledgeBaseUpdate {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+
+/// `LandingStats` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LandingStats {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents_deployed: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_providers: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub registered_users: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_today: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_sessions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_tokens: Option<i64>,
 }
 
 /// `LedgerIntegrity` model.
@@ -6718,7 +6890,7 @@ pub struct ListAgentIntegrationsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentScorersResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub scorers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub scorers: Option<Vec<AgentScorer>>,
 }
 
 /// `ListAgentsResponse` model.
@@ -6783,7 +6955,7 @@ pub struct ListAuthProvidersResponse {
     pub items: Vec<ListAuthProvidersResponseItem>,
     /// Legacy alias for `items`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub providers: Option<Vec<AuthProvider>>,
 }
 
 /// `ListAuthProvidersResponseItem` model.
@@ -6966,7 +7138,7 @@ pub struct ListDataExplorerNamespacesResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListFilesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<FileEntry>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7007,10 +7179,10 @@ pub struct ListIntegrationsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListInvitesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<Invite>>,
     /// Legacy alias for `items`. Will be removed in API v1.x.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub invites: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub invites: Option<Vec<Invite>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7019,7 +7191,7 @@ pub struct ListInvitesResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListKbDocumentsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub documents: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub documents: Option<Vec<KnowledgeBaseDocument>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7061,7 +7233,7 @@ pub struct ListLLMCredentialsProvidersResponseProvider {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListLLMModelsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub models: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub models: Option<Vec<LLMModel>>,
 }
 
 /// `ListMCPServersResponse` model.
@@ -7253,21 +7425,21 @@ pub struct ListProvidersResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicPlansResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub plans: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub plans: Option<Vec<PublicPlan>>,
 }
 
 /// `ListPublicStatesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicStatesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub states: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub states: Option<Vec<PublicState>>,
 }
 
 /// `ListPublicTenantsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicTenantsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<PublicTenant>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7280,7 +7452,7 @@ pub struct ListPublicTenantsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListRunCheckpointsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub checkpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub checkpoints: Option<Vec<RunCheckpoint>>,
 }
 
 /// `ListRunsResponse` model.
@@ -7403,10 +7575,10 @@ pub struct ListSessionsResponseItemModelOverride {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSessionTodosResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<Todo>>,
     /// Legacy alias for `items`. Will be removed in API v1.x.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub todos: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub todos: Option<Vec<Todo>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7422,7 +7594,7 @@ pub struct ListSubscriptionsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListTeamGraphEdgesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub edges: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub edges: Option<Vec<TeamGraphEdge>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7431,7 +7603,7 @@ pub struct ListTeamGraphEdgesResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListTeamGraphNodesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub nodes: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub nodes: Option<Vec<TeamGraphNode>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7471,17 +7643,17 @@ pub struct ListTenantsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListTodosResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub todos: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub todos: Option<Vec<Todo>>,
 }
 
 /// `ListUsersResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListUsersResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<TenantUser>>,
     /// Legacy alias for `items`. Will be removed in API v1.x.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub users: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub users: Option<Vec<TenantUser>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
 }
@@ -7490,7 +7662,7 @@ pub struct ListUsersResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListVideoProvidersResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub providers: Option<Vec<VideoProvider>>,
 }
 
 /// `ListVotingProposalsResponse` model.
@@ -7548,6 +7720,22 @@ pub struct LLMCredential {
     pub updated_at: Option<String>,
 }
 
+/// `LLMModel` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMModel {
+    pub display_name: String,
+    pub id: String,
+    pub max_context_tokens: i64,
+    pub max_output_tokens: i64,
+    pub pricing: serde_json::Map<String, serde_json::Value>,
+    pub provider: String,
+    pub supports_json_mode: bool,
+    pub supports_streaming: bool,
+    pub supports_tool_calls: bool,
+    pub supports_vision: bool,
+    pub tier: String,
+}
+
 /// An LLM provider the platform knows about, and whether a key is configured.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct LLMProvider {
@@ -7586,6 +7774,58 @@ pub struct LLMTranscribeAudioRequest {
     pub model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
+}
+
+/// `LLMUsageSummary` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMUsageSummary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub billing_period: Option<LLMUsageSummaryBillingPeriod>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub by_model: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limits: Option<LLMUsageSummaryLimits>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage: Option<LLMUsageSummaryUsage>,
+}
+
+/// `LLMUsageSummaryBillingPeriod` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMUsageSummaryBillingPeriod {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub end: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub start: Option<String>,
+}
+
+/// `LLMUsageSummaryLimits` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMUsageSummaryLimits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_per_day: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_per_hour: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_per_minute: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_per_month: Option<i64>,
+}
+
+/// `LLMUsageSummaryUsage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMUsageSummaryUsage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_this_hour: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_this_minute: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requests_today: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_remaining: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tokens_used: Option<i64>,
 }
 
 /// `LocateMyAgentResponse` model.
@@ -8523,6 +8763,21 @@ pub struct PermissionSet {
     pub updated_at: Option<String>,
 }
 
+/// `PlatformLLMDefaults` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlatformLLMDefaults {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_endpoint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fallback_provider: Option<String>,
+}
+
 /// `Product` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Product {
@@ -8734,6 +8989,63 @@ pub struct PublicDomainLookupResponse {
     pub tenant_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub found: Option<bool>,
+}
+
+/// `PublicPlan` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicPlan {
+    pub id: String,
+    pub name: String,
+    pub price_amount_cents: i64,
+    pub price_currency: String,
+    pub quotas: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `PublicState` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicState {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branding: Option<serde_json::Map<String, serde_json::Value>>,
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_at: Option<String>,
+    pub short_description: String,
+    pub slug: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stats: Option<serde_json::Map<String, serde_json::Value>>,
+    pub tags: Vec<String>,
+    pub tenant_id: String,
+}
+
+/// `PublicTenant` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicTenant {
+    pub agents: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub agents_count: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branding: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_at: Option<String>,
+    pub slug: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub stats: serde_json::Map<String, serde_json::Value>,
+    pub tags: Vec<String>,
+    pub tenant_id: String,
 }
 
 /// `PublicTrackEventRequest` model.
@@ -9429,6 +9741,11 @@ pub struct Run {
     pub status: RunStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+    /// AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
+    /// carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
+    /// no key configured no token is minted and the field is absent; the token is an opaque string
+    /// to every client.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9462,6 +9779,21 @@ pub struct Run {
 pub struct RunApproveRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub response: Option<String>,
+}
+
+/// `RunCheckpoint` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunCheckpoint {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step: Option<i64>,
+    /// Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
+    /// shape, which differs per adapter.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub messages: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    /// Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
+    /// step and token counters, optionally provider cache hits.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `RunEvaluationRequest` model.
@@ -10790,6 +11122,22 @@ pub struct Team {
     pub updated_at: Option<String>,
 }
 
+/// `TeamChatTurn` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamChatTurn {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub addressed_to: Option<Vec<String>>,
+    pub content: String,
+    pub from_task: bool,
+    pub role: String,
+    pub run_meta: serde_json::Map<String, serde_json::Value>,
+    pub run_pending: bool,
+    pub team_run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thread_id: Option<String>,
+    pub timestamp: String,
+}
+
 /// Body for `POST /api/v1/teams` (`CreateTeamSchema`).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TeamCreate {
@@ -10877,6 +11225,38 @@ pub struct TeamGoalConfig {
     pub max_iterations: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub budget: Option<TeamObjectiveBudget>,
+}
+
+/// `TeamGraphEdge` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamGraphEdge {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub edge_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<String>,
+}
+
+/// `TeamGraphNode` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamGraphNode {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub goal_summary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spawned_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spawned_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
 }
 
 /// `TeamMergeStrategy` enumeration.
@@ -11469,6 +11849,27 @@ impl From<&str> for TenantStatus {
     }
 }
 
+/// `TenantUser` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantUser {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
 /// `TerminateAgentResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TerminateAgentResponse {
@@ -11503,6 +11904,42 @@ pub struct TestLLMProviderKeyResponse {
     pub success: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
+}
+
+/// `TestWebhookResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TestWebhookResponse {
+    pub test_sent: bool,
+    pub webhook_id: String,
+    /// The subscription's first configured event, or `run.completed` when it has none.
+    pub event_type: String,
+}
+
+/// `Todo` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Todo {
+    pub agent_name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assign_agent_id: Option<String>,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_fired_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_run_status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order_index: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub require_confirmation: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    pub session_id: String,
+    pub status: String,
+    pub tenant_id: String,
+    pub title: String,
+    pub todo_id: String,
+    pub updated_at: String,
 }
 
 /// `TransferTenantOwnershipResponse` model.
@@ -12028,6 +12465,65 @@ impl From<&str> for VetoRecordTargetType {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `VideoProvider` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VideoProvider {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub local: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub models: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+/// `VoiceConfig` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoiceConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stt: Option<VoiceConfigStt>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tts: Option<VoiceConfigTts>,
+}
+
+/// `VoiceConfigStt` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoiceConfigStt {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+}
+
+/// `VoiceConfigTts` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoiceConfigTts {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voice: Option<String>,
+}
+
+/// `VoiceProviderList` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoiceProviderList {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
 /// `VoteResult` model.

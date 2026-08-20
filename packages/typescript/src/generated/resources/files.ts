@@ -5,7 +5,7 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
-  JsonObject,
+  FileEntry,
   JsonValue,
   ListFilesResponse,
   UploadFileRequest,
@@ -92,8 +92,8 @@ export class FilesResource extends APIResource {
    * Iterate every item returned by `listFiles`, following the `cursor` cursor until the server
    * reports no further pages.
    */
-  listAll(params?: ListFilesParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  listAll(params?: ListFilesParams, options?: RequestOptions): AsyncIterableIterator<FileEntry> {
+    return autoPaginate<FileEntry>(
       (cursor) => this.list({ ...params, cursor }, options),
       'items',
       'cursor',

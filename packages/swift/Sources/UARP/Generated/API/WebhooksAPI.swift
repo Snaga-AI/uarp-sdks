@@ -123,10 +123,19 @@ public struct WebhooksAPI: Sendable {
 
     /// Send test delivery
     ///
+    /// Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the
+    /// endpoint works before relying on it.
+    ///
+    /// Only an **active** subscription is delivered to — `WebhookManager.dispatch` filters on
+    /// status and silently matches nothing otherwise. A disabled subscription therefore answers
+    /// **422**, not 200: until 2026-08-20 it answered `{"test_sent": true}` with nothing sent, no
+    /// delivery row written and no dispatch line in the server log, which turns a misconfigured
+    /// integration into a confirmed one.
+    ///
     /// `POST /api/v1/webhooks/{webhookId}/test`
     ///
     /// Required scopes: `webhooks:write`.
-    public func testWebhook(webhookId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func testWebhook(webhookId: String, options: RequestOptions = .init()) async throws -> TestWebhookResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/webhooks/\(encodePathSegment(webhookId))/test",

@@ -3,13 +3,18 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
+  ImageProviderList,
   JsonObject,
   LLMSynthesizeSpeechRequest,
   LLMTranscribeAudioRequest,
+  LLMUsageSummary,
   ListLLMModelsResponse,
   ListProviderModelsResponse,
   ListProvidersResponse,
   ListVideoProvidersResponse,
+  PlatformLLMDefaults,
+  VoiceConfig,
+  VoiceProviderList,
 } from '../models.js';
 
 /**
@@ -23,7 +28,7 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getLLMUsage(options?: RequestOptions): Promise<JsonObject> {
+  getLLMUsage(options?: RequestOptions): Promise<LLMUsageSummary> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/llm/usage',
@@ -38,7 +43,7 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getLLMVoiceConfig(options?: RequestOptions): Promise<JsonObject> {
+  getLLMVoiceConfig(options?: RequestOptions): Promise<VoiceConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/llm/voice-config',
@@ -51,7 +56,7 @@ export class ProvidersResource extends APIResource {
    *
    * `GET /api/v1/providers/platform-defaults`
    */
-  getPlatformDefaults(options?: RequestOptions): Promise<JsonObject> {
+  getPlatformDefaults(options?: RequestOptions): Promise<PlatformLLMDefaults> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/providers/platform-defaults',
@@ -77,7 +82,7 @@ export class ProvidersResource extends APIResource {
    *
    * `GET /api/v1/providers/image-providers`
    */
-  listImageProviders(options?: RequestOptions): Promise<JsonObject> {
+  listImageProviders(options?: RequestOptions): Promise<ImageProviderList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/providers/image-providers',
@@ -131,7 +136,7 @@ export class ProvidersResource extends APIResource {
    *
    * `GET /api/v1/providers/voice-providers`
    */
-  listVoiceProviders(options?: RequestOptions): Promise<JsonObject> {
+  listVoiceProviders(options?: RequestOptions): Promise<VoiceProviderList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/providers/voice-providers',

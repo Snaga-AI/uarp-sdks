@@ -116,6 +116,15 @@ package UARP.API.Webhooks is
 
    --  Send test delivery
    --
+   --  Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the
+   --  endpoint works before relying on it.
+   --
+   --  Only an **active** subscription is delivered to - `WebhookManager.dispatch` filters on
+   --  status and silently matches nothing otherwise. A disabled subscription therefore answers
+   --  **422**, not 200: until 2026-08-20 it answered `{"test_sent": true}` with nothing sent, no
+   --  delivery row written and no dispatch line in the server log, which turns a misconfigured
+   --  integration into a confirmed one.
+   --
    --  POST /api/v1/webhooks/{webhookId}/test
    --
    --  Required scopes: webhooks:write.
@@ -123,6 +132,6 @@ package UARP.API.Webhooks is
      (Self : Client_Type;
       Webhook_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Test_Webhook_Response;
 
 end UARP.API.Webhooks;

@@ -172,7 +172,7 @@ public struct PublicAPI: Sendable {
 
     /// Stream every item returned by `listPublicTenants`, following the `cursor` cursor until the
     /// server reports no further pages.
-    public func listPublicTenantsAll(category: String? = nil, sort: String? = nil, search: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func listPublicTenantsAll(category: String? = nil, sort: String? = nil, search: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<PublicTenant, Error> {
         autoPaginate(
             fetch: { cursor in try await self.listPublicTenants(category: category, sort: sort, search: search, limit: limit, cursor: cursor, options: options) },
             items: { $0.items ?? [] },

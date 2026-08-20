@@ -1043,6 +1043,23 @@ public data class AgentPublicConfig(
 )
 
 /**
+ * `AgentScorer` model.
+ */
+@Serializable
+public data class AgentScorer(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val config: JsonObject? = null,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    public val name: String? = null,
+    @SerialName("scorer_id")
+    public val scorerId: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+)
+
+/**
  * `AgentSpec` model.
  */
 @Serializable
@@ -1628,6 +1645,25 @@ public object ArbiterCaseStatusSerializer : KSerializer<ArbiterCaseStatus> {
 }
 
 /**
+ * `ArbiterRegistry` model.
+ */
+@Serializable
+public data class ArbiterRegistry(
+    @SerialName("arbiter_agent_ids")
+    public val arbiterAgentIds: List<String>? = null,
+    @SerialName("max_appeals")
+    public val maxAppeals: Long? = null,
+    @SerialName("panel_size")
+    public val panelSize: Long? = null,
+    @SerialName("ruling_deadline_hours")
+    public val rulingDeadlineHours: Long? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
  * `Artifact` model.
  */
 @Serializable
@@ -1660,6 +1696,19 @@ public data class AssignWorkspaceRequest(
     public val teamId: String? = null,
     @SerialName("company_id")
     public val companyId: String? = null,
+)
+
+/**
+ * `AuthProvider` model.
+ */
+@Serializable
+public data class AuthProvider(
+    public val email: String,
+    public val id: String,
+    public val linked: Boolean,
+    @SerialName("linked_at")
+    public val linkedAt: String? = null,
+    public val sub: String? = null,
 )
 
 /**
@@ -2376,7 +2425,7 @@ public data class CheckGovernanceRequest(
 @Serializable
 public data class CheckGovernanceResponse(
     public val allowed: Boolean? = null,
-    public val violations: List<JsonObject>? = null,
+    public val violations: List<ConstitutionViolation>? = null,
 )
 
 /**
@@ -2694,6 +2743,23 @@ public object ConstitutionRuleScopeSerializer : KSerializer<ConstitutionRuleScop
     override fun serialize(encoder: Encoder, value: ConstitutionRuleScope): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): ConstitutionRuleScope = ConstitutionRuleScope(decoder.decodeString())
 }
+
+/**
+ * `ConstitutionViolation` model.
+ */
+@Serializable
+public data class ConstitutionViolation(
+    @SerialName("rule_id")
+    public val ruleId: String? = null,
+    @SerialName("rule_type")
+    public val ruleType: ConstitutionRuleRuleType? = null,
+    public val action: String? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val penalty: ConstitutionRulePenalty? = null,
+    public val description: String? = null,
+    public val timestamp: String? = null,
+)
 
 /**
  * `ContentReport` model.
@@ -4546,6 +4612,29 @@ public data class ExportAdminConfigResponse(
 )
 
 /**
+ * `FeedEntry` model.
+ */
+@Serializable
+public data class FeedEntry(
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("agent_name")
+    public val agentName: String,
+    @SerialName("event_type")
+    public val eventType: String,
+    @SerialName("feed_id")
+    public val feedId: String,
+    public val metrics: JsonObject? = null,
+    @SerialName("run_id")
+    public val runId: String,
+    public val status: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val timestamp: String,
+    public val title: String,
+)
+
+/**
  * `FileArbiterAppealRequest` model.
  */
 @Serializable
@@ -4568,11 +4657,30 @@ public data class FileArbiterCaseRequest(
 )
 
 /**
+ * `FileEntry` model.
+ */
+@Serializable
+public data class FileEntry(
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("file_id")
+    public val fileId: String,
+    public val filename: String,
+    @SerialName("mime_type")
+    public val mimeType: String,
+    public val sha256: String,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+)
+
+/**
  * `GetActivityFeedResponse` model.
  */
 @Serializable
 public data class GetActivityFeedResponse(
-    public val entries: List<JsonObject>? = null,
+    public val entries: List<FeedEntry>? = null,
     public val cursor: String? = null,
     public val total: Long? = null,
 )
@@ -4795,7 +4903,7 @@ public data class GetAgentVersionDiffResponse(
 public data class GetAgentViolationsResponse(
     @SerialName("agent_id")
     public val agentId: String? = null,
-    public val violations: List<JsonObject>? = null,
+    public val violations: List<ConstitutionViolation>? = null,
     public val count: Long? = null,
 )
 
@@ -5408,7 +5516,7 @@ public data class GetTeamChatHistoryResponse(
     @SerialName("team_id")
     public val teamId: String? = null,
     @SerialName("conversation_history")
-    public val conversationHistory: List<JsonObject>? = null,
+    public val conversationHistory: List<TeamChatTurn>? = null,
     public val total: Long? = null,
     @SerialName("chat_state")
     public val chatState: JsonObject? = null,
@@ -5419,8 +5527,8 @@ public data class GetTeamChatHistoryResponse(
  */
 @Serializable
 public data class GetTeamGraphResponse(
-    public val nodes: List<JsonObject>? = null,
-    public val edges: List<JsonObject>? = null,
+    public val nodes: List<TeamGraphNode>? = null,
+    public val edges: List<TeamGraphEdge>? = null,
 )
 
 /**
@@ -5772,6 +5880,14 @@ public object HumanAmbassadorRoleSerializer : KSerializer<HumanAmbassadorRole> {
 }
 
 /**
+ * `ImageProviderList` model.
+ */
+@Serializable
+public data class ImageProviderList(
+    public val providers: List<JsonObject>? = null,
+)
+
+/**
  * `ImportAdminConfigRequest` model.
  */
 @Serializable
@@ -6030,6 +6146,26 @@ public object IntegrationStatusSerializer : KSerializer<IntegrationStatus> {
 }
 
 /**
+ * `Invite` model.
+ */
+@Serializable
+public data class Invite(
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    public val email: String? = null,
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    public val id: String? = null,
+    @SerialName("invited_by")
+    public val invitedBy: String? = null,
+    public val role: String? = null,
+    public val secret: String? = null,
+    public val status: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+)
+
+/**
  * `InviteUserRequest` model.
  */
 @Serializable
@@ -6121,12 +6257,60 @@ public data class KnowledgeBaseCreate(
 )
 
 /**
+ * `KnowledgeBaseDocument` model.
+ */
+@Serializable
+public data class KnowledgeBaseDocument(
+    @SerialName("chunk_count")
+    public val chunkCount: Long? = null,
+    @SerialName("chunk_preview")
+    public val chunkPreview: String? = null,
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    @SerialName("embedding_status")
+    public val embeddingStatus: String? = null,
+    public val id: String? = null,
+    @SerialName("kb_id")
+    public val kbId: String? = null,
+    public val name: String? = null,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long? = null,
+    public val status: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    public val type: String? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
  * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
  */
 @Serializable
 public data class KnowledgeBaseUpdate(
     public val name: String? = null,
     public val description: String? = null,
+)
+
+/**
+ * `LandingStats` model.
+ */
+@Serializable
+public data class LandingStats(
+    @SerialName("agents_deployed")
+    public val agentsDeployed: Long? = null,
+    @SerialName("llm_providers")
+    public val llmProviders: Long? = null,
+    @SerialName("registered_users")
+    public val registeredUsers: Long? = null,
+    @SerialName("tool_calls_today")
+    public val toolCallsToday: Long? = null,
+    @SerialName("total_runs")
+    public val totalRuns: Long? = null,
+    @SerialName("total_sessions")
+    public val totalSessions: Long? = null,
+    @SerialName("total_tokens")
+    public val totalTokens: Long? = null,
 )
 
 /**
@@ -6180,7 +6364,7 @@ public data class ListAgentIntegrationsResponse(
  */
 @Serializable
 public data class ListAgentScorersResponse(
-    public val scorers: List<JsonObject>? = null,
+    public val scorers: List<AgentScorer>? = null,
 )
 
 /**
@@ -6263,7 +6447,7 @@ public data class ListAuthProvidersResponse(
     /**
      * Legacy alias for `items`. Deprecated by the API.
      */
-    public val providers: List<JsonObject>? = null,
+    public val providers: List<AuthProvider>? = null,
 )
 
 /**
@@ -6438,7 +6622,7 @@ public data class ListDataExplorerNamespacesResponse(
  */
 @Serializable
 public data class ListFilesResponse(
-    public val items: List<JsonObject>? = null,
+    public val items: List<FileEntry>? = null,
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
@@ -6483,11 +6667,11 @@ public data class ListIntegrationsResponse(
  */
 @Serializable
 public data class ListInvitesResponse(
-    public val items: List<JsonObject>? = null,
+    public val items: List<Invite>? = null,
     /**
      * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
      */
-    public val invites: List<JsonObject>? = null,
+    public val invites: List<Invite>? = null,
     public val total: Long? = null,
 )
 
@@ -6496,7 +6680,7 @@ public data class ListInvitesResponse(
  */
 @Serializable
 public data class ListKbDocumentsResponse(
-    public val documents: List<JsonObject>? = null,
+    public val documents: List<KnowledgeBaseDocument>? = null,
     public val total: Long? = null,
 )
 
@@ -6543,7 +6727,7 @@ public data class ListLLMCredentialsProvidersResponseProvider(
  */
 @Serializable
 public data class ListLLMModelsResponse(
-    public val models: List<JsonObject>? = null,
+    public val models: List<LLMModel>? = null,
 )
 
 /**
@@ -6753,7 +6937,7 @@ public data class ListProvidersResponse(
  */
 @Serializable
 public data class ListPublicPlansResponse(
-    public val plans: List<JsonObject>? = null,
+    public val plans: List<PublicPlan>? = null,
 )
 
 /**
@@ -6761,7 +6945,7 @@ public data class ListPublicPlansResponse(
  */
 @Serializable
 public data class ListPublicStatesResponse(
-    public val states: List<JsonObject>? = null,
+    public val states: List<PublicState>? = null,
 )
 
 /**
@@ -6769,7 +6953,7 @@ public data class ListPublicStatesResponse(
  */
 @Serializable
 public data class ListPublicTenantsResponse(
-    public val items: List<JsonObject>? = null,
+    public val items: List<PublicTenant>? = null,
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
@@ -6781,7 +6965,7 @@ public data class ListPublicTenantsResponse(
  */
 @Serializable
 public data class ListRunCheckpointsResponse(
-    public val checkpoints: List<JsonObject>? = null,
+    public val checkpoints: List<RunCheckpoint>? = null,
 )
 
 /**
@@ -6926,11 +7110,11 @@ public data class ListSessionsResponseItemModelOverride(
  */
 @Serializable
 public data class ListSessionTodosResponse(
-    public val items: List<JsonObject>? = null,
+    public val items: List<Todo>? = null,
     /**
      * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
      */
-    public val todos: List<JsonObject>? = null,
+    public val todos: List<Todo>? = null,
     public val total: Long? = null,
 )
 
@@ -6947,7 +7131,7 @@ public data class ListSubscriptionsResponse(
  */
 @Serializable
 public data class ListTeamGraphEdgesResponse(
-    public val edges: List<JsonObject>? = null,
+    public val edges: List<TeamGraphEdge>? = null,
     public val total: Long? = null,
 )
 
@@ -6956,7 +7140,7 @@ public data class ListTeamGraphEdgesResponse(
  */
 @Serializable
 public data class ListTeamGraphNodesResponse(
-    public val nodes: List<JsonObject>? = null,
+    public val nodes: List<TeamGraphNode>? = null,
     public val total: Long? = null,
 )
 
@@ -6998,7 +7182,7 @@ public data class ListTenantsResponse(
  */
 @Serializable
 public data class ListTodosResponse(
-    public val todos: List<JsonObject>? = null,
+    public val todos: List<Todo>? = null,
 )
 
 /**
@@ -7006,11 +7190,11 @@ public data class ListTodosResponse(
  */
 @Serializable
 public data class ListUsersResponse(
-    public val items: List<JsonObject>? = null,
+    public val items: List<TenantUser>? = null,
     /**
      * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
      */
-    public val users: List<JsonObject>? = null,
+    public val users: List<TenantUser>? = null,
     public val total: Long? = null,
 )
 
@@ -7019,7 +7203,7 @@ public data class ListUsersResponse(
  */
 @Serializable
 public data class ListVideoProvidersResponse(
-    public val providers: List<JsonObject>? = null,
+    public val providers: List<VideoProvider>? = null,
 )
 
 /**
@@ -7091,6 +7275,31 @@ public data class LLMCredential(
 )
 
 /**
+ * `LLMModel` model.
+ */
+@Serializable
+public data class LLMModel(
+    @SerialName("display_name")
+    public val displayName: String,
+    public val id: String,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long,
+    @SerialName("max_output_tokens")
+    public val maxOutputTokens: Long,
+    public val pricing: JsonObject,
+    public val provider: String,
+    @SerialName("supports_json_mode")
+    public val supportsJSONMode: Boolean,
+    @SerialName("supports_streaming")
+    public val supportsStreaming: Boolean,
+    @SerialName("supports_tool_calls")
+    public val supportsToolCalls: Boolean,
+    @SerialName("supports_vision")
+    public val supportsVision: Boolean,
+    public val tier: String,
+)
+
+/**
  * An LLM provider the platform knows about, and whether a key is configured.
  */
 @Serializable
@@ -7128,6 +7337,61 @@ public data class LLMTranscribeAudioRequest(
     public val `file`: FilePart,
     public val model: String? = null,
     public val language: String? = null,
+)
+
+/**
+ * `LLMUsageSummary` model.
+ */
+@Serializable
+public data class LLMUsageSummary(
+    @SerialName("billing_period")
+    public val billingPeriod: LLMUsageSummaryBillingPeriod? = null,
+    @SerialName("by_model")
+    public val byModel: List<String>? = null,
+    public val limits: LLMUsageSummaryLimits? = null,
+    public val plan: String? = null,
+    public val usage: LLMUsageSummaryUsage? = null,
+)
+
+/**
+ * `LLMUsageSummaryBillingPeriod` model.
+ */
+@Serializable
+public data class LLMUsageSummaryBillingPeriod(
+    public val end: String? = null,
+    public val start: String? = null,
+)
+
+/**
+ * `LLMUsageSummaryLimits` model.
+ */
+@Serializable
+public data class LLMUsageSummaryLimits(
+    @SerialName("requests_per_day")
+    public val requestsPerDay: Long? = null,
+    @SerialName("requests_per_hour")
+    public val requestsPerHour: Long? = null,
+    @SerialName("requests_per_minute")
+    public val requestsPerMinute: Long? = null,
+    @SerialName("tokens_per_month")
+    public val tokensPerMonth: Long? = null,
+)
+
+/**
+ * `LLMUsageSummaryUsage` model.
+ */
+@Serializable
+public data class LLMUsageSummaryUsage(
+    @SerialName("requests_this_hour")
+    public val requestsThisHour: Long? = null,
+    @SerialName("requests_this_minute")
+    public val requestsThisMinute: Long? = null,
+    @SerialName("requests_today")
+    public val requestsToday: Long? = null,
+    @SerialName("tokens_remaining")
+    public val tokensRemaining: Long? = null,
+    @SerialName("tokens_used")
+    public val tokensUsed: Long? = null,
 )
 
 /**
@@ -7983,6 +8247,23 @@ public data class PermissionSet(
 )
 
 /**
+ * `PlatformLLMDefaults` model.
+ */
+@Serializable
+public data class PlatformLLMDefaults(
+    @SerialName("default_endpoint")
+    public val defaultEndpoint: String? = null,
+    @SerialName("default_model")
+    public val defaultModel: String? = null,
+    @SerialName("default_provider")
+    public val defaultProvider: String? = null,
+    @SerialName("fallback_model")
+    public val fallbackModel: String? = null,
+    @SerialName("fallback_provider")
+    public val fallbackProvider: String? = null,
+)
+
+/**
  * `Product` model.
  */
 @Serializable
@@ -8159,6 +8440,69 @@ public data class PublicDomainLookupResponse(
     @SerialName("tenant_id")
     public val tenantId: String? = null,
     public val found: Boolean? = null,
+)
+
+/**
+ * `PublicPlan` model.
+ */
+@Serializable
+public data class PublicPlan(
+    public val id: String,
+    public val name: String,
+    @SerialName("price_amount_cents")
+    public val priceAmountCents: Long,
+    @SerialName("price_currency")
+    public val priceCurrency: String,
+    public val quotas: JsonObject,
+)
+
+/**
+ * `PublicState` model.
+ */
+@Serializable
+public data class PublicState(
+    public val branding: JsonObject? = null,
+    public val category: String,
+    public val description: String? = null,
+    @SerialName("logo_url")
+    public val logoURL: String? = null,
+    public val name: String,
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    @SerialName("short_description")
+    public val shortDescription: String,
+    public val slug: String,
+    @SerialName("social_links")
+    public val socialLinks: JsonObject? = null,
+    public val stats: JsonObject? = null,
+    public val tags: List<String>,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+)
+
+/**
+ * `PublicTenant` model.
+ */
+@Serializable
+public data class PublicTenant(
+    public val agents: List<JsonObject>,
+    @SerialName("agents_count")
+    public val agentsCount: Long,
+    public val branding: JsonObject? = null,
+    public val category: String? = null,
+    public val description: String? = null,
+    @SerialName("logo_url")
+    public val logoURL: String? = null,
+    public val name: String,
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    public val slug: String,
+    @SerialName("social_links")
+    public val socialLinks: JsonObject? = null,
+    public val stats: JsonObject,
+    public val tags: List<String>,
+    @SerialName("tenant_id")
+    public val tenantId: String,
 )
 
 /**
@@ -8834,6 +9178,13 @@ public data class Run(
     public val sessionId: String? = null,
     public val status: RunStatus,
     public val input: JsonObject? = null,
+    /**
+     * Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+     * AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
+     * carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
+     * no key configured no token is minted and the field is absent; the token is an opaque string
+     * to every client.
+     */
     public val output: JsonObject? = null,
     public val metrics: RunMetrics? = null,
     public val error: String? = null,
@@ -8874,6 +9225,24 @@ public data class Run(
 @Serializable
 public data class RunApproveRequest(
     public val response: String? = null,
+)
+
+/**
+ * `RunCheckpoint` model.
+ */
+@Serializable
+public data class RunCheckpoint(
+    public val step: Long? = null,
+    /**
+     * Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
+     * shape, which differs per adapter.
+     */
+    public val messages: List<JsonObject>? = null,
+    /**
+     * Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
+     * step and token counters, optionally provider cache hits.
+     */
+    public val metrics: JsonObject? = null,
 )
 
 /**
@@ -10014,6 +10383,28 @@ public data class Team(
 )
 
 /**
+ * `TeamChatTurn` model.
+ */
+@Serializable
+public data class TeamChatTurn(
+    @SerialName("addressed_to")
+    public val addressedTo: List<String>? = null,
+    public val content: String,
+    @SerialName("from_task")
+    public val fromTask: Boolean,
+    public val role: String,
+    @SerialName("run_meta")
+    public val runMeta: JsonObject,
+    @SerialName("run_pending")
+    public val runPending: Boolean,
+    @SerialName("team_run_id")
+    public val teamRunId: String,
+    @SerialName("thread_id")
+    public val threadId: String? = null,
+    public val timestamp: String,
+)
+
+/**
  * Body for `POST /api/v1/teams` (`CreateTeamSchema`).
  */
 @Serializable
@@ -10090,6 +10481,37 @@ public data class TeamGoalConfig(
     @SerialName("max_iterations")
     public val maxIterations: Long? = null,
     public val budget: TeamObjectiveBudget? = null,
+)
+
+/**
+ * `TeamGraphEdge` model.
+ */
+@Serializable
+public data class TeamGraphEdge(
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    @SerialName("edge_id")
+    public val edgeId: String? = null,
+    public val from: String? = null,
+    public val to: String? = null,
+    public val type: String? = null,
+)
+
+/**
+ * `TeamGraphNode` model.
+ */
+@Serializable
+public data class TeamGraphNode(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("goal_summary")
+    public val goalSummary: String? = null,
+    public val role: String? = null,
+    @SerialName("spawned_at")
+    public val spawnedAt: String? = null,
+    @SerialName("spawned_by")
+    public val spawnedBy: String? = null,
+    public val status: String? = null,
 )
 
 /**
@@ -10568,6 +10990,24 @@ public object TenantStatusSerializer : KSerializer<TenantStatus> {
 }
 
 /**
+ * `TenantUser` model.
+ */
+@Serializable
+public data class TenantUser(
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    public val email: String? = null,
+    public val id: String? = null,
+    public val name: String? = null,
+    public val role: String? = null,
+    public val status: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
  * `TerminateAgentResponse` model.
  */
 @Serializable
@@ -10602,6 +11042,57 @@ public data class TestIntegrationResponse(
 public data class TestLLMProviderKeyResponse(
     public val success: Boolean? = null,
     public val message: String? = null,
+)
+
+/**
+ * `TestWebhookResponse` model.
+ */
+@Serializable
+public data class TestWebhookResponse(
+    @SerialName("test_sent")
+    public val testSent: Boolean,
+    @SerialName("webhook_id")
+    public val webhookId: String,
+    /**
+     * The subscription's first configured event, or `run.completed` when it has none.
+     */
+    @SerialName("event_type")
+    public val eventType: String,
+)
+
+/**
+ * `Todo` model.
+ */
+@Serializable
+public data class Todo(
+    @SerialName("agent_name")
+    public val agentName: String,
+    @SerialName("assign_agent_id")
+    public val assignAgentId: String? = null,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("due_at")
+    public val dueAt: String? = null,
+    @SerialName("last_fired_at")
+    public val lastFiredAt: String? = null,
+    @SerialName("last_run_status")
+    public val lastRunStatus: String? = null,
+    @SerialName("order_index")
+    public val orderIndex: Long? = null,
+    @SerialName("require_confirmation")
+    public val requireConfirmation: Boolean? = null,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("session_id")
+    public val sessionId: String,
+    public val status: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val title: String,
+    @SerialName("todo_id")
+    public val todoId: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
 )
 
 /**
@@ -11184,6 +11675,58 @@ public object VetoRecordTargetTypeSerializer : KSerializer<VetoRecordTargetType>
     override fun serialize(encoder: Encoder, value: VetoRecordTargetType): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): VetoRecordTargetType = VetoRecordTargetType(decoder.decodeString())
 }
+
+/**
+ * `VideoProvider` model.
+ */
+@Serializable
+public data class VideoProvider(
+    public val configured: Boolean? = null,
+    public val id: String? = null,
+    public val local: Boolean? = null,
+    public val models: List<JsonObject>? = null,
+    public val name: String? = null,
+)
+
+/**
+ * `VoiceConfig` model.
+ */
+@Serializable
+public data class VoiceConfig(
+    public val stt: VoiceConfigStt? = null,
+    public val tts: VoiceConfigTts? = null,
+)
+
+/**
+ * `VoiceConfigStt` model.
+ */
+@Serializable
+public data class VoiceConfigStt(
+    public val configured: Boolean? = null,
+    public val endpoint: String? = null,
+    public val model: String? = null,
+    public val provider: String? = null,
+)
+
+/**
+ * `VoiceConfigTts` model.
+ */
+@Serializable
+public data class VoiceConfigTts(
+    public val configured: Boolean? = null,
+    public val endpoint: String? = null,
+    public val model: String? = null,
+    public val provider: String? = null,
+    public val voice: String? = null,
+)
+
+/**
+ * `VoiceProviderList` model.
+ */
+@Serializable
+public data class VoiceProviderList(
+    public val providers: List<JsonObject>? = null,
+)
 
 /**
  * `VoteResult` model.

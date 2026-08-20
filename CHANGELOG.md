@@ -6,6 +6,46 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.11 — 2026-08-20
+
+### Fixed — Ada
+
+- **The crate declared the gnatcoll it was built on, not the one it needs.**
+  `alire.toml` pinned `gnatcoll ^26.0.0`; the crate uses exactly one unit from
+  it, `GNATCOLL.JSON`, which 25.0.0 has. Any consumer that also depends on
+  `aws` (25.2.0 is the newest in the index, and it wants `gnatcoll ~25.0.0`)
+  got an unsolvable graph — `Missing: +! gnatcoll (^26.0.0) & (~25.0.0)` — and
+  could not use the SDK at all. The range is now `>=25.0.0 & <27.0.0`. Built
+  and tested at both ends: 26.0.0 (what the range still picks on its own) and
+  25.0.0 pinned, both 0 warnings. Found by the Svitlo migration (#35).
+
+- **The Ada client no longer follows redirects.** `uarp_curl.c` set
+  `CURLOPT_FOLLOWLOCATION` with five hops and no host check, so a 302 from
+  the API host would have carried the bearer token to whatever host the
+  `Location` named — a hop nobody authorised. The API documents exactly
+  three 3xx answers and all three are browser-side OAuth hops
+  (`/auth/oauth/{provider}/start` and the two callbacks); no data endpoint
+  redirects. A 302 now reaches the caller as a 302 with `Location` in
+  `Problem.Headers`, and a test against the mock proves it (and fails when
+  the old flag is put back). Also corrected: `Problem.Headers` claimed its
+  names were lower-cased; they arrive as the server sent them, and
+  `UARP.Types.Lookup` does the case-insensitive match (#36).
+
+### Added — every SDK
+
+- **Twenty-five schemas the document gained since 0.5.10 was cut**, regenerated
+  from the API's own document (`api.snaga.ai/api/v1/openapi.json`, not the
+  builder's mirror): `Todo`, `KnowledgeBaseDocument`, `ConstitutionViolation`,
+  `TeamGraphNode`, `TeamGraphEdge`, `FeedEntry`, `FileEntry`, `Invite`,
+  `TenantUser`, `RunCheckpoint`, `LlmModel`, `LlmUsageSummary`,
+  `PlatformLlmDefaults`, `PublicState`, `PublicTenant`, `PublicPlan`,
+  `LandingStats`, `VoiceConfig`, `VoiceProviderList`, `VideoProvider`,
+  `ImageProviderList`, `AgentScorer`, `ArbiterRegistry`, `AuthProvider`,
+  `TeamChatTurn` — with the enums and nested objects they carry (674 → 705
+  named types). The web client held all of these as hand-written types and
+  asked for the first five by name; every other consumer was reading them as
+  untyped JSON.
+
 ## 0.5.10 — 2026-08-20
 
 ### Added — every SDK

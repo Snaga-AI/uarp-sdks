@@ -56,6 +56,15 @@ package UARP.API.Feed is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Activity_Feed_Response;
 
+   --  Collect every item `getActivityFeed` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Activity_Feed_All
+     (Self : Client_Type;
+      Params : Get_Activity_Feed_Params := No_Get_Activity_Feed_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Feed_Entry_Vectors.Vector;
+
    --  SSE activity feed stream
    --
    --  GET /api/v1/feed/stream

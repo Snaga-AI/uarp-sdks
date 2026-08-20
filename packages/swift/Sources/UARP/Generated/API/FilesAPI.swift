@@ -74,7 +74,7 @@ public struct FilesAPI: Sendable {
 
     /// Stream every item returned by `listFiles`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func listAll(mimePrefix: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<FileEntry, Error> {
         autoPaginate(
             fetch: { cursor in try await self.list(mimePrefix: mimePrefix, limit: limit, cursor: cursor, options: options) },
             items: { $0.items ?? [] },

@@ -499,6 +499,15 @@ export interface AgentPublicConfig {
   daily_message_limit?: number;
 }
 
+export interface AgentScorer {
+  agent_id?: string;
+  config?: JsonObject;
+  created_at?: string;
+  name?: string;
+  scorer_id?: string;
+  tenant_id?: string;
+}
+
 export interface AgentSpec {
   spec_id: string;
   version?: string;
@@ -730,6 +739,15 @@ export type ArbiterCaseStatus = 'open' | 'under_review' | 'ruled' | 'appealed' |
 
 export const ARBITER_CASE_STATUS_VALUES = ['open', 'under_review', 'ruled', 'appealed', 'closed'] as const;
 
+export interface ArbiterRegistry {
+  arbiter_agent_ids?: string[];
+  max_appeals?: number;
+  panel_size?: number;
+  ruling_deadline_hours?: number;
+  tenant_id?: string;
+  updated_at?: string;
+}
+
 export interface Artifact {
   artifact_id: string;
   run_id: string;
@@ -745,6 +763,14 @@ export interface AssignWorkspaceRequest {
   agent_id?: string;
   team_id?: string;
   company_id?: string;
+}
+
+export interface AuthProvider {
+  email: string;
+  id: string;
+  linked: boolean;
+  linked_at?: string;
+  sub?: string;
 }
 
 /**
@@ -1037,7 +1063,7 @@ export interface CheckGovernanceRequest {
 
 export interface CheckGovernanceResponse {
   allowed?: boolean;
-  violations?: JsonObject[];
+  violations?: ConstitutionViolation[];
 }
 
 export interface CheckSpawnPermissionRequest {
@@ -1196,6 +1222,16 @@ export const CONSTITUTION_RULE_RULE_TYPE_VALUES = ['prohibition', 'requirement',
 export type ConstitutionRuleScope = 'all_agents' | 'team' | 'agent' | 'role';
 
 export const CONSTITUTION_RULE_SCOPE_VALUES = ['all_agents', 'team', 'agent', 'role'] as const;
+
+export interface ConstitutionViolation {
+  rule_id?: string;
+  rule_type?: ConstitutionRuleRuleType;
+  action?: string;
+  agent_id?: string;
+  penalty?: ConstitutionRulePenalty;
+  description?: string;
+  timestamp?: string;
+}
 
 export interface ContentReport {
   id: string;
@@ -2060,6 +2096,19 @@ export interface ExportAdminConfigResponse {
   sections?: JsonObject;
 }
 
+export interface FeedEntry {
+  agent_id: string;
+  agent_name: string;
+  event_type: string;
+  feed_id: string;
+  metrics?: JsonObject;
+  run_id: string;
+  status?: string;
+  tenant_id: string;
+  timestamp: string;
+  title: string;
+}
+
 export interface FileArbiterAppealRequest {
   filed_by: string;
   reason: string;
@@ -2071,8 +2120,18 @@ export interface FileArbiterCaseRequest {
   reason?: string;
 }
 
+export interface FileEntry {
+  created_at: string;
+  file_id: string;
+  filename: string;
+  mime_type: string;
+  sha256: string;
+  size_bytes: number;
+  tenant_id: string;
+}
+
 export interface GetActivityFeedResponse {
-  entries?: JsonObject[];
+  entries?: FeedEntry[];
   cursor?: string;
   total?: number;
 }
@@ -2172,7 +2231,7 @@ export interface GetAgentVersionDiffResponse {
 
 export interface GetAgentViolationsResponse {
   agent_id?: string;
-  violations?: JsonObject[];
+  violations?: ConstitutionViolation[];
   count?: number;
 }
 
@@ -2436,14 +2495,14 @@ export const GET_SESSION_SHARE_RESPONSE_ROLE_VALUES = ['viewer', 'editor'] as co
 
 export interface GetTeamChatHistoryResponse {
   team_id?: string;
-  conversation_history?: JsonObject[];
+  conversation_history?: TeamChatTurn[];
   total?: number;
   chat_state?: JsonObject;
 }
 
 export interface GetTeamGraphResponse {
-  nodes?: JsonObject[];
-  edges?: JsonObject[];
+  nodes?: TeamGraphNode[];
+  edges?: TeamGraphEdge[];
 }
 
 export interface GetTeamRunMessagesResponse {
@@ -2591,6 +2650,10 @@ export type HumanAmbassadorRole = 'founder' | 'ambassador' | 'observer';
 
 export const HUMAN_AMBASSADOR_ROLE_VALUES = ['founder', 'ambassador', 'observer'] as const;
 
+export interface ImageProviderList {
+  providers?: JsonObject[];
+}
+
 export interface ImportAdminConfigRequest {
   source?: string;
   sections: JsonObject;
@@ -2725,6 +2788,18 @@ export type IntegrationStatus = 'active' | 'inactive' | 'error';
 
 export const INTEGRATION_STATUS_VALUES = ['active', 'inactive', 'error'] as const;
 
+export interface Invite {
+  created_at?: string;
+  email?: string;
+  expires_at?: string;
+  id?: string;
+  invited_by?: string;
+  role?: string;
+  secret?: string;
+  status?: string;
+  tenant_id?: string;
+}
+
 export interface InviteUserRequest {
   email: string;
   role: string;
@@ -2779,12 +2854,37 @@ export interface KnowledgeBaseCreate {
   embedding_model?: string;
 }
 
+export interface KnowledgeBaseDocument {
+  chunk_count?: number;
+  chunk_preview?: string;
+  created_at?: string;
+  embedding_status?: string;
+  id?: string;
+  kb_id?: string;
+  name?: string;
+  size_bytes?: number;
+  status?: string;
+  tenant_id?: string;
+  type?: string;
+  updated_at?: string;
+}
+
 /**
  * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
  */
 export interface KnowledgeBaseUpdate {
   name?: string;
   description?: string;
+}
+
+export interface LandingStats {
+  agents_deployed?: number;
+  llm_providers?: number;
+  registered_users?: number;
+  tool_calls_today?: number;
+  total_runs?: number;
+  total_sessions?: number;
+  total_tokens?: number;
 }
 
 export interface LedgerIntegrity {
@@ -2814,7 +2914,7 @@ export interface ListAgentIntegrationsResponse {
 }
 
 export interface ListAgentScorersResponse {
-  scorers?: JsonObject[];
+  scorers?: AgentScorer[];
 }
 
 export interface ListAgentsResponse {
@@ -2867,7 +2967,7 @@ export interface ListAuthProvidersResponse {
    *
    * @deprecated
    */
-  providers?: JsonObject[];
+  providers?: AuthProvider[];
 }
 
 export interface ListAuthProvidersResponseItem {
@@ -2958,7 +3058,7 @@ export interface ListDataExplorerNamespacesResponse {
 }
 
 export interface ListFilesResponse {
-  items?: JsonObject[];
+  items?: FileEntry[];
   cursor?: string;
   has_more?: boolean;
 }
@@ -2982,18 +3082,18 @@ export interface ListIntegrationsResponse {
 }
 
 export interface ListInvitesResponse {
-  items?: JsonObject[];
+  items?: Invite[];
   /**
    * Legacy alias for `items`. Will be removed in API v1.x.
    *
    * @deprecated
    */
-  invites?: JsonObject[];
+  invites?: Invite[];
   total?: number;
 }
 
 export interface ListKbDocumentsResponse {
-  documents?: JsonObject[];
+  documents?: KnowledgeBaseDocument[];
   total?: number;
 }
 
@@ -3024,7 +3124,7 @@ export interface ListLLMCredentialsProvidersResponseProvider {
 }
 
 export interface ListLLMModelsResponse {
-  models?: JsonObject[];
+  models?: LLMModel[];
 }
 
 export interface ListMCPServersResponse {
@@ -3136,22 +3236,22 @@ export interface ListProvidersResponse {
 }
 
 export interface ListPublicPlansResponse {
-  plans?: JsonObject[];
+  plans?: PublicPlan[];
 }
 
 export interface ListPublicStatesResponse {
-  states?: JsonObject[];
+  states?: PublicState[];
 }
 
 export interface ListPublicTenantsResponse {
-  items?: JsonObject[];
+  items?: PublicTenant[];
   cursor?: string;
   has_more?: boolean;
   total?: number;
 }
 
 export interface ListRunCheckpointsResponse {
-  checkpoints?: JsonObject[];
+  checkpoints?: RunCheckpoint[];
 }
 
 export interface ListRunsResponse {
@@ -3240,13 +3340,13 @@ export interface ListSessionsResponseItemModelOverride {
 }
 
 export interface ListSessionTodosResponse {
-  items?: JsonObject[];
+  items?: Todo[];
   /**
    * Legacy alias for `items`. Will be removed in API v1.x.
    *
    * @deprecated
    */
-  todos?: JsonObject[];
+  todos?: Todo[];
   total?: number;
 }
 
@@ -3255,12 +3355,12 @@ export interface ListSubscriptionsResponse {
 }
 
 export interface ListTeamGraphEdgesResponse {
-  edges?: JsonObject[];
+  edges?: TeamGraphEdge[];
   total?: number;
 }
 
 export interface ListTeamGraphNodesResponse {
-  nodes?: JsonObject[];
+  nodes?: TeamGraphNode[];
   total?: number;
 }
 
@@ -3287,22 +3387,22 @@ export interface ListTenantsResponse {
 }
 
 export interface ListTodosResponse {
-  todos?: JsonObject[];
+  todos?: Todo[];
 }
 
 export interface ListUsersResponse {
-  items?: JsonObject[];
+  items?: TenantUser[];
   /**
    * Legacy alias for `items`. Will be removed in API v1.x.
    *
    * @deprecated
    */
-  users?: JsonObject[];
+  users?: TenantUser[];
   total?: number;
 }
 
 export interface ListVideoProvidersResponse {
-  providers?: JsonObject[];
+  providers?: VideoProvider[];
 }
 
 export interface ListVotingProposalsResponse {
@@ -3346,6 +3446,20 @@ export interface LLMCredential {
   updated_at?: string;
 }
 
+export interface LLMModel {
+  display_name: string;
+  id: string;
+  max_context_tokens: number;
+  max_output_tokens: number;
+  pricing: JsonObject;
+  provider: string;
+  supports_json_mode: boolean;
+  supports_streaming: boolean;
+  supports_tool_calls: boolean;
+  supports_vision: boolean;
+  tier: string;
+}
+
 /**
  * An LLM provider the platform knows about, and whether a key is configured.
  */
@@ -3371,6 +3485,34 @@ export interface LLMTranscribeAudioRequest {
   file: BinaryInput;
   model?: string;
   language?: string;
+}
+
+export interface LLMUsageSummary {
+  billing_period?: LLMUsageSummaryBillingPeriod;
+  by_model?: string[];
+  limits?: LLMUsageSummaryLimits;
+  plan?: string;
+  usage?: LLMUsageSummaryUsage;
+}
+
+export interface LLMUsageSummaryBillingPeriod {
+  end?: string;
+  start?: string;
+}
+
+export interface LLMUsageSummaryLimits {
+  requests_per_day?: number;
+  requests_per_hour?: number;
+  requests_per_minute?: number;
+  tokens_per_month?: number;
+}
+
+export interface LLMUsageSummaryUsage {
+  requests_this_hour?: number;
+  requests_this_minute?: number;
+  requests_today?: number;
+  tokens_remaining?: number;
+  tokens_used?: number;
 }
 
 export interface LocateMyAgentResponse {
@@ -3803,6 +3945,14 @@ export interface PermissionSet {
   updated_at?: string;
 }
 
+export interface PlatformLLMDefaults {
+  default_endpoint?: string;
+  default_model?: string;
+  default_provider?: string;
+  fallback_model?: string;
+  fallback_provider?: string;
+}
+
 export interface Product {
   id: string;
   tenant_id: string;
@@ -3890,6 +4040,45 @@ export interface ProgramStep {
 export interface PublicDomainLookupResponse {
   tenant_id?: string;
   found?: boolean;
+}
+
+export interface PublicPlan {
+  id: string;
+  name: string;
+  price_amount_cents: number;
+  price_currency: string;
+  quotas: JsonObject;
+}
+
+export interface PublicState {
+  branding?: JsonObject;
+  category: string;
+  description?: string;
+  logo_url?: string;
+  name: string;
+  published_at?: string;
+  short_description: string;
+  slug: string;
+  social_links?: JsonObject;
+  stats?: JsonObject;
+  tags: string[];
+  tenant_id: string;
+}
+
+export interface PublicTenant {
+  agents: JsonObject[];
+  agents_count: number;
+  branding?: JsonObject;
+  category?: string;
+  description?: string;
+  logo_url?: string;
+  name: string;
+  published_at?: string;
+  slug: string;
+  social_links?: JsonObject;
+  stats: JsonObject;
+  tags: string[];
+  tenant_id: string;
 }
 
 export interface PublicTrackEventRequest {
@@ -4242,6 +4431,13 @@ export interface Run {
   session_id?: string | null;
   status: RunStatus;
   input?: JsonObject;
+  /**
+   * Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+   * AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
+   * carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
+   * no key configured no token is minted and the field is absent; the token is an opaque string
+   * to every client.
+   */
   output?: JsonObject | null;
   metrics?: RunMetrics;
   error?: string | null;
@@ -4272,6 +4468,20 @@ export interface Run {
 
 export interface RunApproveRequest {
   response?: string;
+}
+
+export interface RunCheckpoint {
+  step?: number;
+  /**
+   * Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
+   * shape, which differs per adapter.
+   */
+  messages?: JsonObject[];
+  /**
+   * Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
+   * step and token counters, optionally provider cache hits.
+   */
+  metrics?: JsonObject;
 }
 
 export interface RunEvaluationRequest {
@@ -4744,6 +4954,18 @@ export interface Team {
   updated_at?: string;
 }
 
+export interface TeamChatTurn {
+  addressed_to?: string[];
+  content: string;
+  from_task: boolean;
+  role: string;
+  run_meta: JsonObject;
+  run_pending: boolean;
+  team_run_id: string;
+  thread_id?: string;
+  timestamp: string;
+}
+
 /**
  * Body for `POST /api/v1/teams` (`CreateTeamSchema`).
  */
@@ -4780,6 +5002,23 @@ export interface TeamGoalConfig {
   review_interval_ms?: number;
   max_iterations?: number;
   budget?: TeamObjectiveBudget;
+}
+
+export interface TeamGraphEdge {
+  created_at?: string;
+  edge_id?: string;
+  from?: string;
+  to?: string;
+  type?: string;
+}
+
+export interface TeamGraphNode {
+  agent_id?: string;
+  goal_summary?: string;
+  role?: string;
+  spawned_at?: string;
+  spawned_by?: string;
+  status?: string;
 }
 
 export type TeamMergeStrategy = 'supervisor_merges' | 'concatenate' | 'vote';
@@ -4951,6 +5190,17 @@ export type TenantStatus = 'active' | 'suspended' | 'trial';
 
 export const TENANT_STATUS_VALUES = ['active', 'suspended', 'trial'] as const;
 
+export interface TenantUser {
+  created_at?: string;
+  email?: string;
+  id?: string;
+  name?: string;
+  role?: string;
+  status?: string;
+  tenant_id?: string;
+  updated_at?: string;
+}
+
 export interface TerminateAgentResponse {
   deleted?: boolean;
   agent_id?: string;
@@ -4969,6 +5219,33 @@ export interface TestIntegrationResponse {
 export interface TestLLMProviderKeyResponse {
   success?: boolean;
   message?: string;
+}
+
+export interface TestWebhookResponse {
+  test_sent: boolean;
+  webhook_id: string;
+  /**
+   * The subscription's first configured event, or `run.completed` when it has none.
+   */
+  event_type: string;
+}
+
+export interface Todo {
+  agent_name: string;
+  assign_agent_id?: string;
+  created_at: string;
+  due_at?: string;
+  last_fired_at?: string;
+  last_run_status?: string;
+  order_index?: number;
+  require_confirmation?: boolean;
+  run_id?: string;
+  session_id: string;
+  status: string;
+  tenant_id: string;
+  title: string;
+  todo_id: string;
+  updated_at: string;
 }
 
 export interface TransferTenantOwnershipResponse {
@@ -5268,6 +5545,38 @@ export interface VetoRecord {
 export type VetoRecordTargetType = 'proposal' | 'action' | 'agent' | 'case';
 
 export const VETO_RECORD_TARGET_TYPE_VALUES = ['proposal', 'action', 'agent', 'case'] as const;
+
+export interface VideoProvider {
+  configured?: boolean;
+  id?: string;
+  local?: boolean;
+  models?: JsonObject[];
+  name?: string;
+}
+
+export interface VoiceConfig {
+  stt?: VoiceConfigStt;
+  tts?: VoiceConfigTts;
+}
+
+export interface VoiceConfigStt {
+  configured?: boolean;
+  endpoint?: string;
+  model?: string;
+  provider?: string;
+}
+
+export interface VoiceConfigTts {
+  configured?: boolean;
+  endpoint?: string;
+  model?: string;
+  provider?: string;
+  voice?: string;
+}
+
+export interface VoiceProviderList {
+  providers?: JsonObject[];
+}
 
 export interface VoteResult {
   proposal_id: string;

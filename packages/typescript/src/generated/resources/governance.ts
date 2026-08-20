@@ -11,6 +11,7 @@ import type {
   AmbassadorVetoRequest,
   AmendConstitutionRequest,
   AmendConstitutionResponse,
+  ArbiterRegistry,
   BootstrapAmbassadorResponse,
   CastBallotRequest,
   CheckGovernanceRequest,
@@ -430,7 +431,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/arbiter/registry`
    */
-  getArbiterRegistry(options?: RequestOptions): Promise<JsonObject> {
+  getArbiterRegistry(options?: RequestOptions): Promise<ArbiterRegistry> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/arbiter/registry',

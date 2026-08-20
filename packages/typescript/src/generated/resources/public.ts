@@ -16,6 +16,7 @@ import type {
   ListPublicStatesResponse,
   ListPublicTenantsResponse,
   PublicDomainLookupResponse,
+  PublicTenant,
   PublicTrackEventRequest,
   RespondToPublicHitlRequest,
   SendPublicMessageRequest,
@@ -220,8 +221,8 @@ export class PublicResource extends APIResource {
    * Iterate every item returned by `listPublicTenants`, following the `cursor` cursor until the
    * server reports no further pages.
    */
-  listPublicTenantsAll(params?: ListPublicTenantsParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  listPublicTenantsAll(params?: ListPublicTenantsParams, options?: RequestOptions): AsyncIterableIterator<PublicTenant> {
+    return autoPaginate<PublicTenant>(
       (cursor) => this.listPublicTenants({ ...params, cursor }, options),
       'items',
       'cursor',

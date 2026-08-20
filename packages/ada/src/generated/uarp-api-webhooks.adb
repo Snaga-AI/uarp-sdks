@@ -130,14 +130,15 @@ package body UARP.API.Webhooks is
      (Self : Client_Type;
       Webhook_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Test_Webhook_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/webhooks/" & UARP.Types.Encode_Path_Segment (Webhook_Id) & "/test",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/webhooks/" & UARP.Types.Encode_Path_Segment (Webhook_Id) & "/test",
+             Idempotent => True,
+             Options => Options));
    end Test_Webhook;
 end UARP.API.Webhooks;
