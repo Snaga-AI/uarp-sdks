@@ -322,6 +322,18 @@ class Handler(BaseHTTPRequestHandler):
             )
         if path == "/status/204":
             return self._send(204, b"")
+        #  A redirect the client must NOT follow.  The Location is served by
+        #  this same mock, so the test is hermetic: if the transport ever
+        #  follows again, the caller sees 200 and the target's body instead
+        #  of the 302 and its Location header.
+        if path == "/redirect/offsite":
+            return self._send(
+                302,
+                json.dumps({"title": "Found", "status": 302}).encode(),
+                extra={"Location": "/redirect/target"},
+            )
+        if path == "/redirect/target":
+            return self._send(200, json.dumps({"followed": True}).encode())
         return self._send(404, json.dumps({"title": "Not Found", "status": 404}).encode())
 
     do_GET = _route
