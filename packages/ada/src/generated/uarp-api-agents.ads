@@ -88,7 +88,7 @@ package UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Fria_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Fria_Report;
 
    --  Create a version snapshot of an agent
    --
@@ -167,7 +167,7 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Fria_Report;
 
    --  Get agent identity (public key)
    --
@@ -201,7 +201,7 @@ package UARP.API.Agents is
       Agent_Id : String;
       Params : Get_Agent_System_Card_Params := No_Get_Agent_System_Card_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Ai_System_Card;
 
    --  Get traffic split configuration
    --

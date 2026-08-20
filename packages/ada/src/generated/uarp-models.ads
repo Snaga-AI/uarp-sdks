@@ -111,24 +111,33 @@ package UARP.Models is
    function To_JSON (Model : Activate_Safe_Mode_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Activate_Safe_Mode_Request;
 
-   --  Values of `ActiveSessionStatus`.
-   --  A value the API introduces later decodes as Active_Session_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Active_Session_Status_Kind is
-     (Active_Session_Status_Active,
-   Active_Session_Status_Revoked,
-   Active_Session_Status_Unrecognized);
+   --  `ActivateSessionBranchResponse` model.
+   type Activate_Session_Branch_Response is record
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Active_Branch : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
 
-   type Active_Session_Status is record
-      Kind : Active_Session_Status_Kind := Active_Session_Status_Unrecognized;
+   function To_JSON (Model : Activate_Session_Branch_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Activate_Session_Branch_Response;
+
+   --  Values of `APIKeySummaryStatus`.
+   --  A value the API introduces later decodes as API_Key_Summary_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type API_Key_Summary_Status_Kind is
+     (API_Key_Summary_Status_Active,
+   API_Key_Summary_Status_Revoked,
+   API_Key_Summary_Status_Unrecognized);
+
+   type API_Key_Summary_Status is record
+      Kind : API_Key_Summary_Status_Kind := API_Key_Summary_Status_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Active_Session_Status (Value : String) return Active_Session_Status;
-   function To_Active_Session_Status (Kind : Active_Session_Status_Kind) return Active_Session_Status;
-   function Image (Model : Active_Session_Status) return String;
-   function To_JSON (Model : Active_Session_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Active_Session_Status;
+   function To_API_Key_Summary_Status (Value : String) return API_Key_Summary_Status;
+   function To_API_Key_Summary_Status (Kind : API_Key_Summary_Status_Kind) return API_Key_Summary_Status;
+   function Image (Model : API_Key_Summary_Status) return String;
+   function To_JSON (Model : API_Key_Summary_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return API_Key_Summary_Status;
 
    --  `ActiveSession` model.
    type Active_Session is record
@@ -136,7 +145,7 @@ package UARP.Models is
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Prefix : UARP.Types.Text := UARP.Types.Empty_Text;
       Scopes : UARP.Types.Text_Vectors.Vector;
-      Status : UARP.Models.Active_Session_Status;
+      Status : UARP.Models.API_Key_Summary_Status;
       Is_Current : Standard.Boolean := False;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -152,31 +161,31 @@ package UARP.Models is
    package Active_Session_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Active_Session);
 
-   --  Values of `AddTeamGraphEdgeRequestType`.
-   --  A value the API introduces later decodes as Add_Team_Graph_Edge_Request_Type_Unrecognized
+   --  Values of `TeamGraphEdgeType`.
+   --  A value the API introduces later decodes as Team_Graph_Edge_Type_Unrecognized
    --  with the original text kept in Raw.
-   type Add_Team_Graph_Edge_Request_Type_Kind is
-     (Add_Team_Graph_Edge_Request_Type_Delegation,
-   Add_Team_Graph_Edge_Request_Type_Supervision,
-   Add_Team_Graph_Edge_Request_Type_Peer,
-   Add_Team_Graph_Edge_Request_Type_Unrecognized);
+   type Team_Graph_Edge_Type_Kind is
+     (Team_Graph_Edge_Type_Delegation,
+   Team_Graph_Edge_Type_Supervision,
+   Team_Graph_Edge_Type_Peer,
+   Team_Graph_Edge_Type_Unrecognized);
 
-   type Add_Team_Graph_Edge_Request_Type is record
-      Kind : Add_Team_Graph_Edge_Request_Type_Kind := Add_Team_Graph_Edge_Request_Type_Unrecognized;
+   type Team_Graph_Edge_Type is record
+      Kind : Team_Graph_Edge_Type_Kind := Team_Graph_Edge_Type_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Add_Team_Graph_Edge_Request_Type (Value : String) return Add_Team_Graph_Edge_Request_Type;
-   function To_Add_Team_Graph_Edge_Request_Type (Kind : Add_Team_Graph_Edge_Request_Type_Kind) return Add_Team_Graph_Edge_Request_Type;
-   function Image (Model : Add_Team_Graph_Edge_Request_Type) return String;
-   function To_JSON (Model : Add_Team_Graph_Edge_Request_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Add_Team_Graph_Edge_Request_Type;
+   function To_Team_Graph_Edge_Type (Value : String) return Team_Graph_Edge_Type;
+   function To_Team_Graph_Edge_Type (Kind : Team_Graph_Edge_Type_Kind) return Team_Graph_Edge_Type;
+   function Image (Model : Team_Graph_Edge_Type) return String;
+   function To_JSON (Model : Team_Graph_Edge_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Graph_Edge_Type;
 
    --  `AddTeamGraphEdgeRequest` model.
    type Add_Team_Graph_Edge_Request is record
       From : UARP.Types.Text := UARP.Types.Empty_Text;
       To : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Models.Add_Team_Graph_Edge_Request_Type;
+      Type_K : UARP.Models.Team_Graph_Edge_Type;
       Has_Task_Id : Boolean := False;
       Task_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -184,30 +193,30 @@ package UARP.Models is
    function To_JSON (Model : Add_Team_Graph_Edge_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Add_Team_Graph_Edge_Request;
 
-   --  Values of `AddTeamGraphNodeRequestRole`.
-   --  A value the API introduces later decodes as Add_Team_Graph_Node_Request_Role_Unrecognized
+   --  Values of `TeamGraphNodeRole`.
+   --  A value the API introduces later decodes as Team_Graph_Node_Role_Unrecognized
    --  with the original text kept in Raw.
-   type Add_Team_Graph_Node_Request_Role_Kind is
-     (Add_Team_Graph_Node_Request_Role_Orchestrator,
-   Add_Team_Graph_Node_Request_Role_Worker,
-   Add_Team_Graph_Node_Request_Role_Arbiter,
-   Add_Team_Graph_Node_Request_Role_Unrecognized);
+   type Team_Graph_Node_Role_Kind is
+     (Team_Graph_Node_Role_Orchestrator,
+   Team_Graph_Node_Role_Worker,
+   Team_Graph_Node_Role_Arbiter,
+   Team_Graph_Node_Role_Unrecognized);
 
-   type Add_Team_Graph_Node_Request_Role is record
-      Kind : Add_Team_Graph_Node_Request_Role_Kind := Add_Team_Graph_Node_Request_Role_Unrecognized;
+   type Team_Graph_Node_Role is record
+      Kind : Team_Graph_Node_Role_Kind := Team_Graph_Node_Role_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Add_Team_Graph_Node_Request_Role (Value : String) return Add_Team_Graph_Node_Request_Role;
-   function To_Add_Team_Graph_Node_Request_Role (Kind : Add_Team_Graph_Node_Request_Role_Kind) return Add_Team_Graph_Node_Request_Role;
-   function Image (Model : Add_Team_Graph_Node_Request_Role) return String;
-   function To_JSON (Model : Add_Team_Graph_Node_Request_Role) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Add_Team_Graph_Node_Request_Role;
+   function To_Team_Graph_Node_Role (Value : String) return Team_Graph_Node_Role;
+   function To_Team_Graph_Node_Role (Kind : Team_Graph_Node_Role_Kind) return Team_Graph_Node_Role;
+   function Image (Model : Team_Graph_Node_Role) return String;
+   function To_JSON (Model : Team_Graph_Node_Role) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Graph_Node_Role;
 
    --  `AddTeamGraphNodeRequest` model.
    type Add_Team_Graph_Node_Request is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Role : UARP.Models.Add_Team_Graph_Node_Request_Role;
+      Role : UARP.Models.Team_Graph_Node_Role;
       Has_Spawned_By : Boolean := False;
       Spawned_By : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Goal_Summary : Boolean := False;
@@ -769,6 +778,11 @@ package UARP.Models is
       Rate_Limit_Sessions_Per_Ip : UARP.Types.Integer_Value := 0;
       Has_Rate_Limit_Messages_Per_Min : Boolean := False;
       Rate_Limit_Messages_Per_Min : UARP.Types.Integer_Value := 0;
+      --  Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+      --  ONLY for the featured landing agent - the one `GET /admin/config/landing` names as
+      --  `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+      --  Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+      --  default of 15.
       Has_Daily_Message_Limit : Boolean := False;
       Daily_Message_Limit : UARP.Types.Integer_Value := 0;
    end record;
@@ -821,19 +835,12 @@ package UARP.Models is
 
    --  `AgentBridgeState` model.
    type Agent_Bridge_State is record
-      Has_Online_Machines : Boolean := False;
       Online_Machines : UARP.Types.Integer_Value := 0;
-      Has_Total_Machines : Boolean := False;
       Total_Machines : UARP.Types.Integer_Value := 0;
-      Has_Platforms : Boolean := False;
       Platforms : UARP.Types.Text_Vectors.Vector;
-      Has_Working_Directories : Boolean := False;
       Working_Directories : UARP.Types.Text_Vectors.Vector;
-      Has_Machine_Names : Boolean := False;
       Machine_Names : UARP.Types.Text_Vectors.Vector;
-      Has_Latest_Heartbeat : Boolean := False;
       Latest_Heartbeat : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Installed_Specs : Boolean := False;
       Installed_Specs : UARP.Models.Bridge_Installed_Spec_Vectors.Vector;
    end record;
 
@@ -1200,20 +1207,45 @@ package UARP.Models is
    function To_JSON (Model : Agent_Model_Config_Input) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Model_Config_Input;
 
+   --  Values of `AgentScorerConfigType`.
+   --  A value the API introduces later decodes as Agent_Scorer_Config_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Agent_Scorer_Config_Type_Kind is
+     (Agent_Scorer_Config_Type_Webhook,
+   Agent_Scorer_Config_Type_Unrecognized);
+
+   type Agent_Scorer_Config_Type is record
+      Kind : Agent_Scorer_Config_Type_Kind := Agent_Scorer_Config_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Agent_Scorer_Config_Type (Value : String) return Agent_Scorer_Config_Type;
+   function To_Agent_Scorer_Config_Type (Kind : Agent_Scorer_Config_Type_Kind) return Agent_Scorer_Config_Type;
+   function Image (Model : Agent_Scorer_Config_Type) return String;
+   function To_JSON (Model : Agent_Scorer_Config_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Scorer_Config_Type;
+
+   --  `AgentScorerConfig` model.
+   type Agent_Scorer_Config is record
+      Type_K : UARP.Models.Agent_Scorer_Config_Type;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timeout_Ms : Boolean := False;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      --  Properties the server returned that this SDK does not model.
+      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Agent_Scorer_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Scorer_Config;
+
    --  `AgentScorer` model.
    type Agent_Scorer is record
-      Has_Agent_Id : Boolean := False;
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Config : Boolean := False;
-      Config : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Scorer_Id : Boolean := False;
       Scorer_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tenant_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Config : UARP.Models.Agent_Scorer_Config;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Agent_Scorer) return UARP.JSON_Support.JSON_Value;
@@ -1276,6 +1308,109 @@ package UARP.Models is
 
    package Agent_Version_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Agent_Version);
+
+   --  Values of `RiskClassificationUpdateLevel`.
+   --  A value the API introduces later decodes as Risk_Classification_Update_Level_Unrecognized
+   --  with the original text kept in Raw.
+   type Risk_Classification_Update_Level_Kind is
+     (Risk_Classification_Update_Level_Minimal,
+   Risk_Classification_Update_Level_Limited,
+   Risk_Classification_Update_Level_High,
+   Risk_Classification_Update_Level_Unacceptable,
+   Risk_Classification_Update_Level_Unrecognized);
+
+   type Risk_Classification_Update_Level is record
+      Kind : Risk_Classification_Update_Level_Kind := Risk_Classification_Update_Level_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Risk_Classification_Update_Level (Value : String) return Risk_Classification_Update_Level;
+   function To_Risk_Classification_Update_Level (Kind : Risk_Classification_Update_Level_Kind) return Risk_Classification_Update_Level;
+   function Image (Model : Risk_Classification_Update_Level) return String;
+   function To_JSON (Model : Risk_Classification_Update_Level) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Level;
+
+   --  Set when level is `high`.
+   --  A value the API introduces later decodes as Risk_Classification_Update_Annex_Iii_Category_Unrecognized
+   --  with the original text kept in Raw.
+   type Risk_Classification_Update_Annex_Iii_Category_Kind is
+     (Risk_Classification_Update_Annex_Iii_Category_Biometric,
+   Risk_Classification_Update_Annex_Iii_Category_Critical_Infrastructure,
+   Risk_Classification_Update_Annex_Iii_Category_Education,
+   Risk_Classification_Update_Annex_Iii_Category_Employment,
+   Risk_Classification_Update_Annex_Iii_Category_Essential_Services,
+   Risk_Classification_Update_Annex_Iii_Category_Law_Enforcement,
+   Risk_Classification_Update_Annex_Iii_Category_Migration,
+   Risk_Classification_Update_Annex_Iii_Category_Democratic_Processes,
+   Risk_Classification_Update_Annex_Iii_Category_Unrecognized);
+
+   type Risk_Classification_Update_Annex_Iii_Category is record
+      Kind : Risk_Classification_Update_Annex_Iii_Category_Kind := Risk_Classification_Update_Annex_Iii_Category_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Risk_Classification_Update_Annex_Iii_Category (Value : String) return Risk_Classification_Update_Annex_Iii_Category;
+   function To_Risk_Classification_Update_Annex_Iii_Category (Kind : Risk_Classification_Update_Annex_Iii_Category_Kind) return Risk_Classification_Update_Annex_Iii_Category;
+   function Image (Model : Risk_Classification_Update_Annex_Iii_Category) return String;
+   function To_JSON (Model : Risk_Classification_Update_Annex_Iii_Category) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Annex_Iii_Category;
+
+   --  EU AI Act (Article 9) classification for an agent.
+   type Risk_Classification is record
+      Level : UARP.Models.Risk_Classification_Update_Level;
+      --  Set when level is `high`.
+      Has_Annex_Iii_Category : Boolean := False;
+      Annex_Iii_Category : UARP.Models.Risk_Classification_Update_Annex_Iii_Category;
+      Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Key ID or user ID of whoever classified.
+      Assessor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Assessed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Review_Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Risk_Classification) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification;
+
+   --  `AiSystemCardTechnicalSpecifications` model.
+   type Ai_System_Card_Technical_Specifications is record
+      Has_Model_Provider : Boolean := False;
+      Model_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Model_Ref : Boolean := False;
+      Model_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Max_Context_Tokens : Boolean := False;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Built_In_Tools : Boolean := False;
+      Built_In_Tools : UARP.Types.Text_Vectors.Vector;
+      Has_Guardrails_Enabled : Boolean := False;
+      Guardrails_Enabled : Standard.Boolean := False;
+      Has_Guardrail_Ids : Boolean := False;
+      Guardrail_Ids : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Ai_System_Card_Technical_Specifications) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ai_System_Card_Technical_Specifications;
+
+   --  `AiSystemCard` model.
+   type Ai_System_Card is record
+      System_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Risk_Classification : Boolean := False;
+      Risk_Classification : UARP.Models.Risk_Classification;
+      Intended_Purpose : UARP.Types.Text := UARP.Types.Empty_Text;
+      Technical_Specifications : UARP.Models.Ai_System_Card_Technical_Specifications;
+      Has_Training_Data_Summary : Boolean := False;
+      Training_Data_Summary : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Performance_Metrics : Boolean := False;
+      Performance_Metrics : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Limitations : UARP.Types.Text_Vectors.Vector;
+      Guardrails_Summary : UARP.Types.Text_Vectors.Vector;
+      Human_Oversight_Measures : UARP.Types.Text_Vectors.Vector;
+      Generated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Ai_System_Card) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ai_System_Card;
 
    --  Values of `HumanAmbassadorRole`.
    --  A value the API introduces later decodes as Human_Ambassador_Role_Unrecognized
@@ -1552,19 +1687,41 @@ package UARP.Models is
    function To_JSON (Model : API_Key_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return API_Key_Response;
 
+   --  What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+   --  `api_key` was created deliberately from Settings or the CLI.
+   --  A value the API introduces later decodes as API_Key_Summary_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type API_Key_Summary_Kind_Kind is
+     (API_Key_Summary_Kind_Session,
+   API_Key_Summary_Kind_API_Key,
+   API_Key_Summary_Kind_Unrecognized);
+
+   type API_Key_Summary_Kind is record
+      Kind : API_Key_Summary_Kind_Kind := API_Key_Summary_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_API_Key_Summary_Kind (Value : String) return API_Key_Summary_Kind;
+   function To_API_Key_Summary_Kind (Kind : API_Key_Summary_Kind_Kind) return API_Key_Summary_Kind;
+   function Image (Model : API_Key_Summary_Kind) return String;
+   function To_JSON (Model : API_Key_Summary_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return API_Key_Summary_Kind;
+
    --  An API key as listed. The secret is shown once, at creation, and never here.
    type API_Key_Summary is record
       Key_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Name : Boolean := False;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Prefix : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Kind : Boolean := False;
-      Kind : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Scopes : Boolean := False;
+      --  What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+      --  `api_key` was created deliberately from Settings or the CLI.
+      Kind : UARP.Models.API_Key_Summary_Kind;
       Scopes : UARP.Types.Text_Vectors.Vector;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
+      Status : UARP.Models.API_Key_Summary_Status;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Expires_At : Boolean := False;
+      Expires_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Last_Used_At : Boolean := False;
+      Last_Used_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : API_Key_Summary) return UARP.JSON_Support.JSON_Value;
@@ -1816,9 +1973,7 @@ package UARP.Models is
       Machine_Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Capabilities : UARP.Types.Text_Vectors.Vector;
       Working_Directory : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Version : Boolean := False;
       Version : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Last_Heartbeat : Boolean := False;
       Last_Heartbeat : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Models.Agent_Summary_Bridge_Status;
       Has_Registered_At : Boolean := False;
@@ -2278,19 +2433,13 @@ package UARP.Models is
 
    --  `ConstitutionViolation` model.
    type Constitution_Violation is record
-      Has_Rule_Id : Boolean := False;
       Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Rule_Type : Boolean := False;
       Rule_Type : UARP.Models.Constitution_Rule_Rule_Type;
-      Has_Action : Boolean := False;
       Action : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Penalty : Boolean := False;
       Penalty : UARP.Models.Constitution_Rule_Penalty;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Timestamp : Boolean := False;
       Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -2474,6 +2623,18 @@ package UARP.Models is
 
    function To_JSON (Model : Complete_O_Auth_Login_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Complete_O_Auth_Login_Response;
+
+   --  `ConnectorConfigField` model.
+   type Connector_Config_Field is record
+      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Required : Boolean := False;
+      Required : Standard.Boolean := False;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Connector_Config_Field) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Connector_Config_Field;
 
    --  `Constitution` model.
    type Constitution is record
@@ -2886,31 +3047,31 @@ package UARP.Models is
    function To_JSON (Model : Create_A2A_Task_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_A2A_Task_Request;
 
-   --  Values of `CreateAgentFriaRequestRightsAssessedItemImpact`.
-   --  A value the API introduces later decodes as Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Unrecognized
+   --  Values of `FriaRightImpact`.
+   --  A value the API introduces later decodes as Fria_Right_Impact_Unrecognized
    --  with the original text kept in Raw.
-   type Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Kind is
-     (Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_None,
-   Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Low,
-   Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Medium,
-   Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_High,
-   Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Unrecognized);
+   type Fria_Right_Impact_Kind is
+     (Fria_Right_Impact_None,
+   Fria_Right_Impact_Low,
+   Fria_Right_Impact_Medium,
+   Fria_Right_Impact_High,
+   Fria_Right_Impact_Unrecognized);
 
-   type Create_Agent_Fria_Request_Rights_Assessed_Item_Impact is record
-      Kind : Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Kind := Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Unrecognized;
+   type Fria_Right_Impact is record
+      Kind : Fria_Right_Impact_Kind := Fria_Right_Impact_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Create_Agent_Fria_Request_Rights_Assessed_Item_Impact (Value : String) return Create_Agent_Fria_Request_Rights_Assessed_Item_Impact;
-   function To_Create_Agent_Fria_Request_Rights_Assessed_Item_Impact (Kind : Create_Agent_Fria_Request_Rights_Assessed_Item_Impact_Kind) return Create_Agent_Fria_Request_Rights_Assessed_Item_Impact;
-   function Image (Model : Create_Agent_Fria_Request_Rights_Assessed_Item_Impact) return String;
-   function To_JSON (Model : Create_Agent_Fria_Request_Rights_Assessed_Item_Impact) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Agent_Fria_Request_Rights_Assessed_Item_Impact;
+   function To_Fria_Right_Impact (Value : String) return Fria_Right_Impact;
+   function To_Fria_Right_Impact (Kind : Fria_Right_Impact_Kind) return Fria_Right_Impact;
+   function Image (Model : Fria_Right_Impact) return String;
+   function To_JSON (Model : Fria_Right_Impact) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fria_Right_Impact;
 
    --  `CreateAgentFriaRequestRightsAssessedItem` model.
    type Create_Agent_Fria_Request_Rights_Assessed_Item is record
       Right : UARP.Types.Text := UARP.Types.Empty_Text;
-      Impact : UARP.Models.Create_Agent_Fria_Request_Rights_Assessed_Item_Impact;
+      Impact : UARP.Models.Fria_Right_Impact;
       Justification : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Mitigation : Boolean := False;
       Mitigation : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -3624,33 +3785,33 @@ package UARP.Models is
    function To_JSON (Model : Create_Task_Request_Recurrence) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Task_Request_Recurrence;
 
-   --  Values of `CreateTaskRequestDeliveryChannel`.
-   --  A value the API introduces later decodes as Create_Task_Request_Delivery_Channel_Unrecognized
+   --  Values of `TodoDeliveryChannel`.
+   --  A value the API introduces later decodes as Todo_Delivery_Channel_Unrecognized
    --  with the original text kept in Raw.
-   type Create_Task_Request_Delivery_Channel_Kind is
-     (Create_Task_Request_Delivery_Channel_Email,
-   Create_Task_Request_Delivery_Channel_Telegram,
-   Create_Task_Request_Delivery_Channel_Whatsapp,
-   Create_Task_Request_Delivery_Channel_Unrecognized);
+   type Todo_Delivery_Channel_Kind is
+     (Todo_Delivery_Channel_Email,
+   Todo_Delivery_Channel_Telegram,
+   Todo_Delivery_Channel_Whatsapp,
+   Todo_Delivery_Channel_Unrecognized);
 
-   type Create_Task_Request_Delivery_Channel is record
-      Kind : Create_Task_Request_Delivery_Channel_Kind := Create_Task_Request_Delivery_Channel_Unrecognized;
+   type Todo_Delivery_Channel is record
+      Kind : Todo_Delivery_Channel_Kind := Todo_Delivery_Channel_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Create_Task_Request_Delivery_Channel (Value : String) return Create_Task_Request_Delivery_Channel;
-   function To_Create_Task_Request_Delivery_Channel (Kind : Create_Task_Request_Delivery_Channel_Kind) return Create_Task_Request_Delivery_Channel;
-   function Image (Model : Create_Task_Request_Delivery_Channel) return String;
-   function To_JSON (Model : Create_Task_Request_Delivery_Channel) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Task_Request_Delivery_Channel;
+   function To_Todo_Delivery_Channel (Value : String) return Todo_Delivery_Channel;
+   function To_Todo_Delivery_Channel (Kind : Todo_Delivery_Channel_Kind) return Todo_Delivery_Channel;
+   function Image (Model : Todo_Delivery_Channel) return String;
+   function To_JSON (Model : Todo_Delivery_Channel) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Todo_Delivery_Channel;
 
-   package Create_Task_Request_Delivery_Channel_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Create_Task_Request_Delivery_Channel);
+   package Todo_Delivery_Channel_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Todo_Delivery_Channel);
 
    --  `CreateTaskRequestDelivery` model.
    type Create_Task_Request_Delivery is record
       Has_Channels : Boolean := False;
-      Channels : UARP.Models.Create_Task_Request_Delivery_Channel_Vectors.Vector;
+      Channels : UARP.Models.Todo_Delivery_Channel_Vectors.Vector;
       Has_Target : Boolean := False;
       Target : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -4385,31 +4546,95 @@ package UARP.Models is
 
    --  `ExportAdminConfigResponse` model.
    type Export_Admin_Config_Response is record
-      Has_Exported_At : Boolean := False;
       Exported_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Section_Count : Boolean := False;
       Section_Count : UARP.Types.Integer_Value := 0;
-      Has_Sections : Boolean := False;
       Sections : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
    function To_JSON (Model : Export_Admin_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Export_Admin_Config_Response;
 
+   --  Values of `FeedEntryEventType`.
+   --  A value the API introduces later decodes as Feed_Entry_Event_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Feed_Entry_Event_Type_Kind is
+     (Feed_Entry_Event_Type_Run_Started,
+   Feed_Entry_Event_Type_Run_Completed,
+   Feed_Entry_Event_Type_Run_Failed,
+   Feed_Entry_Event_Type_Run_Timeout,
+   Feed_Entry_Event_Type_Run_Cancelled,
+   Feed_Entry_Event_Type_Session_Created,
+   Feed_Entry_Event_Type_Company_Tick_Start,
+   Feed_Entry_Event_Type_Company_Tick_End,
+   Feed_Entry_Event_Type_Company_Paused,
+   Feed_Entry_Event_Type_Company_Resumed,
+   Feed_Entry_Event_Type_Company_Escalation,
+   Feed_Entry_Event_Type_Team_Round_Start,
+   Feed_Entry_Event_Type_Team_Round_End,
+   Feed_Entry_Event_Type_Objective_Created,
+   Feed_Entry_Event_Type_Objective_Completed,
+   Feed_Entry_Event_Type_Agent_Created,
+   Feed_Entry_Event_Type_Unrecognized);
+
+   type Feed_Entry_Event_Type is record
+      Kind : Feed_Entry_Event_Type_Kind := Feed_Entry_Event_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Feed_Entry_Event_Type (Value : String) return Feed_Entry_Event_Type;
+   function To_Feed_Entry_Event_Type (Kind : Feed_Entry_Event_Type_Kind) return Feed_Entry_Event_Type;
+   function Image (Model : Feed_Entry_Event_Type) return String;
+   function To_JSON (Model : Feed_Entry_Event_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Feed_Entry_Event_Type;
+
+   --  `FeedEntryMetrics` model.
+   type Feed_Entry_Metrics is record
+      Has_Duration_Ms : Boolean := False;
+      Duration_Ms : UARP.Types.Integer_Value := 0;
+      Has_Tokens_Used : Boolean := False;
+      Tokens_Used : UARP.Types.Integer_Value := 0;
+      Has_Cost_Usd : Boolean := False;
+      Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Steps : Boolean := False;
+      Steps : UARP.Types.Integer_Value := 0;
+      Has_Tool_Calls : Boolean := False;
+      Tool_Calls : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Feed_Entry_Metrics) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Feed_Entry_Metrics;
+
    --  `FeedEntry` model.
    type Feed_Entry is record
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Event_Type : UARP.Types.Text := UARP.Types.Empty_Text;
       Feed_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Metrics : Boolean := False;
-      Metrics : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Event_Type : UARP.Models.Feed_Entry_Event_Type;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Summary : Boolean := False;
+      Summary : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Agent_Name : Boolean := False;
+      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Company_Id : Boolean := False;
+      Company_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Company_Name : Boolean := False;
+      Company_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Team_Id : Boolean := False;
+      Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Team_Name : Boolean := False;
+      Team_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Session_Id : Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Run_Id : Boolean := False;
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
-      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.Models.Feed_Entry_Metrics;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Feed_Entry) return UARP.JSON_Support.JSON_Value;
@@ -4454,6 +4679,35 @@ package UARP.Models is
 
    package File_Entry_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => File_Entry);
+
+   --  `FriaRight` model.
+   type Fria_Right is record
+      Right : UARP.Types.Text := UARP.Types.Empty_Text;
+      Impact : UARP.Models.Fria_Right_Impact;
+      Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Mitigation : Boolean := False;
+      Mitigation : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Fria_Right) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fria_Right;
+
+   package Fria_Right_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Fria_Right);
+
+   --  `FriaReport` model.
+   type Fria_Report is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Risk_Level : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rights_Assessed : UARP.Models.Fria_Right_Vectors.Vector;
+      Mitigations : UARP.Types.Text := UARP.Types.Empty_Text;
+      Assessor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Assessed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Next_Review : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Fria_Report) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fria_Report;
 
    --  `GetActivityFeedResponse` model.
    type Get_Activity_Feed_Response is record
@@ -4665,16 +4919,16 @@ package UARP.Models is
    function To_JSON (Model : Get_Agent_Traffic_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Traffic_Response;
 
-   --  `Value2` model.
-   type Value2 is record
+   --  `Value` model.
+   type Value is record
       Has_From : Boolean := False;
       From : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
       Has_To : Boolean := False;
       To : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
-   function To_JSON (Model : Value2) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value2;
+   function To_JSON (Model : Value) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value;
 
    --  `GetAgentVersionDiffResponse` model.
    type Get_Agent_Version_Diff_Response is record
@@ -4863,7 +5117,10 @@ package UARP.Models is
 
    --  `GovernanceLedgerEntry` model.
    type Governance_Ledger_Entry is record
-      --  Monotonic position in the tenant's chain.
+      --  Position in the ONE global chain shared by all tenants - not a per-tenant sequence.
+      --  Consecutive rows in a tenant's page usually have gaps here; the missing numbers are other
+      --  tenants' entries (see the /governance/ledger description). For the tenant's own count use
+      --  `tenant_total` on the list response.
       Seq : UARP.Types.Integer_Value := 0;
       --  What happened, e.g. `run_complete`, `constitution_amended`.
       Action : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -4910,8 +5167,12 @@ package UARP.Models is
       --  Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
       --  was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
       --  same ledger a second later. Rendering this as "events recorded" understates the ledger by
-      --  three orders of magnitude.
+      --  three orders of magnitude. For the size, read `tenant_total`.
       Total : UARP.Types.Integer_Value := 0;
+      --  How many entries in the whole ledger belong to the calling tenant - the number to render as
+      --  "ledger entries". Independent of `count`/`from`/`to`. Not `entries_checked` from
+      --  `/governance/ledger/verify` (that walks every tenant) and not `head.seq` (global sequence).
+      Tenant_Total : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Get_Governance_Ledger_Response) return UARP.JSON_Support.JSON_Value;
@@ -5468,20 +5729,34 @@ package UARP.Models is
    function To_JSON (Model : Get_Team_Chat_History_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Team_Chat_History_Response;
 
+   --  Values of `TeamGraphNodeStatus`.
+   --  A value the API introduces later decodes as Team_Graph_Node_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Team_Graph_Node_Status_Kind is
+     (Team_Graph_Node_Status_Active,
+   Team_Graph_Node_Status_Idle,
+   Team_Graph_Node_Status_Terminated,
+   Team_Graph_Node_Status_Unrecognized);
+
+   type Team_Graph_Node_Status is record
+      Kind : Team_Graph_Node_Status_Kind := Team_Graph_Node_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Team_Graph_Node_Status (Value : String) return Team_Graph_Node_Status;
+   function To_Team_Graph_Node_Status (Kind : Team_Graph_Node_Status_Kind) return Team_Graph_Node_Status;
+   function Image (Model : Team_Graph_Node_Status) return String;
+   function To_JSON (Model : Team_Graph_Node_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Graph_Node_Status;
+
    --  `TeamGraphNode` model.
    type Team_Graph_Node is record
-      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Goal_Summary : Boolean := False;
-      Goal_Summary : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Role : Boolean := False;
-      Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Spawned_At : Boolean := False;
-      Spawned_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Spawned_By : Boolean := False;
+      Role : UARP.Models.Team_Graph_Node_Role;
+      Status : UARP.Models.Team_Graph_Node_Status;
       Spawned_By : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Spawned_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Goal_Summary : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Team_Graph_Node) return UARP.JSON_Support.JSON_Value;
@@ -5492,16 +5767,13 @@ package UARP.Models is
 
    --  `TeamGraphEdge` model.
    type Team_Graph_Edge is record
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Edge_Id : Boolean := False;
       Edge_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_From : Boolean := False;
       From : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_To : Boolean := False;
       To : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Type : Boolean := False;
-      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Team_Graph_Edge_Type;
+      Has_Task_Id : Boolean := False;
+      Task_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Team_Graph_Edge) return UARP.JSON_Support.JSON_Value;
@@ -5927,30 +6199,24 @@ package UARP.Models is
    function To_JSON (Model : Integration_Catalog_Item_Auth_Type) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Integration_Catalog_Item_Auth_Type;
 
-   --  `Value` model.
-   type Value is record
-      Has_Type : Boolean := False;
-      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Required : Boolean := False;
-      Required : Standard.Boolean := False;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Value) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value;
-
    --  Available integration (connector) type in the catalog
    type Integration_Catalog_Item is record
       --  Connector id (e.g. github, stripe, notion, slack)
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Icon : Boolean := False;
       Icon : UARP.Types.Text := UARP.Types.Empty_Text;
       Auth_Type : UARP.Models.Integration_Catalog_Item_Auth_Type;
-      Has_Config_Schema : Boolean := False;
+      --  Present when the connector authorises through another connector's OAuth provider
+      --  (google_calendar, gmail, google_drive and google_sheets all say `google`). A client builds
+      --  the authorize URL from this when set, from `id` otherwise. Absent for every other connector.
+      Has_Oauth_Provider : Boolean := False;
+      Oauth_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The OAuth scopes the connector needs, so a client can show them BEFORE the visitor clicks
+      --  Connect rather than leaving the IdP consent screen to be the first place they are seen.
+      --  Absent - not empty - for api_key connectors and for OAuth connectors that declare none.
+      Has_Required_Oauth_Scopes : Boolean := False;
+      Required_Oauth_Scopes : UARP.Types.Text_Vectors.Vector;
       Config_Schema : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
@@ -6087,32 +6353,90 @@ package UARP.Models is
    function To_JSON (Model : Knowledge_Base_Create) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Knowledge_Base_Create;
 
+   --  Values of `KnowledgeBaseDocumentType`.
+   --  A value the API introduces later decodes as Knowledge_Base_Document_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Knowledge_Base_Document_Type_Kind is
+     (Knowledge_Base_Document_Type_PDF,
+   Knowledge_Base_Document_Type_Markdown,
+   Knowledge_Base_Document_Type_CSV,
+   Knowledge_Base_Document_Type_Html,
+   Knowledge_Base_Document_Type_Plain,
+   Knowledge_Base_Document_Type_Docx,
+   Knowledge_Base_Document_Type_Image,
+   Knowledge_Base_Document_Type_Unrecognized);
+
+   type Knowledge_Base_Document_Type is record
+      Kind : Knowledge_Base_Document_Type_Kind := Knowledge_Base_Document_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Knowledge_Base_Document_Type (Value : String) return Knowledge_Base_Document_Type;
+   function To_Knowledge_Base_Document_Type (Kind : Knowledge_Base_Document_Type_Kind) return Knowledge_Base_Document_Type;
+   function Image (Model : Knowledge_Base_Document_Type) return String;
+   function To_JSON (Model : Knowledge_Base_Document_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Knowledge_Base_Document_Type;
+
+   --  Values of `KnowledgeBaseDocumentStatus`.
+   --  A value the API introduces later decodes as Knowledge_Base_Document_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Knowledge_Base_Document_Status_Kind is
+     (Knowledge_Base_Document_Status_Uploading,
+   Knowledge_Base_Document_Status_Processing,
+   Knowledge_Base_Document_Status_Ready,
+   Knowledge_Base_Document_Status_Error,
+   Knowledge_Base_Document_Status_Unrecognized);
+
+   type Knowledge_Base_Document_Status is record
+      Kind : Knowledge_Base_Document_Status_Kind := Knowledge_Base_Document_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Knowledge_Base_Document_Status (Value : String) return Knowledge_Base_Document_Status;
+   function To_Knowledge_Base_Document_Status (Kind : Knowledge_Base_Document_Status_Kind) return Knowledge_Base_Document_Status;
+   function Image (Model : Knowledge_Base_Document_Status) return String;
+   function To_JSON (Model : Knowledge_Base_Document_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Knowledge_Base_Document_Status;
+
+   --  `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+   --  provider answered and the document is searchable by keywords only.
+   --  A value the API introduces later decodes as Knowledge_Base_Document_Embedding_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Knowledge_Base_Document_Embedding_Status_Kind is
+     (Knowledge_Base_Document_Embedding_Status_Embedded,
+   Knowledge_Base_Document_Embedding_Status_Keyword_Only,
+   Knowledge_Base_Document_Embedding_Status_Unrecognized);
+
+   type Knowledge_Base_Document_Embedding_Status is record
+      Kind : Knowledge_Base_Document_Embedding_Status_Kind := Knowledge_Base_Document_Embedding_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Knowledge_Base_Document_Embedding_Status (Value : String) return Knowledge_Base_Document_Embedding_Status;
+   function To_Knowledge_Base_Document_Embedding_Status (Kind : Knowledge_Base_Document_Embedding_Status_Kind) return Knowledge_Base_Document_Embedding_Status;
+   function Image (Model : Knowledge_Base_Document_Embedding_Status) return String;
+   function To_JSON (Model : Knowledge_Base_Document_Embedding_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Knowledge_Base_Document_Embedding_Status;
+
    --  `KnowledgeBaseDocument` model.
    type Knowledge_Base_Document is record
-      Has_Chunk_Count : Boolean := False;
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Kb_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Type_K : UARP.Models.Knowledge_Base_Document_Type;
+      Size_Bytes : UARP.Types.Integer_Value := 0;
       Chunk_Count : UARP.Types.Integer_Value := 0;
+      Status : UARP.Models.Knowledge_Base_Document_Status;
+      Has_Error_Message : Boolean := False;
+      Error_Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Chunk_Preview : Boolean := False;
       Chunk_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Embedding_Status : Boolean := False;
-      Embedding_Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Id : Boolean := False;
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Kb_Id : Boolean := False;
-      Kb_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Size_Bytes : Boolean := False;
-      Size_Bytes : UARP.Types.Integer_Value := 0;
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tenant_Id : Boolean := False;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Type : Boolean := False;
-      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+      --  provider answered and the document is searchable by keywords only.
+      Embedding_Status : UARP.Models.Knowledge_Base_Document_Embedding_Status;
    end record;
 
    function To_JSON (Model : Knowledge_Base_Document) return UARP.JSON_Support.JSON_Value;
@@ -6282,7 +6606,6 @@ package UARP.Models is
    --  `ListAPIKeysResponse` model.
    type List_API_Keys_Response is record
       Keys : UARP.Models.API_Key_Summary_Vectors.Vector;
-      Has_Total : Boolean := False;
       Total : UARP.Types.Integer_Value := 0;
    end record;
 
@@ -6872,9 +7195,7 @@ package UARP.Models is
       Has_Logo_URL : Boolean := False;
       Logo_URL : UARP.Types.Text := UARP.Types.Empty_Text;
       Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Is_Sole_Owner : Boolean := False;
       Is_Sole_Owner : Standard.Boolean := False;
-      Has_Member_Count : Boolean := False;
       Member_Count : UARP.Types.Integer_Value := 0;
       Has_Joined_At : Boolean := False;
       Joined_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -6892,7 +7213,6 @@ package UARP.Models is
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Expires_At : Boolean := False;
       Expires_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Invited_By_Name : Boolean := False;
       Invited_By_Name : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7638,30 +7958,88 @@ package UARP.Models is
    function To_JSON (Model : List_Sessions_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Sessions_Response;
 
+   --  Values of `TodoStatus`.
+   --  A value the API introduces later decodes as Todo_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Todo_Status_Kind is
+     (Todo_Status_Pending,
+   Todo_Status_Pending_Confirmation,
+   Todo_Status_In_Progress,
+   Todo_Status_Done,
+   Todo_Status_Cancelled,
+   Todo_Status_Unrecognized);
+
+   type Todo_Status is record
+      Kind : Todo_Status_Kind := Todo_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Todo_Status (Value : String) return Todo_Status;
+   function To_Todo_Status (Kind : Todo_Status_Kind) return Todo_Status;
+   function Image (Model : Todo_Status) return String;
+   function To_JSON (Model : Todo_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Todo_Status;
+
+   --  `TodoRecurrence` model.
+   type Todo_Recurrence is record
+      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timezone : Boolean := False;
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Todo_Recurrence) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Todo_Recurrence;
+
+   --  `TodoDelivery` model.
+   type Todo_Delivery is record
+      Channels : UARP.Models.Todo_Delivery_Channel_Vectors.Vector;
+      Has_Target : Boolean := False;
+      Target : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Todo_Delivery) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Todo_Delivery;
+
    --  `Todo` model.
    type Todo is record
-      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Assign_Agent_Id : Boolean := False;
-      Assign_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Todo_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Instructions : Boolean := False;
+      Instructions : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Due_At : Boolean := False;
       Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Assign_Agent_Id : Boolean := False;
+      Assign_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Assign_Team_Id : Boolean := False;
+      Assign_Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Todo_Status;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Run_Id : Boolean := False;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Team_Run_Id : Boolean := False;
+      Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Recurrence : Boolean := False;
+      Recurrence : UARP.Models.Todo_Recurrence;
+      Has_Next_Fire_At : Boolean := False;
+      Next_Fire_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Last_Fired_At : Boolean := False;
       Last_Fired_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Last_Run_Status : Boolean := False;
       Last_Run_Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Order_Index : Boolean := False;
-      Order_Index : UARP.Types.Integer_Value := 0;
       Has_Require_Confirmation : Boolean := False;
       Require_Confirmation : Standard.Boolean := False;
-      Has_Run_Id : Boolean := False;
-      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Title : UARP.Types.Text := UARP.Types.Empty_Text;
-      Todo_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Delivery : Boolean := False;
+      Delivery : UARP.Models.Todo_Delivery;
+      Has_Order_Index : Boolean := False;
+      Order_Index : UARP.Types.Integer_Value := 0;
+      Has_Parent_Task_Id : Boolean := False;
+      Parent_Task_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Present only on the session-scoped list; absent from GET /todos.
+      Has_Agent_Name : Boolean := False;
+      Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Todo) return UARP.JSON_Support.JSON_Value;
@@ -8429,13 +8807,11 @@ package UARP.Models is
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Shared_With : Boolean := False;
       Shared_With : UARP.Types.Text_Vectors.Vector;
-      Has_Assigned_Agents : Boolean := False;
       Assigned_Agents : UARP.Types.Text_Vectors.Vector;
       Has_Assigned_Teams : Boolean := False;
       Assigned_Teams : UARP.Types.Text_Vectors.Vector;
       Has_Assigned_Companies : Boolean := False;
       Assigned_Companies : UARP.Types.Text_Vectors.Vector;
-      Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Updated_At : Boolean := False;
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -8632,6 +9008,12 @@ package UARP.Models is
       Caller_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Input : Boolean := False;
       Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Metrics : Boolean := False;
+      Metrics : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Set when the run succeeded but paying the publisher failed - a different thing from a failed
+      --  run.
+      Has_Revenue_Error : Boolean := False;
+      Revenue_Error : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Models.Marketplace_Invocation_Status;
       Has_Result : Boolean := False;
       Result : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
@@ -9283,21 +9665,29 @@ package UARP.Models is
    function To_JSON (Model : Registry_Get_Share_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Get_Share_Response;
 
+   --  `ResolvedDep` model.
+   type Resolved_Dep is record
+      Scope : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version_Req : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Resolved_Dep) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Resolved_Dep;
+
+   package Resolved_Dep_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Resolved_Dep);
+
    --  `RegistryGetSparseIndexResponseVersion` model.
    type Registry_Get_Sparse_Index_Response_Version is record
-      Has_Version : Boolean := False;
       Version : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Sha256 : Boolean := False;
       Sha256 : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Dependencies : Boolean := False;
-      Dependencies : UARP.JSON_Support.JSON_Value;
-      Has_Yanked : Boolean := False;
+      Dependencies : UARP.Models.Resolved_Dep_Vectors.Vector;
       Yanked : Standard.Boolean := False;
       Has_Yank_Reason : Boolean := False;
       Yank_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Size : Boolean := False;
       Size : UARP.Types.Integer_Value := 0;
-      Has_Published_At : Boolean := False;
       Published_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -9316,6 +9706,25 @@ package UARP.Models is
 
    function To_JSON (Model : Registry_Get_Sparse_Index_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Get_Sparse_Index_Response;
+
+   --  `RegistryVersionEntry` model.
+   type Registry_Version_Entry is record
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      Sha256 : UARP.Types.Text := UARP.Types.Empty_Text;
+      Dependencies : UARP.Models.Resolved_Dep_Vectors.Vector;
+      Yanked : Standard.Boolean := False;
+      Has_Yank_Reason : Boolean := False;
+      Yank_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Size : Boolean := False;
+      Size : UARP.Types.Integer_Value := 0;
+      Published_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Registry_Version_Entry) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Version_Entry;
+
+   package Registry_Version_Entry_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Registry_Version_Entry);
 
    --  `RegistryGetSpecMetadataResponse` model.
    type Registry_Get_Spec_Metadata_Response is record
@@ -9339,7 +9748,7 @@ package UARP.Models is
       Owner_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Latest_Version : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Versions : Boolean := False;
-      Versions : UARP.JSON_Support.JSON_Value;
+      Versions : UARP.Models.Registry_Version_Entry_Vectors.Vector;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Updated_At : Boolean := False;
@@ -9631,68 +10040,6 @@ package UARP.Models is
 
    function To_JSON (Model : Revoke_Me_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Me_Session_Response;
-
-   --  Values of `RiskClassificationUpdateLevel`.
-   --  A value the API introduces later decodes as Risk_Classification_Update_Level_Unrecognized
-   --  with the original text kept in Raw.
-   type Risk_Classification_Update_Level_Kind is
-     (Risk_Classification_Update_Level_Minimal,
-   Risk_Classification_Update_Level_Limited,
-   Risk_Classification_Update_Level_High,
-   Risk_Classification_Update_Level_Unacceptable,
-   Risk_Classification_Update_Level_Unrecognized);
-
-   type Risk_Classification_Update_Level is record
-      Kind : Risk_Classification_Update_Level_Kind := Risk_Classification_Update_Level_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Risk_Classification_Update_Level (Value : String) return Risk_Classification_Update_Level;
-   function To_Risk_Classification_Update_Level (Kind : Risk_Classification_Update_Level_Kind) return Risk_Classification_Update_Level;
-   function Image (Model : Risk_Classification_Update_Level) return String;
-   function To_JSON (Model : Risk_Classification_Update_Level) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Level;
-
-   --  Set when level is `high`.
-   --  A value the API introduces later decodes as Risk_Classification_Update_Annex_Iii_Category_Unrecognized
-   --  with the original text kept in Raw.
-   type Risk_Classification_Update_Annex_Iii_Category_Kind is
-     (Risk_Classification_Update_Annex_Iii_Category_Biometric,
-   Risk_Classification_Update_Annex_Iii_Category_Critical_Infrastructure,
-   Risk_Classification_Update_Annex_Iii_Category_Education,
-   Risk_Classification_Update_Annex_Iii_Category_Employment,
-   Risk_Classification_Update_Annex_Iii_Category_Essential_Services,
-   Risk_Classification_Update_Annex_Iii_Category_Law_Enforcement,
-   Risk_Classification_Update_Annex_Iii_Category_Migration,
-   Risk_Classification_Update_Annex_Iii_Category_Democratic_Processes,
-   Risk_Classification_Update_Annex_Iii_Category_Unrecognized);
-
-   type Risk_Classification_Update_Annex_Iii_Category is record
-      Kind : Risk_Classification_Update_Annex_Iii_Category_Kind := Risk_Classification_Update_Annex_Iii_Category_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Risk_Classification_Update_Annex_Iii_Category (Value : String) return Risk_Classification_Update_Annex_Iii_Category;
-   function To_Risk_Classification_Update_Annex_Iii_Category (Kind : Risk_Classification_Update_Annex_Iii_Category_Kind) return Risk_Classification_Update_Annex_Iii_Category;
-   function Image (Model : Risk_Classification_Update_Annex_Iii_Category) return String;
-   function To_JSON (Model : Risk_Classification_Update_Annex_Iii_Category) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification_Update_Annex_Iii_Category;
-
-   --  EU AI Act (Article 9) classification for an agent.
-   type Risk_Classification is record
-      Level : UARP.Models.Risk_Classification_Update_Level;
-      --  Set when level is `high`.
-      Has_Annex_Iii_Category : Boolean := False;
-      Annex_Iii_Category : UARP.Models.Risk_Classification_Update_Annex_Iii_Category;
-      Justification : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Key ID or user ID of whoever classified.
-      Assessor : UARP.Types.Text := UARP.Types.Empty_Text;
-      Assessed_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Review_Due_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Risk_Classification) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Risk_Classification;
 
    --  Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
    type Risk_Classification_Update is record
@@ -10846,30 +11193,10 @@ package UARP.Models is
    function To_JSON (Model : Update_Session_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Session_Request;
 
-   --  Values of `UpdateTeamGraphNodeRequestStatus`.
-   --  A value the API introduces later decodes as Update_Team_Graph_Node_Request_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Update_Team_Graph_Node_Request_Status_Kind is
-     (Update_Team_Graph_Node_Request_Status_Active,
-   Update_Team_Graph_Node_Request_Status_Idle,
-   Update_Team_Graph_Node_Request_Status_Terminated,
-   Update_Team_Graph_Node_Request_Status_Unrecognized);
-
-   type Update_Team_Graph_Node_Request_Status is record
-      Kind : Update_Team_Graph_Node_Request_Status_Kind := Update_Team_Graph_Node_Request_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Update_Team_Graph_Node_Request_Status (Value : String) return Update_Team_Graph_Node_Request_Status;
-   function To_Update_Team_Graph_Node_Request_Status (Kind : Update_Team_Graph_Node_Request_Status_Kind) return Update_Team_Graph_Node_Request_Status;
-   function Image (Model : Update_Team_Graph_Node_Request_Status) return String;
-   function To_JSON (Model : Update_Team_Graph_Node_Request_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Team_Graph_Node_Request_Status;
-
    --  `UpdateTeamGraphNodeRequest` model.
    type Update_Team_Graph_Node_Request is record
       Has_Status : Boolean := False;
-      Status : UARP.Models.Update_Team_Graph_Node_Request_Status;
+      Status : UARP.Models.Team_Graph_Node_Status;
       Has_Goal_Summary : Boolean := False;
       Goal_Summary : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -10927,15 +11254,10 @@ package UARP.Models is
 
    --  `UsageMarginSummary` model.
    type Usage_Margin_Summary is record
-      Has_Platform_Markup_Percent : Boolean := False;
       Platform_Markup_Percent : UARP.Types.Float_Value := 0.0;
-      Has_Provider_Cost_Usd : Boolean := False;
       Provider_Cost_Usd : UARP.Types.Float_Value := 0.0;
-      Has_User_Cost_Usd : Boolean := False;
       User_Cost_Usd : UARP.Types.Float_Value := 0.0;
-      Has_Margin_Usd : Boolean := False;
       Margin_Usd : UARP.Types.Float_Value := 0.0;
-      Has_Effective_Margin_Percent : Boolean := False;
       Effective_Margin_Percent : UARP.Types.Float_Value := 0.0;
    end record;
 

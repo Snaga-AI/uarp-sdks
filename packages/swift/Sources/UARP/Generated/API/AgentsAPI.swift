@@ -42,7 +42,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:write`.
-    public func createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = .init()) async throws -> FriaReport {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/fria",
@@ -145,7 +145,7 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:read`.
-    public func getAgentFria(agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAgentFria(agentId: String, options: RequestOptions = .init()) async throws -> FriaReport {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/fria",
@@ -184,7 +184,7 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/system-card`
     ///
     /// Required scopes: `agents:read`.
-    public func getAgentSystemCard(agentId: String, format: GetAgentSystemCardFormat? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAgentSystemCard(agentId: String, format: GetAgentSystemCardFormat? = nil, options: RequestOptions = .init()) async throws -> AiSystemCard {
         var query: [URLQueryItem] = []
         if let format {
             query.append(URLQueryItem(name: "format", value: format.rawValue))
