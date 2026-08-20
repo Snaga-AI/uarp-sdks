@@ -130,6 +130,17 @@ public data class ActivateSafeModeRequest(
 )
 
 /**
+ * `ActivateSessionBranchResponse` model.
+ */
+@Serializable
+public data class ActivateSessionBranchResponse(
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("active_branch")
+    public val activeBranch: String,
+)
+
+/**
  * `ActiveSession` model.
  */
 @Serializable
@@ -139,7 +150,7 @@ public data class ActiveSession(
     public val name: String,
     public val prefix: String,
     public val scopes: List<String>,
-    public val status: ActiveSessionStatus,
+    public val status: APIKeySummaryStatus,
     @SerialName("is_current")
     public val isCurrent: Boolean,
     @SerialName("created_at")
@@ -151,73 +162,16 @@ public data class ActiveSession(
 )
 
 /**
- * `ActiveSessionStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = ActiveSessionStatusSerializer::class)
-@JvmInline
-public value class ActiveSessionStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ACTIVE: ActiveSessionStatus = ActiveSessionStatus("active")
-        public val REVOKED: ActiveSessionStatus = ActiveSessionStatus("revoked")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<ActiveSessionStatus> = listOf(ACTIVE, REVOKED)
-    }
-}
-
-public object ActiveSessionStatusSerializer : KSerializer<ActiveSessionStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ActiveSessionStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ActiveSessionStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): ActiveSessionStatus = ActiveSessionStatus(decoder.decodeString())
-}
-
-/**
  * `AddTeamGraphEdgeRequest` model.
  */
 @Serializable
 public data class AddTeamGraphEdgeRequest(
     public val from: String,
     public val to: String,
-    public val type: AddTeamGraphEdgeRequestType,
+    public val type: TeamGraphEdgeType,
     @SerialName("task_id")
     public val taskId: String? = null,
 )
-
-/**
- * `AddTeamGraphEdgeRequestType` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = AddTeamGraphEdgeRequestTypeSerializer::class)
-@JvmInline
-public value class AddTeamGraphEdgeRequestType(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val DELEGATION: AddTeamGraphEdgeRequestType = AddTeamGraphEdgeRequestType("delegation")
-        public val SUPERVISION: AddTeamGraphEdgeRequestType = AddTeamGraphEdgeRequestType("supervision")
-        public val PEER: AddTeamGraphEdgeRequestType = AddTeamGraphEdgeRequestType("peer")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<AddTeamGraphEdgeRequestType> = listOf(DELEGATION, SUPERVISION, PEER)
-    }
-}
-
-public object AddTeamGraphEdgeRequestTypeSerializer : KSerializer<AddTeamGraphEdgeRequestType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AddTeamGraphEdgeRequestType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: AddTeamGraphEdgeRequestType): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): AddTeamGraphEdgeRequestType = AddTeamGraphEdgeRequestType(decoder.decodeString())
-}
 
 /**
  * `AddTeamGraphNodeRequest` model.
@@ -226,41 +180,12 @@ public object AddTeamGraphEdgeRequestTypeSerializer : KSerializer<AddTeamGraphEd
 public data class AddTeamGraphNodeRequest(
     @SerialName("agent_id")
     public val agentId: String,
-    public val role: AddTeamGraphNodeRequestRole,
+    public val role: TeamGraphNodeRole,
     @SerialName("spawned_by")
     public val spawnedBy: String? = null,
     @SerialName("goal_summary")
     public val goalSummary: String? = null,
 )
-
-/**
- * `AddTeamGraphNodeRequestRole` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = AddTeamGraphNodeRequestRoleSerializer::class)
-@JvmInline
-public value class AddTeamGraphNodeRequestRole(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ORCHESTRATOR: AddTeamGraphNodeRequestRole = AddTeamGraphNodeRequestRole("orchestrator")
-        public val WORKER: AddTeamGraphNodeRequestRole = AddTeamGraphNodeRequestRole("worker")
-        public val ARBITER: AddTeamGraphNodeRequestRole = AddTeamGraphNodeRequestRole("arbiter")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<AddTeamGraphNodeRequestRole> = listOf(ORCHESTRATOR, WORKER, ARBITER)
-    }
-}
-
-public object AddTeamGraphNodeRequestRoleSerializer : KSerializer<AddTeamGraphNodeRequestRole> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AddTeamGraphNodeRequestRole", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: AddTeamGraphNodeRequestRole): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): AddTeamGraphNodeRequestRole = AddTeamGraphNodeRequestRole(decoder.decodeString())
-}
 
 /**
  * `AdminAnalyticsEventsResponse` model.
@@ -851,18 +776,18 @@ public object AgentAutonomyLevelSerializer : KSerializer<AgentAutonomyLevel> {
 @Serializable
 public data class AgentBridgeState(
     @SerialName("online_machines")
-    public val onlineMachines: Long? = null,
+    public val onlineMachines: Long,
     @SerialName("total_machines")
-    public val totalMachines: Long? = null,
-    public val platforms: List<String>? = null,
+    public val totalMachines: Long,
+    public val platforms: List<String>,
     @SerialName("working_directories")
-    public val workingDirectories: List<String>? = null,
+    public val workingDirectories: List<String>,
     @SerialName("machine_names")
-    public val machineNames: List<String>? = null,
+    public val machineNames: List<String>,
     @SerialName("latest_heartbeat")
-    public val latestHeartbeat: String? = null,
+    public val latestHeartbeat: String,
     @SerialName("installed_specs")
-    public val installedSpecs: List<BridgeInstalledSpec>? = null,
+    public val installedSpecs: List<BridgeInstalledSpec>,
 )
 
 /**
@@ -1038,6 +963,13 @@ public data class AgentPublicConfig(
     public val rateLimitSessionsPerIp: Long? = null,
     @SerialName("rate_limit_messages_per_min")
     public val rateLimitMessagesPerMin: Long? = null,
+    /**
+     * Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+     * ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+     * `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+     * Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+     * default of 15.
+     */
     @SerialName("daily_message_limit")
     public val dailyMessageLimit: Long? = null,
 )
@@ -1047,17 +979,102 @@ public data class AgentPublicConfig(
  */
 @Serializable
 public data class AgentScorer(
-    @SerialName("agent_id")
-    public val agentId: String? = null,
-    public val config: JsonObject? = null,
-    @SerialName("created_at")
-    public val createdAt: String? = null,
-    public val name: String? = null,
     @SerialName("scorer_id")
-    public val scorerId: String? = null,
+    public val scorerId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
     @SerialName("tenant_id")
-    public val tenantId: String? = null,
+    public val tenantId: String,
+    public val name: String,
+    public val config: AgentScorerConfig,
+    @SerialName("created_at")
+    public val createdAt: String,
 )
+
+/**
+ * `AgentScorerConfig` model.
+ */
+@Serializable(with = AgentScorerConfigSerializer::class)
+public data class AgentScorerConfig(
+    public val type: AgentScorerConfigType,
+    public val url: String,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long? = null,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+)
+
+/**
+ * Serializer for \[AgentScorerConfig\] that preserves unmodelled properties.
+ */
+public object AgentScorerConfigSerializer : KSerializer<AgentScorerConfig> {
+    @Serializable
+    @SerialName("AgentScorerConfig")
+    private data class Surrogate(
+        val type: AgentScorerConfigType,
+        val url: String,
+        @SerialName("timeout_ms")
+        val timeoutMs: Long? = null,
+    )
+
+    private val declaredNames: Set<String> = setOf("type", "url", "timeout_ms")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): AgentScorerConfig {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("AgentScorerConfig can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return AgentScorerConfig(
+            type = declared.type,
+            url = declared.url,
+            timeoutMs = declared.timeoutMs,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: AgentScorerConfig) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("AgentScorerConfig can only be written as JSON")
+        val declared = Surrogate(
+            type = value.type,
+            url = value.url,
+            timeoutMs = value.timeoutMs,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
+
+/**
+ * `AgentScorerConfigType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AgentScorerConfigTypeSerializer::class)
+@JvmInline
+public value class AgentScorerConfigType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val WEBHOOK: AgentScorerConfigType = AgentScorerConfigType("webhook")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AgentScorerConfigType> = listOf(WEBHOOK)
+    }
+}
+
+public object AgentScorerConfigTypeSerializer : KSerializer<AgentScorerConfigType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentScorerConfigType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AgentScorerConfigType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AgentScorerConfigType = AgentScorerConfigType(decoder.decodeString())
+}
 
 /**
  * `AgentSpec` model.
@@ -1350,6 +1367,53 @@ public data class AgentVersion(
 )
 
 /**
+ * `AiSystemCard` model.
+ */
+@Serializable
+public data class AiSystemCard(
+    @SerialName("system_name")
+    public val systemName: String,
+    public val provider: String,
+    public val version: String,
+    @SerialName("risk_classification")
+    public val riskClassification: RiskClassification? = null,
+    @SerialName("intended_purpose")
+    public val intendedPurpose: String,
+    @SerialName("technical_specifications")
+    public val technicalSpecifications: AiSystemCardTechnicalSpecifications,
+    @SerialName("training_data_summary")
+    public val trainingDataSummary: String? = null,
+    @SerialName("performance_metrics")
+    public val performanceMetrics: JsonObject? = null,
+    public val limitations: List<String>,
+    @SerialName("guardrails_summary")
+    public val guardrailsSummary: List<String>,
+    @SerialName("human_oversight_measures")
+    public val humanOversightMeasures: List<String>,
+    @SerialName("generated_at")
+    public val generatedAt: String,
+)
+
+/**
+ * `AiSystemCardTechnicalSpecifications` model.
+ */
+@Serializable
+public data class AiSystemCardTechnicalSpecifications(
+    @SerialName("model_provider")
+    public val modelProvider: String? = null,
+    @SerialName("model_ref")
+    public val modelRef: String? = null,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long? = null,
+    @SerialName("built_in_tools")
+    public val builtInTools: List<String>? = null,
+    @SerialName("guardrails_enabled")
+    public val guardrailsEnabled: Boolean? = null,
+    @SerialName("guardrail_ids")
+    public val guardrailIds: List<String>? = null,
+)
+
+/**
  * `Ambassador` model.
  */
 @Serializable
@@ -1528,14 +1592,79 @@ public data class APIKeyResponse(
 public data class APIKeySummary(
     @SerialName("key_id")
     public val keyId: String,
-    public val name: String? = null,
+    public val name: String,
     public val prefix: String,
-    public val kind: String? = null,
-    public val scopes: List<String>? = null,
-    public val status: String,
+    /**
+     * What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+     * `api_key` was created deliberately from Settings or the CLI.
+     */
+    public val kind: APIKeySummaryKind,
+    public val scopes: List<String>,
+    public val status: APIKeySummaryStatus,
     @SerialName("created_at")
-    public val createdAt: String? = null,
+    public val createdAt: String,
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    @SerialName("last_used_at")
+    public val lastUsedAt: String? = null,
 )
+
+/**
+ * What the key IS: `session` was minted by an OTP/OAuth sign-in and carries a user_id;
+ * `api_key` was created deliberately from Settings or the CLI.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = APIKeySummaryKindSerializer::class)
+@JvmInline
+public value class APIKeySummaryKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SESSION: APIKeySummaryKind = APIKeySummaryKind("session")
+        public val API_KEY: APIKeySummaryKind = APIKeySummaryKind("api_key")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<APIKeySummaryKind> = listOf(SESSION, API_KEY)
+    }
+}
+
+public object APIKeySummaryKindSerializer : KSerializer<APIKeySummaryKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.APIKeySummaryKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: APIKeySummaryKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): APIKeySummaryKind = APIKeySummaryKind(decoder.decodeString())
+}
+
+/**
+ * `APIKeySummaryStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = APIKeySummaryStatusSerializer::class)
+@JvmInline
+public value class APIKeySummaryStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ACTIVE: APIKeySummaryStatus = APIKeySummaryStatus("active")
+        public val REVOKED: APIKeySummaryStatus = APIKeySummaryStatus("revoked")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<APIKeySummaryStatus> = listOf(ACTIVE, REVOKED)
+    }
+}
+
+public object APIKeySummaryStatusSerializer : KSerializer<APIKeySummaryStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.APIKeySummaryStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: APIKeySummaryStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): APIKeySummaryStatus = APIKeySummaryStatus(decoder.decodeString())
+}
 
 /**
  * `AppleNativeAuthRequest` model.
@@ -1820,9 +1949,9 @@ public data class BridgeConnection(
     public val capabilities: List<String>,
     @SerialName("working_directory")
     public val workingDirectory: String,
-    public val version: String? = null,
+    public val version: String,
     @SerialName("last_heartbeat")
-    public val lastHeartbeat: String? = null,
+    public val lastHeartbeat: String,
     public val status: AgentSummaryBridgeStatus,
     @SerialName("registered_at")
     public val registeredAt: String? = null,
@@ -2525,6 +2654,16 @@ public data class CompleteOAuthLoginResponse(
 )
 
 /**
+ * `ConnectorConfigField` model.
+ */
+@Serializable
+public data class ConnectorConfigField(
+    public val type: String,
+    public val required: Boolean? = null,
+    public val description: String? = null,
+)
+
+/**
  * `Constitution` model.
  */
 @Serializable
@@ -2750,15 +2889,15 @@ public object ConstitutionRuleScopeSerializer : KSerializer<ConstitutionRuleScop
 @Serializable
 public data class ConstitutionViolation(
     @SerialName("rule_id")
-    public val ruleId: String? = null,
+    public val ruleId: String,
     @SerialName("rule_type")
-    public val ruleType: ConstitutionRuleRuleType? = null,
-    public val action: String? = null,
+    public val ruleType: ConstitutionRuleRuleType,
+    public val action: String,
     @SerialName("agent_id")
-    public val agentId: String? = null,
-    public val penalty: ConstitutionRulePenalty? = null,
+    public val agentId: String,
+    public val penalty: ConstitutionRulePenalty,
     public val description: String? = null,
-    public val timestamp: String? = null,
+    public val timestamp: String,
 )
 
 /**
@@ -3201,40 +3340,10 @@ public data class CreateAgentFriaRequest(
 @Serializable
 public data class CreateAgentFriaRequestRightsAssessedItem(
     public val right: String,
-    public val impact: CreateAgentFriaRequestRightsAssessedItemImpact,
+    public val impact: FriaRightImpact,
     public val justification: String,
     public val mitigation: String? = null,
 )
-
-/**
- * `CreateAgentFriaRequestRightsAssessedItemImpact` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = CreateAgentFriaRequestRightsAssessedItemImpactSerializer::class)
-@JvmInline
-public value class CreateAgentFriaRequestRightsAssessedItemImpact(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val NONE: CreateAgentFriaRequestRightsAssessedItemImpact = CreateAgentFriaRequestRightsAssessedItemImpact("none")
-        public val LOW: CreateAgentFriaRequestRightsAssessedItemImpact = CreateAgentFriaRequestRightsAssessedItemImpact("low")
-        public val MEDIUM: CreateAgentFriaRequestRightsAssessedItemImpact = CreateAgentFriaRequestRightsAssessedItemImpact("medium")
-        public val HIGH: CreateAgentFriaRequestRightsAssessedItemImpact = CreateAgentFriaRequestRightsAssessedItemImpact("high")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<CreateAgentFriaRequestRightsAssessedItemImpact> = listOf(NONE, LOW, MEDIUM, HIGH)
-    }
-}
-
-public object CreateAgentFriaRequestRightsAssessedItemImpactSerializer : KSerializer<CreateAgentFriaRequestRightsAssessedItemImpact> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateAgentFriaRequestRightsAssessedItemImpact", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CreateAgentFriaRequestRightsAssessedItemImpact): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): CreateAgentFriaRequestRightsAssessedItemImpact = CreateAgentFriaRequestRightsAssessedItemImpact(decoder.decodeString())
-}
 
 /**
  * `CreateAgentIntegrationRequest` model.
@@ -3832,38 +3941,9 @@ public data class CreateTaskRequest(
  */
 @Serializable
 public data class CreateTaskRequestDelivery(
-    public val channels: List<CreateTaskRequestDeliveryChannel>? = null,
+    public val channels: List<TodoDeliveryChannel>? = null,
     public val target: String? = null,
 )
-
-/**
- * `CreateTaskRequestDeliveryChannel` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = CreateTaskRequestDeliveryChannelSerializer::class)
-@JvmInline
-public value class CreateTaskRequestDeliveryChannel(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val EMAIL: CreateTaskRequestDeliveryChannel = CreateTaskRequestDeliveryChannel("email")
-        public val TELEGRAM: CreateTaskRequestDeliveryChannel = CreateTaskRequestDeliveryChannel("telegram")
-        public val WHATSAPP: CreateTaskRequestDeliveryChannel = CreateTaskRequestDeliveryChannel("whatsapp")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<CreateTaskRequestDeliveryChannel> = listOf(EMAIL, TELEGRAM, WHATSAPP)
-    }
-}
-
-public object CreateTaskRequestDeliveryChannelSerializer : KSerializer<CreateTaskRequestDeliveryChannel> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateTaskRequestDeliveryChannel", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: CreateTaskRequestDeliveryChannel): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): CreateTaskRequestDeliveryChannel = CreateTaskRequestDeliveryChannel(decoder.decodeString())
-}
 
 /**
  * `CreateTaskRequestRecurrence` model.
@@ -4605,10 +4685,10 @@ public data class ExperimentVariant(
 @Serializable
 public data class ExportAdminConfigResponse(
     @SerialName("exported_at")
-    public val exportedAt: String? = null,
+    public val exportedAt: String,
     @SerialName("section_count")
-    public val sectionCount: Long? = null,
-    public val sections: JsonObject? = null,
+    public val sectionCount: Long,
+    public val sections: JsonObject,
 )
 
 /**
@@ -4616,22 +4696,92 @@ public data class ExportAdminConfigResponse(
  */
 @Serializable
 public data class FeedEntry(
-    @SerialName("agent_id")
-    public val agentId: String,
-    @SerialName("agent_name")
-    public val agentName: String,
-    @SerialName("event_type")
-    public val eventType: String,
     @SerialName("feed_id")
     public val feedId: String,
-    public val metrics: JsonObject? = null,
-    @SerialName("run_id")
-    public val runId: String,
-    public val status: String? = null,
     @SerialName("tenant_id")
     public val tenantId: String,
     public val timestamp: String,
+    @SerialName("event_type")
+    public val eventType: FeedEntryEventType,
     public val title: String,
+    public val summary: String? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("agent_name")
+    public val agentName: String? = null,
+    @SerialName("company_id")
+    public val companyId: String? = null,
+    @SerialName("company_name")
+    public val companyName: String? = null,
+    @SerialName("team_id")
+    public val teamId: String? = null,
+    @SerialName("team_name")
+    public val teamName: String? = null,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    public val status: String? = null,
+    public val metrics: FeedEntryMetrics? = null,
+    public val error: String? = null,
+)
+
+/**
+ * `FeedEntryEventType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = FeedEntryEventTypeSerializer::class)
+@JvmInline
+public value class FeedEntryEventType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_STARTED: FeedEntryEventType = FeedEntryEventType("run.started")
+        public val RUN_COMPLETED: FeedEntryEventType = FeedEntryEventType("run.completed")
+        public val RUN_FAILED: FeedEntryEventType = FeedEntryEventType("run.failed")
+        public val RUN_TIMEOUT: FeedEntryEventType = FeedEntryEventType("run.timeout")
+        public val RUN_CANCELLED: FeedEntryEventType = FeedEntryEventType("run.cancelled")
+        public val SESSION_CREATED: FeedEntryEventType = FeedEntryEventType("session.created")
+        public val COMPANY_TICK_START: FeedEntryEventType = FeedEntryEventType("company.tick_start")
+        public val COMPANY_TICK_END: FeedEntryEventType = FeedEntryEventType("company.tick_end")
+        public val COMPANY_PAUSED: FeedEntryEventType = FeedEntryEventType("company.paused")
+        public val COMPANY_RESUMED: FeedEntryEventType = FeedEntryEventType("company.resumed")
+        public val COMPANY_ESCALATION: FeedEntryEventType = FeedEntryEventType("company.escalation")
+        public val TEAM_ROUND_START: FeedEntryEventType = FeedEntryEventType("team.round_start")
+        public val TEAM_ROUND_END: FeedEntryEventType = FeedEntryEventType("team.round_end")
+        public val OBJECTIVE_CREATED: FeedEntryEventType = FeedEntryEventType("objective.created")
+        public val OBJECTIVE_COMPLETED: FeedEntryEventType = FeedEntryEventType("objective.completed")
+        public val AGENT_CREATED: FeedEntryEventType = FeedEntryEventType("agent.created")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<FeedEntryEventType> = listOf(RUN_STARTED, RUN_COMPLETED, RUN_FAILED, RUN_TIMEOUT, RUN_CANCELLED, SESSION_CREATED, COMPANY_TICK_START, COMPANY_TICK_END, COMPANY_PAUSED, COMPANY_RESUMED, COMPANY_ESCALATION, TEAM_ROUND_START, TEAM_ROUND_END, OBJECTIVE_CREATED, OBJECTIVE_COMPLETED, AGENT_CREATED)
+    }
+}
+
+public object FeedEntryEventTypeSerializer : KSerializer<FeedEntryEventType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.FeedEntryEventType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: FeedEntryEventType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): FeedEntryEventType = FeedEntryEventType(decoder.decodeString())
+}
+
+/**
+ * `FeedEntryMetrics` model.
+ */
+@Serializable
+public data class FeedEntryMetrics(
+    @SerialName("duration_ms")
+    public val durationMs: Long? = null,
+    @SerialName("tokens_used")
+    public val tokensUsed: Long? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+    public val steps: Long? = null,
+    @SerialName("tool_calls")
+    public val toolCalls: Long? = null,
 )
 
 /**
@@ -4674,6 +4824,66 @@ public data class FileEntry(
     @SerialName("tenant_id")
     public val tenantId: String,
 )
+
+/**
+ * `FriaReport` model.
+ */
+@Serializable
+public data class FriaReport(
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("risk_level")
+    public val riskLevel: String,
+    @SerialName("rights_assessed")
+    public val rightsAssessed: List<FriaRight>,
+    public val mitigations: String,
+    public val assessor: String,
+    @SerialName("assessed_at")
+    public val assessedAt: String,
+    @SerialName("next_review")
+    public val nextReview: String,
+)
+
+/**
+ * `FriaRight` model.
+ */
+@Serializable
+public data class FriaRight(
+    public val right: String,
+    public val impact: FriaRightImpact,
+    public val justification: String,
+    public val mitigation: String? = null,
+)
+
+/**
+ * `FriaRightImpact` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = FriaRightImpactSerializer::class)
+@JvmInline
+public value class FriaRightImpact(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NONE: FriaRightImpact = FriaRightImpact("none")
+        public val LOW: FriaRightImpact = FriaRightImpact("low")
+        public val MEDIUM: FriaRightImpact = FriaRightImpact("medium")
+        public val HIGH: FriaRightImpact = FriaRightImpact("high")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<FriaRightImpact> = listOf(NONE, LOW, MEDIUM, HIGH)
+    }
+}
+
+public object FriaRightImpactSerializer : KSerializer<FriaRightImpact> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.FriaRightImpact", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: FriaRightImpact): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): FriaRightImpact = FriaRightImpact(decoder.decodeString())
+}
 
 /**
  * `GetActivityFeedResponse` model.
@@ -4891,7 +5101,7 @@ public data class GetAgentVersionDiffResponse(
     public val versionFrom: Long? = null,
     @SerialName("version_to")
     public val versionTo: Long? = null,
-    public val diff: Map<String, Value2>? = null,
+    public val diff: Map<String, Value>? = null,
     @SerialName("changed_fields")
     public val changedFields: List<String>? = null,
 )
@@ -5056,9 +5266,16 @@ public data class GetGovernanceLedgerResponse(
      * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
      * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
      * same ledger a second later. Rendering this as "events recorded" understates the ledger by
-     * three orders of magnitude.
+     * three orders of magnitude. For the size, read `tenant_total`.
      */
     public val total: Long,
+    /**
+     * How many entries in the whole ledger belong to the calling tenant — the number to render as
+     * "ledger entries". Independent of `count`/`from`/`to`. Not `entries_checked` from
+     * `/governance/ledger/verify` (that walks every tenant) and not `head.seq` (global sequence).
+     */
+    @SerialName("tenant_total")
+    public val tenantTotal: Long,
 )
 
 /**
@@ -5687,7 +5904,10 @@ public data class GoogleOneTapAuthResponse(
 @Serializable
 public data class GovernanceLedgerEntry(
     /**
-     * Monotonic position in the tenant's chain.
+     * Position in the ONE global chain shared by all tenants — not a per-tenant sequence.
+     * Consecutive rows in a tenant's page usually have gaps here; the missing numbers are other
+     * tenants' entries (see the /governance/ledger description). For the tenant's own count use
+     * `tenant_total` on the list response.
      */
     public val seq: Long,
     /**
@@ -6077,12 +6297,26 @@ public data class IntegrationCatalogItem(
      */
     public val id: String,
     public val name: String,
-    public val description: String? = null,
-    public val icon: String? = null,
+    public val description: String,
+    public val icon: String,
     @SerialName("auth_type")
     public val authType: IntegrationCatalogItemAuthType,
+    /**
+     * Present when the connector authorises through another connector's OAuth provider
+     * (google_calendar, gmail, google_drive and google_sheets all say `google`). A client builds
+     * the authorize URL from this when set, from `id` otherwise. Absent for every other connector.
+     */
+    @SerialName("oauth_provider")
+    public val oauthProvider: String? = null,
+    /**
+     * The OAuth scopes the connector needs, so a client can show them BEFORE the visitor clicks
+     * Connect rather than leaving the IdP consent screen to be the first place they are seen.
+     * Absent — not empty — for api_key connectors and for OAuth connectors that declare none.
+     */
+    @SerialName("required_oauth_scopes")
+    public val requiredOauthScopes: List<String>? = null,
     @SerialName("config_schema")
-    public val configSchema: Map<String, Value>? = null,
+    public val configSchema: Map<String, ConnectorConfigField>,
 )
 
 /**
@@ -6261,27 +6495,125 @@ public data class KnowledgeBaseCreate(
  */
 @Serializable
 public data class KnowledgeBaseDocument(
+    public val id: String,
+    @SerialName("kb_id")
+    public val kbId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val name: String,
+    public val type: KnowledgeBaseDocumentType,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long,
     @SerialName("chunk_count")
-    public val chunkCount: Long? = null,
+    public val chunkCount: Long,
+    public val status: KnowledgeBaseDocumentStatus,
+    @SerialName("error_message")
+    public val errorMessage: String? = null,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
     @SerialName("chunk_preview")
     public val chunkPreview: String? = null,
-    @SerialName("created_at")
-    public val createdAt: String? = null,
+    /**
+     * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+     * provider answered and the document is searchable by keywords only.
+     */
     @SerialName("embedding_status")
-    public val embeddingStatus: String? = null,
-    public val id: String? = null,
-    @SerialName("kb_id")
-    public val kbId: String? = null,
-    public val name: String? = null,
-    @SerialName("size_bytes")
-    public val sizeBytes: Long? = null,
-    public val status: String? = null,
-    @SerialName("tenant_id")
-    public val tenantId: String? = null,
-    public val type: String? = null,
-    @SerialName("updated_at")
-    public val updatedAt: String? = null,
+    public val embeddingStatus: KnowledgeBaseDocumentEmbeddingStatus,
 )
+
+/**
+ * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
+ * provider answered and the document is searchable by keywords only.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = KnowledgeBaseDocumentEmbeddingStatusSerializer::class)
+@JvmInline
+public value class KnowledgeBaseDocumentEmbeddingStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val EMBEDDED: KnowledgeBaseDocumentEmbeddingStatus = KnowledgeBaseDocumentEmbeddingStatus("embedded")
+        public val KEYWORD_ONLY: KnowledgeBaseDocumentEmbeddingStatus = KnowledgeBaseDocumentEmbeddingStatus("keyword_only")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<KnowledgeBaseDocumentEmbeddingStatus> = listOf(EMBEDDED, KEYWORD_ONLY)
+    }
+}
+
+public object KnowledgeBaseDocumentEmbeddingStatusSerializer : KSerializer<KnowledgeBaseDocumentEmbeddingStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.KnowledgeBaseDocumentEmbeddingStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: KnowledgeBaseDocumentEmbeddingStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): KnowledgeBaseDocumentEmbeddingStatus = KnowledgeBaseDocumentEmbeddingStatus(decoder.decodeString())
+}
+
+/**
+ * `KnowledgeBaseDocumentStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = KnowledgeBaseDocumentStatusSerializer::class)
+@JvmInline
+public value class KnowledgeBaseDocumentStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UPLOADING: KnowledgeBaseDocumentStatus = KnowledgeBaseDocumentStatus("uploading")
+        public val PROCESSING: KnowledgeBaseDocumentStatus = KnowledgeBaseDocumentStatus("processing")
+        public val READY: KnowledgeBaseDocumentStatus = KnowledgeBaseDocumentStatus("ready")
+        public val ERROR: KnowledgeBaseDocumentStatus = KnowledgeBaseDocumentStatus("error")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<KnowledgeBaseDocumentStatus> = listOf(UPLOADING, PROCESSING, READY, ERROR)
+    }
+}
+
+public object KnowledgeBaseDocumentStatusSerializer : KSerializer<KnowledgeBaseDocumentStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.KnowledgeBaseDocumentStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: KnowledgeBaseDocumentStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): KnowledgeBaseDocumentStatus = KnowledgeBaseDocumentStatus(decoder.decodeString())
+}
+
+/**
+ * `KnowledgeBaseDocumentType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = KnowledgeBaseDocumentTypeSerializer::class)
+@JvmInline
+public value class KnowledgeBaseDocumentType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PDF: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("pdf")
+        public val MARKDOWN: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("markdown")
+        public val CSV: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("csv")
+        public val HTML: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("html")
+        public val PLAIN: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("plain")
+        public val DOCX: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("docx")
+        public val IMAGE: KnowledgeBaseDocumentType = KnowledgeBaseDocumentType("image")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<KnowledgeBaseDocumentType> = listOf(PDF, MARKDOWN, CSV, HTML, PLAIN, DOCX, IMAGE)
+    }
+}
+
+public object KnowledgeBaseDocumentTypeSerializer : KSerializer<KnowledgeBaseDocumentType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.KnowledgeBaseDocumentType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: KnowledgeBaseDocumentType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): KnowledgeBaseDocumentType = KnowledgeBaseDocumentType(decoder.decodeString())
+}
 
 /**
  * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
@@ -6427,7 +6759,7 @@ public data class ListAmbassadorVetoesResponse(
 @Serializable
 public data class ListAPIKeysResponse(
     public val keys: List<APIKeySummary>,
-    public val total: Long? = null,
+    public val total: Long,
 )
 
 /**
@@ -6803,9 +7135,9 @@ public data class ListMyTenantsResponseMembership(
     public val logoURL: String? = null,
     public val role: String,
     @SerialName("is_sole_owner")
-    public val isSoleOwner: Boolean? = null,
+    public val isSoleOwner: Boolean,
     @SerialName("member_count")
-    public val memberCount: Long? = null,
+    public val memberCount: Long,
     @SerialName("joined_at")
     public val joinedAt: String? = null,
 )
@@ -6823,7 +7155,7 @@ public data class ListMyTenantsResponsePendingInvite(
     public val tenantName: String,
     public val role: String,
     @SerialName("expires_at")
-    public val expiresAt: String? = null,
+    public val expiresAt: String,
     @SerialName("invited_by_name")
     public val invitedByName: String? = null,
     public val secret: String? = null,
@@ -7437,6 +7769,13 @@ public data class MarketplaceInvocation(
     @SerialName("caller_tenant_id")
     public val callerTenantId: String? = null,
     public val input: JsonObject? = null,
+    public val metrics: JsonObject? = null,
+    /**
+     * Set when the run succeeded but paying the publisher failed — a different thing from a failed
+     * run.
+     */
+    @SerialName("revenue_error")
+    public val revenueError: String? = null,
     public val status: MarketplaceInvocationStatus,
     public val result: JsonObject? = null,
     @SerialName("created_at")
@@ -8669,15 +9008,15 @@ public data class RegistryGetSparseIndexResponse(
  */
 @Serializable
 public data class RegistryGetSparseIndexResponseVersion(
-    public val version: String? = null,
-    public val sha256: String? = null,
-    public val dependencies: List<JsonObject>? = null,
-    public val yanked: Boolean? = null,
+    public val version: String,
+    public val sha256: String,
+    public val dependencies: List<ResolvedDep>,
+    public val yanked: Boolean,
     @SerialName("yank_reason")
     public val yankReason: String? = null,
     public val size: Long? = null,
     @SerialName("published_at")
-    public val publishedAt: String? = null,
+    public val publishedAt: String,
 )
 
 /**
@@ -8700,7 +9039,7 @@ public data class RegistryGetSpecMetadataResponse(
     public val ownerTenantId: String,
     @SerialName("latest_version")
     public val latestVersion: String,
-    public val versions: List<JsonObject>? = null,
+    public val versions: List<RegistryVersionEntry>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
     @SerialName("updated_at")
@@ -8890,6 +9229,22 @@ public data class RegistrySetShareResponse(
 )
 
 /**
+ * `RegistryVersionEntry` model.
+ */
+@Serializable
+public data class RegistryVersionEntry(
+    public val version: String,
+    public val sha256: String,
+    public val dependencies: List<ResolvedDep>,
+    public val yanked: Boolean,
+    @SerialName("yank_reason")
+    public val yankReason: String? = null,
+    public val size: Long? = null,
+    @SerialName("published_at")
+    public val publishedAt: String,
+)
+
+/**
  * `RegistryYankVersionRequest` model.
  */
 @Serializable
@@ -8936,6 +9291,17 @@ public data class ResendInviteResponse(
 @Serializable
 public data class ResolveAmbassadorRequestRequest(
     public val response: String,
+)
+
+/**
+ * `ResolvedDep` model.
+ */
+@Serializable
+public data class ResolvedDep(
+    public val scope: String,
+    public val name: String,
+    @SerialName("version_req")
+    public val versionReq: String,
 )
 
 /**
@@ -10488,14 +10854,45 @@ public data class TeamGoalConfig(
  */
 @Serializable
 public data class TeamGraphEdge(
-    @SerialName("created_at")
-    public val createdAt: String? = null,
     @SerialName("edge_id")
-    public val edgeId: String? = null,
-    public val from: String? = null,
-    public val to: String? = null,
-    public val type: String? = null,
+    public val edgeId: String,
+    public val from: String,
+    public val to: String,
+    public val type: TeamGraphEdgeType,
+    @SerialName("task_id")
+    public val taskId: String? = null,
+    @SerialName("created_at")
+    public val createdAt: String,
 )
+
+/**
+ * `TeamGraphEdgeType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamGraphEdgeTypeSerializer::class)
+@JvmInline
+public value class TeamGraphEdgeType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DELEGATION: TeamGraphEdgeType = TeamGraphEdgeType("delegation")
+        public val SUPERVISION: TeamGraphEdgeType = TeamGraphEdgeType("supervision")
+        public val PEER: TeamGraphEdgeType = TeamGraphEdgeType("peer")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamGraphEdgeType> = listOf(DELEGATION, SUPERVISION, PEER)
+    }
+}
+
+public object TeamGraphEdgeTypeSerializer : KSerializer<TeamGraphEdgeType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamGraphEdgeType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamGraphEdgeType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamGraphEdgeType = TeamGraphEdgeType(decoder.decodeString())
+}
 
 /**
  * `TeamGraphNode` model.
@@ -10503,16 +10900,74 @@ public data class TeamGraphEdge(
 @Serializable
 public data class TeamGraphNode(
     @SerialName("agent_id")
-    public val agentId: String? = null,
-    @SerialName("goal_summary")
-    public val goalSummary: String? = null,
-    public val role: String? = null,
-    @SerialName("spawned_at")
-    public val spawnedAt: String? = null,
+    public val agentId: String,
+    public val role: TeamGraphNodeRole,
+    public val status: TeamGraphNodeStatus,
     @SerialName("spawned_by")
-    public val spawnedBy: String? = null,
-    public val status: String? = null,
+    public val spawnedBy: String,
+    @SerialName("spawned_at")
+    public val spawnedAt: String,
+    @SerialName("goal_summary")
+    public val goalSummary: String,
 )
+
+/**
+ * `TeamGraphNodeRole` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamGraphNodeRoleSerializer::class)
+@JvmInline
+public value class TeamGraphNodeRole(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ORCHESTRATOR: TeamGraphNodeRole = TeamGraphNodeRole("orchestrator")
+        public val WORKER: TeamGraphNodeRole = TeamGraphNodeRole("worker")
+        public val ARBITER: TeamGraphNodeRole = TeamGraphNodeRole("arbiter")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamGraphNodeRole> = listOf(ORCHESTRATOR, WORKER, ARBITER)
+    }
+}
+
+public object TeamGraphNodeRoleSerializer : KSerializer<TeamGraphNodeRole> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamGraphNodeRole", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamGraphNodeRole): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamGraphNodeRole = TeamGraphNodeRole(decoder.decodeString())
+}
+
+/**
+ * `TeamGraphNodeStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TeamGraphNodeStatusSerializer::class)
+@JvmInline
+public value class TeamGraphNodeStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ACTIVE: TeamGraphNodeStatus = TeamGraphNodeStatus("active")
+        public val IDLE: TeamGraphNodeStatus = TeamGraphNodeStatus("idle")
+        public val TERMINATED: TeamGraphNodeStatus = TeamGraphNodeStatus("terminated")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TeamGraphNodeStatus> = listOf(ACTIVE, IDLE, TERMINATED)
+    }
+}
+
+public object TeamGraphNodeStatusSerializer : KSerializer<TeamGraphNodeStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TeamGraphNodeStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TeamGraphNodeStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TeamGraphNodeStatus = TeamGraphNodeStatus(decoder.decodeString())
+}
 
 /**
  * `TeamMergeStrategy` values.
@@ -11065,35 +11520,127 @@ public data class TestWebhookResponse(
  */
 @Serializable
 public data class Todo(
-    @SerialName("agent_name")
-    public val agentName: String,
-    @SerialName("assign_agent_id")
-    public val assignAgentId: String? = null,
-    @SerialName("created_at")
-    public val createdAt: String,
+    @SerialName("todo_id")
+    public val todoId: String,
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val title: String,
+    public val instructions: String? = null,
     @SerialName("due_at")
     public val dueAt: String? = null,
+    @SerialName("assign_agent_id")
+    public val assignAgentId: String? = null,
+    @SerialName("assign_team_id")
+    public val assignTeamId: String? = null,
+    public val status: TodoStatus,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+    @SerialName("run_id")
+    public val runId: String? = null,
+    @SerialName("team_run_id")
+    public val teamRunId: String? = null,
+    public val recurrence: TodoRecurrence? = null,
+    @SerialName("next_fire_at")
+    public val nextFireAt: String? = null,
     @SerialName("last_fired_at")
     public val lastFiredAt: String? = null,
     @SerialName("last_run_status")
     public val lastRunStatus: String? = null,
-    @SerialName("order_index")
-    public val orderIndex: Long? = null,
     @SerialName("require_confirmation")
     public val requireConfirmation: Boolean? = null,
-    @SerialName("run_id")
-    public val runId: String? = null,
-    @SerialName("session_id")
-    public val sessionId: String,
-    public val status: String,
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    public val title: String,
-    @SerialName("todo_id")
-    public val todoId: String,
-    @SerialName("updated_at")
-    public val updatedAt: String,
+    public val delivery: TodoDelivery? = null,
+    @SerialName("order_index")
+    public val orderIndex: Long? = null,
+    @SerialName("parent_task_id")
+    public val parentTaskId: String? = null,
+    /**
+     * Present only on the session-scoped list; absent from GET /todos.
+     */
+    @SerialName("agent_name")
+    public val agentName: String? = null,
 )
+
+/**
+ * `TodoDelivery` model.
+ */
+@Serializable
+public data class TodoDelivery(
+    public val channels: List<TodoDeliveryChannel>,
+    public val target: String? = null,
+)
+
+/**
+ * `TodoDeliveryChannel` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TodoDeliveryChannelSerializer::class)
+@JvmInline
+public value class TodoDeliveryChannel(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val EMAIL: TodoDeliveryChannel = TodoDeliveryChannel("email")
+        public val TELEGRAM: TodoDeliveryChannel = TodoDeliveryChannel("telegram")
+        public val WHATSAPP: TodoDeliveryChannel = TodoDeliveryChannel("whatsapp")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TodoDeliveryChannel> = listOf(EMAIL, TELEGRAM, WHATSAPP)
+    }
+}
+
+public object TodoDeliveryChannelSerializer : KSerializer<TodoDeliveryChannel> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TodoDeliveryChannel", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TodoDeliveryChannel): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TodoDeliveryChannel = TodoDeliveryChannel(decoder.decodeString())
+}
+
+/**
+ * `TodoRecurrence` model.
+ */
+@Serializable
+public data class TodoRecurrence(
+    public val cron: String,
+    public val timezone: String? = null,
+)
+
+/**
+ * `TodoStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TodoStatusSerializer::class)
+@JvmInline
+public value class TodoStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PENDING: TodoStatus = TodoStatus("pending")
+        public val PENDING_CONFIRMATION: TodoStatus = TodoStatus("pending_confirmation")
+        public val IN_PROGRESS: TodoStatus = TodoStatus("in_progress")
+        public val DONE: TodoStatus = TodoStatus("done")
+        public val CANCELLED: TodoStatus = TodoStatus("cancelled")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TodoStatus> = listOf(PENDING, PENDING_CONFIRMATION, IN_PROGRESS, DONE, CANCELLED)
+    }
+}
+
+public object TodoStatusSerializer : KSerializer<TodoStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TodoStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TodoStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TodoStatus = TodoStatus(decoder.decodeString())
+}
 
 /**
  * `TransferTenantOwnershipResponse` model.
@@ -11339,39 +11886,10 @@ public data class UpdateSessionRequestModelOverride(
  */
 @Serializable
 public data class UpdateTeamGraphNodeRequest(
-    public val status: UpdateTeamGraphNodeRequestStatus? = null,
+    public val status: TeamGraphNodeStatus? = null,
     @SerialName("goal_summary")
     public val goalSummary: String? = null,
 )
-
-/**
- * `UpdateTeamGraphNodeRequestStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = UpdateTeamGraphNodeRequestStatusSerializer::class)
-@JvmInline
-public value class UpdateTeamGraphNodeRequestStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ACTIVE: UpdateTeamGraphNodeRequestStatus = UpdateTeamGraphNodeRequestStatus("active")
-        public val IDLE: UpdateTeamGraphNodeRequestStatus = UpdateTeamGraphNodeRequestStatus("idle")
-        public val TERMINATED: UpdateTeamGraphNodeRequestStatus = UpdateTeamGraphNodeRequestStatus("terminated")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<UpdateTeamGraphNodeRequestStatus> = listOf(ACTIVE, IDLE, TERMINATED)
-    }
-}
-
-public object UpdateTeamGraphNodeRequestStatusSerializer : KSerializer<UpdateTeamGraphNodeRequestStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.UpdateTeamGraphNodeRequestStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: UpdateTeamGraphNodeRequestStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): UpdateTeamGraphNodeRequestStatus = UpdateTeamGraphNodeRequestStatus(decoder.decodeString())
-}
 
 /**
  * `UpdateTenantRequest` model.
@@ -11427,15 +11945,15 @@ public data class UploadFileRequest(
 @Serializable
 public data class UsageMarginSummary(
     @SerialName("platform_markup_percent")
-    public val platformMarkupPercent: Double? = null,
+    public val platformMarkupPercent: Double,
     @SerialName("provider_cost_usd")
-    public val providerCostUsd: Double? = null,
+    public val providerCostUsd: Double,
     @SerialName("user_cost_usd")
-    public val userCostUsd: Double? = null,
+    public val userCostUsd: Double,
     @SerialName("margin_usd")
-    public val marginUsd: Double? = null,
+    public val marginUsd: Double,
     @SerialName("effective_margin_percent")
-    public val effectiveMarginPercent: Double? = null,
+    public val effectiveMarginPercent: Double,
 )
 
 /**
@@ -11532,16 +12050,6 @@ public data class ValidationPolicy(
  */
 @Serializable
 public data class Value(
-    public val type: String? = null,
-    public val required: Boolean? = null,
-    public val description: String? = null,
-)
-
-/**
- * `Value2` model.
- */
-@Serializable
-public data class Value2(
     public val from: JsonElement? = null,
     public val to: JsonElement? = null,
 )
@@ -11897,13 +12405,13 @@ public data class Workspace(
     @SerialName("shared_with")
     public val sharedWith: List<String>? = null,
     @SerialName("assigned_agents")
-    public val assignedAgents: List<String>? = null,
+    public val assignedAgents: List<String>,
     @SerialName("assigned_teams")
     public val assignedTeams: List<String>? = null,
     @SerialName("assigned_companies")
     public val assignedCompanies: List<String>? = null,
     @SerialName("created_at")
-    public val createdAt: String? = null,
+    public val createdAt: String,
     @SerialName("updated_at")
     public val updatedAt: String? = null,
 )

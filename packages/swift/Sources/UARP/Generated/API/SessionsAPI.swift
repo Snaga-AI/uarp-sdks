@@ -13,7 +13,7 @@ public struct SessionsAPI: Sendable {
     /// `PUT /api/v1/sessions/{sessionId}/branches/{branchId}/activate`
     ///
     /// Required scopes: `sessions:write`.
-    public func activateSessionBranch(sessionId: String, branchId: String, options: RequestOptions = .init()) async throws -> Session {
+    public func activateSessionBranch(sessionId: String, branchId: String, options: RequestOptions = .init()) async throws -> ActivateSessionBranchResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/branches/\(encodePathSegment(branchId))/activate",

@@ -6,6 +6,7 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  ActivateSessionBranchResponse,
   CreateSessionAnnotationRequest,
   CreateSessionAnnotationResponse,
   CreateSessionBranchRequest,
@@ -91,7 +92,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  activateSessionBranch(sessionId: string, branchId: string, options?: RequestOptions): Promise<Session> {
+  activateSessionBranch(sessionId: string, branchId: string, options?: RequestOptions): Promise<ActivateSessionBranchResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/branches/${encodeURIComponent(String(branchId))}/activate`,

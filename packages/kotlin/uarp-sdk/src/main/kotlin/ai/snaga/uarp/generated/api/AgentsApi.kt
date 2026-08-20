@@ -68,8 +68,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createAgentFria(agentId: String, body: CreateAgentFriaRequest, options: RequestOptions = RequestOptions()): FriaReport {
+        return client.request<FriaReport>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/fria",
@@ -197,8 +197,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getAgentFria(agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAgentFria(agentId: String, options: RequestOptions = RequestOptions()): FriaReport {
+        return client.request<FriaReport>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/fria",
@@ -248,11 +248,11 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getAgentSystemCard(agentId: String, format: GetAgentSystemCardFormat? = null, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun getAgentSystemCard(agentId: String, format: GetAgentSystemCardFormat? = null, options: RequestOptions = RequestOptions()): AiSystemCard {
         val query = buildList {
             if (format != null) add("format" to format.value)
         }
-        return client.request<JsonObject>(
+        return client.request<AiSystemCard>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/system-card",

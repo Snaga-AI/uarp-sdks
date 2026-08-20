@@ -40,17 +40,18 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Fria_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Fria_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/fria",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/fria",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Agent_Fria;
 
    function Create_Agent_Version
@@ -155,14 +156,15 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Fria_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/fria",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/fria",
+             Options => Options));
    end Get_Agent_Fria;
 
    function Get_Agent_Identity
@@ -200,19 +202,20 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Params : Get_Agent_System_Card_Params := No_Get_Agent_System_Card_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Ai_System_Card
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Format then
          UARP.Types.Add (Query, "format", UARP.Models.Image (Params.Format));
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/system-card",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/system-card",
+             Query => Query,
+             Options => Options));
    end Get_Agent_System_Card;
 
    function Get_Agent_Traffic

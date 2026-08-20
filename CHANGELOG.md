@@ -6,6 +6,48 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.12 — 2026-08-20
+
+### Added — every SDK
+
+- **The AI Act documents are typed.** `AISystemCard` (with its nested
+  `technical_specifications`), `FRIAReport` and `FRIARight` — the
+  `GET /agents/{id}/system-card` JSON answer and the `GET`/`POST
+  /agents/{id}/fria` record. Both operations returned bare objects in every
+  SDK before; a client that wrote the FRIA by hand used field names the
+  server does not have and got 400 on every save.
+- **`RegistryVersionEntry` and `ResolvedDep`** — the element of `versions[]`
+  on the sparse index and the spec metadata. `dependencies` is an ARRAY of
+  `{scope, name, version_req}`; a client that typed it as the manifest's
+  name→range map would have iterated indices as names.
+- **`ConnectorConfigField`** — the value type of `IntegrationCatalogItem.
+  config_schema`, named; it was the generator's `Value` placeholder. The
+  catalog item also gained `oauth_provider` and `required_oauth_scopes`.
+- **`ApiKeySummary`** gained `last_used_at`, `expires_at`, and `kind` as the
+  enum `session | api_key`; **`GET /governance/ledger`** gained
+  `tenant_total` (the tenant's share of the whole chain — `total` is and was
+  the page length); **`AgentPublicConfig`** fields a settings form can clear
+  are nullable (`null` is the clear over a shallow-merging PUT).
+
+### Changed — every SDK
+
+- **Seven list elements described from the platform types, not from a
+  two-row capture**: `Todo`, `FeedEntry`, `KnowledgeBaseDocument`,
+  `ConstitutionViolation`, `TeamGraphNode`, `TeamGraphEdge`, `AgentScorer`
+  now carry the fields the server stores (Todo.recurrence/delivery/
+  parent_task_id, FeedEntry.team_*/company_*/summary/error,
+  KnowledgeBaseDocument.error_message, …), closed enums where the type has
+  them, and `required` as the record is rather than as one sample happened
+  to be. Where 0.5.11 made a web client's hand-written type strictly richer
+  than the generated one, 0.5.12 is the one to alias to.
+- `required` tightened where the server always sends the field:
+  `AgentBridgeState` (all seven), `UsageMarginSummary` (all five),
+  `BridgeConnection.version`/`last_heartbeat`, `Workspace.assigned_agents`/
+  `created_at`, the `/me/tenants` membership and invite rows, and
+  `ExportAdminConfigResponse`. `PUT …/branches/{id}/activate` answers
+  `{session_id, active_branch}`; the session share `share_url`/`role` are
+  nullable.
+
 ## 0.5.11 — 2026-08-20
 
 ### Fixed — Ada

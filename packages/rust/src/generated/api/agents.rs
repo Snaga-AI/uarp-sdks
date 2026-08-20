@@ -111,7 +111,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create_agent_fria(&self, agent_id: &str, body: &models::CreateAgentFriaRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_agent_fria(&self, agent_id: &str, body: &models::CreateAgentFriaRequest) -> Result<models::FriaReport> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -237,7 +237,7 @@ impl AgentsApi {
     /// `GET /api/v1/agents/{agentId}/fria`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_agent_fria(&self, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_agent_fria(&self, agent_id: &str) -> Result<models::FriaReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -291,7 +291,7 @@ impl AgentsApi {
     /// `GET /api/v1/agents/{agentId}/system-card`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_agent_system_card(&self, agent_id: &str, params: &GetAgentSystemCardParams) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_agent_system_card(&self, agent_id: &str, params: &GetAgentSystemCardParams) -> Result<models::AiSystemCard> {
         self.client
             .request_json(Request {
                 method: Method::GET,
