@@ -34,6 +34,14 @@ jobs:
       - name: Checked-in output must match the emitters
         run: node generator/src/index.ts --check
 
+      # Reports, never fails. The platform changes its document on its own
+      # schedule, and this repository cannot merge in step with it; a red CI
+      # on every upstream change is a red CI nobody reads. The release
+      # workflow runs the same script with --strict, where divergence has one
+      # unambiguous meaning: this artifact would lie about what it contains.
+      - name: Is the vendored spec still current?
+        run: ./scripts/check-spec-freshness.sh
+
   typescript:
     name: TypeScript
     runs-on: ubuntu-latest
