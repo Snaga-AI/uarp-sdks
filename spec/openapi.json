@@ -614,8 +614,47 @@
                     "installed_specs": {
                         "type": "array",
                         "items": {
-                            "type": "string"
+                            "$ref": "#/components/schemas/BridgeInstalledSpec"
                         }
+                    }
+                }
+            },
+            "BridgeInstalledSpec": {
+                "type": "object",
+                "required": [
+                    "spec_id",
+                    "status"
+                ],
+                "properties": {
+                    "spec_id": {
+                        "type": "string",
+                        "description": "`@scope/name`."
+                    },
+                    "version": {
+                        "type": "string",
+                        "description": "Resolved exactly, never a range."
+                    },
+                    "tools": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Tool names the SPEC registered into the local runtime."
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "installed",
+                            "failed"
+                        ]
+                    },
+                    "error": {
+                        "type": "string",
+                        "description": "Failure detail when `status` is `failed` — artifact 404, SHA mismatch, capability conflict."
+                    },
+                    "reported_at": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 }
             },
@@ -1699,6 +1738,96 @@
                     "status"
                 ]
             },
+            "ConstitutionDocument": {
+                "type": "object",
+                "required": [
+                    "tenant_id",
+                    "version",
+                    "rules",
+                    "amendments",
+                    "founder_id",
+                    "created_at",
+                    "updated_at"
+                ],
+                "properties": {
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "rules": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ConstitutionRule"
+                        }
+                    },
+                    "amendments": {
+                        "type": "array",
+                        "items": {
+                            "$ref": "#/components/schemas/ConstitutionAmendment"
+                        }
+                    },
+                    "founder_id": {
+                        "type": "string",
+                        "description": "Who created the genesis document."
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ConstitutionAmendment": {
+                "type": "object",
+                "required": [
+                    "amendment_id",
+                    "rule_id",
+                    "action",
+                    "proposed_by",
+                    "approved_by",
+                    "rationale",
+                    "applied_at"
+                ],
+                "properties": {
+                    "amendment_id": {
+                        "type": "string"
+                    },
+                    "rule_id": {
+                        "type": "string"
+                    },
+                    "action": {
+                        "type": "string",
+                        "enum": [
+                            "add",
+                            "modify",
+                            "remove"
+                        ]
+                    },
+                    "rule": {
+                        "$ref": "#/components/schemas/ConstitutionRule",
+                        "description": "The new rule, for `add` and `modify`. Absent on `remove`."
+                    },
+                    "proposed_by": {
+                        "type": "string"
+                    },
+                    "approved_by": {
+                        "type": "string",
+                        "description": "The founder, or the consensus that carried it."
+                    },
+                    "rationale": {
+                        "type": "string"
+                    },
+                    "applied_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "ConstitutionRule": {
                 "type": "object",
                 "properties": {
@@ -2044,6 +2173,147 @@
                     "email": {
                         "type": "string",
                         "format": "email"
+                    }
+                }
+            },
+            "VoteResult": {
+                "type": "object",
+                "required": [
+                    "proposal_id",
+                    "status",
+                    "total_votes",
+                    "approve_weight",
+                    "reject_weight",
+                    "abstain_weight",
+                    "quorum_met",
+                    "tallied_at"
+                ],
+                "properties": {
+                    "proposal_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string",
+                        "enum": [
+                            "passed",
+                            "rejected",
+                            "expired",
+                            "vetoed"
+                        ]
+                    },
+                    "total_votes": {
+                        "type": "integer"
+                    },
+                    "approve_weight": {
+                        "type": "number"
+                    },
+                    "reject_weight": {
+                        "type": "number"
+                    },
+                    "abstain_weight": {
+                        "type": "number"
+                    },
+                    "quorum_met": {
+                        "type": "boolean"
+                    },
+                    "tallied_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "HumanAmbassador": {
+                "type": "object",
+                "required": [
+                    "ambassador_id",
+                    "tenant_id",
+                    "name",
+                    "role",
+                    "permissions",
+                    "created_at"
+                ],
+                "properties": {
+                    "ambassador_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string",
+                        "enum": [
+                            "founder",
+                            "ambassador",
+                            "observer"
+                        ]
+                    },
+                    "permissions": {
+                        "$ref": "#/components/schemas/AmbassadorPermissions"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "AmbassadorPermissions": {
+                "type": "object",
+                "required": [
+                    "can_veto",
+                    "can_audit",
+                    "can_propose"
+                ],
+                "properties": {
+                    "can_veto": {
+                        "type": "boolean"
+                    },
+                    "can_audit": {
+                        "type": "boolean"
+                    },
+                    "can_propose": {
+                        "type": "boolean"
+                    }
+                }
+            },
+            "VetoRecord": {
+                "type": "object",
+                "required": [
+                    "veto_id",
+                    "issued_by",
+                    "target_type",
+                    "target_id",
+                    "reason",
+                    "issued_at"
+                ],
+                "properties": {
+                    "veto_id": {
+                        "type": "string"
+                    },
+                    "issued_by": {
+                        "type": "string",
+                        "description": "`ambassador_id` of the human who issued it."
+                    },
+                    "target_type": {
+                        "type": "string",
+                        "enum": [
+                            "proposal",
+                            "action",
+                            "agent",
+                            "case"
+                        ]
+                    },
+                    "target_id": {
+                        "type": "string"
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "issued_at": {
+                        "type": "string",
+                        "format": "date-time"
                     }
                 }
             },

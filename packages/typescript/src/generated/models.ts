@@ -406,7 +406,7 @@ export interface AgentBridgeState {
   working_directories?: string[];
   machine_names?: string[];
   latest_heartbeat?: string;
-  installed_specs?: string[];
+  installed_specs?: BridgeInstalledSpec[];
 }
 
 /**
@@ -584,11 +584,17 @@ export const AGENT_UPDATE_VISIBILITY_VALUES = ['private', 'team', 'public'] as c
 export interface Ambassador {
   ambassador_id: string;
   name?: string;
-  role: AmbassadorRole;
-  permissions?: AmbassadorPermissions;
+  role: HumanAmbassadorRole;
+  permissions?: AmbassadorPermissions2;
 }
 
 export interface AmbassadorPermissions {
+  can_veto: boolean;
+  can_audit: boolean;
+  can_propose: boolean;
+}
+
+export interface AmbassadorPermissions2 {
   can_veto?: boolean;
   can_audit?: boolean;
   can_propose?: boolean;
@@ -614,10 +620,6 @@ export const AMBASSADOR_REQUEST_STATUS_VALUES = ['pending', 'acknowledged', 'res
 export type AmbassadorRequestType = 'clarification' | 'approval' | 'escalation' | 'report';
 
 export const AMBASSADOR_REQUEST_TYPE_VALUES = ['clarification', 'approval', 'escalation', 'report'] as const;
-
-export type AmbassadorRole = 'founder' | 'ambassador' | 'observer';
-
-export const AMBASSADOR_ROLE_VALUES = ['founder', 'ambassador', 'observer'] as const;
 
 export interface AmbassadorVetoRequest {
   target_type: string;
@@ -825,6 +827,31 @@ export interface BridgeHeartbeatResponse {
   ok: boolean;
   timestamp?: string;
 }
+
+export interface BridgeInstalledSpec {
+  /**
+   * `@scope/name`.
+   */
+  spec_id: string;
+  /**
+   * Resolved exactly, never a range.
+   */
+  version?: string;
+  /**
+   * Tool names the SPEC registered into the local runtime.
+   */
+  tools?: string[];
+  status: BridgeInstalledSpecStatus;
+  /**
+   * Failure detail when `status` is `failed` — artifact 404, SHA mismatch, capability conflict.
+   */
+  error?: string;
+  reported_at?: string;
+}
+
+export type BridgeInstalledSpecStatus = 'installed' | 'failed';
+
+export const BRIDGE_INSTALLED_SPEC_STATUS_VALUES = ['installed', 'failed'] as const;
 
 export interface BridgePendingTask {
   task_id: string;
@@ -1068,6 +1095,40 @@ export interface Constitution {
   rules: ConstitutionRule[];
   version: number;
   updated_at?: string;
+}
+
+export interface ConstitutionAmendment {
+  amendment_id: string;
+  rule_id: string;
+  action: ConstitutionAmendmentAction;
+  /**
+   * The new rule, for `add` and `modify`. Absent on `remove`.
+   */
+  rule?: ConstitutionRule;
+  proposed_by: string;
+  /**
+   * The founder, or the consensus that carried it.
+   */
+  approved_by: string;
+  rationale: string;
+  applied_at: string;
+}
+
+export type ConstitutionAmendmentAction = 'add' | 'modify' | 'remove';
+
+export const CONSTITUTION_AMENDMENT_ACTION_VALUES = ['add', 'modify', 'remove'] as const;
+
+export interface ConstitutionDocument {
+  tenant_id: string;
+  version: number;
+  rules: ConstitutionRule[];
+  amendments: ConstitutionAmendment[];
+  /**
+   * Who created the genesis document.
+   */
+  founder_id: string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface ConstitutionRule {
@@ -2475,6 +2536,19 @@ export interface HealthLiveResponse {
 export interface HealthzAliasResponse {
   status?: string;
 }
+
+export interface HumanAmbassador {
+  ambassador_id: string;
+  tenant_id: string;
+  name: string;
+  role: HumanAmbassadorRole;
+  permissions: AmbassadorPermissions;
+  created_at: string;
+}
+
+export type HumanAmbassadorRole = 'founder' | 'ambassador' | 'observer';
+
+export const HUMAN_AMBASSADOR_ROLE_VALUES = ['founder', 'ambassador', 'observer'] as const;
 
 export interface ImportAdminConfigRequest {
   source?: string;
@@ -5125,6 +5199,37 @@ export interface VetoProposalRequest {
 export interface VetoProposalResponse {
   ok?: boolean;
 }
+
+export interface VetoRecord {
+  veto_id: string;
+  /**
+   * `ambassador_id` of the human who issued it.
+   */
+  issued_by: string;
+  target_type: VetoRecordTargetType;
+  target_id: string;
+  reason: string;
+  issued_at: string;
+}
+
+export type VetoRecordTargetType = 'proposal' | 'action' | 'agent' | 'case';
+
+export const VETO_RECORD_TARGET_TYPE_VALUES = ['proposal', 'action', 'agent', 'case'] as const;
+
+export interface VoteResult {
+  proposal_id: string;
+  status: VoteResultStatus;
+  total_votes: number;
+  approve_weight: number;
+  reject_weight: number;
+  abstain_weight: number;
+  quorum_met: boolean;
+  tallied_at: string;
+}
+
+export type VoteResultStatus = 'passed' | 'rejected' | 'expired' | 'vetoed';
+
+export const VOTE_RESULT_STATUS_VALUES = ['passed', 'rejected', 'expired', 'vetoed'] as const;
 
 export interface VotingProposal {
   proposal_id: string;
