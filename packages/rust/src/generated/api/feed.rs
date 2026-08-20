@@ -82,7 +82,7 @@ impl FeedApi {
 
     /// Stream every item returned by `getActivityFeed`, following the `cursor` cursor until the
     /// server reports no further pages.
-    pub fn get_activity_feed_all<'a>(&'a self, params: &'a GetActivityFeedParams) -> impl Stream<Item = Result<serde_json::Map<String, serde_json::Value>>> + 'a {
+    pub fn get_activity_feed_all<'a>(&'a self, params: &'a GetActivityFeedParams) -> impl Stream<Item = Result<models::FeedEntry>> + 'a {
         async_stream::try_stream! {
             let mut guard = CursorGuard::new();
             let mut cursor = params.cursor.clone();

@@ -1105,7 +1105,8 @@
                         "type": [
                             "object",
                             "null"
-                        ]
+                        ],
+                        "description": "Run output. When a run is truncated by its step-budget cutoff (output.truncated === true) AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With no key configured no token is minted and the field is absent; the token is an opaque string to every client."
                     },
                     "metrics": {
                         "$ref": "#/components/schemas/RunMetrics"
@@ -2232,6 +2233,873 @@
                     },
                     "hash": {
                         "type": "string"
+                    }
+                }
+            },
+            "AgentScorer": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "config": {
+                        "type": "object"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "scorer_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "AuthProvider": {
+                "type": "object",
+                "required": [
+                    "email",
+                    "id",
+                    "linked"
+                ],
+                "properties": {
+                    "email": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "linked": {
+                        "type": "boolean"
+                    },
+                    "linked_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "sub": {
+                        "type": "string"
+                    }
+                }
+            },
+            "FeedEntry": {
+                "type": "object",
+                "required": [
+                    "agent_id",
+                    "agent_name",
+                    "event_type",
+                    "feed_id",
+                    "run_id",
+                    "tenant_id",
+                    "timestamp",
+                    "title"
+                ],
+                "properties": {
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "agent_name": {
+                        "type": "string"
+                    },
+                    "event_type": {
+                        "type": "string"
+                    },
+                    "feed_id": {
+                        "type": "string"
+                    },
+                    "metrics": {
+                        "type": "object"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "title": {
+                        "type": "string"
+                    }
+                }
+            },
+            "FileEntry": {
+                "type": "object",
+                "required": [
+                    "created_at",
+                    "file_id",
+                    "filename",
+                    "mime_type",
+                    "sha256",
+                    "size_bytes",
+                    "tenant_id"
+                ],
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "file_id": {
+                        "type": "string"
+                    },
+                    "filename": {
+                        "type": "string"
+                    },
+                    "mime_type": {
+                        "type": "string"
+                    },
+                    "sha256": {
+                        "type": "string"
+                    },
+                    "size_bytes": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "Invite": {
+                "type": "object",
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "expires_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "invited_by": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "secret": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "KnowledgeBaseDocument": {
+                "type": "object",
+                "properties": {
+                    "chunk_count": {
+                        "type": "integer"
+                    },
+                    "chunk_preview": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "embedding_status": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "kb_id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "size_bytes": {
+                        "type": "integer"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "LlmModel": {
+                "type": "object",
+                "required": [
+                    "display_name",
+                    "id",
+                    "max_context_tokens",
+                    "max_output_tokens",
+                    "pricing",
+                    "provider",
+                    "supports_json_mode",
+                    "supports_streaming",
+                    "supports_tool_calls",
+                    "supports_vision",
+                    "tier"
+                ],
+                "properties": {
+                    "display_name": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "max_context_tokens": {
+                        "type": "integer"
+                    },
+                    "max_output_tokens": {
+                        "type": "integer"
+                    },
+                    "pricing": {
+                        "type": "object"
+                    },
+                    "provider": {
+                        "type": "string"
+                    },
+                    "supports_json_mode": {
+                        "type": "boolean"
+                    },
+                    "supports_streaming": {
+                        "type": "boolean"
+                    },
+                    "supports_tool_calls": {
+                        "type": "boolean"
+                    },
+                    "supports_vision": {
+                        "type": "boolean"
+                    },
+                    "tier": {
+                        "type": "string"
+                    }
+                }
+            },
+            "PublicPlan": {
+                "type": "object",
+                "required": [
+                    "id",
+                    "name",
+                    "price_amount_cents",
+                    "price_currency",
+                    "quotas"
+                ],
+                "properties": {
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "price_amount_cents": {
+                        "type": "integer"
+                    },
+                    "price_currency": {
+                        "type": "string"
+                    },
+                    "quotas": {
+                        "type": "object"
+                    }
+                }
+            },
+            "PublicState": {
+                "type": "object",
+                "required": [
+                    "category",
+                    "name",
+                    "short_description",
+                    "slug",
+                    "tags",
+                    "tenant_id"
+                ],
+                "properties": {
+                    "branding": {
+                        "type": "object"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "logo_url": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "short_description": {
+                        "type": "string"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "social_links": {
+                        "type": "object"
+                    },
+                    "stats": {
+                        "type": "object"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "PublicTenant": {
+                "type": "object",
+                "required": [
+                    "agents",
+                    "agents_count",
+                    "name",
+                    "slug",
+                    "stats",
+                    "tags",
+                    "tenant_id"
+                ],
+                "properties": {
+                    "agents": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "agents_count": {
+                        "type": "integer"
+                    },
+                    "branding": {
+                        "type": "object"
+                    },
+                    "category": {
+                        "type": "string"
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "logo_url": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "published_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "slug": {
+                        "type": "string"
+                    },
+                    "social_links": {
+                        "type": "object"
+                    },
+                    "stats": {
+                        "type": "object"
+                    },
+                    "tags": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    }
+                }
+            },
+            "TeamChatTurn": {
+                "type": "object",
+                "required": [
+                    "content",
+                    "from_task",
+                    "role",
+                    "run_meta",
+                    "run_pending",
+                    "team_run_id",
+                    "timestamp"
+                ],
+                "properties": {
+                    "addressed_to": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "content": {
+                        "type": "string"
+                    },
+                    "from_task": {
+                        "type": "boolean"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "run_meta": {
+                        "type": "object"
+                    },
+                    "run_pending": {
+                        "type": "boolean"
+                    },
+                    "team_run_id": {
+                        "type": "string"
+                    },
+                    "thread_id": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "TeamGraphEdge": {
+                "type": "object",
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "edge_id": {
+                        "type": "string"
+                    },
+                    "from": {
+                        "type": "string"
+                    },
+                    "to": {
+                        "type": "string"
+                    },
+                    "type": {
+                        "type": "string"
+                    }
+                }
+            },
+            "TeamGraphNode": {
+                "type": "object",
+                "properties": {
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "goal_summary": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "spawned_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "spawned_by": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    }
+                }
+            },
+            "TenantUser": {
+                "type": "object",
+                "properties": {
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "email": {
+                        "type": "string"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "name": {
+                        "type": "string"
+                    },
+                    "role": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "Todo": {
+                "type": "object",
+                "required": [
+                    "agent_name",
+                    "created_at",
+                    "session_id",
+                    "status",
+                    "tenant_id",
+                    "title",
+                    "todo_id",
+                    "updated_at"
+                ],
+                "properties": {
+                    "agent_name": {
+                        "type": "string"
+                    },
+                    "assign_agent_id": {
+                        "type": "string"
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "due_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "last_fired_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "last_run_status": {
+                        "type": "string"
+                    },
+                    "order_index": {
+                        "type": "integer"
+                    },
+                    "require_confirmation": {
+                        "type": "boolean"
+                    },
+                    "run_id": {
+                        "type": "string"
+                    },
+                    "session_id": {
+                        "type": "string"
+                    },
+                    "status": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "title": {
+                        "type": "string"
+                    },
+                    "todo_id": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "VideoProvider": {
+                "type": "object",
+                "properties": {
+                    "configured": {
+                        "type": "boolean"
+                    },
+                    "id": {
+                        "type": "string"
+                    },
+                    "local": {
+                        "type": "boolean"
+                    },
+                    "models": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    },
+                    "name": {
+                        "type": "string"
+                    }
+                }
+            },
+            "RunCheckpoint": {
+                "type": "object",
+                "properties": {
+                    "step": {
+                        "type": "integer"
+                    },
+                    "messages": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        },
+                        "description": "Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message shape, which differs per adapter."
+                    },
+                    "metrics": {
+                        "type": "object",
+                        "description": "Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`): step and token counters, optionally provider cache hits."
+                    }
+                }
+            },
+            "ConstitutionViolation": {
+                "type": "object",
+                "properties": {
+                    "rule_id": {
+                        "type": "string"
+                    },
+                    "rule_type": {
+                        "type": "string",
+                        "enum": [
+                            "prohibition",
+                            "requirement",
+                            "permission"
+                        ]
+                    },
+                    "action": {
+                        "type": "string"
+                    },
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "penalty": {
+                        "type": "string",
+                        "enum": [
+                            "block",
+                            "warn",
+                            "log",
+                            "terminate_agent",
+                            "revoke_permissions"
+                        ]
+                    },
+                    "description": {
+                        "type": "string"
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "ArbiterRegistry": {
+                "type": "object",
+                "properties": {
+                    "arbiter_agent_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "max_appeals": {
+                        "type": "integer"
+                    },
+                    "panel_size": {
+                        "type": "integer"
+                    },
+                    "ruling_deadline_hours": {
+                        "type": "integer"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "updated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "LlmUsageSummary": {
+                "type": "object",
+                "properties": {
+                    "billing_period": {
+                        "type": "object",
+                        "properties": {
+                            "end": {
+                                "type": "string",
+                                "format": "date-time"
+                            },
+                            "start": {
+                                "type": "string",
+                                "format": "date-time"
+                            }
+                        }
+                    },
+                    "by_model": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        }
+                    },
+                    "limits": {
+                        "type": "object",
+                        "properties": {
+                            "requests_per_day": {
+                                "type": "integer"
+                            },
+                            "requests_per_hour": {
+                                "type": "integer"
+                            },
+                            "requests_per_minute": {
+                                "type": "integer"
+                            },
+                            "tokens_per_month": {
+                                "type": "integer"
+                            }
+                        }
+                    },
+                    "plan": {
+                        "type": "string"
+                    },
+                    "usage": {
+                        "type": "object",
+                        "properties": {
+                            "requests_this_hour": {
+                                "type": "integer"
+                            },
+                            "requests_this_minute": {
+                                "type": "integer"
+                            },
+                            "requests_today": {
+                                "type": "integer"
+                            },
+                            "tokens_remaining": {
+                                "type": "integer"
+                            },
+                            "tokens_used": {
+                                "type": "integer"
+                            }
+                        }
+                    }
+                }
+            },
+            "VoiceConfig": {
+                "type": "object",
+                "properties": {
+                    "stt": {
+                        "type": "object",
+                        "properties": {
+                            "configured": {
+                                "type": "boolean"
+                            },
+                            "endpoint": {
+                                "type": "string"
+                            },
+                            "model": {
+                                "type": "string"
+                            },
+                            "provider": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "tts": {
+                        "type": "object",
+                        "properties": {
+                            "configured": {
+                                "type": "boolean"
+                            },
+                            "endpoint": {
+                                "type": "string"
+                            },
+                            "model": {
+                                "type": "string"
+                            },
+                            "provider": {
+                                "type": "string"
+                            },
+                            "voice": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            },
+            "PlatformLlmDefaults": {
+                "type": "object",
+                "properties": {
+                    "default_endpoint": {
+                        "type": "string"
+                    },
+                    "default_model": {
+                        "type": "string"
+                    },
+                    "default_provider": {
+                        "type": "string"
+                    },
+                    "fallback_model": {
+                        "type": "string"
+                    },
+                    "fallback_provider": {
+                        "type": "string"
+                    }
+                }
+            },
+            "LandingStats": {
+                "type": "object",
+                "properties": {
+                    "agents_deployed": {
+                        "type": "integer"
+                    },
+                    "llm_providers": {
+                        "type": "integer"
+                    },
+                    "registered_users": {
+                        "type": "integer"
+                    },
+                    "tool_calls_today": {
+                        "type": "integer"
+                    },
+                    "total_runs": {
+                        "type": "integer"
+                    },
+                    "total_sessions": {
+                        "type": "integer"
+                    },
+                    "total_tokens": {
+                        "type": "integer"
+                    }
+                }
+            },
+            "ImageProviderList": {
+                "type": "object",
+                "properties": {
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
+                    }
+                }
+            },
+            "VoiceProviderList": {
+                "type": "object",
+                "properties": {
+                    "providers": {
+                        "type": "array",
+                        "items": {
+                            "type": "object"
+                        }
                     }
                 }
             },
@@ -10771,9 +11639,34 @@
                         }
                     }
                 ],
+                "description": "Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the endpoint works before relying on it.\n\nOnly an **active** subscription is delivered to — `WebhookManager.dispatch` filters on status and silently matches nothing otherwise. A disabled subscription therefore answers **422**, not 200: until 2026-08-20 it answered `{\"test_sent\": true}` with nothing sent, no delivery row written and no dispatch line in the server log, which turns a misconfigured integration into a confirmed one.",
                 "responses": {
                     "200": {
-                        "description": "Test sent",
+                        "description": "The event was handed to the delivery worker. This says the dispatch was made, NOT that the receiver accepted it — read `GET /webhooks/{webhookId}/deliveries` for the outcome.",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "test_sent",
+                                        "webhook_id",
+                                        "event_type"
+                                    ],
+                                    "properties": {
+                                        "test_sent": {
+                                            "type": "boolean"
+                                        },
+                                        "webhook_id": {
+                                            "type": "string"
+                                        },
+                                        "event_type": {
+                                            "type": "string",
+                                            "description": "The subscription's first configured event, or `run.completed` when it has none."
+                                        }
+                                    }
+                                }
+                            }
+                        },
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -10796,7 +11689,7 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "422": {
-                        "description": "Validation Error",
+                        "description": "The subscription is not active, so nothing was sent. The message names the current status.",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -14357,7 +15250,7 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/FileEntry"
                                             }
                                         },
                                         "cursor": {
@@ -17044,7 +17937,7 @@
                                         "providers": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/AuthProvider"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`."
@@ -22525,7 +23418,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ImageProviderList"
                                 }
                             }
                         },
@@ -23784,7 +24677,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/LandingStats"
                                 }
                             }
                         },
@@ -24695,7 +25588,7 @@
                                         "scorers": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/AgentScorer"
                                             }
                                         }
                                     }
@@ -24993,7 +25886,7 @@
                                         "checkpoints": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/RunCheckpoint"
                                             }
                                         }
                                     }
@@ -25670,13 +26563,13 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Todo"
                                             }
                                         },
                                         "todos": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Todo"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`. Will be removed in API v1.x."
@@ -28815,7 +29708,7 @@
                                         "documents": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/KnowledgeBaseDocument"
                                             }
                                         },
                                         "total": {
@@ -30122,13 +31015,13 @@
                                         "nodes": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamGraphNode"
                                             }
                                         },
                                         "edges": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamGraphEdge"
                                             }
                                         }
                                     }
@@ -30201,7 +31094,7 @@
                                         "nodes": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamGraphNode"
                                             }
                                         },
                                         "total": {
@@ -30621,7 +31514,7 @@
                                         "edges": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamGraphEdge"
                                             }
                                         },
                                         "total": {
@@ -30911,7 +31804,7 @@
                                         "conversation_history": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TeamChatTurn"
                                             }
                                         },
                                         "total": {
@@ -31208,13 +32101,13 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TenantUser"
                                             }
                                         },
                                         "users": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/TenantUser"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`. Will be removed in API v1.x."
@@ -31705,13 +32598,13 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Invite"
                                             }
                                         },
                                         "invites": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Invite"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`. Will be removed in API v1.x."
@@ -33074,7 +33967,7 @@
                                         "states": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/PublicState"
                                             }
                                         }
                                     }
@@ -33173,7 +34066,7 @@
                                         "plans": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/PublicPlan"
                                             }
                                         }
                                     }
@@ -33310,7 +34203,7 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/PublicTenant"
                                             }
                                         },
                                         "cursor": {
@@ -34750,7 +35643,7 @@
                                         "todos": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/Todo"
                                             }
                                         }
                                     }
@@ -34974,7 +35867,7 @@
                                         "entries": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/FeedEntry"
                                             }
                                         },
                                         "cursor": {
@@ -35127,7 +36020,7 @@
                                         "models": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/LlmModel"
                                             }
                                         }
                                     }
@@ -35181,7 +36074,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/LlmUsageSummary"
                                 }
                             }
                         },
@@ -35502,7 +36395,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/VoiceConfig"
                                 }
                             }
                         },
@@ -35553,7 +36446,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/VoiceProviderList"
                                 }
                             }
                         },
@@ -35602,7 +36495,7 @@
                                         "providers": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/VideoProvider"
                                             }
                                         }
                                     }
@@ -35649,7 +36542,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/PlatformLlmDefaults"
                                 }
                             }
                         },
@@ -44079,7 +44972,7 @@
                                         "violations": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ConstitutionViolation"
                                             }
                                         },
                                         "count": {
@@ -44260,7 +45153,7 @@
                                         "violations": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/ConstitutionViolation"
                                             }
                                         }
                                     }
@@ -46831,7 +47724,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/ArbiterRegistry"
                                 }
                             }
                         },

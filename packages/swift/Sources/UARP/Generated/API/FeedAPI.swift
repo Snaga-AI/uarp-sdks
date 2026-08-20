@@ -43,7 +43,7 @@ public struct FeedAPI: Sendable {
 
     /// Stream every item returned by `getActivityFeed`, following the `cursor` cursor until the
     /// server reports no further pages.
-    public func getActivityFeedAll(limit: Int? = nil, cursor: String? = nil, agentId: String? = nil, companyId: String? = nil, teamId: String? = nil, types: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func getActivityFeedAll(limit: Int? = nil, cursor: String? = nil, agentId: String? = nil, companyId: String? = nil, teamId: String? = nil, types: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<FeedEntry, Error> {
         autoPaginate(
             fetch: { cursor in try await self.getActivityFeed(limit: limit, cursor: cursor, agentId: agentId, companyId: companyId, teamId: teamId, types: types, options: options) },
             items: { $0.entries ?? [] },

@@ -30,8 +30,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getLLMUsage(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getLLMUsage(options: RequestOptions = RequestOptions()): LLMUsageSummary {
+        return client.request<LLMUsageSummary>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/llm/usage",
@@ -47,8 +47,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getLLMVoiceConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getLLMVoiceConfig(options: RequestOptions = RequestOptions()): VoiceConfig {
+        return client.request<VoiceConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/llm/voice-config",
@@ -62,8 +62,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/providers/platform-defaults`
      */
-    public suspend fun getPlatformDefaults(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPlatformDefaults(options: RequestOptions = RequestOptions()): PlatformLLMDefaults {
+        return client.request<PlatformLLMDefaults>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/providers/platform-defaults",
@@ -92,8 +92,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/providers/image-providers`
      */
-    public suspend fun listImageProviders(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun listImageProviders(options: RequestOptions = RequestOptions()): ImageProviderList {
+        return client.request<ImageProviderList>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/providers/image-providers",
@@ -154,8 +154,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/providers/voice-providers`
      */
-    public suspend fun listVoiceProviders(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun listVoiceProviders(options: RequestOptions = RequestOptions()): VoiceProviderList {
+        return client.request<VoiceProviderList>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/providers/voice-providers",

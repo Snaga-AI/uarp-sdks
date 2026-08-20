@@ -103,7 +103,7 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listFiles`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun listAll(mimePrefix: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<FileEntry> = autoPaginate(
         fetch = { pageCursor -> list(mimePrefix = mimePrefix, limit = limit, cursor = pageCursor, options = options) },
         items = { it.items ?: emptyList() },
         cursor = { it.cursor },

@@ -291,7 +291,7 @@ public struct GovernanceAPI: Sendable {
     /// Get arbiter registry
     ///
     /// `GET /api/v1/governance/arbiter/registry`
-    public func getArbiterRegistry(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getArbiterRegistry(options: RequestOptions = .init()) async throws -> ArbiterRegistry {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/arbiter/registry",

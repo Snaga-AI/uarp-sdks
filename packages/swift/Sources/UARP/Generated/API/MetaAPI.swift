@@ -49,7 +49,7 @@ public struct MetaAPI: Sendable {
     /// Get public landing page statistics
     ///
     /// `GET /api/v1/public/landing-stats`
-    public func getPublicLandingStats(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPublicLandingStats(options: RequestOptions = .init()) async throws -> LandingStats {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/landing-stats",

@@ -6,8 +6,8 @@ import { pick } from '../../core/util.js';
 import type {
   GetAppleAppSiteAssociationResponse,
   GetClientConfigResponse,
-  JsonObject,
   JsonValue,
+  LandingStats,
   SearchType,
 } from '../models.js';
 
@@ -76,7 +76,7 @@ export class MetaResource extends APIResource {
    *
    * `GET /api/v1/public/landing-stats`
    */
-  getPublicLandingStats(options?: RequestOptions): Promise<JsonObject> {
+  getPublicLandingStats(options?: RequestOptions): Promise<LandingStats> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/public/landing-stats',

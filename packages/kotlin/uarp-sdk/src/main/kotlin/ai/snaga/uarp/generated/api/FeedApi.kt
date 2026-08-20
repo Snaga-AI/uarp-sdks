@@ -54,7 +54,7 @@ public class FeedApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `getActivityFeed`, following the `cursor` cursor until the
      * server reports no further pages.
      */
-    public fun getActivityFeedAll(limit: Long? = null, cursor: String? = null, agentId: String? = null, companyId: String? = null, teamId: String? = null, types: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun getActivityFeedAll(limit: Long? = null, cursor: String? = null, agentId: String? = null, companyId: String? = null, teamId: String? = null, types: String? = null, options: RequestOptions = RequestOptions()): Flow<FeedEntry> = autoPaginate(
         fetch = { pageCursor -> getActivityFeed(limit = limit, cursor = pageCursor, agentId = agentId, companyId = companyId, teamId = teamId, types = types, options = options) },
         items = { it.entries ?: emptyList() },
         cursor = { it.cursor },

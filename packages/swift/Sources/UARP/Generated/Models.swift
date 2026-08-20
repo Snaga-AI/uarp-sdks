@@ -1371,6 +1371,34 @@ public struct AgentPublicConfig: Codable, Hashable, Sendable {
     }
 }
 
+/// `AgentScorer` model.
+public struct AgentScorer: Codable, Hashable, Sendable {
+    public var agentId: String?
+    public var config: JSONObject?
+    public var createdAt: String?
+    public var name: String?
+    public var scorerId: String?
+    public var tenantId: String?
+
+    public init(agentId: String? = nil, config: JSONObject? = nil, createdAt: String? = nil, name: String? = nil, scorerId: String? = nil, tenantId: String? = nil) {
+        self.agentId = agentId
+        self.config = config
+        self.createdAt = createdAt
+        self.name = name
+        self.scorerId = scorerId
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case config = "config"
+        case createdAt = "created_at"
+        case name = "name"
+        case scorerId = "scorer_id"
+        case tenantId = "tenant_id"
+    }
+}
+
 /// `AgentSpec` model.
 public struct AgentSpec: Codable, Hashable, Sendable {
     public var specId: String
@@ -2106,6 +2134,34 @@ public struct ArbiterCaseStatus: RawRepresentable, Codable, Hashable, Sendable, 
     public static let knownValues: [ArbiterCaseStatus] = [.`open`, .underReview, .ruled, .appealed, .closed]
 }
 
+/// `ArbiterRegistry` model.
+public struct ArbiterRegistry: Codable, Hashable, Sendable {
+    public var arbiterAgentIds: [String]?
+    public var maxAppeals: Int?
+    public var panelSize: Int?
+    public var rulingDeadlineHours: Int?
+    public var tenantId: String?
+    public var updatedAt: String?
+
+    public init(arbiterAgentIds: [String]? = nil, maxAppeals: Int? = nil, panelSize: Int? = nil, rulingDeadlineHours: Int? = nil, tenantId: String? = nil, updatedAt: String? = nil) {
+        self.arbiterAgentIds = arbiterAgentIds
+        self.maxAppeals = maxAppeals
+        self.panelSize = panelSize
+        self.rulingDeadlineHours = rulingDeadlineHours
+        self.tenantId = tenantId
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case arbiterAgentIds = "arbiter_agent_ids"
+        case maxAppeals = "max_appeals"
+        case panelSize = "panel_size"
+        case rulingDeadlineHours = "ruling_deadline_hours"
+        case tenantId = "tenant_id"
+        case updatedAt = "updated_at"
+    }
+}
+
 /// `Artifact` model.
 public struct Artifact: Codable, Hashable, Sendable {
     public var artifactId: String
@@ -2156,6 +2212,31 @@ public struct AssignWorkspaceRequest: Codable, Hashable, Sendable {
         case agentId = "agent_id"
         case teamId = "team_id"
         case companyId = "company_id"
+    }
+}
+
+/// `AuthProvider` model.
+public struct AuthProvider: Codable, Hashable, Sendable {
+    public var email: String
+    public var id: String
+    public var linked: Bool
+    public var linkedAt: String?
+    public var sub: String?
+
+    public init(email: String, id: String, linked: Bool, linkedAt: String? = nil, sub: String? = nil) {
+        self.email = email
+        self.id = id
+        self.linked = linked
+        self.linkedAt = linkedAt
+        self.sub = sub
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case email = "email"
+        case id = "id"
+        case linked = "linked"
+        case linkedAt = "linked_at"
+        case sub = "sub"
     }
 }
 
@@ -3054,9 +3135,9 @@ public struct CheckGovernanceRequest: Codable, Hashable, Sendable {
 /// `CheckGovernanceResponse` model.
 public struct CheckGovernanceResponse: Codable, Hashable, Sendable {
     public var allowed: Bool?
-    public var violations: [JSONObject]?
+    public var violations: [ConstitutionViolation]?
 
-    public init(allowed: Bool? = nil, violations: [JSONObject]? = nil) {
+    public init(allowed: Bool? = nil, violations: [ConstitutionViolation]? = nil) {
         self.allowed = allowed
         self.violations = violations
     }
@@ -3461,6 +3542,37 @@ public struct ConstitutionRuleScope: RawRepresentable, Codable, Hashable, Sendab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ConstitutionRuleScope] = [.allAgents, .team, .agent, .role]
+}
+
+/// `ConstitutionViolation` model.
+public struct ConstitutionViolation: Codable, Hashable, Sendable {
+    public var ruleId: String?
+    public var ruleType: ConstitutionRuleRuleType?
+    public var action: String?
+    public var agentId: String?
+    public var penalty: ConstitutionRulePenalty?
+    public var `description`: String?
+    public var timestamp: String?
+
+    public init(ruleId: String? = nil, ruleType: ConstitutionRuleRuleType? = nil, action: String? = nil, agentId: String? = nil, penalty: ConstitutionRulePenalty? = nil, `description`: String? = nil, timestamp: String? = nil) {
+        self.ruleId = ruleId
+        self.ruleType = ruleType
+        self.action = action
+        self.agentId = agentId
+        self.penalty = penalty
+        self.`description` = `description`
+        self.timestamp = timestamp
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ruleId = "rule_id"
+        case ruleType = "rule_type"
+        case action = "action"
+        case agentId = "agent_id"
+        case penalty = "penalty"
+        case `description` = "description"
+        case timestamp = "timestamp"
+    }
 }
 
 /// `ContentReport` model.
@@ -6004,6 +6116,46 @@ public struct ExportAdminConfigResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `FeedEntry` model.
+public struct FeedEntry: Codable, Hashable, Sendable {
+    public var agentId: String
+    public var agentName: String
+    public var eventType: String
+    public var feedId: String
+    public var metrics: JSONObject?
+    public var runId: String
+    public var status: String?
+    public var tenantId: String
+    public var timestamp: String
+    public var title: String
+
+    public init(agentId: String, agentName: String, eventType: String, feedId: String, metrics: JSONObject? = nil, runId: String, status: String? = nil, tenantId: String, timestamp: String, title: String) {
+        self.agentId = agentId
+        self.agentName = agentName
+        self.eventType = eventType
+        self.feedId = feedId
+        self.metrics = metrics
+        self.runId = runId
+        self.status = status
+        self.tenantId = tenantId
+        self.timestamp = timestamp
+        self.title = title
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case agentName = "agent_name"
+        case eventType = "event_type"
+        case feedId = "feed_id"
+        case metrics = "metrics"
+        case runId = "run_id"
+        case status = "status"
+        case tenantId = "tenant_id"
+        case timestamp = "timestamp"
+        case title = "title"
+    }
+}
+
 /// `FileArbiterAppealRequest` model.
 public struct FileArbiterAppealRequest: Codable, Hashable, Sendable {
     public var filedBy: String
@@ -6039,13 +6191,44 @@ public struct FileArbiterCaseRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `FileEntry` model.
+public struct FileEntry: Codable, Hashable, Sendable {
+    public var createdAt: String
+    public var fileId: String
+    public var filename: String
+    public var mimeType: String
+    public var sha256: String
+    public var sizeBytes: Int
+    public var tenantId: String
+
+    public init(createdAt: String, fileId: String, filename: String, mimeType: String, sha256: String, sizeBytes: Int, tenantId: String) {
+        self.createdAt = createdAt
+        self.fileId = fileId
+        self.filename = filename
+        self.mimeType = mimeType
+        self.sha256 = sha256
+        self.sizeBytes = sizeBytes
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case fileId = "file_id"
+        case filename = "filename"
+        case mimeType = "mime_type"
+        case sha256 = "sha256"
+        case sizeBytes = "size_bytes"
+        case tenantId = "tenant_id"
+    }
+}
+
 /// `GetActivityFeedResponse` model.
 public struct GetActivityFeedResponse: Codable, Hashable, Sendable {
-    public var entries: [JSONObject]?
+    public var entries: [FeedEntry]?
     public var cursor: String?
     public var total: Int?
 
-    public init(entries: [JSONObject]? = nil, cursor: String? = nil, total: Int? = nil) {
+    public init(entries: [FeedEntry]? = nil, cursor: String? = nil, total: Int? = nil) {
         self.entries = entries
         self.cursor = cursor
         self.total = total
@@ -6361,10 +6544,10 @@ public struct GetAgentVersionDiffResponse: Codable, Hashable, Sendable {
 /// `GetAgentViolationsResponse` model.
 public struct GetAgentViolationsResponse: Codable, Hashable, Sendable {
     public var agentId: String?
-    public var violations: [JSONObject]?
+    public var violations: [ConstitutionViolation]?
     public var count: Int?
 
-    public init(agentId: String? = nil, violations: [JSONObject]? = nil, count: Int? = nil) {
+    public init(agentId: String? = nil, violations: [ConstitutionViolation]? = nil, count: Int? = nil) {
         self.agentId = agentId
         self.violations = violations
         self.count = count
@@ -7225,11 +7408,11 @@ public struct GetSessionShareResponseRole: RawRepresentable, Codable, Hashable, 
 /// `GetTeamChatHistoryResponse` model.
 public struct GetTeamChatHistoryResponse: Codable, Hashable, Sendable {
     public var teamId: String?
-    public var conversationHistory: [JSONObject]?
+    public var conversationHistory: [TeamChatTurn]?
     public var total: Int?
     public var chatState: JSONObject?
 
-    public init(teamId: String? = nil, conversationHistory: [JSONObject]? = nil, total: Int? = nil, chatState: JSONObject? = nil) {
+    public init(teamId: String? = nil, conversationHistory: [TeamChatTurn]? = nil, total: Int? = nil, chatState: JSONObject? = nil) {
         self.teamId = teamId
         self.conversationHistory = conversationHistory
         self.total = total
@@ -7246,10 +7429,10 @@ public struct GetTeamChatHistoryResponse: Codable, Hashable, Sendable {
 
 /// `GetTeamGraphResponse` model.
 public struct GetTeamGraphResponse: Codable, Hashable, Sendable {
-    public var nodes: [JSONObject]?
-    public var edges: [JSONObject]?
+    public var nodes: [TeamGraphNode]?
+    public var edges: [TeamGraphEdge]?
 
-    public init(nodes: [JSONObject]? = nil, edges: [JSONObject]? = nil) {
+    public init(nodes: [TeamGraphNode]? = nil, edges: [TeamGraphEdge]? = nil) {
         self.nodes = nodes
         self.edges = edges
     }
@@ -7694,6 +7877,19 @@ public struct HumanAmbassadorRole: RawRepresentable, Codable, Hashable, Sendable
     public static let knownValues: [HumanAmbassadorRole] = [.founder, .ambassador, .observer]
 }
 
+/// `ImageProviderList` model.
+public struct ImageProviderList: Codable, Hashable, Sendable {
+    public var providers: [JSONObject]?
+
+    public init(providers: [JSONObject]? = nil) {
+        self.providers = providers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case providers = "providers"
+    }
+}
+
 /// `ImportAdminConfigRequest` model.
 public struct ImportAdminConfigRequest: Codable, Hashable, Sendable {
     public var source: String?
@@ -8027,6 +8223,43 @@ public struct IntegrationStatus: RawRepresentable, Codable, Hashable, Sendable, 
     public static let knownValues: [IntegrationStatus] = [.active, .inactive, .error]
 }
 
+/// `Invite` model.
+public struct Invite: Codable, Hashable, Sendable {
+    public var createdAt: String?
+    public var email: String?
+    public var expiresAt: String?
+    public var id: String?
+    public var invitedBy: String?
+    public var role: String?
+    public var secret: String?
+    public var status: String?
+    public var tenantId: String?
+
+    public init(createdAt: String? = nil, email: String? = nil, expiresAt: String? = nil, id: String? = nil, invitedBy: String? = nil, role: String? = nil, secret: String? = nil, status: String? = nil, tenantId: String? = nil) {
+        self.createdAt = createdAt
+        self.email = email
+        self.expiresAt = expiresAt
+        self.id = id
+        self.invitedBy = invitedBy
+        self.role = role
+        self.secret = secret
+        self.status = status
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case email = "email"
+        case expiresAt = "expires_at"
+        case id = "id"
+        case invitedBy = "invited_by"
+        case role = "role"
+        case secret = "secret"
+        case status = "status"
+        case tenantId = "tenant_id"
+    }
+}
+
 /// `InviteUserRequest` model.
 public struct InviteUserRequest: Codable, Hashable, Sendable {
     public var email: String
@@ -8175,6 +8408,52 @@ public struct KnowledgeBaseCreate: Codable, Hashable, Sendable {
     }
 }
 
+/// `KnowledgeBaseDocument` model.
+public struct KnowledgeBaseDocument: Codable, Hashable, Sendable {
+    public var chunkCount: Int?
+    public var chunkPreview: String?
+    public var createdAt: String?
+    public var embeddingStatus: String?
+    public var id: String?
+    public var kbId: String?
+    public var name: String?
+    public var sizeBytes: Int?
+    public var status: String?
+    public var tenantId: String?
+    public var type: String?
+    public var updatedAt: String?
+
+    public init(chunkCount: Int? = nil, chunkPreview: String? = nil, createdAt: String? = nil, embeddingStatus: String? = nil, id: String? = nil, kbId: String? = nil, name: String? = nil, sizeBytes: Int? = nil, status: String? = nil, tenantId: String? = nil, type: String? = nil, updatedAt: String? = nil) {
+        self.chunkCount = chunkCount
+        self.chunkPreview = chunkPreview
+        self.createdAt = createdAt
+        self.embeddingStatus = embeddingStatus
+        self.id = id
+        self.kbId = kbId
+        self.name = name
+        self.sizeBytes = sizeBytes
+        self.status = status
+        self.tenantId = tenantId
+        self.type = type
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case chunkCount = "chunk_count"
+        case chunkPreview = "chunk_preview"
+        case createdAt = "created_at"
+        case embeddingStatus = "embedding_status"
+        case id = "id"
+        case kbId = "kb_id"
+        case name = "name"
+        case sizeBytes = "size_bytes"
+        case status = "status"
+        case tenantId = "tenant_id"
+        case type = "type"
+        case updatedAt = "updated_at"
+    }
+}
+
 /// Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
 public struct KnowledgeBaseUpdate: Codable, Hashable, Sendable {
     public var name: String?
@@ -8188,6 +8467,37 @@ public struct KnowledgeBaseUpdate: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case name = "name"
         case `description` = "description"
+    }
+}
+
+/// `LandingStats` model.
+public struct LandingStats: Codable, Hashable, Sendable {
+    public var agentsDeployed: Int?
+    public var llmProviders: Int?
+    public var registeredUsers: Int?
+    public var toolCallsToday: Int?
+    public var totalRuns: Int?
+    public var totalSessions: Int?
+    public var totalTokens: Int?
+
+    public init(agentsDeployed: Int? = nil, llmProviders: Int? = nil, registeredUsers: Int? = nil, toolCallsToday: Int? = nil, totalRuns: Int? = nil, totalSessions: Int? = nil, totalTokens: Int? = nil) {
+        self.agentsDeployed = agentsDeployed
+        self.llmProviders = llmProviders
+        self.registeredUsers = registeredUsers
+        self.toolCallsToday = toolCallsToday
+        self.totalRuns = totalRuns
+        self.totalSessions = totalSessions
+        self.totalTokens = totalTokens
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentsDeployed = "agents_deployed"
+        case llmProviders = "llm_providers"
+        case registeredUsers = "registered_users"
+        case toolCallsToday = "tool_calls_today"
+        case totalRuns = "total_runs"
+        case totalSessions = "total_sessions"
+        case totalTokens = "total_tokens"
     }
 }
 
@@ -8267,9 +8577,9 @@ public struct ListAgentIntegrationsResponse: Codable, Hashable, Sendable {
 
 /// `ListAgentScorersResponse` model.
 public struct ListAgentScorersResponse: Codable, Hashable, Sendable {
-    public var scorers: [JSONObject]?
+    public var scorers: [AgentScorer]?
 
-    public init(scorers: [JSONObject]? = nil) {
+    public init(scorers: [AgentScorer]? = nil) {
         self.scorers = scorers
     }
 
@@ -8400,9 +8710,9 @@ public struct ListAuthProvidersResponse: Codable, Hashable, Sendable {
     /// Legacy alias for `items`.
     ///
     /// - Warning: Deprecated by the API.
-    public var providers: [JSONObject]?
+    public var providers: [AuthProvider]?
 
-    public init(items: [ListAuthProvidersResponseItem], providers: [JSONObject]? = nil) {
+    public init(items: [ListAuthProvidersResponseItem], providers: [AuthProvider]? = nil) {
         self.items = items
         self.providers = providers
     }
@@ -8678,11 +8988,11 @@ public struct ListDataExplorerNamespacesResponse: Codable, Hashable, Sendable {
 
 /// `ListFilesResponse` model.
 public struct ListFilesResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]?
+    public var items: [FileEntry]?
     public var cursor: String?
     public var hasMore: Bool?
 
-    public init(items: [JSONObject]? = nil, cursor: String? = nil, hasMore: Bool? = nil) {
+    public init(items: [FileEntry]? = nil, cursor: String? = nil, hasMore: Bool? = nil) {
         self.items = items
         self.cursor = cursor
         self.hasMore = hasMore
@@ -8755,14 +9065,14 @@ public struct ListIntegrationsResponse: Codable, Hashable, Sendable {
 
 /// `ListInvitesResponse` model.
 public struct ListInvitesResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]?
+    public var items: [Invite]?
     /// Legacy alias for `items`. Will be removed in API v1.x.
     ///
     /// - Warning: Deprecated by the API.
-    public var invites: [JSONObject]?
+    public var invites: [Invite]?
     public var total: Int?
 
-    public init(items: [JSONObject]? = nil, invites: [JSONObject]? = nil, total: Int? = nil) {
+    public init(items: [Invite]? = nil, invites: [Invite]? = nil, total: Int? = nil) {
         self.items = items
         self.invites = invites
         self.total = total
@@ -8777,10 +9087,10 @@ public struct ListInvitesResponse: Codable, Hashable, Sendable {
 
 /// `ListKbDocumentsResponse` model.
 public struct ListKbDocumentsResponse: Codable, Hashable, Sendable {
-    public var documents: [JSONObject]?
+    public var documents: [KnowledgeBaseDocument]?
     public var total: Int?
 
-    public init(documents: [JSONObject]? = nil, total: Int? = nil) {
+    public init(documents: [KnowledgeBaseDocument]? = nil, total: Int? = nil) {
         self.documents = documents
         self.total = total
     }
@@ -8854,9 +9164,9 @@ public struct ListLLMCredentialsProvidersResponseProvider: Codable, Hashable, Se
 
 /// `ListLLMModelsResponse` model.
 public struct ListLLMModelsResponse: Codable, Hashable, Sendable {
-    public var models: [JSONObject]?
+    public var models: [LLMModel]?
 
-    public init(models: [JSONObject]? = nil) {
+    public init(models: [LLMModel]? = nil) {
         self.models = models
     }
 
@@ -9177,9 +9487,9 @@ public struct ListProvidersResponse: Codable, Hashable, Sendable {
 
 /// `ListPublicPlansResponse` model.
 public struct ListPublicPlansResponse: Codable, Hashable, Sendable {
-    public var plans: [JSONObject]?
+    public var plans: [PublicPlan]?
 
-    public init(plans: [JSONObject]? = nil) {
+    public init(plans: [PublicPlan]? = nil) {
         self.plans = plans
     }
 
@@ -9190,9 +9500,9 @@ public struct ListPublicPlansResponse: Codable, Hashable, Sendable {
 
 /// `ListPublicStatesResponse` model.
 public struct ListPublicStatesResponse: Codable, Hashable, Sendable {
-    public var states: [JSONObject]?
+    public var states: [PublicState]?
 
-    public init(states: [JSONObject]? = nil) {
+    public init(states: [PublicState]? = nil) {
         self.states = states
     }
 
@@ -9203,12 +9513,12 @@ public struct ListPublicStatesResponse: Codable, Hashable, Sendable {
 
 /// `ListPublicTenantsResponse` model.
 public struct ListPublicTenantsResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]?
+    public var items: [PublicTenant]?
     public var cursor: String?
     public var hasMore: Bool?
     public var total: Int?
 
-    public init(items: [JSONObject]? = nil, cursor: String? = nil, hasMore: Bool? = nil, total: Int? = nil) {
+    public init(items: [PublicTenant]? = nil, cursor: String? = nil, hasMore: Bool? = nil, total: Int? = nil) {
         self.items = items
         self.cursor = cursor
         self.hasMore = hasMore
@@ -9225,9 +9535,9 @@ public struct ListPublicTenantsResponse: Codable, Hashable, Sendable {
 
 /// `ListRunCheckpointsResponse` model.
 public struct ListRunCheckpointsResponse: Codable, Hashable, Sendable {
-    public var checkpoints: [JSONObject]?
+    public var checkpoints: [RunCheckpoint]?
 
-    public init(checkpoints: [JSONObject]? = nil) {
+    public init(checkpoints: [RunCheckpoint]? = nil) {
         self.checkpoints = checkpoints
     }
 
@@ -9448,14 +9758,14 @@ public struct ListSessionsResponseItemModelOverride: Codable, Hashable, Sendable
 
 /// `ListSessionTodosResponse` model.
 public struct ListSessionTodosResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]?
+    public var items: [Todo]?
     /// Legacy alias for `items`. Will be removed in API v1.x.
     ///
     /// - Warning: Deprecated by the API.
-    public var todos: [JSONObject]?
+    public var todos: [Todo]?
     public var total: Int?
 
-    public init(items: [JSONObject]? = nil, todos: [JSONObject]? = nil, total: Int? = nil) {
+    public init(items: [Todo]? = nil, todos: [Todo]? = nil, total: Int? = nil) {
         self.items = items
         self.todos = todos
         self.total = total
@@ -9483,10 +9793,10 @@ public struct ListSubscriptionsResponse: Codable, Hashable, Sendable {
 
 /// `ListTeamGraphEdgesResponse` model.
 public struct ListTeamGraphEdgesResponse: Codable, Hashable, Sendable {
-    public var edges: [JSONObject]?
+    public var edges: [TeamGraphEdge]?
     public var total: Int?
 
-    public init(edges: [JSONObject]? = nil, total: Int? = nil) {
+    public init(edges: [TeamGraphEdge]? = nil, total: Int? = nil) {
         self.edges = edges
         self.total = total
     }
@@ -9499,10 +9809,10 @@ public struct ListTeamGraphEdgesResponse: Codable, Hashable, Sendable {
 
 /// `ListTeamGraphNodesResponse` model.
 public struct ListTeamGraphNodesResponse: Codable, Hashable, Sendable {
-    public var nodes: [JSONObject]?
+    public var nodes: [TeamGraphNode]?
     public var total: Int?
 
-    public init(nodes: [JSONObject]? = nil, total: Int? = nil) {
+    public init(nodes: [TeamGraphNode]? = nil, total: Int? = nil) {
         self.nodes = nodes
         self.total = total
     }
@@ -9572,9 +9882,9 @@ public struct ListTenantsResponse: Codable, Hashable, Sendable {
 
 /// `ListTodosResponse` model.
 public struct ListTodosResponse: Codable, Hashable, Sendable {
-    public var todos: [JSONObject]?
+    public var todos: [Todo]?
 
-    public init(todos: [JSONObject]? = nil) {
+    public init(todos: [Todo]? = nil) {
         self.todos = todos
     }
 
@@ -9585,14 +9895,14 @@ public struct ListTodosResponse: Codable, Hashable, Sendable {
 
 /// `ListUsersResponse` model.
 public struct ListUsersResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]?
+    public var items: [TenantUser]?
     /// Legacy alias for `items`. Will be removed in API v1.x.
     ///
     /// - Warning: Deprecated by the API.
-    public var users: [JSONObject]?
+    public var users: [TenantUser]?
     public var total: Int?
 
-    public init(items: [JSONObject]? = nil, users: [JSONObject]? = nil, total: Int? = nil) {
+    public init(items: [TenantUser]? = nil, users: [TenantUser]? = nil, total: Int? = nil) {
         self.items = items
         self.users = users
         self.total = total
@@ -9607,9 +9917,9 @@ public struct ListUsersResponse: Codable, Hashable, Sendable {
 
 /// `ListVideoProvidersResponse` model.
 public struct ListVideoProvidersResponse: Codable, Hashable, Sendable {
-    public var providers: [JSONObject]?
+    public var providers: [VideoProvider]?
 
-    public init(providers: [JSONObject]? = nil) {
+    public init(providers: [VideoProvider]? = nil) {
         self.providers = providers
     }
 
@@ -9730,6 +10040,49 @@ public struct LLMCredential: Codable, Hashable, Sendable {
     }
 }
 
+/// `LLMModel` model.
+public struct LLMModel: Codable, Hashable, Sendable {
+    public var displayName: String
+    public var id: String
+    public var maxContextTokens: Int
+    public var maxOutputTokens: Int
+    public var pricing: JSONObject
+    public var provider: String
+    public var supportsJSONMode: Bool
+    public var supportsStreaming: Bool
+    public var supportsToolCalls: Bool
+    public var supportsVision: Bool
+    public var tier: String
+
+    public init(displayName: String, id: String, maxContextTokens: Int, maxOutputTokens: Int, pricing: JSONObject, provider: String, supportsJSONMode: Bool, supportsStreaming: Bool, supportsToolCalls: Bool, supportsVision: Bool, tier: String) {
+        self.displayName = displayName
+        self.id = id
+        self.maxContextTokens = maxContextTokens
+        self.maxOutputTokens = maxOutputTokens
+        self.pricing = pricing
+        self.provider = provider
+        self.supportsJSONMode = supportsJSONMode
+        self.supportsStreaming = supportsStreaming
+        self.supportsToolCalls = supportsToolCalls
+        self.supportsVision = supportsVision
+        self.tier = tier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case displayName = "display_name"
+        case id = "id"
+        case maxContextTokens = "max_context_tokens"
+        case maxOutputTokens = "max_output_tokens"
+        case pricing = "pricing"
+        case provider = "provider"
+        case supportsJSONMode = "supports_json_mode"
+        case supportsStreaming = "supports_streaming"
+        case supportsToolCalls = "supports_tool_calls"
+        case supportsVision = "supports_vision"
+        case tier = "tier"
+    }
+}
+
 /// An LLM provider the platform knows about, and whether a key is configured.
 public struct LLMProvider: Codable, Hashable, Sendable {
     public var id: String
@@ -9802,6 +10155,94 @@ public struct LLMTranscribeAudioRequest: Codable, Hashable, Sendable {
         case file = "file"
         case model = "model"
         case language = "language"
+    }
+}
+
+/// `LLMUsageSummary` model.
+public struct LLMUsageSummary: Codable, Hashable, Sendable {
+    public var billingPeriod: LLMUsageSummaryBillingPeriod?
+    public var byModel: [String]?
+    public var limits: LLMUsageSummaryLimits?
+    public var plan: String?
+    public var usage: LLMUsageSummaryUsage?
+
+    public init(billingPeriod: LLMUsageSummaryBillingPeriod? = nil, byModel: [String]? = nil, limits: LLMUsageSummaryLimits? = nil, plan: String? = nil, usage: LLMUsageSummaryUsage? = nil) {
+        self.billingPeriod = billingPeriod
+        self.byModel = byModel
+        self.limits = limits
+        self.plan = plan
+        self.usage = usage
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case billingPeriod = "billing_period"
+        case byModel = "by_model"
+        case limits = "limits"
+        case plan = "plan"
+        case usage = "usage"
+    }
+}
+
+/// `LLMUsageSummaryBillingPeriod` model.
+public struct LLMUsageSummaryBillingPeriod: Codable, Hashable, Sendable {
+    public var end: String?
+    public var start: String?
+
+    public init(end: String? = nil, start: String? = nil) {
+        self.end = end
+        self.start = start
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case end = "end"
+        case start = "start"
+    }
+}
+
+/// `LLMUsageSummaryLimits` model.
+public struct LLMUsageSummaryLimits: Codable, Hashable, Sendable {
+    public var requestsPerDay: Int?
+    public var requestsPerHour: Int?
+    public var requestsPerMinute: Int?
+    public var tokensPerMonth: Int?
+
+    public init(requestsPerDay: Int? = nil, requestsPerHour: Int? = nil, requestsPerMinute: Int? = nil, tokensPerMonth: Int? = nil) {
+        self.requestsPerDay = requestsPerDay
+        self.requestsPerHour = requestsPerHour
+        self.requestsPerMinute = requestsPerMinute
+        self.tokensPerMonth = tokensPerMonth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case requestsPerDay = "requests_per_day"
+        case requestsPerHour = "requests_per_hour"
+        case requestsPerMinute = "requests_per_minute"
+        case tokensPerMonth = "tokens_per_month"
+    }
+}
+
+/// `LLMUsageSummaryUsage` model.
+public struct LLMUsageSummaryUsage: Codable, Hashable, Sendable {
+    public var requestsThisHour: Int?
+    public var requestsThisMinute: Int?
+    public var requestsToday: Int?
+    public var tokensRemaining: Int?
+    public var tokensUsed: Int?
+
+    public init(requestsThisHour: Int? = nil, requestsThisMinute: Int? = nil, requestsToday: Int? = nil, tokensRemaining: Int? = nil, tokensUsed: Int? = nil) {
+        self.requestsThisHour = requestsThisHour
+        self.requestsThisMinute = requestsThisMinute
+        self.requestsToday = requestsToday
+        self.tokensRemaining = tokensRemaining
+        self.tokensUsed = tokensUsed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case requestsThisHour = "requests_this_hour"
+        case requestsThisMinute = "requests_this_minute"
+        case requestsToday = "requests_today"
+        case tokensRemaining = "tokens_remaining"
+        case tokensUsed = "tokens_used"
     }
 }
 
@@ -10889,6 +11330,31 @@ public struct PermissionSet: Codable, Hashable, Sendable {
     }
 }
 
+/// `PlatformLLMDefaults` model.
+public struct PlatformLLMDefaults: Codable, Hashable, Sendable {
+    public var defaultEndpoint: String?
+    public var defaultModel: String?
+    public var defaultProvider: String?
+    public var fallbackModel: String?
+    public var fallbackProvider: String?
+
+    public init(defaultEndpoint: String? = nil, defaultModel: String? = nil, defaultProvider: String? = nil, fallbackModel: String? = nil, fallbackProvider: String? = nil) {
+        self.defaultEndpoint = defaultEndpoint
+        self.defaultModel = defaultModel
+        self.defaultProvider = defaultProvider
+        self.fallbackModel = fallbackModel
+        self.fallbackProvider = fallbackProvider
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case defaultEndpoint = "default_endpoint"
+        case defaultModel = "default_model"
+        case defaultProvider = "default_provider"
+        case fallbackModel = "fallback_model"
+        case fallbackProvider = "fallback_provider"
+    }
+}
+
 /// `Product` model.
 public struct Product: Codable, Hashable, Sendable {
     public var id: String
@@ -11154,6 +11620,126 @@ public struct PublicDomainLookupResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case tenantId = "tenant_id"
         case found = "found"
+    }
+}
+
+/// `PublicPlan` model.
+public struct PublicPlan: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var priceAmountCents: Int
+    public var priceCurrency: String
+    public var quotas: JSONObject
+
+    public init(id: String, name: String, priceAmountCents: Int, priceCurrency: String, quotas: JSONObject) {
+        self.id = id
+        self.name = name
+        self.priceAmountCents = priceAmountCents
+        self.priceCurrency = priceCurrency
+        self.quotas = quotas
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case priceAmountCents = "price_amount_cents"
+        case priceCurrency = "price_currency"
+        case quotas = "quotas"
+    }
+}
+
+/// `PublicState` model.
+public struct PublicState: Codable, Hashable, Sendable {
+    public var branding: JSONObject?
+    public var category: String
+    public var `description`: String?
+    public var logoURL: String?
+    public var name: String
+    public var publishedAt: String?
+    public var shortDescription: String
+    public var slug: String
+    public var socialLinks: JSONObject?
+    public var stats: JSONObject?
+    public var tags: [String]
+    public var tenantId: String
+
+    public init(branding: JSONObject? = nil, category: String, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, shortDescription: String, slug: String, socialLinks: JSONObject? = nil, stats: JSONObject? = nil, tags: [String], tenantId: String) {
+        self.branding = branding
+        self.category = category
+        self.`description` = `description`
+        self.logoURL = logoURL
+        self.name = name
+        self.publishedAt = publishedAt
+        self.shortDescription = shortDescription
+        self.slug = slug
+        self.socialLinks = socialLinks
+        self.stats = stats
+        self.tags = tags
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case branding = "branding"
+        case category = "category"
+        case `description` = "description"
+        case logoURL = "logo_url"
+        case name = "name"
+        case publishedAt = "published_at"
+        case shortDescription = "short_description"
+        case slug = "slug"
+        case socialLinks = "social_links"
+        case stats = "stats"
+        case tags = "tags"
+        case tenantId = "tenant_id"
+    }
+}
+
+/// `PublicTenant` model.
+public struct PublicTenant: Codable, Hashable, Sendable {
+    public var agents: [JSONObject]
+    public var agentsCount: Int
+    public var branding: JSONObject?
+    public var category: String?
+    public var `description`: String?
+    public var logoURL: String?
+    public var name: String
+    public var publishedAt: String?
+    public var slug: String
+    public var socialLinks: JSONObject?
+    public var stats: JSONObject
+    public var tags: [String]
+    public var tenantId: String
+
+    public init(agents: [JSONObject], agentsCount: Int, branding: JSONObject? = nil, category: String? = nil, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, slug: String, socialLinks: JSONObject? = nil, stats: JSONObject, tags: [String], tenantId: String) {
+        self.agents = agents
+        self.agentsCount = agentsCount
+        self.branding = branding
+        self.category = category
+        self.`description` = `description`
+        self.logoURL = logoURL
+        self.name = name
+        self.publishedAt = publishedAt
+        self.slug = slug
+        self.socialLinks = socialLinks
+        self.stats = stats
+        self.tags = tags
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agents = "agents"
+        case agentsCount = "agents_count"
+        case branding = "branding"
+        case category = "category"
+        case `description` = "description"
+        case logoURL = "logo_url"
+        case name = "name"
+        case publishedAt = "published_at"
+        case slug = "slug"
+        case socialLinks = "social_links"
+        case stats = "stats"
+        case tags = "tags"
+        case tenantId = "tenant_id"
     }
 }
 
@@ -12174,6 +12760,11 @@ public struct Run: Codable, Hashable, Sendable {
     public var sessionId: String?
     public var status: RunStatus
     public var input: JSONObject?
+    /// Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+    /// AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
+    /// carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
+    /// no key configured no token is minted and the field is absent; the token is an opaque string
+    /// to every client.
     public var output: JSONObject?
     public var metrics: RunMetrics?
     public var error: String?
@@ -12242,6 +12833,29 @@ public struct RunApproveRequest: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case response = "response"
+    }
+}
+
+/// `RunCheckpoint` model.
+public struct RunCheckpoint: Codable, Hashable, Sendable {
+    public var step: Int?
+    /// Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
+    /// shape, which differs per adapter.
+    public var messages: [JSONObject]?
+    /// Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
+    /// step and token counters, optionally provider cache hits.
+    public var metrics: JSONObject?
+
+    public init(step: Int? = nil, messages: [JSONObject]? = nil, metrics: JSONObject? = nil) {
+        self.step = step
+        self.messages = messages
+        self.metrics = metrics
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case step = "step"
+        case messages = "messages"
+        case metrics = "metrics"
     }
 }
 
@@ -13654,6 +14268,43 @@ public struct Team: Codable, Hashable, Sendable {
     }
 }
 
+/// `TeamChatTurn` model.
+public struct TeamChatTurn: Codable, Hashable, Sendable {
+    public var addressedTo: [String]?
+    public var content: String
+    public var fromTask: Bool
+    public var role: String
+    public var runMeta: JSONObject
+    public var runPending: Bool
+    public var teamRunId: String
+    public var threadId: String?
+    public var timestamp: String
+
+    public init(addressedTo: [String]? = nil, content: String, fromTask: Bool, role: String, runMeta: JSONObject, runPending: Bool, teamRunId: String, threadId: String? = nil, timestamp: String) {
+        self.addressedTo = addressedTo
+        self.content = content
+        self.fromTask = fromTask
+        self.role = role
+        self.runMeta = runMeta
+        self.runPending = runPending
+        self.teamRunId = teamRunId
+        self.threadId = threadId
+        self.timestamp = timestamp
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case addressedTo = "addressed_to"
+        case content = "content"
+        case fromTask = "from_task"
+        case role = "role"
+        case runMeta = "run_meta"
+        case runPending = "run_pending"
+        case teamRunId = "team_run_id"
+        case threadId = "thread_id"
+        case timestamp = "timestamp"
+    }
+}
+
 /// Body for `POST /api/v1/teams` (`CreateTeamSchema`).
 public struct TeamCreate: Codable, Hashable, Sendable {
     public var name: String
@@ -13754,6 +14405,59 @@ public struct TeamGoalConfig: Codable, Hashable, Sendable {
         case reviewIntervalMs = "review_interval_ms"
         case maxIterations = "max_iterations"
         case budget = "budget"
+    }
+}
+
+/// `TeamGraphEdge` model.
+public struct TeamGraphEdge: Codable, Hashable, Sendable {
+    public var createdAt: String?
+    public var edgeId: String?
+    public var from: String?
+    public var to: String?
+    public var type: String?
+
+    public init(createdAt: String? = nil, edgeId: String? = nil, from: String? = nil, to: String? = nil, type: String? = nil) {
+        self.createdAt = createdAt
+        self.edgeId = edgeId
+        self.from = from
+        self.to = to
+        self.type = type
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case edgeId = "edge_id"
+        case from = "from"
+        case to = "to"
+        case type = "type"
+    }
+}
+
+/// `TeamGraphNode` model.
+public struct TeamGraphNode: Codable, Hashable, Sendable {
+    public var agentId: String?
+    public var goalSummary: String?
+    public var role: String?
+    public var spawnedAt: String?
+    public var spawnedBy: String?
+    public var status: String?
+
+    public init(agentId: String? = nil, goalSummary: String? = nil, role: String? = nil, spawnedAt: String? = nil, spawnedBy: String? = nil, status: String? = nil) {
+        self.agentId = agentId
+        self.goalSummary = goalSummary
+        self.role = role
+        self.spawnedAt = spawnedAt
+        self.spawnedBy = spawnedBy
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case goalSummary = "goal_summary"
+        case role = "role"
+        case spawnedAt = "spawned_at"
+        case spawnedBy = "spawned_by"
+        case status = "status"
     }
 }
 
@@ -14280,6 +14984,40 @@ public struct TenantStatus: RawRepresentable, Codable, Hashable, Sendable, Expre
     public static let knownValues: [TenantStatus] = [.active, .suspended, .trial]
 }
 
+/// `TenantUser` model.
+public struct TenantUser: Codable, Hashable, Sendable {
+    public var createdAt: String?
+    public var email: String?
+    public var id: String?
+    public var name: String?
+    public var role: String?
+    public var status: String?
+    public var tenantId: String?
+    public var updatedAt: String?
+
+    public init(createdAt: String? = nil, email: String? = nil, id: String? = nil, name: String? = nil, role: String? = nil, status: String? = nil, tenantId: String? = nil, updatedAt: String? = nil) {
+        self.createdAt = createdAt
+        self.email = email
+        self.id = id
+        self.name = name
+        self.role = role
+        self.status = status
+        self.tenantId = tenantId
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case createdAt = "created_at"
+        case email = "email"
+        case id = "id"
+        case name = "name"
+        case role = "role"
+        case status = "status"
+        case tenantId = "tenant_id"
+        case updatedAt = "updated_at"
+    }
+}
+
 /// `TerminateAgentResponse` model.
 public struct TerminateAgentResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -14341,6 +15079,81 @@ public struct TestLLMProviderKeyResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case success = "success"
         case message = "message"
+    }
+}
+
+/// `TestWebhookResponse` model.
+public struct TestWebhookResponse: Codable, Hashable, Sendable {
+    public var testSent: Bool
+    public var webhookId: String
+    /// The subscription's first configured event, or `run.completed` when it has none.
+    public var eventType: String
+
+    public init(testSent: Bool, webhookId: String, eventType: String) {
+        self.testSent = testSent
+        self.webhookId = webhookId
+        self.eventType = eventType
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case testSent = "test_sent"
+        case webhookId = "webhook_id"
+        case eventType = "event_type"
+    }
+}
+
+/// `Todo` model.
+public struct Todo: Codable, Hashable, Sendable {
+    public var agentName: String
+    public var assignAgentId: String?
+    public var createdAt: String
+    public var dueAt: String?
+    public var lastFiredAt: String?
+    public var lastRunStatus: String?
+    public var orderIndex: Int?
+    public var requireConfirmation: Bool?
+    public var runId: String?
+    public var sessionId: String
+    public var status: String
+    public var tenantId: String
+    public var title: String
+    public var todoId: String
+    public var updatedAt: String
+
+    public init(agentName: String, assignAgentId: String? = nil, createdAt: String, dueAt: String? = nil, lastFiredAt: String? = nil, lastRunStatus: String? = nil, orderIndex: Int? = nil, requireConfirmation: Bool? = nil, runId: String? = nil, sessionId: String, status: String, tenantId: String, title: String, todoId: String, updatedAt: String) {
+        self.agentName = agentName
+        self.assignAgentId = assignAgentId
+        self.createdAt = createdAt
+        self.dueAt = dueAt
+        self.lastFiredAt = lastFiredAt
+        self.lastRunStatus = lastRunStatus
+        self.orderIndex = orderIndex
+        self.requireConfirmation = requireConfirmation
+        self.runId = runId
+        self.sessionId = sessionId
+        self.status = status
+        self.tenantId = tenantId
+        self.title = title
+        self.todoId = todoId
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentName = "agent_name"
+        case assignAgentId = "assign_agent_id"
+        case createdAt = "created_at"
+        case dueAt = "due_at"
+        case lastFiredAt = "last_fired_at"
+        case lastRunStatus = "last_run_status"
+        case orderIndex = "order_index"
+        case requireConfirmation = "require_confirmation"
+        case runId = "run_id"
+        case sessionId = "session_id"
+        case status = "status"
+        case tenantId = "tenant_id"
+        case title = "title"
+        case todoId = "todo_id"
+        case updatedAt = "updated_at"
     }
 }
 
@@ -15168,6 +15981,107 @@ public struct VetoRecordTargetType: RawRepresentable, Codable, Hashable, Sendabl
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [VetoRecordTargetType] = [.proposal, .action, .agent, .`case`]
+}
+
+/// `VideoProvider` model.
+public struct VideoProvider: Codable, Hashable, Sendable {
+    public var configured: Bool?
+    public var id: String?
+    public var local: Bool?
+    public var models: [JSONObject]?
+    public var name: String?
+
+    public init(configured: Bool? = nil, id: String? = nil, local: Bool? = nil, models: [JSONObject]? = nil, name: String? = nil) {
+        self.configured = configured
+        self.id = id
+        self.local = local
+        self.models = models
+        self.name = name
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case id = "id"
+        case local = "local"
+        case models = "models"
+        case name = "name"
+    }
+}
+
+/// `VoiceConfig` model.
+public struct VoiceConfig: Codable, Hashable, Sendable {
+    public var stt: VoiceConfigStt?
+    public var tts: VoiceConfigTts?
+
+    public init(stt: VoiceConfigStt? = nil, tts: VoiceConfigTts? = nil) {
+        self.stt = stt
+        self.tts = tts
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stt = "stt"
+        case tts = "tts"
+    }
+}
+
+/// `VoiceConfigStt` model.
+public struct VoiceConfigStt: Codable, Hashable, Sendable {
+    public var configured: Bool?
+    public var endpoint: String?
+    public var model: String?
+    public var provider: String?
+
+    public init(configured: Bool? = nil, endpoint: String? = nil, model: String? = nil, provider: String? = nil) {
+        self.configured = configured
+        self.endpoint = endpoint
+        self.model = model
+        self.provider = provider
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case endpoint = "endpoint"
+        case model = "model"
+        case provider = "provider"
+    }
+}
+
+/// `VoiceConfigTts` model.
+public struct VoiceConfigTts: Codable, Hashable, Sendable {
+    public var configured: Bool?
+    public var endpoint: String?
+    public var model: String?
+    public var provider: String?
+    public var voice: String?
+
+    public init(configured: Bool? = nil, endpoint: String? = nil, model: String? = nil, provider: String? = nil, voice: String? = nil) {
+        self.configured = configured
+        self.endpoint = endpoint
+        self.model = model
+        self.provider = provider
+        self.voice = voice
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case endpoint = "endpoint"
+        case model = "model"
+        case provider = "provider"
+        case voice = "voice"
+    }
+}
+
+/// `VoiceProviderList` model.
+public struct VoiceProviderList: Codable, Hashable, Sendable {
+    public var providers: [JSONObject]?
+
+    public init(providers: [JSONObject]? = nil) {
+        self.providers = providers
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case providers = "providers"
+    }
 }
 
 /// `VoteResult` model.

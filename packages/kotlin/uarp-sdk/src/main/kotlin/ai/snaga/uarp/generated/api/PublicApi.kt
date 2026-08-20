@@ -229,7 +229,7 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listPublicTenants`, following the `cursor` cursor until the
      * server reports no further pages.
      */
-    public fun listPublicTenantsAll(category: String? = null, sort: String? = null, search: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun listPublicTenantsAll(category: String? = null, sort: String? = null, search: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<PublicTenant> = autoPaginate(
         fetch = { pageCursor -> listPublicTenants(category = category, sort = sort, search = search, limit = limit, cursor = pageCursor, options = options) },
         items = { it.items ?: emptyList() },
         cursor = { it.cursor },

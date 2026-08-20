@@ -9,40 +9,43 @@ package body UARP.API.Providers is
    function Get_LLM_Usage
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.LLM_Usage_Summary
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/llm/usage",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/llm/usage",
+             Options => Options));
    end Get_LLM_Usage;
 
    function Get_LLM_Voice_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Voice_Config
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/llm/voice-config",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/llm/voice-config",
+             Options => Options));
    end Get_LLM_Voice_Config;
 
    function Get_Platform_Defaults
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Platform_LLM_Defaults
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/providers/platform-defaults",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/providers/platform-defaults",
+             Options => Options));
    end Get_Platform_Defaults;
 
    function List
@@ -62,14 +65,15 @@ package body UARP.API.Providers is
    function List_Image_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Image_Provider_List
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/providers/image-providers",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/providers/image-providers",
+             Options => Options));
    end List_Image_Providers;
 
    function List_LLM_Models
@@ -118,14 +122,15 @@ package body UARP.API.Providers is
    function List_Voice_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Voice_Provider_List
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/providers/voice-providers",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/providers/voice-providers",
+             Options => Options));
    end List_Voice_Providers;
 
    function LLM_Chat_Completion

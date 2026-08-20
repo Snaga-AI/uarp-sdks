@@ -78,8 +78,8 @@ public class MetaApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/landing-stats`
      */
-    public suspend fun getPublicLandingStats(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPublicLandingStats(options: RequestOptions = RequestOptions()): LandingStats {
+        return client.request<LandingStats>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/landing-stats",

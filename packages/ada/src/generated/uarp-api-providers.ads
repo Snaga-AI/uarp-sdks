@@ -19,7 +19,7 @@ package UARP.API.Providers is
    function Get_LLM_Usage
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.LLM_Usage_Summary;
 
    --  Platform default STT/TTS provider/model
    --
@@ -29,7 +29,7 @@ package UARP.API.Providers is
    function Get_LLM_Voice_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Voice_Config;
 
    --  Get platform default providers
    --
@@ -37,7 +37,7 @@ package UARP.API.Providers is
    function Get_Platform_Defaults
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Platform_LLM_Defaults;
 
    --  List configured LLM providers
    --
@@ -53,7 +53,7 @@ package UARP.API.Providers is
    function List_Image_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Image_Provider_List;
 
    --  List available LLM models
    --
@@ -88,7 +88,7 @@ package UARP.API.Providers is
    function List_Voice_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Voice_Provider_List;
 
    --  LLM proxy chat completion
    --

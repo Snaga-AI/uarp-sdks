@@ -396,8 +396,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/arbiter/registry`
      */
-    public suspend fun getArbiterRegistry(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getArbiterRegistry(options: RequestOptions = RequestOptions()): ArbiterRegistry {
+        return client.request<ArbiterRegistry>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/arbiter/registry",

@@ -46,14 +46,15 @@ package body UARP.API.Meta is
    function Get_Public_Landing_Stats
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Landing_Stats
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/public/landing-stats",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/landing-stats",
+             Options => Options));
    end Get_Public_Landing_Stats;
 
    function Search
