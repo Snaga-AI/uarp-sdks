@@ -6,6 +6,38 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.9 — 2026-08-20
+
+### Added — every SDK
+
+- **Six governance types the document had never carried at all.** The web
+  session's audit reported these as "fields the SDK lacks"; the truth was
+  gentler on the SDK and worse on the document — the schemas did not exist, so
+  every client touching voting, the constitution or the ambassador surface had
+  been transcribing the platform types by hand.
+
+  `VoteResult` — the tally written once when voting closes. Its `status` is a
+  distinct enum from the proposal's own: this one is the arithmetic's verdict,
+  and the proposal record is updated from it.
+
+  `HumanAmbassador` and `AmbassadorPermissions` — the human on the other side
+  of an ambassador request. This is where `ambassador_id` lives; a client
+  reading that field off the request was reading one that does not exist.
+
+  `VetoRecord` — a human overruling the collective, immutable once issued.
+
+  `ConstitutionDocument` and `ConstitutionAmendment` — `amendments` is audit
+  history rather than a pending queue, and an amendment's `rule` is absent for
+  `remove` and present otherwise.
+
+### Changed
+
+- The release now refuses to build from a vendored document the platform no
+  longer serves. 0.5.7 shipped a fixed generator against a spec last refreshed
+  for 0.5.6, and it took two consuming sessions reading a published tarball to
+  notice. The guard caught this release's own staleness before the build,
+  which is the whole point of it.
+
 ## 0.5.8 — 2026-08-19
 
 ### Fixed — every SDK

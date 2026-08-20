@@ -776,6 +776,49 @@ package UARP.Models is
    function To_JSON (Model : Agent_Public_Config) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Public_Config;
 
+   --  Values of `BridgeInstalledSpecStatus`.
+   --  A value the API introduces later decodes as Bridge_Installed_Spec_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Bridge_Installed_Spec_Status_Kind is
+     (Bridge_Installed_Spec_Status_Installed,
+   Bridge_Installed_Spec_Status_Failed,
+   Bridge_Installed_Spec_Status_Unrecognized);
+
+   type Bridge_Installed_Spec_Status is record
+      Kind : Bridge_Installed_Spec_Status_Kind := Bridge_Installed_Spec_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Bridge_Installed_Spec_Status (Value : String) return Bridge_Installed_Spec_Status;
+   function To_Bridge_Installed_Spec_Status (Kind : Bridge_Installed_Spec_Status_Kind) return Bridge_Installed_Spec_Status;
+   function Image (Model : Bridge_Installed_Spec_Status) return String;
+   function To_JSON (Model : Bridge_Installed_Spec_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Installed_Spec_Status;
+
+   --  `BridgeInstalledSpec` model.
+   type Bridge_Installed_Spec is record
+      --  `@scope/name`.
+      Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Resolved exactly, never a range.
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Tool names the SPEC registered into the local runtime.
+      Has_Tools : Boolean := False;
+      Tools : UARP.Types.Text_Vectors.Vector;
+      Status : UARP.Models.Bridge_Installed_Spec_Status;
+      --  Failure detail when `status` is `failed` - artifact 404, SHA mismatch, capability conflict.
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reported_At : Boolean := False;
+      Reported_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Bridge_Installed_Spec) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Installed_Spec;
+
+   package Bridge_Installed_Spec_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Bridge_Installed_Spec);
+
    --  `AgentBridgeState` model.
    type Agent_Bridge_State is record
       Has_Online_Machines : Boolean := False;
@@ -791,7 +834,7 @@ package UARP.Models is
       Has_Latest_Heartbeat : Boolean := False;
       Latest_Heartbeat : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Installed_Specs : Boolean := False;
-      Installed_Specs : UARP.Types.Text_Vectors.Vector;
+      Installed_Specs : UARP.Models.Bridge_Installed_Spec_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Agent_Bridge_State) return UARP.JSON_Support.JSON_Value;
@@ -1188,28 +1231,28 @@ package UARP.Models is
    function To_JSON (Model : Agent_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Update;
 
-   --  Values of `AmbassadorRole`.
-   --  A value the API introduces later decodes as Ambassador_Role_Unrecognized
+   --  Values of `HumanAmbassadorRole`.
+   --  A value the API introduces later decodes as Human_Ambassador_Role_Unrecognized
    --  with the original text kept in Raw.
-   type Ambassador_Role_Kind is
-     (Ambassador_Role_Founder,
-   Ambassador_Role_Ambassador,
-   Ambassador_Role_Observer,
-   Ambassador_Role_Unrecognized);
+   type Human_Ambassador_Role_Kind is
+     (Human_Ambassador_Role_Founder,
+   Human_Ambassador_Role_Ambassador,
+   Human_Ambassador_Role_Observer,
+   Human_Ambassador_Role_Unrecognized);
 
-   type Ambassador_Role is record
-      Kind : Ambassador_Role_Kind := Ambassador_Role_Unrecognized;
+   type Human_Ambassador_Role is record
+      Kind : Human_Ambassador_Role_Kind := Human_Ambassador_Role_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Ambassador_Role (Value : String) return Ambassador_Role;
-   function To_Ambassador_Role (Kind : Ambassador_Role_Kind) return Ambassador_Role;
-   function Image (Model : Ambassador_Role) return String;
-   function To_JSON (Model : Ambassador_Role) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Role;
+   function To_Human_Ambassador_Role (Value : String) return Human_Ambassador_Role;
+   function To_Human_Ambassador_Role (Kind : Human_Ambassador_Role_Kind) return Human_Ambassador_Role;
+   function Image (Model : Human_Ambassador_Role) return String;
+   function To_JSON (Model : Human_Ambassador_Role) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Human_Ambassador_Role;
 
-   --  `AmbassadorPermissions` model.
-   type Ambassador_Permissions is record
+   --  `AmbassadorPermissions2` model.
+   type Ambassador_Permissions2 is record
       Has_Can_Veto : Boolean := False;
       Can_Veto : Standard.Boolean := False;
       Has_Can_Audit : Boolean := False;
@@ -1218,17 +1261,17 @@ package UARP.Models is
       Can_Propose : Standard.Boolean := False;
    end record;
 
-   function To_JSON (Model : Ambassador_Permissions) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Permissions;
+   function To_JSON (Model : Ambassador_Permissions2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Permissions2;
 
    --  `Ambassador` model.
    type Ambassador is record
       Ambassador_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Name : Boolean := False;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Role : UARP.Models.Ambassador_Role;
+      Role : UARP.Models.Human_Ambassador_Role;
       Has_Permissions : Boolean := False;
-      Permissions : UARP.Models.Ambassador_Permissions;
+      Permissions : UARP.Models.Ambassador_Permissions2;
    end record;
 
    function To_JSON (Model : Ambassador) return UARP.JSON_Support.JSON_Value;
@@ -1236,6 +1279,16 @@ package UARP.Models is
 
    package Ambassador_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Ambassador);
+
+   --  `AmbassadorPermissions` model.
+   type Ambassador_Permissions is record
+      Can_Veto : Standard.Boolean := False;
+      Can_Audit : Standard.Boolean := False;
+      Can_Propose : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Ambassador_Permissions) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ambassador_Permissions;
 
    --  Values of `AmbassadorRequestType`.
    --  A value the API introduces later decodes as Ambassador_Request_Type_Unrecognized
@@ -2326,6 +2379,62 @@ package UARP.Models is
 
    function To_JSON (Model : Constitution) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution;
+
+   --  Values of `ConstitutionAmendmentAction`.
+   --  A value the API introduces later decodes as Constitution_Amendment_Action_Unrecognized
+   --  with the original text kept in Raw.
+   type Constitution_Amendment_Action_Kind is
+     (Constitution_Amendment_Action_Add,
+   Constitution_Amendment_Action_Modify,
+   Constitution_Amendment_Action_Remove,
+   Constitution_Amendment_Action_Unrecognized);
+
+   type Constitution_Amendment_Action is record
+      Kind : Constitution_Amendment_Action_Kind := Constitution_Amendment_Action_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Constitution_Amendment_Action (Value : String) return Constitution_Amendment_Action;
+   function To_Constitution_Amendment_Action (Kind : Constitution_Amendment_Action_Kind) return Constitution_Amendment_Action;
+   function Image (Model : Constitution_Amendment_Action) return String;
+   function To_JSON (Model : Constitution_Amendment_Action) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Amendment_Action;
+
+   --  `ConstitutionAmendment` model.
+   type Constitution_Amendment is record
+      Amendment_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Action : UARP.Models.Constitution_Amendment_Action;
+      --  The new rule, for `add` and `modify`. Absent on `remove`.
+      Has_Rule : Boolean := False;
+      Rule : UARP.Models.Constitution_Rule;
+      Proposed_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The founder, or the consensus that carried it.
+      Approved_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rationale : UARP.Types.Text := UARP.Types.Empty_Text;
+      Applied_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Constitution_Amendment) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Amendment;
+
+   package Constitution_Amendment_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Constitution_Amendment);
+
+   --  `ConstitutionDocument` model.
+   type Constitution_Document is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Integer_Value := 0;
+      Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
+      Amendments : UARP.Models.Constitution_Amendment_Vectors.Vector;
+      --  Who created the genesis document.
+      Founder_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Constitution_Document) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Document;
 
    --  Values of `ContentReportInputTargetType`.
    --  A value the API introduces later decodes as Content_Report_Input_Target_Type_Unrecognized
@@ -5340,6 +5449,19 @@ package UARP.Models is
 
    function To_JSON (Model : Healthz_Alias_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Healthz_Alias_Response;
+
+   --  `HumanAmbassador` model.
+   type Human_Ambassador is record
+      Ambassador_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Role : UARP.Models.Human_Ambassador_Role;
+      Permissions : UARP.Models.Ambassador_Permissions;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Human_Ambassador) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Human_Ambassador;
 
    --  `ImportAdminConfigRequest` model.
    type Import_Admin_Config_Request is record
@@ -10262,6 +10384,77 @@ package UARP.Models is
 
    function To_JSON (Model : Veto_Proposal_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Proposal_Response;
+
+   --  Values of `VetoRecordTargetType`.
+   --  A value the API introduces later decodes as Veto_Record_Target_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Veto_Record_Target_Type_Kind is
+     (Veto_Record_Target_Type_Proposal,
+   Veto_Record_Target_Type_Action,
+   Veto_Record_Target_Type_Agent,
+   Veto_Record_Target_Type_Case,
+   Veto_Record_Target_Type_Unrecognized);
+
+   type Veto_Record_Target_Type is record
+      Kind : Veto_Record_Target_Type_Kind := Veto_Record_Target_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Veto_Record_Target_Type (Value : String) return Veto_Record_Target_Type;
+   function To_Veto_Record_Target_Type (Kind : Veto_Record_Target_Type_Kind) return Veto_Record_Target_Type;
+   function Image (Model : Veto_Record_Target_Type) return String;
+   function To_JSON (Model : Veto_Record_Target_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record_Target_Type;
+
+   --  `VetoRecord` model.
+   type Veto_Record is record
+      Veto_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `ambassador_id` of the human who issued it.
+      Issued_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      Target_Type : UARP.Models.Veto_Record_Target_Type;
+      Target_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Issued_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Veto_Record) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record;
+
+   --  Values of `VoteResultStatus`.
+   --  A value the API introduces later decodes as Vote_Result_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Vote_Result_Status_Kind is
+     (Vote_Result_Status_Passed,
+   Vote_Result_Status_Rejected,
+   Vote_Result_Status_Expired,
+   Vote_Result_Status_Vetoed,
+   Vote_Result_Status_Unrecognized);
+
+   type Vote_Result_Status is record
+      Kind : Vote_Result_Status_Kind := Vote_Result_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Vote_Result_Status (Value : String) return Vote_Result_Status;
+   function To_Vote_Result_Status (Kind : Vote_Result_Status_Kind) return Vote_Result_Status;
+   function Image (Model : Vote_Result_Status) return String;
+   function To_JSON (Model : Vote_Result_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Vote_Result_Status;
+
+   --  `VoteResult` model.
+   type Vote_Result is record
+      Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Vote_Result_Status;
+      Total_Votes : UARP.Types.Integer_Value := 0;
+      Approve_Weight : UARP.Types.Float_Value := 0.0;
+      Reject_Weight : UARP.Types.Float_Value := 0.0;
+      Abstain_Weight : UARP.Types.Float_Value := 0.0;
+      Quorum_Met : Standard.Boolean := False;
+      Tallied_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Vote_Result) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Vote_Result;
 
    --  `WorkspaceFile` model.
    type Workspace_File is record

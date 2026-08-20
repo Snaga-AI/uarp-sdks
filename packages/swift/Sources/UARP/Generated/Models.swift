@@ -1120,9 +1120,9 @@ public struct AgentBridgeState: Codable, Hashable, Sendable {
     public var workingDirectories: [String]?
     public var machineNames: [String]?
     public var latestHeartbeat: String?
-    public var installedSpecs: [String]?
+    public var installedSpecs: [BridgeInstalledSpec]?
 
-    public init(onlineMachines: Int? = nil, totalMachines: Int? = nil, platforms: [String]? = nil, workingDirectories: [String]? = nil, machineNames: [String]? = nil, latestHeartbeat: String? = nil, installedSpecs: [String]? = nil) {
+    public init(onlineMachines: Int? = nil, totalMachines: Int? = nil, platforms: [String]? = nil, workingDirectories: [String]? = nil, machineNames: [String]? = nil, latestHeartbeat: String? = nil, installedSpecs: [BridgeInstalledSpec]? = nil) {
         self.onlineMachines = onlineMachines
         self.totalMachines = totalMachines
         self.platforms = platforms
@@ -1671,10 +1671,10 @@ public struct AgentUpdateVisibility: RawRepresentable, Codable, Hashable, Sendab
 public struct Ambassador: Codable, Hashable, Sendable {
     public var ambassadorId: String
     public var name: String?
-    public var role: AmbassadorRole
-    public var permissions: AmbassadorPermissions?
+    public var role: HumanAmbassadorRole
+    public var permissions: AmbassadorPermissions2?
 
-    public init(ambassadorId: String, name: String? = nil, role: AmbassadorRole, permissions: AmbassadorPermissions? = nil) {
+    public init(ambassadorId: String, name: String? = nil, role: HumanAmbassadorRole, permissions: AmbassadorPermissions2? = nil) {
         self.ambassadorId = ambassadorId
         self.name = name
         self.role = role
@@ -1691,6 +1691,25 @@ public struct Ambassador: Codable, Hashable, Sendable {
 
 /// `AmbassadorPermissions` model.
 public struct AmbassadorPermissions: Codable, Hashable, Sendable {
+    public var canVeto: Bool
+    public var canAudit: Bool
+    public var canPropose: Bool
+
+    public init(canVeto: Bool, canAudit: Bool, canPropose: Bool) {
+        self.canVeto = canVeto
+        self.canAudit = canAudit
+        self.canPropose = canPropose
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case canVeto = "can_veto"
+        case canAudit = "can_audit"
+        case canPropose = "can_propose"
+    }
+}
+
+/// `AmbassadorPermissions2` model.
+public struct AmbassadorPermissions2: Codable, Hashable, Sendable {
     public var canVeto: Bool?
     public var canAudit: Bool?
     public var canPropose: Bool?
@@ -1795,30 +1814,6 @@ public struct AmbassadorRequestType: RawRepresentable, Codable, Hashable, Sendab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AmbassadorRequestType] = [.clarification, .approval, .escalation, .report]
-}
-
-/// `AmbassadorRole` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct AmbassadorRole: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let founder = AmbassadorRole(rawValue: "founder")
-    public static let ambassador = AmbassadorRole(rawValue: "ambassador")
-    public static let observer = AmbassadorRole(rawValue: "observer")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [AmbassadorRole] = [.founder, .ambassador, .observer]
 }
 
 /// `AmbassadorVetoRequest` model.
@@ -2378,6 +2373,61 @@ public struct BridgeHeartbeatResponse: Codable, Hashable, Sendable {
         case ok = "ok"
         case timestamp = "timestamp"
     }
+}
+
+/// `BridgeInstalledSpec` model.
+public struct BridgeInstalledSpec: Codable, Hashable, Sendable {
+    /// `@scope/name`.
+    public var specId: String
+    /// Resolved exactly, never a range.
+    public var version: String?
+    /// Tool names the SPEC registered into the local runtime.
+    public var tools: [String]?
+    public var status: BridgeInstalledSpecStatus
+    /// Failure detail when `status` is `failed` — artifact 404, SHA mismatch, capability conflict.
+    public var error: String?
+    public var reportedAt: String?
+
+    public init(specId: String, version: String? = nil, tools: [String]? = nil, status: BridgeInstalledSpecStatus, error: String? = nil, reportedAt: String? = nil) {
+        self.specId = specId
+        self.version = version
+        self.tools = tools
+        self.status = status
+        self.error = error
+        self.reportedAt = reportedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case specId = "spec_id"
+        case version = "version"
+        case tools = "tools"
+        case status = "status"
+        case error = "error"
+        case reportedAt = "reported_at"
+    }
+}
+
+/// `BridgeInstalledSpecStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct BridgeInstalledSpecStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let installed = BridgeInstalledSpecStatus(rawValue: "installed")
+    public static let failed = BridgeInstalledSpecStatus(rawValue: "failed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [BridgeInstalledSpecStatus] = [.installed, .failed]
 }
 
 /// `BridgePendingTask` model.
@@ -3157,6 +3207,98 @@ public struct Constitution: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case rules = "rules"
         case version = "version"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// `ConstitutionAmendment` model.
+public struct ConstitutionAmendment: Codable, Hashable, Sendable {
+    public var amendmentId: String
+    public var ruleId: String
+    public var action: ConstitutionAmendmentAction
+    /// The new rule, for `add` and `modify`. Absent on `remove`.
+    public var rule: ConstitutionRule?
+    public var proposedBy: String
+    /// The founder, or the consensus that carried it.
+    public var approvedBy: String
+    public var rationale: String
+    public var appliedAt: String
+
+    public init(amendmentId: String, ruleId: String, action: ConstitutionAmendmentAction, rule: ConstitutionRule? = nil, proposedBy: String, approvedBy: String, rationale: String, appliedAt: String) {
+        self.amendmentId = amendmentId
+        self.ruleId = ruleId
+        self.action = action
+        self.rule = rule
+        self.proposedBy = proposedBy
+        self.approvedBy = approvedBy
+        self.rationale = rationale
+        self.appliedAt = appliedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case amendmentId = "amendment_id"
+        case ruleId = "rule_id"
+        case action = "action"
+        case rule = "rule"
+        case proposedBy = "proposed_by"
+        case approvedBy = "approved_by"
+        case rationale = "rationale"
+        case appliedAt = "applied_at"
+    }
+}
+
+/// `ConstitutionAmendmentAction` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ConstitutionAmendmentAction: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let add = ConstitutionAmendmentAction(rawValue: "add")
+    public static let modify = ConstitutionAmendmentAction(rawValue: "modify")
+    public static let remove = ConstitutionAmendmentAction(rawValue: "remove")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ConstitutionAmendmentAction] = [.add, .modify, .remove]
+}
+
+/// `ConstitutionDocument` model.
+public struct ConstitutionDocument: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var version: Int
+    public var rules: [ConstitutionRule]
+    public var amendments: [ConstitutionAmendment]
+    /// Who created the genesis document.
+    public var founderId: String
+    public var createdAt: String
+    public var updatedAt: String
+
+    public init(tenantId: String, version: Int, rules: [ConstitutionRule], amendments: [ConstitutionAmendment], founderId: String, createdAt: String, updatedAt: String) {
+        self.tenantId = tenantId
+        self.version = version
+        self.rules = rules
+        self.amendments = amendments
+        self.founderId = founderId
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case version = "version"
+        case rules = "rules"
+        case amendments = "amendments"
+        case founderId = "founder_id"
+        case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
 }
@@ -7389,6 +7531,58 @@ public struct HealthzAliasResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case status = "status"
     }
+}
+
+/// `HumanAmbassador` model.
+public struct HumanAmbassador: Codable, Hashable, Sendable {
+    public var ambassadorId: String
+    public var tenantId: String
+    public var name: String
+    public var role: HumanAmbassadorRole
+    public var permissions: AmbassadorPermissions
+    public var createdAt: String
+
+    public init(ambassadorId: String, tenantId: String, name: String, role: HumanAmbassadorRole, permissions: AmbassadorPermissions, createdAt: String) {
+        self.ambassadorId = ambassadorId
+        self.tenantId = tenantId
+        self.name = name
+        self.role = role
+        self.permissions = permissions
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ambassadorId = "ambassador_id"
+        case tenantId = "tenant_id"
+        case name = "name"
+        case role = "role"
+        case permissions = "permissions"
+        case createdAt = "created_at"
+    }
+}
+
+/// `HumanAmbassadorRole` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct HumanAmbassadorRole: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let founder = HumanAmbassadorRole(rawValue: "founder")
+    public static let ambassador = HumanAmbassadorRole(rawValue: "ambassador")
+    public static let observer = HumanAmbassadorRole(rawValue: "observer")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [HumanAmbassadorRole] = [.founder, .ambassador, .observer]
 }
 
 /// `ImportAdminConfigRequest` model.
@@ -14795,6 +14989,119 @@ public struct VetoProposalResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case ok = "ok"
     }
+}
+
+/// `VetoRecord` model.
+public struct VetoRecord: Codable, Hashable, Sendable {
+    public var vetoId: String
+    /// `ambassador_id` of the human who issued it.
+    public var issuedBy: String
+    public var targetType: VetoRecordTargetType
+    public var targetId: String
+    public var reason: String
+    public var issuedAt: String
+
+    public init(vetoId: String, issuedBy: String, targetType: VetoRecordTargetType, targetId: String, reason: String, issuedAt: String) {
+        self.vetoId = vetoId
+        self.issuedBy = issuedBy
+        self.targetType = targetType
+        self.targetId = targetId
+        self.reason = reason
+        self.issuedAt = issuedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case vetoId = "veto_id"
+        case issuedBy = "issued_by"
+        case targetType = "target_type"
+        case targetId = "target_id"
+        case reason = "reason"
+        case issuedAt = "issued_at"
+    }
+}
+
+/// `VetoRecordTargetType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct VetoRecordTargetType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let proposal = VetoRecordTargetType(rawValue: "proposal")
+    public static let action = VetoRecordTargetType(rawValue: "action")
+    public static let agent = VetoRecordTargetType(rawValue: "agent")
+    public static let `case` = VetoRecordTargetType(rawValue: "case")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [VetoRecordTargetType] = [.proposal, .action, .agent, .`case`]
+}
+
+/// `VoteResult` model.
+public struct VoteResult: Codable, Hashable, Sendable {
+    public var proposalId: String
+    public var status: VoteResultStatus
+    public var totalVotes: Int
+    public var approveWeight: Double
+    public var rejectWeight: Double
+    public var abstainWeight: Double
+    public var quorumMet: Bool
+    public var talliedAt: String
+
+    public init(proposalId: String, status: VoteResultStatus, totalVotes: Int, approveWeight: Double, rejectWeight: Double, abstainWeight: Double, quorumMet: Bool, talliedAt: String) {
+        self.proposalId = proposalId
+        self.status = status
+        self.totalVotes = totalVotes
+        self.approveWeight = approveWeight
+        self.rejectWeight = rejectWeight
+        self.abstainWeight = abstainWeight
+        self.quorumMet = quorumMet
+        self.talliedAt = talliedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case proposalId = "proposal_id"
+        case status = "status"
+        case totalVotes = "total_votes"
+        case approveWeight = "approve_weight"
+        case rejectWeight = "reject_weight"
+        case abstainWeight = "abstain_weight"
+        case quorumMet = "quorum_met"
+        case talliedAt = "tallied_at"
+    }
+}
+
+/// `VoteResultStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct VoteResultStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let passed = VoteResultStatus(rawValue: "passed")
+    public static let rejected = VoteResultStatus(rawValue: "rejected")
+    public static let expired = VoteResultStatus(rawValue: "expired")
+    public static let vetoed = VoteResultStatus(rawValue: "vetoed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [VoteResultStatus] = [.passed, .rejected, .expired, .vetoed]
 }
 
 /// `VotingProposal` model.

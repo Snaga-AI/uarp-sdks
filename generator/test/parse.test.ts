@@ -266,7 +266,13 @@ test('parses the production document into the expected shape', () => {
   // `SessionBranch`, `CreateSessionBranchRequest`, `RunApproveRequest`,
   // `KnowledgeBaseAttachedAgent`, `TeamRunSummary`, `ActiveSession`,
   // `AgentPublicConfig`, `AgentBridgeState` and the OAuth exchange pair.
-  assert.equal(spec.types.length, 659);
+  // 659 -> 670 on 2026-08-20: six governance schemas the document had never
+  // carried at all — `VoteResult`, `HumanAmbassador`, `VetoRecord`,
+  // `ConstitutionDocument`, `ConstitutionAmendment` — plus the nested types
+  // the generator names in passing (ambassador permissions, the enums on veto
+  // targets and amendment actions). Every client touching voting or the
+  // constitution had been transcribing these from the platform by hand.
+  assert.equal(spec.types.length, 670);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);
