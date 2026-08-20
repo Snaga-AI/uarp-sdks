@@ -285,7 +285,7 @@ package UARP.API.Governance is
    function Get_Emergency_State
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Emergency_State;
 
    --  Get goal
    --
@@ -297,6 +297,21 @@ package UARP.API.Governance is
       return UARP.JSON_Support.JSON_Value;
 
    --  Get governance ledger
+   --
+   --  Entries visible to the calling tenant, newest first.
+   --
+   --  **Walking `prev_hash` across this page is NOT a verification, and treating it as one
+   --  produces false alarms.** `seq` is global across all tenants while this list is scoped to
+   --  one, so consecutive rows here are usually NOT consecutive in the ledger - the entry a row's
+   --  `prev_hash` names belongs to another tenant and is not returned. Measured against production
+   --  on 2026-08-20 over three independent samples: every pair whose `seq` values were adjacent
+   --  chained correctly, and every pair with a gap did not - 10/10 and 0/5 in the last sample,
+   --  while `GET /governance/ledger/verify` answered `valid: true` at the same moment.
+   --
+   --  A client that walks the chain of a page therefore reports tampering in a ledger the server
+   --  certifies as intact. Integrity has an authority, and it is `GET /governance/ledger/verify`;
+   --  a page-local walk can say "adjacent and chained" or "cannot be checked from here", never
+   --  "broken".
    --
    --  GET /api/v1/governance/ledger
    function Get_Governance_Ledger
@@ -573,7 +588,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Params : Verify_Governance_Ledger_Params := No_Verify_Governance_Ledger_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Verify_Governance_Ledger_Response;
+      return UARP.Models.Ledger_Integrity;
 
    --  Veto proposal
    --

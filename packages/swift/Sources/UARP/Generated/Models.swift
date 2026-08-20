@@ -1667,6 +1667,42 @@ public struct AgentUpdateVisibility: RawRepresentable, Codable, Hashable, Sendab
     public static let knownValues: [AgentUpdateVisibility] = [.`private`, .team, .`public`]
 }
 
+/// `AgentVersion` model.
+public struct AgentVersion: Codable, Hashable, Sendable {
+    public var versionId: String
+    public var agentId: String
+    public var tenantId: String?
+    public var version: Int
+    public var changelog: String?
+    public var createdAt: String
+    public var createdBy: String?
+    /// The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned
+    /// here so the two cannot drift.
+    public var config: JSONObject?
+
+    public init(versionId: String, agentId: String, tenantId: String? = nil, version: Int, changelog: String? = nil, createdAt: String, createdBy: String? = nil, config: JSONObject? = nil) {
+        self.versionId = versionId
+        self.agentId = agentId
+        self.tenantId = tenantId
+        self.version = version
+        self.changelog = changelog
+        self.createdAt = createdAt
+        self.createdBy = createdBy
+        self.config = config
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case versionId = "version_id"
+        case agentId = "agent_id"
+        case tenantId = "tenant_id"
+        case version = "version"
+        case changelog = "changelog"
+        case createdAt = "created_at"
+        case createdBy = "created_by"
+        case config = "config"
+    }
+}
+
 /// `Ambassador` model.
 public struct Ambassador: Codable, Hashable, Sendable {
     public var ambassadorId: String
@@ -5582,6 +5618,56 @@ public struct EmbeddingsResponseUsage: Codable, Hashable, Sendable {
     }
 }
 
+/// `EmergencyState` model.
+public struct EmergencyState: Codable, Hashable, Sendable {
+    public var mode: EmergencyStateMode
+    public var reason: String?
+    public var activatedAt: String?
+    public var activatedBy: String?
+    public var deadline: String?
+
+    public init(mode: EmergencyStateMode, reason: String? = nil, activatedAt: String? = nil, activatedBy: String? = nil, deadline: String? = nil) {
+        self.mode = mode
+        self.reason = reason
+        self.activatedAt = activatedAt
+        self.activatedBy = activatedBy
+        self.deadline = deadline
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case reason = "reason"
+        case activatedAt = "activated_at"
+        case activatedBy = "activated_by"
+        case deadline = "deadline"
+    }
+}
+
+/// `EmergencyStateMode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct EmergencyStateMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let normal = EmergencyStateMode(rawValue: "normal")
+    public static let safeMode = EmergencyStateMode(rawValue: "safe_mode")
+    public static let arbitrationSafeMode = EmergencyStateMode(rawValue: "arbitration_safe_mode")
+    public static let bootstrap = EmergencyStateMode(rawValue: "bootstrap")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [EmergencyStateMode] = [.normal, .safeMode, .arbitrationSafeMode, .bootstrap]
+}
+
 /// `EmptyWorkspaceTrashResponse` model.
 public struct EmptyWorkspaceTrashResponse: Codable, Hashable, Sendable {
     public var deleted: Int?
@@ -6523,11 +6609,14 @@ public struct GetFeatureFlagsResponse: Codable, Hashable, Sendable {
 /// `GetGovernanceLedgerResponse` model.
 public struct GetGovernanceLedgerResponse: Codable, Hashable, Sendable {
     public var entries: [GovernanceLedgerEntry]
-    /// Hash of the most recent ledger entry.
-    public var head: String
+    public var head: GovernanceLedgerHead
+    /// Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
+    /// was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
+    /// same ledger a second later. Rendering this as "events recorded" understates the ledger by
+    /// three orders of magnitude.
     public var total: Int
 
-    public init(entries: [GovernanceLedgerEntry], head: String, total: Int) {
+    public init(entries: [GovernanceLedgerEntry], head: GovernanceLedgerHead, total: Int) {
         self.entries = entries
         self.head = head
         self.total = total
@@ -7408,6 +7497,26 @@ public struct GovernanceLedgerEntry: Codable, Hashable, Sendable {
     }
 }
 
+/// `GovernanceLedgerHead` model.
+public struct GovernanceLedgerHead: Codable, Hashable, Sendable {
+    /// Global sequence of the newest ledger entry across ALL tenants — not the newest entry in the
+    /// accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was
+    /// 6697, and the gap is another tenant's row. A client must not use this to decide whether it
+    /// holds the latest page.
+    public var seq: Int
+    public var `hash`: String
+
+    public init(seq: Int, `hash`: String) {
+        self.seq = seq
+        self.`hash` = `hash`
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case seq = "seq"
+        case `hash` = "hash"
+    }
+}
+
 /// A webhook called before or after a run to allow, redact or block it.
 public struct Guardrail: Codable, Hashable, Sendable {
     public var guardrailId: String
@@ -7803,8 +7912,12 @@ public struct Integration: Codable, Hashable, Sendable {
     public var createdAt: String?
     public var updatedAt: String?
     public var migratedAt: String?
+    /// Agents allowed to use this integration. Present on the live record and read by 7 files in
+    /// the web; the document omitted it, so a generated client could not tell which agents an
+    /// integration serves.
+    public var assignedAgentIds: [String]?
 
-    public init(id: String, tenantId: String, connectorId: String, name: String? = nil, config: JSONObject? = nil, status: IntegrationStatus, lastSyncAt: String? = nil, metadata: JSONObject? = nil, createdAt: String? = nil, updatedAt: String? = nil, migratedAt: String? = nil) {
+    public init(id: String, tenantId: String, connectorId: String, name: String? = nil, config: JSONObject? = nil, status: IntegrationStatus, lastSyncAt: String? = nil, metadata: JSONObject? = nil, createdAt: String? = nil, updatedAt: String? = nil, migratedAt: String? = nil, assignedAgentIds: [String]? = nil) {
         self.id = id
         self.tenantId = tenantId
         self.connectorId = connectorId
@@ -7816,6 +7929,7 @@ public struct Integration: Codable, Hashable, Sendable {
         self.createdAt = createdAt
         self.updatedAt = updatedAt
         self.migratedAt = migratedAt
+        self.assignedAgentIds = assignedAgentIds
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -7830,6 +7944,7 @@ public struct Integration: Codable, Hashable, Sendable {
         case createdAt = "created_at"
         case updatedAt = "updated_at"
         case migratedAt = "migrated_at"
+        case assignedAgentIds = "assigned_agent_ids"
     }
 }
 
@@ -8076,6 +8191,32 @@ public struct KnowledgeBaseUpdate: Codable, Hashable, Sendable {
     }
 }
 
+/// `LedgerIntegrity` model.
+public struct LedgerIntegrity: Codable, Hashable, Sendable {
+    public var valid: Bool
+    public var entriesChecked: Int
+    /// Sequence of the first entry that failed verification. Absent when `valid` is true.
+    public var firstInvalidSeq: Int?
+    public var error: String?
+    public var checkedAt: String
+
+    public init(valid: Bool, entriesChecked: Int, firstInvalidSeq: Int? = nil, error: String? = nil, checkedAt: String) {
+        self.valid = valid
+        self.entriesChecked = entriesChecked
+        self.firstInvalidSeq = firstInvalidSeq
+        self.error = error
+        self.checkedAt = checkedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case valid = "valid"
+        case entriesChecked = "entries_checked"
+        case firstInvalidSeq = "first_invalid_seq"
+        case error = "error"
+        case checkedAt = "checked_at"
+    }
+}
+
 /// `ListA2ATasksResponse` model.
 public struct ListA2ATasksResponse: Codable, Hashable, Sendable {
     public var tasks: [A2ATask]
@@ -8159,14 +8300,14 @@ public struct ListAgentsResponse: Codable, Hashable, Sendable {
 
 /// `ListAgentVersionsResponse` model.
 public struct ListAgentVersionsResponse: Codable, Hashable, Sendable {
-    public var items: [JSONObject]
+    public var items: [AgentVersion]
     /// Legacy alias for `items`. Will be removed in API v1.x.
     ///
     /// - Warning: Deprecated by the API.
-    public var versions: [JSONObject]?
+    public var versions: [AgentVersion]?
     public var total: Int
 
-    public init(items: [JSONObject], versions: [JSONObject]? = nil, total: Int) {
+    public init(items: [AgentVersion], versions: [AgentVersion]? = nil, total: Int) {
         self.items = items
         self.versions = versions
         self.total = total
@@ -14849,22 +14990,6 @@ public struct Value2: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case from = "from"
         case to = "to"
-    }
-}
-
-/// `VerifyGovernanceLedgerResponse` model.
-public struct VerifyGovernanceLedgerResponse: Codable, Hashable, Sendable {
-    public var valid: Bool?
-    public var errors: [JSONObject]?
-
-    public init(valid: Bool? = nil, errors: [JSONObject]? = nil) {
-        self.valid = valid
-        self.errors = errors
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case valid = "valid"
-        case errors = "errors"
     }
 }
 

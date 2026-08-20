@@ -1309,6 +1309,30 @@ public object AgentUpdateVisibilitySerializer : KSerializer<AgentUpdateVisibilit
 }
 
 /**
+ * `AgentVersion` model.
+ */
+@Serializable
+public data class AgentVersion(
+    @SerialName("version_id")
+    public val versionId: String,
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    public val version: Long,
+    public val changelog: String? = null,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("created_by")
+    public val createdBy: String? = null,
+    /**
+     * The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned
+     * here so the two cannot drift.
+     */
+    public val config: JsonObject? = null,
+)
+
+/**
  * `Ambassador` model.
  */
 @Serializable
@@ -4211,6 +4235,50 @@ public data class EmbeddingsResponseUsage(
 )
 
 /**
+ * `EmergencyState` model.
+ */
+@Serializable
+public data class EmergencyState(
+    public val mode: EmergencyStateMode,
+    public val reason: String? = null,
+    @SerialName("activated_at")
+    public val activatedAt: String? = null,
+    @SerialName("activated_by")
+    public val activatedBy: String? = null,
+    public val deadline: String? = null,
+)
+
+/**
+ * `EmergencyStateMode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = EmergencyStateModeSerializer::class)
+@JvmInline
+public value class EmergencyStateMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NORMAL: EmergencyStateMode = EmergencyStateMode("normal")
+        public val SAFE_MODE: EmergencyStateMode = EmergencyStateMode("safe_mode")
+        public val ARBITRATION_SAFE_MODE: EmergencyStateMode = EmergencyStateMode("arbitration_safe_mode")
+        public val BOOTSTRAP: EmergencyStateMode = EmergencyStateMode("bootstrap")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<EmergencyStateMode> = listOf(NORMAL, SAFE_MODE, ARBITRATION_SAFE_MODE, BOOTSTRAP)
+    }
+}
+
+public object EmergencyStateModeSerializer : KSerializer<EmergencyStateMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.EmergencyStateMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: EmergencyStateMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): EmergencyStateMode = EmergencyStateMode(decoder.decodeString())
+}
+
+/**
  * `EmptyWorkspaceTrashResponse` model.
  */
 @Serializable
@@ -4875,10 +4943,13 @@ public data class GetFeatureFlagsResponse(
 @Serializable
 public data class GetGovernanceLedgerResponse(
     public val entries: List<GovernanceLedgerEntry>,
+    public val head: GovernanceLedgerHead,
     /**
-     * Hash of the most recent ledger entry.
+     * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
+     * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
+     * same ledger a second later. Rendering this as "events recorded" understates the ledger by
+     * three orders of magnitude.
      */
-    public val head: String,
     public val total: Long,
 )
 
@@ -5537,6 +5608,21 @@ public data class GovernanceLedgerEntry(
 )
 
 /**
+ * `GovernanceLedgerHead` model.
+ */
+@Serializable
+public data class GovernanceLedgerHead(
+    /**
+     * Global sequence of the newest ledger entry across ALL tenants — not the newest entry in the
+     * accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was
+     * 6697, and the gap is another tenant's row. A client must not use this to decide whether it
+     * holds the latest page.
+     */
+    public val seq: Long,
+    public val hash: String,
+)
+
+/**
  * A webhook called before or after a run to allow, redact or block it.
  */
 @Serializable
@@ -5856,6 +5942,13 @@ public data class Integration(
     public val updatedAt: String? = null,
     @SerialName("migrated_at")
     public val migratedAt: String? = null,
+    /**
+     * Agents allowed to use this integration. Present on the live record and read by 7 files in
+     * the web; the document omitted it, so a generated client could not tell which agents an
+     * integration serves.
+     */
+    @SerialName("assigned_agent_ids")
+    public val assignedAgentIds: List<String>? = null,
 )
 
 /**
@@ -6037,6 +6130,24 @@ public data class KnowledgeBaseUpdate(
 )
 
 /**
+ * `LedgerIntegrity` model.
+ */
+@Serializable
+public data class LedgerIntegrity(
+    public val valid: Boolean,
+    @SerialName("entries_checked")
+    public val entriesChecked: Long,
+    /**
+     * Sequence of the first entry that failed verification. Absent when `valid` is true.
+     */
+    @SerialName("first_invalid_seq")
+    public val firstInvalidSeq: Long? = null,
+    public val error: String? = null,
+    @SerialName("checked_at")
+    public val checkedAt: String,
+)
+
+/**
  * `ListA2ATasksResponse` model.
  */
 @Serializable
@@ -6091,11 +6202,11 @@ public data class ListAgentsResponse(
  */
 @Serializable
 public data class ListAgentVersionsResponse(
-    public val items: List<JsonObject>,
+    public val items: List<AgentVersion>,
     /**
      * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
      */
-    public val versions: List<JsonObject>? = null,
+    public val versions: List<AgentVersion>? = null,
     public val total: Long,
 )
 
@@ -10942,15 +11053,6 @@ public data class Value(
 public data class Value2(
     public val from: JsonElement? = null,
     public val to: JsonElement? = null,
-)
-
-/**
- * `VerifyGovernanceLedgerResponse` model.
- */
-@Serializable
-public data class VerifyGovernanceLedgerResponse(
-    public val valid: Boolean? = null,
-    public val errors: List<JsonObject>? = null,
 )
 
 /**

@@ -1474,6 +1474,25 @@ impl From<&str> for AgentUpdateVisibility {
     }
 }
 
+/// `AgentVersion` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentVersion {
+    pub version_id: String,
+    pub agent_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    pub version: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changelog: Option<String>,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
+    /// The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned
+    /// here so the two cannot drift.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub config: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
 /// `Ambassador` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Ambassador {
@@ -4591,6 +4610,68 @@ pub struct EmbeddingsResponseUsage {
     pub total_tokens: Option<i64>,
 }
 
+/// `EmergencyState` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EmergencyState {
+    pub mode: EmergencyStateMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub activated_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub activated_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deadline: Option<String>,
+}
+
+/// `EmergencyStateMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum EmergencyStateMode {
+    #[default]
+    #[serde(rename = "normal")]
+    Normal,
+    #[serde(rename = "safe_mode")]
+    SafeMode,
+    #[serde(rename = "arbitration_safe_mode")]
+    ArbitrationSafeMode,
+    #[serde(rename = "bootstrap")]
+    Bootstrap,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl EmergencyStateMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Normal => "normal",
+            Self::SafeMode => "safe_mode",
+            Self::ArbitrationSafeMode => "arbitration_safe_mode",
+            Self::Bootstrap => "bootstrap",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for EmergencyStateMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for EmergencyStateMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "normal" => Self::Normal,
+            "safe_mode" => Self::SafeMode,
+            "arbitration_safe_mode" => Self::ArbitrationSafeMode,
+            "bootstrap" => Self::Bootstrap,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `EmptyWorkspaceTrashResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EmptyWorkspaceTrashResponse {
@@ -5291,8 +5372,11 @@ pub struct GetFeatureFlagsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetGovernanceLedgerResponse {
     pub entries: Vec<GovernanceLedgerEntry>,
-    /// Hash of the most recent ledger entry.
-    pub head: String,
+    pub head: GovernanceLedgerHead,
+    /// Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
+    /// was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
+    /// same ledger a second later. Rendering this as "events recorded" understates the ledger by
+    /// three orders of magnitude.
     pub total: i64,
 }
 
@@ -6015,6 +6099,17 @@ pub struct GovernanceLedgerEntry {
     pub hash: String,
 }
 
+/// `GovernanceLedgerHead` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GovernanceLedgerHead {
+    /// Global sequence of the newest ledger entry across ALL tenants — not the newest entry in the
+    /// accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was
+    /// 6697, and the gap is another tenant's row. A client must not use this to decide whether it
+    /// holds the latest page.
+    pub seq: i64,
+    pub hash: String,
+}
+
 /// A webhook called before or after a run to allow, redact or block it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Guardrail {
@@ -6377,6 +6472,11 @@ pub struct Integration {
     pub updated_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub migrated_at: Option<String>,
+    /// Agents allowed to use this integration. Present on the live record and read by 7 files in
+    /// the web; the document omitted it, so a generated client could not tell which agents an
+    /// integration serves.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
 }
 
 /// Available integration (connector) type in the catalog
@@ -6575,6 +6675,19 @@ pub struct KnowledgeBaseUpdate {
     pub description: Option<String>,
 }
 
+/// `LedgerIntegrity` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LedgerIntegrity {
+    pub valid: bool,
+    pub entries_checked: i64,
+    /// Sequence of the first entry that failed verification. Absent when `valid` is true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub first_invalid_seq: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    pub checked_at: String,
+}
+
 /// `ListA2ATasksResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListA2ATasksResponse {
@@ -6621,10 +6734,10 @@ pub struct ListAgentsResponse {
 /// `ListAgentVersionsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentVersionsResponse {
-    pub items: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub items: Vec<AgentVersion>,
     /// Legacy alias for `items`. Will be removed in API v1.x.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub versions: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub versions: Option<Vec<AgentVersion>>,
     pub total: i64,
 }
 
@@ -11795,15 +11908,6 @@ pub struct Value2 {
     pub from: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<serde_json::Value>,
-}
-
-/// `VerifyGovernanceLedgerResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct VerifyGovernanceLedgerResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub valid: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub errors: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
 /// `VerifyMfaRecoveryRequest` model.
