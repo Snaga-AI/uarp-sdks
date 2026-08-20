@@ -272,7 +272,12 @@ test('parses the production document into the expected shape', () => {
   // the generator names in passing (ambassador permissions, the enums on veto
   // targets and amendment actions). Every client touching voting or the
   // constitution had been transcribing these from the platform by hand.
-  assert.equal(spec.types.length, 670);
+  // 670 -> 674 later the same day: `EmergencyState` (the emergency-stop
+  // indicator, four modes where the endpoint pair implies two),
+  // `LedgerIntegrity` (which #166 defined and referenced from nothing until
+  // #168 wired it to the verify operation), `GovernanceLedgerHead` (declared
+  // `string`, `{seq, hash}` on the wire) and `AgentVersion`.
+  assert.equal(spec.types.length, 674);
   assert.equal(spec.scopes.length, 31);
   assert.equal(ops.filter((o) => o.sse).length, 11);
   assert.equal(ops.filter((o) => o.pagination).length, 14);

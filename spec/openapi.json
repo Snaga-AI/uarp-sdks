@@ -2176,6 +2176,123 @@
                     }
                 }
             },
+            "AgentVersion": {
+                "type": "object",
+                "required": [
+                    "version_id",
+                    "agent_id",
+                    "version",
+                    "created_at"
+                ],
+                "properties": {
+                    "version_id": {
+                        "type": "string"
+                    },
+                    "agent_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
+                    "version": {
+                        "type": "integer"
+                    },
+                    "changelog": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "created_by": {
+                        "type": [
+                            "string",
+                            "null"
+                        ]
+                    },
+                    "config": {
+                        "type": "object",
+                        "description": "The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned here so the two cannot drift."
+                    }
+                }
+            },
+            "GovernanceLedgerHead": {
+                "type": "object",
+                "required": [
+                    "seq",
+                    "hash"
+                ],
+                "properties": {
+                    "seq": {
+                        "type": "integer",
+                        "description": "Global sequence of the newest ledger entry across ALL tenants — not the newest entry in the accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was 6697, and the gap is another tenant's row. A client must not use this to decide whether it holds the latest page."
+                    },
+                    "hash": {
+                        "type": "string"
+                    }
+                }
+            },
+            "LedgerIntegrity": {
+                "type": "object",
+                "required": [
+                    "valid",
+                    "entries_checked",
+                    "checked_at"
+                ],
+                "properties": {
+                    "valid": {
+                        "type": "boolean"
+                    },
+                    "entries_checked": {
+                        "type": "integer"
+                    },
+                    "first_invalid_seq": {
+                        "type": "integer",
+                        "description": "Sequence of the first entry that failed verification. Absent when `valid` is true."
+                    },
+                    "error": {
+                        "type": "string"
+                    },
+                    "checked_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
+            "EmergencyState": {
+                "type": "object",
+                "required": [
+                    "mode"
+                ],
+                "properties": {
+                    "mode": {
+                        "type": "string",
+                        "enum": [
+                            "normal",
+                            "safe_mode",
+                            "arbitration_safe_mode",
+                            "bootstrap"
+                        ]
+                    },
+                    "reason": {
+                        "type": "string"
+                    },
+                    "activated_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "activated_by": {
+                        "type": "string"
+                    },
+                    "deadline": {
+                        "type": "string",
+                        "format": "date-time"
+                    }
+                }
+            },
             "VoteResult": {
                 "type": "object",
                 "required": [
@@ -4983,6 +5100,13 @@
                     "migrated_at": {
                         "type": "string",
                         "format": "date-time"
+                    },
+                    "assigned_agent_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Agents allowed to use this integration. Present on the live record and read by 7 files in the web; the document omitted it, so a generated client could not tell which agents an integration serves."
                     }
                 },
                 "required": [
@@ -14881,13 +15005,13 @@
                                         "items": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/AgentVersion"
                                             }
                                         },
                                         "versions": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object"
+                                                "$ref": "#/components/schemas/AgentVersion"
                                             },
                                             "deprecated": true,
                                             "description": "Legacy alias for `items`. Will be removed in API v1.x."
@@ -43761,6 +43885,7 @@
                     "Governance"
                 ],
                 "summary": "Get governance ledger",
+                "description": "Entries visible to the calling tenant, newest first.\n\n**Walking `prev_hash` across this page is NOT a verification, and treating it as one produces false alarms.** `seq` is global across all tenants while this list is scoped to one, so consecutive rows here are usually NOT consecutive in the ledger — the entry a row's `prev_hash` names belongs to another tenant and is not returned. Measured against production on 2026-08-20 over three independent samples: every pair whose `seq` values were adjacent chained correctly, and every pair with a gap did not — 10/10 and 0/5 in the last sample, while `GET /governance/ledger/verify` answered `valid: true` at the same moment.\n\nA client that walks the chain of a page therefore reports tampering in a ledger the server certifies as intact. Integrity has an authority, and it is `GET /governance/ledger/verify`; a page-local walk can say \"adjacent and chained\" or \"cannot be checked from here\", never \"broken\".",
                 "parameters": [
                     {
                         "name": "count",
@@ -43800,11 +43925,11 @@
                                             }
                                         },
                                         "head": {
-                                            "type": "string",
-                                            "description": "Hash of the most recent ledger entry."
+                                            "$ref": "#/components/schemas/GovernanceLedgerHead"
                                         },
                                         "total": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "description": "Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total` was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the same ledger a second later. Rendering this as \"events recorded\" understates the ledger by three orders of magnitude."
                                         }
                                     },
                                     "required": [
@@ -43881,18 +44006,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "valid": {
-                                            "type": "boolean"
-                                        },
-                                        "errors": {
-                                            "type": "array",
-                                            "items": {
-                                                "type": "object"
-                                            }
-                                        }
-                                    }
+                                    "$ref": "#/components/schemas/LedgerIntegrity"
                                 }
                             }
                         },
@@ -45342,7 +45456,7 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "$ref": "#/components/schemas/EmergencyState"
                                 }
                             }
                         },

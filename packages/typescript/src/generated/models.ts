@@ -581,6 +581,21 @@ export type AgentUpdateVisibility = 'private' | 'team' | 'public';
 
 export const AGENT_UPDATE_VISIBILITY_VALUES = ['private', 'team', 'public'] as const;
 
+export interface AgentVersion {
+  version_id: string;
+  agent_id: string;
+  tenant_id?: string;
+  version: number;
+  changelog?: string | null;
+  created_at: string;
+  created_by?: string | null;
+  /**
+   * The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned
+   * here so the two cannot drift.
+   */
+  config?: JsonObject;
+}
+
 export interface Ambassador {
   ambassador_id: string;
   name?: string;
@@ -1925,6 +1940,18 @@ export interface EmbeddingsResponseUsage {
   total_tokens?: number;
 }
 
+export interface EmergencyState {
+  mode: EmergencyStateMode;
+  reason?: string;
+  activated_at?: string;
+  activated_by?: string;
+  deadline?: string;
+}
+
+export type EmergencyStateMode = 'normal' | 'safe_mode' | 'arbitration_safe_mode' | 'bootstrap';
+
+export const EMERGENCY_STATE_MODE_VALUES = ['normal', 'safe_mode', 'arbitration_safe_mode', 'bootstrap'] as const;
+
 export interface EmptyWorkspaceTrashResponse {
   deleted?: number;
 }
@@ -2223,10 +2250,13 @@ export interface GetFeatureFlagsResponse {
 
 export interface GetGovernanceLedgerResponse {
   entries: GovernanceLedgerEntry[];
+  head: GovernanceLedgerHead;
   /**
-   * Hash of the most recent ledger entry.
+   * Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
+   * was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
+   * same ledger a second later. Rendering this as "events recorded" understates the ledger by
+   * three orders of magnitude.
    */
-  head: string;
   total: number;
 }
 
@@ -2502,6 +2532,17 @@ export interface GovernanceLedgerEntry {
   hash: string;
 }
 
+export interface GovernanceLedgerHead {
+  /**
+   * Global sequence of the newest ledger entry across ALL tenants — not the newest entry in the
+   * accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was
+   * 6697, and the gap is another tenant's row. A client must not use this to decide whether it
+   * holds the latest page.
+   */
+  seq: number;
+  hash: string;
+}
+
 /**
  * A webhook called before or after a run to allow, redact or block it.
  */
@@ -2649,6 +2690,12 @@ export interface Integration {
   created_at?: string;
   updated_at?: string;
   migrated_at?: string;
+  /**
+   * Agents allowed to use this integration. Present on the live record and read by 7 files in
+   * the web; the document omitted it, so a generated client could not tell which agents an
+   * integration serves.
+   */
+  assigned_agent_ids?: string[];
 }
 
 /**
@@ -2740,6 +2787,17 @@ export interface KnowledgeBaseUpdate {
   description?: string;
 }
 
+export interface LedgerIntegrity {
+  valid: boolean;
+  entries_checked: number;
+  /**
+   * Sequence of the first entry that failed verification. Absent when `valid` is true.
+   */
+  first_invalid_seq?: number;
+  error?: string;
+  checked_at: string;
+}
+
 export interface ListA2ATasksResponse {
   tasks: A2ATask[];
   cursor?: string;
@@ -2769,13 +2827,13 @@ export interface ListAgentsResponse {
 }
 
 export interface ListAgentVersionsResponse {
-  items: JsonObject[];
+  items: AgentVersion[];
   /**
    * Legacy alias for `items`. Will be removed in API v1.x.
    *
    * @deprecated
    */
-  versions?: JsonObject[];
+  versions?: AgentVersion[];
   total: number;
 }
 
@@ -5152,11 +5210,6 @@ export interface Value {
 export interface Value2 {
   from?: JsonValue;
   to?: JsonValue;
-}
-
-export interface VerifyGovernanceLedgerResponse {
-  valid?: boolean;
-  errors?: JsonObject[];
 }
 
 export interface VerifyMfaRecoveryRequest {

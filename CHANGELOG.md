@@ -6,6 +6,71 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.10 — 2026-08-20
+
+### Added — every SDK
+
+- **`LedgerIntegrity`, and the operation that returns it.** 0.5.9 shipped this
+  schema and referenced it from nothing: the type existed, and
+  `verifyGovernanceLedger` still answered an untyped `{valid, errors[]}`. A
+  type no call returns is the same dead declaration this release series exists
+  to remove, so it is worth saying plainly that we shipped one. Now
+  `verifyGovernanceLedger()` returns `LedgerIntegrity`, with `entries_checked`
+  and `checked_at` as the wire actually carries them, and `first_invalid_seq`
+  documented as present only when `valid` is false — it names the entry where
+  the chain broke, and a client without it can report that something is wrong
+  but not where.
+
+- **`EmergencyState`** — the emergency-stop indicator, previously
+  `{"type": "object"}`. There are **four** modes, not the two implied by having
+  an activate and a deactivate endpoint: `normal`, `safe_mode`,
+  `arbitration_safe_mode`, `bootstrap`. A client that cannot name a mode must
+  say so rather than fall back to `normal`, because that fallback reports
+  "running" during a stop.
+
+- **`GovernanceLedgerHead`** — `head` was declared `string` and is
+  `{seq, hash}` on the wire. That is a contradiction rather than an omission,
+  and a generated typed client broke on it away from the cause. `head.seq` is
+  global across all tenants, not the newest row of your page — measured at 6698
+  while the page's newest entry was 6697 — so it cannot be used to test whether
+  you hold the latest page.
+
+- **`AgentVersion`** — `GET /agents/{agentId}/versions` had an untyped element
+  behind both the canonical `items` and the deprecated `versions` alias.
+  `config` stays deliberately opaque: it carries the entire agent, thirteen
+  versions came to 537 KB on the canon tenant, and pinning the shape here would
+  duplicate `Agent` and then drift from it.
+
+### Changed — every SDK
+
+- **`getGovernanceLedger` now documents that walking the chain is not a
+  verification.** This reaches you in the generated code, not only in the
+  OpenAPI document, because the failure it prevents is one a careful client
+  walks straight into.
+
+  `seq` is global across all tenants while the ledger list is scoped to one, so
+  consecutive rows in a page are usually not consecutive in the ledger, and a
+  row's `prev_hash` names an entry belonging to another tenant that is never
+  returned. Measured against production over three independent samples on
+  2026-08-20, correlation total with no exceptions: every pair with adjacent
+  `seq` chained, every pair with a gap did not, while
+  `GET /governance/ledger/verify` answered `valid: true` at the same moment.
+
+  So a client that honestly walks `prev_hash` across a page reports tampering
+  in a ledger the server certifies as intact — the worst direction for this
+  particular alarm to fail in, since it is the audit trail and its intended
+  reader is an auditor. Integrity has exactly one authority, the verify
+  endpoint. A page-local walk may say "adjacent and chained" or "cannot be
+  checked from here"; it may never say "broken".
+
+  Found by the Ada consumer, which measured the chain independently and modelled
+  four link states rather than two, deliberately offering no "page intact"
+  verdict it could not honestly compute.
+
+- **`total` on the ledger response is the size of the window, not of the
+  ledger** — 16 against `entries_checked: 6698`. Rendering it as "events
+  recorded" understates the ledger by three orders of magnitude.
+
 ## 0.5.9 — 2026-08-20
 
 ### Added — every SDK

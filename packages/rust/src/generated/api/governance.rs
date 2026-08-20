@@ -472,7 +472,7 @@ impl GovernanceApi {
     /// Get emergency state
     ///
     /// `GET /api/v1/governance/emergency/state`
-    pub async fn get_emergency_state(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_emergency_state(&self) -> Result<models::EmergencyState> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -502,6 +502,21 @@ impl GovernanceApi {
     }
 
     /// Get governance ledger
+    ///
+    /// Entries visible to the calling tenant, newest first.
+    ///
+    /// **Walking `prev_hash` across this page is NOT a verification, and treating it as one
+    /// produces false alarms.** `seq` is global across all tenants while this list is scoped to
+    /// one, so consecutive rows here are usually NOT consecutive in the ledger — the entry a row's
+    /// `prev_hash` names belongs to another tenant and is not returned. Measured against production
+    /// on 2026-08-20 over three independent samples: every pair whose `seq` values were adjacent
+    /// chained correctly, and every pair with a gap did not — 10/10 and 0/5 in the last sample,
+    /// while `GET /governance/ledger/verify` answered `valid: true` at the same moment.
+    ///
+    /// A client that walks the chain of a page therefore reports tampering in a ledger the server
+    /// certifies as intact. Integrity has an authority, and it is `GET /governance/ledger/verify`;
+    /// a page-local walk can say "adjacent and chained" or "cannot be checked from here", never
+    /// "broken".
     ///
     /// `GET /api/v1/governance/ledger`
     pub async fn get_governance_ledger(&self, params: &GetGovernanceLedgerParams) -> Result<models::GetGovernanceLedgerResponse> {
@@ -977,7 +992,7 @@ impl GovernanceApi {
     /// Verify ledger integrity
     ///
     /// `GET /api/v1/governance/ledger/verify`
-    pub async fn verify_governance_ledger(&self, params: &VerifyGovernanceLedgerParams) -> Result<models::VerifyGovernanceLedgerResponse> {
+    pub async fn verify_governance_ledger(&self, params: &VerifyGovernanceLedgerParams) -> Result<models::LedgerIntegrity> {
         self.client
             .request_json(Request {
                 method: Method::GET,

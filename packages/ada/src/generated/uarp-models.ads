@@ -1231,6 +1231,30 @@ package UARP.Models is
    function To_JSON (Model : Agent_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Update;
 
+   --  `AgentVersion` model.
+   type Agent_Version is record
+      Version_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tenant_Id : Boolean := False;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Integer_Value := 0;
+      Has_Changelog : Boolean := False;
+      Changelog : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Created_By : Boolean := False;
+      Created_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The full agent configuration as it stood at this version. Shape follows `Agent`; not pinned
+      --  here so the two cannot drift.
+      Has_Config : Boolean := False;
+      Config : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Agent_Version) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Version;
+
+   package Agent_Version_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Agent_Version);
+
    --  Values of `HumanAmbassadorRole`.
    --  A value the API introduces later decodes as Human_Ambassador_Role_Unrecognized
    --  with the original text kept in Raw.
@@ -4011,6 +4035,43 @@ package UARP.Models is
    function To_JSON (Model : Embeddings_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Embeddings_Response;
 
+   --  Values of `EmergencyStateMode`.
+   --  A value the API introduces later decodes as Emergency_State_Mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Emergency_State_Mode_Kind is
+     (Emergency_State_Mode_Normal,
+   Emergency_State_Mode_Safe_Mode,
+   Emergency_State_Mode_Arbitration_Safe_Mode,
+   Emergency_State_Mode_Bootstrap,
+   Emergency_State_Mode_Unrecognized);
+
+   type Emergency_State_Mode is record
+      Kind : Emergency_State_Mode_Kind := Emergency_State_Mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Emergency_State_Mode (Value : String) return Emergency_State_Mode;
+   function To_Emergency_State_Mode (Kind : Emergency_State_Mode_Kind) return Emergency_State_Mode;
+   function Image (Model : Emergency_State_Mode) return String;
+   function To_JSON (Model : Emergency_State_Mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Emergency_State_Mode;
+
+   --  `EmergencyState` model.
+   type Emergency_State is record
+      Mode : UARP.Models.Emergency_State_Mode;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Activated_At : Boolean := False;
+      Activated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Activated_By : Boolean := False;
+      Activated_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Deadline : Boolean := False;
+      Deadline : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Emergency_State) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Emergency_State;
+
    --  `EmptyWorkspaceTrashResponse` model.
    type Empty_Workspace_Trash_Response is record
       Has_Deleted : Boolean := False;
@@ -4708,11 +4769,27 @@ package UARP.Models is
    package Governance_Ledger_Entry_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Governance_Ledger_Entry);
 
+   --  `GovernanceLedgerHead` model.
+   type Governance_Ledger_Head is record
+      --  Global sequence of the newest ledger entry across ALL tenants - not the newest entry in the
+      --  accompanying page. Measured 2026-08-20: `head.seq` was 6698 while the last visible entry was
+      --  6697, and the gap is another tenant's row. A client must not use this to decide whether it
+      --  holds the latest page.
+      Seq : UARP.Types.Integer_Value := 0;
+      Hash : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Governance_Ledger_Head) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Governance_Ledger_Head;
+
    --  `GetGovernanceLedgerResponse` model.
    type Get_Governance_Ledger_Response is record
       Entries : UARP.Models.Governance_Ledger_Entry_Vectors.Vector;
-      --  Hash of the most recent ledger entry.
-      Head : UARP.Types.Text := UARP.Types.Empty_Text;
+      Head : UARP.Models.Governance_Ledger_Head;
+      --  Number of entries IN THIS RESPONSE, not the size of the ledger. Measured 2026-08-20: `total`
+      --  was 16 while `GET /governance/ledger/verify` reported `entries_checked: 6698` against the
+      --  same ledger a second later. Rendering this as "events recorded" understates the ledger by
+      --  three orders of magnitude.
       Total : UARP.Types.Integer_Value := 0;
    end record;
 
@@ -5623,6 +5700,11 @@ package UARP.Models is
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Migrated_At : Boolean := False;
       Migrated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Agents allowed to use this integration. Present on the live record and read by 7 files in
+      --  the web; the document omitted it, so a generated client could not tell which agents an
+      --  integration serves.
+      Has_Assigned_Agent_Ids : Boolean := False;
+      Assigned_Agent_Ids : UARP.Types.Text_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Integration) return UARP.JSON_Support.JSON_Value;
@@ -5795,6 +5877,21 @@ package UARP.Models is
    function To_JSON (Model : Knowledge_Base_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Knowledge_Base_Update;
 
+   --  `LedgerIntegrity` model.
+   type Ledger_Integrity is record
+      Valid : Standard.Boolean := False;
+      Entries_Checked : UARP.Types.Integer_Value := 0;
+      --  Sequence of the first entry that failed verification. Absent when `valid` is true.
+      Has_First_Invalid_Seq : Boolean := False;
+      First_Invalid_Seq : UARP.Types.Integer_Value := 0;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Checked_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Ledger_Integrity) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Ledger_Integrity;
+
    --  `ListA2ATasksResponse` model.
    type List_A2A_Tasks_Response is record
       Tasks : UARP.Models.A2A_Task_Vectors.Vector;
@@ -5850,10 +5947,10 @@ package UARP.Models is
 
    --  `ListAgentVersionsResponse` model.
    type List_Agent_Versions_Response is record
-      Items : UARP.JSON_Support.JSON_Value;
+      Items : UARP.Models.Agent_Version_Vectors.Vector;
       --  Legacy alias for `items`. Will be removed in API v1.x.
       Has_Versions : Boolean := False;
-      Versions : UARP.JSON_Support.JSON_Value;
+      Versions : UARP.Models.Agent_Version_Vectors.Vector;
       Total : UARP.Types.Integer_Value := 0;
    end record;
 
@@ -10312,17 +10409,6 @@ package UARP.Models is
 
    function To_JSON (Model : Usage_Summary) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Usage_Summary;
-
-   --  `VerifyGovernanceLedgerResponse` model.
-   type Verify_Governance_Ledger_Response is record
-      Has_Valid : Boolean := False;
-      Valid : Standard.Boolean := False;
-      Has_Errors : Boolean := False;
-      Errors : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Verify_Governance_Ledger_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Verify_Governance_Ledger_Response;
 
    --  `VerifyMfaRecoveryRequest` model.
    type Verify_Mfa_Recovery_Request is record

@@ -24,6 +24,7 @@ import type {
   DeleteSpawnPolicyResponse,
   DesignRequest,
   DesignRequestCreate,
+  EmergencyState,
   FileArbiterAppealRequest,
   FileArbiterCaseRequest,
   GetAgentObligationsResponse,
@@ -35,6 +36,7 @@ import type {
   IssueArbiterRulingRequest,
   IssueArbiterRulingResponse,
   JsonObject,
+  LedgerIntegrity,
   ListAmbassadorRequestsResponse,
   ListAmbassadorVetoesResponse,
   ListArbiterCasesResponse,
@@ -60,7 +62,6 @@ import type {
   UpdateBuilderRequestStatusRequest,
   UpdateGoalStatusRequest,
   UpdateImprovementStatusRequest,
-  VerifyGovernanceLedgerResponse,
   VetoProposalRequest,
   VetoProposalResponse,
 } from '../models.js';
@@ -468,7 +469,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/emergency/state`
    */
-  getEmergencyState(options?: RequestOptions): Promise<JsonObject> {
+  getEmergencyState(options?: RequestOptions): Promise<EmergencyState> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/emergency/state',
@@ -491,6 +492,21 @@ export class GovernanceResource extends APIResource {
 
   /**
    * Get governance ledger
+   *
+   * Entries visible to the calling tenant, newest first.
+   *
+   * **Walking `prev_hash` across this page is NOT a verification, and treating it as one
+   * produces false alarms.** `seq` is global across all tenants while this list is scoped to
+   * one, so consecutive rows here are usually NOT consecutive in the ledger — the entry a row's
+   * `prev_hash` names belongs to another tenant and is not returned. Measured against production
+   * on 2026-08-20 over three independent samples: every pair whose `seq` values were adjacent
+   * chained correctly, and every pair with a gap did not — 10/10 and 0/5 in the last sample,
+   * while `GET /governance/ledger/verify` answered `valid: true` at the same moment.
+   *
+   * A client that walks the chain of a page therefore reports tampering in a ledger the server
+   * certifies as intact. Integrity has an authority, and it is `GET /governance/ledger/verify`;
+   * a page-local walk can say "adjacent and chained" or "cannot be checked from here", never
+   * "broken".
    *
    * `GET /api/v1/governance/ledger`
    */
@@ -908,7 +924,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/ledger/verify`
    */
-  verifyGovernanceLedger(params?: VerifyGovernanceLedgerParams, options?: RequestOptions): Promise<VerifyGovernanceLedgerResponse> {
+  verifyGovernanceLedger(params?: VerifyGovernanceLedgerParams, options?: RequestOptions): Promise<LedgerIntegrity> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/ledger/verify',
