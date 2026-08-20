@@ -441,8 +441,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/emergency/state`
      */
-    public suspend fun getEmergencyState(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getEmergencyState(options: RequestOptions = RequestOptions()): EmergencyState {
+        return client.request<EmergencyState>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/emergency/state",
@@ -468,6 +468,21 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get governance ledger
+     *
+     * Entries visible to the calling tenant, newest first.
+     *
+     * **Walking `prev_hash` across this page is NOT a verification, and treating it as one
+     * produces false alarms.** `seq` is global across all tenants while this list is scoped to
+     * one, so consecutive rows here are usually NOT consecutive in the ledger — the entry a row's
+     * `prev_hash` names belongs to another tenant and is not returned. Measured against production
+     * on 2026-08-20 over three independent samples: every pair whose `seq` values were adjacent
+     * chained correctly, and every pair with a gap did not — 10/10 and 0/5 in the last sample,
+     * while `GET /governance/ledger/verify` answered `valid: true` at the same moment.
+     *
+     * A client that walks the chain of a page therefore reports tampering in a ledger the server
+     * certifies as intact. Integrity has an authority, and it is `GET /governance/ledger/verify`;
+     * a page-local walk can say "adjacent and chained" or "cannot be checked from here", never
+     * "broken".
      *
      * `GET /api/v1/governance/ledger`
      */
@@ -954,12 +969,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/ledger/verify`
      */
-    public suspend fun verifyGovernanceLedger(from: String? = null, to: String? = null, options: RequestOptions = RequestOptions()): VerifyGovernanceLedgerResponse {
+    public suspend fun verifyGovernanceLedger(from: String? = null, to: String? = null, options: RequestOptions = RequestOptions()): LedgerIntegrity {
         val query = buildList {
             if (from != null) add("from" to from)
             if (to != null) add("to" to to)
         }
-        return client.request<VerifyGovernanceLedgerResponse>(
+        return client.request<LedgerIntegrity>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/ledger/verify",

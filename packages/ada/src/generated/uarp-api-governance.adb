@@ -409,14 +409,15 @@ package body UARP.API.Governance is
    function Get_Emergency_State
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Emergency_State
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/governance/emergency/state",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/governance/emergency/state",
+             Options => Options));
    end Get_Emergency_State;
 
    function Get_Goal
@@ -940,7 +941,7 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Params : Verify_Governance_Ledger_Params := No_Verify_Governance_Ledger_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Verify_Governance_Ledger_Response
+      return UARP.Models.Ledger_Integrity
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin

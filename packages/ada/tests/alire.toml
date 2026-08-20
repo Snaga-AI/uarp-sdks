@@ -1,6 +1,6 @@
 name = "uarp_sdk_tests"
 description = "Test suite for the UARP Ada SDK"
-version = "0.5.9"
+version = "0.5.10"
 licenses = "MIT"
 authors = ["Snaga"]
 maintainers = ["Snaga <support@snaga.ai>"]
