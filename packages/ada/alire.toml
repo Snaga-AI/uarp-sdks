@@ -18,9 +18,16 @@ tags = ["api", "http", "client", "ai", "agents", "openapi"]
 #  building this crate against gnatcoll 25.0.0: clean, no warnings.
 gnatcoll = ">=25.0.0 & <27.0.0"
 
-#  libcurl is linked through `-lcurl` (see uarp_sdk.gpr). It ships with macOS
-#  and every mainstream Linux distribution; Alire's `libcurl` external is not
-#  declared here because its detection only covers Linux package managers.
+#  libcurl is linked through `-lcurl` (see uarp_sdk.gpr). On macOS it ships
+#  with the system, so nothing is declared there. On Linux and Windows it is
+#  a real dependency, and the community index builds the crate on ten
+#  Linux/Windows runners where it was missing -- every one of them failed to
+#  link (alire-index#2059). The `libcurl` external lets Alire detect (and
+#  on distro toolchains install) the development package, conditionally,
+#  as the index maintainers asked (their exact spelling of the table below).
+[[depends-on]]
+[depends-on."case(os)"."linux|windows"]
+libcurl = "*"
 
 [gpr-externals]
 UARP_SDK_LIBRARY_TYPE = ["relocatable", "static", "static-pic"]
