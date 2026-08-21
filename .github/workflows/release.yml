@@ -278,7 +278,15 @@ jobs:
 
   github-release:
     name: GitHub release
-    needs: [verify, npm, crates, maven, swift, swift-mirror, ada]
+    # Not gated on `swift-mirror`: that job fails whenever SWIFT_MIRROR_TOKEN
+    # cannot write to the mirror, and it did for every release from 0.5.4 to
+    # 0.5.12 — so no GitHub release was created for any of them, and the
+    # Alire tarball (built and uploaded as an artifact by `ada`) never
+    # reached a release page the community index could point at. Nine
+    # releases were filled in by hand on 2026-08-21. The mirror's own
+    # failure still fails the workflow, loudly; it just no longer erases
+    # the release.
+    needs: [verify, npm, crates, maven, swift, ada]
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
     permissions:
@@ -290,7 +298,15 @@ jobs:
           awk '/^## ${{ needs.verify.outputs.version }}/{flag=1; next} /^## /{flag=0} flag' \
             CHANGELOG.md > release-notes.md
           cat release-notes.md
+      # The Alire source archive `ada` built. The community index manifest
+      # points at exactly this file under the release's download URL, so a
+      # release without it is a release the index cannot reference.
+      - uses: actions/download-artifact@v4
+        with:
+          name: alire-tarball
+          path: release-assets
       - uses: softprops/action-gh-release@v2
         with:
           body_path: release-notes.md
           name: v${{ needs.verify.outputs.version }}
+          files: release-assets/*.tgz
