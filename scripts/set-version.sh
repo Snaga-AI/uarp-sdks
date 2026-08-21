@@ -37,6 +37,30 @@ echo "$version" > VERSION
 
 edit "s/^  \"version\": \".*\"/  \"version\": \"$version\"/" packages/typescript/package.json
 edit "s/^  \"version\": \".*\"/  \"version\": \"$version\"/" generator/package.json
+
+# The lockfile carries the package's own version TWICE — at the root and again
+# under `packages[""]` — and npm keeps both in step. This script edited only
+# package.json, so every release left the lockfile a version behind: on
+# 2026-08-21 `main` had package.json at 0.5.13 and the lockfile at 0.5.12.
+#
+# Edited as JSON, not with sed, and that is not fastidiousness. In
+# lockfileVersion 3 the `packages[""]` version sits at the SAME six-space
+# indent as every dependency's version:
+#
+#       "version": "0.5.12",     <- packages[""]  (ours)
+#       "version": "22.20.1",    <- a dependency  (not ours)
+#
+# so an anchored line-pattern rewrites every dependency in the tree to the SDK
+# version while looking exactly like a version bump. Two keys are addressed by
+# path instead; nothing else in the file is touched.
+node -e '
+  const fs = require("fs");
+  const f = "packages/typescript/package-lock.json";
+  const d = JSON.parse(fs.readFileSync(f, "utf8"));
+  d.version = process.argv[1];
+  if (d.packages && d.packages[""]) d.packages[""].version = process.argv[1];
+  fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");
+' "$version"
 edit "s/^version = \".*\"/version = \"$version\"/" packages/rust/Cargo.toml
 edit "s/^    version = \".*\"/    version = \"$version\"/" packages/kotlin/build.gradle.kts
 
