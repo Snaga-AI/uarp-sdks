@@ -6,6 +6,26 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.13 — 2026-08-21
+
+### Fixed — Ada
+
+- **`libcurl` is declared, conditionally.** The crate links libcurl through
+  a small C shim; on macOS it ships with the system, on Linux and Windows it
+  is a real dependency that the manifest mentioned only in a comment. The
+  community index builds the crate on ten Linux/Windows runners where the
+  development package was absent, and every one failed to link
+  (alire-project/alire-index#2059). The manifest now carries the
+  maintainers' own spelling:
+
+      [[depends-on]]
+      [depends-on."case(os)"."linux|windows"]
+      libcurl = "*"
+
+  `alr show` lists `when Linux => libcurl*`, `when Windows => libcurl*`;
+  macOS resolves without it (#39). No generated code changed — this is the
+  version the index submission moves to.
+
 ## 0.5.12 — 2026-08-20
 
 ### Added — every SDK
