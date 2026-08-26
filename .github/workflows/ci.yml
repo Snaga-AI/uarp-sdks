@@ -202,3 +202,21 @@ jobs:
       - name: Build the example
         run: alr -n build
         working-directory: packages/ada/examples
+
+  # The community index builds every crate on Windows too, where PE-COFF caps
+  # an object file at 65535 sections and `uarp-models.o` blew past it
+  # (alire-index#2059). Nothing in the Linux job above can see that, so the
+  # library gets built on a Windows runner as well -- the compile is the whole
+  # point, the tests stay on Linux.
+  ada-windows:
+    name: Ada (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: alire-project/setup-alire@v4
+        with:
+          version: 2.1.1
+          toolchain: gnat_native^15 gprbuild^26
+      - name: Build the library
+        run: alr -n build
+        working-directory: packages/ada
