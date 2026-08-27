@@ -505,6 +505,49 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Full maintenance record
+    ///
+    /// The whole record, including who turned it on and when — the audit trail the public status
+    /// deliberately omits. **Super-admin only**, and a caller on the synthetic default tenant is
+    /// 401 rather than 403.
+    ///
+    /// `GET /api/v1/admin/maintenance`
+    ///
+    /// Required scopes: `admin`.
+    public func getMaintenanceState(options: RequestOptions = .init()) async throws -> GetMaintenanceStateResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/maintenance",
+            options: options
+        ))
+    }
+
+    /// Platform revenue, host cost and margin
+    ///
+    /// Stripe subscriptions against real DigitalOcean spend, with the computed margin.
+    /// **Super-admin only.**
+    ///
+    /// Served from a short-lived cache; `cache` says whether this response was a hit, a miss, or a
+    /// forced recomputation. A Stripe or provider outage does not fail the call — the affected
+    /// block carries `error` and the rest is still served, so a partial answer is never mistaken
+    /// for zeros.
+    ///
+    /// `GET /api/v1/admin/economics`
+    ///
+    /// Required scopes: `admin`.
+    public func getPlatformEconomics(refresh: GetPlatformEconomicsRefresh? = nil, options: RequestOptions = .init()) async throws -> PlatformEconomics {
+        var query: [URLQueryItem] = []
+        if let refresh {
+            query.append(URLQueryItem(name: "refresh", value: refresh.rawValue))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/economics",
+            query: query,
+            options: options
+        ))
+    }
+
     /// Get tenant details
     ///
     /// `GET /api/v1/admin/tenants/{tenantId}`
@@ -556,6 +599,31 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/providers",
+            options: options
+        ))
+    }
+
+    /// The reports inbox
+    ///
+    /// Every report from every tenant, newest first. **Super-admin only.** `new_count` counts the
+    /// unresolved reports in the returned set, so a filtered list does not silently under-report
+    /// the backlog.
+    ///
+    /// `GET /api/v1/admin/feedback`
+    ///
+    /// Required scopes: `admin`.
+    public func listFeedback(status: ErrorReportStatus? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListFeedbackResponse {
+        var query: [URLQueryItem] = []
+        if let status {
+            query.append(URLQueryItem(name: "status", value: status.rawValue))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/feedback",
+            query: query,
             options: options
         ))
     }
@@ -711,6 +779,23 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))/settings",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Resolve or reopen a report
+    ///
+    /// **Super-admin only.**
+    ///
+    /// `PATCH /api/v1/admin/feedback`
+    ///
+    /// Required scopes: `admin`.
+    public func updateFeedbackStatus(body: UpdateFeedbackStatusRequest, options: RequestOptions = .init()) async throws -> UpdateFeedbackStatusResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/admin/feedback",
             body: try client.encode(body),
             idempotent: true,
             options: options

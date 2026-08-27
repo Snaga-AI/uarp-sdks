@@ -179,6 +179,26 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Tool → output-view catalog
+    ///
+    /// What the builder needs to render a tool result: for each tool the agent can actually call,
+    /// the SPEC that owns it and the view to render its output with.
+    ///
+    /// Only tools the agent is entitled to are listed — the same filter the runtime applies — so
+    /// the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
+    /// not parse is skipped, not fatal: one broken view must not take the catalog down.
+    ///
+    /// `GET /api/v1/agents/{agentId}/spec-catalog`
+    ///
+    /// Required scopes: `agents:read`.
+    public func getAgentSpecCatalog(agentId: String, options: RequestOptions = .init()) async throws -> SpecToolCatalog {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/spec-catalog",
+            options: options
+        ))
+    }
+
     /// Get EU AI Act Annex IV system card
     ///
     /// `GET /api/v1/agents/{agentId}/system-card`
@@ -264,6 +284,36 @@ public struct AgentsAPI: Sendable {
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }
         )
+    }
+
+    /// Messages between agents
+    ///
+    /// Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
+    /// what an inbox view of one agent means.
+    ///
+    /// `total_scanned` is how many messages the scan looked at before `limit` was applied, so a
+    /// client can tell a short page from an exhausted one.
+    ///
+    /// `GET /api/v1/agent-mail`
+    ///
+    /// Required scopes: `agents:read`.
+    public func listAgentMail(threadId: String? = nil, agentId: String? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListAgentMailResponse {
+        var query: [URLQueryItem] = []
+        if let threadId {
+            query.append(URLQueryItem(name: "thread_id", value: threadId))
+        }
+        if let agentId {
+            query.append(URLQueryItem(name: "agent_id", value: agentId))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/agent-mail",
+            query: query,
+            options: options
+        ))
     }
 
     /// List version snapshots for an agent

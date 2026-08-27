@@ -19,6 +19,7 @@ import type {
   GetAgentVersionDiffResponse,
   JsonObject,
   JsonValue,
+  ListAgentMailResponse,
   ListAgentVersionsResponse,
   ListAgentsResponse,
   RiskClassification,
@@ -27,6 +28,7 @@ import type {
   RotateAgentIdentityResponse,
   SetAgentCapabilitiesResponse,
   SetAgentTrafficRequest,
+  SpecToolCatalog,
   SuspendAgentRequest,
   TerminateAgentResponse,
 } from '../models.js';
@@ -77,6 +79,21 @@ export interface ListAgentsParams {
    * ghosts are hidden from main pickers.
    */
   include_offline?: boolean;
+}
+
+/**
+ * Query and header parameters for `listAgentMail`.
+ */
+export interface ListAgentMailParams {
+  /**
+   * Restrict to one thread — a cheaper scan than filtering after the fact.
+   */
+  thread_id?: string;
+  /**
+   * Messages to OR from this agent.
+   */
+  agent_id?: string;
+  limit?: number;
 }
 
 /**
@@ -275,6 +292,28 @@ export class AgentsResource extends APIResource {
   }
 
   /**
+   * Tool → output-view catalog
+   *
+   * What the builder needs to render a tool result: for each tool the agent can actually call,
+   * the SPEC that owns it and the view to render its output with.
+   *
+   * Only tools the agent is entitled to are listed — the same filter the runtime applies — so
+   * the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
+   * not parse is skipped, not fatal: one broken view must not take the catalog down.
+   *
+   * `GET /api/v1/agents/{agentId}/spec-catalog`
+   *
+   * Required scopes: `agents:read`.
+   */
+  getAgentSpecCatalog(agentId: string, options?: RequestOptions): Promise<SpecToolCatalog> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/spec-catalog`,
+      options,
+    });
+  }
+
+  /**
    * Get EU AI Act Annex IV system card
    *
    * `GET /api/v1/agents/{agentId}/system-card`
@@ -348,6 +387,28 @@ export class AgentsResource extends APIResource {
       'cursor',
       'has_more',
     );
+  }
+
+  /**
+   * Messages between agents
+   *
+   * Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
+   * what an inbox view of one agent means.
+   *
+   * `total_scanned` is how many messages the scan looked at before `limit` was applied, so a
+   * client can tell a short page from an exhausted one.
+   *
+   * `GET /api/v1/agent-mail`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listAgentMail(params?: ListAgentMailParams, options?: RequestOptions): Promise<ListAgentMailResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/agent-mail',
+      query: pick(params, ['thread_id', 'agent_id', 'limit']),
+      options,
+    });
   }
 
   /**

@@ -137,7 +137,7 @@ public struct BridgeAPI: Sendable {
     /// List bridge agents
     ///
     /// `GET /api/v1/bridge/agents`
-    public func listBridgeAgents(options: RequestOptions = .init()) async throws -> [BridgeConnection] {
+    public func listBridgeAgents(options: RequestOptions = .init()) async throws -> [BridgeAgentSummary] {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/bridge/agents",

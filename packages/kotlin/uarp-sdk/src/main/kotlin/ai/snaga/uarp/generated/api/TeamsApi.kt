@@ -63,6 +63,38 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Cancel a team run
+     *
+     * Stops the orchestration loop first, then every non-terminal child run, and releases the chat
+     * state so the canvas does not stay locked on a run that was just killed.
+     *
+     * Order matters and is not an implementation detail: killing children while the loop is still
+     * running makes it spawn more — two fresh child runs were measured within two minutes of a
+     * “successful” cancel.
+     *
+     * `cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the
+     * server sends.
+     *
+     * **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler
+     * under the older noun.
+     *
+     * `POST /api/v1/teams/{teamId}/runs/{teamRunId}/cancel`
+     *
+     * Required scopes: `agents:write`.
+     */
+    @Deprecated("Deprecated by the API")
+    public suspend fun cancelTeamRun(teamId: String, teamRunId: String, options: RequestOptions = RequestOptions()): CancelTeamRunResponse {
+        return client.request<CancelTeamRunResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/teams/${encodePathSegment(teamId)}/runs/${encodePathSegment(teamRunId)}/cancel",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Create a team
      *
      * `POST /api/v1/teams`

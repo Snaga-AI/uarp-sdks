@@ -200,6 +200,9 @@ package body UARP.API.Workspaces is
       if Params.Has_Path then
          UARP.Types.Add (Query, "path", Params.Path);
       end if;
+      if Params.Has_Recursive then
+         UARP.Types.Add (Query, "recursive", Params.Recursive);
+      end if;
       return UARP.Client.Call
          (Self,
           "GET",

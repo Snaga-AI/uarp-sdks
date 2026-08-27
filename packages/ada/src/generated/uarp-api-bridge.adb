@@ -153,7 +153,7 @@ package body UARP.API.Bridge is
    function List_Bridge_Agents
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Bridge_Connection_Vectors.Vector
+      return UARP.Models.Bridge_Agent_Summary_Vectors.Vector
    is
    begin
       declare
@@ -163,10 +163,10 @@ package body UARP.API.Bridge is
                 "GET",
                 "/api/v1/bridge/agents",
                 Options => Options));
-         Collected : UARP.Models.Bridge_Connection_Vectors.Vector;
+         Collected : UARP.Models.Bridge_Agent_Summary_Vectors.Vector;
       begin
          for Index in 1 .. JS.JSON.Length (Payload_Items) loop
-            Collected.Append (UARP.Models.Bridge_Connection'(UARP.Models.From_JSON (JS.JSON.Get (Payload_Items, Index))));
+            Collected.Append (UARP.Models.Bridge_Agent_Summary'(UARP.Models.From_JSON (JS.JSON.Get (Payload_Items, Index))));
          end loop;
          return Collected;
       end;

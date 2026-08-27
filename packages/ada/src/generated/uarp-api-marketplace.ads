@@ -26,7 +26,7 @@ package UARP.API.Marketplace is
       Has_Q : Boolean := False;
       Q : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Category : Boolean := False;
-      Category : UARP.Models.Search_Marketplace_Category;
+      Category : UARP.Models.Marketplace_Listing_Category;
       Has_Sort : Boolean := False;
       Sort : UARP.Models.Search_Marketplace_Sort;
       Has_Limit : Boolean := False;
@@ -88,6 +88,17 @@ package UARP.API.Marketplace is
       Payload : UARP.Models.Invoke_Listing_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Featured spec ids
+   --
+   --  No authentication. Sorted, so a client diffing the list sees a change only when the set
+   --  really changed.
+   --
+   --  GET /api/v1/marketplace/featured-specs
+   function List_Featured_Specs
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Featured_Specs_Response;
 
    --  List user subscriptions
    --

@@ -80,6 +80,38 @@ impl TeamsApi {
             .await
     }
 
+    /// Cancel a team run
+    ///
+    /// Stops the orchestration loop first, then every non-terminal child run, and releases the chat
+    /// state so the canvas does not stay locked on a run that was just killed.
+    ///
+    /// Order matters and is not an implementation detail: killing children while the loop is still
+    /// running makes it spawn more — two fresh child runs were measured within two minutes of a
+    /// “successful” cancel.
+    ///
+    /// `cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the
+    /// server sends.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler
+    /// under the older noun.
+    ///
+    /// `POST /api/v1/teams/{teamId}/runs/{teamRunId}/cancel`
+    ///
+    /// Required scopes: `agents:write`.
+    #[deprecated]
+    pub async fn cancel_team_run(&self, team_id: &str, team_run_id: &str) -> Result<models::CancelTeamRunResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/teams/{}/runs/{}/cancel", encode_path(team_id), encode_path(team_run_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create a team
     ///
     /// `POST /api/v1/teams`

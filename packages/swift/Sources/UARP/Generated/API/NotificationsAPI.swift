@@ -44,6 +44,20 @@ public struct NotificationsAPI: Sendable {
         ))
     }
 
+    /// Remove a target
+    ///
+    /// `DELETE /api/v1/notifications/targets/{targetId}`
+    ///
+    /// Required scopes: `notifications:write`.
+    public func deleteNotificationTarget(targetId: String, options: RequestOptions = .init()) async throws -> DeleteNotificationTargetResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/notifications/targets/\(encodePathSegment(targetId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Get unread notification count
     ///
     /// `GET /api/v1/notifications/unread`
@@ -74,6 +88,21 @@ public struct NotificationsAPI: Sendable {
             method: "GET",
             path: "/api/v1/notifications",
             query: query,
+            options: options
+        ))
+    }
+
+    /// List notification targets
+    ///
+    /// Every configured destination, with secrets redacted — see `NotificationTarget`.
+    ///
+    /// `GET /api/v1/notifications/targets`
+    ///
+    /// Required scopes: `notifications:read`.
+    public func listNotificationTargets(options: RequestOptions = .init()) async throws -> ListNotificationTargetsResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/notifications/targets",
             options: options
         ))
     }
@@ -132,6 +161,46 @@ public struct NotificationsAPI: Sendable {
             path: "/api/v1/notifications/stream",
             query: query,
             headers: headers,
+            options: options
+        ))
+    }
+
+    /// Send a test notification
+    ///
+    /// Queues one notification through the real fan-out, so it proves the whole path rather than
+    /// the stored configuration. **200 means queued, not delivered** — read `last_delivered_at` and
+    /// `last_error` on the target afterwards for the outcome.
+    ///
+    /// `POST /api/v1/notifications/targets/{targetId}/test`
+    ///
+    /// Required scopes: `notifications:write`.
+    public func testNotificationTarget(targetId: String, options: RequestOptions = .init()) async throws -> TestNotificationTargetResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/notifications/targets/\(encodePathSegment(targetId))/test",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Create or update a target
+    ///
+    /// Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
+    /// additionally reuses the id of an existing entry for the same device, so a client that
+    /// re-registers on every launch does not accumulate duplicates.
+    ///
+    /// The answer is the REDACTED target — the signing secret or device token you just sent is not
+    /// echoed back.
+    ///
+    /// `POST /api/v1/notifications/targets`
+    ///
+    /// Required scopes: `notifications:write`.
+    public func upsertNotificationTarget(body: UpsertNotificationTargetRequest, options: RequestOptions = .init()) async throws -> NotificationTarget {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/notifications/targets",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

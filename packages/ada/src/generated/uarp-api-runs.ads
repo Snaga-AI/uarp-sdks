@@ -127,6 +127,24 @@ package UARP.API.Runs is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  What will this run cost
+   --
+   --  Prices a run before it happens, from the agent's own recent runs. Read-only: it dispatches
+   --  nothing and stores nothing, and it needs only `runs:read`.
+   --
+   --  When the model has no known rate the answer is still 200 with `estimated_cost_usd: 0` and
+   --  `pricing: "unknown"` - read `basis.pricing` before showing the figure, or a client will
+   --  present "free" for "we have no idea".
+   --
+   --  POST /api/v1/runs/estimate
+   --
+   --  Required scopes: runs:read.
+   function Estimate_Run_Cost
+     (Self : Client_Type;
+      Payload : UARP.Models.Estimate_Run_Cost_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Run_Cost_Estimate;
+
    --  Export run events as JSONL
    --
    --  GET /api/v1/runs/{runId}/events/export

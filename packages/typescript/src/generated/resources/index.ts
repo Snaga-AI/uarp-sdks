@@ -11,11 +11,13 @@ import { AuthResource } from './auth.js';
 import { BillingResource } from './billing.js';
 import { BootstrapResource } from './bootstrap.js';
 import { BridgeResource } from './bridge.js';
+import { CanvasResource } from './canvas.js';
 import { CommerceResource } from './commerce.js';
 import { CompaniesResource } from './companies.js';
 import { DataExplorerResource } from './data-explorer.js';
 import { EvaluationsResource } from './evaluations.js';
 import { FeedResource } from './feed.js';
+import { FeedbackResource } from './feedback.js';
 import { FilesResource } from './files.js';
 import { GDPRResource } from './gdpr.js';
 import { GovernanceResource } from './governance.js';
@@ -26,12 +28,15 @@ import { KnowledgeResource } from './knowledge.js';
 import { LLMCredentialsResource } from './llm-credentials.js';
 import { MarketplaceResource } from './marketplace.js';
 import { MCPResource } from './mcp.js';
+import { MeResource } from './me.js';
 import { MemoryResource } from './memory.js';
 import { MetaResource } from './meta.js';
+import { MissionsResource } from './missions.js';
 import { NotificationsResource } from './notifications.js';
 import { OpenAiCompatResource } from './open-ai-compat.js';
 import { PlaygroundResource } from './playground.js';
 import { ProgramsResource } from './programs.js';
+import { ProjectsResource } from './projects.js';
 import { ProvidersResource } from './providers.js';
 import { PublicResource } from './public.js';
 import { RegistryResource } from './registry.js';
@@ -39,8 +44,10 @@ import { ReportsResource } from './reports.js';
 import { RunsResource } from './runs.js';
 import { SchedulerResource } from './scheduler.js';
 import { SessionsResource } from './sessions.js';
+import { SquadsResource } from './squads.js';
 import { TeamsResource } from './teams.js';
 import { TenantsResource } from './tenants.js';
+import { TrainingResource } from './training.js';
 import { UsersResource } from './users.js';
 import { WebhooksResource } from './webhooks.js';
 import { WorkspacesResource } from './workspaces.js';
@@ -55,11 +62,13 @@ export * from './auth.js';
 export * from './billing.js';
 export * from './bootstrap.js';
 export * from './bridge.js';
+export * from './canvas.js';
 export * from './commerce.js';
 export * from './companies.js';
 export * from './data-explorer.js';
 export * from './evaluations.js';
 export * from './feed.js';
+export * from './feedback.js';
 export * from './files.js';
 export * from './gdpr.js';
 export * from './governance.js';
@@ -70,12 +79,15 @@ export * from './knowledge.js';
 export * from './llm-credentials.js';
 export * from './marketplace.js';
 export * from './mcp.js';
+export * from './me.js';
 export * from './memory.js';
 export * from './meta.js';
+export * from './missions.js';
 export * from './notifications.js';
 export * from './open-ai-compat.js';
 export * from './playground.js';
 export * from './programs.js';
+export * from './projects.js';
 export * from './providers.js';
 export * from './public.js';
 export * from './registry.js';
@@ -83,8 +95,10 @@ export * from './reports.js';
 export * from './runs.js';
 export * from './scheduler.js';
 export * from './sessions.js';
+export * from './squads.js';
 export * from './teams.js';
 export * from './tenants.js';
+export * from './training.js';
 export * from './users.js';
 export * from './webhooks.js';
 export * from './workspaces.js';
@@ -133,6 +147,7 @@ export interface Resources {
    * Local agent bridge for Snaga desktop connections
    */
   readonly bridge: BridgeResource;
+  readonly canvas: CanvasResource;
   /**
    * E-commerce: products, customers, orders, enrollments
    */
@@ -153,6 +168,7 @@ export interface Resources {
    * Activity feed and real-time event streaming
    */
   readonly feed: FeedResource;
+  readonly feedback: FeedbackResource;
   /**
    * File upload for multimodal content
    */
@@ -193,6 +209,7 @@ export interface Resources {
    * Model Context Protocol server endpoints
    */
   readonly mcp: MCPResource;
+  readonly me: MeResource;
   /**
    * Agent memory management
    */
@@ -201,6 +218,11 @@ export interface Resources {
    * API metadata
    */
   readonly meta: MetaResource;
+  /**
+   * Mission Execution Framework: goal → objectives → authorization gate → execution →
+   * after-action review
+   */
+  readonly missions: MissionsResource;
   /**
    * User notifications
    */
@@ -217,6 +239,7 @@ export interface Resources {
    * Program (curriculum) management
    */
   readonly programs: ProgramsResource;
+  readonly projects: ProjectsResource;
   /**
    * LLM provider discovery and model listing
    */
@@ -246,6 +269,7 @@ export interface Resources {
    * Conversation sessions
    */
   readonly sessions: SessionsResource;
+  readonly squads: SquadsResource;
   /**
    * Team management and team chat
    */
@@ -254,6 +278,7 @@ export interface Resources {
    * Tenant management and API keys
    */
   readonly tenants: TenantsResource;
+  readonly training: TrainingResource;
   /**
    * User management, invites, roles
    */
@@ -280,11 +305,13 @@ export function createResources(client: Transport): Resources {
     billing: new BillingResource(client),
     bootstrap: new BootstrapResource(client),
     bridge: new BridgeResource(client),
+    canvas: new CanvasResource(client),
     commerce: new CommerceResource(client),
     companies: new CompaniesResource(client),
     dataExplorer: new DataExplorerResource(client),
     evaluations: new EvaluationsResource(client),
     feed: new FeedResource(client),
+    feedback: new FeedbackResource(client),
     files: new FilesResource(client),
     gdpr: new GDPRResource(client),
     governance: new GovernanceResource(client),
@@ -295,12 +322,15 @@ export function createResources(client: Transport): Resources {
     llmCredentials: new LLMCredentialsResource(client),
     marketplace: new MarketplaceResource(client),
     mcp: new MCPResource(client),
+    me: new MeResource(client),
     memory: new MemoryResource(client),
     meta: new MetaResource(client),
+    missions: new MissionsResource(client),
     notifications: new NotificationsResource(client),
     openAiCompat: new OpenAiCompatResource(client),
     playground: new PlaygroundResource(client),
     programs: new ProgramsResource(client),
+    projects: new ProjectsResource(client),
     providers: new ProvidersResource(client),
     public: new PublicResource(client),
     registry: new RegistryResource(client),
@@ -308,8 +338,10 @@ export function createResources(client: Transport): Resources {
     runs: new RunsResource(client),
     scheduler: new SchedulerResource(client),
     sessions: new SessionsResource(client),
+    squads: new SquadsResource(client),
     teams: new TeamsResource(client),
     tenants: new TenantsResource(client),
+    training: new TrainingResource(client),
     users: new UsersResource(client),
     webhooks: new WebhooksResource(client),
     workspaces: new WorkspacesResource(client),

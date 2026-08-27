@@ -13,6 +13,30 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `getPublicChatAnalytics`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicChatAnalyticsParams {
+    /// Window in days. Clamped to 1–90.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+
+/// Query and header parameters for `getTenantInbox`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantInboxParams {
+    /// Maximum items returned. Does not affect `counts`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
+/// Query and header parameters for `getTenantOverview`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetTenantOverviewParams {
+    /// Window in days. Clamped to 1–90.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub days: Option<i64>,
+}
+
 /// Query and header parameters for `tenantAnalyticsAgents`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantAnalyticsAgentsParams {
@@ -34,6 +58,78 @@ impl Client {
 }
 
 impl AnalyticsApi {
+    /// Public chat funnel
+    ///
+    /// Visits, engagement and messages on the tenant's public chat surfaces, with
+    /// country/device/browser/OS/referrer/UTM breakdowns and a per-agent split.
+    ///
+    /// The conversion figures are RATIOS (0.25 = a quarter), unlike the admin overview's `*_pct`
+    /// fields, which are percentages.
+    ///
+    /// `GET /api/v1/analytics/public-chat`
+    ///
+    /// Required scopes: `read:analytics`.
+    pub async fn get_public_chat_analytics(&self, params: &GetPublicChatAnalyticsParams) -> Result<models::PublicChatAnalytics> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/analytics/public-chat".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Runs waiting on a human
+    ///
+    /// Approvals, input requests, paused and failed runs, each with a one-line summary of what is
+    /// being asked — tool names, the question, or the error.
+    ///
+    /// `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
+    /// still reports the true backlog.
+    ///
+    /// `GET /api/v1/analytics/inbox`
+    ///
+    /// Required scopes: `read:analytics`.
+    pub async fn get_tenant_inbox(&self, params: &GetTenantInboxParams) -> Result<models::TenantInbox> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/analytics/inbox".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Mission Control overview
+    ///
+    /// One aggregate for the dashboard: fleet, run status buckets, recent runs, pending approvals,
+    /// quota, worker health and schedules at risk.
+    ///
+    /// The run scan is bounded, so `runs.scanned` is what the numbers actually describe. A tenant
+    /// busier than the cap sees a window, not its whole history.
+    ///
+    /// `GET /api/v1/analytics/overview`
+    ///
+    /// Required scopes: `read:analytics`.
+    pub async fn get_tenant_overview(&self, params: &GetTenantOverviewParams) -> Result<models::TenantOverview> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/analytics/overview".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Tenant-scoped agent analytics
     ///
     /// `GET /api/v1/analytics/agents`

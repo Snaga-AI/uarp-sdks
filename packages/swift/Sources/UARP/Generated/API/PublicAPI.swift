@@ -40,6 +40,50 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Public landing overrides
+    ///
+    /// No authentication. Text overrides and partner logos for the landing page.
+    ///
+    /// `GET /api/v1/public/landing/overrides`
+    public func getLandingOverrides(options: RequestOptions = .init()) async throws -> LandingOverrides {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/landing/overrides",
+            options: options
+        ))
+    }
+
+    /// Maintenance state
+    ///
+    /// No authentication, by design: during maintenance the authenticated surface is exactly what a
+    /// client cannot reach, so asking “is it me or is it you” must not itself require a session.
+    ///
+    /// A read failure answers `enabled: false` — the platform is assumed open unless it is known to
+    /// be closed.
+    ///
+    /// `GET /api/v1/maintenance/status`
+    public func getMaintenanceStatus(options: RequestOptions = .init()) async throws -> MaintenanceStatus {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/maintenance/status",
+            options: options
+        ))
+    }
+
+    /// Public deployment info
+    ///
+    /// No authentication. Contact addresses and the public base URL as the operator configured
+    /// them, plus enough setup state to render a “being set up” banner.
+    ///
+    /// `GET /api/v1/public/platform-info`
+    public func getPlatformInfo(options: RequestOptions = .init()) async throws -> PlatformInfo {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/platform-info",
+            options: options
+        ))
+    }
+
     /// Get public agent card
     ///
     /// `GET /api/v1/public/agents/{agentId}`
@@ -116,6 +160,24 @@ public struct PublicAPI: Sendable {
         return try await client.sendText(RequestSpec(
             method: "GET",
             path: "/api/v1/public/tenants/\(encodePathSegment(slug))/style.css",
+            options: options
+        ))
+    }
+
+    /// Is sign-up open
+    ///
+    /// No authentication; cached for 30 seconds.
+    ///
+    /// **Fails open.** If the setting cannot be read the answer is `registration_open: true`,
+    /// because the worst case of guessing open is a missing notice, while guessing closed would
+    /// turn a storage blip into a closed front door. A client cannot distinguish the two — this
+    /// endpoint is the state, not a health check.
+    ///
+    /// `GET /api/v1/public/registration-status`
+    public func getRegistrationStatus(options: RequestOptions = .init()) async throws -> GetRegistrationStatusResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/registration-status",
             options: options
         ))
     }

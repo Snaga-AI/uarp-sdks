@@ -87,6 +87,24 @@ package body UARP.API.Runs is
           Options => Options);
    end Create_Run_Checkpoint;
 
+   function Estimate_Run_Cost
+     (Self : Client_Type;
+      Payload : UARP.Models.Estimate_Run_Cost_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Run_Cost_Estimate
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/estimate",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Estimate_Run_Cost;
+
    function Export_Run_Events
      (Self : Client_Type;
       Run_Id : String;

@@ -173,6 +173,31 @@ impl RunsApi {
             .await
     }
 
+    /// What will this run cost
+    ///
+    /// Prices a run before it happens, from the agent's own recent runs. Read-only: it dispatches
+    /// nothing and stores nothing, and it needs only `runs:read`.
+    ///
+    /// When the model has no known rate the answer is still 200 with `estimated_cost_usd: 0` and
+    /// `pricing: "unknown"` — read `basis.pricing` before showing the figure, or a client will
+    /// present “free” for “we have no idea”.
+    ///
+    /// `POST /api/v1/runs/estimate`
+    ///
+    /// Required scopes: `runs:read`.
+    pub async fn estimate_run_cost(&self, body: &models::EstimateRunCostRequest) -> Result<models::RunCostEstimate> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/runs/estimate".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Export run events as JSONL
     ///
     /// `GET /api/v1/runs/{runId}/events/export`

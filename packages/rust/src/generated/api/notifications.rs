@@ -97,6 +97,24 @@ impl NotificationsApi {
             .await
     }
 
+    /// Remove a target
+    ///
+    /// `DELETE /api/v1/notifications/targets/{targetId}`
+    ///
+    /// Required scopes: `notifications:write`.
+    pub async fn delete_notification_target(&self, target_id: &str) -> Result<models::DeleteNotificationTargetResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/notifications/targets/{}", encode_path(target_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Get unread notification count
     ///
     /// `GET /api/v1/notifications/unread`
@@ -126,6 +144,26 @@ impl NotificationsApi {
                 method: Method::GET,
                 path: "/api/v1/notifications".to_string(),
                 query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// List notification targets
+    ///
+    /// Every configured destination, with secrets redacted — see `NotificationTarget`.
+    ///
+    /// `GET /api/v1/notifications/targets`
+    ///
+    /// Required scopes: `notifications:read`.
+    pub async fn list_notification_targets(&self) -> Result<models::ListNotificationTargetsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/notifications/targets".to_string(),
+                query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -191,5 +229,52 @@ impl NotificationsApi {
             Some(params),
             headers,
         )
+    }
+
+    /// Send a test notification
+    ///
+    /// Queues one notification through the real fan-out, so it proves the whole path rather than
+    /// the stored configuration. **200 means queued, not delivered** — read `last_delivered_at` and
+    /// `last_error` on the target afterwards for the outcome.
+    ///
+    /// `POST /api/v1/notifications/targets/{targetId}/test`
+    ///
+    /// Required scopes: `notifications:write`.
+    pub async fn test_notification_target(&self, target_id: &str) -> Result<models::TestNotificationTargetResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/notifications/targets/{}/test", encode_path(target_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Create or update a target
+    ///
+    /// Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
+    /// additionally reuses the id of an existing entry for the same device, so a client that
+    /// re-registers on every launch does not accumulate duplicates.
+    ///
+    /// The answer is the REDACTED target — the signing secret or device token you just sent is not
+    /// echoed back.
+    ///
+    /// `POST /api/v1/notifications/targets`
+    ///
+    /// Required scopes: `notifications:write`.
+    pub async fn upsert_notification_target(&self, body: &models::UpsertNotificationTargetRequest) -> Result<models::NotificationTarget> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/notifications/targets".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
     }
 }

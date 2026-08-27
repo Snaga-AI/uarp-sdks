@@ -56,6 +56,19 @@ pub struct ListAgentsParams {
     pub include_offline: Option<bool>,
 }
 
+/// Query and header parameters for `listAgentMail`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentMailParams {
+    /// Restrict to one thread — a cheaper scan than filtering after the fact.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thread_id: Option<String>,
+    /// Messages to OR from this agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
 /// Agent CRUD and versioning
 #[derive(Debug, Clone)]
 pub struct AgentsApi {
@@ -286,6 +299,31 @@ impl AgentsApi {
             .await
     }
 
+    /// Tool → output-view catalog
+    ///
+    /// What the builder needs to render a tool result: for each tool the agent can actually call,
+    /// the SPEC that owns it and the view to render its output with.
+    ///
+    /// Only tools the agent is entitled to are listed — the same filter the runtime applies — so
+    /// the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
+    /// not parse is skipped, not fatal: one broken view must not take the catalog down.
+    ///
+    /// `GET /api/v1/agents/{agentId}/spec-catalog`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn get_agent_spec_catalog(&self, agent_id: &str) -> Result<models::SpecToolCatalog> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/agents/{}/spec-catalog", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get EU AI Act Annex IV system card
     ///
     /// `GET /api/v1/agents/{agentId}/system-card`
@@ -379,6 +417,30 @@ impl AgentsApi {
                 }
             }
         }
+    }
+
+    /// Messages between agents
+    ///
+    /// Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
+    /// what an inbox view of one agent means.
+    ///
+    /// `total_scanned` is how many messages the scan looked at before `limit` was applied, so a
+    /// client can tell a short page from an exhausted one.
+    ///
+    /// `GET /api/v1/agent-mail`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_agent_mail(&self, params: &ListAgentMailParams) -> Result<models::ListAgentMailResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/agent-mail".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
     }
 
     /// List version snapshots for an agent

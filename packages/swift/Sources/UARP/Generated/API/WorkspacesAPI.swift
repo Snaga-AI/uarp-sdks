@@ -178,10 +178,13 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:read`.
-    public func listWorkspaceFiles(workspaceId: String, path: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listWorkspaceFiles(workspaceId: String, path: String? = nil, recursive: Bool? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         if let path {
             query.append(URLQueryItem(name: "path", value: path))
+        }
+        if let recursive {
+            query.append(URLQueryItem(name: "recursive", value: String(recursive)))
         }
         return try await client.send(RequestSpec(
             method: "GET",
