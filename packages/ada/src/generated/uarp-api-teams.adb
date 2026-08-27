@@ -38,6 +38,23 @@ package body UARP.API.Teams is
           Options => Options);
    end Add_Team_Graph_Node;
 
+   function Cancel_Team_Run
+     (Self : Client_Type;
+      Team_Id : String;
+      Team_Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Cancel_Team_Run_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id) & "/cancel",
+             Idempotent => True,
+             Options => Options));
+   end Cancel_Team_Run;
+
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Team_Create;

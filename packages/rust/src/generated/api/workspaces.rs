@@ -38,6 +38,11 @@ pub struct ListWorkspaceFilesParams {
     /// Directory path to list
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    /// Walk sub-directories as well. Off by default, so a plain call lists one level — which is how
+    /// generated images, which land in `images/`, stayed invisible to the surfaces meant to show
+    /// them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recursive: Option<bool>,
 }
 
 /// Query and header parameters for `searchWorkspaceFiles`.

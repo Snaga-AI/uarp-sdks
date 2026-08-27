@@ -180,8 +180,8 @@ public class BridgeApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/bridge/agents`
      */
-    public suspend fun listBridgeAgents(options: RequestOptions = RequestOptions()): List<BridgeConnection> {
-        return client.request<List<BridgeConnection>>(
+    public suspend fun listBridgeAgents(options: RequestOptions = RequestOptions()): List<BridgeAgentSummary> {
+        return client.request<List<BridgeAgentSummary>>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/bridge/agents",

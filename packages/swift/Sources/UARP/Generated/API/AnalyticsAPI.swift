@@ -8,6 +8,78 @@ public struct AnalyticsAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Public chat funnel
+    ///
+    /// Visits, engagement and messages on the tenant's public chat surfaces, with
+    /// country/device/browser/OS/referrer/UTM breakdowns and a per-agent split.
+    ///
+    /// The conversion figures are RATIOS (0.25 = a quarter), unlike the admin overview's `*_pct`
+    /// fields, which are percentages.
+    ///
+    /// `GET /api/v1/analytics/public-chat`
+    ///
+    /// Required scopes: `read:analytics`.
+    public func getPublicChatAnalytics(days: Int? = nil, options: RequestOptions = .init()) async throws -> PublicChatAnalytics {
+        var query: [URLQueryItem] = []
+        if let days {
+            query.append(URLQueryItem(name: "days", value: String(days)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/analytics/public-chat",
+            query: query,
+            options: options
+        ))
+    }
+
+    /// Runs waiting on a human
+    ///
+    /// Approvals, input requests, paused and failed runs, each with a one-line summary of what is
+    /// being asked — tool names, the question, or the error.
+    ///
+    /// `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
+    /// still reports the true backlog.
+    ///
+    /// `GET /api/v1/analytics/inbox`
+    ///
+    /// Required scopes: `read:analytics`.
+    public func getTenantInbox(limit: Int? = nil, options: RequestOptions = .init()) async throws -> TenantInbox {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/analytics/inbox",
+            query: query,
+            options: options
+        ))
+    }
+
+    /// Mission Control overview
+    ///
+    /// One aggregate for the dashboard: fleet, run status buckets, recent runs, pending approvals,
+    /// quota, worker health and schedules at risk.
+    ///
+    /// The run scan is bounded, so `runs.scanned` is what the numbers actually describe. A tenant
+    /// busier than the cap sees a window, not its whole history.
+    ///
+    /// `GET /api/v1/analytics/overview`
+    ///
+    /// Required scopes: `read:analytics`.
+    public func getTenantOverview(days: Int? = nil, options: RequestOptions = .init()) async throws -> TenantOverview {
+        var query: [URLQueryItem] = []
+        if let days {
+            query.append(URLQueryItem(name: "days", value: String(days)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/analytics/overview",
+            query: query,
+            options: options
+        ))
+    }
+
     /// Tenant-scoped agent analytics
     ///
     /// `GET /api/v1/analytics/agents`

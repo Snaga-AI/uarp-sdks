@@ -4,7 +4,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
-  BridgeConnection,
+  BridgeAgentSummary,
   BridgeDelegateRequest,
   BridgeDelegateResponse,
   BridgeDeregisterRequest,
@@ -179,7 +179,7 @@ export class BridgeResource extends APIResource {
    *
    * `GET /api/v1/bridge/agents`
    */
-  listBridgeAgents(options?: RequestOptions): Promise<BridgeConnection[]> {
+  listBridgeAgents(options?: RequestOptions): Promise<BridgeAgentSummary[]> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/bridge/agents',

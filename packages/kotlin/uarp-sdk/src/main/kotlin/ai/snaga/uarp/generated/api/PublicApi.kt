@@ -65,6 +65,62 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Public landing overrides
+     *
+     * No authentication. Text overrides and partner logos for the landing page.
+     *
+     * `GET /api/v1/public/landing/overrides`
+     */
+    public suspend fun getLandingOverrides(options: RequestOptions = RequestOptions()): LandingOverrides {
+        return client.request<LandingOverrides>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/landing/overrides",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Maintenance state
+     *
+     * No authentication, by design: during maintenance the authenticated surface is exactly what a
+     * client cannot reach, so asking “is it me or is it you” must not itself require a session.
+     *
+     * A read failure answers `enabled: false` — the platform is assumed open unless it is known to
+     * be closed.
+     *
+     * `GET /api/v1/maintenance/status`
+     */
+    public suspend fun getMaintenanceStatus(options: RequestOptions = RequestOptions()): MaintenanceStatus {
+        return client.request<MaintenanceStatus>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/maintenance/status",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Public deployment info
+     *
+     * No authentication. Contact addresses and the public base URL as the operator configured
+     * them, plus enough setup state to render a “being set up” banner.
+     *
+     * `GET /api/v1/public/platform-info`
+     */
+    public suspend fun getPlatformInfo(options: RequestOptions = RequestOptions()): PlatformInfo {
+        return client.request<PlatformInfo>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/platform-info",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get public agent card
      *
      * `GET /api/v1/public/agents/{agentId}`
@@ -167,6 +223,28 @@ public class PublicApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/tenants/${encodePathSegment(slug)}/style.css",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Is sign-up open
+     *
+     * No authentication; cached for 30 seconds.
+     *
+     * **Fails open.** If the setting cannot be read the answer is `registration_open: true`,
+     * because the worst case of guessing open is a missing notice, while guessing closed would
+     * turn a storage blip into a closed front door. A client cannot distinguish the two — this
+     * endpoint is the state, not a health check.
+     *
+     * `GET /api/v1/public/registration-status`
+     */
+    public suspend fun getRegistrationStatus(options: RequestOptions = RequestOptions()): GetRegistrationStatusResponse {
+        return client.request<GetRegistrationStatusResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/registration-status",
                 options = options,
             )
         )

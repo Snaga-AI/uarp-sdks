@@ -60,6 +60,41 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Content_Report_Accepted;
 
+   --  Public landing overrides
+   --
+   --  No authentication. Text overrides and partner logos for the landing page.
+   --
+   --  GET /api/v1/public/landing/overrides
+   function Get_Landing_Overrides
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Landing_Overrides;
+
+   --  Maintenance state
+   --
+   --  No authentication, by design: during maintenance the authenticated surface is exactly what a
+   --  client cannot reach, so asking "is it me or is it you" must not itself require a session.
+   --
+   --  A read failure answers `enabled: false` - the platform is assumed open unless it is known to
+   --  be closed.
+   --
+   --  GET /api/v1/maintenance/status
+   function Get_Maintenance_Status
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Maintenance_Status;
+
+   --  Public deployment info
+   --
+   --  No authentication. Contact addresses and the public base URL as the operator configured
+   --  them, plus enough setup state to render a "being set up" banner.
+   --
+   --  GET /api/v1/public/platform-info
+   function Get_Platform_Info
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Platform_Info;
+
    --  Get public agent card
    --
    --  GET /api/v1/public/agents/{agentId}
@@ -124,6 +159,21 @@ package UARP.API.Public is
       Slug : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Types.Text;
+
+   --  Is sign-up open
+   --
+   --  No authentication; cached for 30 seconds.
+   --
+   --  **Fails open.** If the setting cannot be read the answer is `registration_open: true`,
+   --  because the worst case of guessing open is a missing notice, while guessing closed would
+   --  turn a storage blip into a closed front door. A client cannot distinguish the two - this
+   --  endpoint is the state, not a health check.
+   --
+   --  GET /api/v1/public/registration-status
+   function Get_Registration_Status
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Registration_Status_Response;
 
    --  List public plans
    --

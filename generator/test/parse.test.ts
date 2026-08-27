@@ -233,8 +233,17 @@ test('parses the production document into the expected shape', () => {
   // the mobile sign-in hand-off. The callback used to put the session key in a
   // fragment on `snaga://callback` — a custom scheme any installed app can
   // claim — so the key is now released only to a caller holding the verifier.
-  assert.equal(ops.length, 559);
-  assert.equal(spec.groups.length, 43);
+  // 559 -> 641 on 2026-08-27: the vendored document was refreshed against the
+  // platform for the first time since 0.5.6, and eighty-two operations arrived
+  // at once. They are not scattered — they are seven whole subsystems that had
+  // never had a client in any language: squads (22), missions (12), training
+  // jobs (10), canvas (7), projects (5), plus `me`, feedback and singles across
+  // notifications, admin, analytics and public. A consuming app could reach
+  // none of it, which is how three finished screens sat waiting on a release
+  // rather than on code.
+  assert.equal(ops.length, 641);
+  // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
+  assert.equal(spec.groups.length, 50);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -298,10 +307,20 @@ test('parses the production document into the expected shape', () => {
   // FeedEntry.event_type, KnowledgeBaseDocument.type/status/embedding_status,
   // TeamGraph role/status/type, ConstitutionViolation rule_type/penalty,
   // ApiKeySummary.kind/status, AgentScorer.config.type).
-  assert.equal(spec.types.length, 723);
+  // 723 -> 945 on 2026-08-27: two hundred and twenty-four named types from the
+  // same refresh, and TWO removed — the only removals in it. Inline
+  // `SearchMarketplaceCategory` folded into the `MarketplaceListingCategory`
+  // it duplicated value-for-value, and `TenantPlan` stopped being a closed
+  // `free|starter|pro|enterprise` union: plans are resolved now, so `plan` is a
+  // string beside a new `plan_id`. Both are source-breaking for anyone who
+  // imported the NAME, which nothing else in this refresh is — operations,
+  // parameters and operationIds all only grew.
+  assert.equal(spec.types.length, 945);
   assert.equal(spec.scopes.length, 31);
-  assert.equal(ops.filter((o) => o.sse).length, 11);
-  assert.equal(ops.filter((o) => o.pagination).length, 14);
+  // 11 -> 15: mission events, squad chat, squad run events, training-job events.
+  assert.equal(ops.filter((o) => o.sse).length, 15);
+  // 14 -> 15: `GET /training-jobs`.
+  assert.equal(ops.filter((o) => o.pagination).length, 15);
   assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 2);
 });
 

@@ -56,6 +56,20 @@ package UARP.API.Agents is
 
    No_List_Agents_Params : constant List_Agents_Params := (others => <>);
 
+   --  Query and header parameters for `listAgentMail`.
+   type List_Agent_Mail_Params is record
+      --  Restrict to one thread - a cheaper scan than filtering after the fact.
+      Has_Thread_Id : Boolean := False;
+      Thread_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Messages to OR from this agent.
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_List_Agent_Mail_Params : constant List_Agent_Mail_Params := (others => <>);
+
    --  Activate agent
    --
    --  POST /api/v1/agents/{agentId}/activate
@@ -191,6 +205,24 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Risk_Classification;
 
+   --  Tool ? output-view catalog
+   --
+   --  What the builder needs to render a tool result: for each tool the agent can actually call,
+   --  the SPEC that owns it and the view to render its output with.
+   --
+   --  Only tools the agent is entitled to are listed - the same filter the runtime applies - so
+   --  the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
+   --  not parse is skipped, not fatal: one broken view must not take the catalog down.
+   --
+   --  GET /api/v1/agents/{agentId}/spec-catalog
+   --
+   --  Required scopes: agents:read.
+   function Get_Agent_Spec_Catalog
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Spec_Tool_Catalog;
+
    --  Get EU AI Act Annex IV system card
    --
    --  GET /api/v1/agents/{agentId}/system-card
@@ -246,6 +278,23 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options;
       Max_Items : Natural := 0)
       return UARP.Models.Agent_Vectors.Vector;
+
+   --  Messages between agents
+   --
+   --  Newest first. `agent_id` matches a message in EITHER direction - sent or received - which is
+   --  what an inbox view of one agent means.
+   --
+   --  `total_scanned` is how many messages the scan looked at before `limit` was applied, so a
+   --  client can tell a short page from an exhausted one.
+   --
+   --  GET /api/v1/agent-mail
+   --
+   --  Required scopes: agents:read.
+   function List_Agent_Mail
+     (Self : Client_Type;
+      Params : List_Agent_Mail_Params := No_List_Agent_Mail_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Mail_Response;
 
    --  List version snapshots for an agent
    --

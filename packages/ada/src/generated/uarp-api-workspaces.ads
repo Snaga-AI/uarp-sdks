@@ -38,6 +38,11 @@ package UARP.API.Workspaces is
       --  Directory path to list
       Has_Path : Boolean := False;
       Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Walk sub-directories as well. Off by default, so a plain call lists one level - which is how
+      --  generated images, which land in `images/`, stayed invisible to the surfaces meant to show
+      --  them.
+      Has_Recursive : Boolean := False;
+      Recursive : Standard.Boolean := False;
    end record;
 
    No_List_Workspace_Files_Params : constant List_Workspace_Files_Params := (others => <>);

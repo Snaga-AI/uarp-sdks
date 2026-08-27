@@ -242,6 +242,30 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Tool → output-view catalog
+     *
+     * What the builder needs to render a tool result: for each tool the agent can actually call,
+     * the SPEC that owns it and the view to render its output with.
+     *
+     * Only tools the agent is entitled to are listed — the same filter the runtime applies — so
+     * the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
+     * not parse is skipped, not fatal: one broken view must not take the catalog down.
+     *
+     * `GET /api/v1/agents/{agentId}/spec-catalog`
+     *
+     * Required scopes: `agents:read`.
+     */
+    public suspend fun getAgentSpecCatalog(agentId: String, options: RequestOptions = RequestOptions()): SpecToolCatalog {
+        return client.request<SpecToolCatalog>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/spec-catalog",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get EU AI Act Annex IV system card
      *
      * `GET /api/v1/agents/{agentId}/system-card`
@@ -334,6 +358,35 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
         cursor = { it.cursor },
         hasMore = { it.hasMore },
     )
+
+    /**
+     * Messages between agents
+     *
+     * Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
+     * what an inbox view of one agent means.
+     *
+     * `total_scanned` is how many messages the scan looked at before `limit` was applied, so a
+     * client can tell a short page from an exhausted one.
+     *
+     * `GET /api/v1/agent-mail`
+     *
+     * Required scopes: `agents:read`.
+     */
+    public suspend fun listAgentMail(threadId: String? = null, agentId: String? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListAgentMailResponse {
+        val query = buildList {
+            if (threadId != null) add("thread_id" to threadId)
+            if (agentId != null) add("agent_id" to agentId)
+            if (limit != null) add("limit" to limit.toString())
+        }
+        return client.request<ListAgentMailResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/agent-mail",
+                query = query,
+                options = options,
+            )
+        )
+    }
 
     /**
      * List version snapshots for an agent

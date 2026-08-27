@@ -11,10 +11,14 @@ import type {
   CreatePublicSessionRequest,
   CreatePublicSessionResponse,
   GetPublicFeaturedAgentResponse,
+  GetRegistrationStatusResponse,
   JsonObject,
+  LandingOverrides,
   ListPublicPlansResponse,
   ListPublicStatesResponse,
   ListPublicTenantsResponse,
+  MaintenanceStatus,
+  PlatformInfo,
   PublicDomainLookupResponse,
   PublicTenant,
   PublicTrackEventRequest,
@@ -77,6 +81,56 @@ export class PublicResource extends APIResource {
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/reports`,
       body,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Public landing overrides
+   *
+   * No authentication. Text overrides and partner logos for the landing page.
+   *
+   * `GET /api/v1/public/landing/overrides`
+   */
+  getLandingOverrides(options?: RequestOptions): Promise<LandingOverrides> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/landing/overrides',
+      options,
+    });
+  }
+
+  /**
+   * Maintenance state
+   *
+   * No authentication, by design: during maintenance the authenticated surface is exactly what a
+   * client cannot reach, so asking “is it me or is it you” must not itself require a session.
+   *
+   * A read failure answers `enabled: false` — the platform is assumed open unless it is known to
+   * be closed.
+   *
+   * `GET /api/v1/maintenance/status`
+   */
+  getMaintenanceStatus(options?: RequestOptions): Promise<MaintenanceStatus> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/maintenance/status',
+      options,
+    });
+  }
+
+  /**
+   * Public deployment info
+   *
+   * No authentication. Contact addresses and the public base URL as the operator configured
+   * them, plus enough setup state to render a “being set up” banner.
+   *
+   * `GET /api/v1/public/platform-info`
+   */
+  getPlatformInfo(options?: RequestOptions): Promise<PlatformInfo> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/platform-info',
       options,
     });
   }
@@ -173,6 +227,26 @@ export class PublicResource extends APIResource {
       method: 'GET',
       path: `/api/v1/public/tenants/${encodeURIComponent(String(slug))}/style.css`,
       responseType: 'text',
+      options,
+    });
+  }
+
+  /**
+   * Is sign-up open
+   *
+   * No authentication; cached for 30 seconds.
+   *
+   * **Fails open.** If the setting cannot be read the answer is `registration_open: true`,
+   * because the worst case of guessing open is a missing notice, while guessing closed would
+   * turn a storage blip into a closed front door. A client cannot distinguish the two — this
+   * endpoint is the state, not a health check.
+   *
+   * `GET /api/v1/public/registration-status`
+   */
+  getRegistrationStatus(options?: RequestOptions): Promise<GetRegistrationStatusResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/registration-status',
       options,
     });
   }

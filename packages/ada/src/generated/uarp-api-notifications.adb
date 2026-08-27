@@ -39,6 +39,22 @@ package body UARP.API.Notifications is
              Options => Options));
    end Delete;
 
+   function Delete_Notification_Target
+     (Self : Client_Type;
+      Target_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Notification_Target_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/notifications/targets/" & UARP.Types.Encode_Path_Segment (Target_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Notification_Target;
+
    function Get_Unread_Count
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -75,6 +91,20 @@ package body UARP.API.Notifications is
              Query => Query,
              Options => Options));
    end List;
+
+   function List_Notification_Targets
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Notification_Targets_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/notifications/targets",
+             Options => Options));
+   end List_Notification_Targets;
 
    function Mark_All_Notifications_Read
      (Self : Client_Type;
@@ -129,4 +159,38 @@ package body UARP.API.Notifications is
           Headers => Headers,
           Options => Options);
    end Stream;
+
+   function Test_Notification_Target
+     (Self : Client_Type;
+      Target_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Test_Notification_Target_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/notifications/targets/" & UARP.Types.Encode_Path_Segment (Target_Id) & "/test",
+             Idempotent => True,
+             Options => Options));
+   end Test_Notification_Target;
+
+   function Upsert_Notification_Target
+     (Self : Client_Type;
+      Payload : UARP.Models.Upsert_Notification_Target_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Target
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/notifications/targets",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Upsert_Notification_Target;
 end UARP.API.Notifications;

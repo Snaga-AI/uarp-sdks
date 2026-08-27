@@ -77,12 +77,29 @@ pub struct GetImmutableAuditParams {
     pub limit: Option<i64>,
 }
 
+/// Query and header parameters for `getPlatformEconomics`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPlatformEconomicsParams {
+    /// `1` bypasses the cache and recomputes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub refresh: Option<models::GetPlatformEconomicsRefresh>,
+}
+
 /// Query and header parameters for `getTenantUsage`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetTenantUsageParams {
     /// ISO YYYY-MM period (defaults to current month)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub period: Option<String>,
+}
+
+/// Query and header parameters for `listFeedback`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListFeedbackParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<models::ErrorReportStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
 }
 
 /// Query and header parameters for `queryAuditLog`.
@@ -701,6 +718,54 @@ impl AdminApi {
             .await
     }
 
+    /// Full maintenance record
+    ///
+    /// The whole record, including who turned it on and when — the audit trail the public status
+    /// deliberately omits. **Super-admin only**, and a caller on the synthetic default tenant is
+    /// 401 rather than 403.
+    ///
+    /// `GET /api/v1/admin/maintenance`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_maintenance_state(&self) -> Result<models::GetMaintenanceStateResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/maintenance".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Platform revenue, host cost and margin
+    ///
+    /// Stripe subscriptions against real DigitalOcean spend, with the computed margin.
+    /// **Super-admin only.**
+    ///
+    /// Served from a short-lived cache; `cache` says whether this response was a hit, a miss, or a
+    /// forced recomputation. A Stripe or provider outage does not fail the call — the affected
+    /// block carries `error` and the rest is still served, so a partial answer is never mistaken
+    /// for zeros.
+    ///
+    /// `GET /api/v1/admin/economics`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_platform_economics(&self, params: &GetPlatformEconomicsParams) -> Result<models::PlatformEconomics> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/economics".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get tenant details
     ///
     /// `GET /api/v1/admin/tenants/{tenantId}`
@@ -764,6 +829,28 @@ impl AdminApi {
                 method: Method::GET,
                 path: "/api/v1/admin/providers".to_string(),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// The reports inbox
+    ///
+    /// Every report from every tenant, newest first. **Super-admin only.** `new_count` counts the
+    /// unresolved reports in the returned set, so a filtered list does not silently under-report
+    /// the backlog.
+    ///
+    /// `GET /api/v1/admin/feedback`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_feedback(&self, params: &ListFeedbackParams) -> Result<models::ListFeedbackResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/feedback".to_string(),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -943,6 +1030,26 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::PATCH,
                 path: format!("/api/v1/admin/tenants/{}/settings", encode_path(tenant_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Resolve or reopen a report
+    ///
+    /// **Super-admin only.**
+    ///
+    /// `PATCH /api/v1/admin/feedback`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_feedback_status(&self, body: &models::UpdateFeedbackStatusRequest) -> Result<models::UpdateFeedbackStatusResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: "/api/v1/admin/feedback".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

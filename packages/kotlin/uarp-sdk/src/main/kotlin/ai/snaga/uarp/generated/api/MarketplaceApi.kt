@@ -126,6 +126,24 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
     }
 
     /**
+     * Featured spec ids
+     *
+     * No authentication. Sorted, so a client diffing the list sees a change only when the set
+     * really changed.
+     *
+     * `GET /api/v1/marketplace/featured-specs`
+     */
+    public suspend fun listFeaturedSpecs(options: RequestOptions = RequestOptions()): ListFeaturedSpecsResponse {
+        return client.request<ListFeaturedSpecsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/marketplace/featured-specs",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * List user subscriptions
      *
      * `GET /api/v1/marketplace/subscriptions`
@@ -187,7 +205,7 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:read`.
      */
-    public suspend fun search(q: String? = null, category: SearchMarketplaceCategory? = null, sort: SearchMarketplaceSort? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): SearchMarketplaceResponse {
+    public suspend fun search(q: String? = null, category: MarketplaceListingCategory? = null, sort: SearchMarketplaceSort? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): SearchMarketplaceResponse {
         val query = buildList {
             if (q != null) add("q" to q)
             if (category != null) add("category" to category.value)

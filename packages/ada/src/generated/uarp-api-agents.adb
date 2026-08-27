@@ -197,6 +197,21 @@ package body UARP.API.Agents is
              Options => Options));
    end Get_Agent_Risk_Classification;
 
+   function Get_Agent_Spec_Catalog
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Spec_Tool_Catalog
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/spec-catalog",
+             Options => Options));
+   end Get_Agent_Spec_Catalog;
+
    function Get_Agent_System_Card
      (Self : Client_Type;
       Agent_Id : String;
@@ -330,6 +345,32 @@ package body UARP.API.Agents is
       end loop;
       return Collected;
    end List_All;
+
+   function List_Agent_Mail
+     (Self : Client_Type;
+      Params : List_Agent_Mail_Params := No_List_Agent_Mail_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Mail_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Thread_Id then
+         UARP.Types.Add (Query, "thread_id", Params.Thread_Id);
+      end if;
+      if Params.Has_Agent_Id then
+         UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agent-mail",
+             Query => Query,
+             Options => Options));
+   end List_Agent_Mail;
 
    function List_Agent_Versions
      (Self : Client_Type;

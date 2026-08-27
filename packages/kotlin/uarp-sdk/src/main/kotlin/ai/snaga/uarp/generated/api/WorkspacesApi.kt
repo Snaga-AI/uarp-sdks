@@ -238,9 +238,10 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, recursive: Boolean? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (path != null) add("path" to path)
+            if (recursive != null) add("recursive" to recursive.toString())
         }
         return client.request<JsonElement>(
             RequestSpec(

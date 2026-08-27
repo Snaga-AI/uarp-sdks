@@ -8,6 +8,7 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   ContinueRunRequest,
   CreateRunRequest,
+  EstimateRunCostRequest,
   GetRunQueuePositionResponse,
   GetRunStepsResponse,
   JsonObject,
@@ -19,6 +20,7 @@ import type {
   RespondToRunResponse,
   Run,
   RunApproveRequest,
+  RunCostEstimate,
 } from '../models.js';
 
 /**
@@ -157,6 +159,30 @@ export class RunsResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/checkpoint`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * What will this run cost
+   *
+   * Prices a run before it happens, from the agent's own recent runs. Read-only: it dispatches
+   * nothing and stores nothing, and it needs only `runs:read`.
+   *
+   * When the model has no known rate the answer is still 200 with `estimated_cost_usd: 0` and
+   * `pricing: "unknown"` — read `basis.pricing` before showing the figure, or a client will
+   * present “free” for “we have no idea”.
+   *
+   * `POST /api/v1/runs/estimate`
+   *
+   * Required scopes: `runs:read`.
+   */
+  estimateRunCost(body: EstimateRunCostRequest, options?: RequestOptions): Promise<RunCostEstimate> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/runs/estimate',
+      body,
       idempotent: true,
       options,
     });

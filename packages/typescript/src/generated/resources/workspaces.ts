@@ -51,6 +51,12 @@ export interface ListWorkspaceFilesParams {
    * Directory path to list
    */
   path?: string;
+  /**
+   * Walk sub-directories as well. Off by default, so a plain call lists one level — which is how
+   * generated images, which land in `images/`, stayed invisible to the surfaces meant to show
+   * them.
+   */
+  recursive?: boolean;
 }
 
 /**
@@ -273,7 +279,7 @@ export class WorkspacesResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,
-      query: pick(params, ['path']),
+      query: pick(params, ['path', 'recursive']),
       options,
     });
   }

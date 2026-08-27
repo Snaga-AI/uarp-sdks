@@ -92,6 +92,28 @@ public struct RunsAPI: Sendable {
         ))
     }
 
+    /// What will this run cost
+    ///
+    /// Prices a run before it happens, from the agent's own recent runs. Read-only: it dispatches
+    /// nothing and stores nothing, and it needs only `runs:read`.
+    ///
+    /// When the model has no known rate the answer is still 200 with `estimated_cost_usd: 0` and
+    /// `pricing: "unknown"` — read `basis.pricing` before showing the figure, or a client will
+    /// present “free” for “we have no idea”.
+    ///
+    /// `POST /api/v1/runs/estimate`
+    ///
+    /// Required scopes: `runs:read`.
+    public func estimateRunCost(body: EstimateRunCostRequest, options: RequestOptions = .init()) async throws -> RunCostEstimate {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/runs/estimate",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Export run events as JSONL
     ///
     /// `GET /api/v1/runs/{runId}/events/export`

@@ -4,6 +4,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   JsonValue,
+  ListSchedulesResponse,
   SetScheduleRequest,
 } from '../models.js';
 
@@ -22,6 +23,23 @@ export class SchedulerResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/schedule`,
+      options,
+    });
+  }
+
+  /**
+   * List every agent schedule
+   *
+   * One call for the whole tenant, so a canvas can badge scheduled agents without a per-agent
+   * fetch. `agent_name` is resolved for display and is absent when the agent record is gone — a
+   * schedule outliving its agent is exactly the case worth showing.
+   *
+   * `GET /api/v1/schedules`
+   */
+  listSchedules(options?: RequestOptions): Promise<ListSchedulesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/schedules',
       options,
     });
   }

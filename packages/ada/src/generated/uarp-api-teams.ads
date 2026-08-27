@@ -54,6 +54,31 @@ package UARP.API.Teams is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Cancel a team run
+   --
+   --  Stops the orchestration loop first, then every non-terminal child run, and releases the chat
+   --  state so the canvas does not stay locked on a run that was just killed.
+   --
+   --  Order matters and is not an implementation detail: killing children while the loop is still
+   --  running makes it spawn more - two fresh child runs were measured within two minutes of a
+   --  "successful" cancel.
+   --
+   --  `cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the
+   --  server sends.
+   --
+   --  **Deprecated - use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler
+   --  under the older noun.
+   --
+   --  POST /api/v1/teams/{teamId}/runs/{teamRunId}/cancel
+   --
+   --  Required scopes: agents:write.
+   function Cancel_Team_Run
+     (Self : Client_Type;
+      Team_Id : String;
+      Team_Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Cancel_Team_Run_Response;
+
    --  Create a team
    --
    --  POST /api/v1/teams

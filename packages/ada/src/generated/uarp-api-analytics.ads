@@ -10,6 +10,33 @@ package UARP.API.Analytics is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `getPublicChatAnalytics`.
+   type Get_Public_Chat_Analytics_Params is record
+      --  Window in days. Clamped to 1-90.
+      Has_Days : Boolean := False;
+      Days : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_Get_Public_Chat_Analytics_Params : constant Get_Public_Chat_Analytics_Params := (others => <>);
+
+   --  Query and header parameters for `getTenantInbox`.
+   type Get_Tenant_Inbox_Params is record
+      --  Maximum items returned. Does not affect `counts`.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_Get_Tenant_Inbox_Params : constant Get_Tenant_Inbox_Params := (others => <>);
+
+   --  Query and header parameters for `getTenantOverview`.
+   type Get_Tenant_Overview_Params is record
+      --  Window in days. Clamped to 1-90.
+      Has_Days : Boolean := False;
+      Days : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_Get_Tenant_Overview_Params : constant Get_Tenant_Overview_Params := (others => <>);
+
    --  Query and header parameters for `tenantAnalyticsAgents`.
    type Tenant_Analytics_Agents_Params is record
       Has_Days : Boolean := False;
@@ -17,6 +44,57 @@ package UARP.API.Analytics is
    end record;
 
    No_Tenant_Analytics_Agents_Params : constant Tenant_Analytics_Agents_Params := (others => <>);
+
+   --  Public chat funnel
+   --
+   --  Visits, engagement and messages on the tenant's public chat surfaces, with
+   --  country/device/browser/OS/referrer/UTM breakdowns and a per-agent split.
+   --
+   --  The conversion figures are RATIOS (0.25 = a quarter), unlike the admin overview's `*_pct`
+   --  fields, which are percentages.
+   --
+   --  GET /api/v1/analytics/public-chat
+   --
+   --  Required scopes: read:analytics.
+   function Get_Public_Chat_Analytics
+     (Self : Client_Type;
+      Params : Get_Public_Chat_Analytics_Params := No_Get_Public_Chat_Analytics_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Public_Chat_Analytics;
+
+   --  Runs waiting on a human
+   --
+   --  Approvals, input requests, paused and failed runs, each with a one-line summary of what is
+   --  being asked - tool names, the question, or the error.
+   --
+   --  `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
+   --  still reports the true backlog.
+   --
+   --  GET /api/v1/analytics/inbox
+   --
+   --  Required scopes: read:analytics.
+   function Get_Tenant_Inbox
+     (Self : Client_Type;
+      Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Inbox;
+
+   --  Mission Control overview
+   --
+   --  One aggregate for the dashboard: fleet, run status buckets, recent runs, pending approvals,
+   --  quota, worker health and schedules at risk.
+   --
+   --  The run scan is bounded, so `runs.scanned` is what the numbers actually describe. A tenant
+   --  busier than the cap sees a window, not its whole history.
+   --
+   --  GET /api/v1/analytics/overview
+   --
+   --  Required scopes: read:analytics.
+   function Get_Tenant_Overview
+     (Self : Client_Type;
+      Params : Get_Tenant_Overview_Params := No_Get_Tenant_Overview_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Overview;
 
    --  Tenant-scoped agent analytics
    --
