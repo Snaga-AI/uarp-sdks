@@ -18,27 +18,144 @@ export type A2ajsonRpcRequestMethod = 'tasks/send' | 'tasks/sendSubscribe' | 'ta
 
 export const A2AJSON_RPC_REQUEST_METHOD_VALUES = ['tasks/send', 'tasks/sendSubscribe', 'tasks/get', 'tasks/cancel', 'tasks/pushNotification/set', 'tasks/pushNotification/get'] as const;
 
-/**
- * Agent-to-Agent Protocol task (A2A spec compliant).
- */
 export interface A2ATask {
-  task_id: string;
-  agent_id: string;
-  status: A2ATaskStatus;
+  id: string;
+  agent_id?: string;
   session_id?: string;
-  /**
-   * Message history per A2A spec.
-   */
-  history?: JsonObject[];
-  artifacts?: JsonObject[];
-  metadata?: JsonObject;
+  status: A2ATaskStatus;
+  messages: A2ATaskMessage[];
+  artifacts: A2ATaskArtifact[];
+  metadata: JsonObject;
   created_at?: string;
   updated_at?: string;
 }
 
+export interface A2ATaskArtifact {
+  name: string;
+  description?: string;
+  parts: JsonObject[];
+  index: number;
+}
+
+export interface A2ATaskMessage {
+  role: A2ATaskMessageRole;
+  parts: JsonObject[];
+}
+
+export type A2ATaskMessageRole = 'user' | 'agent';
+
+export const A2_ATASK_MESSAGE_ROLE_VALUES = ['user', 'agent'] as const;
+
 export type A2ATaskStatus = 'submitted' | 'working' | 'input-required' | 'completed' | 'canceled' | 'failed';
 
 export const A2_ATASK_STATUS_VALUES = ['submitted', 'working', 'input-required', 'completed', 'canceled', 'failed'] as const;
+
+/**
+ * After-action review, built once when the mission reaches a terminal status.
+ * `failure_analysis` is present only when something failed.
+ */
+export interface Aar {
+  aar_id: string;
+  mission_id: string;
+  tenant_id: string;
+  created_at: string;
+  outcome: MissionOutcome;
+  phases: AarPhaseRecord[];
+  objective_outcomes: AarObjectiveOutcome[];
+  failure_analysis?: AarFailureAnalysis;
+}
+
+export interface AarFailureAnalysis {
+  failed_objective_ids: string[];
+  root_causes: AarRootCause[];
+  lessons: AarLesson[];
+}
+
+/**
+ * A pattern seen in this mission and what to do about it next time.
+ */
+export interface AarLesson {
+  pattern: string;
+  recommendation: string;
+}
+
+export interface AarObjectiveOutcome {
+  objective_id: string;
+  /**
+   * The objective's status when the mission ended.
+   */
+  final_status: string;
+  /**
+   * Retries spent on this objective before it settled.
+   */
+  strikes_used: number;
+  final_agent_id?: string;
+  final_model?: string;
+  duration_ms?: number;
+  cost_usd?: number;
+  /**
+   * Whether the success criteria were checked and held.
+   */
+  verified: boolean;
+}
+
+export interface AarPhaseRecord {
+  phase: AarPhaseRecordPhase;
+  started_at: string;
+  completed_at: string;
+  duration_ms: number;
+}
+
+export type AarPhaseRecordPhase = 'recon' | 'plan' | 'authorize' | 'execute' | 'verify';
+
+export const AAR_PHASE_RECORD_PHASE_VALUES = ['recon', 'plan', 'authorize', 'execute', 'verify'] as const;
+
+export interface AarRootCause {
+  objective_id: string;
+  category: AarRootCauseCategory;
+  details: string;
+}
+
+export type AarRootCauseCategory = 'llm_timeout' | 'llm_idle' | 'llm_loop' | 'tool_error' | 'tool_truncation' | 'verification_failed' | 'authorization_denied' | 'external_error' | 'max_duration_exceeded' | 'unknown';
+
+export const AAR_ROOT_CAUSE_CATEGORY_VALUES = ['llm_timeout', 'llm_idle', 'llm_loop', 'tool_error', 'tool_truncation', 'verification_failed', 'authorization_denied', 'external_error', 'max_duration_exceeded', 'unknown'] as const;
+
+export interface AbortMissionRequest {
+  /**
+   * Recorded on the mission; blank or missing is fine.
+   */
+  reason?: string;
+}
+
+/**
+ * The JSON form of an account export. The same bundle the zip contains, as one document.
+ */
+export interface AccountExport {
+  format: AccountExportFormat;
+  exported_at: string;
+  counts: AccountExportCounts;
+  /**
+   * False when a size ceiling was hit; `omitted` then says what was left out. An export that
+   * quietly drops things is worse than one that admits it.
+   */
+  complete: boolean;
+  omitted: string[];
+  /**
+   * Path inside the bundle → its contents (`account.json`, `projects.md`, `memory.md`,
+   * `chats/…`).
+   */
+  files: JsonObject;
+}
+
+export interface AccountExportCounts {
+  chats: number;
+  projects: number;
+  memories: number;
+}
+
+export type AccountExportFormat = 'snaga.export.v1';
+
+export const ACCOUNT_EXPORT_FORMAT_VALUES = ['snaga.export.v1'] as const;
 
 export interface ActivateSafeModeRequest {
   reason: string;
@@ -61,6 +178,20 @@ export interface ActiveSession {
   created_at?: string;
   expires_at?: string | null;
   last_used_at?: string | null;
+}
+
+export interface AddSquadGraphEdgeRequest {
+  from: string;
+  to: string;
+  type: TeamGraphEdgeType;
+  task_id?: string;
+}
+
+export interface AddSquadGraphNodeRequest {
+  agent_id: string;
+  role: TeamGraphNodeRole;
+  spawned_by?: string;
+  goal_summary?: string;
 }
 
 export interface AddTeamGraphEdgeRequest {
@@ -351,6 +482,25 @@ export interface AgentAccessControl {
   caveats?: string[];
 }
 
+export interface AgentAnalyticsRow {
+  agent_id: string;
+  tenant_id: string;
+  name: string;
+  execution_mode: AgentExecutionMode;
+  status: string;
+  /**
+   * Bridge agents only.
+   */
+  bridge_status?: AgentSummaryBridgeStatus;
+  /**
+   * Bridge agents only.
+   */
+  machine_count?: number;
+  runs: number;
+  cost_usd: number;
+  tokens: number;
+}
+
 /**
  * Output of summariseAgents (analytics.ts) — same shape for /admin/analytics/agents and
  * /analytics/agents (tenant-scoped).
@@ -422,6 +572,53 @@ export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
 
 /**
+ * How the tenant's agents split, and which of them cost the most over the window.
+ */
+export interface AgentFleetSummary {
+  range: AgentFleetSummaryRange;
+  total: number;
+  by_execution_mode: AgentFleetSummaryByExecutionMode;
+  bridge: AgentFleetSummaryBridge;
+  runs_total: number;
+  cost_total_usd: number;
+  tokens_total: number;
+  /**
+   * At most ten.
+   */
+  top_by_runs: AgentAnalyticsRow[];
+  /**
+   * At most ten.
+   */
+  top_by_cost: AgentAnalyticsRow[];
+  /**
+   * Every agent, not a page.
+   */
+  agents: AgentAnalyticsRow[];
+}
+
+export interface AgentFleetSummaryBridge {
+  online: number;
+  stale: number;
+  offline: number;
+  /**
+   * Machines across all bridge agents, not agents.
+   */
+  machines_total: number;
+}
+
+export interface AgentFleetSummaryByExecutionMode {
+  /**
+   * Everything that is not a bridge agent.
+   */
+  cloud: number;
+  bridge: number;
+}
+
+export interface AgentFleetSummaryRange {
+  days: number;
+}
+
+/**
  * Agent-scoped integration (connection) instance
  */
 export interface AgentIntegration {
@@ -450,6 +647,33 @@ export interface AgentLineage {
   spawned_by: string;
   spawned_at?: string;
 }
+
+/**
+ * One message between two agents.
+ */
+export interface AgentMessage {
+  message_id: string;
+  thread_id: string;
+  from_agent_id: string;
+  to_agent_id: string;
+  message: string;
+  created_at: string;
+  /**
+   * Integrity signature, when the message carries one.
+   */
+  signature?: string;
+  /**
+   * Communications precedence; absent means routine.
+   */
+  precedence?: AgentMessagePrecedence;
+}
+
+/**
+ * Communications precedence; absent means routine.
+ */
+export type AgentMessagePrecedence = 'flash' | 'immediate' | 'priority' | 'routine';
+
+export const AGENT_MESSAGE_PRECEDENCE_VALUES = ['flash', 'immediate', 'priority', 'routine'] as const;
 
 /**
  * Model capabilities. Deliberately carries no provider or model identifier — see the model
@@ -882,6 +1106,16 @@ export interface BootstrapRequest {
   tenant_slug?: string;
 }
 
+export interface BridgeAgentSummary {
+  agent_id: string;
+  machine_id: string;
+  machine_name: string;
+  capabilities: string[];
+  working_directory: string;
+  status: string;
+  last_heartbeat: string;
+}
+
 export interface BridgeConnection {
   agent_id: string;
   tenant_id?: string;
@@ -1053,6 +1287,48 @@ export type BulkDeleteNotificationsScope = 'read' | 'all';
 
 export const BULK_DELETE_NOTIFICATIONS_SCOPE_VALUES = ['read', 'all'] as const;
 
+export interface CancelSquadRunResponse {
+  cancelled: boolean;
+  team_run_id: string;
+  /**
+   * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   */
+  cancelledCount: number;
+  /**
+   * False when no orchestration loop was in flight in this process — the run had already
+   * settled, or it belongs to another replica.
+   */
+  orchestrator_stopped: boolean;
+}
+
+export interface CancelTeamRunResponse {
+  cancelled: boolean;
+  team_run_id: string;
+  /**
+   * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   */
+  cancelledCount: number;
+  /**
+   * False when no orchestration loop was in flight in this process — the run had already
+   * settled, or it belongs to another replica.
+   */
+  orchestrator_stopped: boolean;
+}
+
+export interface CancelTrainingJobResponseVariant1 {
+  cancelled: boolean;
+  job_id: string;
+}
+
+export interface CancelTrainingJobResponseVariant2 {
+  cancelled: boolean;
+  /**
+   * Either the job was already terminal, or it was modified concurrently and the caller should
+   * retry.
+   */
+  message: string;
+}
+
 export interface CastBallotRequest {
   agent_id: string;
   vote: string;
@@ -1150,6 +1426,17 @@ export interface Company {
   workspace_id?: string;
   created_at?: string;
   updated_at?: string;
+  /**
+   * When the company loop last ATTEMPTED a tick, success or failure. The tick schedule is
+   * computed from this (falling back to updated_at while absent), so an ordinary edit no longer
+   * postpones the next tick.
+   */
+  last_tick_at?: string;
+  /**
+   * When the company loop last completed a tick whose strategist run SUCCEEDED. The `stuck`
+   * escalation reads this (falling back to updated_at while absent).
+   */
+  last_successful_tick_at?: string;
 }
 
 /**
@@ -1670,6 +1957,16 @@ export interface CreateProgramRequestStep {
   suggested_due_offset_days?: number;
 }
 
+export interface CreateProjectRequest {
+  name: string;
+  description?: string;
+  instructions?: string;
+  knowledge_base_ids?: string[];
+  file_ids?: string[];
+  visibility?: ProjectVisibility;
+  shared_with?: ProjectGrant[];
+}
+
 export interface CreatePublicSessionRequest {
   agent_id: string;
 }
@@ -1816,6 +2113,26 @@ export interface CreateTaskRequestRecurrence {
   timezone?: string;
 }
 
+export interface CreateTrainingDepositResponseVariant1 {
+  checkout_url: string;
+  session_id: string;
+}
+
+export interface CreateTrainingDepositResponseVariant2 {
+  already_paid: boolean;
+  job_id: string;
+  status: TrainingJobStatus;
+}
+
+export interface CreateTrainingJobResponse {
+  job_id: string;
+  quote: TrainingQuote;
+  /**
+   * Shown once. Hand it to the worker that runs the job.
+   */
+  callback_secret: string;
+}
+
 export interface CreateVotingProposalRequest {
   title: string;
   description: string;
@@ -1911,6 +2228,16 @@ export interface DeleteNotificationResponse {
   ok?: boolean;
 }
 
+export interface DeleteNotificationTargetResponse {
+  ok: boolean;
+}
+
+export interface DeleteProjectResponse {
+  deleted: boolean;
+  project_id: string;
+  chats_kept: number;
+}
+
 export interface DeleteSessionTodoResponse {
   deleted?: boolean;
   todo_id?: string;
@@ -1919,6 +2246,20 @@ export interface DeleteSessionTodoResponse {
 
 export interface DeleteSpawnPolicyResponse {
   ok?: boolean;
+}
+
+export interface DeleteSquadGraphEdgeResponse {
+  deleted?: boolean;
+  edge_id?: string;
+}
+
+export interface DeleteSquadGraphNodeResponse {
+  deleted?: boolean;
+  agent_id?: string;
+}
+
+export interface DeleteSquadResponse {
+  deleted?: boolean;
 }
 
 export interface DeleteTeamGraphEdgeResponse {
@@ -1932,7 +2273,8 @@ export interface DeleteTeamGraphNodeResponse {
 }
 
 export interface DeleteTeamResponse {
-  deleted?: boolean;
+  deleted: boolean;
+  team_id: string;
 }
 
 export interface DeleteUserResponse {
@@ -2123,6 +2465,62 @@ export interface ErrorError {
   message?: string;
 }
 
+/**
+ * What a person reported from the “report to the team” button, or general feedback. Reports
+ * are stored in ONE global inbox across all tenants, and expire after 90 days — the inbox is a
+ * working queue, not an archive.
+ */
+export interface ErrorReport {
+  id: string;
+  /**
+   * The tenant the report came FROM, not the inbox it is stored in.
+   */
+  tenant_id: string;
+  user_id?: string;
+  key_id?: string;
+  /**
+   * The toast headline. Defaults to “Reported error” when the caller sends none.
+   */
+  title: string;
+  message: string;
+  /**
+   * What the person was doing — action, component.
+   */
+  context?: string;
+  url?: string;
+  run_id?: string;
+  user_agent?: string;
+  /**
+   * Anything other than `feedback` is filed as an `error`.
+   */
+  kind: ErrorReportKind;
+  status: ErrorReportStatus;
+  created_at: string;
+}
+
+/**
+ * Anything other than `feedback` is filed as an `error`.
+ */
+export type ErrorReportKind = 'error' | 'feedback';
+
+export const ERROR_REPORT_KIND_VALUES = ['error', 'feedback'] as const;
+
+export type ErrorReportStatus = 'new' | 'resolved';
+
+export const ERROR_REPORT_STATUS_VALUES = ['new', 'resolved'] as const;
+
+export interface EstimateRunCostRequest {
+  agent_id: string;
+  /**
+   * The prompt, used for the input-token estimate.
+   */
+  input_text?: string;
+  /**
+   * Picks up a per-session model override, when one is set.
+   */
+  session_id?: string;
+}
+
 export interface Experiment {
   experiment_id?: string;
   tenant_id?: string;
@@ -2149,6 +2547,10 @@ export interface ExportAdminConfigResponse {
   section_count: number;
   sections: JsonObject;
 }
+
+export type ExportMyAccountFormat = 'zip' | 'json';
+
+export const EXPORT_MY_ACCOUNT_FORMAT_VALUES = ['zip', 'json'] as const;
 
 export interface FeedEntry {
   feed_id: string;
@@ -2201,6 +2603,122 @@ export interface FileEntry {
   sha256: string;
   size_bytes: number;
   tenant_id: string;
+}
+
+/**
+ * The operator's canvas: where each agent sits, how they are wired, and the notes and
+ * not-yet-real nodes drawn around them. Persisted as one record per tenant.
+ */
+export interface FleetLayout {
+  /**
+   * Agent id → its place on the canvas.
+   */
+  positions: Record<string, Value3>;
+  edges: FleetLayoutEdge[];
+  notes?: FleetLayoutNote[];
+  drafts?: FleetLayoutDraft[];
+  updated_at?: string;
+  /**
+   * Present ONLY when the save discarded something. Counts per collection of the items that did
+   * not survive the caps or validation. A 200 without this field saved everything.
+   */
+  dropped?: FleetLayoutDropped;
+}
+
+export interface FleetLayoutDraft {
+  id: string;
+  /**
+   * memory / knowledge / tool / condition / … — a node the operator drew that is not a backend
+   * entity yet.
+   */
+  kind: string;
+  x: number;
+  y: number;
+  label?: string;
+  config?: JsonObject;
+}
+
+/**
+ * Present ONLY when the save discarded something. Counts per collection of the items that did
+ * not survive the caps or validation. A 200 without this field saved everything.
+ */
+export interface FleetLayoutDropped {
+  positions: number;
+  edges: number;
+  notes: number;
+  drafts: number;
+}
+
+export interface FleetLayoutEdge {
+  id: string;
+  /**
+   * Agent id.
+   */
+  source: string;
+  /**
+   * Agent id.
+   */
+  target: string;
+  /**
+   * Edge kind; a workflow edge is what makes the graph runnable.
+   */
+  type?: string;
+}
+
+export interface FleetLayoutNote {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+  color?: string;
+  /**
+   * A frame is a large titled rectangle drawn BEHIND the nodes to group a squad.
+   */
+  frame?: boolean;
+}
+
+/**
+ * What a client SENDS when saving the canvas. The stored record additionally carries
+ * `updated_at`, and the response may carry `dropped` — both are produced by the server, so
+ * neither belongs in a request.
+ */
+export interface FleetLayoutUpdate {
+  /**
+   * Agent id → its place on the canvas.
+   */
+  positions: Record<string, Value2>;
+  edges: FleetLayoutUpdateEdge[];
+  notes?: FleetLayoutUpdateNote[];
+  drafts?: FleetLayoutUpdateDraft[];
+}
+
+export interface FleetLayoutUpdateDraft {
+  id: string;
+  kind: string;
+  x: number;
+  y: number;
+  label?: string;
+  config?: JsonObject;
+}
+
+export interface FleetLayoutUpdateEdge {
+  id: string;
+  source: string;
+  target: string;
+  type?: string;
+}
+
+export interface FleetLayoutUpdateNote {
+  id: string;
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+  text: string;
+  color?: string;
+  frame?: boolean;
 }
 
 export interface FriaReport {
@@ -2287,6 +2805,29 @@ export interface GetAgentActivityStatsResponse {
   totalRuns?: number;
   completedRuns?: number;
   failedRuns?: number;
+  cancelledRuns?: number;
+  guardrailBlockedRuns?: number;
+  errorRatePercent?: number;
+  avgStepsPerRun?: number;
+  avgDurationMs?: number;
+  avgInputTokens?: number;
+  avgOutputTokens?: number;
+  avgThinkingTokens?: number;
+  toolBreakdown?: JsonObject[];
+  topErrorMessages?: GetAgentActivityStatsResponseTopErrorMessage[];
+  runsByDay?: GetAgentActivityStatsResponseRunsByDayItem[];
+}
+
+export interface GetAgentActivityStatsResponseRunsByDayItem {
+  day?: string;
+  total?: number;
+  completed?: number;
+  failed?: number;
+}
+
+export interface GetAgentActivityStatsResponseTopErrorMessage {
+  message?: string;
+  count?: number;
 }
 
 export interface GetAgentIdentityResponse {
@@ -2319,7 +2860,7 @@ export interface GetAgentVersionDiffResponse {
   agent_id?: string;
   version_from?: number;
   version_to?: number;
-  diff?: Record<string, Value>;
+  diff?: Record<string, Value4>;
   changed_fields?: string[];
 }
 
@@ -2445,6 +2986,16 @@ export interface GetListingReviewsResponse {
   cursor?: string;
 }
 
+export interface GetMaintenanceStateResponse {
+  enabled: boolean;
+  message?: string;
+  enabled_at?: string;
+  /**
+   * Empty string for the synthetic default-off state — that state has no author.
+   */
+  enabled_by_email?: string;
+}
+
 export interface GetMarkupConfigResponse {
   markup?: JsonObject;
 }
@@ -2528,6 +3079,10 @@ export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'start
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
 
+export type GetPlatformEconomicsRefresh = '1';
+
+export const GET_PLATFORM_ECONOMICS_REFRESH_VALUES = ['1'] as const;
+
 export interface GetPlatformURLSResponse {
   urls?: GetPlatformURLSResponseURLS;
 }
@@ -2558,6 +3113,10 @@ export interface GetReadyResponseChecks {
 export type GetReadyResponseStatus = 'ready' | 'not_ready';
 
 export const GET_READY_RESPONSE_STATUS_VALUES = ['ready', 'not_ready'] as const;
+
+export interface GetRegistrationStatusResponse {
+  registration_open: boolean;
+}
 
 export interface GetRootAgentResponse {
   /**
@@ -2593,6 +3152,23 @@ export type GetSessionShareResponseRole = 'viewer' | 'editor';
 
 export const GET_SESSION_SHARE_RESPONSE_ROLE_VALUES = ['viewer', 'editor'] as const;
 
+export interface GetSquadChatHistoryResponse {
+  team_id?: string;
+  conversation_history?: TeamChatTurn[];
+  total?: number;
+  chat_state?: JsonObject;
+}
+
+export interface GetSquadGraphResponse {
+  nodes?: TeamGraphNode[];
+  edges?: TeamGraphEdge[];
+}
+
+export interface GetSquadRunMessagesResponse {
+  messages?: JsonObject[];
+  total?: number;
+}
+
 export interface GetTeamChatHistoryResponse {
   team_id?: string;
   conversation_history?: TeamChatTurn[];
@@ -2616,6 +3192,26 @@ export interface GetTenantUsageResponse {
   usage?: JsonObject;
 }
 
+export interface GetTrainingJobMetricsResponse {
+  series: GetTrainingJobMetricsResponseSery[];
+  /**
+   * The durable gauge snapshot for first paint; null before the worker reports.
+   */
+  latest: TrainingJobMetrics | null;
+  total_points: number;
+}
+
+export interface GetTrainingJobMetricsResponseSery {
+  step: number;
+  loss: number;
+  eval_loss?: number;
+  tokens_per_sec?: number;
+  /**
+   * Event-log sequence number the point came from.
+   */
+  seq: number;
+}
+
 export interface GetUnreadCountResponse {
   unread_count?: number;
 }
@@ -2635,18 +3231,31 @@ export interface GetUsageTimeseriesResponseDataItem {
 }
 
 export interface Goal {
-  id: string;
+  goal_id: string;
+  tenant_id: string;
   agent_id: string;
   title?: string;
   description?: string;
+  rationale?: string;
+  /**
+   * How the goal squares with the constitution — written by the formulating agent.
+   */
+  alignment_justification?: string;
+  expected_impact?: string;
+  resource_estimate_usd?: number;
   status: GoalStatus;
-  target_date?: string | null;
-  created_at?: string;
+  /**
+   * Set once the goal reaches a vote. Absent before that.
+   */
+  proposal_id?: string;
+  constitution_check_passed?: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
-export type GoalStatus = 'draft' | 'active' | 'achieved' | 'abandoned' | 'expired';
+export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed';
 
-export const GOAL_STATUS_VALUES = ['draft', 'active', 'achieved', 'abandoned', 'expired'] as const;
+export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed'] as const;
 
 export interface GoogleOneTapAuthRequest {
   /**
@@ -2740,6 +3349,20 @@ export interface HealthzAliasResponse {
   status?: string;
 }
 
+export interface HostDroplet {
+  id: number;
+  name: string;
+  status: string;
+  region: string;
+  size_slug: string;
+  price_monthly_usd: number;
+  price_hourly_usd: number;
+  memory_mb: number;
+  vcpus: number;
+  disk_gb: number;
+  created_at: string;
+}
+
 export interface HumanAmbassador {
   ambassador_id: string;
   tenant_id: string;
@@ -2767,20 +3390,82 @@ export interface ImportAdminConfigRequest {
  * sandbox_testing → approved → applied | rejected at any step).
  */
 export interface ImprovementProposal {
+  proposal_id: string;
+  tenant_id: string;
   agent_id: string;
-  version: string;
-  type: string;
-  diff?: JsonObject;
+  /**
+   * Was declared `string` here while the record has always carried a number.
+   */
+  version: number;
+  type: ImprovementProposalType;
+  /**
+   * The proposal's heading. Undeclared until now, so a client built from this document rendered
+   * the card without one.
+   */
+  title?: string;
+  description?: string;
   rationale?: string;
+  /**
+   * The failed runs that prompted the proposal.
+   */
+  failed_run_ids?: string[];
+  /**
+   * The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+   * the documented name found nothing and showed "no diff" over a proposal that had one.
+   */
+  changes?: JsonObject;
+  baseline_success_rate?: number;
+  /**
+   * Present only after the sandbox stage has run.
+   */
+  sandbox_success_rate?: number;
   status: ImprovementProposalStatus;
-  submitted_by?: string;
-  created_at?: string;
+  /**
+   * Set once the proposal reaches a vote.
+   */
+  vote_proposal_id?: string;
+  created_at: string;
   updated_at?: string;
 }
 
 export type ImprovementProposalStatus = 'proposed' | 'arbiter_review' | 'voting' | 'sandbox_testing' | 'approved' | 'applied' | 'rejected';
 
 export const IMPROVEMENT_PROPOSAL_STATUS_VALUES = ['proposed', 'arbiter_review', 'voting', 'sandbox_testing', 'approved', 'applied', 'rejected'] as const;
+
+export type ImprovementProposalType = 'prompt_change' | 'tool_addition' | 'tool_removal' | 'model_change' | 'parameter_tuning' | 'skill_addition';
+
+export const IMPROVEMENT_PROPOSAL_TYPE_VALUES = ['prompt_change', 'tool_addition', 'tool_removal', 'model_change', 'parameter_tuning', 'skill_addition'] as const;
+
+/**
+ * One run waiting on a person, with what it is actually asking rather than just its status.
+ */
+export interface InboxItem {
+  id: string;
+  kind: InboxItemKind;
+  run_id: string;
+  agent_id: string;
+  agent_name: string;
+  session_id: string | null;
+  status: string;
+  created_at: string | null;
+  /**
+   * One line: the tool being requested, the question, or the error.
+   */
+  summary: string;
+  /**
+   * Longer body — tool arguments, error detail, question context. Empty string when there is
+   * none.
+   */
+  detail: string;
+  /**
+   * The agent's own choices, for `input` items. Empty otherwise.
+   */
+  options: string[];
+}
+
+export type InboxItemKind = 'approval' | 'input' | 'paused' | 'failed';
+
+export const INBOX_ITEM_KIND_VALUES = ['approval', 'input', 'paused', 'failed'] as const;
 
 export interface IngestKbDocumentRequest {
   file_id?: string;
@@ -3013,6 +3698,28 @@ export interface KnowledgeBaseUpdate {
   description?: string;
 }
 
+/**
+ * Operator-set text and partner logos for the public landing page.
+ */
+export interface LandingOverrides {
+  /**
+   * Override key → text. Empty when nothing is overridden.
+   */
+  texts: JsonObject;
+  multilang_enabled: boolean;
+  default_locale: string;
+  partners_enabled: boolean;
+  /**
+   * Null means never configured, which a client may render differently from an empty list.
+   */
+  partners: JsonObject[] | null;
+  /**
+   * KV versionstamp of the stored record. The admin form sends it back on write so two operators
+   * cannot silently overwrite each other.
+   */
+  version: string | null;
+}
+
 export interface LandingStats {
   agents_deployed?: number;
   llm_providers?: number;
@@ -3047,6 +3754,15 @@ export interface ListAdminProvidersResponse {
 export interface ListAgentIntegrationsResponse {
   integrations?: AgentIntegration[];
   total?: number;
+}
+
+export interface ListAgentMailResponse {
+  messages: AgentMessage[];
+  /**
+   * Agent id → name, resolved for display. An agent that no longer exists is simply absent.
+   */
+  agent_names: JsonObject;
+  total_scanned: number;
 }
 
 export interface ListAgentScorersResponse {
@@ -3193,9 +3909,22 @@ export interface ListDataExplorerNamespacesResponse {
   namespaces?: JsonObject[];
 }
 
+export interface ListFeaturedSpecsResponse {
+  featured: string[];
+}
+
+export interface ListFeedbackResponse {
+  reports: ErrorReport[];
+  count: number;
+  new_count: number;
+}
+
 export interface ListFilesResponse {
   items?: FileEntry[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
 }
 
@@ -3280,6 +4009,19 @@ export interface ListMeSessionsResponse {
   total: number;
 }
 
+export interface ListMissionObjectivesResponse {
+  items: Objective[];
+  total: number;
+}
+
+export interface ListMissionsResponse {
+  items: Mission[];
+  /**
+   * Length of `items` in this response, not a tenant-wide count.
+   */
+  total: number;
+}
+
 export interface ListModelsResponse {
   object: 'list';
   data: ListModelsResponseDataItem[];
@@ -3326,6 +4068,10 @@ export interface ListNotificationsResponse {
   notifications: Notification[];
 }
 
+export interface ListNotificationTargetsResponse {
+  targets: NotificationTarget[];
+}
+
 export interface ListOAuthLoginProvidersResponse {
   providers: ListOAuthLoginProvidersResponseProvider[];
 }
@@ -3342,6 +4088,16 @@ export const LIST_OAUTH_LOGIN_PROVIDERS_RESPONSE_PROVIDER_ID_VALUES = ['github',
 
 export interface ListProgramsResponse {
   programs: Program[];
+}
+
+export type ListProjectsArchived = 'true';
+
+export const LIST_PROJECTS_ARCHIVED_VALUES = ['true'] as const;
+
+export interface ListProjectsResponse {
+  items: Project[];
+  total: number;
+  archived_count: number;
 }
 
 export interface ListProviderModelsResponse {
@@ -3381,7 +4137,10 @@ export interface ListPublicStatesResponse {
 
 export interface ListPublicTenantsResponse {
   items?: PublicTenant[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
   total?: number;
 }
@@ -3394,6 +4153,10 @@ export interface ListRunsResponse {
   items: Run[];
   cursor?: string;
   has_more: boolean;
+}
+
+export interface ListSchedulesResponse {
+  schedules: ScheduleSummary[];
 }
 
 export interface ListSessionAnnotationsResponse {
@@ -3486,6 +4249,33 @@ export interface ListSessionTodosResponse {
   total?: number;
 }
 
+export interface ListSquadGraphEdgesResponse {
+  edges?: TeamGraphEdge[];
+  total?: number;
+}
+
+export interface ListSquadGraphNodesResponse {
+  nodes?: TeamGraphNode[];
+  total?: number;
+}
+
+export interface ListSquadRunsResponse {
+  team_id?: string;
+  runs?: TeamRunSummary[];
+  total?: number;
+}
+
+export interface ListSquadsResponse {
+  items: Team[];
+  /**
+   * Legacy alias for `items`. Will be removed in API v1.x.
+   *
+   * @deprecated
+   */
+  teams?: Team[];
+  total?: number;
+}
+
 export interface ListSubscriptionsResponse {
   subscriptions?: JsonObject[];
 }
@@ -3503,7 +4293,15 @@ export interface ListTeamGraphNodesResponse {
 export interface ListTeamRunsResponse {
   team_id?: string;
   runs?: TeamRunSummary[];
+  /**
+   * Rows in THIS page, not the total across pages.
+   */
   total?: number;
+  /**
+   * Pass back as `cursor` to continue. Absent on the last page.
+   */
+  cursor?: string;
+  has_more?: boolean;
 }
 
 export interface ListTeamsResponse {
@@ -3524,6 +4322,19 @@ export interface ListTenantsResponse {
 
 export interface ListTodosResponse {
   todos?: Todo[];
+}
+
+export interface ListTrainingJobsResponse {
+  items: TrainingJob[];
+  /**
+   * Length of `items` on this page, not a tenant-wide count.
+   */
+  total: number;
+  /**
+   * Pass as `cursor` for the next page; null on the last page.
+   */
+  cursor: string | null;
+  has_more: boolean;
 }
 
 export interface ListUsersResponse {
@@ -3661,26 +4472,40 @@ export interface LogoutResponse {
   already_revoked?: boolean;
 }
 
+/**
+ * Whether the platform is closed for maintenance. Unauthenticated: a client that cannot sign
+ * in still needs to know why. `message` is plain text and is never rendered as HTML by the
+ * API.
+ */
+export interface MaintenanceStatus {
+  enabled: boolean;
+  /**
+   * Absent when no message was set.
+   */
+  message?: string;
+}
+
 export interface MarkAllNotificationsReadResponse {
   marked?: number;
 }
 
 export interface MarketplaceInvocation {
   invocation_id: string;
+  caller_tenant_id: string;
+  publisher_tenant_id: string;
   listing_id: string;
-  tenant_id?: string;
-  caller_tenant_id?: string;
-  input?: JsonObject;
+  agent_id: string;
+  agent_version: string;
+  input: JsonObject;
+  status: MarketplaceInvocationStatus;
+  output?: JsonObject;
   metrics?: JsonObject;
   /**
-   * Set when the run succeeded but paying the publisher failed — a different thing from a failed
-   * run.
+   * Set when the run succeeded but the publisher payout failed — not a failed run.
    */
   revenue_error?: string;
-  status: MarketplaceInvocationStatus;
-  result?: JsonObject | null;
   created_at: string;
-  completed_at?: string | null;
+  completed_at?: string;
 }
 
 export type MarketplaceInvocationStatus = 'pending' | 'running' | 'completed' | 'failed';
@@ -3691,25 +4516,36 @@ export interface MarketplaceListing {
   listing_id: string;
   tenant_id: string;
   agent_id: string;
-  agent_version?: string;
+  agent_version: string;
   name: string;
-  description?: string;
+  description: string;
   category: MarketplaceListingCategory;
-  tags?: string[];
+  tags: string[];
   icon_url?: string;
-  readme?: string;
-  pricing?: JsonObject;
-  stats?: MarketplaceListingStats;
+  readme: string;
+  pricing: MarketplaceListingPricing;
+  stats: MarketplaceListingStats;
   status: MarketplaceListingStatus;
-  a2a_enabled?: boolean;
+  a2a_enabled: boolean;
   program_id?: string;
-  created_at?: string;
-  updated_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export type MarketplaceListingCategory = 'productivity' | 'engineering' | 'research' | 'creative' | 'support' | 'operations' | 'analytics' | 'education' | 'personal' | 'other';
+export type MarketplaceListingCategory = 'coding' | 'writing' | 'research' | 'data' | 'automation' | 'creative' | 'education' | 'business' | 'other';
 
-export const MARKETPLACE_LISTING_CATEGORY_VALUES = ['productivity', 'engineering', 'research', 'creative', 'support', 'operations', 'analytics', 'education', 'personal', 'other'] as const;
+export const MARKETPLACE_LISTING_CATEGORY_VALUES = ['coding', 'writing', 'research', 'data', 'automation', 'creative', 'education', 'business', 'other'] as const;
+
+export interface MarketplaceListingPricing {
+  model: MarketplaceListingPricingModel;
+  price_per_run_usd?: number;
+  price_per_1k_tokens_usd?: number;
+  stripe_price_id?: string;
+}
+
+export type MarketplaceListingPricingModel = 'free' | 'per_run' | 'per_token' | 'subscription';
+
+export const MARKETPLACE_LISTING_PRICING_MODEL_VALUES = ['free', 'per_run', 'per_token', 'subscription'] as const;
 
 export interface MarketplaceListingRating {
   rating_id: string;
@@ -3722,15 +4558,30 @@ export interface MarketplaceListingRating {
 }
 
 export interface MarketplaceListingStats {
-  rating_avg?: number;
-  rating_count?: number;
-  invocation_count?: number;
-  favourite_count?: number;
+  total_runs: number;
+  avg_rating: number;
+  total_ratings: number;
+  avg_latency_ms: number;
+  success_rate: number;
 }
 
-export type MarketplaceListingStatus = 'draft' | 'published' | 'deprecated';
+export type MarketplaceListingStatus = 'draft' | 'published' | 'suspended' | 'archived';
 
-export const MARKETPLACE_LISTING_STATUS_VALUES = ['draft', 'published', 'deprecated'] as const;
+export const MARKETPLACE_LISTING_STATUS_VALUES = ['draft', 'published', 'suspended', 'archived'] as const;
+
+export interface MaterializeCanvasSquadRequest {
+  supervisor_agent_id: string;
+  /**
+   * Defaults to the saved layout's outgoing edges.
+   */
+  worker_ids?: string[];
+}
+
+export interface MaterializeCanvasSquadResponse {
+  team_id: string;
+  created: boolean;
+  worker_count: number;
+}
 
 export interface McpjsonRpcRequest {
   jsonrpc: '2.0';
@@ -3839,6 +4690,134 @@ export interface MintSSETokenResponse {
   expires_at: string;
 }
 
+/**
+ * A Mission Execution Framework run: a goal decomposed into objectives, executed under an
+ * authorization gate with checkpoints and an after-action review. Sent by every mission
+ * endpoint that answers with the record itself.
+ */
+export interface Mission {
+  mission_id: string;
+  tenant_id: string;
+  /**
+   * Chat session the mission was started from.
+   */
+  session_id: string;
+  /**
+   * User id, or an agent id when a sub-mission was spawned by an agent.
+   */
+  created_by: string;
+  /**
+   * The requester's goal, verbatim.
+   */
+  goal: string;
+  /**
+   * Why MEF took the request. `quick_reply` never reaches execution.
+   */
+  classification: MissionClassification;
+  /**
+   * Lifecycle state. `completed`, `failed` and `aborted` are terminal.
+   */
+  status: MissionStatus;
+  /**
+   * Root objective ids in plan order.
+   */
+  objective_ids: string[];
+  /**
+   * Appended chronologically as objectives verify; a resume replays from the last one.
+   */
+  checkpoint_ids: string[];
+  /**
+   * Set once the after-action review is finalized — see GET /missions/{missionId}/aar.
+   */
+  aar_id?: string;
+  metrics?: MissionMetrics;
+  /**
+   * Terminal outcome. `partial` means some objectives verified and some did not.
+   */
+  outcome?: MissionOutcome;
+  result_summary?: string;
+  /**
+   * Subset of objective_ids that failed verification.
+   */
+  failed_objective_ids?: string[];
+  /**
+   * ISO 8601 hard deadline the runtime enforces against.
+   */
+  deadline?: string;
+  created_at: string;
+  updated_at: string;
+  /**
+   * Set when the status first leaves `draft`.
+   */
+  started_at?: string;
+  /**
+   * Set when the status becomes terminal.
+   */
+  completed_at?: string;
+}
+
+/**
+ * Why MEF took the request. `quick_reply` never reaches execution.
+ */
+export type MissionClassification = 'quick_reply' | 'mission';
+
+export const MISSION_CLASSIFICATION_VALUES = ['quick_reply', 'mission'] as const;
+
+/**
+ * Aggregated spend for the whole mission. Written on the terminal transition, so it is absent
+ * while the mission is still running.
+ */
+export interface MissionMetrics {
+  total_cost_usd: number;
+  total_tokens: number;
+  total_duration_ms: number;
+  llm_calls: number;
+  /**
+   * Objective retries across the mission — a strike counter, not an HTTP retry count.
+   */
+  retries: number;
+}
+
+/**
+ * Terminal outcome. `partial` means some objectives verified and some did not.
+ */
+export type MissionOutcome = 'success' | 'partial' | 'failed' | 'aborted';
+
+export const MISSION_OUTCOME_VALUES = ['success', 'partial', 'failed', 'aborted'] as const;
+
+/**
+ * What POST /missions answers. `plan` is echoed back only when the server planned the mission
+ * from a goal.
+ */
+export interface MissionStartResponse {
+  mission_id: string;
+  /**
+   * Persisted objective ids, in plan order.
+   */
+  objective_ids: string[];
+  /**
+   * The intake decision. A `quick_reply` mission is recorded but is not mission work.
+   */
+  classification: MissionStartResponseClassification;
+  plan?: PlannedMission;
+}
+
+/**
+ * The intake decision. A `quick_reply` mission is recorded but is not mission work.
+ */
+export interface MissionStartResponseClassification {
+  classification: MissionClassification;
+  score: number;
+  confidence: number;
+}
+
+/**
+ * Lifecycle state. `completed`, `failed` and `aborted` are terminal.
+ */
+export type MissionStatus = 'draft' | 'planning' | 'awaiting_authorization' | 'executing' | 'paused' | 'verifying' | 'completed' | 'failed' | 'aborted';
+
+export const MISSION_STATUS_VALUES = ['draft', 'planning', 'awaiting_authorization', 'executing', 'paused', 'verifying', 'completed', 'failed', 'aborted'] as const;
+
 export interface MoveWorkspaceFileRequest {
   from_path: string;
   to_path: string;
@@ -3881,6 +4860,95 @@ export interface NotificationSource {
 export type NotificationSourceKind = 'run' | 'agent' | 'bridge' | 'budget' | 'team' | 'task';
 
 export const NOTIFICATION_SOURCE_KIND_VALUES = ['run', 'agent', 'bridge', 'budget', 'team', 'task'] as const;
+
+/**
+ * Where outbound notifications go. **Secrets never leave the server**: a webhook's signing
+ * secret is reported only as `has_signing_secret`, a device token only by its last four
+ * characters, and a Web Push endpoint only by host — the path carries a subscription
+ * identifier.
+ */
+export interface NotificationTarget {
+  id: string;
+  tenant_id: string;
+  channel: NotificationTargetChannel;
+  /**
+   * Operator's own label — “Slack #ops”, “iPhone 15”.
+   */
+  label: string;
+  /**
+   * A disabled target is kept for audit and skipped at fan-out.
+   */
+  enabled: boolean;
+  created_at: string;
+  /**
+   * Last success — the field that tells a dead webhook from a quiet one.
+   */
+  last_delivered_at?: string;
+  last_error?: string;
+  config: NotificationTargetConfigVariant1 | NotificationTargetConfigVariant2 | NotificationTargetConfigVariant3 | NotificationTargetConfigVariant4;
+}
+
+export type NotificationTargetChannel = 'email' | 'webhook' | 'push' | 'web_push';
+
+export const NOTIFICATION_TARGET_CHANNEL_VALUES = ['email', 'webhook', 'push', 'web_push'] as const;
+
+export interface NotificationTargetConfigVariant1 {
+  kind: NotificationTargetConfigVariant1kind;
+  address: string;
+}
+
+export type NotificationTargetConfigVariant1kind = 'email';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT1KIND_VALUES = ['email'] as const;
+
+export interface NotificationTargetConfigVariant2 {
+  kind: AgentScorerConfigType;
+  url: string;
+  format: NotificationTargetConfigVariant2format;
+  /**
+   * Whether a secret is configured. The secret itself is never returned.
+   */
+  has_signing_secret: boolean;
+}
+
+export type NotificationTargetConfigVariant2format = 'generic' | 'slack' | 'discord';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT2FORMAT_VALUES = ['generic', 'slack', 'discord'] as const;
+
+export interface NotificationTargetConfigVariant3 {
+  kind: NotificationTargetConfigVariant3kind;
+  platform: NotificationTargetConfigVariant3platform;
+  device_label?: string;
+  /**
+   * Last four characters of the device token, for visual identification only.
+   */
+  device_token_suffix: string;
+}
+
+export type NotificationTargetConfigVariant3kind = 'push';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT3KIND_VALUES = ['push'] as const;
+
+export type NotificationTargetConfigVariant3platform = 'apns' | 'fcm';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT3PLATFORM_VALUES = ['apns', 'fcm'] as const;
+
+export interface NotificationTargetConfigVariant4 {
+  kind: NotificationTargetConfigVariant4kind;
+  /**
+   * Host only — `(invalid endpoint)` when the stored URL will not parse.
+   */
+  endpoint_host: string;
+  device_label?: string;
+  /**
+   * Browser-supplied expiry, ms since epoch.
+   */
+  expiration_time: number | null;
+}
+
+export type NotificationTargetConfigVariant4kind = 'web_push';
+
+export const NOTIFICATION_TARGET_CONFIG_VARIANT4KIND_VALUES = ['web_push'] as const;
 
 export interface OAuthAppExchangeRequest {
   /**
@@ -4021,6 +5089,107 @@ export interface OAuthStartResponse {
 }
 
 /**
+ * One unit of mission work. Sent in full by GET /missions/{missionId}/objectives and by the
+ * PATCH that edits one.
+ */
+export interface Objective {
+  objective_id: string;
+  tenant_id: string;
+  company_id?: string;
+  /**
+   * Parent objective, or null for a root objective of the mission.
+   */
+  parent_id: string | null;
+  title: string;
+  description: string;
+  /**
+   * What the verifier checks before the objective counts as done.
+   */
+  success_criteria: string[];
+  /**
+   * Lifecycle, owned by the executor — PATCH cannot set it.
+   */
+  status: ObjectiveStatus;
+  priority: ObjectivePriority;
+  /**
+   * Agent that executes this objective. Mutually exclusive with assigned_team_id in practice.
+   */
+  assigned_agent_id?: string;
+  assigned_team_id?: string;
+  /**
+   * Objective ids that must verify first. The plan is a DAG.
+   */
+  dependencies: string[];
+  budget: ObjectiveBudget;
+  result?: string;
+  output_summary?: string;
+  progress_notes: string[];
+  created_at: string;
+  updated_at: string;
+  completed_at?: string;
+  /**
+   * The end state to preserve when the literal instruction stops fitting.
+   */
+  commanders_intent?: string;
+  roe?: ObjectiveRoE;
+  decision_points?: ObjectiveDecisionPoint[];
+  deadline?: string;
+  abort_reason?: string;
+}
+
+/**
+ * Per-objective ceiling and what has been spent against it. The executor stops an objective
+ * that would cross a max.
+ */
+export interface ObjectiveBudget {
+  max_runs: number;
+  max_tokens: number;
+  max_cost_usd: number;
+  spent_runs: number;
+  spent_tokens: number;
+  spent_cost_usd: number;
+}
+
+/**
+ * A branch in the plan: when `condition` holds, execution continues at the matching branch's
+ * objective instead of the next one in order.
+ */
+export interface ObjectiveDecisionPoint {
+  condition: string;
+  branches: ObjectiveDecisionPointBranch[];
+  /**
+   * Taken when no branch matches.
+   */
+  fallback_objective_id?: string;
+}
+
+export interface ObjectiveDecisionPointBranch {
+  when: string;
+  objective_id: string;
+}
+
+export type ObjectivePriority = 'low' | 'medium' | 'high' | 'critical';
+
+export const OBJECTIVE_PRIORITY_VALUES = ['low', 'medium', 'high', 'critical'] as const;
+
+/**
+ * Rules of engagement: what the objective may do alone, what needs a human, and what it must
+ * never do.
+ */
+export interface ObjectiveRoE {
+  autonomous_actions: string[];
+  requires_approval: string[];
+  prohibited: string[];
+}
+
+/**
+ * Lifecycle, owned by the executor — PATCH cannot set it.
+ */
+export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'completed' | 'failed';
+
+export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'completed', 'failed'] as const;
+
+/**
  * Error envelope used by the OpenAI-compatible surface (`/v1/*`). Deliberately NOT RFC 9457:
  * callers here are OpenAI SDKs pointed at this base URL, and they decode this shape.
  */
@@ -4063,6 +5232,11 @@ export interface PauseCompanyResponse {
   status?: string;
 }
 
+export interface PauseMissionResponse {
+  pausing: boolean;
+  mission: Mission;
+}
+
 export interface PermissionCheckResult {
   allowed: boolean;
   reason?: string;
@@ -4087,12 +5261,192 @@ export interface PermissionSet {
   updated_at?: string;
 }
 
+/**
+ * A fully decomposed plan. Supplying one skips the LLM planner entirely.
+ */
+export interface PlannedMission {
+  goal: string;
+  classification: MissionClassification;
+  objectives: PlannedObjective[];
+  /**
+   * When true the mission stops at `awaiting_authorization` instead of executing — the gate for
+   * destructive or externally visible plans.
+   */
+  requires_authorization: boolean;
+  deadline?: string;
+}
+
+/**
+ * An objective as supplied in a caller-written plan. Dependencies are INDICES into
+ * `objectives`, because ids do not exist until the plan is persisted.
+ */
+export interface PlannedObjective {
+  title: string;
+  description: string;
+  success_criteria: string[];
+  priority: ObjectivePriority;
+  /**
+   * Indices into `objectives`; must form a DAG or the plan is rejected.
+   */
+  depends_on_indices: number[];
+  assigned_agent_id?: string;
+  assigned_team_id?: string;
+  /**
+   * Ceilings only — the spent_* counters are created by the server.
+   */
+  budget: PlannedObjectiveBudget;
+  commanders_intent?: string;
+  roe?: ObjectiveRoE;
+  deadline?: string;
+  decision_points?: ObjectiveDecisionPoint[];
+}
+
+/**
+ * Ceilings only — the spent_* counters are created by the server.
+ */
+export interface PlannedObjectiveBudget {
+  max_runs: number;
+  max_tokens: number;
+  max_cost_usd: number;
+}
+
+/**
+ * Platform profit and loss: Stripe revenue against real host spend. Super-admin only. Served
+ * from a short-lived cache — `cache` says which.
+ */
+export interface PlatformEconomics {
+  revenue: PlatformEconomicsRevenue;
+  costs: PlatformEconomicsCosts;
+  economics: PlatformEconomicsEconomics;
+  generated_at: string;
+  /**
+   * `hit` — served from cache; `miss` — computed and cached; `bypass` — recomputed because
+   * `refresh=1`.
+   */
+  cache: PlatformEconomicsCache;
+}
+
+/**
+ * `hit` — served from cache; `miss` — computed and cached; `bypass` — recomputed because
+ * `refresh=1`.
+ */
+export type PlatformEconomicsCache = 'hit' | 'miss' | 'bypass';
+
+export const PLATFORM_ECONOMICS_CACHE_VALUES = ['hit', 'miss', 'bypass'] as const;
+
+export interface PlatformEconomicsCosts {
+  provider: PlatformEconomicsCostsProvider;
+  configured: boolean;
+  /**
+   * Real accrued spend from the provider's own meter.
+   */
+  month_to_date_usd: number | null;
+  /**
+   * Negative means credit.
+   */
+  account_balance_usd: number | null;
+  balance_generated_at: string | null;
+  droplets: HostDroplet[];
+  /**
+   * Sum of droplet list prices — steady state, not accrued.
+   */
+  monthly_run_rate_usd: number;
+  error?: string;
+}
+
+export type PlatformEconomicsCostsProvider = 'digitalocean';
+
+export const PLATFORM_ECONOMICS_COSTS_PROVIDER_VALUES = ['digitalocean'] as const;
+
+export interface PlatformEconomicsEconomics {
+  monthly_revenue_usd: number;
+  monthly_infra_usd: number;
+  monthly_margin_usd: number;
+  /**
+   * Null when there is no revenue to divide by — not zero, which would read as a 0% margin.
+   */
+  margin_percent: number | null;
+  month_to_date_infra_usd: number | null;
+  markup_percent: number | null;
+  pricing_tiers: JsonObject | null;
+}
+
+export interface PlatformEconomicsRevenue {
+  /**
+   * False on a deployment with no Stripe key; the figures are then zeros, not an error.
+   */
+  stripe_configured: boolean;
+  mrr_usd: number;
+  arr_usd: number;
+  subscriptions: PlatformEconomicsRevenueSubscription[];
+  by_status: JsonObject;
+  /**
+   * Present when Stripe could not be reached; the rest of the payload is still served.
+   */
+  error?: string;
+}
+
+export interface PlatformEconomicsRevenueSubscription {
+  subscription_id: string;
+  customer_id: string;
+  tenant_id: string | null;
+  tenant_name: string | null;
+  plan: string | null;
+  billing_status: string | null;
+  status: string;
+  monthly_usd: number;
+  currency: string;
+  interval: string;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
+}
+
+/**
+ * What an unauthenticated page may know about this deployment. Deliberately minimal — no
+ * secrets and no wizard step names, so a probe cannot enumerate what setup still has pending.
+ */
+export interface PlatformInfo {
+  /**
+   * The platform's own base URL, so a client need not bake it into its bundle.
+   */
+  public_base_url: string;
+  /**
+   * Role → address. Always an object, possibly empty — a client gates each link on presence
+   * rather than handling nulls.
+   */
+  contact_emails: JsonObject;
+  /**
+   * True once the platform is live.
+   */
+  setup_complete: boolean;
+  registration_open: boolean;
+}
+
 export interface PlatformLLMDefaults {
   default_endpoint?: string;
+  /**
+   * Stored model half. May be bare (`minimax-m3`) or already provider-qualified
+   * (`ollama/glm-5.2`) — production holds both shapes. Dial `default_model_ref` instead of
+   * joining this yourself.
+   */
   default_model?: string;
   default_provider?: string;
+  /**
+   * Stored model half of the fallback. A vendor path (`MiniMaxAI/MiniMax-M3`) carries a slash
+   * while naming no provider, so this string is NOT dialable on its own — use
+   * `fallback_model_ref`.
+   */
   fallback_model?: string;
   fallback_provider?: string;
+  /**
+   * The default as the chat surface accepts it: `provider/model`, already de-duplicated against
+   * a model half that carries the provider head. Null when no default model is configured.
+   */
+  default_model_ref?: string | null;
+  /**
+   * Same for the fallback. Null when no fallback model is configured.
+   */
+  fallback_model_ref?: string | null;
 }
 
 export interface Product {
@@ -4179,6 +5533,222 @@ export interface ProgramStep {
   order_index: number;
 }
 
+/**
+ * A named body of work that chats belong to: standing instructions, the knowledge bases its
+ * chats may search, and the files they can read. An agent is *who* answers; a project is *what
+ * about*.
+ */
+export interface Project {
+  project_id: string;
+  tenant_id: string;
+  name: string;
+  description?: string;
+  /**
+   * Injected into the system prompt below the agent's own prompt and above personal preferences.
+   */
+  instructions?: string;
+  knowledge_base_ids?: string[];
+  /**
+   * Ids that no longer resolve to a file in this tenant are dropped on write — an attachment
+   * that lies is worse than a rejected one.
+   */
+  file_ids?: string[];
+  /**
+   * Owns a private project outright.
+   */
+  created_by?: string;
+  /**
+   * `tenant` (the default, and what every pre-existing project is) or `private`.
+   */
+  visibility?: ProjectVisibility;
+  /**
+   * Ignored while `visibility` is `tenant`.
+   */
+  shared_with?: ProjectGrant[];
+  /**
+   * Absent or null when the project is live. Archiving hides it from the default list and loses
+   * nothing.
+   */
+  archived_at?: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+/**
+ * A project with its chats and the caller's own access level.
+ */
+export interface ProjectDetail {
+  project_id: string;
+  tenant_id: string;
+  name: string;
+  description?: string;
+  /**
+   * Injected into the system prompt below the agent's own prompt and above personal preferences.
+   */
+  instructions?: string;
+  knowledge_base_ids?: string[];
+  /**
+   * Ids that no longer resolve to a file in this tenant are dropped on write — an attachment
+   * that lies is worse than a rejected one.
+   */
+  file_ids?: string[];
+  /**
+   * Owns a private project outright.
+   */
+  created_by?: string;
+  /**
+   * `tenant` (the default, and what every pre-existing project is) or `private`.
+   */
+  visibility?: ProjectVisibility;
+  /**
+   * Ignored while `visibility` is `tenant`.
+   */
+  shared_with?: ProjectGrant[];
+  /**
+   * Absent or null when the project is live. Archiving hides it from the default list and loses
+   * nothing.
+   */
+  archived_at?: string | null;
+  created_at: string;
+  updated_at: string;
+  /**
+   * The chats filed under this project, most recently updated first.
+   */
+  sessions: ProjectDetailSession[];
+  session_count: number;
+  /**
+   * What THIS caller may do. `none` never reaches a client — it is answered as 404.
+   */
+  access: ProjectGrantAccess;
+}
+
+export interface ProjectDetailSession {
+  session_id: string;
+  agent_id: string;
+  updated_at?: string;
+  title?: string;
+}
+
+/**
+ * One person's access to a private project.
+ */
+export interface ProjectGrant {
+  user_id: string;
+  /**
+   * `view` opens the chats and the brief; `edit` also rewrites them.
+   */
+  access: ProjectGrantAccess;
+}
+
+/**
+ * `view` opens the chats and the brief; `edit` also rewrites them.
+ */
+export type ProjectGrantAccess = 'view' | 'edit';
+
+export const PROJECT_GRANT_ACCESS_VALUES = ['view', 'edit'] as const;
+
+/**
+ * `tenant` (the default, and what every pre-existing project is) or `private`.
+ */
+export type ProjectVisibility = 'tenant' | 'private';
+
+export const PROJECT_VISIBILITY_VALUES = ['tenant', 'private'] as const;
+
+/**
+ * Funnel for public (unauthenticated) chat surfaces: visits, engagement, messages, with the
+ * usual breakdowns.
+ */
+export interface PublicChatAnalytics {
+  range: PublicChatAnalyticsRange;
+  totals: PublicChatAnalyticsTotals;
+  /**
+   * Ratios, not percentages: 0.25 means a quarter.
+   */
+  conversion: PublicChatAnalyticsConversion;
+  timeseries: PublicChatAnalyticsTimesery[];
+  by_country: PublicChatAnalyticsByCountryItem[];
+  by_device: PublicChatAnalyticsByDeviceItem[];
+  by_browser: PublicChatAnalyticsByBrowserItem[];
+  by_os: PublicChatAnalyticsByO[];
+  by_referrer: PublicChatAnalyticsByReferrerItem[];
+  by_utm_source: PublicChatAnalyticsByUtmSourceItem[];
+  by_agent: PublicChatAnalyticsByAgentItem[];
+}
+
+export interface PublicChatAnalyticsByAgentItem {
+  agent_id: string;
+  visits: number;
+  engaged: number;
+  messages: number;
+}
+
+export interface PublicChatAnalyticsByBrowserItem {
+  value: string;
+  count: number;
+}
+
+export interface PublicChatAnalyticsByCountryItem {
+  value: string;
+  count: number;
+}
+
+export interface PublicChatAnalyticsByDeviceItem {
+  value: string;
+  count: number;
+}
+
+export interface PublicChatAnalyticsByO {
+  value: string;
+  count: number;
+}
+
+export interface PublicChatAnalyticsByReferrerItem {
+  value: string;
+  count: number;
+}
+
+export interface PublicChatAnalyticsByUtmSourceItem {
+  value: string;
+  count: number;
+}
+
+/**
+ * Ratios, not percentages: 0.25 means a quarter.
+ */
+export interface PublicChatAnalyticsConversion {
+  /**
+   * engaged / visit.
+   */
+  engagement_rate: number;
+  /**
+   * message / visit.
+   */
+  message_rate: number;
+  /**
+   * message / engaged.
+   */
+  engaged_to_message_rate: number;
+}
+
+export interface PublicChatAnalyticsRange {
+  from: string;
+  to: string;
+  days: number;
+}
+
+export interface PublicChatAnalyticsTimesery {
+  date: string;
+  visits: number;
+  engaged: number;
+  messages: number;
+}
+
+export interface PublicChatAnalyticsTotals {
+  public_chat_visit: number;
+  public_chat_engaged: number;
+  public_chat_message: number;
+}
+
 export interface PublicDomainLookupResponse {
   tenant_id?: string;
   found?: boolean;
@@ -4208,19 +5778,33 @@ export interface PublicState {
 }
 
 export interface PublicTenant {
-  agents: JsonObject[];
-  agents_count: number;
-  branding?: JsonObject;
-  category?: string;
+  tenant_id: string;
+  slug: string;
+  name: string;
   description?: string;
   logo_url?: string;
-  name: string;
-  published_at?: string;
-  slug: string;
-  social_links?: JsonObject;
-  stats: JsonObject;
+  category?: string;
   tags: string[];
-  tenant_id: string;
+  agents_count: number;
+  agents: PublicTenantAgent[];
+  stats: PublicTenantStats;
+  social_links?: JsonObject;
+  branding?: JsonObject;
+  published_at?: string;
+}
+
+export interface PublicTenantAgent {
+  agent_id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  greeting?: string;
+}
+
+export interface PublicTenantStats {
+  total_runs: number;
+  total_agents: number;
+  avg_rating: number;
 }
 
 export interface PublicTrackEventRequest {
@@ -4328,22 +5912,22 @@ export interface RegistryGetSparseIndexResponseVersion {
 export interface RegistryGetSpecMetadataResponse {
   scope: string;
   name: string;
-  description?: string;
-  license?: string;
+  description: string;
+  license: string;
   repository?: string;
   homepage?: string;
-  categories?: string[];
-  keywords?: string[];
+  categories: string[];
+  keywords: string[];
   visibility: RegistryPublishResponseVisibility;
   shared_with?: string[];
   owner_tenant_id: string;
   latest_version: string;
-  versions?: RegistryVersionEntry[];
-  created_at?: string;
-  updated_at?: string;
-  tool_count?: number;
-  skill_count?: number;
-  capabilities?: string[];
+  versions: RegistryVersionEntry[];
+  created_at: string;
+  updated_at: string;
+  tool_count: number;
+  skill_count: number;
+  capabilities: string[];
   schema_version?: string;
 }
 
@@ -4517,6 +6101,22 @@ export interface ResumeCompanyResponse {
   status?: string;
 }
 
+export interface ResumeMissionResponse {
+  accepted: boolean;
+  mission: Mission;
+}
+
+export interface RetryTrainingJobResponse {
+  /**
+   * The NEW job's id.
+   */
+  job_id: string;
+  /**
+   * Shown once, for the new job.
+   */
+  callback_secret: string;
+}
+
 export interface RevokeMeSessionResponse {
   ok: boolean;
   key_id: string;
@@ -4628,6 +6228,47 @@ export interface RunApproveRequest {
   response?: string;
 }
 
+export interface RunCanvasLoopRequest {
+  supervisor_agent_id: string;
+  worker_ids?: string[];
+  /**
+   * Which drawn loop to run.
+   */
+  loop_id?: string;
+}
+
+export interface RunCanvasLoopResponse {
+  mission_id: string;
+  team_id: string;
+  worker_count: number;
+  max_passes: number;
+  budget_usd: number;
+  time_minutes: number;
+}
+
+export interface RunCanvasWorkflowRequest {
+  entry_agent_id?: string;
+  max_passes_per_step?: number;
+  budget_usd_per_step?: number;
+  time_minutes?: number;
+  /**
+   * Free text passed into the run.
+   */
+  feedback?: string;
+}
+
+export interface RunCanvasWorkflowResponse {
+  mission_id: string;
+  /**
+   * Objectives created — one per agent step.
+   */
+  step_count: number;
+  /**
+   * Workflow edges the plan was built from.
+   */
+  edge_count: number;
+}
+
 export interface RunCheckpoint {
   step?: number;
   /**
@@ -4641,6 +6282,83 @@ export interface RunCheckpoint {
    */
   metrics?: JsonObject;
 }
+
+/**
+ * What a run is likely to cost before it is started. Nothing is dispatched and nothing is
+ * stored — this is a read.
+ *
+ * The numbers are an estimate built from the agent's own recent runs, and the `basis` block
+ * says what they rest on so a client can present them honestly instead of showing every figure
+ * with the same confidence.
+ */
+export interface RunCostEstimate {
+  /**
+   * The model the estimate was priced against, after any per-session override.
+   */
+  model: string;
+  estimate: RunCostEstimateEstimate;
+  /**
+   * What the estimate was computed from. A zero sample is not an error — it means the agent has
+   * no history yet and the defaults were used.
+   */
+  basis: RunCostEstimateBasis;
+}
+
+/**
+ * What the estimate was computed from. A zero sample is not an error — it means the agent has
+ * no history yet and the defaults were used.
+ */
+export interface RunCostEstimateBasis {
+  runs_sampled: number;
+  avg_steps: number | null;
+  avg_output_tokens_per_step: number | null;
+  /**
+   * Median of the sampled runs' actual cost.
+   */
+  median_cost_usd: number | null;
+  /**
+   * What a bad run looked like — the number worth showing next to the estimate.
+   */
+  p90_cost_usd: number | null;
+  /**
+   * `model` — a real per-model rate; `fallback` — the configured tier rate, i.e. a number with a
+   * shrug behind it; `unknown` — no rate at all, and the estimate is zero.
+   */
+  pricing: RunCostEstimateBasisPricing;
+}
+
+/**
+ * `model` — a real per-model rate; `fallback` — the configured tier rate, i.e. a number with a
+ * shrug behind it; `unknown` — no rate at all, and the estimate is zero.
+ */
+export type RunCostEstimateBasisPricing = 'model' | 'fallback' | 'unknown';
+
+export const RUN_COST_ESTIMATE_BASIS_PRICING_VALUES = ['model', 'fallback', 'unknown'] as const;
+
+export interface RunCostEstimateEstimate {
+  estimated_cost_usd: number;
+  /**
+   * `medium` only when past runs supplied a step count; `low` otherwise, including when no rate
+   * is known at all.
+   */
+  confidence: RunCostEstimateEstimateConfidence;
+  breakdown: RunCostEstimateEstimateBreakdown;
+}
+
+export interface RunCostEstimateEstimateBreakdown {
+  input_tokens_est: number;
+  output_tokens_est: number;
+  input_cost_est: number;
+  output_cost_est: number;
+}
+
+/**
+ * `medium` only when past runs supplied a step count; `low` otherwise, including when no rate
+ * is known at all.
+ */
+export type RunCostEstimateEstimateConfidence = 'low' | 'medium' | 'high';
+
+export const RUN_COST_ESTIMATE_ESTIMATE_CONFIDENCE_VALUES = ['low', 'medium', 'high'] as const;
 
 export interface RunEvaluationRequest {
   dataset_id: string;
@@ -4663,6 +6381,12 @@ export interface RunMetrics {
    * Estimated total cost in USD
    */
   total_cost_usd?: number | null;
+}
+
+export interface RunMissionResponse {
+  accepted: boolean;
+  already_running: boolean;
+  mission: Mission;
 }
 
 /**
@@ -4732,13 +6456,44 @@ export interface Schedule {
   next_run_at?: string | null;
 }
 
+export interface ScheduleCanvasWorkflowRequest {
+  /**
+   * The trigger node's id on the canvas.
+   */
+  trigger_id: string;
+  cron: string;
+  entry_agent_id?: string;
+}
+
+export interface ScheduleCanvasWorkflowResponse {
+  trigger_id: string;
+  cron: string;
+  next_fire_at: string;
+  status: ScheduleCanvasWorkflowResponseStatus;
+}
+
+export type ScheduleCanvasWorkflowResponseStatus = 'active';
+
+export const SCHEDULE_CANVAS_WORKFLOW_RESPONSE_STATUS_VALUES = ['active'] as const;
+
 export type ScheduleOnFailure = 'continue' | 'pause' | 'alert';
 
 export const SCHEDULE_ON_FAILURE_VALUES = ['continue', 'pause', 'alert'] as const;
 
-export type SearchMarketplaceCategory = 'coding' | 'writing' | 'research' | 'data' | 'automation' | 'creative' | 'education' | 'business' | 'other';
-
-export const SEARCH_MARKETPLACE_CATEGORY_VALUES = ['coding', 'writing', 'research', 'data', 'automation', 'creative', 'education', 'business', 'other'] as const;
+export interface ScheduleSummary {
+  agent_id: string;
+  /**
+   * Resolved for display; absent if the agent record is gone.
+   */
+  agent_name?: string;
+  cron: string;
+  enabled: boolean;
+  /**
+   * `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like.
+   */
+  status: string;
+  next_fire_at?: string;
+}
 
 export interface SearchMarketplaceResponse {
   items: MarketplaceListing[];
@@ -5045,26 +6800,146 @@ export interface SpawnPolicy {
   max_children_per_agent?: number;
 }
 
+/**
+ * Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
+ * the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
+ * than failing the call.
+ */
+export interface SpecToolCatalog {
+  agent_id: string;
+  /**
+   * Tool name → the SPEC that owns it and the view to render its output with. Integration
+   * aliases map onto their base tool's view.
+   */
+  tools: Record<string, Value>;
+}
+
+export interface StartMissionRequest {
+  /**
+   * Chat session the mission belongs to.
+   */
+  session_id: string;
+  /**
+   * What the mission is for, in the requester's words.
+   */
+  goal: string;
+  plan?: PlannedMission;
+  /**
+   * Required when `plan` is omitted: the agents the planner may assign objectives to.
+   */
+  available_agents?: StartMissionRequestAvailableAgent[];
+  /**
+   * Skip the intake classifier and treat the request as mission work.
+   */
+  skip_classification?: boolean;
+  /**
+   * ISO 8601. Honoured on the goal-only path.
+   */
+  deadline?: string;
+}
+
+export interface StartMissionRequestAvailableAgent {
+  agent_id: string;
+  name: string;
+  description?: string;
+}
+
 export type StartOAuthProvider = 'github' | 'stripe' | 'notion' | 'slack' | 'x_twitter' | 'linkedin' | 'youtube' | 'instagram';
 
 export const START_OAUTH_PROVIDER_VALUES = ['github', 'stripe', 'notion', 'slack', 'x_twitter', 'linkedin', 'youtube', 'instagram'] as const;
 
 export interface StartOAuthRequest {
-  agent_id: string;
+  /**
+   * Optional. Was declared REQUIRED here while the route has treated it as optional
+   * (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+   * a generated client had to invent one to connect an integration that belongs to no agent.
+   */
+  agent_id?: string;
   name?: string;
   scopes?: string[];
+  /**
+   * The destination connector when it differs from the OAuth provider in the path —
+   * `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+   * it; the document did not declare it, so a client generated from this document could not send
+   * it and multi-connector OAuth silently asked for the provider's scopes instead of the
+   * connector's. Wrong scopes, no error.
+   */
+  connector_id?: string;
+  /**
+   * Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+   * "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+   */
+  extra?: JsonObject;
 }
 
-export interface StartTeamRunRequest {
+export interface StartSquadRunRequest {
   input?: JsonObject;
   addressed_to?: string[];
   message?: string;
-  chat_mode?: StartTeamRunRequestChatMode;
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
 }
 
-export type StartTeamRunRequestChatMode = 'plan' | 'chat';
+/**
+ * `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+ * handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+ * from this document had its addressing and its chat mode dropped with no error at all: the
+ * run started, it just was not the run that was asked for. They belong inside `input`, which
+ * is where the handler reads them.
+ */
+export interface StartTeamRunRequest {
+  /**
+   * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+   * absent, @mentions in `message` are parsed for the same purpose.
+   */
+  input: string | StartTeamRunRequestInputVariant2;
+  /**
+   * Accepted by the handler and undeclared here until now — the drift ran both ways.
+   */
+  metadata?: JsonObject;
+}
 
-export const START_TEAM_RUN_REQUEST_CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+export interface StartTeamRunRequestInputVariant2 {
+  message?: string;
+  addressed_to?: string[];
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
+}
+
+export type StartTeamRunRequestInputVariant2chatMode = 'plan' | 'chat';
+
+export const START_TEAM_RUN_REQUEST_INPUT_VARIANT2CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+
+export interface StartTeamRunResponse {
+  team_run_id: string;
+}
+
+export interface SubmitFeedbackRequest {
+  /**
+   * Clipped at 8000 characters.
+   */
+  message: string;
+  /**
+   * Clipped at 300.
+   */
+  title?: string;
+  /**
+   * Clipped at 2000.
+   */
+  context?: string;
+  /**
+   * Clipped at 1000.
+   */
+  url?: string;
+  run_id?: string;
+  /**
+   * Anything other than `feedback` is filed as an error.
+   */
+  kind?: ErrorReportKind;
+}
+
+export interface SubmitFeedbackResponse {
+  ok: boolean;
+  id: string;
+}
 
 export interface SubscribeToListingRequest {
   stripe_subscription_id?: string;
@@ -5082,10 +6957,33 @@ export interface SuspendUserResponse {
   suspended?: boolean;
 }
 
+export interface SwitchTenantRequest {
+  tenant_id: string;
+}
+
+export interface SwitchTenantResponse {
+  switched: boolean;
+  tenant_id: string;
+  user_id: string;
+  role: string;
+}
+
 export interface TallyVotesResponse {
   status?: string;
   outcome?: string;
   total_votes?: number;
+}
+
+/**
+ * A teacher model to distil from. Teachers must share the student's vocabulary.
+ */
+export interface TeacherRef {
+  provider_id: string;
+  model_ref: string;
+  /**
+   * Relative weight in the distillation mix.
+   */
+  weight?: number;
 }
 
 /**
@@ -5218,6 +7116,11 @@ export const TEAM_ORCHESTRATION_MODE_VALUES = ['strict_addressed', 'peer_collab'
  */
 export interface TeamPolicies {
   max_rounds: number;
+  /**
+   * Total team run timeout. Accepted at any value but only ever RAISED: anything below 3600000
+   * (1 hour) is enforced as 3600000, so that slow local models are not killed mid-run. 0 or
+   * absent means uncapped.
+   */
   timeout_ms: number;
   early_termination: boolean;
   consensus_threshold?: number;
@@ -5342,24 +7245,306 @@ export interface TeamWorkerPermissions {
 }
 
 export interface Tenant {
-  tenant_id?: string;
-  name?: string;
-  slug?: string;
-  status?: TenantStatus;
-  plan?: TenantPlan;
-  quotas?: JsonObject;
+  tenant_id: string;
+  name: string;
+  slug: string;
+  status: TenantStatus;
+  plan?: string;
+  /**
+   * Resolved plan id — present on the normal answer, absent on the bootstrap branch.
+   */
+  plan_id?: string;
+  quotas?: TenantQuotas;
+  quota_overrides?: TenantQuotaOverrides;
   settings?: JsonObject;
-  created_at?: string;
-  updated_at?: string;
+  billing?: TenantBilling;
+  billing_status?: TenantBillingStatus;
+  trial?: TenantTrial;
+  trial_ends_at?: string;
+  trial_recommended_plan?: string;
+  trial_resolved?: boolean;
+  onboarding_completed?: boolean;
+  is_super_admin?: boolean;
+  is_platform_admin?: boolean;
+  head_agent_id?: string;
+  shared_workspace_id?: string;
+  public?: boolean;
+  description?: string;
+  logo_url?: string;
+  custom_domain?: TenantCustomDomain;
+  branding?: TenantBranding;
+  social_links?: JsonObject;
+  marketplace_listing?: JsonObject;
+  public_agent_id?: string;
+  published_agent_ids?: string[];
+  public_settings?: TenantPublicSettings;
+  entitled_spec_packages?: string[];
+  legal_hold?: boolean;
+  suspension_reason?: string;
+  suspended_at?: string;
+  created_at: string;
+  updated_at: string;
 }
 
-export type TenantPlan = 'free' | 'starter' | 'pro' | 'enterprise';
+export interface TenantBilling {
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+  cancel_at_period_end?: boolean;
+  current_period_end_ms?: number;
+}
 
-export const TENANT_PLAN_VALUES = ['free', 'starter', 'pro', 'enterprise'] as const;
+export type TenantBillingStatus = 'active' | 'past_due' | 'disputed' | 'cancelled';
 
-export type TenantStatus = 'active' | 'suspended' | 'trial';
+export const TENANT_BILLING_STATUS_VALUES = ['active', 'past_due', 'disputed', 'cancelled'] as const;
 
-export const TENANT_STATUS_VALUES = ['active', 'suspended', 'trial'] as const;
+export interface TenantBranding {
+  primary_color?: string;
+  accent_color?: string;
+  background_color?: string;
+  foreground_color?: string;
+  card_color?: string;
+  border_color?: string;
+  favicon_url?: string;
+  custom_css?: string;
+  font_family?: string;
+  site_title?: string;
+  seo_description?: string;
+  og_image_url?: string;
+  dark_mode?: boolean;
+}
+
+export interface TenantCustomDomain {
+  domain: string;
+  created_at: string;
+  updated_at?: string;
+  status?: TenantCustomDomainStatus;
+  verification_method?: TenantCustomDomainVerificationMethod;
+  verification_value?: string;
+  last_checked_at?: string;
+  verified_at?: string;
+  dns?: JsonObject;
+  cert?: JsonObject;
+}
+
+export type TenantCustomDomainStatus = 'pending' | 'verified' | 'failed' | 'deactivated';
+
+export const TENANT_CUSTOM_DOMAIN_STATUS_VALUES = ['pending', 'verified', 'failed', 'deactivated'] as const;
+
+export type TenantCustomDomainVerificationMethod = 'cname';
+
+export const TENANT_CUSTOM_DOMAIN_VERIFICATION_METHOD_VALUES = ['cname'] as const;
+
+/**
+ * The “what needs a human” queue. The overview answers how many; this answers which, and what
+ * they are asking.
+ */
+export interface TenantInbox {
+  generated_at: string;
+  /**
+   * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+   * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+   * true these are a floor, not a total.
+   */
+  counts: TenantInboxCounts;
+  items: InboxItem[];
+  /**
+   * Run records inspected; the scan is capped.
+   */
+  scanned: number;
+  /**
+   * The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+   * tell you this — the number only means something to a caller who already knows what the cap
+   * is.
+   */
+  truncated?: boolean;
+}
+
+/**
+ * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+ * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+ * true these are a floor, not a total.
+ */
+export interface TenantInboxCounts {
+  total: number;
+  approval: number;
+  input: number;
+  paused: number;
+  failed: number;
+}
+
+/**
+ * The single aggregate behind Mission Control: fleet, run buckets, approvals, quota, worker
+ * health and schedule risk in one call instead of N.
+ */
+export interface TenantOverview {
+  generated_at: string;
+  fleet: TenantOverviewFleet;
+  runs: TenantOverviewRuns;
+  approvals: TenantOverviewApprovals;
+  usage: TenantOverviewUsage;
+  cost: TenantOverviewCost;
+  system: TenantOverviewSystem;
+  schedules: TenantOverviewSchedules;
+}
+
+export interface TenantOverviewApprovals {
+  pending_count: number;
+}
+
+export interface TenantOverviewCost {
+  total_usd: number;
+  range_days: number;
+}
+
+export interface TenantOverviewFleet {
+  total: number;
+  active_agents: number;
+  suspended: number;
+  terminated: number;
+  by_execution_mode: TenantOverviewFleetByExecutionMode;
+  bridge: TenantOverviewFleetBridge;
+  head_agent_id: string | null;
+  top_by_runs: AgentAnalyticsRow[];
+  top_by_cost: AgentAnalyticsRow[];
+  /**
+   * Agent id → the timestamp of its most recent run in the scanned window.
+   */
+  last_run_at: JsonObject;
+}
+
+export interface TenantOverviewFleetBridge {
+  online: number;
+  stale: number;
+  offline: number;
+  machines_total: number;
+}
+
+export interface TenantOverviewFleetByExecutionMode {
+  cloud: number;
+  bridge: number;
+}
+
+export interface TenantOverviewRuns {
+  by_status: JsonObject;
+  /**
+   * Queued, running, paused, awaiting approval or awaiting input.
+   */
+  active_count: number;
+  failed_24h: number;
+  cost_24h_usd: number;
+  recent: TenantOverviewRunsRecentItem[];
+  /**
+   * How many run records the aggregate actually looked at. The scan is capped, so a busy
+   * tenant's numbers describe the scanned window, not all history.
+   */
+  scanned: number;
+}
+
+export interface TenantOverviewRunsRecentItem {
+  run_id: string;
+  agent_id: string;
+  status: string;
+  created_at?: string;
+  cost_usd?: number;
+  duration_ms?: number;
+  error?: string;
+}
+
+export interface TenantOverviewSchedules {
+  total: number;
+  /**
+   * Paused, errored, or carrying consecutive failures — a silently dead cron.
+   */
+  at_risk: number;
+  paused: number;
+}
+
+export interface TenantOverviewSystem {
+  /**
+   * False when no cron job is registered — the signal that scheduled work has stopped.
+   */
+  healthy: boolean;
+  kv: boolean;
+  workers_active: number;
+  workers_queued: number;
+  cron_registered: number;
+}
+
+export interface TenantOverviewUsage {
+  tokens_used: number;
+  runs_used: number;
+  cost_mtd_usd: number;
+}
+
+export interface TenantPublicSettings {
+  max_messages_per_session?: number;
+  max_tokens_per_session?: number;
+  allow_tool_calls?: boolean;
+  allow_file_uploads?: boolean;
+  rate_limit_per_ip_per_hour?: number;
+  require_auth?: boolean;
+}
+
+/**
+ * Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+ * actually overridden are present.
+ */
+export interface TenantQuotaOverrides {
+  max_agents?: number;
+  max_teams?: number;
+  max_workers_per_team?: number;
+  max_concurrent_runs?: number;
+  max_concurrent_team_runs?: number;
+  max_active_sessions?: number;
+  max_monthly_tokens?: number;
+  max_monthly_tool_calls?: number;
+  max_monthly_runs?: number;
+  max_mcp_servers?: number;
+  max_storage_bytes?: number;
+  max_memory_entries_per_agent?: number;
+  max_memory_storage_bytes?: number;
+  max_agent_versions?: number;
+  max_knowledge_bases?: number;
+  max_workspaces?: number;
+  max_daily_tool_calls?: number;
+  max_monthly_images?: number;
+  max_daily_images?: number;
+  max_monthly_videos?: number;
+}
+
+export interface TenantQuotas {
+  max_agents: number;
+  max_teams: number;
+  max_workers_per_team: number;
+  max_concurrent_runs: number;
+  max_concurrent_team_runs: number;
+  max_active_sessions: number;
+  max_monthly_tokens: number;
+  max_monthly_tool_calls: number;
+  max_monthly_runs: number;
+  max_mcp_servers: number;
+  max_storage_bytes: number;
+  max_memory_entries_per_agent: number;
+  max_memory_storage_bytes: number;
+  max_agent_versions: number;
+  max_knowledge_bases: number;
+  max_workspaces: number;
+  max_daily_tool_calls?: number;
+  max_monthly_images?: number;
+  max_daily_images?: number;
+  max_monthly_videos?: number;
+}
+
+export type TenantStatus = 'active' | 'suspended' | 'trial' | 'deleted' | 'waitlisted';
+
+export const TENANT_STATUS_VALUES = ['active', 'suspended', 'trial', 'deleted', 'waitlisted'] as const;
+
+export interface TenantTrial {
+  active: boolean;
+  ends_at: string | null;
+  days_left: number;
+  recommended_plan: string | null;
+}
 
 export interface TenantUser {
   created_at?: string;
@@ -5378,7 +7563,14 @@ export interface TerminateAgentResponse {
 }
 
 export interface TestAgentIntegrationResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
 }
 
@@ -5388,8 +7580,20 @@ export interface TestIntegrationResponse {
 }
 
 export interface TestLLMProviderKeyResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
+}
+
+export interface TestNotificationTargetResponse {
+  ok: boolean;
+  message: string;
 }
 
 export interface TestWebhookResponse {
@@ -5447,6 +7651,278 @@ export type TodoStatus = 'pending' | 'pending_confirmation' | 'in_progress' | 'd
 
 export const TODO_STATUS_VALUES = ['pending', 'pending_confirmation', 'in_progress', 'done', 'cancelled'] as const;
 
+/**
+ * A provisioned GPU droplet.
+ */
+export interface TrainingDroplet {
+  id: string;
+  region?: string;
+  gpu_type?: string;
+  status?: string;
+  ip?: string;
+  provider?: string;
+}
+
+/**
+ * Quality-gate verdict; present from the `quality_gate` phase onward.
+ */
+export interface TrainingGate {
+  teacher_pass: number;
+  student_pass: number;
+  /**
+   * Whether the student cleared the bar the teachers set.
+   */
+  beats: boolean;
+  reason?: string;
+}
+
+/**
+ * What the server resolved and persisted: the caller's settings plus the student architecture
+ * filled in from the tier.
+ */
+export interface TrainingHyperparams {
+  hours_per_droplet?: number;
+  learning_rate?: number;
+  steps?: number;
+  batch_size?: number;
+  quant?: string;
+  seed?: number;
+  vocab?: number;
+  dim?: number;
+  ff?: number;
+  seq?: number;
+  layers?: number;
+  heads?: number;
+}
+
+/**
+ * A distillation job: a student model trained from teacher models on rented GPUs, under a
+ * prepaid deposit. Creating one is restricted to super-admins.
+ */
+export interface TrainingJob {
+  job_id: string;
+  tenant_id: string;
+  /**
+   * `complete`, `failed` and `cancelled` are terminal; only a terminal job can be retried.
+   */
+  status: TrainingJobStatus;
+  /**
+   * Verifier-backed domain. The server admits only this subset.
+   */
+  domain: TrainingJobDomain;
+  persona: TrainingPersona;
+  /**
+   * At least one.
+   */
+  teacher_refs: TeacherRef[];
+  /**
+   * Student size. `Large` is accepted by the request schema but refused by the guardrail, so the
+   * rejection names the tier instead of being a generic 422.
+   */
+  tier: TrainingJobTier;
+  /**
+   * Droplet size id from the GPU catalog; drives both cost and provisioning.
+   */
+  gpu_sku: string;
+  droplet_count: number;
+  hyperparams: TrainingHyperparams;
+  /**
+   * Escrow taken at admission; equals `quote.deposit`.
+   */
+  deposit_usd: number;
+  do_droplet_ids: string[];
+  /**
+   * Exported model reference, filled at `exporting`.
+   */
+  gguf_ref?: string;
+  served_provider_id?: string;
+  served_model_ref?: string;
+  served_endpoint?: string;
+  quote: TrainingQuote;
+  gate?: TrainingGate;
+  metrics?: TrainingJobMetrics;
+  droplets?: TrainingDroplet[];
+  stripe_payment_intent?: string;
+  /**
+   * Set on failure or cancellation, e.g. `cancelled_by_user`.
+   */
+  error?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TrainingJobCallbackRequest {
+  /**
+   * A `training.*` event type from the allowed set.
+   */
+  type: string;
+  /**
+   * Optional lifecycle transition to persist.
+   */
+  status?: TrainingJobStatus;
+  /**
+   * Free-form progress payload.
+   */
+  payload?: JsonObject;
+  metrics?: TrainingJobMetrics;
+  droplets?: TrainingDroplet[];
+}
+
+export interface TrainingJobCallbackResponse {
+  accepted: boolean;
+  job_id: string;
+}
+
+/**
+ * Verifier-backed domain. The server admits only this subset.
+ */
+export type TrainingJobDomain = 'Code' | 'SVG';
+
+export const TRAINING_JOB_DOMAIN_VALUES = ['Code', 'SVG'] as const;
+
+/**
+ * Live snapshot merged from worker callbacks. Cost and GPU-hour fields are computed by the
+ * server from elapsed wall-clock — a worker cannot report them, and a spoofed value is
+ * dropped.
+ */
+export interface TrainingJobMetrics {
+  phase?: string;
+  percent?: number;
+  current_step?: number;
+  total_steps?: number;
+  current_epoch?: number;
+  total_epochs?: number;
+  loss?: number;
+  eval_loss?: number;
+  learning_rate?: number;
+  grad_norm?: number;
+  tokens_per_sec?: number;
+  samples_per_sec?: number;
+  /**
+   * One entry per GPU.
+   */
+  gpu_util_pct?: number[];
+  gpu_mem_used_gb?: number[];
+  gpu_mem_total_gb?: number[];
+  gpu_hours_used?: number;
+  cost_accrued_usd?: number;
+  eta_seconds?: number;
+  started_training_at?: string;
+  updated_at: string;
+}
+
+/**
+ * A job specification. The same body prices a job (`/quote`) and creates one.
+ */
+export interface TrainingJobRequest {
+  /**
+   * `Web_Layout` and `Multi_Lang` are accepted here and refused by the guardrail, so the caller
+   * gets the specific reason.
+   */
+  domain: TrainingJobRequestDomain;
+  tier: TrainingJobRequestTier;
+  /**
+   * Defaults to the catalog's default SKU.
+   */
+  gpu_sku?: string;
+  droplet_count: number;
+  settings: TrainingSettings;
+  /**
+   * Spend cap the quote is checked against.
+   */
+  max_spend: number;
+  /**
+   * At least one teacher.
+   */
+  teacher_refs: TeacherRef[];
+  persona: TrainingPersona;
+  /**
+   * The caller attests it may distil from these teachers.
+   */
+  teacher_attested: boolean;
+}
+
+/**
+ * `Web_Layout` and `Multi_Lang` are accepted here and refused by the guardrail, so the caller
+ * gets the specific reason.
+ */
+export type TrainingJobRequestDomain = 'Code' | 'SVG' | 'Web_Layout' | 'Multi_Lang';
+
+export const TRAINING_JOB_REQUEST_DOMAIN_VALUES = ['Code', 'SVG', 'Web_Layout', 'Multi_Lang'] as const;
+
+export type TrainingJobRequestTier = 'Small' | 'Medium' | 'Large';
+
+export const TRAINING_JOB_REQUEST_TIER_VALUES = ['Small', 'Medium', 'Large'] as const;
+
+/**
+ * `complete`, `failed` and `cancelled` are terminal; only a terminal job can be retried.
+ */
+export type TrainingJobStatus = 'queued' | 'deposit_paid' | 'provisioning' | 'training' | 'quality_gate' | 'exporting' | 'serving' | 'complete' | 'failed' | 'cancelled';
+
+export const TRAINING_JOB_STATUS_VALUES = ['queued', 'deposit_paid', 'provisioning', 'training', 'quality_gate', 'exporting', 'serving', 'complete', 'failed', 'cancelled'] as const;
+
+/**
+ * Student size. `Large` is accepted by the request schema but refused by the guardrail, so the
+ * rejection names the tier instead of being a generic 422.
+ */
+export type TrainingJobTier = 'Small' | 'Medium';
+
+export const TRAINING_JOB_TIER_VALUES = ['Small', 'Medium'] as const;
+
+/**
+ * Student identity and the system prompt it is served with.
+ */
+export interface TrainingPersona {
+  name: string;
+  system: string;
+}
+
+/**
+ * Price for a training job. Money is USD as a float on this surface; the training platform
+ * computes the exact fixed-point value.
+ */
+export interface TrainingQuote {
+  /**
+   * droplet_count × hours_per_droplet.
+   */
+  gpu_hours: number;
+  /**
+   * What the GPU provider is paid.
+   */
+  provider_cost: number;
+  /**
+   * What the tenant is charged.
+   */
+  platform_price: number;
+  /**
+   * Prepaid escrow taken at admission — min(platform_price, cap).
+   */
+  deposit: number;
+  /**
+   * False when platform_price exceeds the job's `max_spend`; the job is then refused by the
+   * guardrail.
+   */
+  within_budget: boolean;
+}
+
+/**
+ * Tunables a caller may set. Everything except the GPU-hour budget is optional.
+ */
+export interface TrainingSettings {
+  /**
+   * GPU-hours per droplet. Bounded server-side so one job cannot outlive the orphan reaper.
+   */
+  hours_per_droplet: number;
+  learning_rate?: number;
+  steps?: number;
+  batch_size?: number;
+  /**
+   * Quantized export format, e.g. `Q8_0` or `Q4_K`.
+   */
+  quant?: string;
+  seed?: number;
+}
+
 export interface TransferTenantOwnershipResponse {
   ok?: boolean;
   new_owner_id?: string;
@@ -5458,6 +7934,15 @@ export interface UnlinkAuthProviderResponse {
   remaining_factors?: number;
   already_unlinked?: boolean;
 }
+
+export interface UnscheduleCanvasWorkflowResponse {
+  trigger_id: string;
+  status: UnscheduleCanvasWorkflowResponseStatus;
+}
+
+export type UnscheduleCanvasWorkflowResponseStatus = 'removed';
+
+export const UNSCHEDULE_CANVAS_WORKFLOW_RESPONSE_STATUS_VALUES = ['removed'] as const;
 
 export interface UnsubscribeFromListingResponse {
   unsubscribed?: boolean;
@@ -5513,6 +7998,16 @@ export interface UpdateCoreMemoryBlockRequest {
   content: string;
 }
 
+export interface UpdateFeedbackStatusRequest {
+  id: string;
+  status: ErrorReportStatus;
+}
+
+export interface UpdateFeedbackStatusResponse {
+  ok: boolean;
+  status: ErrorReportStatus;
+}
+
 export interface UpdateGoalStatusRequest {
   status: string;
 }
@@ -5526,9 +8021,63 @@ export interface UpdateIntegrationRequest {
   config?: JsonObject;
 }
 
+/**
+ * At least one editable field.
+ */
+export interface UpdateMissionObjectiveRequest {
+  title?: string;
+  description?: string;
+  success_criteria?: string[];
+  priority?: ObjectivePriority;
+  /**
+   * Empty string clears the assignment.
+   */
+  assigned_agent_id?: string;
+  /**
+   * Empty string clears the assignment.
+   */
+  assigned_team_id?: string;
+  /**
+   * Ceilings only; the spent counters are not writable.
+   */
+  budget?: UpdateMissionObjectiveRequestBudget;
+  deadline?: string;
+  commanders_intent?: string;
+  roe?: ObjectiveRoE;
+  decision_points?: ObjectiveDecisionPoint[];
+}
+
+/**
+ * Ceilings only; the spent counters are not writable.
+ */
+export interface UpdateMissionObjectiveRequestBudget {
+  max_runs?: number;
+  max_tokens?: number;
+  max_cost_usd?: number;
+}
+
+export interface UpdateMyPreferencesRequest {
+  custom_instructions?: string;
+  enabled?: boolean;
+}
+
 export interface UpdatePlatformURLSRequest {
   public_base_url?: string;
   webhook_base_url?: string;
+}
+
+export interface UpdateProjectRequest {
+  name?: string;
+  description?: string;
+  instructions?: string;
+  knowledge_base_ids?: string[];
+  file_ids?: string[];
+  visibility?: ProjectVisibility;
+  shared_with?: ProjectGrant[];
+  /**
+   * Timestamp to archive, null to restore.
+   */
+  archived_at?: string | null;
 }
 
 export interface UpdateSecurityPoliciesRequest {
@@ -5565,6 +8114,11 @@ export interface UpdateSessionRequestModelOverride {
   capabilities?: JsonObject;
 }
 
+export interface UpdateSquadGraphNodeRequest {
+  status?: TeamGraphNodeStatus;
+  goal_summary?: string;
+}
+
 export interface UpdateTeamGraphNodeRequest {
   status?: TeamGraphNodeStatus;
   goal_summary?: string;
@@ -5594,6 +8148,61 @@ export interface UploadFileRequest {
   data: BinaryInput;
   mime_type: string;
   filename?: string;
+}
+
+export interface UploadWorkspaceFileRequest {
+  file: BinaryInput;
+}
+
+export interface UpsertNotificationTargetRequest {
+  /**
+   * Rewrites this target when it exists.
+   */
+  id?: string;
+  /**
+   * Defaults to something channel-specific when omitted.
+   */
+  label?: string;
+  /**
+   * Defaults to true; only an explicit `false` disables.
+   */
+  enabled?: boolean;
+  config: UpsertNotificationTargetRequestConfigVariant1 | UpsertNotificationTargetRequestConfigVariant2 | UpsertNotificationTargetRequestConfigVariant3 | UpsertNotificationTargetRequestConfigVariant4;
+}
+
+export interface UpsertNotificationTargetRequestConfigVariant1 {
+  kind: NotificationTargetConfigVariant1kind;
+  address: string;
+}
+
+export interface UpsertNotificationTargetRequestConfigVariant2 {
+  kind: AgentScorerConfigType;
+  /**
+   * Must be https.
+   */
+  url: string;
+  signing_secret?: string;
+  format?: NotificationTargetConfigVariant2format;
+}
+
+export interface UpsertNotificationTargetRequestConfigVariant3 {
+  kind: NotificationTargetConfigVariant3kind;
+  platform: NotificationTargetConfigVariant3platform;
+  device_token: string;
+  device_label?: string;
+}
+
+export interface UpsertNotificationTargetRequestConfigVariant4 {
+  kind: NotificationTargetConfigVariant4kind;
+  endpoint: string;
+  keys: UpsertNotificationTargetRequestConfigVariant4keys;
+  device_label?: string;
+  expiration_time?: number | null;
+}
+
+export interface UpsertNotificationTargetRequestConfigVariant4keys {
+  p256dh: string;
+  auth: string;
 }
 
 export interface UsageMarginSummary {
@@ -5636,6 +8245,25 @@ export interface UsageSummary {
 }
 
 /**
+ * Personal instructions that apply to every conversation this person has, whichever agent
+ * answers.
+ */
+export interface UserPreferences {
+  custom_instructions: string;
+  /**
+   * Off keeps the text but stops it reaching any run — the switch people actually want when an
+   * instruction misfires.
+   */
+  enabled: boolean;
+  updated_at?: string;
+  /**
+   * Server-enforced ceiling for `custom_instructions`. Sent on every response so a client does
+   * not hard-code it.
+   */
+  max_chars: number;
+}
+
+/**
  * One rubric line for LLM-as-judge validation.
  */
 export interface ValidationCriterion {
@@ -5674,6 +8302,24 @@ export interface ValidationPolicy {
 }
 
 export interface Value {
+  spec_id: string;
+  /**
+   * The parsed view document, or null when the stored view was unparseable.
+   */
+  output_view: JsonValue;
+}
+
+export interface Value2 {
+  x: number;
+  y: number;
+}
+
+export interface Value3 {
+  x: number;
+  y: number;
+}
+
+export interface Value4 {
   from?: JsonValue;
   to?: JsonValue;
 }

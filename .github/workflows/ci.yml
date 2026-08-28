@@ -202,3 +202,63 @@ jobs:
       - name: Build the example
         run: alr -n build
         working-directory: packages/ada/examples
+
+  # The community index builds every crate on Windows too, where PE-COFF caps
+  # an object file at 65535 sections and `uarp-models.o` blew past it
+  # (alire-index#2059). Nothing in the Linux job above can see that, so the
+  # library gets built on a Windows runner as well -- the compile is the whole
+  # point, the tests stay on Linux.
+  ada-windows:
+    name: Ada (Windows)
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: alire-project/setup-alire@v4
+        with:
+          version: 2.1.1
+          toolchain: gnat_native^15 gprbuild^26
+      - name: Build the library
+        run: alr -n build
+        working-directory: packages/ada
+
+  trailers:
+    name: Trailers
+    # This repository has no `commit-msg` hook — `core.hooksPath` is unset
+    # and there is no `.husky` — so the trailer rule CLAUDE.md describes has
+    # never been enforced here. `pre-commit`'s `commit-msg` stage would not
+    # help: it runs only for someone who ran `pre-commit install`, which is
+    # exactly the assumption that already failed.
+    #
+    # Go-forward only, and there is no breach to clean up: of the 90 commits
+    # on main, 0 carry a banned trailer and 13 are missing the required one.
+    # The rule is being kept by discipline alone. This stops it regressing.
+    #
+    # Not academic. `d427c74`, the tip of main, carries a developer machine's
+    # hostname as a co-author trailer, because this repository squash-merges
+    # and squash-merge discards the branch author while preserving the
+    # trailer. The branch behind #44 would have gone red here first.
+    #
+    # Shared with `chabanov/snaga`; the script is the same file in both.
+    runs-on: ubuntu-latest
+    # Minutes, not seconds, only because checkout dominates: the check
+    # itself is a grep over a handful of commit messages.
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # REQUIRED. `git log origin/main..HEAD` needs both ends of the
+          # range, and every other checkout in this file uses the default
+          # shallow depth of 1. On a shallow clone that range resolves to
+          # NOTHING and this job would report success having examined no
+          # commits — precisely the false-green it exists to prevent. The
+          # script exits 2 rather than 0 on an empty range as a backstop,
+          # but this is the actual fix. If you copy a job block from this
+          # file, this line does not come with it.
+          fetch-depth: 0
+
+      - name: Check commit trailers
+        env:
+          # On a pull request the checkout is a merge commit, so `HEAD~1`
+          # and friends are not the base. GitHub gives us the real one.
+          TRAILER_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || 'HEAD~1' }}
+        run: ./scripts/check-trailers.sh "$TRAILER_BASE"

@@ -127,11 +127,11 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun downloadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun downloadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = RequestOptions()): ByteArray {
         val query = buildList {
             add("path" to path)
         }
-        return client.request<JsonElement>(
+        return client.requestBytes(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/content",
@@ -238,9 +238,10 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, recursive: Boolean? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (path != null) add("path" to path)
+            if (recursive != null) add("recursive" to recursive.toString())
         }
         return client.request<JsonElement>(
             RequestSpec(
@@ -411,15 +412,19 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun uploadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             add("path" to path)
+        }
+        val parts = buildList {
+            add(Part.File("file", body.`file`))
         }
         return client.request<JsonElement>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files",
                 query = query,
+                body = Body.Multipart(parts),
                 idempotent = true,
                 options = options,
             )

@@ -6,6 +6,33 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.14 — 2026-08-26
+
+### Fixed — Ada
+
+- **The models unit compiles on Windows.** A PE-COFF object header holds its
+  section count in 16 bits, so 65535 is the ceiling, and `uarp-models.o` asked
+  for 164648 — every Windows runner on the index PR stopped at
+  `as: too many sections` (alire-project/alire-index#2059). It asked because
+  `uarp-models.ads` declares 1824 subprograms and instantiates
+  `Ada.Containers.Vectors` 126 times, all of it landing in that one object,
+  and because Alire's profiles pass `-ffunction-sections -fdata-sections` —
+  one section per subprogram, plus its `.pdata$` and `.xdata$` unwind sections
+  on x86-64 Windows. ELF has no such ceiling, which is why Linux and macOS
+  built it all along. The two switches are now off for that unit alone,
+  which costs only the linker's dead-code stripping inside it; the rest of
+  the crate stays sectioned as the profile asks.
+
+  Verified on Windows 10 against the index's own toolchain (alr 2.1.1,
+  gnat_native 15.3.1, gprbuild 26.0.1): 176494 sections before, 100 after,
+  `libuarp_sdk.a` archived, the test suite 127/127 green over real HTTP and
+  SSE, and all three examples linked against libcurl.
+
+- **The Ada CI job now also builds on Windows.** It ran on `ubuntu-latest`
+  alone, so a break of this class had nowhere to surface but the index PR.
+
+No generated code changed — this is the version the index submission moves to.
+
 ## 0.5.13 — 2026-08-21
 
 ### Fixed — Ada

@@ -568,6 +568,40 @@ package body UARP.API.Admin is
              Options => Options));
    end Get_Immutable_Audit;
 
+   function Get_Maintenance_State
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Maintenance_State_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/maintenance",
+             Options => Options));
+   end Get_Maintenance_State;
+
+   function Get_Platform_Economics
+     (Self : Client_Type;
+      Params : Get_Platform_Economics_Params := No_Get_Platform_Economics_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Platform_Economics
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Refresh then
+         UARP.Types.Add (Query, "refresh", UARP.Models.Image (Params.Refresh));
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/economics",
+             Query => Query,
+             Options => Options));
+   end Get_Platform_Economics;
+
    function Get_Tenant
      (Self : Client_Type;
       Tenant_Id : String;
@@ -630,6 +664,29 @@ package body UARP.API.Admin is
              "/api/v1/admin/providers",
              Options => Options));
    end List_Admin_Providers;
+
+   function List_Feedback
+     (Self : Client_Type;
+      Params : List_Feedback_Params := No_List_Feedback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Feedback_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Status then
+         UARP.Types.Add (Query, "status", UARP.Models.Image (Params.Status));
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/feedback",
+             Query => Query,
+             Options => Options));
+   end List_Feedback;
 
    function List_Tenants
      (Self : Client_Type;
@@ -809,6 +866,24 @@ package body UARP.API.Admin is
           Idempotent => True,
           Options => Options);
    end Update_Admin_Tenant_Settings;
+
+   function Update_Feedback_Status
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Feedback_Status_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Feedback_Status_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/feedback",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Feedback_Status;
 
    function Update_Tenant
      (Self : Client_Type;

@@ -68,6 +68,24 @@ public class NotificationsApi internal constructor(private val client: UarpClien
     }
 
     /**
+     * Remove a target
+     *
+     * `DELETE /api/v1/notifications/targets/{targetId}`
+     *
+     * Required scopes: `notifications:write`.
+     */
+    public suspend fun deleteNotificationTarget(targetId: String, options: RequestOptions = RequestOptions()): DeleteNotificationTargetResponse {
+        return client.request<DeleteNotificationTargetResponse>(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/notifications/targets/${encodePathSegment(targetId)}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get unread notification count
      *
      * `GET /api/v1/notifications/unread`
@@ -101,6 +119,25 @@ public class NotificationsApi internal constructor(private val client: UarpClien
                 method = "GET",
                 path = "/api/v1/notifications",
                 query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * List notification targets
+     *
+     * Every configured destination, with secrets redacted — see `NotificationTarget`.
+     *
+     * `GET /api/v1/notifications/targets`
+     *
+     * Required scopes: `notifications:read`.
+     */
+    public suspend fun listNotificationTargets(options: RequestOptions = RequestOptions()): ListNotificationTargetsResponse {
+        return client.request<ListNotificationTargetsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/notifications/targets",
                 options = options,
             )
         )
@@ -169,6 +206,54 @@ public class NotificationsApi internal constructor(private val client: UarpClien
                 path = "/api/v1/notifications/stream",
                 query = query,
                 headers = headers,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Send a test notification
+     *
+     * Queues one notification through the real fan-out, so it proves the whole path rather than
+     * the stored configuration. **200 means queued, not delivered** — read `last_delivered_at` and
+     * `last_error` on the target afterwards for the outcome.
+     *
+     * `POST /api/v1/notifications/targets/{targetId}/test`
+     *
+     * Required scopes: `notifications:write`.
+     */
+    public suspend fun testNotificationTarget(targetId: String, options: RequestOptions = RequestOptions()): TestNotificationTargetResponse {
+        return client.request<TestNotificationTargetResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/notifications/targets/${encodePathSegment(targetId)}/test",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Create or update a target
+     *
+     * Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
+     * additionally reuses the id of an existing entry for the same device, so a client that
+     * re-registers on every launch does not accumulate duplicates.
+     *
+     * The answer is the REDACTED target — the signing secret or device token you just sent is not
+     * echoed back.
+     *
+     * `POST /api/v1/notifications/targets`
+     *
+     * Required scopes: `notifications:write`.
+     */
+    public suspend fun upsertNotificationTarget(body: UpsertNotificationTargetRequest, options: RequestOptions = RequestOptions()): NotificationTarget {
+        return client.request<NotificationTarget>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/notifications/targets",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
                 options = options,
             )
         )

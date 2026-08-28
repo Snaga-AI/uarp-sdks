@@ -18,6 +18,20 @@ package body UARP.API.Scheduler is
           Options => Options);
    end Get_Schedule;
 
+   function List_Schedules
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Schedules_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/schedules",
+             Options => Options));
+   end List_Schedules;
+
    function Remove_Schedule
      (Self : Client_Type;
       Agent_Id : String;

@@ -38,6 +38,23 @@ package body UARP.API.Teams is
           Options => Options);
    end Add_Team_Graph_Node;
 
+   function Cancel_Team_Run
+     (Self : Client_Type;
+      Team_Id : String;
+      Team_Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Cancel_Team_Run_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id) & "/cancel",
+             Idempotent => True,
+             Options => Options));
+   end Cancel_Team_Run;
+
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Team_Create;
@@ -253,34 +270,93 @@ package body UARP.API.Teams is
    function List_Team_Runs
      (Self : Client_Type;
       Team_Id : String;
+      Params : List_Team_Runs_Params := No_List_Team_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Team_Runs_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs",
+             Query => Query,
              Options => Options));
    end List_Team_Runs;
+
+   function List_Team_Runs_All
+     (Self : Client_Type;
+      Team_Id : String;
+      Params : List_Team_Runs_Params := No_List_Team_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Run_Summary_Vectors.Vector
+   is
+      Collected : UARP.Models.Team_Run_Summary_Vectors.Vector;
+      Page_Params : List_Team_Runs_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Team_Runs_Response :=
+               List_Team_Runs
+                  (Self,
+                   Team_Id => Team_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Runs loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Runs.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Team_Runs_All;
 
    function Start_Team_Run
      (Self : Client_Type;
       Team_Id : String;
       Payload : UARP.Models.Start_Team_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Start_Team_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Start_Team_Run;
 
    procedure Stream_Team_Chat_Events
@@ -306,14 +382,14 @@ package body UARP.API.Teams is
    procedure Stream_Team_Run_Events
      (Self : Client_Type;
       Team_Id : String;
-      Run_Id : String;
+      Team_Run_Id : String;
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options)
    is
    begin
       UARP.Client.Stream
          (Self,
-          "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/events",
+          "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id) & "/events",
           Sink,
           Options => Options);
    end Stream_Team_Run_Events;

@@ -87,6 +87,20 @@ package body UARP.API.Marketplace is
           Options => Options);
    end Invoke_Listing_Agent;
 
+   function List_Featured_Specs
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Featured_Specs_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/marketplace/featured-specs",
+             Options => Options));
+   end List_Featured_Specs;
+
    function List_Subscriptions
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

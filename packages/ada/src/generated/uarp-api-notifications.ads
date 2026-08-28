@@ -70,6 +70,17 @@ package UARP.API.Notifications is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Delete_Notification_Response;
 
+   --  Remove a target
+   --
+   --  DELETE /api/v1/notifications/targets/{targetId}
+   --
+   --  Required scopes: notifications:write.
+   function Delete_Notification_Target
+     (Self : Client_Type;
+      Target_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Notification_Target_Response;
+
    --  Get unread notification count
    --
    --  GET /api/v1/notifications/unread
@@ -90,6 +101,18 @@ package UARP.API.Notifications is
       Params : List_Notifications_Params := No_List_Notifications_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Notifications_Response;
+
+   --  List notification targets
+   --
+   --  Every configured destination, with secrets redacted - see `NotificationTarget`.
+   --
+   --  GET /api/v1/notifications/targets
+   --
+   --  Required scopes: notifications:read.
+   function List_Notification_Targets
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Notification_Targets_Response;
 
    --  Mark all notifications as read
    --
@@ -129,5 +152,38 @@ package UARP.API.Notifications is
       Params : Stream_Notifications_Params := No_Stream_Notifications_Params;
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
+
+   --  Send a test notification
+   --
+   --  Queues one notification through the real fan-out, so it proves the whole path rather than
+   --  the stored configuration. **200 means queued, not delivered** - read `last_delivered_at` and
+   --  `last_error` on the target afterwards for the outcome.
+   --
+   --  POST /api/v1/notifications/targets/{targetId}/test
+   --
+   --  Required scopes: notifications:write.
+   function Test_Notification_Target
+     (Self : Client_Type;
+      Target_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Test_Notification_Target_Response;
+
+   --  Create or update a target
+   --
+   --  Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
+   --  additionally reuses the id of an existing entry for the same device, so a client that
+   --  re-registers on every launch does not accumulate duplicates.
+   --
+   --  The answer is the REDACTED target - the signing secret or device token you just sent is not
+   --  echoed back.
+   --
+   --  POST /api/v1/notifications/targets
+   --
+   --  Required scopes: notifications:write.
+   function Upsert_Notification_Target
+     (Self : Client_Type;
+      Payload : UARP.Models.Upsert_Notification_Target_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Target;
 
 end UARP.API.Notifications;

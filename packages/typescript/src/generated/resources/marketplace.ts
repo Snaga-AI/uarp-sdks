@@ -9,12 +9,13 @@ import type {
   InvokeListingAgentRequest,
   JsonObject,
   JsonValue,
+  ListFeaturedSpecsResponse,
   ListSubscriptionsResponse,
   MarketplaceInvocation,
   MarketplaceListing,
+  MarketplaceListingCategory,
   PublishListingRequest,
   RateListingRequest,
-  SearchMarketplaceCategory,
   SearchMarketplaceResponse,
   SearchMarketplaceSort,
   SubscribeToListingRequest,
@@ -34,7 +35,7 @@ export interface GetListingReviewsParams {
  */
 export interface SearchMarketplaceParams {
   q?: string;
-  category?: SearchMarketplaceCategory;
+  category?: MarketplaceListingCategory;
   sort?: SearchMarketplaceSort;
   limit?: number;
 }
@@ -128,6 +129,22 @@ export class MarketplaceResource extends APIResource {
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}/invoke`,
       body,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Featured spec ids
+   *
+   * No authentication. Sorted, so a client diffing the list sees a change only when the set
+   * really changed.
+   *
+   * `GET /api/v1/marketplace/featured-specs`
+   */
+  listFeaturedSpecs(options?: RequestOptions): Promise<ListFeaturedSpecsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/marketplace/featured-specs',
       options,
     });
   }

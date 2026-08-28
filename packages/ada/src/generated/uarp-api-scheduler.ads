@@ -21,6 +21,18 @@ package UARP.API.Scheduler is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  List every agent schedule
+   --
+   --  One call for the whole tenant, so a canvas can badge scheduled agents without a per-agent
+   --  fetch. `agent_name` is resolved for display and is absent when the agent record is gone - a
+   --  schedule outliving its agent is exactly the case worth showing.
+   --
+   --  GET /api/v1/schedules
+   function List_Schedules
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Schedules_Response;
+
    --  Remove agent schedule
    --
    --  DELETE /api/v1/agents/{agentId}/schedule

@@ -38,6 +38,11 @@ pub struct ListWorkspaceFilesParams {
     /// Directory path to list
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    /// Walk sub-directories as well. Off by default, so a plain call lists one level — which is how
+    /// generated images, which land in `images/`, stayed invisible to the surfaces meant to show
+    /// them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recursive: Option<bool>,
 }
 
 /// Query and header parameters for `searchWorkspaceFiles`.
@@ -169,9 +174,9 @@ impl WorkspacesApi {
     /// `GET /api/v1/workspaces/{workspaceId}/files/content`
     ///
     /// Required scopes: `files:read`.
-    pub async fn download_workspace_file(&self, workspace_id: &str, params: &DownloadWorkspaceFileParams) -> Result<serde_json::Value> {
+    pub async fn download_workspace_file(&self, workspace_id: &str, params: &DownloadWorkspaceFileParams) -> Result<bytes::Bytes> {
         self.client
-            .request_json(Request {
+            .request_bytes(Request {
                 method: Method::GET,
                 path: format!("/api/v1/workspaces/{}/files/content", encode_path(workspace_id)),
                 query: Some(params),
@@ -439,16 +444,23 @@ impl WorkspacesApi {
     /// `PUT /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    pub async fn upload_workspace_file(&self, workspace_id: &str, params: &UploadWorkspaceFileParams) -> Result<serde_json::Value> {
+    pub async fn upload_workspace_file(&self, workspace_id: &str, body: &models::UploadWorkspaceFileRequest, params: &UploadWorkspaceFileParams) -> Result<serde_json::Value> {
         self.client
-            .request_json(Request {
-                method: Method::PUT,
-                path: format!("/api/v1/workspaces/{}/files", encode_path(workspace_id)),
-                query: Some(params),
-                body: NO_BODY,
-                headers: Vec::new(),
-                idempotent: true,
-            })
+            .request_multipart(
+                Request {
+                    method: Method::PUT,
+                    path: format!("/api/v1/workspaces/{}/files", encode_path(workspace_id)),
+                    query: Some(params),
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                || {
+                    let mut form = reqwest::multipart::Form::new();
+                    form = form.part("file", body.file.clone().into_part()?);
+                    Ok(form)
+                },
+            )
             .await
     }
 }

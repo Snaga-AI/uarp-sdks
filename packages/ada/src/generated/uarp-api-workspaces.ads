@@ -38,6 +38,11 @@ package UARP.API.Workspaces is
       --  Directory path to list
       Has_Path : Boolean := False;
       Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Walk sub-directories as well. Off by default, so a plain call lists one level - which is how
+      --  generated images, which land in `images/`, stayed invisible to the surfaces meant to show
+      --  them.
+      Has_Recursive : Boolean := False;
+      Recursive : Standard.Boolean := False;
    end record;
 
    No_List_Workspace_Files_Params : constant List_Workspace_Files_Params := (others => <>);
@@ -134,7 +139,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Params : Download_Workspace_File_Params := No_Download_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Types.Text;
 
    --  Permanently empty workspace trash
    --
@@ -306,6 +311,7 @@ package UARP.API.Workspaces is
    function Upload_Workspace_File
      (Self : Client_Type;
       Workspace_Id : String;
+      Payload : UARP.Models.Upload_Workspace_File_Request;
       Params : Upload_Workspace_File_Params := No_Upload_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;

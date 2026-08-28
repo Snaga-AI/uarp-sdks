@@ -2,6 +2,66 @@
 
 package body UARP.API.Analytics is
 
+   function Get_Public_Chat_Analytics
+     (Self : Client_Type;
+      Params : Get_Public_Chat_Analytics_Params := No_Get_Public_Chat_Analytics_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Public_Chat_Analytics
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Days then
+         UARP.Types.Add (Query, "days", Params.Days);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/analytics/public-chat",
+             Query => Query,
+             Options => Options));
+   end Get_Public_Chat_Analytics;
+
+   function Get_Tenant_Inbox
+     (Self : Client_Type;
+      Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Inbox
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/analytics/inbox",
+             Query => Query,
+             Options => Options));
+   end Get_Tenant_Inbox;
+
+   function Get_Tenant_Overview
+     (Self : Client_Type;
+      Params : Get_Tenant_Overview_Params := No_Get_Tenant_Overview_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Overview
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Days then
+         UARP.Types.Add (Query, "days", Params.Days);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/analytics/overview",
+             Query => Query,
+             Options => Options));
+   end Get_Tenant_Overview;
+
    function Tenant_Analytics_Agents
      (Self : Client_Type;
       Params : Tenant_Analytics_Agents_Params := No_Tenant_Analytics_Agents_Params;

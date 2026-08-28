@@ -89,6 +89,65 @@ impl PublicApi {
             .await
     }
 
+    /// Public landing overrides
+    ///
+    /// No authentication. Text overrides and partner logos for the landing page.
+    ///
+    /// `GET /api/v1/public/landing/overrides`
+    pub async fn get_landing_overrides(&self) -> Result<models::LandingOverrides> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/landing/overrides".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Maintenance state
+    ///
+    /// No authentication, by design: during maintenance the authenticated surface is exactly what a
+    /// client cannot reach, so asking “is it me or is it you” must not itself require a session.
+    ///
+    /// A read failure answers `enabled: false` — the platform is assumed open unless it is known to
+    /// be closed.
+    ///
+    /// `GET /api/v1/maintenance/status`
+    pub async fn get_maintenance_status(&self) -> Result<models::MaintenanceStatus> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/maintenance/status".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Public deployment info
+    ///
+    /// No authentication. Contact addresses and the public base URL as the operator configured
+    /// them, plus enough setup state to render a “being set up” banner.
+    ///
+    /// `GET /api/v1/public/platform-info`
+    pub async fn get_platform_info(&self) -> Result<models::PlatformInfo> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/platform-info".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get public agent card
     ///
     /// `GET /api/v1/public/agents/{agentId}`
@@ -196,6 +255,29 @@ impl PublicApi {
             .request_text(Request {
                 method: Method::GET,
                 path: format!("/api/v1/public/tenants/{}/style.css", encode_path(slug)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Is sign-up open
+    ///
+    /// No authentication; cached for 30 seconds.
+    ///
+    /// **Fails open.** If the setting cannot be read the answer is `registration_open: true`,
+    /// because the worst case of guessing open is a missing notice, while guessing closed would
+    /// turn a storage blip into a closed front door. A client cannot distinguish the two — this
+    /// endpoint is the state, not a health check.
+    ///
+    /// `GET /api/v1/public/registration-status`
+    pub async fn get_registration_status(&self) -> Result<models::GetRegistrationStatusResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/registration-status".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),

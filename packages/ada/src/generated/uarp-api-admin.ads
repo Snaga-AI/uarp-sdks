@@ -79,6 +79,15 @@ package UARP.API.Admin is
 
    No_Get_Immutable_Audit_Params : constant Get_Immutable_Audit_Params := (others => <>);
 
+   --  Query and header parameters for `getPlatformEconomics`.
+   type Get_Platform_Economics_Params is record
+      --  `1` bypasses the cache and recomputes.
+      Has_Refresh : Boolean := False;
+      Refresh : UARP.Models.Get_Platform_Economics_Refresh;
+   end record;
+
+   No_Get_Platform_Economics_Params : constant Get_Platform_Economics_Params := (others => <>);
+
    --  Query and header parameters for `getTenantUsage`.
    type Get_Tenant_Usage_Params is record
       --  ISO YYYY-MM period (defaults to current month)
@@ -87,6 +96,16 @@ package UARP.API.Admin is
    end record;
 
    No_Get_Tenant_Usage_Params : constant Get_Tenant_Usage_Params := (others => <>);
+
+   --  Query and header parameters for `listFeedback`.
+   type List_Feedback_Params is record
+      Has_Status : Boolean := False;
+      Status : UARP.Models.Error_Report_Status;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_List_Feedback_Params : constant List_Feedback_Params := (others => <>);
 
    --  Query and header parameters for `queryAuditLog`.
    type Query_Audit_Log_Params is record
@@ -450,6 +469,39 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Immutable_Audit_Response;
 
+   --  Full maintenance record
+   --
+   --  The whole record, including who turned it on and when - the audit trail the public status
+   --  deliberately omits. **Super-admin only**, and a caller on the synthetic default tenant is
+   --  401 rather than 403.
+   --
+   --  GET /api/v1/admin/maintenance
+   --
+   --  Required scopes: admin.
+   function Get_Maintenance_State
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Maintenance_State_Response;
+
+   --  Platform revenue, host cost and margin
+   --
+   --  Stripe subscriptions against real DigitalOcean spend, with the computed margin.
+   --  **Super-admin only.**
+   --
+   --  Served from a short-lived cache; `cache` says whether this response was a hit, a miss, or a
+   --  forced recomputation. A Stripe or provider outage does not fail the call - the affected
+   --  block carries `error` and the rest is still served, so a partial answer is never mistaken
+   --  for zeros.
+   --
+   --  GET /api/v1/admin/economics
+   --
+   --  Required scopes: admin.
+   function Get_Platform_Economics
+     (Self : Client_Type;
+      Params : Get_Platform_Economics_Params := No_Get_Platform_Economics_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Platform_Economics;
+
    --  Get tenant details
    --
    --  GET /api/v1/admin/tenants/{tenantId}
@@ -490,6 +542,21 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Admin_Providers_Response;
+
+   --  The reports inbox
+   --
+   --  Every report from every tenant, newest first. **Super-admin only.** `new_count` counts the
+   --  unresolved reports in the returned set, so a filtered list does not silently under-report
+   --  the backlog.
+   --
+   --  GET /api/v1/admin/feedback
+   --
+   --  Required scopes: admin.
+   function List_Feedback
+     (Self : Client_Type;
+      Params : List_Feedback_Params := No_List_Feedback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Feedback_Response;
 
    --  List all tenants (super admin only)
    --
@@ -605,6 +672,19 @@ package UARP.API.Admin is
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Resolve or reopen a report
+   --
+   --  **Super-admin only.**
+   --
+   --  PATCH /api/v1/admin/feedback
+   --
+   --  Required scopes: admin.
+   function Update_Feedback_Status
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Feedback_Status_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Feedback_Status_Response;
 
    --  Update tenant
    --

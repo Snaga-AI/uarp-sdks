@@ -39,6 +39,48 @@ package body UARP.API.Public is
              Options => Options));
    end Create_Public_Session_Report;
 
+   function Get_Landing_Overrides
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Landing_Overrides
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/landing/overrides",
+             Options => Options));
+   end Get_Landing_Overrides;
+
+   function Get_Maintenance_Status
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Maintenance_Status
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/maintenance/status",
+             Options => Options));
+   end Get_Maintenance_Status;
+
+   function Get_Platform_Info
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Platform_Info
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/platform-info",
+             Options => Options));
+   end Get_Platform_Info;
+
    function Get_Public_Agent_Card
      (Self : Client_Type;
       Agent_Id : String;
@@ -136,6 +178,20 @@ package body UARP.API.Public is
           "/api/v1/public/tenants/" & UARP.Types.Encode_Path_Segment (Slug) & "/style.css",
           Options => Options);
    end Get_Public_Tenant_Stylesheet;
+
+   function Get_Registration_Status
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Registration_Status_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/registration-status",
+             Options => Options));
+   end Get_Registration_Status;
 
    function List_Public_Plans
      (Self : Client_Type;

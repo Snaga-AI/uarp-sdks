@@ -18,8 +18,25 @@ project Uarp_Sdk is
 
    package Compiler is
       --  Generated sources carry long doc comments and qualified names.
-      for Default_Switches ("Ada") use Uarp_Sdk_Config.Ada_Compiler_Switches & ("-gnatyM200");
+      Ada_Switches := Uarp_Sdk_Config.Ada_Compiler_Switches & ("-gnatyM200");
+
+      for Default_Switches ("Ada") use Ada_Switches;
       for Default_Switches ("C") use ("-O2", "-Wall");
+
+      --  `uarp-models.ads` declares 1824 subprograms and instantiates
+      --  Ada.Containers.Vectors 126 times, and every instantiation lands in
+      --  this one object file. Alire's build profiles pass
+      --  `-ffunction-sections -fdata-sections`, so each of those subprograms
+      --  gets its own `.text$`, and on x86-64 Windows its own `.pdata$` and
+      --  `.xdata$` unwind sections besides -- 164648 sections in total, where
+      --  PE-COFF holds the count in 16 bits. The Windows index runners
+      --  therefore stopped at `as: uarp-models.o: too many sections`, while
+      --  ELF, which has no such ceiling, built it everywhere else
+      --  (alire-index#2059). Turning the two switches back off for this unit
+      --  alone costs only the linker's dead-code stripping inside it, and
+      --  leaves the rest of the crate sectioned as the profile asks.
+      for Switches ("uarp-models.adb") use
+        Ada_Switches & ("-fno-function-sections", "-fno-data-sections");
    end Compiler;
 
    package Binder is

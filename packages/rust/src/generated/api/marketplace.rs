@@ -30,7 +30,7 @@ pub struct SearchMarketplaceParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub q: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<models::SearchMarketplaceCategory>,
+    pub category: Option<models::MarketplaceListingCategory>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sort: Option<models::SearchMarketplaceSort>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -158,6 +158,25 @@ impl MarketplaceApi {
                 body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// Featured spec ids
+    ///
+    /// No authentication. Sorted, so a client diffing the list sees a change only when the set
+    /// really changed.
+    ///
+    /// `GET /api/v1/marketplace/featured-specs`
+    pub async fn list_featured_specs(&self) -> Result<models::ListFeaturedSpecsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/marketplace/featured-specs".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }

@@ -233,8 +233,17 @@ test('parses the production document into the expected shape', () => {
   // the mobile sign-in hand-off. The callback used to put the session key in a
   // fragment on `snaga://callback` — a custom scheme any installed app can
   // claim — so the key is now released only to a caller holding the verifier.
-  assert.equal(ops.length, 559);
-  assert.equal(spec.groups.length, 43);
+  // 559 -> 641 on 2026-08-27: the vendored document was refreshed against the
+  // platform for the first time since 0.5.6, and eighty-two operations arrived
+  // at once. They are not scattered — they are seven whole subsystems that had
+  // never had a client in any language: squads (22), missions (12), training
+  // jobs (10), canvas (7), projects (5), plus `me`, feedback and singles across
+  // notifications, admin, analytics and public. A consuming app could reach
+  // none of it, which is how three finished screens sat waiting on a release
+  // rather than on code.
+  assert.equal(ops.length, 641);
+  // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
+  assert.equal(spec.groups.length, 50);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -298,11 +307,64 @@ test('parses the production document into the expected shape', () => {
   // FeedEntry.event_type, KnowledgeBaseDocument.type/status/embedding_status,
   // TeamGraph role/status/type, ConstitutionViolation rule_type/penalty,
   // ApiKeySummary.kind/status, AgentScorer.config.type).
-  assert.equal(spec.types.length, 723);
+  // 723 -> 945 on 2026-08-27: two hundred and twenty-four named types from the
+  // same refresh, and TWO removed — the only removals in it. Inline
+  // `SearchMarketplaceCategory` folded into the `MarketplaceListingCategory`
+  // it duplicated value-for-value, and `TenantPlan` stopped being a closed
+  // `free|starter|pro|enterprise` union: plans are resolved now, so `plan` is a
+  // string beside a new `plan_id`. Both are source-breaking for anyone who
+  // imported the NAME, which nothing else in this refresh is — operations,
+  // parameters and operationIds all only grew.
+  // 945 -> 946 on 2026-08-28: `UploadWorkspaceFileRequest`. `PUT
+  // /workspaces/{id}/files` declared no request body at all, so the emitted
+  // client had no parameter to put a file in — it sent nothing, the route's
+  // `arrayBuffer()` returned zero bytes, and the file was written EMPTY under
+  // a 200. The same refresh gave `downloadWorkspaceFile` a media type, which
+  // turns its return from `JsonValue` into `Blob`: it was running binary
+  // responses through a JSON parser and quietly corrupting png and pdf.
+  // 946 -> 949 on 2026-08-28: four added, one removed, from correcting two
+  // governance schemas and the team-run request against the handlers.
+  // `ImprovementProposalType` — `type` was a bare string beside a `version`
+  // declared as a string over a number, `diff` over a field stored as
+  // `changes`, and no `title` or `description` at all, so a card generated
+  // from this document came out untitled and reading "no diff" over changes
+  // that were there. `StartTeamRunResponse` — the 202 was an empty object and
+  // answers `{team_run_id}`. `StartTeamRunRequestInputVariant2` and its
+  // `chatMode`, replacing the top-level `StartTeamRunRequestChatMode` that is
+  // the removal: `addressed_to`, `message` and `chat_mode` were declared at
+  // the top level of the body, and the handler's schema takes `input` and
+  // `metadata` with `.strip()`. So the addressing and the chat mode were
+  // discarded with no error — the run started, it just was not the run that
+  // was asked for. All three live inside `input`, which is where the handler
+  // reads them.
+  // 949 -> 952 on 2026-08-28: three added, none removed, from the three
+  // document fixes uarp deployed in #285. `TenantQuotaOverrides` is the one
+  // that mattered: `quota_overrides` was declared as `TenantQuotas`, which
+  // requires sixteen fields, and overrides are partial by definition — canon
+  // sends six — so every strict client failed to decode `GET /tenants/me`.
+  // Measured against the released 0.5.14 model: `missing field
+  // max_workers_per_team` before, decodes after. The other two,
+  // `GetAgentActivityStatsResponseRunsByDayItem` and
+  // `...TopErrorMessage`, are the item types that come with activity-stats
+  // finally declaring the fourteen fields it was already serving instead of
+  // three — this count going up is the proof those eleven fields are now
+  // reachable rather than invisible in all five clients.
+  assert.equal(spec.types.length, 952);
   assert.equal(spec.scopes.length, 31);
-  assert.equal(ops.filter((o) => o.sse).length, 11);
-  assert.equal(ops.filter((o) => o.pagination).length, 14);
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 2);
+  // 11 -> 15: mission events, squad chat, squad run events, training-job events.
+  assert.equal(ops.filter((o) => o.sse).length, 15);
+  // 14 -> 15: `GET /training-jobs`.
+  // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
+  // (default 50, ceiling 100) and `cursor` all along and neither was
+  // declared, so a client generated from this document saw the first fifty
+  // runs and had no way to reach the rest. This count going up is the proof
+  // the declaration took: paging is detected from the parameters, so the
+  // operation could not have been counted here before they existed.
+  assert.equal(ops.filter((o) => o.pagination).length, 16);
+  // 2 -> 3:  joins the two that were already
+  // multipart. It is the reason for the type count above — a route that
+  // takes a file and said so nowhere.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 3);
 });
 
 test('every named type reference resolves', () => {

@@ -8,10 +8,15 @@ import type {
   BulkDeleteNotificationsResponse,
   BulkDeleteNotificationsScope,
   DeleteNotificationResponse,
+  DeleteNotificationTargetResponse,
   GetUnreadCountResponse,
   JsonObject,
+  ListNotificationTargetsResponse,
   ListNotificationsResponse,
   MarkAllNotificationsReadResponse,
+  NotificationTarget,
+  TestNotificationTargetResponse,
+  UpsertNotificationTargetRequest,
 } from '../models.js';
 
 /**
@@ -89,6 +94,22 @@ export class NotificationsResource extends APIResource {
   }
 
   /**
+   * Remove a target
+   *
+   * `DELETE /api/v1/notifications/targets/{targetId}`
+   *
+   * Required scopes: `notifications:write`.
+   */
+  deleteNotificationTarget(targetId: string, options?: RequestOptions): Promise<DeleteNotificationTargetResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/notifications/targets/${encodeURIComponent(String(targetId))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Get unread notification count
    *
    * `GET /api/v1/notifications/unread`
@@ -115,6 +136,23 @@ export class NotificationsResource extends APIResource {
       method: 'GET',
       path: '/api/v1/notifications',
       query: pick(params, ['limit', 'unread']),
+      options,
+    });
+  }
+
+  /**
+   * List notification targets
+   *
+   * Every configured destination, with secrets redacted — see `NotificationTarget`.
+   *
+   * `GET /api/v1/notifications/targets`
+   *
+   * Required scopes: `notifications:read`.
+   */
+  listNotificationTargets(options?: RequestOptions): Promise<ListNotificationTargetsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/notifications/targets',
       options,
     });
   }
@@ -171,6 +209,50 @@ export class NotificationsResource extends APIResource {
       path: '/api/v1/notifications/stream',
       query: pick(params, ['token']),
       headers: pick(params, ['Last-Event-ID']),
+      options,
+    });
+  }
+
+  /**
+   * Send a test notification
+   *
+   * Queues one notification through the real fan-out, so it proves the whole path rather than
+   * the stored configuration. **200 means queued, not delivered** — read `last_delivered_at` and
+   * `last_error` on the target afterwards for the outcome.
+   *
+   * `POST /api/v1/notifications/targets/{targetId}/test`
+   *
+   * Required scopes: `notifications:write`.
+   */
+  testNotificationTarget(targetId: string, options?: RequestOptions): Promise<TestNotificationTargetResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/notifications/targets/${encodeURIComponent(String(targetId))}/test`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Create or update a target
+   *
+   * Upsert, not insert: sending an `id` rewrites that target. A device target (push or web push)
+   * additionally reuses the id of an existing entry for the same device, so a client that
+   * re-registers on every launch does not accumulate duplicates.
+   *
+   * The answer is the REDACTED target — the signing secret or device token you just sent is not
+   * echoed back.
+   *
+   * `POST /api/v1/notifications/targets`
+   *
+   * Required scopes: `notifications:write`.
+   */
+  upsertNotificationTarget(body: UpsertNotificationTargetRequest, options?: RequestOptions): Promise<NotificationTarget> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/notifications/targets',
+      body,
+      idempotent: true,
       options,
     });
   }

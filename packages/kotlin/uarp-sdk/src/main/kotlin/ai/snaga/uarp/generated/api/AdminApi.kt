@@ -622,6 +622,56 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Full maintenance record
+     *
+     * The whole record, including who turned it on and when — the audit trail the public status
+     * deliberately omits. **Super-admin only**, and a caller on the synthetic default tenant is
+     * 401 rather than 403.
+     *
+     * `GET /api/v1/admin/maintenance`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun getMaintenanceState(options: RequestOptions = RequestOptions()): GetMaintenanceStateResponse {
+        return client.request<GetMaintenanceStateResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/maintenance",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Platform revenue, host cost and margin
+     *
+     * Stripe subscriptions against real DigitalOcean spend, with the computed margin.
+     * **Super-admin only.**
+     *
+     * Served from a short-lived cache; `cache` says whether this response was a hit, a miss, or a
+     * forced recomputation. A Stripe or provider outage does not fail the call — the affected
+     * block carries `error` and the rest is still served, so a partial answer is never mistaken
+     * for zeros.
+     *
+     * `GET /api/v1/admin/economics`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun getPlatformEconomics(refresh: GetPlatformEconomicsRefresh? = null, options: RequestOptions = RequestOptions()): PlatformEconomics {
+        val query = buildList {
+            if (refresh != null) add("refresh" to refresh.value)
+        }
+        return client.request<PlatformEconomics>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/economics",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get tenant details
      *
      * `GET /api/v1/admin/tenants/{tenantId}`
@@ -686,6 +736,32 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/providers",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * The reports inbox
+     *
+     * Every report from every tenant, newest first. **Super-admin only.** `new_count` counts the
+     * unresolved reports in the returned set, so a filtered list does not silently under-report
+     * the backlog.
+     *
+     * `GET /api/v1/admin/feedback`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun listFeedback(status: ErrorReportStatus? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListFeedbackResponse {
+        val query = buildList {
+            if (status != null) add("status" to status.value)
+            if (limit != null) add("limit" to limit.toString())
+        }
+        return client.request<ListFeedbackResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/feedback",
+                query = query,
                 options = options,
             )
         )
@@ -874,6 +950,27 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/admin/tenants/${encodePathSegment(tenantId)}/settings",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Resolve or reopen a report
+     *
+     * **Super-admin only.**
+     *
+     * `PATCH /api/v1/admin/feedback`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun updateFeedbackStatus(body: UpdateFeedbackStatusRequest, options: RequestOptions = RequestOptions()): UpdateFeedbackStatusResponse {
+        return client.request<UpdateFeedbackStatusResponse>(
+            RequestSpec(
+                method = "PATCH",
+                path = "/api/v1/admin/feedback",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

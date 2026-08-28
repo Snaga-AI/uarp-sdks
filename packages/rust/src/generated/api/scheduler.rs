@@ -45,6 +45,26 @@ impl SchedulerApi {
             .await
     }
 
+    /// List every agent schedule
+    ///
+    /// One call for the whole tenant, so a canvas can badge scheduled agents without a per-agent
+    /// fetch. `agent_name` is resolved for display and is absent when the agent record is gone — a
+    /// schedule outliving its agent is exactly the case worth showing.
+    ///
+    /// `GET /api/v1/schedules`
+    pub async fn list_schedules(&self) -> Result<models::ListSchedulesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/schedules".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Remove agent schedule
     ///
     /// `DELETE /api/v1/agents/{agentId}/schedule`
