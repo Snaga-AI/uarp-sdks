@@ -14153,11 +14153,26 @@ impl From<&str> for StartOAuthProvider {
 /// `StartOAuthRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct StartOAuthRequest {
-    pub agent_id: String,
+    /// Optional. Was declared REQUIRED here while the route has treated it as optional
+    /// (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+    /// a generated client had to invent one to connect an integration that belongs to no agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
+    /// The destination connector when it differs from the OAuth provider in the path —
+    /// `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+    /// it; the document did not declare it, so a client generated from this document could not send
+    /// it and multi-connector OAuth silently asked for the provider's scopes instead of the
+    /// connector's. Wrong scopes, no error.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector_id: Option<String>,
+    /// Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+    /// "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub extra: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `StartSquadRunRequest` model.
@@ -15652,8 +15667,10 @@ pub struct TerminateAgentResponse {
 /// `TestAgentIntegrationResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TestAgentIntegrationResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub success: Option<bool>,
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    pub success: bool,
+    /// Why it failed. Absent on success.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -15670,8 +15687,10 @@ pub struct TestIntegrationResponse {
 /// `TestLLMProviderKeyResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TestLLMProviderKeyResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub success: Option<bool>,
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    pub success: bool,
+    /// Why it failed. Absent on success.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }

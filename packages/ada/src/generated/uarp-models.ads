@@ -13811,11 +13811,26 @@ package UARP.Models is
 
    --  `StartOAuthRequest` model.
    type Start_O_Auth_Request is record
+      --  Optional. Was declared REQUIRED here while the route has treated it as optional
+      --  (`routes/integrations.ts`: "agent_id is now optional - if provided, validate it exists"), so
+      --  a generated client had to invent one to connect an integration that belongs to no agent.
+      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Name : Boolean := False;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Scopes : Boolean := False;
       Scopes : UARP.Types.Text_Vectors.Vector;
+      --  The destination connector when it differs from the OAuth provider in the path -
+      --  `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+      --  it; the document did not declare it, so a client generated from this document could not send
+      --  it and multi-connector OAuth silently asked for the provider's scopes instead of the
+      --  connector's. Wrong scopes, no error.
+      Has_Connector_Id : Boolean := False;
+      Connector_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+      --  "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+      Has_Extra : Boolean := False;
+      Extra : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
    function To_JSON (Model : Start_O_Auth_Request) return UARP.JSON_Support.JSON_Value;
@@ -14231,8 +14246,10 @@ package UARP.Models is
 
    --  `TestAgentIntegrationResponse` model.
    type Test_Agent_Integration_Response is record
-      Has_Success : Boolean := False;
+      --  False when the connector could not reach the remote or the credentials were refused. This is
+      --  the only field that says so; the status will be 200 either way.
       Success : Standard.Boolean := False;
+      --  Why it failed. Absent on success.
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -14253,8 +14270,10 @@ package UARP.Models is
 
    --  `TestLLMProviderKeyResponse` model.
    type Test_LLM_Provider_Key_Response is record
-      Has_Success : Boolean := False;
+      --  False when the connector could not reach the remote or the credentials were refused. This is
+      --  the only field that says so; the status will be 200 either way.
       Success : Standard.Boolean := False;
+      --  Why it failed. Absent on success.
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;

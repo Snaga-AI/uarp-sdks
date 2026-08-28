@@ -18500,20 +18500,36 @@ public struct StartOAuthProvider: RawRepresentable, Codable, Hashable, Sendable,
 
 /// `StartOAuthRequest` model.
 public struct StartOAuthRequest: Codable, Hashable, Sendable {
-    public var agentId: String
+    /// Optional. Was declared REQUIRED here while the route has treated it as optional
+    /// (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+    /// a generated client had to invent one to connect an integration that belongs to no agent.
+    public var agentId: String?
     public var name: String?
     public var scopes: [String]?
+    /// The destination connector when it differs from the OAuth provider in the path —
+    /// `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+    /// it; the document did not declare it, so a client generated from this document could not send
+    /// it and multi-connector OAuth silently asked for the provider's scopes instead of the
+    /// connector's. Wrong scopes, no error.
+    public var connectorId: String?
+    /// Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+    /// "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+    public var extra: JSONObject?
 
-    public init(agentId: String, name: String? = nil, scopes: [String]? = nil) {
+    public init(agentId: String? = nil, name: String? = nil, scopes: [String]? = nil, connectorId: String? = nil, extra: JSONObject? = nil) {
         self.agentId = agentId
         self.name = name
         self.scopes = scopes
+        self.connectorId = connectorId
+        self.extra = extra
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
         case name = "name"
         case scopes = "scopes"
+        case connectorId = "connector_id"
+        case extra = "extra"
     }
 }
 
@@ -20361,10 +20377,13 @@ public struct TerminateAgentResponse: Codable, Hashable, Sendable {
 
 /// `TestAgentIntegrationResponse` model.
 public struct TestAgentIntegrationResponse: Codable, Hashable, Sendable {
-    public var success: Bool?
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    public var success: Bool
+    /// Why it failed. Absent on success.
     public var message: String?
 
-    public init(success: Bool? = nil, message: String? = nil) {
+    public init(success: Bool, message: String? = nil) {
         self.success = success
         self.message = message
     }
@@ -20393,10 +20412,13 @@ public struct TestIntegrationResponse: Codable, Hashable, Sendable {
 
 /// `TestLLMProviderKeyResponse` model.
 public struct TestLLMProviderKeyResponse: Codable, Hashable, Sendable {
-    public var success: Bool?
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    public var success: Bool
+    /// Why it failed. Absent on success.
     public var message: String?
 
-    public init(success: Bool? = nil, message: String? = nil) {
+    public init(success: Bool, message: String? = nil) {
         self.success = success
         self.message = message
     }

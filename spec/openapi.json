@@ -12485,13 +12485,11 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
-                                "required": [
-                                    "agent_id"
-                                ],
                                 "properties": {
                                     "agent_id": {
                                         "type": "string",
-                                        "format": "uuid"
+                                        "format": "uuid",
+                                        "description": "Optional. Was declared REQUIRED here while the route has treated it as optional (`routes/integrations.ts`: \"agent_id is now optional — if provided, validate it exists\"), so a generated client had to invent one to connect an integration that belongs to no agent."
                                     },
                                     "name": {
                                         "type": "string"
@@ -12501,6 +12499,17 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "connector_id": {
+                                        "type": "string",
+                                        "description": "The destination connector when it differs from the OAuth provider in the path — `google_calendar` through `google`, for example. The route reads it and resolves scopes from it; the document did not declare it, so a client generated from this document could not send it and multi-connector OAuth silently asked for the provider's scopes instead of the connector's. Wrong scopes, no error."
+                                    },
+                                    "extra": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        },
+                                        "description": "Provider-specific parameters the authorize URL needs, e.g. `{ \"shop\": \"mystore.myshopify.com\" }`. Read by the route, previously undeclared."
                                     }
                                 }
                             }
@@ -13162,17 +13171,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Test result",
+                        "description": "The test RAN. Whether the connection works is `success` — a failed test comes back as 200 with `success: false` and a `message`, because the API call succeeded even though the credentials did not. A client that branches on the status code shows a green “connection OK” over a connection that is broken, which is what this description exists to prevent.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
+                                    "required": [
+                                        "success"
+                                    ],
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "description": "False when the connector could not reach the remote or the credentials were refused. This is the only field that says so; the status will be 200 either way."
                                         },
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Why it failed. Absent on success."
                                         }
                                     }
                                 }
@@ -13529,17 +13543,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Test result",
+                        "description": "The test RAN. Whether the connection works is `success` — a failed test comes back as 200 with `success: false` and a `message`, because the API call succeeded even though the credentials did not. A client that branches on the status code shows a green “connection OK” over a connection that is broken, which is what this description exists to prevent.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
+                                    "required": [
+                                        "success"
+                                    ],
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "description": "False when the connector could not reach the remote or the credentials were refused. This is the only field that says so; the status will be 200 either way."
                                         },
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Why it failed. Absent on success."
                                         }
                                     }
                                 }
@@ -20130,6 +20149,16 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No agent with that id in this tenant. Checked before anything is created, so a refused dispatch leaves neither a task nor a run behind — the same answer the JSON-RPC `tasks/send` method has always given.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "description": "Validation Error",

@@ -36283,7 +36283,9 @@ package body UARP.Models is
    function To_JSON (Model : Start_O_Auth_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      if Model.Has_Agent_Id then
+         JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      end if;
       if Model.Has_Name then
          JS.Set (Result, "name", JS.JSON.Create (Model.Name));
       end if;
@@ -36297,6 +36299,12 @@ package body UARP.Models is
             JS.Set (Result, "scopes", Items);
          end;
       end if;
+      if Model.Has_Connector_Id then
+         JS.Set (Result, "connector_id", JS.JSON.Create (Model.Connector_Id));
+      end if;
+      if Model.Has_Extra then
+         JS.Set (Result, "extra", Model.Extra);
+      end if;
       return Result;
    end To_JSON;
 
@@ -36304,6 +36312,7 @@ package body UARP.Models is
       Result : Start_O_Auth_Request;
    begin
       if JS.Present (Node, "agent_id") then
+         Result.Has_Agent_Id := True;
          Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
       end if;
       if JS.Present (Node, "name") then
@@ -36319,6 +36328,14 @@ package body UARP.Models is
                Result.Scopes.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      if JS.Present (Node, "connector_id") then
+         Result.Has_Connector_Id := True;
+         Result.Connector_Id := JS.As_Text (JS.Get_Value (Node, "connector_id"));
+      end if;
+      if JS.Present (Node, "extra") then
+         Result.Has_Extra := True;
+         Result.Extra := JS.Get_Value (Node, "extra");
       end if;
       return Result;
    end From_JSON;
@@ -37397,9 +37414,7 @@ package body UARP.Models is
    function To_JSON (Model : Test_Agent_Integration_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      if Model.Has_Success then
-         JS.Set (Result, "success", JS.JSON.Create (Model.Success));
-      end if;
+      JS.Set (Result, "success", JS.JSON.Create (Model.Success));
       if Model.Has_Message then
          JS.Set (Result, "message", JS.JSON.Create (Model.Message));
       end if;
@@ -37410,7 +37425,6 @@ package body UARP.Models is
       Result : Test_Agent_Integration_Response;
    begin
       if JS.Present (Node, "success") then
-         Result.Has_Success := True;
          Result.Success := JS.As_Boolean (JS.Get_Value (Node, "success"));
       end if;
       if JS.Present (Node, "message") then
@@ -37449,9 +37463,7 @@ package body UARP.Models is
    function To_JSON (Model : Test_LLM_Provider_Key_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      if Model.Has_Success then
-         JS.Set (Result, "success", JS.JSON.Create (Model.Success));
-      end if;
+      JS.Set (Result, "success", JS.JSON.Create (Model.Success));
       if Model.Has_Message then
          JS.Set (Result, "message", JS.JSON.Create (Model.Message));
       end if;
@@ -37462,7 +37474,6 @@ package body UARP.Models is
       Result : Test_LLM_Provider_Key_Response;
    begin
       if JS.Present (Node, "success") then
-         Result.Has_Success := True;
          Result.Success := JS.As_Boolean (JS.Get_Value (Node, "success"));
       end if;
       if JS.Present (Node, "message") then

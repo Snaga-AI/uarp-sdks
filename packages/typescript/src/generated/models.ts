@@ -6767,9 +6767,27 @@ export type StartOAuthProvider = 'github' | 'stripe' | 'notion' | 'slack' | 'x_t
 export const START_OAUTH_PROVIDER_VALUES = ['github', 'stripe', 'notion', 'slack', 'x_twitter', 'linkedin', 'youtube', 'instagram'] as const;
 
 export interface StartOAuthRequest {
-  agent_id: string;
+  /**
+   * Optional. Was declared REQUIRED here while the route has treated it as optional
+   * (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+   * a generated client had to invent one to connect an integration that belongs to no agent.
+   */
+  agent_id?: string;
   name?: string;
   scopes?: string[];
+  /**
+   * The destination connector when it differs from the OAuth provider in the path —
+   * `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+   * it; the document did not declare it, so a client generated from this document could not send
+   * it and multi-connector OAuth silently asked for the provider's scopes instead of the
+   * connector's. Wrong scopes, no error.
+   */
+  connector_id?: string;
+  /**
+   * Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+   * "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+   */
+  extra?: JsonObject;
 }
 
 export interface StartSquadRunRequest {
@@ -7414,7 +7432,14 @@ export interface TerminateAgentResponse {
 }
 
 export interface TestAgentIntegrationResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
 }
 
@@ -7424,7 +7449,14 @@ export interface TestIntegrationResponse {
 }
 
 export interface TestLLMProviderKeyResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
 }
 

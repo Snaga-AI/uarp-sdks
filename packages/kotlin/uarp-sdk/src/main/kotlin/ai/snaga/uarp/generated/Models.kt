@@ -13731,10 +13731,29 @@ public object StartOAuthProviderSerializer : KSerializer<StartOAuthProvider> {
  */
 @Serializable
 public data class StartOAuthRequest(
+    /**
+     * Optional. Was declared REQUIRED here while the route has treated it as optional
+     * (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+     * a generated client had to invent one to connect an integration that belongs to no agent.
+     */
     @SerialName("agent_id")
-    public val agentId: String,
+    public val agentId: String? = null,
     public val name: String? = null,
     public val scopes: List<String>? = null,
+    /**
+     * The destination connector when it differs from the OAuth provider in the path —
+     * `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+     * it; the document did not declare it, so a client generated from this document could not send
+     * it and multi-connector OAuth silently asked for the provider's scopes instead of the
+     * connector's. Wrong scopes, no error.
+     */
+    @SerialName("connector_id")
+    public val connectorId: String? = null,
+    /**
+     * Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+     * "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+     */
+    public val extra: JsonObject? = null,
 )
 
 /**
@@ -15157,7 +15176,14 @@ public data class TerminateAgentResponse(
  */
 @Serializable
 public data class TestAgentIntegrationResponse(
-    public val success: Boolean? = null,
+    /**
+     * False when the connector could not reach the remote or the credentials were refused. This is
+     * the only field that says so; the status will be 200 either way.
+     */
+    public val success: Boolean,
+    /**
+     * Why it failed. Absent on success.
+     */
     public val message: String? = null,
 )
 
@@ -15175,7 +15201,14 @@ public data class TestIntegrationResponse(
  */
 @Serializable
 public data class TestLLMProviderKeyResponse(
-    public val success: Boolean? = null,
+    /**
+     * False when the connector could not reach the remote or the credentials were refused. This is
+     * the only field that says so; the status will be 200 either way.
+     */
+    public val success: Boolean,
+    /**
+     * Why it failed. Absent on success.
+     */
     public val message: String? = null,
 )
 
