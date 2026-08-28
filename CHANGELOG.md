@@ -24,10 +24,16 @@ installable package.
       before   DECODE FAILED: missing field `max_workers_per_team`
       after    DECODED OK
 
-  Rust, Swift and Kotlin all generated the sixteen as non-optional, so this
-  was a live break on a published package rather than a latent one. The fix is
-  a dedicated all-optional `TenantQuotaOverrides`; `TenantQuotas` is correct as
-  it stands for the effective set and is unchanged.
+  Rust, Swift and Kotlin all generated the sixteen as non-optional. To be
+  precise about the blast radius, since an earlier draft of this entry
+  overstated it: no PUBLISHED package was affected. 0.5.13 predates the
+  refresh that introduced `TenantQuotas` and does not model `quota_overrides`
+  at all, so it decodes the same body cleanly — verified against the crate
+  pulled from crates.io, not against a local tree. The defect lived in `main`
+  from the document refresh onward and would have shipped with this release.
+  It was caught first. The fix is a dedicated all-optional
+  `TenantQuotaOverrides`; `TenantQuotas` is correct as it stands for the
+  effective set and is unchanged.
 
 - **`cursor` is nullable on `/files` and `/public/tenants`.** Both were
   declared a plain string and both serve `null` on the last page — the same
