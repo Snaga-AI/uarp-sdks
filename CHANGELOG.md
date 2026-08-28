@@ -6,6 +6,91 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.15 — 2026-08-28
+
+The first release cut from a document that matches what the platform serves.
+559 operations to 641, 163 schemas to 219 — the 0.5.14 tag was cut before the
+document refresh landed, so everything below has been on `main` and in no
+installable package.
+
+### Fixed — all five clients
+
+- **`quota_overrides` stopped being a copy of the plan's quotas.** It was
+  declared `$ref: TenantQuotas`, which requires sixteen fields, and overrides
+  are partial by definition — a tenant that overrides six sends six. So every
+  strict client failed to decode `GET /tenants/me` outright. Measured against
+  the released 0.5.14 model and a live production body:
+
+      before   DECODE FAILED: missing field `max_workers_per_team`
+      after    DECODED OK
+
+  Rust, Swift and Kotlin all generated the sixteen as non-optional, so this
+  was a live break on a published package rather than a latent one. The fix is
+  a dedicated all-optional `TenantQuotaOverrides`; `TenantQuotas` is correct as
+  it stands for the effective set and is unchanged.
+
+- **`cursor` is nullable on `/files` and `/public/tenants`.** Both were
+  declared a plain string and both serve `null` on the last page — the same
+  strict-decoder hazard, on pagination, which every consumer touches.
+
+- **Workspace file upload sent no body at all.** `uploadWorkspaceFile` had no
+  body parameter, so the route's `arrayBuffer()` received zero bytes and wrote
+  an EMPTY file under a 200. `downloadWorkspaceFile` ran binary responses
+  through a JSON parser, corrupting any png or pdf into something that still
+  opens.
+
+- **Team runs.** `startTeamRun` takes `input` and `metadata` instead of four
+  top-level fields the handler was discarding in silence; `listTeamRuns` gained
+  the `limit` and `cursor` the handler has always read, so a client is no longer
+  stuck on the first fifty; `streamTeamRunEvents` takes `teamRunId` like every
+  sibling under that prefix.
+
+### Added
+
+- **82 operations and 56 schemas** the vendored document had been missing.
+- **`getAgentActivityStats` declares the fourteen fields it serves**, not three.
+  `cancelledRuns`, `guardrailBlockedRuns`, `errorRatePercent`, `avgStepsPerRun`,
+  `avgDurationMs`, `avgInputTokens`, `avgOutputTokens`, `avgThinkingTokens`,
+  `toolBreakdown`, `topErrorMessages` and `runsByDay` were being served and were
+  invisible in all five clients.
+
+### Changed — source-breaking, though nothing that works today breaks
+
+- `uploadWorkspaceFile` gains a required body parameter and
+  `downloadWorkspaceFile` returns binary (`Blob` / `bytes::Bytes` / `Data` /
+  `ByteArray` / `UARP.Types.Text`). Calling either today writes an empty file
+  or corrupts a download, so there is no working call site to regress.
+- `Tenant.quota_overrides` changes type from `TenantQuotas` to
+  `TenantQuotaOverrides`. Anyone naming that type in a signature must rename it.
+- `getGovernanceLedger`'s `from` and `to` change from string to integer. They
+  are ledger SEQUENCE NUMBERS, not timestamps, and were declared as strings —
+  so callers reasonably sent an ISO timestamp, the server ran it through
+  `parseInt`, and `2026-08-28T18:00:00Z` silently became sequence 2026. The
+  request then answered 200 with an empty page over a ledger holding thousands
+  of entries. Non-integer values are now rejected with 400 instead. The
+  parameter also gained `count`, which is what most callers actually want.
+
+### Internal
+
+- The freshness gate hashes the whole document canonically rather than its
+  schema and path NAMES. The name digest could not see a request body being
+  declared, a media type added or a false `required` dropped, and it reported
+  `current` over a document three fixes behind.
+- The generator refuses two operations in one group that would emit the same
+  method name — five compiler errors' worth of information, available before
+  any of them run. It checks the emitted name, not the `operationId`: the live
+  document has a duplicate id across two groups and it is harmless.
+- A route-coverage gate compares the BUILT client against the operations the
+  platform serves, because the Ada manifest is generated from the TypeScript
+  declarations rather than from openapi — so a gate on the spec alone goes
+  green while the last link stays stale.
+- CI enforces the commit-trailer rule the repository documents. There was no
+  `commit-msg` hook and never had been.
+- `scripts/set-version.sh` writes the version into `package-lock.json`, which
+  it never did, so every release left the lockfile a version behind (#42).
+- The contract gate no longer dies on macOS's `/usr/bin/java` stub, which
+  exists and fails; it now runs four SDKs where it ran none.
+
 ## 0.5.14 — 2026-08-26
 
 ### Fixed — Ada

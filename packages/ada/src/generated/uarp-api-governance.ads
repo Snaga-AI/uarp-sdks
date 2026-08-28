@@ -13,12 +13,23 @@ package UARP.API.Governance is
 
    --  Query and header parameters for `getGovernanceLedger`.
    type Get_Governance_Ledger_Params is record
+      --  How many of THIS TENANT's most recent entries to return, capped at 200. Ignored when both
+      --  `from` and `to` are supplied.
       Has_Count : Boolean := False;
       Count : UARP.Types.Integer_Value := 0;
+      --  Inclusive lower bound as a ledger SEQUENCE NUMBER (`seq`), not a timestamp. `seq` is a
+      --  position in the one global chain shared by all tenants, so a tenant's own entries are
+      --  scattered across it - use `count` unless you already have a `seq` from a previous response.
+      --  Has no effect unless `to` is supplied as well. Declared as a string until 2026-08-28, which
+      --  is why callers reasonably sent an ISO timestamp: the server ran it through `parseInt`, so
+      --  `2026-08-28T18:00:00Z` silently became sequence 2026 and the request answered 200 with an
+      --  empty page. Non-integer values are now rejected with 400.
       Has_From : Boolean := False;
-      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      From : UARP.Types.Integer_Value := 0;
+      --  Inclusive upper bound as a ledger SEQUENCE NUMBER (`seq`), not a timestamp. See `from`. Has
+      --  no effect unless `from` is supplied as well.
       Has_To : Boolean := False;
-      To : UARP.Types.Text := UARP.Types.Empty_Text;
+      To : UARP.Types.Integer_Value := 0;
    end record;
 
    No_Get_Governance_Ledger_Params : constant Get_Governance_Ledger_Params := (others => <>);

@@ -361,16 +361,16 @@ public struct GovernanceAPI: Sendable {
     /// "broken".
     ///
     /// `GET /api/v1/governance/ledger`
-    public func getGovernanceLedger(count: Int? = nil, from: String? = nil, to: String? = nil, options: RequestOptions = .init()) async throws -> GetGovernanceLedgerResponse {
+    public func getGovernanceLedger(count: Int? = nil, from: Int? = nil, to: Int? = nil, options: RequestOptions = .init()) async throws -> GetGovernanceLedgerResponse {
         var query: [URLQueryItem] = []
         if let count {
             query.append(URLQueryItem(name: "count", value: String(count)))
         }
         if let from {
-            query.append(URLQueryItem(name: "from", value: from))
+            query.append(URLQueryItem(name: "from", value: String(from)))
         }
         if let to {
-            query.append(URLQueryItem(name: "to", value: to))
+            query.append(URLQueryItem(name: "to", value: String(to)))
         }
         return try await client.send(RequestSpec(
             method: "GET",

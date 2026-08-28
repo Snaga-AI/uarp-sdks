@@ -16,12 +16,23 @@ use crate::util::encode_path;
 /// Query and header parameters for `getGovernanceLedger`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetGovernanceLedgerParams {
+    /// How many of THIS TENANT's most recent entries to return, capped at 200. Ignored when both
+    /// `from` and `to` are supplied.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub count: Option<i64>,
+    /// Inclusive lower bound as a ledger SEQUENCE NUMBER (`seq`), not a timestamp. `seq` is a
+    /// position in the one global chain shared by all tenants, so a tenant's own entries are
+    /// scattered across it — use `count` unless you already have a `seq` from a previous response.
+    /// Has no effect unless `to` is supplied as well. Declared as a string until 2026-08-28, which
+    /// is why callers reasonably sent an ISO timestamp: the server ran it through `parseInt`, so
+    /// `2026-08-28T18:00:00Z` silently became sequence 2026 and the request answered 200 with an
+    /// empty page. Non-integer values are now rejected with 400.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from: Option<String>,
+    pub from: Option<i64>,
+    /// Inclusive upper bound as a ledger SEQUENCE NUMBER (`seq`), not a timestamp. See `from`. Has
+    /// no effect unless `from` is supplied as well.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub to: Option<String>,
+    pub to: Option<i64>,
 }
 
 /// Query and header parameters for `listAmbassadorRequests`.
