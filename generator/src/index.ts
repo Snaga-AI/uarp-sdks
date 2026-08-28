@@ -15,7 +15,7 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync }
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import type { Spec } from './ir.ts';
+import type { Operation, Spec } from './ir.ts';
 import { parse } from './parse.ts';
 import { emitTypeScript } from './emit/typescript.ts';
 import { emitRust } from './emit/rust.ts';
@@ -193,6 +193,46 @@ function parseArgs(argv: string[]): Options | undefined {
   return { stats, check, specPath, outRoot, targets: targets.length > 0 ? targets : Object.keys(TARGETS) };
 }
 
+/**
+ * Two operations in ONE group that emit the SAME method name.
+ *
+ * Every target language rejects the result, so this costs five compiler errors
+ * to learn something the generator already knows. Measured against a fixture
+ * with a same-tag `operationId` collision: TypeScript `TS2393: Duplicate
+ * function implementation`, Rust `E0592: duplicate definitions with name
+ * `update``, and the equivalent redeclaration error in Swift, Kotlin and Ada.
+ * The generator emitted all five without a word.
+ *
+ * Deliberately NOT a check for a duplicate `operationId`. The document the
+ * platform serves today HAS one — `updateTenant` on both `PUT /tenants/me` and
+ * `PATCH /admin/tenants/{tenantId}`, 641 operations against 640 unique ids —
+ * and it is harmless: the two sit in different groups, method names are scoped
+ * per group, and they emit `tenants.update()` and `admin.updateTenant()`, both
+ * reachable in all five languages. A check on the id would refuse the live
+ * document and teach the next person to pass a flag to silence it.
+ *
+ * The emitted name is what collides, so the emitted name is what is checked.
+ */
+export function methodCollisions(spec: Spec): string[] {
+  const problems: string[] = [];
+  for (const group of spec.groups) {
+    const byMethod = new Map<string, Operation[]>();
+    for (const op of group.operations) {
+      const list = byMethod.get(op.method);
+      if (list) list.push(op);
+      else byMethod.set(op.method, [op]);
+    }
+    for (const [method, ops] of byMethod) {
+      if (ops.length < 2) continue;
+      const where = ops
+        .map((op) => `${op.httpMethod.toUpperCase()} ${op.path} (operationId ${op.id})`)
+        .join('\n      ');
+      problems.push(`${group.accessor}.${method}() would be emitted ${ops.length} times:\n      ${where}`);
+    }
+  }
+  return problems;
+}
+
 function main(argv: string[]): void {
   const options = parseArgs(argv);
   if (!options) {
@@ -203,6 +243,16 @@ function main(argv: string[]): void {
   const spec = loadSpec(options.specPath);
   if (options.stats) {
     printStats(spec);
+    return;
+  }
+
+  const collisions = methodCollisions(spec);
+  if (collisions.length > 0) {
+    console.error(`refusing to generate: ${collisions.length} method name collision(s)`);
+    for (const problem of collisions) console.error(`  ${problem}`);
+    console.error('\nTwo operations in one group cannot share a method name; every target language rejects it.');
+    console.error('Give one of them a distinct operationId in the API document.');
+    process.exitCode = 1;
     return;
   }
 
