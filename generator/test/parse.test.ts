@@ -337,7 +337,19 @@ test('parses the production document into the expected shape', () => {
   // discarded with no error — the run started, it just was not the run that
   // was asked for. All three live inside `input`, which is where the handler
   // reads them.
-  assert.equal(spec.types.length, 949);
+  // 949 -> 952 on 2026-08-28: three added, none removed, from the three
+  // document fixes uarp deployed in #285. `TenantQuotaOverrides` is the one
+  // that mattered: `quota_overrides` was declared as `TenantQuotas`, which
+  // requires sixteen fields, and overrides are partial by definition — canon
+  // sends six — so every strict client failed to decode `GET /tenants/me`.
+  // Measured against the released 0.5.14 model: `missing field
+  // max_workers_per_team` before, decodes after. The other two,
+  // `GetAgentActivityStatsResponseRunsByDayItem` and
+  // `...TopErrorMessage`, are the item types that come with activity-stats
+  // finally declaring the fourteen fields it was already serving instead of
+  // three — this count going up is the proof those eleven fields are now
+  // reachable rather than invisible in all five clients.
+  assert.equal(spec.types.length, 952);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   assert.equal(ops.filter((o) => o.sse).length, 15);
