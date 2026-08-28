@@ -4113,14 +4113,14 @@ public struct CompanyCreate: Codable, Hashable, Sendable {
     public var name: String
     /// What the company exists to do.
     public var mission: String
-    /// Spend ceiling in USD.
-    public var budget: Double
+    /// Spend ceiling and pacing for the company.
+    public var budget: CompanyCreateBudget
     public var `description`: String?
     public var strategicGoals: [String]?
     public var config: JSONObject?
     public var workspaceId: String?
 
-    public init(name: String, mission: String, budget: Double, `description`: String? = nil, strategicGoals: [String]? = nil, config: JSONObject? = nil, workspaceId: String? = nil) {
+    public init(name: String, mission: String, budget: CompanyCreateBudget, `description`: String? = nil, strategicGoals: [String]? = nil, config: JSONObject? = nil, workspaceId: String? = nil) {
         self.name = name
         self.mission = mission
         self.budget = budget
@@ -4138,6 +4138,29 @@ public struct CompanyCreate: Codable, Hashable, Sendable {
         case strategicGoals = "strategic_goals"
         case config = "config"
         case workspaceId = "workspace_id"
+    }
+}
+
+/// Spend ceiling and pacing for the company.
+public struct CompanyCreateBudget: Codable, Hashable, Sendable {
+    public var totalUsd: Double
+    public var dailyLimitUsd: Double
+    public var alertThresholdPct: Double
+    /// Metered by the platform. Ignored on create (set to 0) and on update.
+    public var spentUsd: Double?
+
+    public init(totalUsd: Double, dailyLimitUsd: Double, alertThresholdPct: Double, spentUsd: Double? = nil) {
+        self.totalUsd = totalUsd
+        self.dailyLimitUsd = dailyLimitUsd
+        self.alertThresholdPct = alertThresholdPct
+        self.spentUsd = spentUsd
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case totalUsd = "total_usd"
+        case dailyLimitUsd = "daily_limit_usd"
+        case alertThresholdPct = "alert_threshold_pct"
+        case spentUsd = "spent_usd"
     }
 }
 
@@ -10662,18 +10685,29 @@ public struct LedgerIntegrity: Codable, Hashable, Sendable {
 /// `ListA2ATasksResponse` model.
 public struct ListA2ATasksResponse: Codable, Hashable, Sendable {
     public var tasks: [A2ATask]
+    /// Offset to pass as `offset` for the next page; absent on the last page.
     public var cursor: String?
+    /// Size of the whole set.
+    public var total: Int?
+    public var limit: Int?
+    public var offset: Int?
     public var hasMore: Bool?
 
-    public init(tasks: [A2ATask], cursor: String? = nil, hasMore: Bool? = nil) {
+    public init(tasks: [A2ATask], cursor: String? = nil, total: Int? = nil, limit: Int? = nil, offset: Int? = nil, hasMore: Bool? = nil) {
         self.tasks = tasks
         self.cursor = cursor
+        self.total = total
+        self.limit = limit
+        self.offset = offset
         self.hasMore = hasMore
     }
 
     private enum CodingKeys: String, CodingKey {
         case tasks = "tasks"
         case cursor = "cursor"
+        case total = "total"
+        case limit = "limit"
+        case offset = "offset"
         case hasMore = "has_more"
     }
 }
@@ -11109,6 +11143,7 @@ public struct ListContentReportsResponse: Codable, Hashable, Sendable {
 /// `ListDataExplorerKeysResponse` model.
 public struct ListDataExplorerKeysResponse: Codable, Hashable, Sendable {
     public var keys: [JSONObject]?
+    /// Opaque cursor for the next page; null on the last page.
     public var cursor: String?
     public var hasMore: Bool?
 
@@ -11822,6 +11857,7 @@ public struct ListRunCheckpointsResponse: Codable, Hashable, Sendable {
 /// `ListRunsResponse` model.
 public struct ListRunsResponse: Codable, Hashable, Sendable {
     public var items: [Run]
+    /// Opaque cursor for the next page; null on the last page.
     public var cursor: String?
     public var hasMore: Bool
 
@@ -18539,11 +18575,11 @@ public struct SpawnPolicy: Codable, Hashable, Sendable {
     /// Child agent gets at most this fraction of parent's budget.
     public var childBudgetRatio: Double
     public var maxDepth: Int
-    public var allowedRoles: [String]?
-    public var requireApprovalAboveDepth: Int?
-    public var maxChildrenPerAgent: Int?
+    public var allowedRoles: [String]
+    public var requireApprovalAboveDepth: Int
+    public var maxChildrenPerAgent: Int
 
-    public init(tenantId: String, childBudgetRatio: Double, maxDepth: Int, allowedRoles: [String]? = nil, requireApprovalAboveDepth: Int? = nil, maxChildrenPerAgent: Int? = nil) {
+    public init(tenantId: String, childBudgetRatio: Double, maxDepth: Int, allowedRoles: [String], requireApprovalAboveDepth: Int, maxChildrenPerAgent: Int) {
         self.tenantId = tenantId
         self.childBudgetRatio = childBudgetRatio
         self.maxDepth = maxDepth

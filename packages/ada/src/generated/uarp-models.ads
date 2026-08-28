@@ -3048,13 +3048,26 @@ package UARP.Models is
    package Company_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Company);
 
+   --  Spend ceiling and pacing for the company.
+   type Company_Create_Budget is record
+      Total_Usd : UARP.Types.Float_Value := 0.0;
+      Daily_Limit_Usd : UARP.Types.Float_Value := 0.0;
+      Alert_Threshold_Pct : UARP.Types.Float_Value := 0.0;
+      --  Metered by the platform. Ignored on create (set to 0) and on update.
+      Has_Spent_Usd : Boolean := False;
+      Spent_Usd : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Company_Create_Budget) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Create_Budget;
+
    --  Body for `POST /api/v1/companies` (`CreateCompanySchema`).
    type Company_Create is record
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       --  What the company exists to do.
       Mission : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Spend ceiling in USD.
-      Budget : UARP.Types.Float_Value := 0.0;
+      --  Spend ceiling and pacing for the company.
+      Budget : UARP.Models.Company_Create_Budget;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Strategic_Goals : Boolean := False;
@@ -7805,8 +7818,16 @@ package UARP.Models is
    --  `ListA2ATasksResponse` model.
    type List_A2A_Tasks_Response is record
       Tasks : UARP.Models.A2A_Task_Vectors.Vector;
+      --  Offset to pass as `offset` for the next page; absent on the last page.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Size of the whole set.
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      Has_Offset : Boolean := False;
+      Offset : UARP.Types.Integer_Value := 0;
       Has_Has_More : Boolean := False;
       Has_More : Standard.Boolean := False;
    end record;
@@ -8232,6 +8253,7 @@ package UARP.Models is
    type List_Data_Explorer_Keys_Response is record
       Has_Keys : Boolean := False;
       Keys : UARP.JSON_Support.JSON_Value;
+      --  Opaque cursor for the next page; null on the last page.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Has_More : Boolean := False;
@@ -9658,6 +9680,7 @@ package UARP.Models is
    --  `ListRunsResponse` model.
    type List_Runs_Response is record
       Items : UARP.Models.Run_Vectors.Vector;
+      --  Opaque cursor for the next page; null on the last page.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_More : Standard.Boolean := False;
@@ -13882,11 +13905,8 @@ package UARP.Models is
       --  Child agent gets at most this fraction of parent's budget.
       Child_Budget_Ratio : UARP.Types.Float_Value := 0.0;
       Max_Depth : UARP.Types.Integer_Value := 0;
-      Has_Allowed_Roles : Boolean := False;
       Allowed_Roles : UARP.Types.Text_Vectors.Vector;
-      Has_Require_Approval_Above_Depth : Boolean := False;
       Require_Approval_Above_Depth : UARP.Types.Integer_Value := 0;
-      Has_Max_Children_Per_Agent : Boolean := False;
       Max_Children_Per_Agent : UARP.Types.Integer_Value := 0;
    end record;
 

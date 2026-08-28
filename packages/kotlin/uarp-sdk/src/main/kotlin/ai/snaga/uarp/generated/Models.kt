@@ -3171,15 +3171,33 @@ public data class CompanyCreate(
      */
     public val mission: String,
     /**
-     * Spend ceiling in USD.
+     * Spend ceiling and pacing for the company.
      */
-    public val budget: Double,
+    public val budget: CompanyCreateBudget,
     public val description: String? = null,
     @SerialName("strategic_goals")
     public val strategicGoals: List<String>? = null,
     public val config: JsonObject? = null,
     @SerialName("workspace_id")
     public val workspaceId: String? = null,
+)
+
+/**
+ * Spend ceiling and pacing for the company.
+ */
+@Serializable
+public data class CompanyCreateBudget(
+    @SerialName("total_usd")
+    public val totalUsd: Double,
+    @SerialName("daily_limit_usd")
+    public val dailyLimitUsd: Double,
+    @SerialName("alert_threshold_pct")
+    public val alertThresholdPct: Double,
+    /**
+     * Metered by the platform. Ignored on create (set to 0) and on update.
+     */
+    @SerialName("spent_usd")
+    public val spentUsd: Double? = null,
 )
 
 /**
@@ -7959,7 +7977,16 @@ public data class LedgerIntegrity(
 @Serializable
 public data class ListA2ATasksResponse(
     public val tasks: List<A2ATask>,
+    /**
+     * Offset to pass as `offset` for the next page; absent on the last page.
+     */
     public val cursor: String? = null,
+    /**
+     * Size of the whole set.
+     */
+    public val total: Long? = null,
+    public val limit: Long? = null,
+    public val offset: Long? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
 )
@@ -8241,6 +8268,9 @@ public data class ListContentReportsResponse(
 @Serializable
 public data class ListDataExplorerKeysResponse(
     public val keys: List<JsonObject>? = null,
+    /**
+     * Opaque cursor for the next page; null on the last page.
+     */
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
@@ -8703,6 +8733,9 @@ public data class ListRunCheckpointsResponse(
 @Serializable
 public data class ListRunsResponse(
     public val items: List<Run>,
+    /**
+     * Opaque cursor for the next page; null on the last page.
+     */
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean,
@@ -13761,11 +13794,11 @@ public data class SpawnPolicy(
     @SerialName("max_depth")
     public val maxDepth: Long,
     @SerialName("allowed_roles")
-    public val allowedRoles: List<String>? = null,
+    public val allowedRoles: List<String>,
     @SerialName("require_approval_above_depth")
-    public val requireApprovalAboveDepth: Long? = null,
+    public val requireApprovalAboveDepth: Long,
     @SerialName("max_children_per_agent")
-    public val maxChildrenPerAgent: Long? = null,
+    public val maxChildrenPerAgent: Long,
 )
 
 /**

@@ -963,7 +963,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateTenant(tenantId: string, body: JsonObject, options?: RequestOptions): Promise<Tenant> {
+  updateTenantById(tenantId: string, body: JsonObject, options?: RequestOptions): Promise<Tenant> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}`,

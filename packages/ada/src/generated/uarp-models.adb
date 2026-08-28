@@ -7878,12 +7878,43 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Company_Create_Budget) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "total_usd", JS.JSON.Create (Model.Total_Usd));
+      JS.Set (Result, "daily_limit_usd", JS.JSON.Create (Model.Daily_Limit_Usd));
+      JS.Set (Result, "alert_threshold_pct", JS.JSON.Create (Model.Alert_Threshold_Pct));
+      if Model.Has_Spent_Usd then
+         JS.Set (Result, "spent_usd", JS.JSON.Create (Model.Spent_Usd));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Company_Create_Budget is
+      Result : Company_Create_Budget;
+   begin
+      if JS.Present (Node, "total_usd") then
+         Result.Total_Usd := JS.As_Float (JS.Get_Value (Node, "total_usd"));
+      end if;
+      if JS.Present (Node, "daily_limit_usd") then
+         Result.Daily_Limit_Usd := JS.As_Float (JS.Get_Value (Node, "daily_limit_usd"));
+      end if;
+      if JS.Present (Node, "alert_threshold_pct") then
+         Result.Alert_Threshold_Pct := JS.As_Float (JS.Get_Value (Node, "alert_threshold_pct"));
+      end if;
+      if JS.Present (Node, "spent_usd") then
+         Result.Has_Spent_Usd := True;
+         Result.Spent_Usd := JS.As_Float (JS.Get_Value (Node, "spent_usd"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Company_Create) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
       JS.Set (Result, "mission", JS.JSON.Create (Model.Mission));
-      JS.Set (Result, "budget", JS.JSON.Create (Model.Budget));
+      JS.Set (Result, "budget", To_JSON (Model.Budget));
       if Model.Has_Description then
          JS.Set (Result, "description", JS.JSON.Create (Model.Description));
       end if;
@@ -7916,7 +7947,7 @@ package body UARP.Models is
          Result.Mission := JS.As_Text (JS.Get_Value (Node, "mission"));
       end if;
       if JS.Present (Node, "budget") then
-         Result.Budget := JS.As_Float (JS.Get_Value (Node, "budget"));
+         Result.Budget := From_JSON (JS.Get_Value (Node, "budget"));
       end if;
       if JS.Present (Node, "description") then
          Result.Has_Description := True;
@@ -19985,6 +20016,15 @@ package body UARP.Models is
       if Model.Has_Cursor then
          JS.Set (Result, "cursor", JS.JSON.Create (Model.Cursor));
       end if;
+      if Model.Has_Total then
+         JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      end if;
+      if Model.Has_Limit then
+         JS.Set (Result, "limit", JS.JSON.Create (Model.Limit));
+      end if;
+      if Model.Has_Offset then
+         JS.Set (Result, "offset", JS.JSON.Create (Model.Offset));
+      end if;
       if Model.Has_Has_More then
          JS.Set (Result, "has_more", JS.JSON.Create (Model.Has_More));
       end if;
@@ -20006,6 +20046,18 @@ package body UARP.Models is
       if JS.Present (Node, "cursor") then
          Result.Has_Cursor := True;
          Result.Cursor := JS.As_Text (JS.Get_Value (Node, "cursor"));
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Has_Total := True;
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      if JS.Present (Node, "limit") then
+         Result.Has_Limit := True;
+         Result.Limit := JS.As_Integer (JS.Get_Value (Node, "limit"));
+      end if;
+      if JS.Present (Node, "offset") then
+         Result.Has_Offset := True;
+         Result.Offset := JS.As_Integer (JS.Get_Value (Node, "offset"));
       end if;
       if JS.Present (Node, "has_more") then
          Result.Has_Has_More := True;
@@ -36532,22 +36584,16 @@ package body UARP.Models is
       JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
       JS.Set (Result, "child_budget_ratio", JS.JSON.Create (Model.Child_Budget_Ratio));
       JS.Set (Result, "max_depth", JS.JSON.Create (Model.Max_Depth));
-      if Model.Has_Allowed_Roles then
-         declare
-            Items : JS.JSON_Array := JS.JSON.Empty_Array;
-         begin
-            for Element of Model.Allowed_Roles loop
-               JS.JSON.Append (Items, JS.JSON.Create (Element));
-            end loop;
-            JS.Set (Result, "allowed_roles", Items);
-         end;
-      end if;
-      if Model.Has_Require_Approval_Above_Depth then
-         JS.Set (Result, "require_approval_above_depth", JS.JSON.Create (Model.Require_Approval_Above_Depth));
-      end if;
-      if Model.Has_Max_Children_Per_Agent then
-         JS.Set (Result, "max_children_per_agent", JS.JSON.Create (Model.Max_Children_Per_Agent));
-      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Allowed_Roles loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "allowed_roles", Items);
+      end;
+      JS.Set (Result, "require_approval_above_depth", JS.JSON.Create (Model.Require_Approval_Above_Depth));
+      JS.Set (Result, "max_children_per_agent", JS.JSON.Create (Model.Max_Children_Per_Agent));
       return Result;
    end To_JSON;
 
@@ -36564,7 +36610,6 @@ package body UARP.Models is
          Result.Max_Depth := JS.As_Integer (JS.Get_Value (Node, "max_depth"));
       end if;
       if JS.Present (Node, "allowed_roles") then
-         Result.Has_Allowed_Roles := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "allowed_roles");
          begin
@@ -36574,11 +36619,9 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "require_approval_above_depth") then
-         Result.Has_Require_Approval_Above_Depth := True;
          Result.Require_Approval_Above_Depth := JS.As_Integer (JS.Get_Value (Node, "require_approval_above_depth"));
       end if;
       if JS.Present (Node, "max_children_per_agent") then
-         Result.Has_Max_Children_Per_Agent := True;
          Result.Max_Children_Per_Agent := JS.As_Integer (JS.Get_Value (Node, "max_children_per_agent"));
       end if;
       return Result;

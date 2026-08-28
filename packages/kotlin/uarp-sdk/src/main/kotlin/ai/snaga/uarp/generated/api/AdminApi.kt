@@ -985,7 +985,7 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateTenant(tenantId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Tenant {
+    public suspend fun updateTenantById(tenantId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Tenant {
         return client.request<Tenant>(
             RequestSpec(
                 method = "PATCH",

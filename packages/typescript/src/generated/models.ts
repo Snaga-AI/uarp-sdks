@@ -1449,13 +1449,26 @@ export interface CompanyCreate {
    */
   mission: string;
   /**
-   * Spend ceiling in USD.
+   * Spend ceiling and pacing for the company.
    */
-  budget: number;
+  budget: CompanyCreateBudget;
   description?: string;
   strategic_goals?: string[];
   config?: JsonObject;
   workspace_id?: string;
+}
+
+/**
+ * Spend ceiling and pacing for the company.
+ */
+export interface CompanyCreateBudget {
+  total_usd: number;
+  daily_limit_usd: number;
+  alert_threshold_pct: number;
+  /**
+   * Metered by the platform. Ignored on create (set to 0) and on update.
+   */
+  spent_usd?: number;
 }
 
 /**
@@ -3743,7 +3756,16 @@ export interface LedgerIntegrity {
 
 export interface ListA2ATasksResponse {
   tasks: A2ATask[];
+  /**
+   * Offset to pass as `offset` for the next page; absent on the last page.
+   */
   cursor?: string;
+  /**
+   * Size of the whole set.
+   */
+  total?: number;
+  limit?: number;
+  offset?: number;
   has_more?: boolean;
 }
 
@@ -3901,7 +3923,10 @@ export interface ListContentReportsResponse {
 
 export interface ListDataExplorerKeysResponse {
   keys?: JsonObject[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null on the last page.
+   */
+  cursor?: string | null;
   has_more?: boolean;
 }
 
@@ -4151,7 +4176,10 @@ export interface ListRunCheckpointsResponse {
 
 export interface ListRunsResponse {
   items: Run[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null on the last page.
+   */
+  cursor?: string | null;
   has_more: boolean;
 }
 
@@ -6795,9 +6823,9 @@ export interface SpawnPolicy {
    */
   child_budget_ratio: number;
   max_depth: number;
-  allowed_roles?: string[];
-  require_approval_above_depth?: number;
-  max_children_per_agent?: number;
+  allowed_roles: string[];
+  require_approval_above_depth: number;
+  max_children_per_agent: number;
 }
 
 /**

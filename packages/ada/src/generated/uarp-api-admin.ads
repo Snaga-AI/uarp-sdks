@@ -691,7 +691,7 @@ package UARP.API.Admin is
    --  PATCH /api/v1/admin/tenants/{tenantId}
    --
    --  Required scopes: admin.
-   function Update_Tenant
+   function Update_Tenant_By_Id
      (Self : Client_Type;
       Tenant_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;

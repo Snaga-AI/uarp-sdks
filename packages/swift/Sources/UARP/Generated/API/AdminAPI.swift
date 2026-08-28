@@ -807,7 +807,7 @@ public struct AdminAPI: Sendable {
     /// `PATCH /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
-    public func updateTenant(tenantId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Tenant {
+    public func updateTenantById(tenantId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Tenant {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))",

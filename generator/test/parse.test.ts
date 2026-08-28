@@ -349,7 +349,13 @@ test('parses the production document into the expected shape', () => {
   // finally declaring the fourteen fields it was already serving instead of
   // three — this count going up is the proof those eleven fields are now
   // reachable rather than invisible in all five clients.
-  assert.equal(spec.types.length, 952);
+  // 952 -> 953 on 2026-08-28: one added, none removed. `CompanyCreateBudget`,
+  // and note no SCHEMA was added for it — `budget` on the company-create body
+  // was an inline object the platform has always accepted and never described
+  // in a way the generator could name, so every client typed it loosely. It
+  // now declares `total_usd`, `daily_limit_usd`, `alert_threshold_pct` and a
+  // `spent_usd` the platform meters and ignores on write.
+  assert.equal(spec.types.length, 953);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   assert.equal(ops.filter((o) => o.sse).length, 15);

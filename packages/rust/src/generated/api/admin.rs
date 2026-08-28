@@ -1063,7 +1063,7 @@ impl AdminApi {
     /// `PATCH /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_tenant(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
+    pub async fn update_tenant_by_id(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

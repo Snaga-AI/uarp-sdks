@@ -136,8 +136,33 @@
                         "description": "What the company exists to do."
                     },
                     "budget": {
-                        "type": "number",
-                        "description": "Spend ceiling in USD."
+                        "type": "object",
+                        "description": "Spend ceiling and pacing for the company.",
+                        "properties": {
+                            "total_usd": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "daily_limit_usd": {
+                                "type": "number",
+                                "exclusiveMinimum": 0
+                            },
+                            "alert_threshold_pct": {
+                                "type": "number",
+                                "minimum": 0,
+                                "maximum": 100
+                            },
+                            "spent_usd": {
+                                "type": "number",
+                                "readOnly": true,
+                                "description": "Metered by the platform. Ignored on create (set to 0) and on update."
+                            }
+                        },
+                        "required": [
+                            "total_usd",
+                            "daily_limit_usd",
+                            "alert_threshold_pct"
+                        ]
                     },
                     "description": {
                         "type": "string"
@@ -4364,7 +4389,8 @@
                 "type": "object",
                 "properties": {
                     "tenant_id": {
-                        "type": "string"
+                        "type": "string",
+                        "readOnly": true
                     },
                     "child_budget_ratio": {
                         "type": "number",
@@ -4391,7 +4417,10 @@
                 "required": [
                     "tenant_id",
                     "child_budget_ratio",
-                    "max_depth"
+                    "max_depth",
+                    "allowed_roles",
+                    "require_approval_above_depth",
+                    "max_children_per_agent"
                 ]
             },
             "PermissionCheckResult": {
@@ -15181,7 +15210,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null on the last page."
                                         },
                                         "has_more": {
                                             "type": "boolean"
@@ -20164,7 +20197,18 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Offset to pass as `offset` for the next page; absent on the last page."
+                                        },
+                                        "total": {
+                                            "type": "integer",
+                                            "description": "Size of the whole set."
+                                        },
+                                        "limit": {
+                                            "type": "integer"
+                                        },
+                                        "offset": {
+                                            "type": "integer"
                                         },
                                         "has_more": {
                                             "type": "boolean"
@@ -32504,7 +32548,7 @@
                 ]
             },
             "patch": {
-                "operationId": "updateTenant",
+                "operationId": "updateTenantById",
                 "tags": [
                     "Admin"
                 ],
@@ -46980,7 +47024,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null on the last page."
                                         },
                                         "has_more": {
                                             "type": "boolean"

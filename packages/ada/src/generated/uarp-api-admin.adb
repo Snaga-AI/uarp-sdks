@@ -885,7 +885,7 @@ package body UARP.API.Admin is
              Options => Options));
    end Update_Feedback_Status;
 
-   function Update_Tenant
+   function Update_Tenant_By_Id
      (Self : Client_Type;
       Tenant_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
@@ -902,5 +902,5 @@ package body UARP.API.Admin is
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
-   end Update_Tenant;
+   end Update_Tenant_By_Id;
 end UARP.API.Admin;

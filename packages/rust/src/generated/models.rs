@@ -3223,8 +3223,8 @@ pub struct CompanyCreate {
     pub name: String,
     /// What the company exists to do.
     pub mission: String,
-    /// Spend ceiling in USD.
-    pub budget: f64,
+    /// Spend ceiling and pacing for the company.
+    pub budget: CompanyCreateBudget,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3233,6 +3233,17 @@ pub struct CompanyCreate {
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub workspace_id: Option<String>,
+}
+
+/// Spend ceiling and pacing for the company.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyCreateBudget {
+    pub total_usd: f64,
+    pub daily_limit_usd: f64,
+    pub alert_threshold_pct: f64,
+    /// Metered by the platform. Ignored on create (set to 0) and on update.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub spent_usd: Option<f64>,
 }
 
 /// Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.
@@ -8407,8 +8418,16 @@ pub struct LedgerIntegrity {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListA2ATasksResponse {
     pub tasks: Vec<A2ATask>,
+    /// Offset to pass as `offset` for the next page; absent on the last page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
+    /// Size of the whole set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub offset: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
 }
@@ -8672,6 +8691,7 @@ pub struct ListContentReportsResponse {
 pub struct ListDataExplorerKeysResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub keys: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    /// Opaque cursor for the next page; null on the last page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9088,6 +9108,7 @@ pub struct ListRunCheckpointsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListRunsResponse {
     pub items: Vec<Run>,
+    /// Opaque cursor for the next page; null on the last page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     pub has_more: bool,
@@ -14187,12 +14208,9 @@ pub struct SpawnPolicy {
     /// Child agent gets at most this fraction of parent's budget.
     pub child_budget_ratio: f64,
     pub max_depth: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub allowed_roles: Option<Vec<String>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub require_approval_above_depth: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub max_children_per_agent: Option<i64>,
+    pub allowed_roles: Vec<String>,
+    pub require_approval_above_depth: i64,
+    pub max_children_per_agent: i64,
 }
 
 /// Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
