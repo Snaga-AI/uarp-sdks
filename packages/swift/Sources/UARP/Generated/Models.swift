@@ -7981,17 +7981,88 @@ public struct GetAgentActivityStatsResponse: Codable, Hashable, Sendable {
     public var totalRuns: Int?
     public var completedRuns: Int?
     public var failedRuns: Int?
+    public var cancelledRuns: Int?
+    public var guardrailBlockedRuns: Int?
+    public var errorRatePercent: Double?
+    public var avgStepsPerRun: Double?
+    public var avgDurationMs: Double?
+    public var avgInputTokens: Double?
+    public var avgOutputTokens: Double?
+    public var avgThinkingTokens: Double?
+    public var toolBreakdown: [JSONObject]?
+    public var topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]?
+    public var runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]?
 
-    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil) {
+    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil, cancelledRuns: Int? = nil, guardrailBlockedRuns: Int? = nil, errorRatePercent: Double? = nil, avgStepsPerRun: Double? = nil, avgDurationMs: Double? = nil, avgInputTokens: Double? = nil, avgOutputTokens: Double? = nil, avgThinkingTokens: Double? = nil, toolBreakdown: [JSONObject]? = nil, topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]? = nil, runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]? = nil) {
         self.totalRuns = totalRuns
         self.completedRuns = completedRuns
         self.failedRuns = failedRuns
+        self.cancelledRuns = cancelledRuns
+        self.guardrailBlockedRuns = guardrailBlockedRuns
+        self.errorRatePercent = errorRatePercent
+        self.avgStepsPerRun = avgStepsPerRun
+        self.avgDurationMs = avgDurationMs
+        self.avgInputTokens = avgInputTokens
+        self.avgOutputTokens = avgOutputTokens
+        self.avgThinkingTokens = avgThinkingTokens
+        self.toolBreakdown = toolBreakdown
+        self.topErrorMessages = topErrorMessages
+        self.runsByDay = runsByDay
     }
 
     private enum CodingKeys: String, CodingKey {
         case totalRuns = "totalRuns"
         case completedRuns = "completedRuns"
         case failedRuns = "failedRuns"
+        case cancelledRuns = "cancelledRuns"
+        case guardrailBlockedRuns = "guardrailBlockedRuns"
+        case errorRatePercent = "errorRatePercent"
+        case avgStepsPerRun = "avgStepsPerRun"
+        case avgDurationMs = "avgDurationMs"
+        case avgInputTokens = "avgInputTokens"
+        case avgOutputTokens = "avgOutputTokens"
+        case avgThinkingTokens = "avgThinkingTokens"
+        case toolBreakdown = "toolBreakdown"
+        case topErrorMessages = "topErrorMessages"
+        case runsByDay = "runsByDay"
+    }
+}
+
+/// `GetAgentActivityStatsResponseRunsByDayItem` model.
+public struct GetAgentActivityStatsResponseRunsByDayItem: Codable, Hashable, Sendable {
+    public var day: String?
+    public var total: Int?
+    public var completed: Int?
+    public var failed: Int?
+
+    public init(day: String? = nil, total: Int? = nil, completed: Int? = nil, failed: Int? = nil) {
+        self.day = day
+        self.total = total
+        self.completed = completed
+        self.failed = failed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case day = "day"
+        case total = "total"
+        case completed = "completed"
+        case failed = "failed"
+    }
+}
+
+/// `GetAgentActivityStatsResponseTopErrorMessage` model.
+public struct GetAgentActivityStatsResponseTopErrorMessage: Codable, Hashable, Sendable {
+    public var message: String?
+    public var count: Int?
+
+    public init(message: String? = nil, count: Int? = nil) {
+        self.message = message
+        self.count = count
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+        case count = "count"
     }
 }
 
@@ -11102,6 +11173,7 @@ public struct ListFeedbackResponse: Codable, Hashable, Sendable {
 /// `ListFilesResponse` model.
 public struct ListFilesResponse: Codable, Hashable, Sendable {
     public var items: [FileEntry]?
+    /// Opaque cursor for the next page; null when no more pages.
     public var cursor: String?
     public var hasMore: Bool?
 
@@ -11714,6 +11786,7 @@ public struct ListPublicStatesResponse: Codable, Hashable, Sendable {
 /// `ListPublicTenantsResponse` model.
 public struct ListPublicTenantsResponse: Codable, Hashable, Sendable {
     public var items: [PublicTenant]?
+    /// Opaque cursor for the next page; null when no more pages.
     public var cursor: String?
     public var hasMore: Bool?
     public var total: Int?
@@ -19682,7 +19755,7 @@ public struct Tenant: Codable, Hashable, Sendable {
     /// Resolved plan id — present on the normal answer, absent on the bootstrap branch.
     public var planId: String?
     public var quotas: TenantQuotas?
-    public var quotaOverrides: TenantQuotas?
+    public var quotaOverrides: TenantQuotaOverrides?
     public var settings: JSONObject?
     public var billing: TenantBilling?
     public var billingStatus: TenantBillingStatus?
@@ -19712,7 +19785,7 @@ public struct Tenant: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String
 
-    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotas? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: JSONObject? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
+    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotaOverrides? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: JSONObject? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
         self.tenantId = tenantId
         self.name = name
         self.slug = slug
@@ -20329,6 +20402,77 @@ public struct TenantPublicSettings: Codable, Hashable, Sendable {
         case allowFileUploads = "allow_file_uploads"
         case rateLimitPerIpPerHour = "rate_limit_per_ip_per_hour"
         case requireAuth = "require_auth"
+    }
+}
+
+/// Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+/// actually overridden are present.
+public struct TenantQuotaOverrides: Codable, Hashable, Sendable {
+    public var maxAgents: Int?
+    public var maxTeams: Int?
+    public var maxWorkersPerTeam: Int?
+    public var maxConcurrentRuns: Int?
+    public var maxConcurrentTeamRuns: Int?
+    public var maxActiveSessions: Int?
+    public var maxMonthlyTokens: Int?
+    public var maxMonthlyToolCalls: Int?
+    public var maxMonthlyRuns: Int?
+    public var maxMCPServers: Int?
+    public var maxStorageBytes: Int?
+    public var maxMemoryEntriesPerAgent: Int?
+    public var maxMemoryStorageBytes: Int?
+    public var maxAgentVersions: Int?
+    public var maxKnowledgeBases: Int?
+    public var maxWorkspaces: Int?
+    public var maxDailyToolCalls: Int?
+    public var maxMonthlyImages: Int?
+    public var maxDailyImages: Int?
+    public var maxMonthlyVideos: Int?
+
+    public init(maxAgents: Int? = nil, maxTeams: Int? = nil, maxWorkersPerTeam: Int? = nil, maxConcurrentRuns: Int? = nil, maxConcurrentTeamRuns: Int? = nil, maxActiveSessions: Int? = nil, maxMonthlyTokens: Int? = nil, maxMonthlyToolCalls: Int? = nil, maxMonthlyRuns: Int? = nil, maxMCPServers: Int? = nil, maxStorageBytes: Int? = nil, maxMemoryEntriesPerAgent: Int? = nil, maxMemoryStorageBytes: Int? = nil, maxAgentVersions: Int? = nil, maxKnowledgeBases: Int? = nil, maxWorkspaces: Int? = nil, maxDailyToolCalls: Int? = nil, maxMonthlyImages: Int? = nil, maxDailyImages: Int? = nil, maxMonthlyVideos: Int? = nil) {
+        self.maxAgents = maxAgents
+        self.maxTeams = maxTeams
+        self.maxWorkersPerTeam = maxWorkersPerTeam
+        self.maxConcurrentRuns = maxConcurrentRuns
+        self.maxConcurrentTeamRuns = maxConcurrentTeamRuns
+        self.maxActiveSessions = maxActiveSessions
+        self.maxMonthlyTokens = maxMonthlyTokens
+        self.maxMonthlyToolCalls = maxMonthlyToolCalls
+        self.maxMonthlyRuns = maxMonthlyRuns
+        self.maxMCPServers = maxMCPServers
+        self.maxStorageBytes = maxStorageBytes
+        self.maxMemoryEntriesPerAgent = maxMemoryEntriesPerAgent
+        self.maxMemoryStorageBytes = maxMemoryStorageBytes
+        self.maxAgentVersions = maxAgentVersions
+        self.maxKnowledgeBases = maxKnowledgeBases
+        self.maxWorkspaces = maxWorkspaces
+        self.maxDailyToolCalls = maxDailyToolCalls
+        self.maxMonthlyImages = maxMonthlyImages
+        self.maxDailyImages = maxDailyImages
+        self.maxMonthlyVideos = maxMonthlyVideos
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxAgents = "max_agents"
+        case maxTeams = "max_teams"
+        case maxWorkersPerTeam = "max_workers_per_team"
+        case maxConcurrentRuns = "max_concurrent_runs"
+        case maxConcurrentTeamRuns = "max_concurrent_team_runs"
+        case maxActiveSessions = "max_active_sessions"
+        case maxMonthlyTokens = "max_monthly_tokens"
+        case maxMonthlyToolCalls = "max_monthly_tool_calls"
+        case maxMonthlyRuns = "max_monthly_runs"
+        case maxMCPServers = "max_mcp_servers"
+        case maxStorageBytes = "max_storage_bytes"
+        case maxMemoryEntriesPerAgent = "max_memory_entries_per_agent"
+        case maxMemoryStorageBytes = "max_memory_storage_bytes"
+        case maxAgentVersions = "max_agent_versions"
+        case maxKnowledgeBases = "max_knowledge_bases"
+        case maxWorkspaces = "max_workspaces"
+        case maxDailyToolCalls = "max_daily_tool_calls"
+        case maxMonthlyImages = "max_monthly_images"
+        case maxDailyImages = "max_daily_images"
+        case maxMonthlyVideos = "max_monthly_videos"
     }
 }
 

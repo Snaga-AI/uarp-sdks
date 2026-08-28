@@ -14755,6 +14755,72 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Top_Error_Message) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Message then
+         JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      end if;
+      if Model.Has_Count then
+         JS.Set (Result, "count", JS.JSON.Create (Model.Count));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Top_Error_Message is
+      Result : Get_Agent_Activity_Stats_Response_Top_Error_Message;
+   begin
+      if JS.Present (Node, "message") then
+         Result.Has_Message := True;
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "count") then
+         Result.Has_Count := True;
+         Result.Count := JS.As_Integer (JS.Get_Value (Node, "count"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Runs_By_Day_Item) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Day then
+         JS.Set (Result, "day", JS.JSON.Create (Model.Day));
+      end if;
+      if Model.Has_Total then
+         JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      end if;
+      if Model.Has_Completed then
+         JS.Set (Result, "completed", JS.JSON.Create (Model.Completed));
+      end if;
+      if Model.Has_Failed then
+         JS.Set (Result, "failed", JS.JSON.Create (Model.Failed));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Runs_By_Day_Item is
+      Result : Get_Agent_Activity_Stats_Response_Runs_By_Day_Item;
+   begin
+      if JS.Present (Node, "day") then
+         Result.Has_Day := True;
+         Result.Day := JS.As_Text (JS.Get_Value (Node, "day"));
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Has_Total := True;
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      if JS.Present (Node, "completed") then
+         Result.Has_Completed := True;
+         Result.Completed := JS.As_Integer (JS.Get_Value (Node, "completed"));
+      end if;
+      if JS.Present (Node, "failed") then
+         Result.Has_Failed := True;
+         Result.Failed := JS.As_Integer (JS.Get_Value (Node, "failed"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Get_Agent_Activity_Stats_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -14766,6 +14832,53 @@ package body UARP.Models is
       end if;
       if Model.Has_Failed_Runs then
          JS.Set (Result, "failedRuns", JS.JSON.Create (Model.Failed_Runs));
+      end if;
+      if Model.Has_Cancelled_Runs then
+         JS.Set (Result, "cancelledRuns", JS.JSON.Create (Model.Cancelled_Runs));
+      end if;
+      if Model.Has_Guardrail_Blocked_Runs then
+         JS.Set (Result, "guardrailBlockedRuns", JS.JSON.Create (Model.Guardrail_Blocked_Runs));
+      end if;
+      if Model.Has_Error_Rate_Percent then
+         JS.Set (Result, "errorRatePercent", JS.JSON.Create (Model.Error_Rate_Percent));
+      end if;
+      if Model.Has_Avg_Steps_Per_Run then
+         JS.Set (Result, "avgStepsPerRun", JS.JSON.Create (Model.Avg_Steps_Per_Run));
+      end if;
+      if Model.Has_Avg_Duration_Ms then
+         JS.Set (Result, "avgDurationMs", JS.JSON.Create (Model.Avg_Duration_Ms));
+      end if;
+      if Model.Has_Avg_Input_Tokens then
+         JS.Set (Result, "avgInputTokens", JS.JSON.Create (Model.Avg_Input_Tokens));
+      end if;
+      if Model.Has_Avg_Output_Tokens then
+         JS.Set (Result, "avgOutputTokens", JS.JSON.Create (Model.Avg_Output_Tokens));
+      end if;
+      if Model.Has_Avg_Thinking_Tokens then
+         JS.Set (Result, "avgThinkingTokens", JS.JSON.Create (Model.Avg_Thinking_Tokens));
+      end if;
+      if Model.Has_Tool_Breakdown then
+         JS.Set (Result, "toolBreakdown", Model.Tool_Breakdown);
+      end if;
+      if Model.Has_Top_Error_Messages then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Top_Error_Messages loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "topErrorMessages", Items);
+         end;
+      end if;
+      if Model.Has_Runs_By_Day then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Runs_By_Day loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "runsByDay", Items);
+         end;
       end if;
       return Result;
    end To_JSON;
@@ -14784,6 +14897,62 @@ package body UARP.Models is
       if JS.Present (Node, "failedRuns") then
          Result.Has_Failed_Runs := True;
          Result.Failed_Runs := JS.As_Integer (JS.Get_Value (Node, "failedRuns"));
+      end if;
+      if JS.Present (Node, "cancelledRuns") then
+         Result.Has_Cancelled_Runs := True;
+         Result.Cancelled_Runs := JS.As_Integer (JS.Get_Value (Node, "cancelledRuns"));
+      end if;
+      if JS.Present (Node, "guardrailBlockedRuns") then
+         Result.Has_Guardrail_Blocked_Runs := True;
+         Result.Guardrail_Blocked_Runs := JS.As_Integer (JS.Get_Value (Node, "guardrailBlockedRuns"));
+      end if;
+      if JS.Present (Node, "errorRatePercent") then
+         Result.Has_Error_Rate_Percent := True;
+         Result.Error_Rate_Percent := JS.As_Float (JS.Get_Value (Node, "errorRatePercent"));
+      end if;
+      if JS.Present (Node, "avgStepsPerRun") then
+         Result.Has_Avg_Steps_Per_Run := True;
+         Result.Avg_Steps_Per_Run := JS.As_Float (JS.Get_Value (Node, "avgStepsPerRun"));
+      end if;
+      if JS.Present (Node, "avgDurationMs") then
+         Result.Has_Avg_Duration_Ms := True;
+         Result.Avg_Duration_Ms := JS.As_Float (JS.Get_Value (Node, "avgDurationMs"));
+      end if;
+      if JS.Present (Node, "avgInputTokens") then
+         Result.Has_Avg_Input_Tokens := True;
+         Result.Avg_Input_Tokens := JS.As_Float (JS.Get_Value (Node, "avgInputTokens"));
+      end if;
+      if JS.Present (Node, "avgOutputTokens") then
+         Result.Has_Avg_Output_Tokens := True;
+         Result.Avg_Output_Tokens := JS.As_Float (JS.Get_Value (Node, "avgOutputTokens"));
+      end if;
+      if JS.Present (Node, "avgThinkingTokens") then
+         Result.Has_Avg_Thinking_Tokens := True;
+         Result.Avg_Thinking_Tokens := JS.As_Float (JS.Get_Value (Node, "avgThinkingTokens"));
+      end if;
+      if JS.Present (Node, "toolBreakdown") then
+         Result.Has_Tool_Breakdown := True;
+         Result.Tool_Breakdown := JS.Get_Value (Node, "toolBreakdown");
+      end if;
+      if JS.Present (Node, "topErrorMessages") then
+         Result.Has_Top_Error_Messages := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "topErrorMessages");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Top_Error_Messages.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "runsByDay") then
+         Result.Has_Runs_By_Day := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "runsByDay");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Runs_By_Day.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       return Result;
    end From_JSON;
@@ -27482,6 +27651,158 @@ package body UARP.Models is
          Result.Max_Knowledge_Bases := JS.As_Integer (JS.Get_Value (Node, "max_knowledge_bases"));
       end if;
       if JS.Present (Node, "max_workspaces") then
+         Result.Max_Workspaces := JS.As_Integer (JS.Get_Value (Node, "max_workspaces"));
+      end if;
+      if JS.Present (Node, "max_daily_tool_calls") then
+         Result.Has_Max_Daily_Tool_Calls := True;
+         Result.Max_Daily_Tool_Calls := JS.As_Integer (JS.Get_Value (Node, "max_daily_tool_calls"));
+      end if;
+      if JS.Present (Node, "max_monthly_images") then
+         Result.Has_Max_Monthly_Images := True;
+         Result.Max_Monthly_Images := JS.As_Integer (JS.Get_Value (Node, "max_monthly_images"));
+      end if;
+      if JS.Present (Node, "max_daily_images") then
+         Result.Has_Max_Daily_Images := True;
+         Result.Max_Daily_Images := JS.As_Integer (JS.Get_Value (Node, "max_daily_images"));
+      end if;
+      if JS.Present (Node, "max_monthly_videos") then
+         Result.Has_Max_Monthly_Videos := True;
+         Result.Max_Monthly_Videos := JS.As_Integer (JS.Get_Value (Node, "max_monthly_videos"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Tenant_Quota_Overrides) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Max_Agents then
+         JS.Set (Result, "max_agents", JS.JSON.Create (Model.Max_Agents));
+      end if;
+      if Model.Has_Max_Teams then
+         JS.Set (Result, "max_teams", JS.JSON.Create (Model.Max_Teams));
+      end if;
+      if Model.Has_Max_Workers_Per_Team then
+         JS.Set (Result, "max_workers_per_team", JS.JSON.Create (Model.Max_Workers_Per_Team));
+      end if;
+      if Model.Has_Max_Concurrent_Runs then
+         JS.Set (Result, "max_concurrent_runs", JS.JSON.Create (Model.Max_Concurrent_Runs));
+      end if;
+      if Model.Has_Max_Concurrent_Team_Runs then
+         JS.Set (Result, "max_concurrent_team_runs", JS.JSON.Create (Model.Max_Concurrent_Team_Runs));
+      end if;
+      if Model.Has_Max_Active_Sessions then
+         JS.Set (Result, "max_active_sessions", JS.JSON.Create (Model.Max_Active_Sessions));
+      end if;
+      if Model.Has_Max_Monthly_Tokens then
+         JS.Set (Result, "max_monthly_tokens", JS.JSON.Create (Model.Max_Monthly_Tokens));
+      end if;
+      if Model.Has_Max_Monthly_Tool_Calls then
+         JS.Set (Result, "max_monthly_tool_calls", JS.JSON.Create (Model.Max_Monthly_Tool_Calls));
+      end if;
+      if Model.Has_Max_Monthly_Runs then
+         JS.Set (Result, "max_monthly_runs", JS.JSON.Create (Model.Max_Monthly_Runs));
+      end if;
+      if Model.Has_Max_MCP_Servers then
+         JS.Set (Result, "max_mcp_servers", JS.JSON.Create (Model.Max_MCP_Servers));
+      end if;
+      if Model.Has_Max_Storage_Bytes then
+         JS.Set (Result, "max_storage_bytes", JS.JSON.Create (Model.Max_Storage_Bytes));
+      end if;
+      if Model.Has_Max_Memory_Entries_Per_Agent then
+         JS.Set (Result, "max_memory_entries_per_agent", JS.JSON.Create (Model.Max_Memory_Entries_Per_Agent));
+      end if;
+      if Model.Has_Max_Memory_Storage_Bytes then
+         JS.Set (Result, "max_memory_storage_bytes", JS.JSON.Create (Model.Max_Memory_Storage_Bytes));
+      end if;
+      if Model.Has_Max_Agent_Versions then
+         JS.Set (Result, "max_agent_versions", JS.JSON.Create (Model.Max_Agent_Versions));
+      end if;
+      if Model.Has_Max_Knowledge_Bases then
+         JS.Set (Result, "max_knowledge_bases", JS.JSON.Create (Model.Max_Knowledge_Bases));
+      end if;
+      if Model.Has_Max_Workspaces then
+         JS.Set (Result, "max_workspaces", JS.JSON.Create (Model.Max_Workspaces));
+      end if;
+      if Model.Has_Max_Daily_Tool_Calls then
+         JS.Set (Result, "max_daily_tool_calls", JS.JSON.Create (Model.Max_Daily_Tool_Calls));
+      end if;
+      if Model.Has_Max_Monthly_Images then
+         JS.Set (Result, "max_monthly_images", JS.JSON.Create (Model.Max_Monthly_Images));
+      end if;
+      if Model.Has_Max_Daily_Images then
+         JS.Set (Result, "max_daily_images", JS.JSON.Create (Model.Max_Daily_Images));
+      end if;
+      if Model.Has_Max_Monthly_Videos then
+         JS.Set (Result, "max_monthly_videos", JS.JSON.Create (Model.Max_Monthly_Videos));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Quota_Overrides is
+      Result : Tenant_Quota_Overrides;
+   begin
+      if JS.Present (Node, "max_agents") then
+         Result.Has_Max_Agents := True;
+         Result.Max_Agents := JS.As_Integer (JS.Get_Value (Node, "max_agents"));
+      end if;
+      if JS.Present (Node, "max_teams") then
+         Result.Has_Max_Teams := True;
+         Result.Max_Teams := JS.As_Integer (JS.Get_Value (Node, "max_teams"));
+      end if;
+      if JS.Present (Node, "max_workers_per_team") then
+         Result.Has_Max_Workers_Per_Team := True;
+         Result.Max_Workers_Per_Team := JS.As_Integer (JS.Get_Value (Node, "max_workers_per_team"));
+      end if;
+      if JS.Present (Node, "max_concurrent_runs") then
+         Result.Has_Max_Concurrent_Runs := True;
+         Result.Max_Concurrent_Runs := JS.As_Integer (JS.Get_Value (Node, "max_concurrent_runs"));
+      end if;
+      if JS.Present (Node, "max_concurrent_team_runs") then
+         Result.Has_Max_Concurrent_Team_Runs := True;
+         Result.Max_Concurrent_Team_Runs := JS.As_Integer (JS.Get_Value (Node, "max_concurrent_team_runs"));
+      end if;
+      if JS.Present (Node, "max_active_sessions") then
+         Result.Has_Max_Active_Sessions := True;
+         Result.Max_Active_Sessions := JS.As_Integer (JS.Get_Value (Node, "max_active_sessions"));
+      end if;
+      if JS.Present (Node, "max_monthly_tokens") then
+         Result.Has_Max_Monthly_Tokens := True;
+         Result.Max_Monthly_Tokens := JS.As_Integer (JS.Get_Value (Node, "max_monthly_tokens"));
+      end if;
+      if JS.Present (Node, "max_monthly_tool_calls") then
+         Result.Has_Max_Monthly_Tool_Calls := True;
+         Result.Max_Monthly_Tool_Calls := JS.As_Integer (JS.Get_Value (Node, "max_monthly_tool_calls"));
+      end if;
+      if JS.Present (Node, "max_monthly_runs") then
+         Result.Has_Max_Monthly_Runs := True;
+         Result.Max_Monthly_Runs := JS.As_Integer (JS.Get_Value (Node, "max_monthly_runs"));
+      end if;
+      if JS.Present (Node, "max_mcp_servers") then
+         Result.Has_Max_MCP_Servers := True;
+         Result.Max_MCP_Servers := JS.As_Integer (JS.Get_Value (Node, "max_mcp_servers"));
+      end if;
+      if JS.Present (Node, "max_storage_bytes") then
+         Result.Has_Max_Storage_Bytes := True;
+         Result.Max_Storage_Bytes := JS.As_Integer (JS.Get_Value (Node, "max_storage_bytes"));
+      end if;
+      if JS.Present (Node, "max_memory_entries_per_agent") then
+         Result.Has_Max_Memory_Entries_Per_Agent := True;
+         Result.Max_Memory_Entries_Per_Agent := JS.As_Integer (JS.Get_Value (Node, "max_memory_entries_per_agent"));
+      end if;
+      if JS.Present (Node, "max_memory_storage_bytes") then
+         Result.Has_Max_Memory_Storage_Bytes := True;
+         Result.Max_Memory_Storage_Bytes := JS.As_Integer (JS.Get_Value (Node, "max_memory_storage_bytes"));
+      end if;
+      if JS.Present (Node, "max_agent_versions") then
+         Result.Has_Max_Agent_Versions := True;
+         Result.Max_Agent_Versions := JS.As_Integer (JS.Get_Value (Node, "max_agent_versions"));
+      end if;
+      if JS.Present (Node, "max_knowledge_bases") then
+         Result.Has_Max_Knowledge_Bases := True;
+         Result.Max_Knowledge_Bases := JS.As_Integer (JS.Get_Value (Node, "max_knowledge_bases"));
+      end if;
+      if JS.Present (Node, "max_workspaces") then
+         Result.Has_Max_Workspaces := True;
          Result.Max_Workspaces := JS.As_Integer (JS.Get_Value (Node, "max_workspaces"));
       end if;
       if JS.Present (Node, "max_daily_tool_calls") then

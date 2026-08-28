@@ -6262,6 +6262,50 @@ pub struct GetAgentActivityStatsResponse {
     pub completed_runs: Option<i64>,
     #[serde(rename = "failedRuns", default, skip_serializing_if = "Option::is_none")]
     pub failed_runs: Option<i64>,
+    #[serde(rename = "cancelledRuns", default, skip_serializing_if = "Option::is_none")]
+    pub cancelled_runs: Option<i64>,
+    #[serde(rename = "guardrailBlockedRuns", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_blocked_runs: Option<i64>,
+    #[serde(rename = "errorRatePercent", default, skip_serializing_if = "Option::is_none")]
+    pub error_rate_percent: Option<f64>,
+    #[serde(rename = "avgStepsPerRun", default, skip_serializing_if = "Option::is_none")]
+    pub avg_steps_per_run: Option<f64>,
+    #[serde(rename = "avgDurationMs", default, skip_serializing_if = "Option::is_none")]
+    pub avg_duration_ms: Option<f64>,
+    #[serde(rename = "avgInputTokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_input_tokens: Option<f64>,
+    #[serde(rename = "avgOutputTokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_output_tokens: Option<f64>,
+    #[serde(rename = "avgThinkingTokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_thinking_tokens: Option<f64>,
+    #[serde(rename = "toolBreakdown", default, skip_serializing_if = "Option::is_none")]
+    pub tool_breakdown: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(rename = "topErrorMessages", default, skip_serializing_if = "Option::is_none")]
+    pub top_error_messages: Option<Vec<GetAgentActivityStatsResponseTopErrorMessage>>,
+    #[serde(rename = "runsByDay", default, skip_serializing_if = "Option::is_none")]
+    pub runs_by_day: Option<Vec<GetAgentActivityStatsResponseRunsByDayItem>>,
+}
+
+/// `GetAgentActivityStatsResponseRunsByDayItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentActivityStatsResponseRunsByDayItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failed: Option<i64>,
+}
+
+/// `GetAgentActivityStatsResponseTopErrorMessage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentActivityStatsResponseTopErrorMessage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
 }
 
 /// `GetAgentIdentityResponse` model.
@@ -8660,6 +8704,7 @@ pub struct ListFeedbackResponse {
 pub struct ListFilesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<FileEntry>>,
+    /// Opaque cursor for the next page; null when no more pages.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9023,6 +9068,7 @@ pub struct ListPublicStatesResponse {
 pub struct ListPublicTenantsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<PublicTenant>>,
+    /// Opaque cursor for the next page; null when no more pages.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15242,7 +15288,7 @@ pub struct Tenant {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub quotas: Option<TenantQuotas>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub quota_overrides: Option<TenantQuotas>,
+    pub quota_overrides: Option<TenantQuotaOverrides>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub settings: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15662,6 +15708,52 @@ pub struct TenantPublicSettings {
     pub rate_limit_per_ip_per_hour: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub require_auth: Option<bool>,
+}
+
+/// Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+/// actually overridden are present.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantQuotaOverrides {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_agents: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_teams: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_workers_per_team: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_concurrent_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_concurrent_team_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_active_sessions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_monthly_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_monthly_tool_calls: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_monthly_runs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_mcp_servers: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_storage_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_memory_entries_per_agent: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_memory_storage_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_agent_versions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_knowledge_bases: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_workspaces: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_daily_tool_calls: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_monthly_images: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_daily_images: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_monthly_videos: Option<i64>,
 }
 
 /// `TenantQuotas` model.

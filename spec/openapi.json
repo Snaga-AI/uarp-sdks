@@ -7132,6 +7132,72 @@
                     "max_workspaces"
                 ]
             },
+            "TenantQuotaOverrides": {
+                "type": "object",
+                "description": "Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys actually overridden are present.",
+                "properties": {
+                    "max_agents": {
+                        "type": "integer"
+                    },
+                    "max_teams": {
+                        "type": "integer"
+                    },
+                    "max_workers_per_team": {
+                        "type": "integer"
+                    },
+                    "max_concurrent_runs": {
+                        "type": "integer"
+                    },
+                    "max_concurrent_team_runs": {
+                        "type": "integer"
+                    },
+                    "max_active_sessions": {
+                        "type": "integer"
+                    },
+                    "max_monthly_tokens": {
+                        "type": "integer"
+                    },
+                    "max_monthly_tool_calls": {
+                        "type": "integer"
+                    },
+                    "max_monthly_runs": {
+                        "type": "integer"
+                    },
+                    "max_mcp_servers": {
+                        "type": "integer"
+                    },
+                    "max_storage_bytes": {
+                        "type": "integer"
+                    },
+                    "max_memory_entries_per_agent": {
+                        "type": "integer"
+                    },
+                    "max_memory_storage_bytes": {
+                        "type": "integer"
+                    },
+                    "max_agent_versions": {
+                        "type": "integer"
+                    },
+                    "max_knowledge_bases": {
+                        "type": "integer"
+                    },
+                    "max_workspaces": {
+                        "type": "integer"
+                    },
+                    "max_daily_tool_calls": {
+                        "type": "integer"
+                    },
+                    "max_monthly_images": {
+                        "type": "integer"
+                    },
+                    "max_daily_images": {
+                        "type": "integer"
+                    },
+                    "max_monthly_videos": {
+                        "type": "integer"
+                    }
+                }
+            },
             "TenantBilling": {
                 "type": "object",
                 "properties": {
@@ -7327,7 +7393,7 @@
                         "$ref": "#/components/schemas/TenantQuotas"
                     },
                     "quota_overrides": {
-                        "$ref": "#/components/schemas/TenantQuotas"
+                        "$ref": "#/components/schemas/TenantQuotaOverrides"
                     },
                     "settings": {
                         "type": "object"
@@ -19768,7 +19834,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null when no more pages."
                                         },
                                         "has_more": {
                                             "type": "boolean"
@@ -35603,6 +35673,70 @@
                                         },
                                         "failedRuns": {
                                             "type": "integer"
+                                        },
+                                        "cancelledRuns": {
+                                            "type": "integer"
+                                        },
+                                        "guardrailBlockedRuns": {
+                                            "type": "integer"
+                                        },
+                                        "errorRatePercent": {
+                                            "type": "number"
+                                        },
+                                        "avgStepsPerRun": {
+                                            "type": "number"
+                                        },
+                                        "avgDurationMs": {
+                                            "type": "number"
+                                        },
+                                        "avgInputTokens": {
+                                            "type": "number"
+                                        },
+                                        "avgOutputTokens": {
+                                            "type": "number"
+                                        },
+                                        "avgThinkingTokens": {
+                                            "type": "number"
+                                        },
+                                        "toolBreakdown": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "topErrorMessages": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "count": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "runsByDay": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "day": {
+                                                        "type": "string"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer"
+                                                    },
+                                                    "completed": {
+                                                        "type": "integer"
+                                                    },
+                                                    "failed": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -38866,7 +39000,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null when no more pages."
                                         },
                                         "has_more": {
                                             "type": "boolean"

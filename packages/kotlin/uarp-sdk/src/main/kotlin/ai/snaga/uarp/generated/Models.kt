@@ -5962,6 +5962,37 @@ public data class GetAgentActivityStatsResponse(
     public val totalRuns: Long? = null,
     public val completedRuns: Long? = null,
     public val failedRuns: Long? = null,
+    public val cancelledRuns: Long? = null,
+    public val guardrailBlockedRuns: Long? = null,
+    public val errorRatePercent: Double? = null,
+    public val avgStepsPerRun: Double? = null,
+    public val avgDurationMs: Double? = null,
+    public val avgInputTokens: Double? = null,
+    public val avgOutputTokens: Double? = null,
+    public val avgThinkingTokens: Double? = null,
+    public val toolBreakdown: List<JsonObject>? = null,
+    public val topErrorMessages: List<GetAgentActivityStatsResponseTopErrorMessage>? = null,
+    public val runsByDay: List<GetAgentActivityStatsResponseRunsByDayItem>? = null,
+)
+
+/**
+ * `GetAgentActivityStatsResponseRunsByDayItem` model.
+ */
+@Serializable
+public data class GetAgentActivityStatsResponseRunsByDayItem(
+    public val day: String? = null,
+    public val total: Long? = null,
+    public val completed: Long? = null,
+    public val failed: Long? = null,
+)
+
+/**
+ * `GetAgentActivityStatsResponseTopErrorMessage` model.
+ */
+@Serializable
+public data class GetAgentActivityStatsResponseTopErrorMessage(
+    public val message: String? = null,
+    public val count: Long? = null,
 )
 
 /**
@@ -8248,6 +8279,9 @@ public data class ListFeedbackResponse(
 @Serializable
 public data class ListFilesResponse(
     public val items: List<FileEntry>? = null,
+    /**
+     * Opaque cursor for the next page; null when no more pages.
+     */
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
@@ -8646,6 +8680,9 @@ public data class ListPublicStatesResponse(
 @Serializable
 public data class ListPublicTenantsResponse(
     public val items: List<PublicTenant>? = null,
+    /**
+     * Opaque cursor for the next page; null when no more pages.
+     */
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
@@ -14733,7 +14770,7 @@ public data class Tenant(
     public val planId: String? = null,
     public val quotas: TenantQuotas? = null,
     @SerialName("quota_overrides")
-    public val quotaOverrides: TenantQuotas? = null,
+    public val quotaOverrides: TenantQuotaOverrides? = null,
     public val settings: JsonObject? = null,
     public val billing: TenantBilling? = null,
     @SerialName("billing_status")
@@ -15174,6 +15211,54 @@ public data class TenantPublicSettings(
     public val rateLimitPerIpPerHour: Long? = null,
     @SerialName("require_auth")
     public val requireAuth: Boolean? = null,
+)
+
+/**
+ * Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+ * actually overridden are present.
+ */
+@Serializable
+public data class TenantQuotaOverrides(
+    @SerialName("max_agents")
+    public val maxAgents: Long? = null,
+    @SerialName("max_teams")
+    public val maxTeams: Long? = null,
+    @SerialName("max_workers_per_team")
+    public val maxWorkersPerTeam: Long? = null,
+    @SerialName("max_concurrent_runs")
+    public val maxConcurrentRuns: Long? = null,
+    @SerialName("max_concurrent_team_runs")
+    public val maxConcurrentTeamRuns: Long? = null,
+    @SerialName("max_active_sessions")
+    public val maxActiveSessions: Long? = null,
+    @SerialName("max_monthly_tokens")
+    public val maxMonthlyTokens: Long? = null,
+    @SerialName("max_monthly_tool_calls")
+    public val maxMonthlyToolCalls: Long? = null,
+    @SerialName("max_monthly_runs")
+    public val maxMonthlyRuns: Long? = null,
+    @SerialName("max_mcp_servers")
+    public val maxMCPServers: Long? = null,
+    @SerialName("max_storage_bytes")
+    public val maxStorageBytes: Long? = null,
+    @SerialName("max_memory_entries_per_agent")
+    public val maxMemoryEntriesPerAgent: Long? = null,
+    @SerialName("max_memory_storage_bytes")
+    public val maxMemoryStorageBytes: Long? = null,
+    @SerialName("max_agent_versions")
+    public val maxAgentVersions: Long? = null,
+    @SerialName("max_knowledge_bases")
+    public val maxKnowledgeBases: Long? = null,
+    @SerialName("max_workspaces")
+    public val maxWorkspaces: Long? = null,
+    @SerialName("max_daily_tool_calls")
+    public val maxDailyToolCalls: Long? = null,
+    @SerialName("max_monthly_images")
+    public val maxMonthlyImages: Long? = null,
+    @SerialName("max_daily_images")
+    public val maxDailyImages: Long? = null,
+    @SerialName("max_monthly_videos")
+    public val maxMonthlyVideos: Long? = null,
 )
 
 /**

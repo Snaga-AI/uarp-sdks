@@ -5789,6 +5789,38 @@ package UARP.Models is
    function To_JSON (Model : Get_Admin_Trace_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Trace_Response;
 
+   --  `GetAgentActivityStatsResponseTopErrorMessage` model.
+   type Get_Agent_Activity_Stats_Response_Top_Error_Message is record
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Count : Boolean := False;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Top_Error_Message) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Top_Error_Message;
+
+   package Get_Agent_Activity_Stats_Response_Top_Error_Message_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Top_Error_Message);
+
+   --  `GetAgentActivityStatsResponseRunsByDayItem` model.
+   type Get_Agent_Activity_Stats_Response_Runs_By_Day_Item is record
+      Has_Day : Boolean := False;
+      Day : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+      Has_Completed : Boolean := False;
+      Completed : UARP.Types.Integer_Value := 0;
+      Has_Failed : Boolean := False;
+      Failed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Runs_By_Day_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Runs_By_Day_Item;
+
+   package Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Runs_By_Day_Item);
+
    --  `GetAgentActivityStatsResponse` model.
    type Get_Agent_Activity_Stats_Response is record
       Has_Total_Runs : Boolean := False;
@@ -5797,6 +5829,28 @@ package UARP.Models is
       Completed_Runs : UARP.Types.Integer_Value := 0;
       Has_Failed_Runs : Boolean := False;
       Failed_Runs : UARP.Types.Integer_Value := 0;
+      Has_Cancelled_Runs : Boolean := False;
+      Cancelled_Runs : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Blocked_Runs : Boolean := False;
+      Guardrail_Blocked_Runs : UARP.Types.Integer_Value := 0;
+      Has_Error_Rate_Percent : Boolean := False;
+      Error_Rate_Percent : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Steps_Per_Run : Boolean := False;
+      Avg_Steps_Per_Run : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Duration_Ms : Boolean := False;
+      Avg_Duration_Ms : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Input_Tokens : Boolean := False;
+      Avg_Input_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Output_Tokens : Boolean := False;
+      Avg_Output_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Thinking_Tokens : Boolean := False;
+      Avg_Thinking_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Tool_Breakdown : Boolean := False;
+      Tool_Breakdown : UARP.JSON_Support.JSON_Value;
+      Has_Top_Error_Messages : Boolean := False;
+      Top_Error_Messages : UARP.Models.Get_Agent_Activity_Stats_Response_Top_Error_Message_Vectors.Vector;
+      Has_Runs_By_Day : Boolean := False;
+      Runs_By_Day : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Get_Agent_Activity_Stats_Response) return UARP.JSON_Support.JSON_Value;
@@ -8218,6 +8272,7 @@ package UARP.Models is
    type List_Files_Response is record
       Has_Items : Boolean := False;
       Items : UARP.Models.File_Entry_Vectors.Vector;
+      --  Opaque cursor for the next page; null when no more pages.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Has_More : Boolean := False;
@@ -9434,6 +9489,7 @@ package UARP.Models is
    type List_Public_Tenants_Response is record
       Has_Items : Boolean := False;
       Items : UARP.Models.Public_Tenant_Vectors.Vector;
+      --  Opaque cursor for the next page; null when no more pages.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Has_More : Boolean := False;
@@ -10505,6 +10561,54 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Quotas) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Quotas;
 
+   --  Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+   --  actually overridden are present.
+   type Tenant_Quota_Overrides is record
+      Has_Max_Agents : Boolean := False;
+      Max_Agents : UARP.Types.Integer_Value := 0;
+      Has_Max_Teams : Boolean := False;
+      Max_Teams : UARP.Types.Integer_Value := 0;
+      Has_Max_Workers_Per_Team : Boolean := False;
+      Max_Workers_Per_Team : UARP.Types.Integer_Value := 0;
+      Has_Max_Concurrent_Runs : Boolean := False;
+      Max_Concurrent_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_Concurrent_Team_Runs : Boolean := False;
+      Max_Concurrent_Team_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_Active_Sessions : Boolean := False;
+      Max_Active_Sessions : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Tokens : Boolean := False;
+      Max_Monthly_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Tool_Calls : Boolean := False;
+      Max_Monthly_Tool_Calls : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Runs : Boolean := False;
+      Max_Monthly_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_MCP_Servers : Boolean := False;
+      Max_MCP_Servers : UARP.Types.Integer_Value := 0;
+      Has_Max_Storage_Bytes : Boolean := False;
+      Max_Storage_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Entries_Per_Agent : Boolean := False;
+      Max_Memory_Entries_Per_Agent : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Storage_Bytes : Boolean := False;
+      Max_Memory_Storage_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Max_Agent_Versions : Boolean := False;
+      Max_Agent_Versions : UARP.Types.Integer_Value := 0;
+      Has_Max_Knowledge_Bases : Boolean := False;
+      Max_Knowledge_Bases : UARP.Types.Integer_Value := 0;
+      Has_Max_Workspaces : Boolean := False;
+      Max_Workspaces : UARP.Types.Integer_Value := 0;
+      Has_Max_Daily_Tool_Calls : Boolean := False;
+      Max_Daily_Tool_Calls : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Images : Boolean := False;
+      Max_Monthly_Images : UARP.Types.Integer_Value := 0;
+      Has_Max_Daily_Images : Boolean := False;
+      Max_Daily_Images : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Videos : Boolean := False;
+      Max_Monthly_Videos : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Tenant_Quota_Overrides) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Quota_Overrides;
+
    --  `TenantBilling` model.
    type Tenant_Billing is record
       Has_Stripe_Customer_Id : Boolean := False;
@@ -10684,7 +10788,7 @@ package UARP.Models is
       Has_Quotas : Boolean := False;
       Quotas : UARP.Models.Tenant_Quotas;
       Has_Quota_Overrides : Boolean := False;
-      Quota_Overrides : UARP.Models.Tenant_Quotas;
+      Quota_Overrides : UARP.Models.Tenant_Quota_Overrides;
       Has_Settings : Boolean := False;
       Settings : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Billing : Boolean := False;

@@ -2805,6 +2805,29 @@ export interface GetAgentActivityStatsResponse {
   totalRuns?: number;
   completedRuns?: number;
   failedRuns?: number;
+  cancelledRuns?: number;
+  guardrailBlockedRuns?: number;
+  errorRatePercent?: number;
+  avgStepsPerRun?: number;
+  avgDurationMs?: number;
+  avgInputTokens?: number;
+  avgOutputTokens?: number;
+  avgThinkingTokens?: number;
+  toolBreakdown?: JsonObject[];
+  topErrorMessages?: GetAgentActivityStatsResponseTopErrorMessage[];
+  runsByDay?: GetAgentActivityStatsResponseRunsByDayItem[];
+}
+
+export interface GetAgentActivityStatsResponseRunsByDayItem {
+  day?: string;
+  total?: number;
+  completed?: number;
+  failed?: number;
+}
+
+export interface GetAgentActivityStatsResponseTopErrorMessage {
+  message?: string;
+  count?: number;
 }
 
 export interface GetAgentIdentityResponse {
@@ -3898,7 +3921,10 @@ export interface ListFeedbackResponse {
 
 export interface ListFilesResponse {
   items?: FileEntry[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
 }
 
@@ -4111,7 +4137,10 @@ export interface ListPublicStatesResponse {
 
 export interface ListPublicTenantsResponse {
   items?: PublicTenant[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
   total?: number;
 }
@@ -7226,7 +7255,7 @@ export interface Tenant {
    */
   plan_id?: string;
   quotas?: TenantQuotas;
-  quota_overrides?: TenantQuotas;
+  quota_overrides?: TenantQuotaOverrides;
   settings?: JsonObject;
   billing?: TenantBilling;
   billing_status?: TenantBillingStatus;
@@ -7454,6 +7483,33 @@ export interface TenantPublicSettings {
   allow_file_uploads?: boolean;
   rate_limit_per_ip_per_hour?: number;
   require_auth?: boolean;
+}
+
+/**
+ * Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+ * actually overridden are present.
+ */
+export interface TenantQuotaOverrides {
+  max_agents?: number;
+  max_teams?: number;
+  max_workers_per_team?: number;
+  max_concurrent_runs?: number;
+  max_concurrent_team_runs?: number;
+  max_active_sessions?: number;
+  max_monthly_tokens?: number;
+  max_monthly_tool_calls?: number;
+  max_monthly_runs?: number;
+  max_mcp_servers?: number;
+  max_storage_bytes?: number;
+  max_memory_entries_per_agent?: number;
+  max_memory_storage_bytes?: number;
+  max_agent_versions?: number;
+  max_knowledge_bases?: number;
+  max_workspaces?: number;
+  max_daily_tool_calls?: number;
+  max_monthly_images?: number;
+  max_daily_images?: number;
+  max_monthly_videos?: number;
 }
 
 export interface TenantQuotas {
