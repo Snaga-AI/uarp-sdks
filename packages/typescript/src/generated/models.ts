@@ -2273,7 +2273,8 @@ export interface DeleteTeamGraphNodeResponse {
 }
 
 export interface DeleteTeamResponse {
-  deleted?: boolean;
+  deleted: boolean;
+  team_id: string;
 }
 
 export interface DeleteUserResponse {
@@ -2804,6 +2805,29 @@ export interface GetAgentActivityStatsResponse {
   totalRuns?: number;
   completedRuns?: number;
   failedRuns?: number;
+  cancelledRuns?: number;
+  guardrailBlockedRuns?: number;
+  errorRatePercent?: number;
+  avgStepsPerRun?: number;
+  avgDurationMs?: number;
+  avgInputTokens?: number;
+  avgOutputTokens?: number;
+  avgThinkingTokens?: number;
+  toolBreakdown?: JsonObject[];
+  topErrorMessages?: GetAgentActivityStatsResponseTopErrorMessage[];
+  runsByDay?: GetAgentActivityStatsResponseRunsByDayItem[];
+}
+
+export interface GetAgentActivityStatsResponseRunsByDayItem {
+  day?: string;
+  total?: number;
+  completed?: number;
+  failed?: number;
+}
+
+export interface GetAgentActivityStatsResponseTopErrorMessage {
+  message?: string;
+  count?: number;
 }
 
 export interface GetAgentIdentityResponse {
@@ -3207,18 +3231,31 @@ export interface GetUsageTimeseriesResponseDataItem {
 }
 
 export interface Goal {
-  id: string;
+  goal_id: string;
+  tenant_id: string;
   agent_id: string;
   title?: string;
   description?: string;
+  rationale?: string;
+  /**
+   * How the goal squares with the constitution — written by the formulating agent.
+   */
+  alignment_justification?: string;
+  expected_impact?: string;
+  resource_estimate_usd?: number;
   status: GoalStatus;
-  target_date?: string | null;
-  created_at?: string;
+  /**
+   * Set once the goal reaches a vote. Absent before that.
+   */
+  proposal_id?: string;
+  constitution_check_passed?: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
-export type GoalStatus = 'draft' | 'active' | 'achieved' | 'abandoned' | 'expired';
+export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed';
 
-export const GOAL_STATUS_VALUES = ['draft', 'active', 'achieved', 'abandoned', 'expired'] as const;
+export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed'] as const;
 
 export interface GoogleOneTapAuthRequest {
   /**
@@ -3353,20 +3390,51 @@ export interface ImportAdminConfigRequest {
  * sandbox_testing → approved → applied | rejected at any step).
  */
 export interface ImprovementProposal {
+  proposal_id: string;
+  tenant_id: string;
   agent_id: string;
-  version: string;
-  type: string;
-  diff?: JsonObject;
+  /**
+   * Was declared `string` here while the record has always carried a number.
+   */
+  version: number;
+  type: ImprovementProposalType;
+  /**
+   * The proposal's heading. Undeclared until now, so a client built from this document rendered
+   * the card without one.
+   */
+  title?: string;
+  description?: string;
   rationale?: string;
+  /**
+   * The failed runs that prompted the proposal.
+   */
+  failed_run_ids?: string[];
+  /**
+   * The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+   * the documented name found nothing and showed "no diff" over a proposal that had one.
+   */
+  changes?: JsonObject;
+  baseline_success_rate?: number;
+  /**
+   * Present only after the sandbox stage has run.
+   */
+  sandbox_success_rate?: number;
   status: ImprovementProposalStatus;
-  submitted_by?: string;
-  created_at?: string;
+  /**
+   * Set once the proposal reaches a vote.
+   */
+  vote_proposal_id?: string;
+  created_at: string;
   updated_at?: string;
 }
 
 export type ImprovementProposalStatus = 'proposed' | 'arbiter_review' | 'voting' | 'sandbox_testing' | 'approved' | 'applied' | 'rejected';
 
 export const IMPROVEMENT_PROPOSAL_STATUS_VALUES = ['proposed', 'arbiter_review', 'voting', 'sandbox_testing', 'approved', 'applied', 'rejected'] as const;
+
+export type ImprovementProposalType = 'prompt_change' | 'tool_addition' | 'tool_removal' | 'model_change' | 'parameter_tuning' | 'skill_addition';
+
+export const IMPROVEMENT_PROPOSAL_TYPE_VALUES = ['prompt_change', 'tool_addition', 'tool_removal', 'model_change', 'parameter_tuning', 'skill_addition'] as const;
 
 /**
  * One run waiting on a person, with what it is actually asking rather than just its status.
@@ -3853,7 +3921,10 @@ export interface ListFeedbackResponse {
 
 export interface ListFilesResponse {
   items?: FileEntry[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
 }
 
@@ -4066,7 +4137,10 @@ export interface ListPublicStatesResponse {
 
 export interface ListPublicTenantsResponse {
   items?: PublicTenant[];
-  cursor?: string;
+  /**
+   * Opaque cursor for the next page; null when no more pages.
+   */
+  cursor?: string | null;
   has_more?: boolean;
   total?: number;
 }
@@ -4219,7 +4293,15 @@ export interface ListTeamGraphNodesResponse {
 export interface ListTeamRunsResponse {
   team_id?: string;
   runs?: TeamRunSummary[];
+  /**
+   * Rows in THIS page, not the total across pages.
+   */
   total?: number;
+  /**
+   * Pass back as `cursor` to continue. Absent on the last page.
+   */
+  cursor?: string;
+  has_more?: boolean;
 }
 
 export interface ListTeamsResponse {
@@ -6767,28 +6849,68 @@ export type StartOAuthProvider = 'github' | 'stripe' | 'notion' | 'slack' | 'x_t
 export const START_OAUTH_PROVIDER_VALUES = ['github', 'stripe', 'notion', 'slack', 'x_twitter', 'linkedin', 'youtube', 'instagram'] as const;
 
 export interface StartOAuthRequest {
-  agent_id: string;
+  /**
+   * Optional. Was declared REQUIRED here while the route has treated it as optional
+   * (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+   * a generated client had to invent one to connect an integration that belongs to no agent.
+   */
+  agent_id?: string;
   name?: string;
   scopes?: string[];
+  /**
+   * The destination connector when it differs from the OAuth provider in the path —
+   * `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+   * it; the document did not declare it, so a client generated from this document could not send
+   * it and multi-connector OAuth silently asked for the provider's scopes instead of the
+   * connector's. Wrong scopes, no error.
+   */
+  connector_id?: string;
+  /**
+   * Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+   * "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+   */
+  extra?: JsonObject;
 }
 
 export interface StartSquadRunRequest {
   input?: JsonObject;
   addressed_to?: string[];
   message?: string;
-  chat_mode?: StartTeamRunRequestChatMode;
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
 }
 
+/**
+ * `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+ * handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+ * from this document had its addressing and its chat mode dropped with no error at all: the
+ * run started, it just was not the run that was asked for. They belong inside `input`, which
+ * is where the handler reads them.
+ */
 export interface StartTeamRunRequest {
-  input?: JsonObject;
-  addressed_to?: string[];
-  message?: string;
-  chat_mode?: StartTeamRunRequestChatMode;
+  /**
+   * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+   * absent, @mentions in `message` are parsed for the same purpose.
+   */
+  input: string | StartTeamRunRequestInputVariant2;
+  /**
+   * Accepted by the handler and undeclared here until now — the drift ran both ways.
+   */
+  metadata?: JsonObject;
 }
 
-export type StartTeamRunRequestChatMode = 'plan' | 'chat';
+export interface StartTeamRunRequestInputVariant2 {
+  message?: string;
+  addressed_to?: string[];
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
+}
 
-export const START_TEAM_RUN_REQUEST_CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+export type StartTeamRunRequestInputVariant2chatMode = 'plan' | 'chat';
+
+export const START_TEAM_RUN_REQUEST_INPUT_VARIANT2CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+
+export interface StartTeamRunResponse {
+  team_run_id: string;
+}
 
 export interface SubmitFeedbackRequest {
   /**
@@ -7133,7 +7255,7 @@ export interface Tenant {
    */
   plan_id?: string;
   quotas?: TenantQuotas;
-  quota_overrides?: TenantQuotas;
+  quota_overrides?: TenantQuotaOverrides;
   settings?: JsonObject;
   billing?: TenantBilling;
   billing_status?: TenantBillingStatus;
@@ -7219,8 +7341,9 @@ export const TENANT_CUSTOM_DOMAIN_VERIFICATION_METHOD_VALUES = ['cname'] as cons
 export interface TenantInbox {
   generated_at: string;
   /**
-   * Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-   * truncates the list.
+   * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+   * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+   * true these are a floor, not a total.
    */
   counts: TenantInboxCounts;
   items: InboxItem[];
@@ -7228,11 +7351,18 @@ export interface TenantInbox {
    * Run records inspected; the scan is capped.
    */
   scanned: number;
+  /**
+   * The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+   * tell you this — the number only means something to a caller who already knows what the cap
+   * is.
+   */
+  truncated?: boolean;
 }
 
 /**
- * Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
- * truncates the list.
+ * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+ * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+ * true these are a floor, not a total.
  */
 export interface TenantInboxCounts {
   total: number;
@@ -7355,6 +7485,33 @@ export interface TenantPublicSettings {
   require_auth?: boolean;
 }
 
+/**
+ * Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+ * actually overridden are present.
+ */
+export interface TenantQuotaOverrides {
+  max_agents?: number;
+  max_teams?: number;
+  max_workers_per_team?: number;
+  max_concurrent_runs?: number;
+  max_concurrent_team_runs?: number;
+  max_active_sessions?: number;
+  max_monthly_tokens?: number;
+  max_monthly_tool_calls?: number;
+  max_monthly_runs?: number;
+  max_mcp_servers?: number;
+  max_storage_bytes?: number;
+  max_memory_entries_per_agent?: number;
+  max_memory_storage_bytes?: number;
+  max_agent_versions?: number;
+  max_knowledge_bases?: number;
+  max_workspaces?: number;
+  max_daily_tool_calls?: number;
+  max_monthly_images?: number;
+  max_daily_images?: number;
+  max_monthly_videos?: number;
+}
+
 export interface TenantQuotas {
   max_agents: number;
   max_teams: number;
@@ -7406,7 +7563,14 @@ export interface TerminateAgentResponse {
 }
 
 export interface TestAgentIntegrationResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
 }
 
@@ -7416,7 +7580,14 @@ export interface TestIntegrationResponse {
 }
 
 export interface TestLLMProviderKeyResponse {
-  success?: boolean;
+  /**
+   * False when the connector could not reach the remote or the credentials were refused. This is
+   * the only field that says so; the status will be 200 either way.
+   */
+  success: boolean;
+  /**
+   * Why it failed. Absent on success.
+   */
   message?: string;
 }
 
@@ -7977,6 +8148,10 @@ export interface UploadFileRequest {
   data: BinaryInput;
   mime_type: string;
   filename?: string;
+}
+
+export interface UploadWorkspaceFileRequest {
+  file: BinaryInput;
 }
 
 export interface UpsertNotificationTargetRequest {

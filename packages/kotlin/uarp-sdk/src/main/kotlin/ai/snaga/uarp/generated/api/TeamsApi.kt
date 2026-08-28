@@ -328,19 +328,38 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
     /**
      * List runs for a team
      *
+     * `limit` and `cursor` were undeclared, so a client generated from this document saw the first
+     * fifty runs and had no way to page past them.
+     *
      * `GET /api/v1/teams/{teamId}/runs`
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun listTeamRuns(teamId: String, options: RequestOptions = RequestOptions()): ListTeamRunsResponse {
+    public suspend fun listTeamRuns(teamId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListTeamRunsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListTeamRunsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/runs",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listTeamRuns`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun listTeamRunsAll(teamId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<TeamRunSummary> = autoPaginate(
+        fetch = { pageCursor -> listTeamRuns(teamId = teamId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.runs ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Start a team run
@@ -349,8 +368,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun startTeamRun(teamId: String, body: StartTeamRunRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun startTeamRun(teamId: String, body: StartTeamRunRequest, options: RequestOptions = RequestOptions()): StartTeamRunResponse {
+        return client.request<StartTeamRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/runs",
@@ -387,17 +406,21 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
     /**
      * Stream team run events (SSE)
      *
-     * `GET /api/v1/teams/{teamId}/runs/{runId}/events`
+     * The path variable was named `runId` here while every sibling under this prefix — and the
+     * handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
+     * value, two names, so a generated client offered both.
+     *
+     * `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
      *
      * Required scopes: `agents:read`.
      *
      * Returns a cold flow of server-sent events.
      */
-    public fun streamTeamRunEvents(teamId: String, runId: String, options: RequestOptions = RequestOptions()): Flow<ServerEvent> {
+    public fun streamTeamRunEvents(teamId: String, teamRunId: String, options: RequestOptions = RequestOptions()): Flow<ServerEvent> {
         return client.stream(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/teams/${encodePathSegment(teamId)}/runs/${encodePathSegment(runId)}/events",
+                path = "/api/v1/teams/${encodePathSegment(teamId)}/runs/${encodePathSegment(teamRunId)}/events",
                 options = options,
             )
         )

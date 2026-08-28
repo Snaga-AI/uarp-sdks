@@ -139,7 +139,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Params : Download_Workspace_File_Params := No_Download_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Types.Text;
 
    --  Permanently empty workspace trash
    --
@@ -311,6 +311,7 @@ package UARP.API.Workspaces is
    function Upload_Workspace_File
      (Self : Client_Type;
       Workspace_Id : String;
+      Payload : UARP.Models.Upload_Workspace_File_Request;
       Params : Upload_Workspace_File_Params := No_Upload_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;

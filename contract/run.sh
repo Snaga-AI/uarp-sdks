@@ -29,6 +29,17 @@ done
 
 have() { command -v "$1" >/dev/null 2>&1; }
 
+# macOS ships /usr/bin/java as a stub that EXISTS and fails: `command -v java`
+# succeeds on a machine with no JDK at all, so `have java` said yes, gradle was
+# launched, and the whole run died there under `set -e` — before the comparison
+# it exists to perform. Three SDKs had already recorded their traces and none
+# of them were compared, on every macOS box without a JDK.
+#
+# This does not weaken the two-SDK floor below; it is what lets the run REACH
+# it. A toolchain is present when it answers, not when a file with its name is
+# on PATH.
+have_java() { have java && java -version >/dev/null 2>&1; }
+
 selected=("$@")
 wanted() {
     [[ ${#selected[@]} -eq 0 ]] && return 0
@@ -74,7 +85,7 @@ else
     wanted swift && skipped+=("swift")
 fi
 
-if wanted kotlin && have java; then
+if wanted kotlin && have_java; then
     echo "==> kotlin"
     curl -fsS "$base/__reset" >/dev/null
     (cd "$root/packages/kotlin" && UARP_CONTRACT_BASE_URL="$base" ./gradlew :uarp-sdk:contract --console=plain -q >/dev/null)

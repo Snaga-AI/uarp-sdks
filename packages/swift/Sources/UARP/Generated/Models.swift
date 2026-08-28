@@ -6483,14 +6483,17 @@ public struct DeleteTeamGraphNodeResponse: Codable, Hashable, Sendable {
 
 /// `DeleteTeamResponse` model.
 public struct DeleteTeamResponse: Codable, Hashable, Sendable {
-    public var deleted: Bool?
+    public var deleted: Bool
+    public var teamId: String
 
-    public init(deleted: Bool? = nil) {
+    public init(deleted: Bool, teamId: String) {
         self.deleted = deleted
+        self.teamId = teamId
     }
 
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
+        case teamId = "team_id"
     }
 }
 
@@ -7978,17 +7981,88 @@ public struct GetAgentActivityStatsResponse: Codable, Hashable, Sendable {
     public var totalRuns: Int?
     public var completedRuns: Int?
     public var failedRuns: Int?
+    public var cancelledRuns: Int?
+    public var guardrailBlockedRuns: Int?
+    public var errorRatePercent: Double?
+    public var avgStepsPerRun: Double?
+    public var avgDurationMs: Double?
+    public var avgInputTokens: Double?
+    public var avgOutputTokens: Double?
+    public var avgThinkingTokens: Double?
+    public var toolBreakdown: [JSONObject]?
+    public var topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]?
+    public var runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]?
 
-    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil) {
+    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil, cancelledRuns: Int? = nil, guardrailBlockedRuns: Int? = nil, errorRatePercent: Double? = nil, avgStepsPerRun: Double? = nil, avgDurationMs: Double? = nil, avgInputTokens: Double? = nil, avgOutputTokens: Double? = nil, avgThinkingTokens: Double? = nil, toolBreakdown: [JSONObject]? = nil, topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]? = nil, runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]? = nil) {
         self.totalRuns = totalRuns
         self.completedRuns = completedRuns
         self.failedRuns = failedRuns
+        self.cancelledRuns = cancelledRuns
+        self.guardrailBlockedRuns = guardrailBlockedRuns
+        self.errorRatePercent = errorRatePercent
+        self.avgStepsPerRun = avgStepsPerRun
+        self.avgDurationMs = avgDurationMs
+        self.avgInputTokens = avgInputTokens
+        self.avgOutputTokens = avgOutputTokens
+        self.avgThinkingTokens = avgThinkingTokens
+        self.toolBreakdown = toolBreakdown
+        self.topErrorMessages = topErrorMessages
+        self.runsByDay = runsByDay
     }
 
     private enum CodingKeys: String, CodingKey {
         case totalRuns = "totalRuns"
         case completedRuns = "completedRuns"
         case failedRuns = "failedRuns"
+        case cancelledRuns = "cancelledRuns"
+        case guardrailBlockedRuns = "guardrailBlockedRuns"
+        case errorRatePercent = "errorRatePercent"
+        case avgStepsPerRun = "avgStepsPerRun"
+        case avgDurationMs = "avgDurationMs"
+        case avgInputTokens = "avgInputTokens"
+        case avgOutputTokens = "avgOutputTokens"
+        case avgThinkingTokens = "avgThinkingTokens"
+        case toolBreakdown = "toolBreakdown"
+        case topErrorMessages = "topErrorMessages"
+        case runsByDay = "runsByDay"
+    }
+}
+
+/// `GetAgentActivityStatsResponseRunsByDayItem` model.
+public struct GetAgentActivityStatsResponseRunsByDayItem: Codable, Hashable, Sendable {
+    public var day: String?
+    public var total: Int?
+    public var completed: Int?
+    public var failed: Int?
+
+    public init(day: String? = nil, total: Int? = nil, completed: Int? = nil, failed: Int? = nil) {
+        self.day = day
+        self.total = total
+        self.completed = completed
+        self.failed = failed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case day = "day"
+        case total = "total"
+        case completed = "completed"
+        case failed = "failed"
+    }
+}
+
+/// `GetAgentActivityStatsResponseTopErrorMessage` model.
+public struct GetAgentActivityStatsResponseTopErrorMessage: Codable, Hashable, Sendable {
+    public var message: String?
+    public var count: Int?
+
+    public init(message: String? = nil, count: Int? = nil) {
+        self.message = message
+        self.count = count
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+        case count = "count"
     }
 }
 
@@ -9282,32 +9356,55 @@ public struct GetUsageTimeseriesResponseDataItem: Codable, Hashable, Sendable {
 
 /// `Goal` model.
 public struct Goal: Codable, Hashable, Sendable {
-    public var id: String
+    public var goalId: String
+    public var tenantId: String
     public var agentId: String
     public var title: String?
     public var `description`: String?
+    public var rationale: String?
+    /// How the goal squares with the constitution — written by the formulating agent.
+    public var alignmentJustification: String?
+    public var expectedImpact: String?
+    public var resourceEstimateUsd: Double?
     public var status: GoalStatus
-    public var targetDate: String?
-    public var createdAt: String?
+    /// Set once the goal reaches a vote. Absent before that.
+    public var proposalId: String?
+    public var constitutionCheckPassed: Bool?
+    public var createdAt: String
+    public var updatedAt: String?
 
-    public init(id: String, agentId: String, title: String? = nil, `description`: String? = nil, status: GoalStatus, targetDate: String? = nil, createdAt: String? = nil) {
-        self.id = id
+    public init(goalId: String, tenantId: String, agentId: String, title: String? = nil, `description`: String? = nil, rationale: String? = nil, alignmentJustification: String? = nil, expectedImpact: String? = nil, resourceEstimateUsd: Double? = nil, status: GoalStatus, proposalId: String? = nil, constitutionCheckPassed: Bool? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.goalId = goalId
+        self.tenantId = tenantId
         self.agentId = agentId
         self.title = title
         self.`description` = `description`
+        self.rationale = rationale
+        self.alignmentJustification = alignmentJustification
+        self.expectedImpact = expectedImpact
+        self.resourceEstimateUsd = resourceEstimateUsd
         self.status = status
-        self.targetDate = targetDate
+        self.proposalId = proposalId
+        self.constitutionCheckPassed = constitutionCheckPassed
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id = "id"
+        case goalId = "goal_id"
+        case tenantId = "tenant_id"
         case agentId = "agent_id"
         case title = "title"
         case `description` = "description"
+        case rationale = "rationale"
+        case alignmentJustification = "alignment_justification"
+        case expectedImpact = "expected_impact"
+        case resourceEstimateUsd = "resource_estimate_usd"
         case status = "status"
-        case targetDate = "target_date"
+        case proposalId = "proposal_id"
+        case constitutionCheckPassed = "constitution_check_passed"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 }
 
@@ -9327,14 +9424,16 @@ public struct GoalStatus: RawRepresentable, Codable, Hashable, Sendable, Express
         try container.encode(rawValue)
     }
 
-    public static let draft = GoalStatus(rawValue: "draft")
+    public static let proposed = GoalStatus(rawValue: "proposed")
+    public static let checking = GoalStatus(rawValue: "checking")
+    public static let voting = GoalStatus(rawValue: "voting")
+    public static let approved = GoalStatus(rawValue: "approved")
+    public static let rejected = GoalStatus(rawValue: "rejected")
     public static let active = GoalStatus(rawValue: "active")
-    public static let achieved = GoalStatus(rawValue: "achieved")
-    public static let abandoned = GoalStatus(rawValue: "abandoned")
-    public static let expired = GoalStatus(rawValue: "expired")
+    public static let completed = GoalStatus(rawValue: "completed")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [GoalStatus] = [.draft, .active, .achieved, .abandoned, .expired]
+    public static let knownValues: [GoalStatus] = [.proposed, .checking, .voting, .approved, .rejected, .active, .completed]
 }
 
 /// `GoogleOneTapAuthRequest` model.
@@ -9688,36 +9787,65 @@ public struct ImportAdminConfigRequest: Codable, Hashable, Sendable {
 /// Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting →
 /// sandbox_testing → approved → applied | rejected at any step).
 public struct ImprovementProposal: Codable, Hashable, Sendable {
+    public var proposalId: String
+    public var tenantId: String
     public var agentId: String
-    public var version: String
-    public var type: String
-    public var diff: JSONObject?
+    /// Was declared `string` here while the record has always carried a number.
+    public var version: Int
+    public var type: ImprovementProposalType
+    /// The proposal's heading. Undeclared until now, so a client built from this document rendered
+    /// the card without one.
+    public var title: String?
+    public var `description`: String?
     public var rationale: String?
+    /// The failed runs that prompted the proposal.
+    public var failedRunIds: [String]?
+    /// The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+    /// the documented name found nothing and showed "no diff" over a proposal that had one.
+    public var changes: JSONObject?
+    public var baselineSuccessRate: Double?
+    /// Present only after the sandbox stage has run.
+    public var sandboxSuccessRate: Double?
     public var status: ImprovementProposalStatus
-    public var submittedBy: String?
-    public var createdAt: String?
+    /// Set once the proposal reaches a vote.
+    public var voteProposalId: String?
+    public var createdAt: String
     public var updatedAt: String?
 
-    public init(agentId: String, version: String, type: String, diff: JSONObject? = nil, rationale: String? = nil, status: ImprovementProposalStatus, submittedBy: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
+    public init(proposalId: String, tenantId: String, agentId: String, version: Int, type: ImprovementProposalType, title: String? = nil, `description`: String? = nil, rationale: String? = nil, failedRunIds: [String]? = nil, changes: JSONObject? = nil, baselineSuccessRate: Double? = nil, sandboxSuccessRate: Double? = nil, status: ImprovementProposalStatus, voteProposalId: String? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.proposalId = proposalId
+        self.tenantId = tenantId
         self.agentId = agentId
         self.version = version
         self.type = type
-        self.diff = diff
+        self.title = title
+        self.`description` = `description`
         self.rationale = rationale
+        self.failedRunIds = failedRunIds
+        self.changes = changes
+        self.baselineSuccessRate = baselineSuccessRate
+        self.sandboxSuccessRate = sandboxSuccessRate
         self.status = status
-        self.submittedBy = submittedBy
+        self.voteProposalId = voteProposalId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
+        case proposalId = "proposal_id"
+        case tenantId = "tenant_id"
         case agentId = "agent_id"
         case version = "version"
         case type = "type"
-        case diff = "diff"
+        case title = "title"
+        case `description` = "description"
         case rationale = "rationale"
+        case failedRunIds = "failed_run_ids"
+        case changes = "changes"
+        case baselineSuccessRate = "baseline_success_rate"
+        case sandboxSuccessRate = "sandbox_success_rate"
         case status = "status"
-        case submittedBy = "submitted_by"
+        case voteProposalId = "vote_proposal_id"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -9749,6 +9877,33 @@ public struct ImprovementProposalStatus: RawRepresentable, Codable, Hashable, Se
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ImprovementProposalStatus] = [.proposed, .arbiterReview, .voting, .sandboxTesting, .approved, .applied, .rejected]
+}
+
+/// `ImprovementProposalType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ImprovementProposalType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let promptChange = ImprovementProposalType(rawValue: "prompt_change")
+    public static let toolAddition = ImprovementProposalType(rawValue: "tool_addition")
+    public static let toolRemoval = ImprovementProposalType(rawValue: "tool_removal")
+    public static let modelChange = ImprovementProposalType(rawValue: "model_change")
+    public static let parameterTuning = ImprovementProposalType(rawValue: "parameter_tuning")
+    public static let skillAddition = ImprovementProposalType(rawValue: "skill_addition")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ImprovementProposalType] = [.promptChange, .toolAddition, .toolRemoval, .modelChange, .parameterTuning, .skillAddition]
 }
 
 /// One run waiting on a person, with what it is actually asking rather than just its status.
@@ -11018,6 +11173,7 @@ public struct ListFeedbackResponse: Codable, Hashable, Sendable {
 /// `ListFilesResponse` model.
 public struct ListFilesResponse: Codable, Hashable, Sendable {
     public var items: [FileEntry]?
+    /// Opaque cursor for the next page; null when no more pages.
     public var cursor: String?
     public var hasMore: Bool?
 
@@ -11630,6 +11786,7 @@ public struct ListPublicStatesResponse: Codable, Hashable, Sendable {
 /// `ListPublicTenantsResponse` model.
 public struct ListPublicTenantsResponse: Codable, Hashable, Sendable {
     public var items: [PublicTenant]?
+    /// Opaque cursor for the next page; null when no more pages.
     public var cursor: String?
     public var hasMore: Bool?
     public var total: Int?
@@ -12029,18 +12186,26 @@ public struct ListTeamGraphNodesResponse: Codable, Hashable, Sendable {
 public struct ListTeamRunsResponse: Codable, Hashable, Sendable {
     public var teamId: String?
     public var runs: [TeamRunSummary]?
+    /// Rows in THIS page, not the total across pages.
     public var total: Int?
+    /// Pass back as `cursor` to continue. Absent on the last page.
+    public var cursor: String?
+    public var hasMore: Bool?
 
-    public init(teamId: String? = nil, runs: [TeamRunSummary]? = nil, total: Int? = nil) {
+    public init(teamId: String? = nil, runs: [TeamRunSummary]? = nil, total: Int? = nil, cursor: String? = nil, hasMore: Bool? = nil) {
         self.teamId = teamId
         self.runs = runs
         self.total = total
+        self.cursor = cursor
+        self.hasMore = hasMore
     }
 
     private enum CodingKeys: String, CodingKey {
         case teamId = "team_id"
         case runs = "runs"
         case total = "total"
+        case cursor = "cursor"
+        case hasMore = "has_more"
     }
 }
 
@@ -18500,20 +18665,36 @@ public struct StartOAuthProvider: RawRepresentable, Codable, Hashable, Sendable,
 
 /// `StartOAuthRequest` model.
 public struct StartOAuthRequest: Codable, Hashable, Sendable {
-    public var agentId: String
+    /// Optional. Was declared REQUIRED here while the route has treated it as optional
+    /// (`routes/integrations.ts`: "agent_id is now optional — if provided, validate it exists"), so
+    /// a generated client had to invent one to connect an integration that belongs to no agent.
+    public var agentId: String?
     public var name: String?
     public var scopes: [String]?
+    /// The destination connector when it differs from the OAuth provider in the path —
+    /// `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+    /// it; the document did not declare it, so a client generated from this document could not send
+    /// it and multi-connector OAuth silently asked for the provider's scopes instead of the
+    /// connector's. Wrong scopes, no error.
+    public var connectorId: String?
+    /// Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+    /// "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+    public var extra: JSONObject?
 
-    public init(agentId: String, name: String? = nil, scopes: [String]? = nil) {
+    public init(agentId: String? = nil, name: String? = nil, scopes: [String]? = nil, connectorId: String? = nil, extra: JSONObject? = nil) {
         self.agentId = agentId
         self.name = name
         self.scopes = scopes
+        self.connectorId = connectorId
+        self.extra = extra
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
         case name = "name"
         case scopes = "scopes"
+        case connectorId = "connector_id"
+        case extra = "extra"
     }
 }
 
@@ -18522,9 +18703,9 @@ public struct StartSquadRunRequest: Codable, Hashable, Sendable {
     public var input: JSONObject?
     public var addressedTo: [String]?
     public var message: String?
-    public var chatMode: StartTeamRunRequestChatMode?
+    public var chatMode: StartTeamRunRequestInputVariant2chatMode?
 
-    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestChatMode? = nil) {
+    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestInputVariant2chatMode? = nil) {
         self.input = input
         self.addressedTo = addressedTo
         self.message = message
@@ -18539,33 +18720,53 @@ public struct StartSquadRunRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `StartTeamRunRequest` model.
+/// `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+/// handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+/// from this document had its addressing and its chat mode dropped with no error at all: the
+/// run started, it just was not the run that was asked for. They belong inside `input`, which
+/// is where the handler reads them.
 public struct StartTeamRunRequest: Codable, Hashable, Sendable {
-    public var input: JSONObject?
-    public var addressedTo: [String]?
-    public var message: String?
-    public var chatMode: StartTeamRunRequestChatMode?
+    /// The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+    /// absent, @mentions in `message` are parsed for the same purpose.
+    public var input: JSONValue
+    /// Accepted by the handler and undeclared here until now — the drift ran both ways.
+    public var metadata: JSONObject?
 
-    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestChatMode? = nil) {
+    public init(input: JSONValue, metadata: JSONObject? = nil) {
         self.input = input
-        self.addressedTo = addressedTo
-        self.message = message
-        self.chatMode = chatMode
+        self.metadata = metadata
     }
 
     private enum CodingKeys: String, CodingKey {
         case input = "input"
-        case addressedTo = "addressed_to"
+        case metadata = "metadata"
+    }
+}
+
+/// `StartTeamRunRequestInputVariant2` model.
+public struct StartTeamRunRequestInputVariant2: Codable, Hashable, Sendable {
+    public var message: String?
+    public var addressedTo: [String]?
+    public var chatMode: StartTeamRunRequestInputVariant2chatMode?
+
+    public init(message: String? = nil, addressedTo: [String]? = nil, chatMode: StartTeamRunRequestInputVariant2chatMode? = nil) {
+        self.message = message
+        self.addressedTo = addressedTo
+        self.chatMode = chatMode
+    }
+
+    private enum CodingKeys: String, CodingKey {
         case message = "message"
+        case addressedTo = "addressed_to"
         case chatMode = "chat_mode"
     }
 }
 
-/// `StartTeamRunRequestChatMode` values.
+/// `StartTeamRunRequestInputVariant2chatMode` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
-public struct StartTeamRunRequestChatMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+public struct StartTeamRunRequestInputVariant2chatMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: String) { self.rawValue = value }
@@ -18577,11 +18778,24 @@ public struct StartTeamRunRequestChatMode: RawRepresentable, Codable, Hashable, 
         try container.encode(rawValue)
     }
 
-    public static let plan = StartTeamRunRequestChatMode(rawValue: "plan")
-    public static let chat = StartTeamRunRequestChatMode(rawValue: "chat")
+    public static let plan = StartTeamRunRequestInputVariant2chatMode(rawValue: "plan")
+    public static let chat = StartTeamRunRequestInputVariant2chatMode(rawValue: "chat")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [StartTeamRunRequestChatMode] = [.plan, .chat]
+    public static let knownValues: [StartTeamRunRequestInputVariant2chatMode] = [.plan, .chat]
+}
+
+/// `StartTeamRunResponse` model.
+public struct StartTeamRunResponse: Codable, Hashable, Sendable {
+    public var teamRunId: String
+
+    public init(teamRunId: String) {
+        self.teamRunId = teamRunId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case teamRunId = "team_run_id"
+    }
 }
 
 /// `SubmitFeedbackRequest` model.
@@ -19541,7 +19755,7 @@ public struct Tenant: Codable, Hashable, Sendable {
     /// Resolved plan id — present on the normal answer, absent on the bootstrap branch.
     public var planId: String?
     public var quotas: TenantQuotas?
-    public var quotaOverrides: TenantQuotas?
+    public var quotaOverrides: TenantQuotaOverrides?
     public var settings: JSONObject?
     public var billing: TenantBilling?
     public var billingStatus: TenantBillingStatus?
@@ -19571,7 +19785,7 @@ public struct Tenant: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String
 
-    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotas? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: JSONObject? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
+    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotaOverrides? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: JSONObject? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
         self.tenantId = tenantId
         self.name = name
         self.slug = slug
@@ -19837,18 +20051,24 @@ public struct TenantCustomDomainVerificationMethod: RawRepresentable, Codable, H
 /// they are asking.
 public struct TenantInbox: Codable, Hashable, Sendable {
     public var generatedAt: String
-    /// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-    /// truncates the list.
+    /// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+    /// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+    /// true these are a floor, not a total.
     public var counts: TenantInboxCounts
     public var items: [InboxItem]
     /// Run records inspected; the scan is capped.
     public var scanned: Int
+    /// The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+    /// tell you this — the number only means something to a caller who already knows what the cap
+    /// is.
+    public var truncated: Bool?
 
-    public init(generatedAt: String, counts: TenantInboxCounts, items: [InboxItem], scanned: Int) {
+    public init(generatedAt: String, counts: TenantInboxCounts, items: [InboxItem], scanned: Int, truncated: Bool? = nil) {
         self.generatedAt = generatedAt
         self.counts = counts
         self.items = items
         self.scanned = scanned
+        self.truncated = truncated
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -19856,11 +20076,13 @@ public struct TenantInbox: Codable, Hashable, Sendable {
         case counts = "counts"
         case items = "items"
         case scanned = "scanned"
+        case truncated = "truncated"
     }
 }
 
-/// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-/// truncates the list.
+/// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+/// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+/// true these are a floor, not a total.
 public struct TenantInboxCounts: Codable, Hashable, Sendable {
     public var total: Int
     public var approval: Int
@@ -20183,6 +20405,77 @@ public struct TenantPublicSettings: Codable, Hashable, Sendable {
     }
 }
 
+/// Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+/// actually overridden are present.
+public struct TenantQuotaOverrides: Codable, Hashable, Sendable {
+    public var maxAgents: Int?
+    public var maxTeams: Int?
+    public var maxWorkersPerTeam: Int?
+    public var maxConcurrentRuns: Int?
+    public var maxConcurrentTeamRuns: Int?
+    public var maxActiveSessions: Int?
+    public var maxMonthlyTokens: Int?
+    public var maxMonthlyToolCalls: Int?
+    public var maxMonthlyRuns: Int?
+    public var maxMCPServers: Int?
+    public var maxStorageBytes: Int?
+    public var maxMemoryEntriesPerAgent: Int?
+    public var maxMemoryStorageBytes: Int?
+    public var maxAgentVersions: Int?
+    public var maxKnowledgeBases: Int?
+    public var maxWorkspaces: Int?
+    public var maxDailyToolCalls: Int?
+    public var maxMonthlyImages: Int?
+    public var maxDailyImages: Int?
+    public var maxMonthlyVideos: Int?
+
+    public init(maxAgents: Int? = nil, maxTeams: Int? = nil, maxWorkersPerTeam: Int? = nil, maxConcurrentRuns: Int? = nil, maxConcurrentTeamRuns: Int? = nil, maxActiveSessions: Int? = nil, maxMonthlyTokens: Int? = nil, maxMonthlyToolCalls: Int? = nil, maxMonthlyRuns: Int? = nil, maxMCPServers: Int? = nil, maxStorageBytes: Int? = nil, maxMemoryEntriesPerAgent: Int? = nil, maxMemoryStorageBytes: Int? = nil, maxAgentVersions: Int? = nil, maxKnowledgeBases: Int? = nil, maxWorkspaces: Int? = nil, maxDailyToolCalls: Int? = nil, maxMonthlyImages: Int? = nil, maxDailyImages: Int? = nil, maxMonthlyVideos: Int? = nil) {
+        self.maxAgents = maxAgents
+        self.maxTeams = maxTeams
+        self.maxWorkersPerTeam = maxWorkersPerTeam
+        self.maxConcurrentRuns = maxConcurrentRuns
+        self.maxConcurrentTeamRuns = maxConcurrentTeamRuns
+        self.maxActiveSessions = maxActiveSessions
+        self.maxMonthlyTokens = maxMonthlyTokens
+        self.maxMonthlyToolCalls = maxMonthlyToolCalls
+        self.maxMonthlyRuns = maxMonthlyRuns
+        self.maxMCPServers = maxMCPServers
+        self.maxStorageBytes = maxStorageBytes
+        self.maxMemoryEntriesPerAgent = maxMemoryEntriesPerAgent
+        self.maxMemoryStorageBytes = maxMemoryStorageBytes
+        self.maxAgentVersions = maxAgentVersions
+        self.maxKnowledgeBases = maxKnowledgeBases
+        self.maxWorkspaces = maxWorkspaces
+        self.maxDailyToolCalls = maxDailyToolCalls
+        self.maxMonthlyImages = maxMonthlyImages
+        self.maxDailyImages = maxDailyImages
+        self.maxMonthlyVideos = maxMonthlyVideos
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxAgents = "max_agents"
+        case maxTeams = "max_teams"
+        case maxWorkersPerTeam = "max_workers_per_team"
+        case maxConcurrentRuns = "max_concurrent_runs"
+        case maxConcurrentTeamRuns = "max_concurrent_team_runs"
+        case maxActiveSessions = "max_active_sessions"
+        case maxMonthlyTokens = "max_monthly_tokens"
+        case maxMonthlyToolCalls = "max_monthly_tool_calls"
+        case maxMonthlyRuns = "max_monthly_runs"
+        case maxMCPServers = "max_mcp_servers"
+        case maxStorageBytes = "max_storage_bytes"
+        case maxMemoryEntriesPerAgent = "max_memory_entries_per_agent"
+        case maxMemoryStorageBytes = "max_memory_storage_bytes"
+        case maxAgentVersions = "max_agent_versions"
+        case maxKnowledgeBases = "max_knowledge_bases"
+        case maxWorkspaces = "max_workspaces"
+        case maxDailyToolCalls = "max_daily_tool_calls"
+        case maxMonthlyImages = "max_monthly_images"
+        case maxDailyImages = "max_daily_images"
+        case maxMonthlyVideos = "max_monthly_videos"
+    }
+}
+
 /// `TenantQuotas` model.
 public struct TenantQuotas: Codable, Hashable, Sendable {
     public var maxAgents: Int
@@ -20353,10 +20646,13 @@ public struct TerminateAgentResponse: Codable, Hashable, Sendable {
 
 /// `TestAgentIntegrationResponse` model.
 public struct TestAgentIntegrationResponse: Codable, Hashable, Sendable {
-    public var success: Bool?
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    public var success: Bool
+    /// Why it failed. Absent on success.
     public var message: String?
 
-    public init(success: Bool? = nil, message: String? = nil) {
+    public init(success: Bool, message: String? = nil) {
         self.success = success
         self.message = message
     }
@@ -20385,10 +20681,13 @@ public struct TestIntegrationResponse: Codable, Hashable, Sendable {
 
 /// `TestLLMProviderKeyResponse` model.
 public struct TestLLMProviderKeyResponse: Codable, Hashable, Sendable {
-    public var success: Bool?
+    /// False when the connector could not reach the remote or the credentials were refused. This is
+    /// the only field that says so; the status will be 200 either way.
+    public var success: Bool
+    /// Why it failed. Absent on success.
     public var message: String?
 
-    public init(success: Bool? = nil, message: String? = nil) {
+    public init(success: Bool, message: String? = nil) {
         self.success = success
         self.message = message
     }
@@ -21799,6 +22098,19 @@ public struct UploadFileRequest: Codable, Hashable, Sendable {
         case data = "data"
         case mimeType = "mime_type"
         case filename = "filename"
+    }
+}
+
+/// `UploadWorkspaceFileRequest` model.
+public struct UploadWorkspaceFileRequest: Codable, Hashable, Sendable {
+    public var file: FilePart
+
+    public init(file: FilePart) {
+        self.file = file
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case file = "file"
     }
 }
 

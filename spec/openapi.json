@@ -2029,7 +2029,10 @@
             "Goal": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "goal_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
                         "type": "string"
                     },
                     "agent_id": {
@@ -2041,32 +2044,53 @@
                     "description": {
                         "type": "string"
                     },
+                    "rationale": {
+                        "type": "string"
+                    },
+                    "alignment_justification": {
+                        "type": "string",
+                        "description": "How the goal squares with the constitution — written by the formulating agent."
+                    },
+                    "expected_impact": {
+                        "type": "string"
+                    },
+                    "resource_estimate_usd": {
+                        "type": "number"
+                    },
                     "status": {
                         "type": "string",
                         "enum": [
-                            "draft",
+                            "proposed",
+                            "checking",
+                            "voting",
+                            "approved",
+                            "rejected",
                             "active",
-                            "achieved",
-                            "abandoned",
-                            "expired"
+                            "completed"
                         ]
                     },
-                    "target_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
+                    "proposal_id": {
+                        "type": "string",
+                        "description": "Set once the goal reaches a vote. Absent before that."
+                    },
+                    "constitution_check_passed": {
+                        "type": "boolean"
                     },
                     "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     }
                 },
                 "required": [
-                    "id",
+                    "goal_id",
+                    "tenant_id",
                     "agent_id",
-                    "status"
+                    "status",
+                    "created_at"
                 ]
             },
             "UsageSummary": {
@@ -4708,21 +4732,58 @@
                 "type": "object",
                 "description": "Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting → sandbox_testing → approved → applied | rejected at any step).",
                 "properties": {
+                    "proposal_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
                     "agent_id": {
                         "type": "string"
                     },
                     "version": {
-                        "type": "string"
+                        "type": "integer",
+                        "description": "Was declared `string` here while the record has always carried a number."
                     },
                     "type": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                            "prompt_change",
+                            "tool_addition",
+                            "tool_removal",
+                            "model_change",
+                            "parameter_tuning",
+                            "skill_addition"
+                        ]
                     },
-                    "diff": {
-                        "type": "object",
-                        "additionalProperties": true
+                    "title": {
+                        "type": "string",
+                        "description": "The proposal's heading. Undeclared until now, so a client built from this document rendered the card without one."
+                    },
+                    "description": {
+                        "type": "string"
                     },
                     "rationale": {
                         "type": "string"
+                    },
+                    "failed_run_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The failed runs that prompted the proposal."
+                    },
+                    "changes": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading the documented name found nothing and showed \"no diff\" over a proposal that had one."
+                    },
+                    "baseline_success_rate": {
+                        "type": "number"
+                    },
+                    "sandbox_success_rate": {
+                        "type": "number",
+                        "description": "Present only after the sandbox stage has run."
                     },
                     "status": {
                         "type": "string",
@@ -4736,8 +4797,9 @@
                             "rejected"
                         ]
                     },
-                    "submitted_by": {
-                        "type": "string"
+                    "vote_proposal_id": {
+                        "type": "string",
+                        "description": "Set once the proposal reaches a vote."
                     },
                     "created_at": {
                         "type": "string",
@@ -4749,10 +4811,13 @@
                     }
                 },
                 "required": [
+                    "proposal_id",
+                    "tenant_id",
                     "agent_id",
                     "version",
                     "type",
-                    "status"
+                    "status",
+                    "created_at"
                 ]
             },
             "BridgeAgentSummary": {
@@ -7067,6 +7132,72 @@
                     "max_workspaces"
                 ]
             },
+            "TenantQuotaOverrides": {
+                "type": "object",
+                "description": "Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys actually overridden are present.",
+                "properties": {
+                    "max_agents": {
+                        "type": "integer"
+                    },
+                    "max_teams": {
+                        "type": "integer"
+                    },
+                    "max_workers_per_team": {
+                        "type": "integer"
+                    },
+                    "max_concurrent_runs": {
+                        "type": "integer"
+                    },
+                    "max_concurrent_team_runs": {
+                        "type": "integer"
+                    },
+                    "max_active_sessions": {
+                        "type": "integer"
+                    },
+                    "max_monthly_tokens": {
+                        "type": "integer"
+                    },
+                    "max_monthly_tool_calls": {
+                        "type": "integer"
+                    },
+                    "max_monthly_runs": {
+                        "type": "integer"
+                    },
+                    "max_mcp_servers": {
+                        "type": "integer"
+                    },
+                    "max_storage_bytes": {
+                        "type": "integer"
+                    },
+                    "max_memory_entries_per_agent": {
+                        "type": "integer"
+                    },
+                    "max_memory_storage_bytes": {
+                        "type": "integer"
+                    },
+                    "max_agent_versions": {
+                        "type": "integer"
+                    },
+                    "max_knowledge_bases": {
+                        "type": "integer"
+                    },
+                    "max_workspaces": {
+                        "type": "integer"
+                    },
+                    "max_daily_tool_calls": {
+                        "type": "integer"
+                    },
+                    "max_monthly_images": {
+                        "type": "integer"
+                    },
+                    "max_daily_images": {
+                        "type": "integer"
+                    },
+                    "max_monthly_videos": {
+                        "type": "integer"
+                    }
+                }
+            },
             "TenantBilling": {
                 "type": "object",
                 "properties": {
@@ -7262,7 +7393,7 @@
                         "$ref": "#/components/schemas/TenantQuotas"
                     },
                     "quota_overrides": {
-                        "$ref": "#/components/schemas/TenantQuotas"
+                        "$ref": "#/components/schemas/TenantQuotaOverrides"
                     },
                     "settings": {
                         "type": "object"
@@ -9616,7 +9747,7 @@
                             "paused",
                             "failed"
                         ],
-                        "description": "Counted over the whole scan, NOT over `items` — the counts stay honest when `limit` truncates the list.",
+                        "description": "Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is true these are a floor, not a total.",
                         "properties": {
                             "total": {
                                 "type": "integer"
@@ -9644,6 +9775,10 @@
                     "scanned": {
                         "type": "integer",
                         "description": "Run records inspected; the scan is capped."
+                    },
+                    "truncated": {
+                        "type": "boolean",
+                        "description": "The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot tell you this — the number only means something to a caller who already knows what the cap is."
                     }
                 }
             },
@@ -12481,13 +12616,11 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
-                                "required": [
-                                    "agent_id"
-                                ],
                                 "properties": {
                                     "agent_id": {
                                         "type": "string",
-                                        "format": "uuid"
+                                        "format": "uuid",
+                                        "description": "Optional. Was declared REQUIRED here while the route has treated it as optional (`routes/integrations.ts`: \"agent_id is now optional — if provided, validate it exists\"), so a generated client had to invent one to connect an integration that belongs to no agent."
                                     },
                                     "name": {
                                         "type": "string"
@@ -12497,6 +12630,17 @@
                                         "items": {
                                             "type": "string"
                                         }
+                                    },
+                                    "connector_id": {
+                                        "type": "string",
+                                        "description": "The destination connector when it differs from the OAuth provider in the path — `google_calendar` through `google`, for example. The route reads it and resolves scopes from it; the document did not declare it, so a client generated from this document could not send it and multi-connector OAuth silently asked for the provider's scopes instead of the connector's. Wrong scopes, no error."
+                                    },
+                                    "extra": {
+                                        "type": "object",
+                                        "additionalProperties": {
+                                            "type": "string"
+                                        },
+                                        "description": "Provider-specific parameters the authorize URL needs, e.g. `{ \"shop\": \"mystore.myshopify.com\" }`. Read by the route, previously undeclared."
                                     }
                                 }
                             }
@@ -13158,17 +13302,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Test result",
+                        "description": "The test RAN. Whether the connection works is `success` — a failed test comes back as 200 with `success: false` and a `message`, because the API call succeeded even though the credentials did not. A client that branches on the status code shows a green “connection OK” over a connection that is broken, which is what this description exists to prevent.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
+                                    "required": [
+                                        "success"
+                                    ],
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "description": "False when the connector could not reach the remote or the credentials were refused. This is the only field that says so; the status will be 200 either way."
                                         },
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Why it failed. Absent on success."
                                         }
                                     }
                                 }
@@ -13525,17 +13674,22 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "Test result",
+                        "description": "The test RAN. Whether the connection works is `success` — a failed test comes back as 200 with `success: false` and a `message`, because the API call succeeded even though the credentials did not. A client that branches on the status code shows a green “connection OK” over a connection that is broken, which is what this description exists to prevent.",
                         "content": {
                             "application/json": {
                                 "schema": {
                                     "type": "object",
+                                    "required": [
+                                        "success"
+                                    ],
                                     "properties": {
                                         "success": {
-                                            "type": "boolean"
+                                            "type": "boolean",
+                                            "description": "False when the connector could not reach the remote or the credentials were refused. This is the only field that says so; the status will be 200 either way."
                                         },
                                         "message": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "Why it failed. Absent on success."
                                         }
                                     }
                                 }
@@ -19680,7 +19834,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null when no more pages."
                                         },
                                         "has_more": {
                                             "type": "boolean"
@@ -20126,6 +20284,16 @@
                     },
                     "403": {
                         "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "No agent with that id in this tenant. Checked before anything is created, so a refused dispatch leaves neither a task nor a run behind — the same answer the JSON-RPC `tasks/send` method has always given.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "422": {
                         "description": "Validation Error",
@@ -24777,8 +24945,15 @@
                                     "properties": {
                                         "deleted": {
                                             "type": "boolean"
+                                        },
+                                        "team_id": {
+                                            "type": "string"
                                         }
-                                    }
+                                    },
+                                    "required": [
+                                        "deleted",
+                                        "team_id"
+                                    ]
                                 }
                             }
                         },
@@ -26752,6 +26927,32 @@
                         "$ref": "#/components/parameters/IdempotencyKey"
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "description": "The file bytes, either as `multipart/form-data` with a `file` part or as a raw body. NEVER JSON — `routes/workspaces.ts` reads `formData()` for multipart and `arrayBuffer()` for everything else. This block was missing entirely, and a client generated from the document sent no body at all: `arrayBuffer()` then returns zero bytes, the file is written EMPTY, and the response is 200. Nothing about that looks like a failure from the caller's side.",
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        },
+                        "application/octet-stream": {
+                            "schema": {
+                                "type": "string",
+                                "format": "binary"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "File uploaded",
@@ -26766,6 +26967,9 @@
                                 "$ref": "#/components/headers/XRateLimitReset"
                             }
                         }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
@@ -26782,6 +26986,16 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
@@ -26912,6 +27126,14 @@
                 "responses": {
                     "200": {
                         "description": "File content (binary)",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"
@@ -33875,6 +34097,7 @@
                     "Teams"
                 ],
                 "summary": "List runs for a team",
+                "description": "`limit` and `cursor` were undeclared, so a client generated from this document saw the first fifty runs and had no way to page past them.",
                 "parameters": [
                     {
                         "name": "teamId",
@@ -33884,6 +34107,26 @@
                             "type": "string",
                             "format": "uuid"
                         }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 50
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "From a previous response's `cursor`."
                     }
                 ],
                 "responses": {
@@ -33904,7 +34147,15 @@
                                             }
                                         },
                                         "total": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "description": "Rows in THIS page, not the total across pages."
+                                        },
+                                        "cursor": {
+                                            "type": "string",
+                                            "description": "Pass back as `cursor` to continue. Absent on the last page."
+                                        },
+                                        "has_more": {
+                                            "type": "boolean"
                                         }
                                     }
                                 }
@@ -33972,27 +34223,46 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "description": "`addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written from this document had its addressing and its chat mode dropped with no error at all: the run started, it just was not the run that was asked for. They belong inside `input`, which is where the handler reads them.",
                                 "properties": {
                                     "input": {
-                                        "type": "object"
-                                    },
-                                    "addressed_to": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "message": {
-                                        "type": "string"
-                                    },
-                                    "chat_mode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "plan",
-                                            "chat"
+                                        "description": "The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same purpose.",
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "addressed_to": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "chat_mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "plan",
+                                                            "chat"
+                                                        ]
+                                                    }
+                                                }
+                                            }
                                         ]
+                                    },
+                                    "metadata": {
+                                        "type": "object",
+                                        "additionalProperties": true,
+                                        "description": "Accepted by the handler and undeclared here until now — the drift ran both ways."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "input"
+                                ]
                             }
                         }
                     }
@@ -34003,7 +34273,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "properties": {
+                                        "team_run_id": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "team_run_id"
+                                    ]
                                 }
                             }
                         },
@@ -34057,13 +34335,14 @@
                 ]
             }
         },
-        "/api/v1/teams/{teamId}/runs/{runId}/events": {
+        "/api/v1/teams/{teamId}/runs/{teamRunId}/events": {
             "get": {
                 "operationId": "streamTeamRunEvents",
                 "tags": [
                     "Teams"
                 ],
                 "summary": "Stream team run events (SSE)",
+                "description": "The path variable was named `runId` here while every sibling under this prefix — and the handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same value, two names, so a generated client offered both.",
                 "parameters": [
                     {
                         "name": "teamId",
@@ -34075,7 +34354,7 @@
                         }
                     },
                     {
-                        "name": "runId",
+                        "name": "teamRunId",
                         "in": "path",
                         "required": true,
                         "schema": {
@@ -35394,6 +35673,70 @@
                                         },
                                         "failedRuns": {
                                             "type": "integer"
+                                        },
+                                        "cancelledRuns": {
+                                            "type": "integer"
+                                        },
+                                        "guardrailBlockedRuns": {
+                                            "type": "integer"
+                                        },
+                                        "errorRatePercent": {
+                                            "type": "number"
+                                        },
+                                        "avgStepsPerRun": {
+                                            "type": "number"
+                                        },
+                                        "avgDurationMs": {
+                                            "type": "number"
+                                        },
+                                        "avgInputTokens": {
+                                            "type": "number"
+                                        },
+                                        "avgOutputTokens": {
+                                            "type": "number"
+                                        },
+                                        "avgThinkingTokens": {
+                                            "type": "number"
+                                        },
+                                        "toolBreakdown": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "topErrorMessages": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "count": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
+                                        },
+                                        "runsByDay": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object",
+                                                "properties": {
+                                                    "day": {
+                                                        "type": "string"
+                                                    },
+                                                    "total": {
+                                                        "type": "integer"
+                                                    },
+                                                    "completed": {
+                                                        "type": "integer"
+                                                    },
+                                                    "failed": {
+                                                        "type": "integer"
+                                                    }
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -38657,7 +39000,11 @@
                                             }
                                         },
                                         "cursor": {
-                                            "type": "string"
+                                            "type": [
+                                                "string",
+                                                "null"
+                                            ],
+                                            "description": "Opaque cursor for the next page; null when no more pages."
                                         },
                                         "has_more": {
                                             "type": "boolean"

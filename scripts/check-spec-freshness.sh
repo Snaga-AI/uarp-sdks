@@ -45,10 +45,23 @@ paths = d.get("paths", {})
 schemas = (d.get("components") or {}).get("schemas", {})
 ops = sum(1 for p in paths.values() for m in p if m in
           ("get", "put", "post", "delete", "patch", "head", "options"))
-# Names only: enough to catch an added or renamed schema, immune to how the
-# document was serialised.
-names = sorted(schemas) + sorted(paths)
-digest = hashlib.sha256("\n".join(names).encode()).hexdigest()[:16]
+# The digest used to be `sorted(schemas) + sorted(paths)` — NAMES only, on the
+# reasoning that it catches an added or renamed schema and is immune to
+# serialisation. It is immune to rather more than that.
+#
+# Measured 2026-08-28: the platform declared a request body on
+# `PUT /workspaces/{id}/files`, a media type on the download beside it, and
+# dropped a false `required: agent_id` from `startOAuth`. None of those adds or
+# renames a path or a schema, so the digest did not move and this check
+# reported `current` over a vendored document three fixes behind. The generated
+# client still had no parameter to put a file in.
+#
+# That is the exact failure this check exists to prevent, and the release path
+# runs it with --strict. So hash the whole document canonically: sorted keys,
+# no whitespace — which keeps the immunity to formatting that motivated the
+# original while seeing everything inside it.
+canonical = json.dumps(d, sort_keys=True, separators=(",", ":"))
+digest = hashlib.sha256(canonical.encode()).hexdigest()[:16]
 print(f"{len(paths)} {len(schemas)} {ops} {digest}")
 PY
 }

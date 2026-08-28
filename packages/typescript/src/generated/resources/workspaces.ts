@@ -20,6 +20,7 @@ import type {
   SearchWorkspaceFilesResponse,
   ShareWorkspaceRequest,
   UpdateWorkspaceRequest,
+  UploadWorkspaceFileRequest,
 } from '../models.js';
 
 /**
@@ -182,11 +183,12 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:read`.
    */
-  downloadWorkspaceFile(workspaceId: string, params: DownloadWorkspaceFileParams, options?: RequestOptions): Promise<JsonValue> {
+  downloadWorkspaceFile(workspaceId: string, params: DownloadWorkspaceFileParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/content`,
       query: pick(params, ['path']),
+      responseType: 'binary',
       options,
     });
   }
@@ -422,11 +424,12 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  uploadWorkspaceFile(workspaceId: string, params: UploadWorkspaceFileParams, options?: RequestOptions): Promise<JsonValue> {
+  uploadWorkspaceFile(workspaceId: string, body: UploadWorkspaceFileRequest, params: UploadWorkspaceFileParams, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,
       query: pick(params, ['path']),
+      multipart: body,
       idempotent: true,
       options,
     });

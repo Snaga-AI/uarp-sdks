@@ -4771,8 +4771,8 @@ package UARP.Models is
 
    --  `DeleteTeamResponse` model.
    type Delete_Team_Response is record
-      Has_Deleted : Boolean := False;
       Deleted : Standard.Boolean := False;
+      Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Delete_Team_Response) return UARP.JSON_Support.JSON_Value;
@@ -5789,6 +5789,38 @@ package UARP.Models is
    function To_JSON (Model : Get_Admin_Trace_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Trace_Response;
 
+   --  `GetAgentActivityStatsResponseTopErrorMessage` model.
+   type Get_Agent_Activity_Stats_Response_Top_Error_Message is record
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Count : Boolean := False;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Top_Error_Message) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Top_Error_Message;
+
+   package Get_Agent_Activity_Stats_Response_Top_Error_Message_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Top_Error_Message);
+
+   --  `GetAgentActivityStatsResponseRunsByDayItem` model.
+   type Get_Agent_Activity_Stats_Response_Runs_By_Day_Item is record
+      Has_Day : Boolean := False;
+      Day : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+      Has_Completed : Boolean := False;
+      Completed : UARP.Types.Integer_Value := 0;
+      Has_Failed : Boolean := False;
+      Failed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Runs_By_Day_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Runs_By_Day_Item;
+
+   package Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Runs_By_Day_Item);
+
    --  `GetAgentActivityStatsResponse` model.
    type Get_Agent_Activity_Stats_Response is record
       Has_Total_Runs : Boolean := False;
@@ -5797,6 +5829,28 @@ package UARP.Models is
       Completed_Runs : UARP.Types.Integer_Value := 0;
       Has_Failed_Runs : Boolean := False;
       Failed_Runs : UARP.Types.Integer_Value := 0;
+      Has_Cancelled_Runs : Boolean := False;
+      Cancelled_Runs : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Blocked_Runs : Boolean := False;
+      Guardrail_Blocked_Runs : UARP.Types.Integer_Value := 0;
+      Has_Error_Rate_Percent : Boolean := False;
+      Error_Rate_Percent : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Steps_Per_Run : Boolean := False;
+      Avg_Steps_Per_Run : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Duration_Ms : Boolean := False;
+      Avg_Duration_Ms : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Input_Tokens : Boolean := False;
+      Avg_Input_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Output_Tokens : Boolean := False;
+      Avg_Output_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Thinking_Tokens : Boolean := False;
+      Avg_Thinking_Tokens : UARP.Types.Float_Value := 0.0;
+      Has_Tool_Breakdown : Boolean := False;
+      Tool_Breakdown : UARP.JSON_Support.JSON_Value;
+      Has_Top_Error_Messages : Boolean := False;
+      Top_Error_Messages : UARP.Models.Get_Agent_Activity_Stats_Response_Top_Error_Message_Vectors.Vector;
+      Has_Runs_By_Day : Boolean := False;
+      Runs_By_Day : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Get_Agent_Activity_Stats_Response) return UARP.JSON_Support.JSON_Value;
@@ -6985,11 +7039,13 @@ package UARP.Models is
    --  A value the API introduces later decodes as Goal_Status_Unrecognized
    --  with the original text kept in Raw.
    type Goal_Status_Kind is
-     (Goal_Status_Draft,
+     (Goal_Status_Proposed,
+   Goal_Status_Checking,
+   Goal_Status_Voting,
+   Goal_Status_Approved,
+   Goal_Status_Rejected,
    Goal_Status_Active,
-   Goal_Status_Achieved,
-   Goal_Status_Abandoned,
-   Goal_Status_Expired,
+   Goal_Status_Completed,
    Goal_Status_Unrecognized);
 
    type Goal_Status is record
@@ -7005,17 +7061,31 @@ package UARP.Models is
 
    --  `Goal` model.
    type Goal is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Goal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Title : Boolean := False;
       Title : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Rationale : Boolean := False;
+      Rationale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  How the goal squares with the constitution - written by the formulating agent.
+      Has_Alignment_Justification : Boolean := False;
+      Alignment_Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Expected_Impact : Boolean := False;
+      Expected_Impact : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Resource_Estimate_Usd : Boolean := False;
+      Resource_Estimate_Usd : UARP.Types.Float_Value := 0.0;
       Status : UARP.Models.Goal_Status;
-      Has_Target_Date : Boolean := False;
-      Target_Date : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
+      --  Set once the goal reaches a vote. Absent before that.
+      Has_Proposal_Id : Boolean := False;
+      Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Constitution_Check_Passed : Boolean := False;
+      Constitution_Check_Passed : Standard.Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Goal) return UARP.JSON_Support.JSON_Value;
@@ -7146,6 +7216,29 @@ package UARP.Models is
    function To_JSON (Model : Import_Admin_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Admin_Config_Request;
 
+   --  Values of `ImprovementProposalType`.
+   --  A value the API introduces later decodes as Improvement_Proposal_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Improvement_Proposal_Type_Kind is
+     (Improvement_Proposal_Type_Prompt_Change,
+   Improvement_Proposal_Type_Tool_Addition,
+   Improvement_Proposal_Type_Tool_Removal,
+   Improvement_Proposal_Type_Model_Change,
+   Improvement_Proposal_Type_Parameter_Tuning,
+   Improvement_Proposal_Type_Skill_Addition,
+   Improvement_Proposal_Type_Unrecognized);
+
+   type Improvement_Proposal_Type is record
+      Kind : Improvement_Proposal_Type_Kind := Improvement_Proposal_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Improvement_Proposal_Type (Value : String) return Improvement_Proposal_Type;
+   function To_Improvement_Proposal_Type (Kind : Improvement_Proposal_Type_Kind) return Improvement_Proposal_Type;
+   function Image (Model : Improvement_Proposal_Type) return String;
+   function To_JSON (Model : Improvement_Proposal_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Improvement_Proposal_Type;
+
    --  Values of `ImprovementProposalStatus`.
    --  A value the API introduces later decodes as Improvement_Proposal_Status_Unrecognized
    --  with the original text kept in Raw.
@@ -7173,17 +7266,36 @@ package UARP.Models is
    --  Self-improvement proposal - multi-stage state machine (proposed ? arbiter_review ? voting ?
    --  sandbox_testing ? approved ? applied | rejected at any step).
    type Improvement_Proposal is record
+      Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Version : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Diff : Boolean := False;
-      Diff : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Was declared `string` here while the record has always carried a number.
+      Version : UARP.Types.Integer_Value := 0;
+      Type_K : UARP.Models.Improvement_Proposal_Type;
+      --  The proposal's heading. Undeclared until now, so a client built from this document rendered
+      --  the card without one.
+      Has_Title : Boolean := False;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Rationale : Boolean := False;
       Rationale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The failed runs that prompted the proposal.
+      Has_Failed_Run_Ids : Boolean := False;
+      Failed_Run_Ids : UARP.Types.Text_Vectors.Vector;
+      --  The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+      --  the documented name found nothing and showed "no diff" over a proposal that had one.
+      Has_Changes : Boolean := False;
+      Changes : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Baseline_Success_Rate : Boolean := False;
+      Baseline_Success_Rate : UARP.Types.Float_Value := 0.0;
+      --  Present only after the sandbox stage has run.
+      Has_Sandbox_Success_Rate : Boolean := False;
+      Sandbox_Success_Rate : UARP.Types.Float_Value := 0.0;
       Status : UARP.Models.Improvement_Proposal_Status;
-      Has_Submitted_By : Boolean := False;
-      Submitted_By : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
+      --  Set once the proposal reaches a vote.
+      Has_Vote_Proposal_Id : Boolean := False;
+      Vote_Proposal_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Updated_At : Boolean := False;
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -8160,6 +8272,7 @@ package UARP.Models is
    type List_Files_Response is record
       Has_Items : Boolean := False;
       Items : UARP.Models.File_Entry_Vectors.Vector;
+      --  Opaque cursor for the next page; null when no more pages.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Has_More : Boolean := False;
@@ -9376,6 +9489,7 @@ package UARP.Models is
    type List_Public_Tenants_Response is record
       Has_Items : Boolean := False;
       Items : UARP.Models.Public_Tenant_Vectors.Vector;
+      --  Opaque cursor for the next page; null when no more pages.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Has_More : Boolean := False;
@@ -10368,8 +10482,14 @@ package UARP.Models is
       Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Runs : Boolean := False;
       Runs : UARP.Models.Team_Run_Summary_Vectors.Vector;
+      --  Rows in THIS page, not the total across pages.
       Has_Total : Boolean := False;
       Total : UARP.Types.Integer_Value := 0;
+      --  Pass back as `cursor` to continue. Absent on the last page.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Has_More : Boolean := False;
+      Has_More : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : List_Team_Runs_Response) return UARP.JSON_Support.JSON_Value;
@@ -10440,6 +10560,54 @@ package UARP.Models is
 
    function To_JSON (Model : Tenant_Quotas) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Quotas;
+
+   --  Per-tenant overrides applied on top of the plan's quotas. Partial by nature: only the keys
+   --  actually overridden are present.
+   type Tenant_Quota_Overrides is record
+      Has_Max_Agents : Boolean := False;
+      Max_Agents : UARP.Types.Integer_Value := 0;
+      Has_Max_Teams : Boolean := False;
+      Max_Teams : UARP.Types.Integer_Value := 0;
+      Has_Max_Workers_Per_Team : Boolean := False;
+      Max_Workers_Per_Team : UARP.Types.Integer_Value := 0;
+      Has_Max_Concurrent_Runs : Boolean := False;
+      Max_Concurrent_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_Concurrent_Team_Runs : Boolean := False;
+      Max_Concurrent_Team_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_Active_Sessions : Boolean := False;
+      Max_Active_Sessions : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Tokens : Boolean := False;
+      Max_Monthly_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Tool_Calls : Boolean := False;
+      Max_Monthly_Tool_Calls : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Runs : Boolean := False;
+      Max_Monthly_Runs : UARP.Types.Integer_Value := 0;
+      Has_Max_MCP_Servers : Boolean := False;
+      Max_MCP_Servers : UARP.Types.Integer_Value := 0;
+      Has_Max_Storage_Bytes : Boolean := False;
+      Max_Storage_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Entries_Per_Agent : Boolean := False;
+      Max_Memory_Entries_Per_Agent : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Storage_Bytes : Boolean := False;
+      Max_Memory_Storage_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Max_Agent_Versions : Boolean := False;
+      Max_Agent_Versions : UARP.Types.Integer_Value := 0;
+      Has_Max_Knowledge_Bases : Boolean := False;
+      Max_Knowledge_Bases : UARP.Types.Integer_Value := 0;
+      Has_Max_Workspaces : Boolean := False;
+      Max_Workspaces : UARP.Types.Integer_Value := 0;
+      Has_Max_Daily_Tool_Calls : Boolean := False;
+      Max_Daily_Tool_Calls : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Images : Boolean := False;
+      Max_Monthly_Images : UARP.Types.Integer_Value := 0;
+      Has_Max_Daily_Images : Boolean := False;
+      Max_Daily_Images : UARP.Types.Integer_Value := 0;
+      Has_Max_Monthly_Videos : Boolean := False;
+      Max_Monthly_Videos : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Tenant_Quota_Overrides) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Quota_Overrides;
 
    --  `TenantBilling` model.
    type Tenant_Billing is record
@@ -10620,7 +10788,7 @@ package UARP.Models is
       Has_Quotas : Boolean := False;
       Quotas : UARP.Models.Tenant_Quotas;
       Has_Quota_Overrides : Boolean := False;
-      Quota_Overrides : UARP.Models.Tenant_Quotas;
+      Quota_Overrides : UARP.Models.Tenant_Quota_Overrides;
       Has_Settings : Boolean := False;
       Settings : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Billing : Boolean := False;
@@ -13811,34 +13979,49 @@ package UARP.Models is
 
    --  `StartOAuthRequest` model.
    type Start_O_Auth_Request is record
+      --  Optional. Was declared REQUIRED here while the route has treated it as optional
+      --  (`routes/integrations.ts`: "agent_id is now optional - if provided, validate it exists"), so
+      --  a generated client had to invent one to connect an integration that belongs to no agent.
+      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Name : Boolean := False;
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Scopes : Boolean := False;
       Scopes : UARP.Types.Text_Vectors.Vector;
+      --  The destination connector when it differs from the OAuth provider in the path -
+      --  `google_calendar` through `google`, for example. The route reads it and resolves scopes from
+      --  it; the document did not declare it, so a client generated from this document could not send
+      --  it and multi-connector OAuth silently asked for the provider's scopes instead of the
+      --  connector's. Wrong scopes, no error.
+      Has_Connector_Id : Boolean := False;
+      Connector_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
+      --  "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+      Has_Extra : Boolean := False;
+      Extra : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
    function To_JSON (Model : Start_O_Auth_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_O_Auth_Request;
 
-   --  Values of `StartTeamRunRequestChatMode`.
-   --  A value the API introduces later decodes as Start_Team_Run_Request_Chat_Mode_Unrecognized
+   --  Values of `StartTeamRunRequestInputVariant2chatMode`.
+   --  A value the API introduces later decodes as Start_Team_Run_Request_Input_Variant2chat_Mode_Unrecognized
    --  with the original text kept in Raw.
-   type Start_Team_Run_Request_Chat_Mode_Kind is
-     (Start_Team_Run_Request_Chat_Mode_Plan,
-   Start_Team_Run_Request_Chat_Mode_Chat,
-   Start_Team_Run_Request_Chat_Mode_Unrecognized);
+   type Start_Team_Run_Request_Input_Variant2chat_Mode_Kind is
+     (Start_Team_Run_Request_Input_Variant2chat_Mode_Plan,
+   Start_Team_Run_Request_Input_Variant2chat_Mode_Chat,
+   Start_Team_Run_Request_Input_Variant2chat_Mode_Unrecognized);
 
-   type Start_Team_Run_Request_Chat_Mode is record
-      Kind : Start_Team_Run_Request_Chat_Mode_Kind := Start_Team_Run_Request_Chat_Mode_Unrecognized;
+   type Start_Team_Run_Request_Input_Variant2chat_Mode is record
+      Kind : Start_Team_Run_Request_Input_Variant2chat_Mode_Kind := Start_Team_Run_Request_Input_Variant2chat_Mode_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Start_Team_Run_Request_Chat_Mode (Value : String) return Start_Team_Run_Request_Chat_Mode;
-   function To_Start_Team_Run_Request_Chat_Mode (Kind : Start_Team_Run_Request_Chat_Mode_Kind) return Start_Team_Run_Request_Chat_Mode;
-   function Image (Model : Start_Team_Run_Request_Chat_Mode) return String;
-   function To_JSON (Model : Start_Team_Run_Request_Chat_Mode) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Team_Run_Request_Chat_Mode;
+   function To_Start_Team_Run_Request_Input_Variant2chat_Mode (Value : String) return Start_Team_Run_Request_Input_Variant2chat_Mode;
+   function To_Start_Team_Run_Request_Input_Variant2chat_Mode (Kind : Start_Team_Run_Request_Input_Variant2chat_Mode_Kind) return Start_Team_Run_Request_Input_Variant2chat_Mode;
+   function Image (Model : Start_Team_Run_Request_Input_Variant2chat_Mode) return String;
+   function To_JSON (Model : Start_Team_Run_Request_Input_Variant2chat_Mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Team_Run_Request_Input_Variant2chat_Mode;
 
    --  `StartSquadRunRequest` model.
    type Start_Squad_Run_Request is record
@@ -13849,26 +14032,49 @@ package UARP.Models is
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Chat_Mode : Boolean := False;
-      Chat_Mode : UARP.Models.Start_Team_Run_Request_Chat_Mode;
+      Chat_Mode : UARP.Models.Start_Team_Run_Request_Input_Variant2chat_Mode;
    end record;
 
    function To_JSON (Model : Start_Squad_Run_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Squad_Run_Request;
 
-   --  `StartTeamRunRequest` model.
-   type Start_Team_Run_Request is record
-      Has_Input : Boolean := False;
-      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Addressed_To : Boolean := False;
-      Addressed_To : UARP.Types.Text_Vectors.Vector;
+   --  `StartTeamRunRequestInputVariant2` model.
+   type Start_Team_Run_Request_Input_Variant2 is record
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Addressed_To : Boolean := False;
+      Addressed_To : UARP.Types.Text_Vectors.Vector;
       Has_Chat_Mode : Boolean := False;
-      Chat_Mode : UARP.Models.Start_Team_Run_Request_Chat_Mode;
+      Chat_Mode : UARP.Models.Start_Team_Run_Request_Input_Variant2chat_Mode;
+   end record;
+
+   function To_JSON (Model : Start_Team_Run_Request_Input_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Team_Run_Request_Input_Variant2;
+
+   --  `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+   --  handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+   --  from this document had its addressing and its chat mode dropped with no error at all: the
+   --  run started, it just was not the run that was asked for. They belong inside `input`, which
+   --  is where the handler reads them.
+   type Start_Team_Run_Request is record
+      --  The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+      --  absent, @mentions in `message` are parsed for the same purpose.
+      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      --  Accepted by the handler and undeclared here until now - the drift ran both ways.
+      Has_Metadata : Boolean := False;
+      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
    function To_JSON (Model : Start_Team_Run_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Team_Run_Request;
+
+   --  `StartTeamRunResponse` model.
+   type Start_Team_Run_Response is record
+      Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Start_Team_Run_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Start_Team_Run_Response;
 
    --  `SubmitFeedbackRequest` model.
    type Submit_Feedback_Request is record
@@ -14040,8 +14246,9 @@ package UARP.Models is
    function To_JSON (Model : Team_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Update;
 
-   --  Counted over the whole scan, NOT over `items` - the counts stay honest when `limit`
-   --  truncates the list.
+   --  Counted over the whole scan, NOT over `items` - so `limit` truncating the list does not move
+   --  them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+   --  true these are a floor, not a total.
    type Tenant_Inbox_Counts is record
       Total : UARP.Types.Integer_Value := 0;
       Approval : UARP.Types.Integer_Value := 0;
@@ -14057,12 +14264,18 @@ package UARP.Models is
    --  they are asking.
    type Tenant_Inbox is record
       Generated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Counted over the whole scan, NOT over `items` - the counts stay honest when `limit`
-      --  truncates the list.
+      --  Counted over the whole scan, NOT over `items` - so `limit` truncating the list does not move
+      --  them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+      --  true these are a floor, not a total.
       Counts : UARP.Models.Tenant_Inbox_Counts;
       Items : UARP.Models.Inbox_Item_Vectors.Vector;
       --  Run records inspected; the scan is capped.
       Scanned : UARP.Types.Integer_Value := 0;
+      --  The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+      --  tell you this - the number only means something to a caller who already knows what the cap
+      --  is.
+      Has_Truncated : Boolean := False;
+      Truncated : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Tenant_Inbox) return UARP.JSON_Support.JSON_Value;
@@ -14224,8 +14437,10 @@ package UARP.Models is
 
    --  `TestAgentIntegrationResponse` model.
    type Test_Agent_Integration_Response is record
-      Has_Success : Boolean := False;
+      --  False when the connector could not reach the remote or the credentials were refused. This is
+      --  the only field that says so; the status will be 200 either way.
       Success : Standard.Boolean := False;
+      --  Why it failed. Absent on success.
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -14246,8 +14461,10 @@ package UARP.Models is
 
    --  `TestLLMProviderKeyResponse` model.
    type Test_LLM_Provider_Key_Response is record
-      Has_Success : Boolean := False;
+      --  False when the connector could not reach the remote or the credentials were refused. This is
+      --  the only field that says so; the status will be 200 either way.
       Success : Standard.Boolean := False;
+      --  Why it failed. Absent on success.
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -14825,6 +15042,14 @@ package UARP.Models is
 
    function To_JSON (Model : Upload_File_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upload_File_Request;
+
+   --  `UploadWorkspaceFileRequest` model.
+   type Upload_Workspace_File_Request is record
+      File : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Upload_Workspace_File_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upload_Workspace_File_Request;
 
    --  `UpsertNotificationTargetRequestConfigVariant1` model.
    type Upsert_Notification_Target_Request_Config_Variant1 is record
