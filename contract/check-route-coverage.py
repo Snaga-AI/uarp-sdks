@@ -78,7 +78,14 @@ def sdk_operations(dist: pathlib.Path) -> set[tuple[str, str]]:
         r"path:\s*[`'\"]([^`'\"]+)[`'\"]",
         re.MULTILINE,
     )
-    for js in sorted(dist.glob("*.js")):
+    # rglob, not glob. `tsc` mirrors the source layout, so exactly ONE .js file
+    # lands at the top of dist/ — index.js, which only re-exports — and all 60
+    # others sit under dist/generated/resources/ and dist/core/. A non-recursive
+    # glob therefore reads no routes at all and the gate reports every single
+    # operation unreachable: `sdk ops: 0, unreachable: 641` against a client that
+    # in fact reaches all 641. A gate that is red no matter what is worse than no
+    # gate, because the first person to see it learns to ignore it.
+    for js in sorted(dist.rglob("*.js")):
         for verb, path in pat.findall(js.read_text(encoding="utf-8")):
             # Template holes (`${agentId}`) stand in for the spec's {agentId}.
             norm = re.sub(r"\$\{[^}]+\}", "{param}", path)
