@@ -22,6 +22,17 @@ package UARP.API.Teams is
 
    No_Get_Team_Chat_History_Params : constant Get_Team_Chat_History_Params := (others => <>);
 
+   --  Query and header parameters for `listTeamRuns`.
+   type List_Team_Runs_Params is record
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  From a previous response's `cursor`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Team_Runs_Params : constant List_Team_Runs_Params := (others => <>);
+
    --  Query and header parameters for `streamTeamChatEvents`.
    type Stream_Team_Chat_Events_Params is record
       Has_Thread_Id : Boolean := False;
@@ -229,14 +240,28 @@ package UARP.API.Teams is
 
    --  List runs for a team
    --
+   --  `limit` and `cursor` were undeclared, so a client generated from this document saw the first
+   --  fifty runs and had no way to page past them.
+   --
    --  GET /api/v1/teams/{teamId}/runs
    --
    --  Required scopes: agents:read.
    function List_Team_Runs
      (Self : Client_Type;
       Team_Id : String;
+      Params : List_Team_Runs_Params := No_List_Team_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Team_Runs_Response;
+
+   --  Collect every item `listTeamRuns` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_Team_Runs_All
+     (Self : Client_Type;
+      Team_Id : String;
+      Params : List_Team_Runs_Params := No_List_Team_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Run_Summary_Vectors.Vector;
 
    --  Start a team run
    --
@@ -248,7 +273,7 @@ package UARP.API.Teams is
       Team_Id : String;
       Payload : UARP.Models.Start_Team_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Start_Team_Run_Response;
 
    --  SSE stream for team chat
    --
@@ -266,7 +291,11 @@ package UARP.API.Teams is
 
    --  Stream team run events (SSE)
    --
-   --  GET /api/v1/teams/{teamId}/runs/{runId}/events
+   --  The path variable was named `runId` here while every sibling under this prefix - and the
+   --  handler, which reads `params.teamRunId` for this route too - calls it `teamRunId`. Same
+   --  value, two names, so a generated client offered both.
+   --
+   --  GET /api/v1/teams/{teamId}/runs/{teamRunId}/events
    --
    --  Required scopes: agents:read.
    --
@@ -274,7 +303,7 @@ package UARP.API.Teams is
    procedure Stream_Team_Run_Events
      (Self : Client_Type;
       Team_Id : String;
-      Run_Id : String;
+      Team_Run_Id : String;
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
 

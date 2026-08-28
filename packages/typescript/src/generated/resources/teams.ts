@@ -4,6 +4,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   AddTeamGraphEdgeRequest,
   AddTeamGraphNodeRequest,
@@ -20,8 +21,10 @@ import type {
   ListTeamRunsResponse,
   ListTeamsResponse,
   StartTeamRunRequest,
+  StartTeamRunResponse,
   Team,
   TeamCreate,
+  TeamRunSummary,
   TeamUpdate,
   UpdateTeamGraphNodeRequest,
 } from '../models.js';
@@ -32,6 +35,17 @@ import type {
 export interface GetTeamChatHistoryParams {
   thread_id?: string;
   include_internal?: boolean;
+}
+
+/**
+ * Query and header parameters for `listTeamRuns`.
+ */
+export interface ListTeamRunsParams {
+  limit?: number;
+  /**
+   * From a previous response's `cursor`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -314,16 +328,33 @@ export class TeamsResource extends APIResource {
   /**
    * List runs for a team
    *
+   * `limit` and `cursor` were undeclared, so a client generated from this document saw the first
+   * fifty runs and had no way to page past them.
+   *
    * `GET /api/v1/teams/{teamId}/runs`
    *
    * Required scopes: `agents:read`.
    */
-  listTeamRuns(teamId: string, options?: RequestOptions): Promise<ListTeamRunsResponse> {
+  listTeamRuns(teamId: string, params?: ListTeamRunsParams, options?: RequestOptions): Promise<ListTeamRunsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/runs`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listTeamRuns`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listTeamRunsAll(teamId: string, params?: ListTeamRunsParams, options?: RequestOptions): AsyncIterableIterator<TeamRunSummary> {
+    return autoPaginate<TeamRunSummary>(
+      (cursor) => this.listTeamRuns(teamId, { ...params, cursor }, options),
+      'runs',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -333,7 +364,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  startTeamRun(teamId: string, body: StartTeamRunRequest, options?: RequestOptions): Promise<JsonObject> {
+  startTeamRun(teamId: string, body: StartTeamRunRequest, options?: RequestOptions): Promise<StartTeamRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/runs`,
@@ -364,16 +395,20 @@ export class TeamsResource extends APIResource {
   /**
    * Stream team run events (SSE)
    *
-   * `GET /api/v1/teams/{teamId}/runs/{runId}/events`
+   * The path variable was named `runId` here while every sibling under this prefix — and the
+   * handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
+   * value, two names, so a generated client offered both.
+   *
+   * `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
    *
    * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
    */
-  streamTeamRunEvents(teamId: string, runId: string, options?: RequestOptions): EventStream {
+  streamTeamRunEvents(teamId: string, teamRunId: string, options?: RequestOptions): EventStream {
     return this._client.stream({
       method: 'GET',
-      path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/runs/${encodeURIComponent(String(runId))}/events`,
+      path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/runs/${encodeURIComponent(String(teamRunId))}/events`,
       options,
     });
   }

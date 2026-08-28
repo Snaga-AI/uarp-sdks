@@ -6,11 +6,13 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
@@ -21,6 +23,16 @@ pub struct GetTeamChatHistoryParams {
     pub thread_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include_internal: Option<bool>,
+}
+
+/// Query and header parameters for `listTeamRuns`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListTeamRunsParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// From a previous response's `cursor`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `streamTeamChatEvents`.
@@ -348,15 +360,18 @@ impl TeamsApi {
 
     /// List runs for a team
     ///
+    /// `limit` and `cursor` were undeclared, so a client generated from this document saw the first
+    /// fifty runs and had no way to page past them.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn list_team_runs(&self, team_id: &str) -> Result<models::ListTeamRunsResponse> {
+    pub async fn list_team_runs(&self, team_id: &str, params: &ListTeamRunsParams) -> Result<models::ListTeamRunsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/teams/{}/runs", encode_path(team_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -364,12 +379,35 @@ impl TeamsApi {
             .await
     }
 
+    /// Stream every item returned by `listTeamRuns`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn list_team_runs_all<'a>(&'a self, team_id: &'a str, params: &'a ListTeamRunsParams) -> impl Stream<Item = Result<models::TeamRunSummary>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_team_runs(team_id, &page_params).await?;
+                let items = page.runs.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
+    }
+
     /// Start a team run
     ///
     /// `POST /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn start_team_run(&self, team_id: &str, body: &models::StartTeamRunRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn start_team_run(&self, team_id: &str, body: &models::StartTeamRunRequest) -> Result<models::StartTeamRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -399,14 +437,18 @@ impl TeamsApi {
 
     /// Stream team run events (SSE)
     ///
-    /// `GET /api/v1/teams/{teamId}/runs/{runId}/events`
+    /// The path variable was named `runId` here while every sibling under this prefix — and the
+    /// handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
+    /// value, two names, so a generated client offered both.
+    ///
+    /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream.
-    pub fn stream_team_run_events(&self, team_id: &str, run_id: &str) -> EventStream {
+    pub fn stream_team_run_events(&self, team_id: &str, team_run_id: &str) -> EventStream {
         self.client.request_stream(
-            &format!("/api/v1/teams/{}/runs/{}/events", encode_path(team_id), encode_path(run_id)),
+            &format!("/api/v1/teams/{}/runs/{}/events", encode_path(team_id), encode_path(team_run_id)),
             NO_QUERY,
             Vec::new(),
         )

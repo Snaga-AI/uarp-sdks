@@ -2273,7 +2273,8 @@ export interface DeleteTeamGraphNodeResponse {
 }
 
 export interface DeleteTeamResponse {
-  deleted?: boolean;
+  deleted: boolean;
+  team_id: string;
 }
 
 export interface DeleteUserResponse {
@@ -3207,18 +3208,31 @@ export interface GetUsageTimeseriesResponseDataItem {
 }
 
 export interface Goal {
-  id: string;
+  goal_id: string;
+  tenant_id: string;
   agent_id: string;
   title?: string;
   description?: string;
+  rationale?: string;
+  /**
+   * How the goal squares with the constitution — written by the formulating agent.
+   */
+  alignment_justification?: string;
+  expected_impact?: string;
+  resource_estimate_usd?: number;
   status: GoalStatus;
-  target_date?: string | null;
-  created_at?: string;
+  /**
+   * Set once the goal reaches a vote. Absent before that.
+   */
+  proposal_id?: string;
+  constitution_check_passed?: boolean;
+  created_at: string;
+  updated_at?: string;
 }
 
-export type GoalStatus = 'draft' | 'active' | 'achieved' | 'abandoned' | 'expired';
+export type GoalStatus = 'proposed' | 'checking' | 'voting' | 'approved' | 'rejected' | 'active' | 'completed';
 
-export const GOAL_STATUS_VALUES = ['draft', 'active', 'achieved', 'abandoned', 'expired'] as const;
+export const GOAL_STATUS_VALUES = ['proposed', 'checking', 'voting', 'approved', 'rejected', 'active', 'completed'] as const;
 
 export interface GoogleOneTapAuthRequest {
   /**
@@ -3353,20 +3367,51 @@ export interface ImportAdminConfigRequest {
  * sandbox_testing → approved → applied | rejected at any step).
  */
 export interface ImprovementProposal {
+  proposal_id: string;
+  tenant_id: string;
   agent_id: string;
-  version: string;
-  type: string;
-  diff?: JsonObject;
+  /**
+   * Was declared `string` here while the record has always carried a number.
+   */
+  version: number;
+  type: ImprovementProposalType;
+  /**
+   * The proposal's heading. Undeclared until now, so a client built from this document rendered
+   * the card without one.
+   */
+  title?: string;
+  description?: string;
   rationale?: string;
+  /**
+   * The failed runs that prompted the proposal.
+   */
+  failed_run_ids?: string[];
+  /**
+   * The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+   * the documented name found nothing and showed "no diff" over a proposal that had one.
+   */
+  changes?: JsonObject;
+  baseline_success_rate?: number;
+  /**
+   * Present only after the sandbox stage has run.
+   */
+  sandbox_success_rate?: number;
   status: ImprovementProposalStatus;
-  submitted_by?: string;
-  created_at?: string;
+  /**
+   * Set once the proposal reaches a vote.
+   */
+  vote_proposal_id?: string;
+  created_at: string;
   updated_at?: string;
 }
 
 export type ImprovementProposalStatus = 'proposed' | 'arbiter_review' | 'voting' | 'sandbox_testing' | 'approved' | 'applied' | 'rejected';
 
 export const IMPROVEMENT_PROPOSAL_STATUS_VALUES = ['proposed', 'arbiter_review', 'voting', 'sandbox_testing', 'approved', 'applied', 'rejected'] as const;
+
+export type ImprovementProposalType = 'prompt_change' | 'tool_addition' | 'tool_removal' | 'model_change' | 'parameter_tuning' | 'skill_addition';
+
+export const IMPROVEMENT_PROPOSAL_TYPE_VALUES = ['prompt_change', 'tool_addition', 'tool_removal', 'model_change', 'parameter_tuning', 'skill_addition'] as const;
 
 /**
  * One run waiting on a person, with what it is actually asking rather than just its status.
@@ -4219,7 +4264,15 @@ export interface ListTeamGraphNodesResponse {
 export interface ListTeamRunsResponse {
   team_id?: string;
   runs?: TeamRunSummary[];
+  /**
+   * Rows in THIS page, not the total across pages.
+   */
   total?: number;
+  /**
+   * Pass back as `cursor` to continue. Absent on the last page.
+   */
+  cursor?: string;
+  has_more?: boolean;
 }
 
 export interface ListTeamsResponse {
@@ -6794,19 +6847,41 @@ export interface StartSquadRunRequest {
   input?: JsonObject;
   addressed_to?: string[];
   message?: string;
-  chat_mode?: StartTeamRunRequestChatMode;
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
 }
 
+/**
+ * `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+ * handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+ * from this document had its addressing and its chat mode dropped with no error at all: the
+ * run started, it just was not the run that was asked for. They belong inside `input`, which
+ * is where the handler reads them.
+ */
 export interface StartTeamRunRequest {
-  input?: JsonObject;
-  addressed_to?: string[];
-  message?: string;
-  chat_mode?: StartTeamRunRequestChatMode;
+  /**
+   * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+   * absent, @mentions in `message` are parsed for the same purpose.
+   */
+  input: string | StartTeamRunRequestInputVariant2;
+  /**
+   * Accepted by the handler and undeclared here until now — the drift ran both ways.
+   */
+  metadata?: JsonObject;
 }
 
-export type StartTeamRunRequestChatMode = 'plan' | 'chat';
+export interface StartTeamRunRequestInputVariant2 {
+  message?: string;
+  addressed_to?: string[];
+  chat_mode?: StartTeamRunRequestInputVariant2chatMode;
+}
 
-export const START_TEAM_RUN_REQUEST_CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+export type StartTeamRunRequestInputVariant2chatMode = 'plan' | 'chat';
+
+export const START_TEAM_RUN_REQUEST_INPUT_VARIANT2CHAT_MODE_VALUES = ['plan', 'chat'] as const;
+
+export interface StartTeamRunResponse {
+  team_run_id: string;
+}
 
 export interface SubmitFeedbackRequest {
   /**

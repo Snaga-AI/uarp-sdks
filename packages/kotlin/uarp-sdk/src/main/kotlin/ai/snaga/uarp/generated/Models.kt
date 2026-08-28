@@ -4846,7 +4846,9 @@ public data class DeleteTeamGraphNodeResponse(
  */
 @Serializable
 public data class DeleteTeamResponse(
-    public val deleted: Boolean? = null,
+    public val deleted: Boolean,
+    @SerialName("team_id")
+    public val teamId: String,
 )
 
 /**
@@ -6887,16 +6889,36 @@ public data class GetUsageTimeseriesResponseDataItem(
  */
 @Serializable
 public data class Goal(
-    public val id: String,
+    @SerialName("goal_id")
+    public val goalId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
     @SerialName("agent_id")
     public val agentId: String,
     public val title: String? = null,
     public val description: String? = null,
+    public val rationale: String? = null,
+    /**
+     * How the goal squares with the constitution — written by the formulating agent.
+     */
+    @SerialName("alignment_justification")
+    public val alignmentJustification: String? = null,
+    @SerialName("expected_impact")
+    public val expectedImpact: String? = null,
+    @SerialName("resource_estimate_usd")
+    public val resourceEstimateUsd: Double? = null,
     public val status: GoalStatus,
-    @SerialName("target_date")
-    public val targetDate: String? = null,
+    /**
+     * Set once the goal reaches a vote. Absent before that.
+     */
+    @SerialName("proposal_id")
+    public val proposalId: String? = null,
+    @SerialName("constitution_check_passed")
+    public val constitutionCheckPassed: Boolean? = null,
     @SerialName("created_at")
-    public val createdAt: String? = null,
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
 )
 
 /**
@@ -6913,14 +6935,16 @@ public value class GoalStatus(public val value: String) {
     override fun toString(): String = value
 
     public companion object {
-        public val DRAFT: GoalStatus = GoalStatus("draft")
+        public val PROPOSED: GoalStatus = GoalStatus("proposed")
+        public val CHECKING: GoalStatus = GoalStatus("checking")
+        public val VOTING: GoalStatus = GoalStatus("voting")
+        public val APPROVED: GoalStatus = GoalStatus("approved")
+        public val REJECTED: GoalStatus = GoalStatus("rejected")
         public val ACTIVE: GoalStatus = GoalStatus("active")
-        public val ACHIEVED: GoalStatus = GoalStatus("achieved")
-        public val ABANDONED: GoalStatus = GoalStatus("abandoned")
-        public val EXPIRED: GoalStatus = GoalStatus("expired")
+        public val COMPLETED: GoalStatus = GoalStatus("completed")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<GoalStatus> = listOf(DRAFT, ACTIVE, ACHIEVED, ABANDONED, EXPIRED)
+        public val knownValues: List<GoalStatus> = listOf(PROPOSED, CHECKING, VOTING, APPROVED, REJECTED, ACTIVE, COMPLETED)
     }
 }
 
@@ -7204,17 +7228,49 @@ public data class ImportAdminConfigRequest(
  */
 @Serializable
 public data class ImprovementProposal(
+    @SerialName("proposal_id")
+    public val proposalId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
     @SerialName("agent_id")
     public val agentId: String,
-    public val version: String,
-    public val type: String,
-    public val diff: JsonObject? = null,
+    /**
+     * Was declared `string` here while the record has always carried a number.
+     */
+    public val version: Long,
+    public val type: ImprovementProposalType,
+    /**
+     * The proposal's heading. Undeclared until now, so a client built from this document rendered
+     * the card without one.
+     */
+    public val title: String? = null,
+    public val description: String? = null,
     public val rationale: String? = null,
+    /**
+     * The failed runs that prompted the proposal.
+     */
+    @SerialName("failed_run_ids")
+    public val failedRunIds: List<String>? = null,
+    /**
+     * The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+     * the documented name found nothing and showed "no diff" over a proposal that had one.
+     */
+    public val changes: JsonObject? = null,
+    @SerialName("baseline_success_rate")
+    public val baselineSuccessRate: Double? = null,
+    /**
+     * Present only after the sandbox stage has run.
+     */
+    @SerialName("sandbox_success_rate")
+    public val sandboxSuccessRate: Double? = null,
     public val status: ImprovementProposalStatus,
-    @SerialName("submitted_by")
-    public val submittedBy: String? = null,
+    /**
+     * Set once the proposal reaches a vote.
+     */
+    @SerialName("vote_proposal_id")
+    public val voteProposalId: String? = null,
     @SerialName("created_at")
-    public val createdAt: String? = null,
+    public val createdAt: String,
     @SerialName("updated_at")
     public val updatedAt: String? = null,
 )
@@ -7250,6 +7306,38 @@ public object ImprovementProposalStatusSerializer : KSerializer<ImprovementPropo
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ImprovementProposalStatus", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: ImprovementProposalStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): ImprovementProposalStatus = ImprovementProposalStatus(decoder.decodeString())
+}
+
+/**
+ * `ImprovementProposalType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ImprovementProposalTypeSerializer::class)
+@JvmInline
+public value class ImprovementProposalType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val PROMPT_CHANGE: ImprovementProposalType = ImprovementProposalType("prompt_change")
+        public val TOOL_ADDITION: ImprovementProposalType = ImprovementProposalType("tool_addition")
+        public val TOOL_REMOVAL: ImprovementProposalType = ImprovementProposalType("tool_removal")
+        public val MODEL_CHANGE: ImprovementProposalType = ImprovementProposalType("model_change")
+        public val PARAMETER_TUNING: ImprovementProposalType = ImprovementProposalType("parameter_tuning")
+        public val SKILL_ADDITION: ImprovementProposalType = ImprovementProposalType("skill_addition")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ImprovementProposalType> = listOf(PROMPT_CHANGE, TOOL_ADDITION, TOOL_REMOVAL, MODEL_CHANGE, PARAMETER_TUNING, SKILL_ADDITION)
+    }
+}
+
+public object ImprovementProposalTypeSerializer : KSerializer<ImprovementProposalType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ImprovementProposalType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ImprovementProposalType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ImprovementProposalType = ImprovementProposalType(decoder.decodeString())
 }
 
 /**
@@ -8806,7 +8894,16 @@ public data class ListTeamRunsResponse(
     @SerialName("team_id")
     public val teamId: String? = null,
     public val runs: List<TeamRunSummary>? = null,
+    /**
+     * Rows in THIS page, not the total across pages.
+     */
     public val total: Long? = null,
+    /**
+     * Pass back as `cursor` to continue. Absent on the last page.
+     */
+    public val cursor: String? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean? = null,
 )
 
 /**
@@ -13766,49 +13863,77 @@ public data class StartSquadRunRequest(
     public val addressedTo: List<String>? = null,
     public val message: String? = null,
     @SerialName("chat_mode")
-    public val chatMode: StartTeamRunRequestChatMode? = null,
+    public val chatMode: StartTeamRunRequestInputVariant2chatMode? = null,
 )
 
 /**
- * `StartTeamRunRequest` model.
+ * `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+ * handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+ * from this document had its addressing and its chat mode dropped with no error at all: the
+ * run started, it just was not the run that was asked for. They belong inside `input`, which
+ * is where the handler reads them.
  */
 @Serializable
 public data class StartTeamRunRequest(
-    public val input: JsonObject? = null,
-    @SerialName("addressed_to")
-    public val addressedTo: List<String>? = null,
-    public val message: String? = null,
-    @SerialName("chat_mode")
-    public val chatMode: StartTeamRunRequestChatMode? = null,
+    /**
+     * The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+     * absent, @mentions in `message` are parsed for the same purpose.
+     */
+    public val input: JsonElement,
+    /**
+     * Accepted by the handler and undeclared here until now — the drift ran both ways.
+     */
+    public val metadata: JsonObject? = null,
 )
 
 /**
- * `StartTeamRunRequestChatMode` values.
+ * `StartTeamRunRequestInputVariant2` model.
+ */
+@Serializable
+public data class StartTeamRunRequestInputVariant2(
+    public val message: String? = null,
+    @SerialName("addressed_to")
+    public val addressedTo: List<String>? = null,
+    @SerialName("chat_mode")
+    public val chatMode: StartTeamRunRequestInputVariant2chatMode? = null,
+)
+
+/**
+ * `StartTeamRunRequestInputVariant2chatMode` values.
  */
 ///
 /**
  * Values the API adds later decode unchanged, so a new server-side case never breaks an
  * existing client.
  */
-@Serializable(with = StartTeamRunRequestChatModeSerializer::class)
+@Serializable(with = StartTeamRunRequestInputVariant2chatModeSerializer::class)
 @JvmInline
-public value class StartTeamRunRequestChatMode(public val value: String) {
+public value class StartTeamRunRequestInputVariant2chatMode(public val value: String) {
     override fun toString(): String = value
 
     public companion object {
-        public val PLAN: StartTeamRunRequestChatMode = StartTeamRunRequestChatMode("plan")
-        public val CHAT: StartTeamRunRequestChatMode = StartTeamRunRequestChatMode("chat")
+        public val PLAN: StartTeamRunRequestInputVariant2chatMode = StartTeamRunRequestInputVariant2chatMode("plan")
+        public val CHAT: StartTeamRunRequestInputVariant2chatMode = StartTeamRunRequestInputVariant2chatMode("chat")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<StartTeamRunRequestChatMode> = listOf(PLAN, CHAT)
+        public val knownValues: List<StartTeamRunRequestInputVariant2chatMode> = listOf(PLAN, CHAT)
     }
 }
 
-public object StartTeamRunRequestChatModeSerializer : KSerializer<StartTeamRunRequestChatMode> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.StartTeamRunRequestChatMode", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: StartTeamRunRequestChatMode): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): StartTeamRunRequestChatMode = StartTeamRunRequestChatMode(decoder.decodeString())
+public object StartTeamRunRequestInputVariant2chatModeSerializer : KSerializer<StartTeamRunRequestInputVariant2chatMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.StartTeamRunRequestInputVariant2chatMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: StartTeamRunRequestInputVariant2chatMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): StartTeamRunRequestInputVariant2chatMode = StartTeamRunRequestInputVariant2chatMode(decoder.decodeString())
 }
+
+/**
+ * `StartTeamRunResponse` model.
+ */
+@Serializable
+public data class StartTeamRunResponse(
+    @SerialName("team_run_id")
+    public val teamRunId: String,
+)
 
 /**
  * `SubmitFeedbackRequest` model.

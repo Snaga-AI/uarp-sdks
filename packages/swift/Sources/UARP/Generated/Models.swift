@@ -6483,14 +6483,17 @@ public struct DeleteTeamGraphNodeResponse: Codable, Hashable, Sendable {
 
 /// `DeleteTeamResponse` model.
 public struct DeleteTeamResponse: Codable, Hashable, Sendable {
-    public var deleted: Bool?
+    public var deleted: Bool
+    public var teamId: String
 
-    public init(deleted: Bool? = nil) {
+    public init(deleted: Bool, teamId: String) {
         self.deleted = deleted
+        self.teamId = teamId
     }
 
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
+        case teamId = "team_id"
     }
 }
 
@@ -9282,32 +9285,55 @@ public struct GetUsageTimeseriesResponseDataItem: Codable, Hashable, Sendable {
 
 /// `Goal` model.
 public struct Goal: Codable, Hashable, Sendable {
-    public var id: String
+    public var goalId: String
+    public var tenantId: String
     public var agentId: String
     public var title: String?
     public var `description`: String?
+    public var rationale: String?
+    /// How the goal squares with the constitution — written by the formulating agent.
+    public var alignmentJustification: String?
+    public var expectedImpact: String?
+    public var resourceEstimateUsd: Double?
     public var status: GoalStatus
-    public var targetDate: String?
-    public var createdAt: String?
+    /// Set once the goal reaches a vote. Absent before that.
+    public var proposalId: String?
+    public var constitutionCheckPassed: Bool?
+    public var createdAt: String
+    public var updatedAt: String?
 
-    public init(id: String, agentId: String, title: String? = nil, `description`: String? = nil, status: GoalStatus, targetDate: String? = nil, createdAt: String? = nil) {
-        self.id = id
+    public init(goalId: String, tenantId: String, agentId: String, title: String? = nil, `description`: String? = nil, rationale: String? = nil, alignmentJustification: String? = nil, expectedImpact: String? = nil, resourceEstimateUsd: Double? = nil, status: GoalStatus, proposalId: String? = nil, constitutionCheckPassed: Bool? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.goalId = goalId
+        self.tenantId = tenantId
         self.agentId = agentId
         self.title = title
         self.`description` = `description`
+        self.rationale = rationale
+        self.alignmentJustification = alignmentJustification
+        self.expectedImpact = expectedImpact
+        self.resourceEstimateUsd = resourceEstimateUsd
         self.status = status
-        self.targetDate = targetDate
+        self.proposalId = proposalId
+        self.constitutionCheckPassed = constitutionCheckPassed
         self.createdAt = createdAt
+        self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case id = "id"
+        case goalId = "goal_id"
+        case tenantId = "tenant_id"
         case agentId = "agent_id"
         case title = "title"
         case `description` = "description"
+        case rationale = "rationale"
+        case alignmentJustification = "alignment_justification"
+        case expectedImpact = "expected_impact"
+        case resourceEstimateUsd = "resource_estimate_usd"
         case status = "status"
-        case targetDate = "target_date"
+        case proposalId = "proposal_id"
+        case constitutionCheckPassed = "constitution_check_passed"
         case createdAt = "created_at"
+        case updatedAt = "updated_at"
     }
 }
 
@@ -9327,14 +9353,16 @@ public struct GoalStatus: RawRepresentable, Codable, Hashable, Sendable, Express
         try container.encode(rawValue)
     }
 
-    public static let draft = GoalStatus(rawValue: "draft")
+    public static let proposed = GoalStatus(rawValue: "proposed")
+    public static let checking = GoalStatus(rawValue: "checking")
+    public static let voting = GoalStatus(rawValue: "voting")
+    public static let approved = GoalStatus(rawValue: "approved")
+    public static let rejected = GoalStatus(rawValue: "rejected")
     public static let active = GoalStatus(rawValue: "active")
-    public static let achieved = GoalStatus(rawValue: "achieved")
-    public static let abandoned = GoalStatus(rawValue: "abandoned")
-    public static let expired = GoalStatus(rawValue: "expired")
+    public static let completed = GoalStatus(rawValue: "completed")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [GoalStatus] = [.draft, .active, .achieved, .abandoned, .expired]
+    public static let knownValues: [GoalStatus] = [.proposed, .checking, .voting, .approved, .rejected, .active, .completed]
 }
 
 /// `GoogleOneTapAuthRequest` model.
@@ -9688,36 +9716,65 @@ public struct ImportAdminConfigRequest: Codable, Hashable, Sendable {
 /// Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting →
 /// sandbox_testing → approved → applied | rejected at any step).
 public struct ImprovementProposal: Codable, Hashable, Sendable {
+    public var proposalId: String
+    public var tenantId: String
     public var agentId: String
-    public var version: String
-    public var type: String
-    public var diff: JSONObject?
+    /// Was declared `string` here while the record has always carried a number.
+    public var version: Int
+    public var type: ImprovementProposalType
+    /// The proposal's heading. Undeclared until now, so a client built from this document rendered
+    /// the card without one.
+    public var title: String?
+    public var `description`: String?
     public var rationale: String?
+    /// The failed runs that prompted the proposal.
+    public var failedRunIds: [String]?
+    /// The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+    /// the documented name found nothing and showed "no diff" over a proposal that had one.
+    public var changes: JSONObject?
+    public var baselineSuccessRate: Double?
+    /// Present only after the sandbox stage has run.
+    public var sandboxSuccessRate: Double?
     public var status: ImprovementProposalStatus
-    public var submittedBy: String?
-    public var createdAt: String?
+    /// Set once the proposal reaches a vote.
+    public var voteProposalId: String?
+    public var createdAt: String
     public var updatedAt: String?
 
-    public init(agentId: String, version: String, type: String, diff: JSONObject? = nil, rationale: String? = nil, status: ImprovementProposalStatus, submittedBy: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
+    public init(proposalId: String, tenantId: String, agentId: String, version: Int, type: ImprovementProposalType, title: String? = nil, `description`: String? = nil, rationale: String? = nil, failedRunIds: [String]? = nil, changes: JSONObject? = nil, baselineSuccessRate: Double? = nil, sandboxSuccessRate: Double? = nil, status: ImprovementProposalStatus, voteProposalId: String? = nil, createdAt: String, updatedAt: String? = nil) {
+        self.proposalId = proposalId
+        self.tenantId = tenantId
         self.agentId = agentId
         self.version = version
         self.type = type
-        self.diff = diff
+        self.title = title
+        self.`description` = `description`
         self.rationale = rationale
+        self.failedRunIds = failedRunIds
+        self.changes = changes
+        self.baselineSuccessRate = baselineSuccessRate
+        self.sandboxSuccessRate = sandboxSuccessRate
         self.status = status
-        self.submittedBy = submittedBy
+        self.voteProposalId = voteProposalId
         self.createdAt = createdAt
         self.updatedAt = updatedAt
     }
 
     private enum CodingKeys: String, CodingKey {
+        case proposalId = "proposal_id"
+        case tenantId = "tenant_id"
         case agentId = "agent_id"
         case version = "version"
         case type = "type"
-        case diff = "diff"
+        case title = "title"
+        case `description` = "description"
         case rationale = "rationale"
+        case failedRunIds = "failed_run_ids"
+        case changes = "changes"
+        case baselineSuccessRate = "baseline_success_rate"
+        case sandboxSuccessRate = "sandbox_success_rate"
         case status = "status"
-        case submittedBy = "submitted_by"
+        case voteProposalId = "vote_proposal_id"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
     }
@@ -9749,6 +9806,33 @@ public struct ImprovementProposalStatus: RawRepresentable, Codable, Hashable, Se
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ImprovementProposalStatus] = [.proposed, .arbiterReview, .voting, .sandboxTesting, .approved, .applied, .rejected]
+}
+
+/// `ImprovementProposalType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ImprovementProposalType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let promptChange = ImprovementProposalType(rawValue: "prompt_change")
+    public static let toolAddition = ImprovementProposalType(rawValue: "tool_addition")
+    public static let toolRemoval = ImprovementProposalType(rawValue: "tool_removal")
+    public static let modelChange = ImprovementProposalType(rawValue: "model_change")
+    public static let parameterTuning = ImprovementProposalType(rawValue: "parameter_tuning")
+    public static let skillAddition = ImprovementProposalType(rawValue: "skill_addition")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ImprovementProposalType] = [.promptChange, .toolAddition, .toolRemoval, .modelChange, .parameterTuning, .skillAddition]
 }
 
 /// One run waiting on a person, with what it is actually asking rather than just its status.
@@ -12029,18 +12113,26 @@ public struct ListTeamGraphNodesResponse: Codable, Hashable, Sendable {
 public struct ListTeamRunsResponse: Codable, Hashable, Sendable {
     public var teamId: String?
     public var runs: [TeamRunSummary]?
+    /// Rows in THIS page, not the total across pages.
     public var total: Int?
+    /// Pass back as `cursor` to continue. Absent on the last page.
+    public var cursor: String?
+    public var hasMore: Bool?
 
-    public init(teamId: String? = nil, runs: [TeamRunSummary]? = nil, total: Int? = nil) {
+    public init(teamId: String? = nil, runs: [TeamRunSummary]? = nil, total: Int? = nil, cursor: String? = nil, hasMore: Bool? = nil) {
         self.teamId = teamId
         self.runs = runs
         self.total = total
+        self.cursor = cursor
+        self.hasMore = hasMore
     }
 
     private enum CodingKeys: String, CodingKey {
         case teamId = "team_id"
         case runs = "runs"
         case total = "total"
+        case cursor = "cursor"
+        case hasMore = "has_more"
     }
 }
 
@@ -18538,9 +18630,9 @@ public struct StartSquadRunRequest: Codable, Hashable, Sendable {
     public var input: JSONObject?
     public var addressedTo: [String]?
     public var message: String?
-    public var chatMode: StartTeamRunRequestChatMode?
+    public var chatMode: StartTeamRunRequestInputVariant2chatMode?
 
-    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestChatMode? = nil) {
+    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestInputVariant2chatMode? = nil) {
         self.input = input
         self.addressedTo = addressedTo
         self.message = message
@@ -18555,33 +18647,53 @@ public struct StartSquadRunRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `StartTeamRunRequest` model.
+/// `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+/// handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+/// from this document had its addressing and its chat mode dropped with no error at all: the
+/// run started, it just was not the run that was asked for. They belong inside `input`, which
+/// is where the handler reads them.
 public struct StartTeamRunRequest: Codable, Hashable, Sendable {
-    public var input: JSONObject?
-    public var addressedTo: [String]?
-    public var message: String?
-    public var chatMode: StartTeamRunRequestChatMode?
+    /// The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+    /// absent, @mentions in `message` are parsed for the same purpose.
+    public var input: JSONValue
+    /// Accepted by the handler and undeclared here until now — the drift ran both ways.
+    public var metadata: JSONObject?
 
-    public init(input: JSONObject? = nil, addressedTo: [String]? = nil, message: String? = nil, chatMode: StartTeamRunRequestChatMode? = nil) {
+    public init(input: JSONValue, metadata: JSONObject? = nil) {
         self.input = input
-        self.addressedTo = addressedTo
-        self.message = message
-        self.chatMode = chatMode
+        self.metadata = metadata
     }
 
     private enum CodingKeys: String, CodingKey {
         case input = "input"
-        case addressedTo = "addressed_to"
+        case metadata = "metadata"
+    }
+}
+
+/// `StartTeamRunRequestInputVariant2` model.
+public struct StartTeamRunRequestInputVariant2: Codable, Hashable, Sendable {
+    public var message: String?
+    public var addressedTo: [String]?
+    public var chatMode: StartTeamRunRequestInputVariant2chatMode?
+
+    public init(message: String? = nil, addressedTo: [String]? = nil, chatMode: StartTeamRunRequestInputVariant2chatMode? = nil) {
+        self.message = message
+        self.addressedTo = addressedTo
+        self.chatMode = chatMode
+    }
+
+    private enum CodingKeys: String, CodingKey {
         case message = "message"
+        case addressedTo = "addressed_to"
         case chatMode = "chat_mode"
     }
 }
 
-/// `StartTeamRunRequestChatMode` values.
+/// `StartTeamRunRequestInputVariant2chatMode` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
-public struct StartTeamRunRequestChatMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+public struct StartTeamRunRequestInputVariant2chatMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: String) { self.rawValue = value }
@@ -18593,11 +18705,24 @@ public struct StartTeamRunRequestChatMode: RawRepresentable, Codable, Hashable, 
         try container.encode(rawValue)
     }
 
-    public static let plan = StartTeamRunRequestChatMode(rawValue: "plan")
-    public static let chat = StartTeamRunRequestChatMode(rawValue: "chat")
+    public static let plan = StartTeamRunRequestInputVariant2chatMode(rawValue: "plan")
+    public static let chat = StartTeamRunRequestInputVariant2chatMode(rawValue: "chat")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [StartTeamRunRequestChatMode] = [.plan, .chat]
+    public static let knownValues: [StartTeamRunRequestInputVariant2chatMode] = [.plan, .chat]
+}
+
+/// `StartTeamRunResponse` model.
+public struct StartTeamRunResponse: Codable, Hashable, Sendable {
+    public var teamRunId: String
+
+    public init(teamRunId: String) {
+        self.teamRunId = teamRunId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case teamRunId = "team_run_id"
+    }
 }
 
 /// `SubmitFeedbackRequest` model.

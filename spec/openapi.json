@@ -2029,7 +2029,10 @@
             "Goal": {
                 "type": "object",
                 "properties": {
-                    "id": {
+                    "goal_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
                         "type": "string"
                     },
                     "agent_id": {
@@ -2041,32 +2044,53 @@
                     "description": {
                         "type": "string"
                     },
+                    "rationale": {
+                        "type": "string"
+                    },
+                    "alignment_justification": {
+                        "type": "string",
+                        "description": "How the goal squares with the constitution — written by the formulating agent."
+                    },
+                    "expected_impact": {
+                        "type": "string"
+                    },
+                    "resource_estimate_usd": {
+                        "type": "number"
+                    },
                     "status": {
                         "type": "string",
                         "enum": [
-                            "draft",
+                            "proposed",
+                            "checking",
+                            "voting",
+                            "approved",
+                            "rejected",
                             "active",
-                            "achieved",
-                            "abandoned",
-                            "expired"
+                            "completed"
                         ]
                     },
-                    "target_date": {
-                        "type": [
-                            "string",
-                            "null"
-                        ],
-                        "format": "date-time"
+                    "proposal_id": {
+                        "type": "string",
+                        "description": "Set once the goal reaches a vote. Absent before that."
+                    },
+                    "constitution_check_passed": {
+                        "type": "boolean"
                     },
                     "created_at": {
+                        "type": "string",
+                        "format": "date-time"
+                    },
+                    "updated_at": {
                         "type": "string",
                         "format": "date-time"
                     }
                 },
                 "required": [
-                    "id",
+                    "goal_id",
+                    "tenant_id",
                     "agent_id",
-                    "status"
+                    "status",
+                    "created_at"
                 ]
             },
             "UsageSummary": {
@@ -4708,21 +4732,58 @@
                 "type": "object",
                 "description": "Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting → sandbox_testing → approved → applied | rejected at any step).",
                 "properties": {
+                    "proposal_id": {
+                        "type": "string"
+                    },
+                    "tenant_id": {
+                        "type": "string"
+                    },
                     "agent_id": {
                         "type": "string"
                     },
                     "version": {
-                        "type": "string"
+                        "type": "integer",
+                        "description": "Was declared `string` here while the record has always carried a number."
                     },
                     "type": {
-                        "type": "string"
+                        "type": "string",
+                        "enum": [
+                            "prompt_change",
+                            "tool_addition",
+                            "tool_removal",
+                            "model_change",
+                            "parameter_tuning",
+                            "skill_addition"
+                        ]
                     },
-                    "diff": {
-                        "type": "object",
-                        "additionalProperties": true
+                    "title": {
+                        "type": "string",
+                        "description": "The proposal's heading. Undeclared until now, so a client built from this document rendered the card without one."
+                    },
+                    "description": {
+                        "type": "string"
                     },
                     "rationale": {
                         "type": "string"
+                    },
+                    "failed_run_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "The failed runs that prompted the proposal."
+                    },
+                    "changes": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading the documented name found nothing and showed \"no diff\" over a proposal that had one."
+                    },
+                    "baseline_success_rate": {
+                        "type": "number"
+                    },
+                    "sandbox_success_rate": {
+                        "type": "number",
+                        "description": "Present only after the sandbox stage has run."
                     },
                     "status": {
                         "type": "string",
@@ -4736,8 +4797,9 @@
                             "rejected"
                         ]
                     },
-                    "submitted_by": {
-                        "type": "string"
+                    "vote_proposal_id": {
+                        "type": "string",
+                        "description": "Set once the proposal reaches a vote."
                     },
                     "created_at": {
                         "type": "string",
@@ -4749,10 +4811,13 @@
                     }
                 },
                 "required": [
+                    "proposal_id",
+                    "tenant_id",
                     "agent_id",
                     "version",
                     "type",
-                    "status"
+                    "status",
+                    "created_at"
                 ]
             },
             "BridgeAgentSummary": {
@@ -24810,8 +24875,15 @@
                                     "properties": {
                                         "deleted": {
                                             "type": "boolean"
+                                        },
+                                        "team_id": {
+                                            "type": "string"
                                         }
-                                    }
+                                    },
+                                    "required": [
+                                        "deleted",
+                                        "team_id"
+                                    ]
                                 }
                             }
                         },
@@ -33955,6 +34027,7 @@
                     "Teams"
                 ],
                 "summary": "List runs for a team",
+                "description": "`limit` and `cursor` were undeclared, so a client generated from this document saw the first fifty runs and had no way to page past them.",
                 "parameters": [
                     {
                         "name": "teamId",
@@ -33964,6 +34037,26 @@
                             "type": "string",
                             "format": "uuid"
                         }
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "minimum": 1,
+                            "maximum": 100,
+                            "default": 50
+                        }
+                    },
+                    {
+                        "name": "cursor",
+                        "in": "query",
+                        "required": false,
+                        "schema": {
+                            "type": "string"
+                        },
+                        "description": "From a previous response's `cursor`."
                     }
                 ],
                 "responses": {
@@ -33984,7 +34077,15 @@
                                             }
                                         },
                                         "total": {
-                                            "type": "integer"
+                                            "type": "integer",
+                                            "description": "Rows in THIS page, not the total across pages."
+                                        },
+                                        "cursor": {
+                                            "type": "string",
+                                            "description": "Pass back as `cursor` to continue. Absent on the last page."
+                                        },
+                                        "has_more": {
+                                            "type": "boolean"
                                         }
                                     }
                                 }
@@ -34052,27 +34153,46 @@
                         "application/json": {
                             "schema": {
                                 "type": "object",
+                                "description": "`addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written from this document had its addressing and its chat mode dropped with no error at all: the run started, it just was not the run that was asked for. They belong inside `input`, which is where the handler reads them.",
                                 "properties": {
                                     "input": {
-                                        "type": "object"
-                                    },
-                                    "addressed_to": {
-                                        "type": "array",
-                                        "items": {
-                                            "type": "string"
-                                        }
-                                    },
-                                    "message": {
-                                        "type": "string"
-                                    },
-                                    "chat_mode": {
-                                        "type": "string",
-                                        "enum": [
-                                            "plan",
-                                            "chat"
+                                        "description": "The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers; absent, @mentions in `message` are parsed for the same purpose.",
+                                        "oneOf": [
+                                            {
+                                                "type": "string"
+                                            },
+                                            {
+                                                "type": "object",
+                                                "properties": {
+                                                    "message": {
+                                                        "type": "string"
+                                                    },
+                                                    "addressed_to": {
+                                                        "type": "array",
+                                                        "items": {
+                                                            "type": "string"
+                                                        }
+                                                    },
+                                                    "chat_mode": {
+                                                        "type": "string",
+                                                        "enum": [
+                                                            "plan",
+                                                            "chat"
+                                                        ]
+                                                    }
+                                                }
+                                            }
                                         ]
+                                    },
+                                    "metadata": {
+                                        "type": "object",
+                                        "additionalProperties": true,
+                                        "description": "Accepted by the handler and undeclared here until now — the drift ran both ways."
                                     }
-                                }
+                                },
+                                "required": [
+                                    "input"
+                                ]
                             }
                         }
                     }
@@ -34083,7 +34203,15 @@
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "type": "object"
+                                    "type": "object",
+                                    "properties": {
+                                        "team_run_id": {
+                                            "type": "string"
+                                        }
+                                    },
+                                    "required": [
+                                        "team_run_id"
+                                    ]
                                 }
                             }
                         },
@@ -34137,13 +34265,14 @@
                 ]
             }
         },
-        "/api/v1/teams/{teamId}/runs/{runId}/events": {
+        "/api/v1/teams/{teamId}/runs/{teamRunId}/events": {
             "get": {
                 "operationId": "streamTeamRunEvents",
                 "tags": [
                     "Teams"
                 ],
                 "summary": "Stream team run events (SSE)",
+                "description": "The path variable was named `runId` here while every sibling under this prefix — and the handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same value, two names, so a generated client offered both.",
                 "parameters": [
                     {
                         "name": "teamId",
@@ -34155,7 +34284,7 @@
                         }
                     },
                     {
-                        "name": "runId",
+                        "name": "teamRunId",
                         "in": "path",
                         "required": true,
                         "schema": {

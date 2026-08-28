@@ -250,15 +250,37 @@ public struct TeamsAPI: Sendable {
 
     /// List runs for a team
     ///
+    /// `limit` and `cursor` were undeclared, so a client generated from this document saw the first
+    /// fifty runs and had no way to page past them.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:read`.
-    public func listTeamRuns(teamId: String, options: RequestOptions = .init()) async throws -> ListTeamRunsResponse {
+    public func listTeamRuns(teamId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListTeamRunsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/runs",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listTeamRuns`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    public func listTeamRunsAll(teamId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<TeamRunSummary, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listTeamRuns(teamId: teamId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.runs ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Start a team run
@@ -266,7 +288,7 @@ public struct TeamsAPI: Sendable {
     /// `POST /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:write`.
-    public func startTeamRun(teamId: String, body: StartTeamRunRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func startTeamRun(teamId: String, body: StartTeamRunRequest, options: RequestOptions = .init()) async throws -> StartTeamRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/runs",
@@ -298,15 +320,19 @@ public struct TeamsAPI: Sendable {
 
     /// Stream team run events (SSE)
     ///
-    /// `GET /api/v1/teams/{teamId}/runs/{runId}/events`
+    /// The path variable was named `runId` here while every sibling under this prefix — and the
+    /// handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
+    /// value, two names, so a generated client offered both.
+    ///
+    /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
-    public func streamTeamRunEvents(teamId: String, runId: String, options: RequestOptions = .init()) -> EventStream {
+    public func streamTeamRunEvents(teamId: String, teamRunId: String, options: RequestOptions = .init()) -> EventStream {
         return client.sendStream(RequestSpec(
             method: "GET",
-            path: "/api/v1/teams/\(encodePathSegment(teamId))/runs/\(encodePathSegment(runId))/events",
+            path: "/api/v1/teams/\(encodePathSegment(teamId))/runs/\(encodePathSegment(teamRunId))/events",
             options: options
         ))
     }

@@ -322,12 +322,33 @@ test('parses the production document into the expected shape', () => {
   // a 200. The same refresh gave `downloadWorkspaceFile` a media type, which
   // turns its return from `JsonValue` into `Blob`: it was running binary
   // responses through a JSON parser and quietly corrupting png and pdf.
-  assert.equal(spec.types.length, 946);
+  // 946 -> 949 on 2026-08-28: four added, one removed, from correcting two
+  // governance schemas and the team-run request against the handlers.
+  // `ImprovementProposalType` — `type` was a bare string beside a `version`
+  // declared as a string over a number, `diff` over a field stored as
+  // `changes`, and no `title` or `description` at all, so a card generated
+  // from this document came out untitled and reading "no diff" over changes
+  // that were there. `StartTeamRunResponse` — the 202 was an empty object and
+  // answers `{team_run_id}`. `StartTeamRunRequestInputVariant2` and its
+  // `chatMode`, replacing the top-level `StartTeamRunRequestChatMode` that is
+  // the removal: `addressed_to`, `message` and `chat_mode` were declared at
+  // the top level of the body, and the handler's schema takes `input` and
+  // `metadata` with `.strip()`. So the addressing and the chat mode were
+  // discarded with no error — the run started, it just was not the run that
+  // was asked for. All three live inside `input`, which is where the handler
+  // reads them.
+  assert.equal(spec.types.length, 949);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   assert.equal(ops.filter((o) => o.sse).length, 15);
   // 14 -> 15: `GET /training-jobs`.
-  assert.equal(ops.filter((o) => o.pagination).length, 15);
+  // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
+  // (default 50, ceiling 100) and `cursor` all along and neither was
+  // declared, so a client generated from this document saw the first fifty
+  // runs and had no way to reach the rest. This count going up is the proof
+  // the declaration took: paging is detected from the parameters, so the
+  // operation could not have been counted here before they existed.
+  assert.equal(ops.filter((o) => o.pagination).length, 16);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.

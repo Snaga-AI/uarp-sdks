@@ -5023,8 +5023,8 @@ pub struct DeleteTeamGraphNodeResponse {
 /// `DeleteTeamResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteTeamResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub deleted: Option<bool>,
+    pub deleted: bool,
+    pub team_id: String,
 }
 
 /// `DeleteUserResponse` model.
@@ -7234,33 +7234,51 @@ pub struct GetUsageTimeseriesResponseDataItem {
 /// `Goal` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Goal {
-    pub id: String,
+    pub goal_id: String,
+    pub tenant_id: String,
     pub agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rationale: Option<String>,
+    /// How the goal squares with the constitution — written by the formulating agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub alignment_justification: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_impact: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_estimate_usd: Option<f64>,
     pub status: GoalStatus,
+    /// Set once the goal reaches a vote. Absent before that.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub target_date: Option<String>,
+    pub proposal_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    pub constitution_check_passed: Option<bool>,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
 }
 
 /// `GoalStatus` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GoalStatus {
     #[default]
-    #[serde(rename = "draft")]
-    Draft,
+    #[serde(rename = "proposed")]
+    Proposed,
+    #[serde(rename = "checking")]
+    Checking,
+    #[serde(rename = "voting")]
+    Voting,
+    #[serde(rename = "approved")]
+    Approved,
+    #[serde(rename = "rejected")]
+    Rejected,
     #[serde(rename = "active")]
     Active,
-    #[serde(rename = "achieved")]
-    Achieved,
-    #[serde(rename = "abandoned")]
-    Abandoned,
-    #[serde(rename = "expired")]
-    Expired,
+    #[serde(rename = "completed")]
+    Completed,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -7270,11 +7288,13 @@ impl GoalStatus {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Draft => "draft",
+            Self::Proposed => "proposed",
+            Self::Checking => "checking",
+            Self::Voting => "voting",
+            Self::Approved => "approved",
+            Self::Rejected => "rejected",
             Self::Active => "active",
-            Self::Achieved => "achieved",
-            Self::Abandoned => "abandoned",
-            Self::Expired => "expired",
+            Self::Completed => "completed",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -7289,11 +7309,13 @@ impl std::fmt::Display for GoalStatus {
 impl From<&str> for GoalStatus {
     fn from(value: &str) -> Self {
         match value {
-            "draft" => Self::Draft,
+            "proposed" => Self::Proposed,
+            "checking" => Self::Checking,
+            "voting" => Self::Voting,
+            "approved" => Self::Approved,
+            "rejected" => Self::Rejected,
             "active" => Self::Active,
-            "achieved" => Self::Achieved,
-            "abandoned" => Self::Abandoned,
-            "expired" => Self::Expired,
+            "completed" => Self::Completed,
             other => Self::Other(other.to_string()),
         }
     }
@@ -7573,18 +7595,37 @@ pub struct ImportAdminConfigRequest {
 /// sandbox_testing → approved → applied | rejected at any step).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ImprovementProposal {
+    pub proposal_id: String,
+    pub tenant_id: String,
     pub agent_id: String,
-    pub version: String,
-    pub r#type: String,
+    /// Was declared `string` here while the record has always carried a number.
+    pub version: i64,
+    pub r#type: ImprovementProposalType,
+    /// The proposal's heading. Undeclared until now, so a client built from this document rendered
+    /// the card without one.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub diff: Option<serde_json::Map<String, serde_json::Value>>,
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
+    /// The failed runs that prompted the proposal.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failed_run_ids: Option<Vec<String>>,
+    /// The proposed changes. Declared as `diff` here and stored as `changes`, so a client reading
+    /// the documented name found nothing and showed "no diff" over a proposal that had one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changes: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub baseline_success_rate: Option<f64>,
+    /// Present only after the sandbox stage has run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub sandbox_success_rate: Option<f64>,
     pub status: ImprovementProposalStatus,
+    /// Set once the proposal reaches a vote.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub submitted_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
+    pub vote_proposal_id: Option<String>,
+    pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
 }
@@ -7644,6 +7685,62 @@ impl From<&str> for ImprovementProposalStatus {
             "approved" => Self::Approved,
             "applied" => Self::Applied,
             "rejected" => Self::Rejected,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ImprovementProposalType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ImprovementProposalType {
+    #[default]
+    #[serde(rename = "prompt_change")]
+    PromptChange,
+    #[serde(rename = "tool_addition")]
+    ToolAddition,
+    #[serde(rename = "tool_removal")]
+    ToolRemoval,
+    #[serde(rename = "model_change")]
+    ModelChange,
+    #[serde(rename = "parameter_tuning")]
+    ParameterTuning,
+    #[serde(rename = "skill_addition")]
+    SkillAddition,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ImprovementProposalType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::PromptChange => "prompt_change",
+            Self::ToolAddition => "tool_addition",
+            Self::ToolRemoval => "tool_removal",
+            Self::ModelChange => "model_change",
+            Self::ParameterTuning => "parameter_tuning",
+            Self::SkillAddition => "skill_addition",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ImprovementProposalType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ImprovementProposalType {
+    fn from(value: &str) -> Self {
+        match value {
+            "prompt_change" => Self::PromptChange,
+            "tool_addition" => Self::ToolAddition,
+            "tool_removal" => Self::ToolRemoval,
+            "model_change" => Self::ModelChange,
+            "parameter_tuning" => Self::ParameterTuning,
+            "skill_addition" => Self::SkillAddition,
             other => Self::Other(other.to_string()),
         }
     }
@@ -9147,8 +9244,14 @@ pub struct ListTeamRunsResponse {
     pub team_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runs: Option<Vec<TeamRunSummary>>,
+    /// Rows in THIS page, not the total across pages.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
+    /// Pass back as `cursor` to continue. Absent on the last page.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_more: Option<bool>,
 }
 
 /// `ListTeamsResponse` model.
@@ -14185,25 +14288,38 @@ pub struct StartSquadRunRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub chat_mode: Option<StartTeamRunRequestChatMode>,
+    pub chat_mode: Option<StartTeamRunRequestInputVariant2chatMode>,
 }
 
-/// `StartTeamRunRequest` model.
+/// `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
+/// handler's schema accepts only `input` and `metadata`, with `.strip()`. So a client written
+/// from this document had its addressing and its chat mode dropped with no error at all: the
+/// run started, it just was not the run that was asked for. They belong inside `input`, which
+/// is where the handler reads them.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct StartTeamRunRequest {
+    /// The turn. A bare string is expanded to `{ message }`. `addressed_to` selects who answers;
+    /// absent, @mentions in `message` are parsed for the same purpose.
+    pub input: serde_json::Value,
+    /// Accepted by the handler and undeclared here until now — the drift ran both ways.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub input: Option<serde_json::Map<String, serde_json::Value>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub addressed_to: Option<Vec<String>>,
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `StartTeamRunRequestInputVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StartTeamRunRequestInputVariant2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub chat_mode: Option<StartTeamRunRequestChatMode>,
+    pub addressed_to: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub chat_mode: Option<StartTeamRunRequestInputVariant2chatMode>,
 }
 
-/// `StartTeamRunRequestChatMode` enumeration.
+/// `StartTeamRunRequestInputVariant2chatMode` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum StartTeamRunRequestChatMode {
+pub enum StartTeamRunRequestInputVariant2chatMode {
     #[default]
     #[serde(rename = "plan")]
     Plan,
@@ -14214,7 +14330,7 @@ pub enum StartTeamRunRequestChatMode {
     Other(String),
 }
 
-impl StartTeamRunRequestChatMode {
+impl StartTeamRunRequestInputVariant2chatMode {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
@@ -14225,13 +14341,13 @@ impl StartTeamRunRequestChatMode {
     }
 }
 
-impl std::fmt::Display for StartTeamRunRequestChatMode {
+impl std::fmt::Display for StartTeamRunRequestInputVariant2chatMode {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl From<&str> for StartTeamRunRequestChatMode {
+impl From<&str> for StartTeamRunRequestInputVariant2chatMode {
     fn from(value: &str) -> Self {
         match value {
             "plan" => Self::Plan,
@@ -14239,6 +14355,12 @@ impl From<&str> for StartTeamRunRequestChatMode {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `StartTeamRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StartTeamRunResponse {
+    pub team_run_id: String,
 }
 
 /// `SubmitFeedbackRequest` model.
