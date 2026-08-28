@@ -315,13 +315,23 @@ test('parses the production document into the expected shape', () => {
   // string beside a new `plan_id`. Both are source-breaking for anyone who
   // imported the NAME, which nothing else in this refresh is — operations,
   // parameters and operationIds all only grew.
-  assert.equal(spec.types.length, 945);
+  // 945 -> 946 on 2026-08-28: `UploadWorkspaceFileRequest`. `PUT
+  // /workspaces/{id}/files` declared no request body at all, so the emitted
+  // client had no parameter to put a file in — it sent nothing, the route's
+  // `arrayBuffer()` returned zero bytes, and the file was written EMPTY under
+  // a 200. The same refresh gave `downloadWorkspaceFile` a media type, which
+  // turns its return from `JsonValue` into `Blob`: it was running binary
+  // responses through a JSON parser and quietly corrupting png and pdf.
+  assert.equal(spec.types.length, 946);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   assert.equal(ops.filter((o) => o.sse).length, 15);
   // 14 -> 15: `GET /training-jobs`.
   assert.equal(ops.filter((o) => o.pagination).length, 15);
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 2);
+  // 2 -> 3:  joins the two that were already
+  // multipart. It is the reason for the type count above — a route that
+  // takes a file and said so nowhere.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 3);
 });
 
 test('every named type reference resolves', () => {

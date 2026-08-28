@@ -9616,7 +9616,7 @@
                             "paused",
                             "failed"
                         ],
-                        "description": "Counted over the whole scan, NOT over `items` — the counts stay honest when `limit` truncates the list.",
+                        "description": "Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is true these are a floor, not a total.",
                         "properties": {
                             "total": {
                                 "type": "integer"
@@ -9644,6 +9644,10 @@
                     "scanned": {
                         "type": "integer",
                         "description": "Run records inspected; the scan is capped."
+                    },
+                    "truncated": {
+                        "type": "boolean",
+                        "description": "The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot tell you this — the number only means something to a caller who already knows what the cap is."
                     }
                 }
             },
@@ -26752,6 +26756,32 @@
                         "$ref": "#/components/parameters/IdempotencyKey"
                     }
                 ],
+                "requestBody": {
+                    "required": true,
+                    "description": "The file bytes, either as `multipart/form-data` with a `file` part or as a raw body. NEVER JSON — `routes/workspaces.ts` reads `formData()` for multipart and `arrayBuffer()` for everything else. This block was missing entirely, and a client generated from the document sent no body at all: `arrayBuffer()` then returns zero bytes, the file is written EMPTY, and the response is 200. Nothing about that looks like a failure from the caller's side.",
+                    "content": {
+                        "multipart/form-data": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "file"
+                                ],
+                                "properties": {
+                                    "file": {
+                                        "type": "string",
+                                        "format": "binary"
+                                    }
+                                }
+                            }
+                        },
+                        "application/octet-stream": {
+                            "schema": {
+                                "type": "string",
+                                "format": "binary"
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "200": {
                         "description": "File uploaded",
@@ -26766,6 +26796,9 @@
                                 "$ref": "#/components/headers/XRateLimitReset"
                             }
                         }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
@@ -26782,6 +26815,16 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
@@ -26912,6 +26955,14 @@
                 "responses": {
                     "200": {
                         "description": "File content (binary)",
+                        "content": {
+                            "application/octet-stream": {
+                                "schema": {
+                                    "type": "string",
+                                    "format": "binary"
+                                }
+                            }
+                        },
                         "headers": {
                             "X-RateLimit-Limit": {
                                 "$ref": "#/components/headers/XRateLimitLimit"

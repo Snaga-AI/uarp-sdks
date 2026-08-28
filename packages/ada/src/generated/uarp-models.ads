@@ -14040,8 +14040,9 @@ package UARP.Models is
    function To_JSON (Model : Team_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Team_Update;
 
-   --  Counted over the whole scan, NOT over `items` - the counts stay honest when `limit`
-   --  truncates the list.
+   --  Counted over the whole scan, NOT over `items` - so `limit` truncating the list does not move
+   --  them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+   --  true these are a floor, not a total.
    type Tenant_Inbox_Counts is record
       Total : UARP.Types.Integer_Value := 0;
       Approval : UARP.Types.Integer_Value := 0;
@@ -14057,12 +14058,18 @@ package UARP.Models is
    --  they are asking.
    type Tenant_Inbox is record
       Generated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Counted over the whole scan, NOT over `items` - the counts stay honest when `limit`
-      --  truncates the list.
+      --  Counted over the whole scan, NOT over `items` - so `limit` truncating the list does not move
+      --  them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+      --  true these are a floor, not a total.
       Counts : UARP.Models.Tenant_Inbox_Counts;
       Items : UARP.Models.Inbox_Item_Vectors.Vector;
       --  Run records inspected; the scan is capped.
       Scanned : UARP.Types.Integer_Value := 0;
+      --  The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+      --  tell you this - the number only means something to a caller who already knows what the cap
+      --  is.
+      Has_Truncated : Boolean := False;
+      Truncated : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Tenant_Inbox) return UARP.JSON_Support.JSON_Value;
@@ -14825,6 +14832,14 @@ package UARP.Models is
 
    function To_JSON (Model : Upload_File_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upload_File_Request;
+
+   --  `UploadWorkspaceFileRequest` model.
+   type Upload_Workspace_File_Request is record
+      File : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Upload_Workspace_File_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upload_Workspace_File_Request;
 
    --  `UpsertNotificationTargetRequestConfigVariant1` model.
    type Upsert_Notification_Target_Request_Config_Variant1 is record

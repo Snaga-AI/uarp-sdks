@@ -15366,16 +15366,23 @@ impl From<&str> for TenantCustomDomainVerificationMethod {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantInbox {
     pub generated_at: String,
-    /// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-    /// truncates the list.
+    /// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+    /// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+    /// true these are a floor, not a total.
     pub counts: TenantInboxCounts,
     pub items: Vec<InboxItem>,
     /// Run records inspected; the scan is capped.
     pub scanned: i64,
+    /// The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+    /// tell you this — the number only means something to a caller who already knows what the cap
+    /// is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
 }
 
-/// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-/// truncates the list.
+/// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+/// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+/// true these are a floor, not a total.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantInboxCounts {
     pub total: i64,
@@ -16734,6 +16741,12 @@ pub struct UploadFileRequest {
     pub mime_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
+}
+
+/// `UploadWorkspaceFileRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UploadWorkspaceFileRequest {
+    pub file: FilePart,
 }
 
 /// `UpsertNotificationTargetRequest` model.

@@ -36944,6 +36944,9 @@ package body UARP.Models is
          JS.Set (Result, "items", Items);
       end;
       JS.Set (Result, "scanned", JS.JSON.Create (Model.Scanned));
+      if Model.Has_Truncated then
+         JS.Set (Result, "truncated", JS.JSON.Create (Model.Truncated));
+      end if;
       return Result;
    end To_JSON;
 
@@ -36967,6 +36970,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "scanned") then
          Result.Scanned := JS.As_Integer (JS.Get_Value (Node, "scanned"));
+      end if;
+      if JS.Present (Node, "truncated") then
+         Result.Has_Truncated := True;
+         Result.Truncated := JS.As_Boolean (JS.Get_Value (Node, "truncated"));
       end if;
       return Result;
    end From_JSON;
@@ -38923,6 +38930,22 @@ package body UARP.Models is
       if JS.Present (Node, "filename") then
          Result.Has_Filename := True;
          Result.Filename := JS.As_Text (JS.Get_Value (Node, "filename"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Upload_Workspace_File_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "file", JS.JSON.Create (Model.File));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Upload_Workspace_File_Request is
+      Result : Upload_Workspace_File_Request;
+   begin
+      if JS.Present (Node, "file") then
+         Result.File := JS.As_Text (JS.Get_Value (Node, "file"));
       end if;
       return Result;
    end From_JSON;

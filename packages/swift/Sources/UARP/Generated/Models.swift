@@ -19837,18 +19837,24 @@ public struct TenantCustomDomainVerificationMethod: RawRepresentable, Codable, H
 /// they are asking.
 public struct TenantInbox: Codable, Hashable, Sendable {
     public var generatedAt: String
-    /// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-    /// truncates the list.
+    /// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+    /// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+    /// true these are a floor, not a total.
     public var counts: TenantInboxCounts
     public var items: [InboxItem]
     /// Run records inspected; the scan is capped.
     public var scanned: Int
+    /// The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+    /// tell you this — the number only means something to a caller who already knows what the cap
+    /// is.
+    public var truncated: Bool?
 
-    public init(generatedAt: String, counts: TenantInboxCounts, items: [InboxItem], scanned: Int) {
+    public init(generatedAt: String, counts: TenantInboxCounts, items: [InboxItem], scanned: Int, truncated: Bool? = nil) {
         self.generatedAt = generatedAt
         self.counts = counts
         self.items = items
         self.scanned = scanned
+        self.truncated = truncated
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -19856,11 +19862,13 @@ public struct TenantInbox: Codable, Hashable, Sendable {
         case counts = "counts"
         case items = "items"
         case scanned = "scanned"
+        case truncated = "truncated"
     }
 }
 
-/// Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-/// truncates the list.
+/// Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+/// them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+/// true these are a floor, not a total.
 public struct TenantInboxCounts: Codable, Hashable, Sendable {
     public var total: Int
     public var approval: Int
@@ -21799,6 +21807,19 @@ public struct UploadFileRequest: Codable, Hashable, Sendable {
         case data = "data"
         case mimeType = "mime_type"
         case filename = "filename"
+    }
+}
+
+/// `UploadWorkspaceFileRequest` model.
+public struct UploadWorkspaceFileRequest: Codable, Hashable, Sendable {
+    public var file: FilePart
+
+    public init(file: FilePart) {
+        self.file = file
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case file = "file"
     }
 }
 

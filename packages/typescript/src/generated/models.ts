@@ -7219,8 +7219,9 @@ export const TENANT_CUSTOM_DOMAIN_VERIFICATION_METHOD_VALUES = ['cname'] as cons
 export interface TenantInbox {
   generated_at: string;
   /**
-   * Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
-   * truncates the list.
+   * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+   * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+   * true these are a floor, not a total.
    */
   counts: TenantInboxCounts;
   items: InboxItem[];
@@ -7228,11 +7229,18 @@ export interface TenantInbox {
    * Run records inspected; the scan is capped.
    */
   scanned: number;
+  /**
+   * The scan hit its cap, so `counts` is a floor rather than a total. `scanned` alone cannot
+   * tell you this — the number only means something to a caller who already knows what the cap
+   * is.
+   */
+  truncated?: boolean;
 }
 
 /**
- * Counted over the whole scan, NOT over `items` — the counts stay honest when `limit`
- * truncates the list.
+ * Counted over the whole scan, NOT over `items` — so `limit` truncating the list does not move
+ * them. The SCAN is capped too, though, and that cap they cannot see past: when `truncated` is
+ * true these are a floor, not a total.
  */
 export interface TenantInboxCounts {
   total: number;
@@ -7977,6 +7985,10 @@ export interface UploadFileRequest {
   data: BinaryInput;
   mime_type: string;
   filename?: string;
+}
+
+export interface UploadWorkspaceFileRequest {
+  file: BinaryInput;
 }
 
 export interface UpsertNotificationTargetRequest {

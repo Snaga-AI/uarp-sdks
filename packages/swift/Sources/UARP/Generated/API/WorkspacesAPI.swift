@@ -91,10 +91,10 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/workspaces/{workspaceId}/files/content`
     ///
     /// Required scopes: `files:read`.
-    public func downloadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func downloadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = .init()) async throws -> Data {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "path", value: path))
-        return try await client.send(RequestSpec(
+        return try await client.sendData(RequestSpec(
             method: "GET",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/content",
             query: query,
@@ -323,13 +323,16 @@ public struct WorkspacesAPI: Sendable {
     /// `PUT /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    public func uploadWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "path", value: path))
+        var parts: [MultipartPart] = []
+        parts.append(MultipartPart(name: "file", value: .file(body.file)))
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files",
             query: query,
+            body: .multipart(parts),
             idempotent: true,
             options: options
         ))
