@@ -223,7 +223,7 @@ impl SessionsApi {
     /// schedules it; explicit `null` files it in the backlog with no schedule at all.
     ///
     /// `POST /api/v1/todos`
-    pub async fn create_task(&self, body: &models::CreateTaskRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_task(&self, body: &serde_json::Value) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
                 method: Method::POST,

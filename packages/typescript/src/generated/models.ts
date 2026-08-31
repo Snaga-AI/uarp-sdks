@@ -815,10 +815,31 @@ export interface AgentUpdate {
   description?: string;
   prompts?: JsonObject;
   model?: AgentModelConfigInput;
+  /**
+   * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+   * leaves the agent with exactly that one — read the current value and send the full set. The
+   * incoming list is normalised and persisted whole; the previous list is consulted only to keep
+   * permission-grant timestamps stable for SPECs that were already installed.
+   */
   specs?: JsonObject[];
+  /**
+   * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+   * leaves the agent with exactly that one — read the current value and send the full set. 
+   */
   approval_required_tools?: string[];
+  /**
+   * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+   * leaves the agent with exactly that one — read the current value and send the full set. 
+   */
   auto_approve_tools?: string[];
   knowledge_base_id?: string | null;
+  /**
+   * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+   * leaves the agent with exactly that one — read the current value and send the full set. Note
+   * the legacy singular `knowledge_base_id` is UNIONED with this array within the same request —
+   * the server-side helper is named `mergeKbIds` for that reason, and merges the two REQUEST
+   * fields, never the request with what is stored.
+   */
   knowledge_base_ids?: string[];
   workspace_id?: string;
   visibility?: AgentUpdateVisibility;
@@ -968,6 +989,16 @@ export const APIKEY_SUMMARY_KIND_VALUES = ['session', 'api_key'] as const;
 export type APIKeySummaryStatus = 'active' | 'revoked';
 
 export const APIKEY_SUMMARY_STATUS_VALUES = ['active', 'revoked'] as const;
+
+export interface AppendCreativityEventRequest {
+  tool_name: string;
+  payload: JsonObject;
+}
+
+export interface AppendCreativityEventResponse {
+  event?: JsonObject;
+  total_events?: number;
+}
 
 export interface AppleNativeAuthRequest {
   /**
@@ -1767,12 +1798,6 @@ export interface CreateAgentFriaRequestRightsAssessedItem {
   mitigation?: string;
 }
 
-export interface CreateAgentIntegrationRequest {
-  connector_id: string;
-  name: string;
-  config?: JsonObject;
-}
-
 export interface CreateAgentRequest {
   name: string;
   model?: AgentModelConfigInput;
@@ -1846,6 +1871,24 @@ export interface CreateCommerceProductRequest {
   body_html?: string;
   shopify_product_id?: string;
   options?: JsonObject[];
+}
+
+export interface CreateCreativitySessionRequest {
+  mode: CreateCreativitySessionRequestMode;
+}
+
+export type CreateCreativitySessionRequestMode = '2d_engineering' | '2d_sketch' | '2d_artist' | '3d_composer' | '3d_generative';
+
+export const CREATE_CREATIVITY_SESSION_REQUEST_MODE_VALUES = ['2d_engineering', '2d_sketch', '2d_artist', '3d_composer', '3d_generative'] as const;
+
+export interface CreateCreativitySessionResponse {
+  session_id?: string;
+  agent_id?: string;
+  mode?: string;
+  ws_url?: string;
+  was_agent_created?: boolean;
+  was_agent_updated?: boolean;
+  was_session_created?: boolean;
 }
 
 export interface CreateDatasetRequest {
@@ -2102,28 +2145,6 @@ export interface CreateSessionTodoRequest {
   due_at?: string;
   assign_agent_id?: string;
   status?: string;
-}
-
-export interface CreateTaskRequest {
-  title: string;
-  instructions?: string;
-  due_at?: string | null;
-  recurrence?: CreateTaskRequestRecurrence;
-  require_confirmation?: boolean;
-  delivery?: CreateTaskRequestDelivery;
-  agent_id?: string;
-  agent_ids?: string[];
-  team_id?: string;
-}
-
-export interface CreateTaskRequestDelivery {
-  channels?: TodoDeliveryChannel[];
-  target?: string;
-}
-
-export interface CreateTaskRequestRecurrence {
-  cron?: string;
-  timezone?: string;
 }
 
 export interface CreateTrainingDepositResponseVariant1 {
@@ -2902,6 +2923,14 @@ export interface GetAppleAppSiteAssociationResponseWebcredentials {
   apps?: string[];
 }
 
+export interface GetBillingTrialResponse {
+  active?: boolean;
+  ends_at?: string | null;
+  days_left?: number | null;
+  recommended_plan?: string | null;
+  signals?: JsonObject | null;
+}
+
 export interface GetBridgeTaskApprovalResponse {
   approval_response?: JsonObject;
 }
@@ -3011,6 +3040,24 @@ export interface GetMaintenanceStateResponse {
 
 export interface GetMarkupConfigResponse {
   markup?: JsonObject;
+}
+
+export interface GetMediaUsageResponse {
+  plan?: string;
+  images?: GetMediaUsageResponseImages;
+  videos?: GetMediaUsageResponseVideos;
+}
+
+export interface GetMediaUsageResponseImages {
+  monthly_used?: number;
+  daily_used?: number;
+  monthly_limit?: number | null;
+  daily_limit?: number | null;
+}
+
+export interface GetMediaUsageResponseVideos {
+  monthly_used?: number;
+  monthly_limit?: number | null;
 }
 
 export interface GetMemoriesByEntityResponse {
@@ -3919,6 +3966,21 @@ export interface ListContentReportsResponse {
   items: ContentReport[];
   cursor: string | null;
   has_more: boolean;
+}
+
+export interface ListCreativityEventsResponse {
+  events?: JsonObject[];
+  /**
+   * High-water mark of the log. NOT events.length — the log is spliced by the eraser, so a
+   * length-derived cursor would resume past real events or re-deliver old ones.
+   */
+  latest_seq?: number;
+  scene_state?: JsonObject;
+}
+
+export interface ListCreativitySessionsResponse {
+  sessions?: JsonObject[];
+  total?: number;
 }
 
 export interface ListDataExplorerKeysResponse {
@@ -6084,6 +6146,10 @@ export interface ReplaceConstitutionResponse {
   version?: number;
 }
 
+export interface ReplaceCreativityEventPayloadRequest {
+  payload: JsonObject;
+}
+
 export interface ResendInviteResponse {
   ok?: boolean;
 }
@@ -6703,6 +6769,26 @@ export interface SetAdminLLMDefaultResponse {
 export interface SetAgentCapabilitiesResponse {
   status?: string;
   agent_id?: string;
+}
+
+export interface SetAgentIntegrationsRequest {
+  /**
+   * The COMPLETE set after the call. Non-string members are ignored; ids the tenant does not own
+   * come back under `diff.unknown` rather than failing the call.
+   */
+  integration_ids: string[];
+}
+
+export interface SetAgentIntegrationsResponse {
+  integrations: AgentIntegration[];
+  total: number;
+  diff: SetAgentIntegrationsResponseDiff;
+}
+
+export interface SetAgentIntegrationsResponseDiff {
+  assigned: string[];
+  unassigned: string[];
+  unknown: string[];
 }
 
 export interface SetAgentPermissionsResponse {
@@ -7956,6 +8042,15 @@ export interface TransferTenantOwnershipResponse {
   new_owner_id?: string;
 }
 
+/**
+ * Exactly one of the three. The handler trims each and acts on the first non-empty one.
+ */
+export interface UnassignWorkspaceRequest {
+  agent_id?: string;
+  team_id?: string;
+  company_id?: string;
+}
+
 export interface UnlinkAuthProviderResponse {
   ok: boolean;
   provider: string;
@@ -8024,6 +8119,16 @@ export interface UpdateBuilderRequestStatusRequest {
 
 export interface UpdateCoreMemoryBlockRequest {
   content: string;
+}
+
+export interface UpdateCreativitySceneRequest {
+  width?: number;
+  height?: number;
+  snap_grid?: number;
+}
+
+export interface UpdateCreativitySceneResponse {
+  scene_state?: JsonObject;
 }
 
 export interface UpdateFeedbackStatusRequest {

@@ -39,25 +39,6 @@ package body UARP.API.Integrations is
              Options => Options));
    end Create;
 
-   function Create_Agent_Integration
-     (Self : Client_Type;
-      Agent_Id : String;
-      Payload : UARP.Models.Create_Agent_Integration_Request;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Agent_Integration
-   is
-   begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "POST",
-             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/integrations",
-             Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => True,
-             Idempotent => True,
-             Options => Options));
-   end Create_Agent_Integration;
-
    procedure Delete
      (Self : Client_Type;
       Id : String;
@@ -149,6 +130,25 @@ package body UARP.API.Integrations is
           Query => Query,
           Options => Options);
    end Oauth_Callback;
+
+   function Set_Agent_Integrations
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Set_Agent_Integrations_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Agent_Integrations_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/integrations",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Agent_Integrations;
 
    function Start_O_Auth
      (Self : Client_Type;

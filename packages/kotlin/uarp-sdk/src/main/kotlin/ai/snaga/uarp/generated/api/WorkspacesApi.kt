@@ -371,15 +371,26 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
     /**
      * Unassign agent/team/company from workspace
      *
+     * The body names WHICH assignment to remove — `agent_id`, `team_id` or `company_id`. It was
+     * undeclared until 2026-08-31, and the omission did not stay in the document: the SDK
+     * generator faithfully wrote `body: false`, a proxy honoured that flag and dropped the body,
+     * and the server still read it. The result was a DELETE that always succeeded and changed
+     * nothing — 200, no error, unchanged state, under a button labelled Unassign.
+     *
+     * Three layers each behaved correctly on what they were given; the mistake in the first passed
+     * through both and came out the other side as "it works". A spec cannot be checked against a
+     * spec.
+     *
      * `DELETE /api/v1/workspaces/{workspaceId}/assign`
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun unassignWorkspace(workspaceId: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun unassignWorkspace(workspaceId: String, body: UnassignWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/assign",
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )

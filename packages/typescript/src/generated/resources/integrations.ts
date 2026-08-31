@@ -5,7 +5,6 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
   AgentIntegration,
-  CreateAgentIntegrationRequest,
   CreateIntegrationRequest,
   Integration,
   JsonValue,
@@ -14,6 +13,8 @@ import type {
   ListIntegrationsResponse,
   OAuthCompleteRequest,
   OAuthStartResponse,
+  SetAgentIntegrationsRequest,
+  SetAgentIntegrationsResponse,
   StartOAuthProvider,
   StartOAuthRequest,
   TestAgentIntegrationResponse,
@@ -62,23 +63,6 @@ export class IntegrationsResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/integrations',
-      body,
-      idempotent: true,
-      options,
-    });
-  }
-
-  /**
-   * Add an integration to an agent (by connector_id and config, or link existing)
-   *
-   * `POST /api/v1/agents/{agentId}/integrations`
-   *
-   * Required scopes: `agents:write`.
-   */
-  createAgentIntegration(agentId: string, body: CreateAgentIntegrationRequest, options?: RequestOptions): Promise<AgentIntegration> {
-    return this._client.request({
-      method: 'POST',
-      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/integrations`,
       body,
       idempotent: true,
       options,
@@ -175,6 +159,36 @@ export class IntegrationsResource extends APIResource {
       method: 'GET',
       path: `/api/v1/integrations/${encodeURIComponent(String(provider))}/oauth/callback`,
       query: pick(params, ['code', 'state']),
+      options,
+    });
+  }
+
+  /**
+   * Replace the set of integrations assigned to an agent
+   *
+   * The write operation this path actually has. Integrations are CREATED tenant-wide (`POST
+   * /api/v1/integrations`) and then ASSIGNED here; the assignment is a replace, so ids omitted
+   * from the array are unassigned.
+   *
+   * This document declared `POST` on this path until 2026-08-30, and the route answers that with
+   * **405** — it was removed in the assignment refactor and its handler exists only to name the
+   * replacement. A declared operation the server refuses is worse than an undeclared one: a
+   * generated client has the method, calls it, and reads the failure as a fault in its own
+   * request.
+   *
+   * Owner/admin only: assignment is a tenant-policy decision, not a developer-level config
+   * change. Each assigned and unassigned id is audit-logged.
+   *
+   * `PUT /api/v1/agents/{agentId}/integrations`
+   *
+   * Required scopes: `agents:write`.
+   */
+  setAgentIntegrations(agentId: string, body: SetAgentIntegrationsRequest, options?: RequestOptions): Promise<SetAgentIntegrationsResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/integrations`,
+      body,
+      idempotent: true,
       options,
     });
   }

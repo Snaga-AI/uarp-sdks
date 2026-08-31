@@ -183,7 +183,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/todos`
      */
-    public suspend fun createTask(body: CreateTaskRequest, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun createTask(body: JsonElement, options: RequestOptions = RequestOptions()): JsonObject {
         return client.request<JsonObject>(
             RequestSpec(
                 method = "POST",

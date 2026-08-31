@@ -1757,13 +1757,34 @@ public data class AgentUpdate(
     public val description: String? = null,
     public val prompts: JsonObject? = null,
     public val model: AgentModelConfigInput? = null,
+    /**
+     * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+     * leaves the agent with exactly that one — read the current value and send the full set. The
+     * incoming list is normalised and persisted whole; the previous list is consulted only to keep
+     * permission-grant timestamps stable for SPECs that were already installed.
+     */
     public val specs: List<JsonObject>? = null,
+    /**
+     * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+     * leaves the agent with exactly that one — read the current value and send the full set. 
+     */
     @SerialName("approval_required_tools")
     public val approvalRequiredTools: List<String>? = null,
+    /**
+     * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+     * leaves the agent with exactly that one — read the current value and send the full set. 
+     */
     @SerialName("auto_approve_tools")
     public val autoApproveTools: List<String>? = null,
     @SerialName("knowledge_base_id")
     public val knowledgeBaseId: String? = null,
+    /**
+     * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+     * leaves the agent with exactly that one — read the current value and send the full set. Note
+     * the legacy singular `knowledge_base_id` is UNIONED with this array within the same request —
+     * the server-side helper is named `mergeKbIds` for that reason, and merges the two REQUEST
+     * fields, never the request with what is stored.
+     */
     @SerialName("knowledge_base_ids")
     public val knowledgeBaseIds: List<String>? = null,
     @SerialName("workspace_id")
@@ -2123,6 +2144,26 @@ public object APIKeySummaryStatusSerializer : KSerializer<APIKeySummaryStatus> {
     override fun serialize(encoder: Encoder, value: APIKeySummaryStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): APIKeySummaryStatus = APIKeySummaryStatus(decoder.decodeString())
 }
+
+/**
+ * `AppendCreativityEventRequest` model.
+ */
+@Serializable
+public data class AppendCreativityEventRequest(
+    @SerialName("tool_name")
+    public val toolName: String,
+    public val payload: JsonObject,
+)
+
+/**
+ * `AppendCreativityEventResponse` model.
+ */
+@Serializable
+public data class AppendCreativityEventResponse(
+    public val event: JsonObject? = null,
+    @SerialName("total_events")
+    public val totalEvents: Long? = null,
+)
 
 /**
  * `AppleNativeAuthRequest` model.
@@ -3917,17 +3958,6 @@ public data class CreateAgentFriaRequestRightsAssessedItem(
 )
 
 /**
- * `CreateAgentIntegrationRequest` model.
- */
-@Serializable
-public data class CreateAgentIntegrationRequest(
-    @SerialName("connector_id")
-    public val connectorId: String,
-    public val name: String,
-    public val config: JsonObject? = null,
-)
-
-/**
  * `CreateAgentRequest` model.
  */
 @Serializable
@@ -4045,6 +4075,65 @@ public data class CreateCommerceProductRequest(
     @SerialName("shopify_product_id")
     public val shopifyProductId: String? = null,
     public val options: List<JsonObject>? = null,
+)
+
+/**
+ * `CreateCreativitySessionRequest` model.
+ */
+@Serializable
+public data class CreateCreativitySessionRequest(
+    public val mode: CreateCreativitySessionRequestMode,
+)
+
+/**
+ * `CreateCreativitySessionRequestMode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CreateCreativitySessionRequestModeSerializer::class)
+@JvmInline
+public value class CreateCreativitySessionRequestMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val V2D_ENGINEERING: CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode("2d_engineering")
+        public val V2D_SKETCH: CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode("2d_sketch")
+        public val V2D_ARTIST: CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode("2d_artist")
+        public val V3D_COMPOSER: CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode("3d_composer")
+        public val V3D_GENERATIVE: CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode("3d_generative")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CreateCreativitySessionRequestMode> = listOf(V2D_ENGINEERING, V2D_SKETCH, V2D_ARTIST, V3D_COMPOSER, V3D_GENERATIVE)
+    }
+}
+
+public object CreateCreativitySessionRequestModeSerializer : KSerializer<CreateCreativitySessionRequestMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreateCreativitySessionRequestMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CreateCreativitySessionRequestMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CreateCreativitySessionRequestMode = CreateCreativitySessionRequestMode(decoder.decodeString())
+}
+
+/**
+ * `CreateCreativitySessionResponse` model.
+ */
+@Serializable
+public data class CreateCreativitySessionResponse(
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    public val mode: String? = null,
+    @SerialName("ws_url")
+    public val wsURL: String? = null,
+    @SerialName("was_agent_created")
+    public val wasAgentCreated: Boolean? = null,
+    @SerialName("was_agent_updated")
+    public val wasAgentUpdated: Boolean? = null,
+    @SerialName("was_session_created")
+    public val wasSessionCreated: Boolean? = null,
 )
 
 /**
@@ -4501,45 +4590,6 @@ public data class CreateSessionTodoRequest(
     @SerialName("assign_agent_id")
     public val assignAgentId: String? = null,
     public val status: String? = null,
-)
-
-/**
- * `CreateTaskRequest` model.
- */
-@Serializable
-public data class CreateTaskRequest(
-    public val title: String,
-    public val instructions: String? = null,
-    @SerialName("due_at")
-    public val dueAt: String? = null,
-    public val recurrence: CreateTaskRequestRecurrence? = null,
-    @SerialName("require_confirmation")
-    public val requireConfirmation: Boolean? = null,
-    public val delivery: CreateTaskRequestDelivery? = null,
-    @SerialName("agent_id")
-    public val agentId: String? = null,
-    @SerialName("agent_ids")
-    public val agentIds: List<String>? = null,
-    @SerialName("team_id")
-    public val teamId: String? = null,
-)
-
-/**
- * `CreateTaskRequestDelivery` model.
- */
-@Serializable
-public data class CreateTaskRequestDelivery(
-    public val channels: List<TodoDeliveryChannel>? = null,
-    public val target: String? = null,
-)
-
-/**
- * `CreateTaskRequestRecurrence` model.
- */
-@Serializable
-public data class CreateTaskRequestRecurrence(
-    public val cron: String? = null,
-    public val timezone: String? = null,
 )
 
 /**
@@ -6147,6 +6197,21 @@ public data class GetAppleAppSiteAssociationResponseWebcredentials(
 )
 
 /**
+ * `GetBillingTrialResponse` model.
+ */
+@Serializable
+public data class GetBillingTrialResponse(
+    public val active: Boolean? = null,
+    @SerialName("ends_at")
+    public val endsAt: String? = null,
+    @SerialName("days_left")
+    public val daysLeft: Long? = null,
+    @SerialName("recommended_plan")
+    public val recommendedPlan: String? = null,
+    public val signals: JsonObject? = null,
+)
+
+/**
  * `GetBridgeTaskApprovalResponse` model.
  */
 @Serializable
@@ -6360,6 +6425,42 @@ public data class GetMaintenanceStateResponse(
 @Serializable
 public data class GetMarkupConfigResponse(
     public val markup: JsonObject? = null,
+)
+
+/**
+ * `GetMediaUsageResponse` model.
+ */
+@Serializable
+public data class GetMediaUsageResponse(
+    public val plan: String? = null,
+    public val images: GetMediaUsageResponseImages? = null,
+    public val videos: GetMediaUsageResponseVideos? = null,
+)
+
+/**
+ * `GetMediaUsageResponseImages` model.
+ */
+@Serializable
+public data class GetMediaUsageResponseImages(
+    @SerialName("monthly_used")
+    public val monthlyUsed: Long? = null,
+    @SerialName("daily_used")
+    public val dailyUsed: Long? = null,
+    @SerialName("monthly_limit")
+    public val monthlyLimit: Long? = null,
+    @SerialName("daily_limit")
+    public val dailyLimit: Long? = null,
+)
+
+/**
+ * `GetMediaUsageResponseVideos` model.
+ */
+@Serializable
+public data class GetMediaUsageResponseVideos(
+    @SerialName("monthly_used")
+    public val monthlyUsed: Long? = null,
+    @SerialName("monthly_limit")
+    public val monthlyLimit: Long? = null,
 )
 
 /**
@@ -8260,6 +8361,31 @@ public data class ListContentReportsResponse(
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean,
+)
+
+/**
+ * `ListCreativityEventsResponse` model.
+ */
+@Serializable
+public data class ListCreativityEventsResponse(
+    public val events: List<JsonObject>? = null,
+    /**
+     * High-water mark of the log. NOT events.length — the log is spliced by the eraser, so a
+     * length-derived cursor would resume past real events or re-deliver old ones.
+     */
+    @SerialName("latest_seq")
+    public val latestSeq: Long? = null,
+    @SerialName("scene_state")
+    public val sceneState: JsonObject? = null,
+)
+
+/**
+ * `ListCreativitySessionsResponse` model.
+ */
+@Serializable
+public data class ListCreativitySessionsResponse(
+    public val sessions: List<JsonObject>? = null,
+    public val total: Long? = null,
 )
 
 /**
@@ -12206,6 +12332,14 @@ public data class ReplaceConstitutionResponse(
 )
 
 /**
+ * `ReplaceCreativityEventPayloadRequest` model.
+ */
+@Serializable
+public data class ReplaceCreativityEventPayloadRequest(
+    public val payload: JsonObject,
+)
+
+/**
  * `ResendInviteResponse` model.
  */
 @Serializable
@@ -13558,6 +13692,39 @@ public data class SetAgentCapabilitiesResponse(
     public val status: String? = null,
     @SerialName("agent_id")
     public val agentId: String? = null,
+)
+
+/**
+ * `SetAgentIntegrationsRequest` model.
+ */
+@Serializable
+public data class SetAgentIntegrationsRequest(
+    /**
+     * The COMPLETE set after the call. Non-string members are ignored; ids the tenant does not own
+     * come back under `diff.unknown` rather than failing the call.
+     */
+    @SerialName("integration_ids")
+    public val integrationIds: List<String>,
+)
+
+/**
+ * `SetAgentIntegrationsResponse` model.
+ */
+@Serializable
+public data class SetAgentIntegrationsResponse(
+    public val integrations: List<AgentIntegration>,
+    public val total: Long,
+    public val diff: SetAgentIntegrationsResponseDiff,
+)
+
+/**
+ * `SetAgentIntegrationsResponseDiff` model.
+ */
+@Serializable
+public data class SetAgentIntegrationsResponseDiff(
+    public val assigned: List<String>,
+    public val unassigned: List<String>,
+    public val unknown: List<String>,
 )
 
 /**
@@ -16076,6 +16243,19 @@ public data class TransferTenantOwnershipResponse(
 )
 
 /**
+ * Exactly one of the three. The handler trims each and acts on the first non-empty one.
+ */
+@Serializable
+public data class UnassignWorkspaceRequest(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("team_id")
+    public val teamId: String? = null,
+    @SerialName("company_id")
+    public val companyId: String? = null,
+)
+
+/**
  * `UnlinkAuthProviderResponse` model.
  */
 @Serializable
@@ -16248,6 +16428,26 @@ public data class UpdateBuilderRequestStatusRequest(
 @Serializable
 public data class UpdateCoreMemoryBlockRequest(
     public val content: String,
+)
+
+/**
+ * `UpdateCreativitySceneRequest` model.
+ */
+@Serializable
+public data class UpdateCreativitySceneRequest(
+    public val width: Long? = null,
+    public val height: Long? = null,
+    @SerialName("snap_grid")
+    public val snapGrid: Long? = null,
+)
+
+/**
+ * `UpdateCreativitySceneResponse` model.
+ */
+@Serializable
+public data class UpdateCreativitySceneResponse(
+    @SerialName("scene_state")
+    public val sceneState: JsonObject? = null,
 )
 
 /**

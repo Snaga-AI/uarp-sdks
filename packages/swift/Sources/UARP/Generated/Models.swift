@@ -2255,10 +2255,23 @@ public struct AgentUpdate: Codable, Hashable, Sendable {
     public var `description`: String?
     public var prompts: JSONObject?
     public var model: AgentModelConfigInput?
+    /// Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+    /// leaves the agent with exactly that one — read the current value and send the full set. The
+    /// incoming list is normalised and persisted whole; the previous list is consulted only to keep
+    /// permission-grant timestamps stable for SPECs that were already installed.
     public var specs: [JSONObject]?
+    /// Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+    /// leaves the agent with exactly that one — read the current value and send the full set. 
     public var approvalRequiredTools: [String]?
+    /// Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+    /// leaves the agent with exactly that one — read the current value and send the full set. 
     public var autoApproveTools: [String]?
     public var knowledgeBaseId: String?
+    /// Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
+    /// leaves the agent with exactly that one — read the current value and send the full set. Note
+    /// the legacy singular `knowledge_base_id` is UNIONED with this array within the same request —
+    /// the server-side helper is named `mergeKbIds` for that reason, and merges the two REQUEST
+    /// fields, never the request with what is stored.
     public var knowledgeBaseIds: [String]?
     public var workspaceId: String?
     public var visibility: AgentUpdateVisibility?
@@ -2748,6 +2761,38 @@ public struct APIKeySummaryStatus: RawRepresentable, Codable, Hashable, Sendable
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [APIKeySummaryStatus] = [.active, .revoked]
+}
+
+/// `AppendCreativityEventRequest` model.
+public struct AppendCreativityEventRequest: Codable, Hashable, Sendable {
+    public var toolName: String
+    public var payload: JSONObject
+
+    public init(toolName: String, payload: JSONObject) {
+        self.toolName = toolName
+        self.payload = payload
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolName = "tool_name"
+        case payload = "payload"
+    }
+}
+
+/// `AppendCreativityEventResponse` model.
+public struct AppendCreativityEventResponse: Codable, Hashable, Sendable {
+    public var event: JSONObject?
+    public var totalEvents: Int?
+
+    public init(event: JSONObject? = nil, totalEvents: Int? = nil) {
+        self.event = event
+        self.totalEvents = totalEvents
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case event = "event"
+        case totalEvents = "total_events"
+    }
 }
 
 /// `AppleNativeAuthRequest` model.
@@ -5011,25 +5056,6 @@ public struct CreateAgentFriaRequestRightsAssessedItem: Codable, Hashable, Senda
     }
 }
 
-/// `CreateAgentIntegrationRequest` model.
-public struct CreateAgentIntegrationRequest: Codable, Hashable, Sendable {
-    public var connectorId: String
-    public var name: String
-    public var config: JSONObject?
-
-    public init(connectorId: String, name: String, config: JSONObject? = nil) {
-        self.connectorId = connectorId
-        self.name = name
-        self.config = config
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case connectorId = "connector_id"
-        case name = "name"
-        case config = "config"
-    }
-}
-
 /// `CreateAgentRequest` model.
 public struct CreateAgentRequest: Codable, Hashable, Sendable {
     public var name: String
@@ -5241,6 +5267,76 @@ public struct CreateCommerceProductRequest: Codable, Hashable, Sendable {
         case bodyHtml = "body_html"
         case shopifyProductId = "shopify_product_id"
         case options = "options"
+    }
+}
+
+/// `CreateCreativitySessionRequest` model.
+public struct CreateCreativitySessionRequest: Codable, Hashable, Sendable {
+    public var mode: CreateCreativitySessionRequestMode
+
+    public init(mode: CreateCreativitySessionRequestMode) {
+        self.mode = mode
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+    }
+}
+
+/// `CreateCreativitySessionRequestMode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct CreateCreativitySessionRequestMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let v2dEngineering = CreateCreativitySessionRequestMode(rawValue: "2d_engineering")
+    public static let v2dSketch = CreateCreativitySessionRequestMode(rawValue: "2d_sketch")
+    public static let v2dArtist = CreateCreativitySessionRequestMode(rawValue: "2d_artist")
+    public static let v3dComposer = CreateCreativitySessionRequestMode(rawValue: "3d_composer")
+    public static let v3dGenerative = CreateCreativitySessionRequestMode(rawValue: "3d_generative")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [CreateCreativitySessionRequestMode] = [.v2dEngineering, .v2dSketch, .v2dArtist, .v3dComposer, .v3dGenerative]
+}
+
+/// `CreateCreativitySessionResponse` model.
+public struct CreateCreativitySessionResponse: Codable, Hashable, Sendable {
+    public var sessionId: String?
+    public var agentId: String?
+    public var mode: String?
+    public var wsURL: String?
+    public var wasAgentCreated: Bool?
+    public var wasAgentUpdated: Bool?
+    public var wasSessionCreated: Bool?
+
+    public init(sessionId: String? = nil, agentId: String? = nil, mode: String? = nil, wsURL: String? = nil, wasAgentCreated: Bool? = nil, wasAgentUpdated: Bool? = nil, wasSessionCreated: Bool? = nil) {
+        self.sessionId = sessionId
+        self.agentId = agentId
+        self.mode = mode
+        self.wsURL = wsURL
+        self.wasAgentCreated = wasAgentCreated
+        self.wasAgentUpdated = wasAgentUpdated
+        self.wasSessionCreated = wasSessionCreated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionId = "session_id"
+        case agentId = "agent_id"
+        case mode = "mode"
+        case wsURL = "ws_url"
+        case wasAgentCreated = "was_agent_created"
+        case wasAgentUpdated = "was_agent_updated"
+        case wasSessionCreated = "was_session_created"
     }
 }
 
@@ -5933,75 +6029,6 @@ public struct CreateSessionTodoRequest: Codable, Hashable, Sendable {
         case dueAt = "due_at"
         case assignAgentId = "assign_agent_id"
         case status = "status"
-    }
-}
-
-/// `CreateTaskRequest` model.
-public struct CreateTaskRequest: Codable, Hashable, Sendable {
-    public var title: String
-    public var instructions: String?
-    public var dueAt: String?
-    public var recurrence: CreateTaskRequestRecurrence?
-    public var requireConfirmation: Bool?
-    public var delivery: CreateTaskRequestDelivery?
-    public var agentId: String?
-    public var agentIds: [String]?
-    public var teamId: String?
-
-    public init(title: String, instructions: String? = nil, dueAt: String? = nil, recurrence: CreateTaskRequestRecurrence? = nil, requireConfirmation: Bool? = nil, delivery: CreateTaskRequestDelivery? = nil, agentId: String? = nil, agentIds: [String]? = nil, teamId: String? = nil) {
-        self.title = title
-        self.instructions = instructions
-        self.dueAt = dueAt
-        self.recurrence = recurrence
-        self.requireConfirmation = requireConfirmation
-        self.delivery = delivery
-        self.agentId = agentId
-        self.agentIds = agentIds
-        self.teamId = teamId
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case title = "title"
-        case instructions = "instructions"
-        case dueAt = "due_at"
-        case recurrence = "recurrence"
-        case requireConfirmation = "require_confirmation"
-        case delivery = "delivery"
-        case agentId = "agent_id"
-        case agentIds = "agent_ids"
-        case teamId = "team_id"
-    }
-}
-
-/// `CreateTaskRequestDelivery` model.
-public struct CreateTaskRequestDelivery: Codable, Hashable, Sendable {
-    public var channels: [TodoDeliveryChannel]?
-    public var target: String?
-
-    public init(channels: [TodoDeliveryChannel]? = nil, target: String? = nil) {
-        self.channels = channels
-        self.target = target
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case channels = "channels"
-        case target = "target"
-    }
-}
-
-/// `CreateTaskRequestRecurrence` model.
-public struct CreateTaskRequestRecurrence: Codable, Hashable, Sendable {
-    public var cron: String?
-    public var timezone: String?
-
-    public init(cron: String? = nil, timezone: String? = nil) {
-        self.cron = cron
-        self.timezone = timezone
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case cron = "cron"
-        case timezone = "timezone"
     }
 }
 
@@ -8287,6 +8314,31 @@ public struct GetAppleAppSiteAssociationResponseWebcredentials: Codable, Hashabl
     }
 }
 
+/// `GetBillingTrialResponse` model.
+public struct GetBillingTrialResponse: Codable, Hashable, Sendable {
+    public var active: Bool?
+    public var endsAt: String?
+    public var daysLeft: Int?
+    public var recommendedPlan: String?
+    public var signals: JSONObject?
+
+    public init(active: Bool? = nil, endsAt: String? = nil, daysLeft: Int? = nil, recommendedPlan: String? = nil, signals: JSONObject? = nil) {
+        self.active = active
+        self.endsAt = endsAt
+        self.daysLeft = daysLeft
+        self.recommendedPlan = recommendedPlan
+        self.signals = signals
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case active = "active"
+        case endsAt = "ends_at"
+        case daysLeft = "days_left"
+        case recommendedPlan = "recommended_plan"
+        case signals = "signals"
+    }
+}
+
 /// `GetBridgeTaskApprovalResponse` model.
 public struct GetBridgeTaskApprovalResponse: Codable, Hashable, Sendable {
     public var approvalResponse: JSONObject?
@@ -8602,6 +8654,63 @@ public struct GetMarkupConfigResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case markup = "markup"
+    }
+}
+
+/// `GetMediaUsageResponse` model.
+public struct GetMediaUsageResponse: Codable, Hashable, Sendable {
+    public var plan: String?
+    public var images: GetMediaUsageResponseImages?
+    public var videos: GetMediaUsageResponseVideos?
+
+    public init(plan: String? = nil, images: GetMediaUsageResponseImages? = nil, videos: GetMediaUsageResponseVideos? = nil) {
+        self.plan = plan
+        self.images = images
+        self.videos = videos
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case plan = "plan"
+        case images = "images"
+        case videos = "videos"
+    }
+}
+
+/// `GetMediaUsageResponseImages` model.
+public struct GetMediaUsageResponseImages: Codable, Hashable, Sendable {
+    public var monthlyUsed: Int?
+    public var dailyUsed: Int?
+    public var monthlyLimit: Int?
+    public var dailyLimit: Int?
+
+    public init(monthlyUsed: Int? = nil, dailyUsed: Int? = nil, monthlyLimit: Int? = nil, dailyLimit: Int? = nil) {
+        self.monthlyUsed = monthlyUsed
+        self.dailyUsed = dailyUsed
+        self.monthlyLimit = monthlyLimit
+        self.dailyLimit = dailyLimit
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case monthlyUsed = "monthly_used"
+        case dailyUsed = "daily_used"
+        case monthlyLimit = "monthly_limit"
+        case dailyLimit = "daily_limit"
+    }
+}
+
+/// `GetMediaUsageResponseVideos` model.
+public struct GetMediaUsageResponseVideos: Codable, Hashable, Sendable {
+    public var monthlyUsed: Int?
+    public var monthlyLimit: Int?
+
+    public init(monthlyUsed: Int? = nil, monthlyLimit: Int? = nil) {
+        self.monthlyUsed = monthlyUsed
+        self.monthlyLimit = monthlyLimit
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case monthlyUsed = "monthly_used"
+        case monthlyLimit = "monthly_limit"
     }
 }
 
@@ -11137,6 +11246,43 @@ public struct ListContentReportsResponse: Codable, Hashable, Sendable {
         case items = "items"
         case cursor = "cursor"
         case hasMore = "has_more"
+    }
+}
+
+/// `ListCreativityEventsResponse` model.
+public struct ListCreativityEventsResponse: Codable, Hashable, Sendable {
+    public var events: [JSONObject]?
+    /// High-water mark of the log. NOT events.length — the log is spliced by the eraser, so a
+    /// length-derived cursor would resume past real events or re-deliver old ones.
+    public var latestSeq: Int?
+    public var sceneState: JSONObject?
+
+    public init(events: [JSONObject]? = nil, latestSeq: Int? = nil, sceneState: JSONObject? = nil) {
+        self.events = events
+        self.latestSeq = latestSeq
+        self.sceneState = sceneState
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case events = "events"
+        case latestSeq = "latest_seq"
+        case sceneState = "scene_state"
+    }
+}
+
+/// `ListCreativitySessionsResponse` model.
+public struct ListCreativitySessionsResponse: Codable, Hashable, Sendable {
+    public var sessions: [JSONObject]?
+    public var total: Int?
+
+    public init(sessions: [JSONObject]? = nil, total: Int? = nil) {
+        self.sessions = sessions
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessions = "sessions"
+        case total = "total"
     }
 }
 
@@ -16625,6 +16771,19 @@ public struct ReplaceConstitutionResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ReplaceCreativityEventPayloadRequest` model.
+public struct ReplaceCreativityEventPayloadRequest: Codable, Hashable, Sendable {
+    public var payload: JSONObject
+
+    public init(payload: JSONObject) {
+        self.payload = payload
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case payload = "payload"
+    }
+}
+
 /// `ResendInviteResponse` model.
 public struct ResendInviteResponse: Codable, Hashable, Sendable {
     public var ok: Bool?
@@ -18267,6 +18426,59 @@ public struct SetAgentCapabilitiesResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case status = "status"
         case agentId = "agent_id"
+    }
+}
+
+/// `SetAgentIntegrationsRequest` model.
+public struct SetAgentIntegrationsRequest: Codable, Hashable, Sendable {
+    /// The COMPLETE set after the call. Non-string members are ignored; ids the tenant does not own
+    /// come back under `diff.unknown` rather than failing the call.
+    public var integrationIds: [String]
+
+    public init(integrationIds: [String]) {
+        self.integrationIds = integrationIds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case integrationIds = "integration_ids"
+    }
+}
+
+/// `SetAgentIntegrationsResponse` model.
+public struct SetAgentIntegrationsResponse: Codable, Hashable, Sendable {
+    public var integrations: [AgentIntegration]
+    public var total: Int
+    public var diff: SetAgentIntegrationsResponseDiff
+
+    public init(integrations: [AgentIntegration], total: Int, diff: SetAgentIntegrationsResponseDiff) {
+        self.integrations = integrations
+        self.total = total
+        self.diff = diff
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case integrations = "integrations"
+        case total = "total"
+        case diff = "diff"
+    }
+}
+
+/// `SetAgentIntegrationsResponseDiff` model.
+public struct SetAgentIntegrationsResponseDiff: Codable, Hashable, Sendable {
+    public var assigned: [String]
+    public var unassigned: [String]
+    public var unknown: [String]
+
+    public init(assigned: [String], unassigned: [String], unknown: [String]) {
+        self.assigned = assigned
+        self.unassigned = unassigned
+        self.unknown = unknown
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case assigned = "assigned"
+        case unassigned = "unassigned"
+        case unknown = "unknown"
     }
 }
 
@@ -21501,6 +21713,25 @@ public struct TransferTenantOwnershipResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// Exactly one of the three. The handler trims each and acts on the first non-empty one.
+public struct UnassignWorkspaceRequest: Codable, Hashable, Sendable {
+    public var agentId: String?
+    public var teamId: String?
+    public var companyId: String?
+
+    public init(agentId: String? = nil, teamId: String? = nil, companyId: String? = nil) {
+        self.agentId = agentId
+        self.teamId = teamId
+        self.companyId = companyId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case teamId = "team_id"
+        case companyId = "company_id"
+    }
+}
+
 /// `UnlinkAuthProviderResponse` model.
 public struct UnlinkAuthProviderResponse: Codable, Hashable, Sendable {
     public var ok: Bool
@@ -21741,6 +21972,38 @@ public struct UpdateCoreMemoryBlockRequest: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case content = "content"
+    }
+}
+
+/// `UpdateCreativitySceneRequest` model.
+public struct UpdateCreativitySceneRequest: Codable, Hashable, Sendable {
+    public var width: Int?
+    public var height: Int?
+    public var snapGrid: Int?
+
+    public init(width: Int? = nil, height: Int? = nil, snapGrid: Int? = nil) {
+        self.width = width
+        self.height = height
+        self.snapGrid = snapGrid
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case width = "width"
+        case height = "height"
+        case snapGrid = "snap_grid"
+    }
+}
+
+/// `UpdateCreativitySceneResponse` model.
+public struct UpdateCreativitySceneResponse: Codable, Hashable, Sendable {
+    public var sceneState: JSONObject?
+
+    public init(sceneState: JSONObject? = nil) {
+        self.sceneState = sceneState
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sceneState = "scene_state"
     }
 }
 

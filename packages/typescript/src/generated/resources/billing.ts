@@ -8,6 +8,8 @@ import type {
   CreateBillingPortalSessionResponse,
   CreateCheckoutSessionRequest,
   CreateCheckoutSessionResponse,
+  GetBillingTrialResponse,
+  GetMediaUsageResponse,
   GetUsageTimeseriesMetric,
   GetUsageTimeseriesResponse,
   HandleStripeWebhookRequest,
@@ -98,6 +100,36 @@ export class BillingResource extends APIResource {
       path: '/api/v1/billing/checkout-session',
       body,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Trial window and a live usage-based plan recommendation
+   *
+   * `GET /api/v1/billing/trial`
+   *
+   * Required scopes: `billing:read`.
+   */
+  getBillingTrial(options?: RequestOptions): Promise<GetBillingTrialResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/billing/trial',
+      options,
+    });
+  }
+
+  /**
+   * Image and video generation usage against plan quotas
+   *
+   * `GET /api/v1/usage/media`
+   *
+   * Required scopes: `billing:read`.
+   */
+  getMediaUsage(options?: RequestOptions): Promise<GetMediaUsageResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/usage/media',
       options,
     });
   }

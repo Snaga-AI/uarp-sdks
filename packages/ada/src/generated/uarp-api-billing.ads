@@ -77,6 +77,26 @@ package UARP.API.Billing is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Checkout_Session_Response;
 
+   --  Trial window and a live usage-based plan recommendation
+   --
+   --  GET /api/v1/billing/trial
+   --
+   --  Required scopes: billing:read.
+   function Get_Billing_Trial
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Billing_Trial_Response;
+
+   --  Image and video generation usage against plan quotas
+   --
+   --  GET /api/v1/usage/media
+   --
+   --  Required scopes: billing:read.
+   function Get_Media_Usage
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Media_Usage_Response;
+
    --  Get current tenant usage
    --
    --  GET /api/v1/usage

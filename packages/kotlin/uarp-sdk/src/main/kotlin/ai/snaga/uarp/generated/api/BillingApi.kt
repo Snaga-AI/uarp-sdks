@@ -82,6 +82,40 @@ public class BillingApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Trial window and a live usage-based plan recommendation
+     *
+     * `GET /api/v1/billing/trial`
+     *
+     * Required scopes: `billing:read`.
+     */
+    public suspend fun getBillingTrial(options: RequestOptions = RequestOptions()): GetBillingTrialResponse {
+        return client.request<GetBillingTrialResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/billing/trial",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Image and video generation usage against plan quotas
+     *
+     * `GET /api/v1/usage/media`
+     *
+     * Required scopes: `billing:read`.
+     */
+    public suspend fun getMediaUsage(options: RequestOptions = RequestOptions()): GetMediaUsageResponse {
+        return client.request<GetMediaUsageResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/usage/media",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get current tenant usage
      *
      * `GET /api/v1/usage`

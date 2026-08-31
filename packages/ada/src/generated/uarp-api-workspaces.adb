@@ -329,6 +329,7 @@ package body UARP.API.Workspaces is
    function Unassign_Workspace
      (Self : Client_Type;
       Workspace_Id : String;
+      Payload : UARP.Models.Unassign_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -337,6 +338,8 @@ package body UARP.API.Workspaces is
          (Self,
           "DELETE",
           "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/assign",
+          Payload => UARP.Models.To_JSON (Payload),
+          Has_Payload => True,
           Idempotent => True,
           Options => Options);
    end Unassign_Workspace;

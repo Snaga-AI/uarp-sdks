@@ -328,19 +328,22 @@
                         "type": "array",
                         "items": {
                             "type": "object"
-                        }
+                        },
+                        "description": "Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id leaves the agent with exactly that one — read the current value and send the full set. The incoming list is normalised and persisted whole; the previous list is consulted only to keep permission-grant timestamps stable for SPECs that were already installed."
                     },
                     "approval_required_tools": {
                         "type": "array",
                         "items": {
                             "type": "string"
-                        }
+                        },
+                        "description": "Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id leaves the agent with exactly that one — read the current value and send the full set. "
                     },
                     "auto_approve_tools": {
                         "type": "array",
                         "items": {
                             "type": "string"
-                        }
+                        },
+                        "description": "Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id leaves the agent with exactly that one — read the current value and send the full set. "
                     },
                     "knowledge_base_id": {
                         "type": [
@@ -352,7 +355,8 @@
                         "type": "array",
                         "items": {
                             "type": "string"
-                        }
+                        },
+                        "description": "Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id leaves the agent with exactly that one — read the current value and send the full set. Note the legacy singular `knowledge_base_id` is UNIONED with this array within the same request — the server-side helper is named `mergeKbIds` for that reason, and merges the two REQUEST fields, never the request with what is stored."
                     },
                     "workspace_id": {
                         "type": "string"
@@ -11453,6 +11457,39 @@
                     }
                 }
             },
+            "CreativitySessionOpened": {
+                "description": "The caller's session for this mode. 201 when a session was created, 200 when an existing one was reused — the endpoint is idempotent per (user, mode), so a client that retries does not accumulate sessions.",
+                "content": {
+                    "application/json": {
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "session_id": {
+                                    "type": "string"
+                                },
+                                "agent_id": {
+                                    "type": "string"
+                                },
+                                "mode": {
+                                    "type": "string"
+                                },
+                                "ws_url": {
+                                    "type": "string"
+                                },
+                                "was_agent_created": {
+                                    "type": "boolean"
+                                },
+                                "was_agent_updated": {
+                                    "type": "boolean"
+                                },
+                                "was_session_created": {
+                                    "type": "boolean"
+                                }
+                            }
+                        }
+                    }
+                }
+            },
             "NotFound": {
                 "description": "Resource does not exist or is not visible to this tenant.",
                 "content": {
@@ -13011,16 +13048,12 @@
                     }
                 ]
             },
-            "post": {
-                "operationId": "createAgentIntegration",
-                "summary": "Add an integration to an agent (by connector_id and config, or link existing)",
+            "put": {
+                "operationId": "setAgentIntegrations",
+                "summary": "Replace the set of integrations assigned to an agent",
+                "description": "The write operation this path actually has. Integrations are CREATED tenant-wide (`POST /api/v1/integrations`) and then ASSIGNED here; the assignment is a replace, so ids omitted from the array are unassigned.\n\nThis document declared `POST` on this path until 2026-08-30, and the route answers that with **405** — it was removed in the assignment refactor and its handler exists only to name the replacement. A declared operation the server refuses is worse than an undeclared one: a generated client has the method, calls it, and reads the failure as a fault in its own request.\n\nOwner/admin only: assignment is a tenant-policy decision, not a developer-level config change. Each assigned and unassigned id is audit-logged.",
                 "tags": [
                     "Integrations"
-                ],
-                "parameters": [
-                    {
-                        "$ref": "#/components/parameters/IdempotencyKey"
-                    }
                 ],
                 "requestBody": {
                     "required": true,
@@ -13029,18 +13062,15 @@
                             "schema": {
                                 "type": "object",
                                 "required": [
-                                    "connector_id",
-                                    "name"
+                                    "integration_ids"
                                 ],
                                 "properties": {
-                                    "connector_id": {
-                                        "type": "string"
-                                    },
-                                    "name": {
-                                        "type": "string"
-                                    },
-                                    "config": {
-                                        "type": "object"
+                                    "integration_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        },
+                                        "description": "The COMPLETE set after the call. Non-string members are ignored; ids the tenant does not own come back under `diff.unknown` rather than failing the call."
                                     }
                                 }
                             }
@@ -13048,12 +13078,56 @@
                     }
                 },
                 "responses": {
-                    "201": {
-                        "description": "Integration created",
+                    "200": {
+                        "description": "The post-assignment view, so a caller refreshes in one round-trip",
                         "content": {
                             "application/json": {
                                 "schema": {
-                                    "$ref": "#/components/schemas/AgentIntegration"
+                                    "type": "object",
+                                    "required": [
+                                        "integrations",
+                                        "total",
+                                        "diff"
+                                    ],
+                                    "properties": {
+                                        "integrations": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/AgentIntegration"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        },
+                                        "diff": {
+                                            "type": "object",
+                                            "required": [
+                                                "assigned",
+                                                "unassigned",
+                                                "unknown"
+                                            ],
+                                            "properties": {
+                                                "assigned": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "unassigned": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                },
+                                                "unknown": {
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         },
@@ -13076,37 +13150,13 @@
                         "$ref": "#/components/responses/Unauthorized"
                     },
                     "403": {
-                        "$ref": "#/components/responses/Forbidden"
+                        "description": "Only owner/admin may assign integrations to an agent"
                     },
                     "404": {
-                        "description": "Agent not found",
-                        "content": {
-                            "application/problem+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
-                    },
-                    "405": {
-                        "description": "This method is not supported on this path.",
-                        "content": {
-                            "application/problem+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
+                        "$ref": "#/components/responses/NotFound"
                     },
                     "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/problem+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
+                        "description": "`integration_ids` missing or not an array"
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
@@ -13120,6 +13170,11 @@
                         "bearerAuth": [
                             "agents:write"
                         ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
                     }
                 ]
             }
@@ -22284,7 +22339,7 @@
                         }
                     },
                     "429": {
-                        "$ref": "#/components/responses/RateLimited"
+                        "$ref": "#/components/responses/TooManyRequests"
                     },
                     "500": {
                         "$ref": "#/components/responses/InternalServerError"
@@ -26792,6 +26847,29 @@
                     "Workspaces"
                 ],
                 "summary": "Unassign agent/team/company from workspace",
+                "description": "The body names WHICH assignment to remove — `agent_id`, `team_id` or `company_id`. It was undeclared until 2026-08-31, and the omission did not stay in the document: the SDK generator faithfully wrote `body: false`, a proxy honoured that flag and dropped the body, and the server still read it. The result was a DELETE that always succeeded and changed nothing — 200, no error, unchanged state, under a button labelled Unassign.\n\nThree layers each behaved correctly on what they were given; the mistake in the first passed through both and came out the other side as \"it works\". A spec cannot be checked against a spec.",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "description": "Exactly one of the three. The handler trims each and acts on the first non-empty one.",
+                                "properties": {
+                                    "agent_id": {
+                                        "type": "string"
+                                    },
+                                    "team_id": {
+                                        "type": "string"
+                                    },
+                                    "company_id": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "security": [
                     {
                         "bearerAuth": [
@@ -26834,7 +26912,7 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "422": {
-                        "description": "The request body or query failed validation. See `errors`.",
+                        "description": "Validation Error",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -32236,6 +32314,802 @@
                         ]
                     }
                 ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/billing/trial": {
+            "get": {
+                "operationId": "getBillingTrial",
+                "tags": [
+                    "Billing"
+                ],
+                "summary": "Trial window and a live usage-based plan recommendation",
+                "responses": {
+                    "200": {
+                        "description": "Trial state",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "active": {
+                                            "type": "boolean"
+                                        },
+                                        "ends_at": {
+                                            "type": "string",
+                                            "format": "date-time",
+                                            "nullable": true
+                                        },
+                                        "days_left": {
+                                            "type": "integer",
+                                            "nullable": true
+                                        },
+                                        "recommended_plan": {
+                                            "type": "string",
+                                            "nullable": true
+                                        },
+                                        "signals": {
+                                            "type": "object",
+                                            "additionalProperties": true,
+                                            "nullable": true
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [
+                            "billing:read"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/usage/media": {
+            "get": {
+                "operationId": "getMediaUsage",
+                "tags": [
+                    "Billing"
+                ],
+                "summary": "Image and video generation usage against plan quotas",
+                "responses": {
+                    "200": {
+                        "description": "Media usage",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "plan": {
+                                            "type": "string"
+                                        },
+                                        "images": {
+                                            "type": "object",
+                                            "properties": {
+                                                "monthly_used": {
+                                                    "type": "integer"
+                                                },
+                                                "daily_used": {
+                                                    "type": "integer"
+                                                },
+                                                "monthly_limit": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                },
+                                                "daily_limit": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        },
+                                        "videos": {
+                                            "type": "object",
+                                            "properties": {
+                                                "monthly_used": {
+                                                    "type": "integer"
+                                                },
+                                                "monthly_limit": {
+                                                    "type": "integer",
+                                                    "nullable": true
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [
+                            "billing:read"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/creativity/sessions": {
+            "post": {
+                "operationId": "createCreativitySession",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Open (or reuse) the caller's creativity session for a mode",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "mode"
+                                ],
+                                "properties": {
+                                    "mode": {
+                                        "type": "string",
+                                        "enum": [
+                                            "2d_engineering",
+                                            "2d_sketch",
+                                            "2d_artist",
+                                            "3d_composer",
+                                            "3d_generative"
+                                        ]
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "$ref": "#/components/responses/CreativitySessionOpened"
+                    },
+                    "201": {
+                        "$ref": "#/components/responses/CreativitySessionOpened"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "listCreativitySessions",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "List the caller's creativity sessions",
+                "responses": {
+                    "200": {
+                        "description": "Sessions",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "sessions": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            }
+        },
+        "/api/v1/creativity/sessions/{sessionId}": {
+            "parameters": [
+                {
+                    "name": "sessionId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "getCreativitySession",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Fetch one creativity session",
+                "responses": {
+                    "200": {
+                        "description": "Session",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object"
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                }
+            },
+            "patch": {
+                "operationId": "updateCreativityScene",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Update mutable scene state (width, height, snap grid)",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "width": {
+                                        "type": "integer"
+                                    },
+                                    "height": {
+                                        "type": "integer"
+                                    },
+                                    "snap_grid": {
+                                        "type": "integer"
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "Updated scene state",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "scene_state": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "archiveCreativitySession",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Archive a creativity session",
+                "responses": {
+                    "204": {
+                        "description": "Archived",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            }
+        },
+        "/api/v1/creativity/sessions/{sessionId}/events": {
+            "parameters": [
+                {
+                    "name": "sessionId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "post": {
+                "operationId": "appendCreativityEvent",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Append one event to the session log",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "tool_name",
+                                    "payload"
+                                ],
+                                "properties": {
+                                    "tool_name": {
+                                        "type": "string"
+                                    },
+                                    "payload": {
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "201": {
+                        "description": "Event appended",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "event": {
+                                            "type": "object"
+                                        },
+                                        "total_events": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            },
+            "get": {
+                "operationId": "listCreativityEvents",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Events since a sequence number, for resume and catch-up",
+                "parameters": [
+                    {
+                        "name": "since_seq",
+                        "in": "query",
+                        "schema": {
+                            "type": "integer"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Events",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "events": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "object"
+                                            }
+                                        },
+                                        "latest_seq": {
+                                            "type": "integer",
+                                            "description": "High-water mark of the log. NOT events.length — the log is spliced by the eraser, so a length-derived cursor would resume past real events or re-deliver old ones."
+                                        },
+                                        "scene_state": {
+                                            "type": "object"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": [
+                            "events:read"
+                        ]
+                    }
+                ]
+            }
+        },
+        "/api/v1/creativity/sessions/{sessionId}/events/{eventId}": {
+            "parameters": [
+                {
+                    "name": "sessionId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                },
+                {
+                    "name": "eventId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string"
+                    }
+                }
+            ],
+            "patch": {
+                "operationId": "replaceCreativityEventPayload",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Replace one event's payload",
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "required": [
+                                    "payload"
+                                ],
+                                "properties": {
+                                    "payload": {
+                                        "type": "object",
+                                        "additionalProperties": true
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "204": {
+                        "description": "Replaced",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "422": {
+                        "description": "Validation Error",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ]
+            },
+            "delete": {
+                "operationId": "eraseCreativityEvent",
+                "tags": [
+                    "Creativity"
+                ],
+                "summary": "Remove one event from the log (the eraser)",
+                "description": "Splices the event out of the log and does NOT modify scene_state, so layer and snap configuration survive.",
+                "responses": {
+                    "204": {
+                        "description": "Erased",
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
                 "parameters": [
                     {
                         "$ref": "#/components/parameters/IdempotencyKey"
@@ -40535,10 +41409,13 @@
                                 ],
                                 "properties": {
                                     "title": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "minLength": 1,
+                                        "maxLength": 5000
                                     },
                                     "instructions": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "maxLength": 50000
                                     },
                                     "due_at": {
                                         "type": "string",
@@ -40579,18 +41456,39 @@
                                         }
                                     },
                                     "agent_id": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "minLength": 1
                                     },
                                     "agent_ids": {
                                         "type": "array",
                                         "items": {
                                             "type": "string"
-                                        }
+                                        },
+                                        "minItems": 1,
+                                        "maxItems": 20
                                     },
                                     "team_id": {
-                                        "type": "string"
+                                        "type": "string",
+                                        "minLength": 1
                                     }
-                                }
+                                },
+                                "oneOf": [
+                                    {
+                                        "required": [
+                                            "agent_id"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "agent_ids"
+                                        ]
+                                    },
+                                    {
+                                        "required": [
+                                            "team_id"
+                                        ]
+                                    }
+                                ]
                             }
                         }
                     }

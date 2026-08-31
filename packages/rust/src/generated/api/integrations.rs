@@ -70,24 +70,6 @@ impl IntegrationsApi {
             .await
     }
 
-    /// Add an integration to an agent (by connector_id and config, or link existing)
-    ///
-    /// `POST /api/v1/agents/{agentId}/integrations`
-    ///
-    /// Required scopes: `agents:write`.
-    pub async fn create_agent_integration(&self, agent_id: &str, body: &models::CreateAgentIntegrationRequest) -> Result<models::AgentIntegration> {
-        self.client
-            .request_json(Request {
-                method: Method::POST,
-                path: format!("/api/v1/agents/{}/integrations", encode_path(agent_id)),
-                query: NO_QUERY,
-                body: Some(body),
-                headers: Vec::new(),
-                idempotent: true,
-            })
-            .await
-    }
-
     /// Delete integration
     ///
     /// `DELETE /api/v1/integrations/{id}`
@@ -192,6 +174,37 @@ impl IntegrationsApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
+            })
+            .await
+    }
+
+    /// Replace the set of integrations assigned to an agent
+    ///
+    /// The write operation this path actually has. Integrations are CREATED tenant-wide (`POST
+    /// /api/v1/integrations`) and then ASSIGNED here; the assignment is a replace, so ids omitted
+    /// from the array are unassigned.
+    ///
+    /// This document declared `POST` on this path until 2026-08-30, and the route answers that with
+    /// **405** — it was removed in the assignment refactor and its handler exists only to name the
+    /// replacement. A declared operation the server refuses is worse than an undeclared one: a
+    /// generated client has the method, calls it, and reads the failure as a fault in its own
+    /// request.
+    ///
+    /// Owner/admin only: assignment is a tenant-policy decision, not a developer-level config
+    /// change. Each assigned and unassigned id is audit-logged.
+    ///
+    /// `PUT /api/v1/agents/{agentId}/integrations`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn set_agent_integrations(&self, agent_id: &str, body: &models::SetAgentIntegrationsRequest) -> Result<models::SetAgentIntegrationsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/agents/{}/integrations", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
             })
             .await
     }

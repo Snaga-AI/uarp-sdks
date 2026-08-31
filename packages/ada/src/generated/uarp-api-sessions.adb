@@ -152,7 +152,7 @@ package body UARP.API.Sessions is
 
    function Create_Task
      (Self : Client_Type;
-      Payload : UARP.Models.Create_Task_Request;
+      Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -161,7 +161,7 @@ package body UARP.API.Sessions is
          (Self,
           "POST",
           "/api/v1/todos",
-          Payload => UARP.Models.To_JSON (Payload),
+          Payload => Payload,
           Has_Payload => True,
           Idempotent => True,
           Options => Options);

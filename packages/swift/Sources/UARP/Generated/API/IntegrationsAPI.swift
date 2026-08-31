@@ -38,21 +38,6 @@ public struct IntegrationsAPI: Sendable {
         ))
     }
 
-    /// Add an integration to an agent (by connector_id and config, or link existing)
-    ///
-    /// `POST /api/v1/agents/{agentId}/integrations`
-    ///
-    /// Required scopes: `agents:write`.
-    public func createAgentIntegration(agentId: String, body: CreateAgentIntegrationRequest, options: RequestOptions = .init()) async throws -> AgentIntegration {
-        return try await client.send(RequestSpec(
-            method: "POST",
-            path: "/api/v1/agents/\(encodePathSegment(agentId))/integrations",
-            body: try client.encode(body),
-            idempotent: true,
-            options: options
-        ))
-    }
-
     /// Delete integration
     ///
     /// `DELETE /api/v1/integrations/{id}`
@@ -133,6 +118,34 @@ public struct IntegrationsAPI: Sendable {
             method: "GET",
             path: "/api/v1/integrations/\(encodePathSegment(String(describing: provider)))/oauth/callback",
             query: query,
+            options: options
+        ))
+    }
+
+    /// Replace the set of integrations assigned to an agent
+    ///
+    /// The write operation this path actually has. Integrations are CREATED tenant-wide (`POST
+    /// /api/v1/integrations`) and then ASSIGNED here; the assignment is a replace, so ids omitted
+    /// from the array are unassigned.
+    ///
+    /// This document declared `POST` on this path until 2026-08-30, and the route answers that with
+    /// **405** — it was removed in the assignment refactor and its handler exists only to name the
+    /// replacement. A declared operation the server refuses is worse than an undeclared one: a
+    /// generated client has the method, calls it, and reads the failure as a fault in its own
+    /// request.
+    ///
+    /// Owner/admin only: assignment is a tenant-policy decision, not a developer-level config
+    /// change. Each assigned and unassigned id is audit-logged.
+    ///
+    /// `PUT /api/v1/agents/{agentId}/integrations`
+    ///
+    /// Required scopes: `agents:write`.
+    public func setAgentIntegrations(agentId: String, body: SetAgentIntegrationsRequest, options: RequestOptions = .init()) async throws -> SetAgentIntegrationsResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/integrations",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

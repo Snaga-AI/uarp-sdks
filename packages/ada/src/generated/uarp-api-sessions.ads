@@ -166,7 +166,7 @@ package UARP.API.Sessions is
    --  POST /api/v1/todos
    function Create_Task
      (Self : Client_Type;
-      Payload : UARP.Models.Create_Task_Request;
+      Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

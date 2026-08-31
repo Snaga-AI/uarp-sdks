@@ -42,18 +42,6 @@ package UARP.API.Integrations is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Integration;
 
-   --  Add an integration to an agent (by connector_id and config, or link existing)
-   --
-   --  POST /api/v1/agents/{agentId}/integrations
-   --
-   --  Required scopes: agents:write.
-   function Create_Agent_Integration
-     (Self : Client_Type;
-      Agent_Id : String;
-      Payload : UARP.Models.Create_Agent_Integration_Request;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Agent_Integration;
-
    --  Delete integration
    --
    --  DELETE /api/v1/integrations/{id}
@@ -118,6 +106,31 @@ package UARP.API.Integrations is
       Params : Oauth_Callback_Params := No_Oauth_Callback_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Replace the set of integrations assigned to an agent
+   --
+   --  The write operation this path actually has. Integrations are CREATED tenant-wide (`POST
+   --  /api/v1/integrations`) and then ASSIGNED here; the assignment is a replace, so ids omitted
+   --  from the array are unassigned.
+   --
+   --  This document declared `POST` on this path until 2026-08-30, and the route answers that with
+   --  **405** - it was removed in the assignment refactor and its handler exists only to name the
+   --  replacement. A declared operation the server refuses is worse than an undeclared one: a
+   --  generated client has the method, calls it, and reads the failure as a fault in its own
+   --  request.
+   --
+   --  Owner/admin only: assignment is a tenant-policy decision, not a developer-level config
+   --  change. Each assigned and unassigned id is audit-logged.
+   --
+   --  PUT /api/v1/agents/{agentId}/integrations
+   --
+   --  Required scopes: agents:write.
+   function Set_Agent_Integrations
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Set_Agent_Integrations_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Agent_Integrations_Response;
 
    --  Start OAuth flow for an integration provider
    --

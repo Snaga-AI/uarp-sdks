@@ -241,9 +241,16 @@ test('parses the production document into the expected shape', () => {
   // notifications, admin, analytics and public. A consuming app could reach
   // none of it, which is how three finished screens sat waiting on a release
   // rather than on code.
-  assert.equal(ops.length, 641);
+  // 641 -> 652 on 2026-08-31: six paths the catalogue had been silent about
+  // while the platform served them — `/billing/trial`, `/usage/media` and the
+  // whole `creativity/sessions` subtree with its events. They were never
+  // missing features; they were live surfaces no generated client could reach,
+  // which is the same shape as the 559 -> 641 refresh and the reason this
+  // count is asserted at all.
+  assert.equal(ops.length, 652);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
-  assert.equal(spec.groups.length, 50);
+  // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
+  assert.equal(spec.groups.length, 51);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -355,7 +362,25 @@ test('parses the production document into the expected shape', () => {
   // in a way the generator could name, so every client typed it loosely. It
   // now declares `total_usd`, `daily_limit_usd`, `alert_threshold_pct` and a
   // `spent_usd` the platform meters and ignores on write.
-  assert.equal(spec.types.length, 953);
+  // 953 -> 967 on 2026-08-31: eighteen added, four removed, from the six
+  // newly-declared paths and two corrections.
+  //
+  // `UnassignWorkspaceRequest` is the one worth naming. `DELETE
+  // /workspaces/{id}/assign` was declared with NO request body while the
+  // handler reads one, so all five clients sent nothing, took a 200 and
+  // changed nothing — a silent no-op under a success. Its own summary gave it
+  // away before the wire did: "Unassign agent/team/company from workspace"
+  // names three kinds of target and the path carries none of them.
+  //
+  // `SetAgentIntegrationsRequest` and its `...ResponseDiff` replace
+  // `CreateAgentIntegrationRequest`: assigning integrations is now one call
+  // declaring "the COMPLETE set after the call", answering with
+  // assigned/unassigned/unknown. That closes the older ambiguity where
+  // `integrations` was an array with no description saying whether it merged
+  // or replaced.
+  //
+  // The `CreateTaskRequest*` trio is the removal, alongside that.
+  assert.equal(spec.types.length, 967);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   assert.equal(ops.filter((o) => o.sse).length, 15);

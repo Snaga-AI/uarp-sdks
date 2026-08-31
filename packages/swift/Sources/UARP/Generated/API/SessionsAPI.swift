@@ -137,7 +137,7 @@ public struct SessionsAPI: Sendable {
     /// schedules it; explicit `null` files it in the backlog with no schedule at all.
     ///
     /// `POST /api/v1/todos`
-    public func createTask(body: CreateTaskRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createTask(body: JSONValue, options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/todos",

@@ -14,7 +14,6 @@ import type {
   CreateSessionShareRequest,
   CreateSessionShareResponse,
   CreateSessionTodoRequest,
-  CreateTaskRequest,
   DeleteSessionTodoResponse,
   GetSessionShareResponse,
   JsonObject,
@@ -228,7 +227,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/todos`
    */
-  createTask(body: CreateTaskRequest, options?: RequestOptions): Promise<JsonObject> {
+  createTask(body: JsonValue, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/todos',

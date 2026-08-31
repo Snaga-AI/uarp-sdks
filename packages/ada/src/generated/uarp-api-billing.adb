@@ -52,6 +52,34 @@ package body UARP.API.Billing is
              Options => Options));
    end Create_Checkout_Session;
 
+   function Get_Billing_Trial
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Billing_Trial_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/billing/trial",
+             Options => Options));
+   end Get_Billing_Trial;
+
+   function Get_Media_Usage
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Media_Usage_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/usage/media",
+             Options => Options));
+   end Get_Media_Usage;
+
    function Get_Usage
      (Self : Client_Type;
       Params : Get_Usage_Params := No_Get_Usage_Params;

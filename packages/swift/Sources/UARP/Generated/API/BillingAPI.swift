@@ -55,6 +55,32 @@ public struct BillingAPI: Sendable {
         ))
     }
 
+    /// Trial window and a live usage-based plan recommendation
+    ///
+    /// `GET /api/v1/billing/trial`
+    ///
+    /// Required scopes: `billing:read`.
+    public func getBillingTrial(options: RequestOptions = .init()) async throws -> GetBillingTrialResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/billing/trial",
+            options: options
+        ))
+    }
+
+    /// Image and video generation usage against plan quotas
+    ///
+    /// `GET /api/v1/usage/media`
+    ///
+    /// Required scopes: `billing:read`.
+    public func getMediaUsage(options: RequestOptions = .init()) async throws -> GetMediaUsageResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/usage/media",
+            options: options
+        ))
+    }
+
     /// Get current tenant usage
     ///
     /// `GET /api/v1/usage`

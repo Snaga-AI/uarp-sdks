@@ -405,16 +405,26 @@ impl WorkspacesApi {
 
     /// Unassign agent/team/company from workspace
     ///
+    /// The body names WHICH assignment to remove — `agent_id`, `team_id` or `company_id`. It was
+    /// undeclared until 2026-08-31, and the omission did not stay in the document: the SDK
+    /// generator faithfully wrote `body: false`, a proxy honoured that flag and dropped the body,
+    /// and the server still read it. The result was a DELETE that always succeeded and changed
+    /// nothing — 200, no error, unchanged state, under a button labelled Unassign.
+    ///
+    /// Three layers each behaved correctly on what they were given; the mistake in the first passed
+    /// through both and came out the other side as "it works". A spec cannot be checked against a
+    /// spec.
+    ///
     /// `DELETE /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    pub async fn unassign_workspace(&self, workspace_id: &str) -> Result<serde_json::Value> {
+    pub async fn unassign_workspace(&self, workspace_id: &str, body: &models::UnassignWorkspaceRequest) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/workspaces/{}/assign", encode_path(workspace_id)),
                 query: NO_QUERY,
-                body: NO_BODY,
+                body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
             })

@@ -112,6 +112,42 @@ impl BillingApi {
             .await
     }
 
+    /// Trial window and a live usage-based plan recommendation
+    ///
+    /// `GET /api/v1/billing/trial`
+    ///
+    /// Required scopes: `billing:read`.
+    pub async fn get_billing_trial(&self) -> Result<models::GetBillingTrialResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/billing/trial".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Image and video generation usage against plan quotas
+    ///
+    /// `GET /api/v1/usage/media`
+    ///
+    /// Required scopes: `billing:read`.
+    pub async fn get_media_usage(&self) -> Result<models::GetMediaUsageResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/usage/media".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get current tenant usage
     ///
     /// `GET /api/v1/usage`

@@ -14,6 +14,7 @@ import { BridgeResource } from './bridge.js';
 import { CanvasResource } from './canvas.js';
 import { CommerceResource } from './commerce.js';
 import { CompaniesResource } from './companies.js';
+import { CreativityResource } from './creativity.js';
 import { DataExplorerResource } from './data-explorer.js';
 import { EvaluationsResource } from './evaluations.js';
 import { FeedResource } from './feed.js';
@@ -65,6 +66,7 @@ export * from './bridge.js';
 export * from './canvas.js';
 export * from './commerce.js';
 export * from './companies.js';
+export * from './creativity.js';
 export * from './data-explorer.js';
 export * from './evaluations.js';
 export * from './feed.js';
@@ -156,6 +158,7 @@ export interface Resources {
    * Company management
    */
   readonly companies: CompaniesResource;
+  readonly creativity: CreativityResource;
   /**
    * KV data explorer for admin diagnostics
    */
@@ -308,6 +311,7 @@ export function createResources(client: Transport): Resources {
     canvas: new CanvasResource(client),
     commerce: new CommerceResource(client),
     companies: new CompaniesResource(client),
+    creativity: new CreativityResource(client),
     dataExplorer: new DataExplorerResource(client),
     evaluations: new EvaluationsResource(client),
     feed: new FeedResource(client),
