@@ -51,6 +51,155 @@
       }
     },
     "schemas": {
+      "NotificationChannel": {
+        "type": "string",
+        "description": "Delivery channel. `in_app` is always-on (bell drawer + SSE) and cannot be opted out of; `telegram`/`whatsapp` are reserved and have no adapter yet.",
+        "enum": [
+          "in_app",
+          "email",
+          "webhook",
+          "push",
+          "web_push",
+          "telegram",
+          "whatsapp"
+        ]
+      },
+      "NotificationType": {
+        "type": "string",
+        "description": "Fine-grained event type. There are no coarse buckets on the server — a UI that groups events (e.g. \"agents / failures / system\") maps its groups onto these types itself.",
+        "enum": [
+          "run.started",
+          "run.failed",
+          "run.completed",
+          "run.awaiting_approval",
+          "run.awaiting_input",
+          "approval.requested",
+          "budget.warning",
+          "budget.exceeded",
+          "bridge.online",
+          "bridge.offline",
+          "invite.accepted",
+          "marketplace.review",
+          "workflow.triggered",
+          "system.alert",
+          "task.completed",
+          "task.confirmation_required",
+          "agent.suspended",
+          "agent.terminated",
+          "billing.payment_failed",
+          "billing.subscription_paused",
+          "billing.subscription_cancelled",
+          "billing.dispute_opened",
+          "domain.dns_drift",
+          "domain.cert_failed",
+          "domain.cert_renewal_due"
+        ]
+      },
+      "NotificationPreferencesInput": {
+        "type": "object",
+        "description": "Per-TENANT notification routing. Sent to PUT /notifications/prefs, which REPLACES the stored value — an omitted field is stored as omitted (that is how a client clears `muted_types` or drops `quiet_hours`). `tenant_id` and `updated_at` are ignored if sent: the server derives them.",
+        "properties": {
+          "priority_channels": {
+            "type": "object",
+            "description": "Default channel routing keyed by severity. Server default: critical → [in_app, email]; warning/info/success → [in_app].",
+            "properties": {
+              "critical": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NotificationChannel"
+                }
+              },
+              "warning": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NotificationChannel"
+                }
+              },
+              "info": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NotificationChannel"
+                }
+              },
+              "success": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/NotificationChannel"
+                }
+              }
+            }
+          },
+          "type_overrides": {
+            "type": "object",
+            "description": "Per-event-type channel list. When present for a type it REPLACES the priority-level default for that type. Keys are NotificationType values.",
+            "additionalProperties": {
+              "type": "array",
+              "items": {
+                "$ref": "#/components/schemas/NotificationChannel"
+              }
+            }
+          },
+          "muted_types": {
+            "type": "array",
+            "description": "Event types muted for OUTBOUND delivery (email/webhook/push). The in-app bell still receives them — muting does not hide an event from the bell drawer, it only stops the outbound channels.",
+            "items": {
+              "$ref": "#/components/schemas/NotificationType"
+            }
+          },
+          "quiet_hours": {
+            "type": "object",
+            "description": "Window during which non-critical messages are suppressed; critical always bypasses. Set both start_local and end_local to enable, empty disables.",
+            "properties": {
+              "start_local": {
+                "type": "string",
+                "description": "Local-time start \"HH:mm\"."
+              },
+              "end_local": {
+                "type": "string",
+                "description": "Local-time end \"HH:mm\"."
+              },
+              "timezone": {
+                "type": "string",
+                "description": "IANA timezone (e.g. \"Europe/Kyiv\"). Defaults to UTC when absent."
+              },
+              "start_utc": {
+                "type": "string",
+                "deprecated": true,
+                "description": "Legacy — use start_local + timezone."
+              },
+              "end_utc": {
+                "type": "string",
+                "deprecated": true,
+                "description": "Legacy — use end_local + timezone."
+              }
+            }
+          }
+        }
+      },
+      "NotificationPreferences": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/NotificationPreferencesInput"
+          },
+          {
+            "type": "object",
+            "description": "The stored value as returned by GET/PUT — same shape plus the server-derived fields.",
+            "required": [
+              "tenant_id",
+              "updated_at"
+            ],
+            "properties": {
+              "tenant_id": {
+                "type": "string"
+              },
+              "updated_at": {
+                "type": "string",
+                "format": "date-time"
+              }
+            }
+          }
+        ]
+      },
       "Error": {
         "type": "object",
         "description": "RFC 9457 problem+json style error; correlationId for request tracing.",
@@ -27921,6 +28070,164 @@
             ]
           }
         ],
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/IdempotencyKey"
+          }
+        ]
+      }
+    },
+    "/api/v1/notifications/prefs": {
+      "get": {
+        "operationId": "getNotificationPreferences",
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Read the tenant's notification routing preferences",
+        "description": "Returns the stored preferences, or the server defaults (critical → in_app+email, everything else → in_app) when none are stored. Note: `email` in a channel list only delivers when the tenant also has an email target configured (see POST /notifications/targets).",
+        "security": [
+          {
+            "bearerAuth": [
+              "notifications:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Current notification preferences",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/XRateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/XRateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/XRateLimitReset"
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "$ref": "#/components/responses/Forbidden"
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        }
+      },
+      "put": {
+        "operationId": "replaceNotificationPreferences",
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Replace the tenant's notification routing preferences",
+        "description": "WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored — the server derives them.",
+        "security": [
+          {
+            "bearerAuth": [
+              "notifications:write"
+            ]
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/NotificationPreferencesInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "The stored preferences after the replace",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationPreferences"
+                }
+              }
+            },
+            "headers": {
+              "X-RateLimit-Limit": {
+                "$ref": "#/components/headers/XRateLimitLimit"
+              },
+              "X-RateLimit-Remaining": {
+                "$ref": "#/components/headers/XRateLimitRemaining"
+              },
+              "X-RateLimit-Reset": {
+                "$ref": "#/components/headers/XRateLimitReset"
+              }
+            }
+          },
+          "400": {
+            "description": "JSON body required / invalid",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authentication required",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Missing notifications:write scope",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "429": {
+            "$ref": "#/components/responses/TooManyRequests"
+          },
+          "500": {
+            "$ref": "#/components/responses/InternalServerError"
+          }
+        },
         "parameters": [
           {
             "$ref": "#/components/parameters/IdempotencyKey"

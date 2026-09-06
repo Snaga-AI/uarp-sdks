@@ -14,6 +14,8 @@ import type {
   ListNotificationTargetsResponse,
   ListNotificationsResponse,
   MarkAllNotificationsReadResponse,
+  NotificationPreferences,
+  NotificationPreferencesInput,
   NotificationTarget,
   TestNotificationTargetResponse,
   UpsertNotificationTargetRequest,
@@ -110,6 +112,25 @@ export class NotificationsResource extends APIResource {
   }
 
   /**
+   * Read the tenant's notification routing preferences
+   *
+   * Returns the stored preferences, or the server defaults (critical → in_app+email, everything
+   * else → in_app) when none are stored. Note: `email` in a channel list only delivers when the
+   * tenant also has an email target configured (see POST /notifications/targets).
+   *
+   * `GET /api/v1/notifications/prefs`
+   *
+   * Required scopes: `notifications:read`.
+   */
+  getNotificationPreferences(options?: RequestOptions): Promise<NotificationPreferences> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/notifications/prefs',
+      options,
+    });
+  }
+
+  /**
    * Get unread notification count
    *
    * `GET /api/v1/notifications/unread`
@@ -184,6 +205,27 @@ export class NotificationsResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/notifications/${encodeURIComponent(String(notifId))}/read`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Replace the tenant's notification routing preferences
+   *
+   * WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear
+   * muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored — the server
+   * derives them.
+   *
+   * `PUT /api/v1/notifications/prefs`
+   *
+   * Required scopes: `notifications:write`.
+   */
+  replaceNotificationPreferences(body: NotificationPreferencesInput, options?: RequestOptions): Promise<NotificationPreferences> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/notifications/prefs',
+      body,
       idempotent: true,
       options,
     });

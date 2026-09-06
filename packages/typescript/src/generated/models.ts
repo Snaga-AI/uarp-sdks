@@ -5884,6 +5884,154 @@ export interface Notification {
 }
 
 /**
+ * Delivery channel. `in_app` is always-on (bell drawer + SSE) and cannot be opted out of;
+ * `telegram`/`whatsapp` are reserved and have no adapter yet.
+ */
+export type NotificationChannel = 'in_app' | 'email' | 'webhook' | 'push' | 'web_push' | 'telegram' | 'whatsapp';
+
+export const NOTIFICATION_CHANNEL_VALUES = ['in_app', 'email', 'webhook', 'push', 'web_push', 'telegram', 'whatsapp'] as const;
+
+export interface NotificationPreferences {
+  /**
+   * Default channel routing keyed by severity. Server default: critical → [in_app, email];
+   * warning/info/success → [in_app].
+   */
+  priority_channels?: NotificationPreferencesPriorityChannels;
+  /**
+   * Per-event-type channel list. When present for a type it REPLACES the priority-level default
+   * for that type. Keys are NotificationType values.
+   */
+  type_overrides?: Record<string, NotificationChannel[]>;
+  /**
+   * Event types muted for OUTBOUND delivery (email/webhook/push). The in-app bell still receives
+   * them — muting does not hide an event from the bell drawer, it only stops the outbound
+   * channels.
+   */
+  muted_types?: NotificationType[];
+  /**
+   * Window during which non-critical messages are suppressed; critical always bypasses. Set both
+   * start_local and end_local to enable, empty disables.
+   */
+  quiet_hours?: NotificationPreferencesQuietHours;
+  tenant_id: string;
+  updated_at: string;
+}
+
+/**
+ * Per-TENANT notification routing. Sent to PUT /notifications/prefs, which REPLACES the stored
+ * value — an omitted field is stored as omitted (that is how a client clears `muted_types` or
+ * drops `quiet_hours`). `tenant_id` and `updated_at` are ignored if sent: the server derives
+ * them.
+ */
+export interface NotificationPreferencesInput {
+  /**
+   * Default channel routing keyed by severity. Server default: critical → [in_app, email];
+   * warning/info/success → [in_app].
+   */
+  priority_channels?: NotificationPreferencesInputPriorityChannels;
+  /**
+   * Per-event-type channel list. When present for a type it REPLACES the priority-level default
+   * for that type. Keys are NotificationType values.
+   */
+  type_overrides?: Record<string, NotificationChannel[]>;
+  /**
+   * Event types muted for OUTBOUND delivery (email/webhook/push). The in-app bell still receives
+   * them — muting does not hide an event from the bell drawer, it only stops the outbound
+   * channels.
+   */
+  muted_types?: NotificationType[];
+  /**
+   * Window during which non-critical messages are suppressed; critical always bypasses. Set both
+   * start_local and end_local to enable, empty disables.
+   */
+  quiet_hours?: NotificationPreferencesInputQuietHours;
+}
+
+/**
+ * Default channel routing keyed by severity. Server default: critical → [in_app, email];
+ * warning/info/success → [in_app].
+ */
+export interface NotificationPreferencesInputPriorityChannels {
+  critical?: NotificationChannel[];
+  warning?: NotificationChannel[];
+  info?: NotificationChannel[];
+  success?: NotificationChannel[];
+}
+
+/**
+ * Window during which non-critical messages are suppressed; critical always bypasses. Set both
+ * start_local and end_local to enable, empty disables.
+ */
+export interface NotificationPreferencesInputQuietHours {
+  /**
+   * Local-time start "HH:mm".
+   */
+  start_local?: string;
+  /**
+   * Local-time end "HH:mm".
+   */
+  end_local?: string;
+  /**
+   * IANA timezone (e.g. "Europe/Kyiv"). Defaults to UTC when absent.
+   */
+  timezone?: string;
+  /**
+   * Legacy — use start_local + timezone.
+   *
+   * @deprecated
+   */
+  start_utc?: string;
+  /**
+   * Legacy — use end_local + timezone.
+   *
+   * @deprecated
+   */
+  end_utc?: string;
+}
+
+/**
+ * Default channel routing keyed by severity. Server default: critical → [in_app, email];
+ * warning/info/success → [in_app].
+ */
+export interface NotificationPreferencesPriorityChannels {
+  critical?: NotificationChannel[];
+  warning?: NotificationChannel[];
+  info?: NotificationChannel[];
+  success?: NotificationChannel[];
+}
+
+/**
+ * Window during which non-critical messages are suppressed; critical always bypasses. Set both
+ * start_local and end_local to enable, empty disables.
+ */
+export interface NotificationPreferencesQuietHours {
+  /**
+   * Local-time start "HH:mm".
+   */
+  start_local?: string;
+  /**
+   * Local-time end "HH:mm".
+   */
+  end_local?: string;
+  /**
+   * IANA timezone (e.g. "Europe/Kyiv"). Defaults to UTC when absent.
+   */
+  timezone?: string;
+  /**
+   * Legacy — use start_local + timezone.
+   *
+   * @deprecated
+   */
+  start_utc?: string;
+  /**
+   * Legacy — use end_local + timezone.
+   *
+   * @deprecated
+   */
+  end_utc?: string;
+}
+
+/**
  * UI surface routing; defaults to `info` when omitted.
  */
 export type NotificationPriority = 'critical' | 'warning' | 'info' | 'success';
@@ -5987,6 +6135,14 @@ export interface NotificationTargetConfigVariant4 {
 export type NotificationTargetConfigVariant4kind = 'web_push';
 
 export const NOTIFICATION_TARGET_CONFIG_VARIANT4KIND_VALUES = ['web_push'] as const;
+
+/**
+ * Fine-grained event type. There are no coarse buckets on the server — a UI that groups events
+ * (e.g. "agents / failures / system") maps its groups onto these types itself.
+ */
+export type NotificationType = 'run.started' | 'run.failed' | 'run.completed' | 'run.awaiting_approval' | 'run.awaiting_input' | 'approval.requested' | 'budget.warning' | 'budget.exceeded' | 'bridge.online' | 'bridge.offline' | 'invite.accepted' | 'marketplace.review' | 'workflow.triggered' | 'system.alert' | 'task.completed' | 'task.confirmation_required' | 'agent.suspended' | 'agent.terminated' | 'billing.payment_failed' | 'billing.subscription_paused' | 'billing.subscription_cancelled' | 'billing.dispute_opened' | 'domain.dns_drift' | 'domain.cert_failed' | 'domain.cert_renewal_due';
+
+export const NOTIFICATION_TYPE_VALUES = ['run.started', 'run.failed', 'run.completed', 'run.awaiting_approval', 'run.awaiting_input', 'approval.requested', 'budget.warning', 'budget.exceeded', 'bridge.online', 'bridge.offline', 'invite.accepted', 'marketplace.review', 'workflow.triggered', 'system.alert', 'task.completed', 'task.confirmation_required', 'agent.suspended', 'agent.terminated', 'billing.payment_failed', 'billing.subscription_paused', 'billing.subscription_cancelled', 'billing.dispute_opened', 'domain.dns_drift', 'domain.cert_failed', 'domain.cert_renewal_due'] as const;
 
 export interface OAuthAppExchangeRequest {
   /**
