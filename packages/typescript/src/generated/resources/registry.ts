@@ -17,7 +17,11 @@ import type {
   RegistrySearchResponse,
   RegistrySetShareRequest,
   RegistrySetShareResponse,
+  RegistrySpecFeatureState,
   RegistryYankVersionRequest,
+  SeedStarterSpecsResponse,
+  SetRegistrySpecVisibilityRequest,
+  SetRegistrySpecVisibilityResponse,
 } from '../models.js';
 
 /**
@@ -54,6 +58,27 @@ export interface RegistrySearchParams {
  * Spec registry — publish, search, yank, share spec artifacts
  */
 export class RegistryResource extends APIResource {
+  /**
+   * Add a SPEC to the featured set (super-admin)
+   *
+   * The SPEC's existence is confirmed BEFORE the featured set is touched, so a typo cannot leave
+   * a dangling id in a shared list — that is what the 404 protects. The set itself is mutated
+   * under a compare-and-set retry, because it is one shared record and a plain read-modify-write
+   * was last-writer-wins.
+   *
+   * Idempotent: featuring an already-featured SPEC is 200, not a conflict.
+   *
+   * `POST /api/v1/registry/admin/specs/{scope}/{name}/feature`
+   */
+  featureRegistrySpec(scope: string, name: string, options?: RequestOptions): Promise<RegistrySpecFeatureState> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/registry/admin/specs/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/feature`,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Admin: list all specs (regardless of visibility)
    *
@@ -252,6 +277,66 @@ export class RegistryResource extends APIResource {
       body,
       idempotent: true,
       responseType: 'void',
+      options,
+    });
+  }
+
+  /**
+   * Bulk-publish the bundled starter SPECs (super-admin)
+   *
+   * Idempotent: a starter SPEC already present is counted in `skipped`, not republished, so
+   * re-running is safe and is how a partially-failed seed is completed.
+   *
+   * `errors` is present ONLY when at least one SPEC failed. Its absence means no failures — not
+   * that the field is unavailable — so a client should treat missing as empty rather than
+   * unknown. A run can be partially successful: `added` and `errors` are both meaningful in the
+   * same response, and the status is still 200.
+   *
+   * `POST /api/v1/registry/admin/specs/seed`
+   */
+  seedStarterSpecs(options?: RequestOptions): Promise<SeedStarterSpecsResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/registry/admin/specs/seed',
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Make a SPEC public or private (super-admin)
+   *
+   * PATCH and only PATCH — a PUT is 405 with the allowed methods named.
+   *
+   * WRITE SEMANTICS: replaces the visibility, which is the only field this route touches.
+   * `visibility` is required and must be exactly `public` or `private`; anything else, including
+   * a missing body or a near-miss like `unlisted`, is 400 rather than being coerced or ignored.
+   *
+   * `PATCH /api/v1/registry/admin/specs/{scope}/{name}/visibility`
+   */
+  setRegistrySpecVisibility(scope: string, name: string, body: SetRegistrySpecVisibilityRequest, options?: RequestOptions): Promise<SetRegistrySpecVisibilityResponse> {
+    return this._client.request({
+      method: 'PATCH',
+      path: `/api/v1/registry/admin/specs/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/visibility`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove a SPEC from the featured set (super-admin)
+   *
+   * Same shape and same guards as the POST; the response's `featured` is simply `false`.
+   * Idempotent — un-featuring something that was not featured is 200.
+   *
+   * `DELETE /api/v1/registry/admin/specs/{scope}/{name}/feature`
+   */
+  unfeatureRegistrySpec(scope: string, name: string, options?: RequestOptions): Promise<RegistrySpecFeatureState> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/registry/admin/specs/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/feature`,
+      idempotent: true,
       options,
     });
   }

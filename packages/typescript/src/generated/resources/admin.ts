@@ -18,28 +18,53 @@ import type {
   AdminPutOAuthProviderResponse,
   AdminReplayWebhookDLQResponse,
   AgentAnalyticsSummary,
+  CreateAdminBlogPostRequest,
+  CreateAdminBlogPostResponse,
+  DeleteAdminBlogPostResponse,
+  DeleteAdminIntegrationOAuthProviderResponse,
+  DeleteAdminLLMDefaultResponse,
+  DeleteAdminProviderResponse,
+  DeleteCustomPlanForce,
   ErrorReportStatus,
+  GenerateAdminBlogPostResponse,
+  GetAdminBlogConfigResponse,
+  GetAdminIntegrationOAuthProviderProvider,
+  GetAdminIntegrationOAuthProviderResponse,
   GetAdminLLMDefaultsResponse,
   GetAdminStatsResponse,
   GetAdminTraceResponse,
   GetImmutableAuditResponse,
-  GetMaintenanceStateResponse,
-  GetPlatformEconomicsRefresh,
   GetTenantUsageResponse,
   JsonObject,
   JsonValue,
+  ListAdminBlogPostsResponse,
+  ListAdminDomainHealthResponse,
+  ListAdminIntegrationOAuthProvidersResponse,
   ListAdminProvidersResponse,
   ListFeedbackResponse,
   ListTenantsResponse,
+  MaintenanceState,
   OAuthLoginProviderItemId,
   PlatformEconomics,
   PurgeAdminTenantResponse,
+  SetAdminIntegrationOAuthProviderRequest,
+  SetAdminIntegrationOAuthProviderResponse,
   SetAdminLLMDefaultRequest,
   SetAdminLLMDefaultResponse,
+  SetMaintenanceStateRequest,
   SuspendTenantRequest,
+  SyncProviderModelsResponse,
   Tenant,
-  UpdateFeedbackStatusRequest,
-  UpdateFeedbackStatusResponse,
+  TenantMefConfigResponse,
+  UpdateAdminBlogConfigRequest,
+  UpdateAdminBlogConfigResponse,
+  UpdateAdminBlogPostRequest,
+  UpdateAdminBlogPostResponse,
+  UpdateFeedbackReportStatusRequest,
+  UpdateFeedbackReportStatusResponse,
+  UpdateTenantMefConfigRequest,
+  UpdateTenantPlanRequest,
+  UpdateTenantPlanResponse,
 } from '../models.js';
 
 /**
@@ -106,7 +131,7 @@ export interface GetPlatformEconomicsParams {
   /**
    * `1` bypasses the cache and recomputes.
    */
-  refresh?: GetPlatformEconomicsRefresh;
+  refresh?: DeleteCustomPlanForce;
 }
 
 /**
@@ -495,6 +520,26 @@ export class AdminResource extends APIResource {
   }
 
   /**
+   * Write a post by hand
+   *
+   * `source` is stamped `manual` and cannot be set by the caller. The slug is derived from the
+   * title and made unique; `status` defaults to `draft`.
+   *
+   * `POST /api/v1/admin/blog/posts`
+   *
+   * Required scopes: `admin`.
+   */
+  createAdminBlogPost(body: CreateAdminBlogPostRequest, options?: RequestOptions): Promise<CreateAdminBlogPostResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/admin/blog/posts',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Create custom provider
    *
    * `POST /api/v1/admin/providers`
@@ -524,6 +569,157 @@ export class AdminResource extends APIResource {
       path: '/api/v1/admin/tenants',
       body,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Delete a post
+   *
+   * `DELETE /api/v1/admin/blog/posts/{postId}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteAdminBlogPost(postId: string, options?: RequestOptions): Promise<DeleteAdminBlogPostResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/blog/posts/${encodeURIComponent(String(postId))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove one provider's stored OAuth credentials
+   *
+   * Deletes the record outright — this is the only way to clear a stored credential, since the
+   * PUT treats a blank value as "keep". Idempotent: deleting a provider that has nothing stored
+   * is still 200.
+   *
+   * `DELETE /api/v1/admin/integration-oauth-providers/{provider}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, options?: RequestOptions): Promise<DeleteAdminIntegrationOAuthProviderResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/integration-oauth-providers/${encodeURIComponent(String(provider))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove the platform API key for a provider
+   *
+   * Drops the stored platform key. The PROVIDER survives — this is the key, not the definition;
+   * `DELETE /api/v1/admin/providers/{providerId}` is the other one, and it removes a custom
+   * provider outright.
+   *
+   * Answers `configured: false` for the provider, which is the same field `GET
+   * /api/v1/admin/llm-defaults` reports per provider, so the caller can apply the answer without
+   * a re-read.
+   *
+   * `DELETE /api/v1/admin/llm-defaults/{providerId}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteAdminLLMDefault(providerId: string, options?: RequestOptions): Promise<DeleteAdminLLMDefaultResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/llm-defaults/${encodeURIComponent(String(providerId))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove a custom provider (super-admin, fresh MFA)
+   *
+   * Removes a CUSTOM provider and its settings. A built-in provider is not deletable and answers
+   * 404 here — that 404 means "no such CUSTOM provider", not "no such provider", which is worth
+   * knowing before reading it as a routing mistake.
+   *
+   * Gated on a fresh MFA challenge because it is irreversible: the definition and its settings
+   * are deleted outright, not disabled. To stop using a provider without losing it, PATCH
+   * `enabled: false` instead. To drop the platform API KEY while keeping the provider, use
+   * `DELETE /api/v1/admin/llm-defaults/{providerId}` — a different route with a different
+   * subject.
+   *
+   * `DELETE /api/v1/admin/providers/{providerId}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteAdminProvider(providerId: string, options?: RequestOptions): Promise<DeleteAdminProviderResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/providers/${encodeURIComponent(String(providerId))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Run the authoring agent now and create a post
+   *
+   * Generates immediately, ignoring `frequency` — this is the operator's manual trigger, not a
+   * schedule nudge. Whether the result lands published or as a draft follows the stored
+   * `auto_publish`.
+   *
+   * A generation that FAILS is **422**, not a 200 carrying an error field, so a client reads the
+   * status. Success is **201**.
+   *
+   * `POST /api/v1/admin/blog/generate`
+   *
+   * Required scopes: `admin`.
+   */
+  generateAdminBlogPost(options?: RequestOptions): Promise<GenerateAdminBlogPostResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/admin/blog/generate',
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Get the blog's authoring configuration
+   *
+   * Super-admin only. Wrapped in `{config}` rather than returned bare — the whole blog surface
+   * uses envelopes.
+   *
+   * `GET /api/v1/admin/blog/config`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminBlogConfig(options?: RequestOptions): Promise<GetAdminBlogConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/blog/config',
+      options,
+    });
+  }
+
+  /**
+   * Read one provider's stored OAuth credentials (secret masked)
+   *
+   * **The response has two shapes and a client must handle both.** With nothing stored it is the
+   * three-field form — `{provider, enabled: false, configured: false}` — and `client_id`,
+   * `client_secret_hint` and `scopes` are ABSENT, not null. With a record stored, all six are
+   * present.
+   *
+   * The secret is never echoed. `client_secret_hint` is the last four characters behind dots,
+   * enough for an operator to confirm which credential is stored without seeing it, and it is
+   * null when the stored secret is empty.
+   *
+   * `GET /api/v1/admin/integration-oauth-providers/{provider}`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, options?: RequestOptions): Promise<GetAdminIntegrationOAuthProviderResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/admin/integration-oauth-providers/${encodeURIComponent(String(provider))}`,
       options,
     });
   }
@@ -661,7 +857,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getMaintenanceState(options?: RequestOptions): Promise<GetMaintenanceStateResponse> {
+  getMaintenanceState(options?: RequestOptions): Promise<MaintenanceState> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/maintenance',
@@ -709,6 +905,29 @@ export class AdminResource extends APIResource {
   }
 
   /**
+   * One tenant's mission-framework overrides, and what they resolve to
+   *
+   * Answers both layers at once: `mef_config` is what an operator stored for this tenant,
+   * `effective` is what the runtime will actually do. They differ whenever the platform is the
+   * deciding factor — with the mission service absent, every effective flag is false no matter
+   * what the tenant record says, so an operator reading only `mef_config` sees settings that do
+   * nothing.
+   *
+   * `mef_config` is `null` when nothing is overridden, not an empty object.
+   *
+   * `GET /api/v1/admin/tenants/{tenantId}/mef-config`
+   *
+   * Required scopes: `admin`.
+   */
+  getTenantMefConfig(tenantId: string, options?: RequestOptions): Promise<TenantMefConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/mef-config`,
+      options,
+    });
+  }
+
+  /**
    * Get tenant usage metrics
    *
    * `GET /api/v1/admin/tenants/{tenantId}/usage`
@@ -733,6 +952,75 @@ export class AdminResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/internal/verify-domain',
+      options,
+    });
+  }
+
+  /**
+   * List every post, drafts included
+   *
+   * The admin view: unlike the public blog read, drafts are included. Unpaged.
+   *
+   * `GET /api/v1/admin/blog/posts`
+   *
+   * Required scopes: `admin`.
+   */
+  listAdminBlogPosts(options?: RequestOptions): Promise<ListAdminBlogPostsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/blog/posts',
+      options,
+    });
+  }
+
+  /**
+   * Every tenant's custom domain, worst first
+   *
+   * **The order is the product.** Rows are sorted by problem severity — failed, then drift, then
+   * renewal_due, then pending, then healthy — so an operator's eye lands on what is broken. A
+   * client that re-sorts alphabetically throws that away and should sort back, or not sort at
+   * all.
+   *
+   * Tenants with no custom domain are omitted entirely, so `count` is the number of configured
+   * domains and not the number of tenants.
+   *
+   * Bounded: the tenant registry scan takes at most 5000 entries in one pass and is not paged,
+   * so on a platform past that size this list is silently partial.
+   *
+   * `GET /api/v1/admin/domains/health`
+   *
+   * Required scopes: `admin`.
+   */
+  listAdminDomainHealth(options?: RequestOptions): Promise<ListAdminDomainHealthResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/domains/health',
+      options,
+    });
+  }
+
+  /**
+   * Which integration providers an operator has configured
+   *
+   * Super-admin only, and never returns a secret — provider id, an enabled bit, and whether
+   * credentials exist at all. The dashboard uses it to decide which connector rows need a
+   * "Configure" call to action.
+   *
+   * Distinct from `/api/v1/integrations/catalog`, which is tenant-facing and lists every known
+   * connector regardless of OAuth-readiness.
+   *
+   * The list is the SUPPORTED set, not the stored set: every supported provider appears, with
+   * `configured: false` where nothing is stored. So an empty result means the supported set is
+   * empty, never that nothing is configured.
+   *
+   * `GET /api/v1/admin/integration-oauth-providers`
+   *
+   * Required scopes: `admin`.
+   */
+  listAdminIntegrationOAuthProviders(options?: RequestOptions): Promise<ListAdminIntegrationOAuthProvidersResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/integration-oauth-providers',
       options,
     });
   }
@@ -836,6 +1124,38 @@ export class AdminResource extends APIResource {
   }
 
   /**
+   * Store or update one provider's OAuth credentials
+   *
+   * WRITE SEMANTICS: merges, and the merge is what makes the route usable. An omitted or blank
+   * `client_id` or `client_secret` keeps the stored one, so an operator can flip `enabled` or
+   * rotate `scopes` WITHOUT re-pasting a secret they cannot read back. Blank counts as omitted
+   * here: a whitespace-only value does not clear anything.
+   *
+   * The consequence is that there is no way to clear a credential through this route — DELETE
+   * the provider instead.
+   *
+   * A FIRST write still needs both: with no stored record and either missing, the answer is 400.
+   * `enabled` defaults to true on a first write and otherwise keeps its stored value. A present
+   * `scopes` REPLACES the stored list.
+   *
+   * The response is the short form, not the record: `{provider, enabled, configured: true}`,
+   * with no echo of the credentials just written.
+   *
+   * `PUT /api/v1/admin/integration-oauth-providers/{provider}`
+   *
+   * Required scopes: `admin`.
+   */
+  setAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, body: SetAdminIntegrationOAuthProviderRequest, options?: RequestOptions): Promise<SetAdminIntegrationOAuthProviderResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/integration-oauth-providers/${encodeURIComponent(String(provider))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Set platform API key
    *
    * `PUT /api/v1/admin/llm-defaults/{providerId}`
@@ -870,6 +1190,36 @@ export class AdminResource extends APIResource {
   }
 
   /**
+   * Turn maintenance mode on or off (super-admin)
+   *
+   * Undocumented until now, while the GET beside it was described in full — so a generated
+   * client could READ the maintenance state and had no way to change it. The web has been
+   * calling this all along (`lib/hooks/use-maintenance-mode.ts`).
+   *
+   * Answers the whole record back, the same shape the GET serves, so a client need not re-read
+   * to learn `enabled_at` and `enabled_by_email`.
+   *
+   * WRITE SEMANTICS: replaces. The record is rebuilt from this body and written whole; nothing
+   * is read first. Turning maintenance ON without a `message` DROPS the message a previous ON
+   * had set, and turning it OFF wipes the message unconditionally, keeping only the timestamp
+   * and the actor so the audit trail still shows who closed the window. `enabled_at` and
+   * `enabled_by_email` are stamped on EVERY call, including one that changes nothing.
+   *
+   * `PUT /api/v1/admin/maintenance`
+   *
+   * Required scopes: `admin`.
+   */
+  setMaintenanceState(body: SetMaintenanceStateRequest, options?: RequestOptions): Promise<MaintenanceState> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/maintenance',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Suspend a tenant
    *
    * `PUT /api/v1/admin/tenants/{tenantId}/suspend`
@@ -880,6 +1230,85 @@ export class AdminResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/suspend`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Pull one provider's model list into the catalogue
+   *
+   * Asks the provider what models it offers and MERGES the result into the platform catalogue.
+   * Additive only — nothing is removed, so a model the provider has withdrawn stays in the
+   * catalogue until it is deleted deliberately.
+   *
+   * CUSTOM providers only: the 404 means "no custom provider with that id", so a built-in
+   * provider id is also 404 here. `added` counts new entries, `scanned` is the provider's
+   * reported inventory, and `total` is the catalogue size after the merge — so `added` is zero
+   * on a run that changed nothing, which is the normal result of a second run.
+   *
+   * `POST /api/v1/admin/providers/{providerId}/sync-models`
+   *
+   * Required scopes: `admin`.
+   */
+  syncProviderModels(providerId: string, options?: RequestOptions): Promise<SyncProviderModelsResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/admin/providers/${encodeURIComponent(String(providerId))}/sync-models`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Update the blog's authoring configuration
+   *
+   * WRITE SEMANTICS: merges. The body is spread over the stored record, so an omitted field
+   * keeps its value.
+   *
+   * One field is not a plain merge: setting `agent_id` also pins `agent_tenant_id` to the
+   * CALLING tenant, because the cron that auto-writes posts runs without a request context and
+   * would otherwise have no tenant to run the agent in. Clearing `agent_id` to `null` nulls
+   * both. `agent_tenant_id` is therefore never sent by a client and never has to be — it is
+   * derived.
+   *
+   * Answers the stored record, so a client sees what took effect.
+   *
+   * `PUT /api/v1/admin/blog/config`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminBlogConfig(body: UpdateAdminBlogConfigRequest, options?: RequestOptions): Promise<UpdateAdminBlogConfigResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/blog/config',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Edit a post
+   *
+   * WRITE SEMANTICS: merges. An omitted field keeps its value; `tags` present REPLACES the list.
+   *
+   * Three things move on their own and a client should not try to send them. Editing the `title`
+   * or the `body` re-stamps `source` to `manual`, even on a post the agent wrote — the record
+   * then says who last shaped it rather than who started it. Changing the `title` mints a new
+   * unique `slug`, so a published post's URL changes under it. And `published_at` follows
+   * `status`: it is stamped on the first transition to `published` and set back to null on
+   * `draft`, so a republished post carries a NEW timestamp rather than its original one.
+   *
+   * `PATCH /api/v1/admin/blog/posts/{postId}`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminBlogPost(postId: string, body: UpdateAdminBlogPostRequest, options?: RequestOptions): Promise<UpdateAdminBlogPostResponse> {
+    return this._client.request({
+      method: 'PATCH',
+      path: `/api/v1/admin/blog/posts/${encodeURIComponent(String(postId))}`,
       body,
       idempotent: true,
       options,
@@ -938,18 +1367,24 @@ export class AdminResource extends APIResource {
   }
 
   /**
-   * Resolve or reopen a report
+   * Mark one feedback report resolved, or reopen it
    *
-   * **Super-admin only.**
+   * **Only the exact string `resolved` resolves a report; every other value sets it to `new`.**
+   * There is no validation and no error path: `"Resolved"`, `"closed"`, a typo, a missing
+   * `status`, or a body that is not JSON at all are each accepted with 200 and REOPEN a resolved
+   * report. A client must send the literal value and must not rely on being told when it did
+   * not.
    *
-   * `PATCH /api/v1/admin/feedback`
+   * WRITE SEMANTICS: replaces the status field only; nothing else on the report is touched.
+   *
+   * `PATCH /api/v1/admin/feedback/{reportId}`
    *
    * Required scopes: `admin`.
    */
-  updateFeedbackStatus(body: UpdateFeedbackStatusRequest, options?: RequestOptions): Promise<UpdateFeedbackStatusResponse> {
+  updateFeedbackReportStatus(reportId: string, body?: UpdateFeedbackReportStatusRequest, options?: RequestOptions): Promise<UpdateFeedbackReportStatusResponse> {
     return this._client.request({
       method: 'PATCH',
-      path: '/api/v1/admin/feedback',
+      path: `/api/v1/admin/feedback/${encodeURIComponent(String(reportId))}`,
       body,
       idempotent: true,
       options,
@@ -957,16 +1392,67 @@ export class AdminResource extends APIResource {
   }
 
   /**
-   * Update tenant
+   * Set or clear one tenant's mission-framework overrides
    *
-   * `PATCH /api/v1/admin/tenants/{tenantId}`
+   * WRITE SEMANTICS: merges, per key. Only the four known keys are read; a key the body omits
+   * keeps its stored value, and a key sent as `null` CLEARS that override so the flag falls back
+   * to the platform default. Unknown keys are ignored silently rather than rejected.
+   *
+   * A non-boolean, non-null value for a known key is **422**. Note the title on that one is
+   * `ValidationError` without a space, unlike the `Validation Error` used elsewhere on this
+   * surface.
+   *
+   * When clearing the last override leaves nothing set, the whole `mef_config` is dropped rather
+   * than stored as `{}` — a later read answers `null`. And every accepted request writes: even a
+   * body that changes nothing stamps a new `updated_at` on the tenant record.
+   *
+   * Answers the same body as the GET, so a client sees both the stored overrides and what they
+   * now resolve to.
+   *
+   * `PATCH /api/v1/admin/tenants/{tenantId}/mef-config`
    *
    * Required scopes: `admin`.
    */
-  updateTenantById(tenantId: string, body: JsonObject, options?: RequestOptions): Promise<Tenant> {
+  updateTenantMefConfig(tenantId: string, body: UpdateTenantMefConfigRequest, options?: RequestOptions): Promise<TenantMefConfigResponse> {
     return this._client.request({
       method: 'PATCH',
-      path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}`,
+      path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/mef-config`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Set a tenant's plan (super-admin)
+   *
+   * The operator's manual plan grant, undocumented while GET, PATCH and DELETE on this same path
+   * were described. It is not a general tenant update: `plan` is required and it is what the
+   * route is for.
+   *
+   * WRITE SEMANTICS: mixed. The write is a compare-and-set MERGE onto the current record, so
+   * `name`, `slug` and `quota_overrides` keep their stored values when omitted. `plan` and
+   * `quotas` do not: both are written on every call, and omitting `quotas` REPLACES the tenant
+   * quotas with the resolved plan defaults rather than leaving them alone. A caller raising one
+   * dimension must send `quota_overrides`, not `quotas`.
+   *
+   * `quotas` REPLACES the plan's quotas for this tenant. `quota_overrides` is the durable one —
+   * a partial grant that survives a later Stripe subscription change, where a plain `quotas`
+   * write does not. When a tenant's plan keeps reverting, the override is the field that makes
+   * it stick, and it must be set BEFORE the plan is put back, not after.
+   *
+   * Granting any paid plan clears a stale `billing_status` (a "cancelled" left over from an
+   * earlier Stripe cancellation becomes "active"); a downgrade to free leaves the status alone,
+   * since free is never gated.
+   *
+   * `PUT /api/v1/admin/tenants/{tenantId}`
+   *
+   * Required scopes: `admin`.
+   */
+  updateTenantPlan(body: UpdateTenantPlanRequest, options?: RequestOptions): Promise<UpdateTenantPlanResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/tenants/{tenantId}',
       body,
       idempotent: true,
       options,

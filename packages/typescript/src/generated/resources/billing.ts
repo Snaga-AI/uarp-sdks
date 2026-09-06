@@ -8,6 +8,8 @@ import type {
   CreateBillingPortalSessionResponse,
   CreateCheckoutSessionRequest,
   CreateCheckoutSessionResponse,
+  CreateSpecPackageCheckoutSessionRequest,
+  CreateSpecPackageCheckoutSessionResponse,
   GetBillingTrialResponse,
   GetMediaUsageResponse,
   GetUsageTimeseriesMetric,
@@ -15,6 +17,7 @@ import type {
   HandleStripeWebhookRequest,
   JsonValue,
   ListBillingPlansResponse,
+  ListBillingSpecPackagesResponse,
   UsageSummary,
 } from '../models.js';
 
@@ -98,6 +101,35 @@ export class BillingResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/billing/checkout-session',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Start Stripe checkout for a SPEC package
+   *
+   * Answers a Stripe-hosted URL to redirect to.
+   *
+   * `success_url` and `cancel_url` must be SAME-ORIGIN with the request; anything else is
+   * refused. Both default to the billing settings page, so a caller that has no opinion should
+   * omit them rather than construct one.
+   *
+   * Three refusals worth telling apart. **501** — billing is not configured on this deployment.
+   * Not 502, deliberately: no upstream was contacted, and a 502 sends an operator hunting an
+   * outage when the fix is one admin setting. **400** — the package exists but has no Stripe
+   * price wired, and the message names the admin screen that creates one. **404** — no such
+   * package, or it is archived.
+   *
+   * `POST /api/v1/billing/spec-packages/{packageId}/checkout-session`
+   *
+   * Required scopes: `billing:read`.
+   */
+  createSpecPackageCheckoutSession(packageId: string, body?: CreateSpecPackageCheckoutSessionRequest, options?: RequestOptions): Promise<CreateSpecPackageCheckoutSessionResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/billing/spec-packages/${encodeURIComponent(String(packageId))}/checkout-session`,
       body,
       idempotent: true,
       options,
@@ -197,6 +229,36 @@ export class BillingResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/billing/plans',
+      options,
+    });
+  }
+
+  /**
+   * SPEC packages this tenant can see, with entitlement
+   *
+   * The tenant-facing view, and deliberately narrower than the admin one: archived packages are
+   * omitted and **the Stripe price id is never returned** — `checkout_available` is the boolean
+   * derived from whether one is wired.
+   *
+   * `entitlement` is a three-way discriminator a client should branch on rather than infer:
+   * `plan_included` (comes with the tenant's plan tier), `purchased` (bought a la carte),
+   * `available` (not entitled, and buyable). It carries the same values as
+   * `/api/v1/billing/packages` so one card component serves both.
+   *
+   * `program` is the nav entry and pages a package contributes, and is ABSENT for agent-only
+   * packages with no UI — which is what lets a client build the entitlement-gated navigation
+   * from this single call.
+   *
+   * Sorted by `display_order`, then by name.
+   *
+   * `GET /api/v1/billing/spec-packages`
+   *
+   * Required scopes: `billing:read`.
+   */
+  listBillingSpecPackages(options?: RequestOptions): Promise<ListBillingSpecPackagesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/billing/spec-packages',
       options,
     });
   }

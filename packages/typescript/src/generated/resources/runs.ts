@@ -9,11 +9,14 @@ import type {
   ContinueRunRequest,
   CreateRunRequest,
   EstimateRunCostRequest,
+  GetRunChangedFiles,
   GetRunQueuePositionResponse,
+  GetRunResponse,
   GetRunStepsResponse,
   JsonObject,
   JsonValue,
   ListRunCheckpointsResponse,
+  ListRunsOrder,
   ListRunsResponse,
   RejectRunRequest,
   RespondToRunRequest,
@@ -22,6 +25,18 @@ import type {
   RunApproveRequest,
   RunCostEstimate,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `getRun`.
+ */
+export interface GetRunParams {
+  /**
+   * Set to `true` to include `changed_files` in the response. Opt-in because this endpoint is
+   * polled and the paths live in their own key range: serving them unconditionally would add a
+   * KV list to a hot read for every caller that never looks at them.
+   */
+  changed_files?: GetRunChangedFiles;
+}
 
 /**
  * Query and header parameters for `getRunFeedback`.
@@ -39,6 +54,14 @@ export interface ListRunsParams {
   status?: string;
   limit?: number;
   cursor?: string;
+  /**
+   * `desc` (default) newest first, `asc` oldest first. Any other value is a 400 rather than a
+   * silent default, so a typo surfaces as an error instead of as plausible-looking data.
+   *
+   * Use `asc` instead of paging toward the end: the cursor is opaque, so there is no way to jump
+   * to the far end, but `asc` puts that end on page one.
+   */
+  order?: ListRunsOrder;
 }
 
 /**
@@ -211,10 +234,11 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  get(runId: string, options?: RequestOptions): Promise<Run> {
+  get(runId: string, params?: GetRunParams, options?: RequestOptions): Promise<GetRunResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}`,
+      query: pick(params, ['changed_files']),
       options,
     });
   }
@@ -286,6 +310,14 @@ export class RunsResource extends APIResource {
   /**
    * List all runs for tenant
    *
+   * Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
+   * most recent runs. Do not page toward the end to find recent activity — a client that walks
+   * `has_more` looking for the newest page now walks away from it. This was previously true only
+   * of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop
+   * walk that reversed meaning the day the order changed. Note the sibling
+   * `/api/v1/teams/{teamId}/runs` is deliberately the other way round — oldest first — because a
+   * team transcript reads forward.
+   *
    * `GET /api/v1/runs`
    *
    * Required scopes: `runs:read`.
@@ -294,7 +326,7 @@ export class RunsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/runs',
-      query: pick(params, ['agent_id', 'session_id', 'status', 'limit', 'cursor']),
+      query: pick(params, ['agent_id', 'session_id', 'status', 'limit', 'cursor', 'order']),
       options,
     });
   }

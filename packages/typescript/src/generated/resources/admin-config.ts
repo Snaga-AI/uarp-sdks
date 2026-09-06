@@ -2,15 +2,26 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
 import type {
-  ClearRateLimitsResponse,
-  CreatePlanStripePricePlanId,
   CreatePlanStripePriceRequest,
   CreatePlanStripePriceResponse,
+  CustomPlanInput,
+  DeleteCustomPlanForce,
+  DeleteCustomPlanResponse,
+  DeleteModelPricingOverrideResponse,
+  DeletePromoCodeResponse,
   ExportAdminConfigResponse,
+  GetAdminDisabledToolsResponse,
+  GetAdminFounderConfigResponse,
   GetAdminGuardrailsResponse,
   GetAdminIntegrationsResponse,
+  GetAdminOAuthIdentityConfigResponse,
   GetAdminPlansResponse,
+  GetAdminRegistrationConfigResponse,
+  GetAdminSmtpConfigResponse,
+  GetAdminSpecPackagesResponse,
+  GetAdminToolOverridesResponse,
   GetFeatureFlagsResponse,
   GetMarkupConfigResponse,
   GetPlatformURLSResponse,
@@ -18,29 +29,75 @@ import type {
   GetRuntimeConfigResponse,
   ImportAdminConfigRequest,
   JsonObject,
+  ListCustomPlansResponse,
+  ListPromoCodesResponse,
+  ListPromoRewardsResponse,
+  PlanLLMLimitsTierAccessItem,
+  PromoCodeInput,
+  SetModelPricingOverrideRequest,
+  SetModelPricingOverrideResponse,
+  SetupStateResponse,
+  TestAdminSmtpConfigRequest,
+  TestAdminSmtpConfigResponse,
+  UpdateAdminDisabledToolsResponse,
+  UpdateAdminFounderConfigRequest,
+  UpdateAdminOAuthIdentityConfigRequest,
   UpdateAdminPlansRequest,
   UpdateAdminPlansResponse,
+  UpdateAdminRegistrationConfigRequest,
+  UpdateAdminSetupStateRequest,
+  UpdateAdminSmtpConfigRequest,
+  UpdateAdminSpecPackagesRequest,
   UpdateAdminStripeConfigRequest,
+  UpdateAdminToolOverridesRequest,
+  UpdateAdminToolOverridesResponse,
   UpdatePlatformURLSRequest,
   UpdateSecurityPoliciesRequest,
   UpdateWebhooksPolicyRequest,
+  UpsertCustomPlanResponse,
+  UpsertPromoCodeResponse,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `deleteCustomPlan`.
+ */
+export interface DeleteCustomPlanParams {
+  /**
+   * Exactly `1`. Deletes despite assigned tenants.
+   */
+  force?: DeleteCustomPlanForce;
+}
+
+/**
+ * Query and header parameters for `updateAdminSpecPackages`.
+ */
+export interface UpdateAdminSpecPackagesParams {
+  /**
+   * Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
+   * not listed still refuse.
+   */
+  confirm_drop?: string;
+}
 
 /**
  * Platform configuration: pricing, plans, feature flags, rate limits, runtime
  */
 export class AdminConfigResource extends APIResource {
   /**
-   * Clear rate limit overrides
+   * Create the Stripe product and price for a package
    *
-   * `DELETE /api/v1/admin/config/rate-limits`
+   * Creates the product and price in Stripe and persists the resulting price id onto the
+   * package. Until this has run, the package cannot be bought: `POST
+   * /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
+   *
+   * `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
    *
    * Required scopes: `admin`.
    */
-  clearRateLimits(options?: RequestOptions): Promise<ClearRateLimitsResponse> {
+  createAdminSpecPackageStripePrice(packageId: string, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
-      method: 'DELETE',
-      path: '/api/v1/admin/config/rate-limits',
+      method: 'POST',
+      path: `/api/v1/admin/config/spec-packages/${encodeURIComponent(String(packageId))}/stripe-price`,
       idempotent: true,
       options,
     });
@@ -53,11 +110,76 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  createPlanStripePrice(planId: CreatePlanStripePricePlanId, body: CreatePlanStripePriceRequest, options?: RequestOptions): Promise<CreatePlanStripePriceResponse> {
+  createPlanStripePrice(planId: PlanLLMLimitsTierAccessItem, body: CreatePlanStripePriceRequest, options?: RequestOptions): Promise<CreatePlanStripePriceResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/admin/config/plans/${encodeURIComponent(String(planId))}/stripe-price`,
       body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove a custom plan
+   *
+   * **Refuses while tenants are assigned to the plan.** The answer is 409 naming how many, and
+   * the caller opts in with `?force=1` — an exact string match, so `?force=true` does NOT force.
+   * Deleting a plan out from under its tenants leaves them on an id that no longer resolves,
+   * which is why the guard is there.
+   *
+   * The count in the message is a floor, not a census: it is what the tenant scan saw at that
+   * moment.
+   *
+   * `DELETE /api/v1/admin/config/custom-plans/{planId}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteCustomPlan(planId: string, params?: DeleteCustomPlanParams, options?: RequestOptions): Promise<DeleteCustomPlanResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/config/custom-plans/${encodeURIComponent(String(planId))}`,
+      query: pick(params, ['force']),
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Drop the price override for one model
+   *
+   * Removes the override so the model bills at its catalogue rate again. The 404 is keyed on the
+   * OVERRIDE map, not the model catalogue: deleting an override that was never set is 404 even
+   * for a model that exists.
+   *
+   * `DELETE /api/v1/admin/config/model-pricing/{modelRef}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteModelPricingOverride(modelRef: string, options?: RequestOptions): Promise<DeleteModelPricingOverrideResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/config/model-pricing/${encodeURIComponent(String(modelRef))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Remove a promo code
+   *
+   * Removes the code only. Redemption and reward records already written against it are NOT
+   * cascaded — they remain, keyed by the code string, so a code deleted and later re-created
+   * inherits the history of its name.
+   *
+   * `DELETE /api/v1/admin/config/promo-codes/{code}`
+   *
+   * Required scopes: `admin`.
+   */
+  deletePromoCode(code: string, options?: RequestOptions): Promise<DeletePromoCodeResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/config/promo-codes/${encodeURIComponent(String(code))}`,
       idempotent: true,
       options,
     });
@@ -139,6 +261,21 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Tool ids disabled platform-wide
+   *
+   * `GET /api/v1/admin/config/disabled-tools`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminDisabledTools(options?: RequestOptions): Promise<GetAdminDisabledToolsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/disabled-tools',
+      options,
+    });
+  }
+
+  /**
    * Get evaluation overrides (timeouts, regression threshold, auto-rollback)
    *
    * `GET /api/v1/admin/config/evaluation`
@@ -149,6 +286,25 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/evaluation',
+      options,
+    });
+  }
+
+  /**
+   * Founder identity, stored and from the environment
+   *
+   * Same three-layer read as SMTP, except the third key is `effective` rather than `source`: the
+   * resolved values themselves, not a label saying where they came from. Resolution is per
+   * FIELD, so a founder id from storage can sit beside a public key from the environment.
+   *
+   * `GET /api/v1/admin/config/founder`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminFounderConfig(options?: RequestOptions): Promise<GetAdminFounderConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/founder',
       options,
     });
   }
@@ -274,6 +430,25 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Apple native sign-in identifiers and the OAuth return-to allowlist
+   *
+   * Three-layer read with `effective`, as with founder identity. The environment's
+   * `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before
+   * it appears here.
+   *
+   * `GET /api/v1/admin/config/oauth-identity`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminOAuthIdentityConfig(options?: RequestOptions): Promise<GetAdminOAuthIdentityConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/oauth-identity',
+      options,
+    });
+  }
+
+  /**
    * Get persistence overrides (snapshot interval, KV auto-cap)
    *
    * `GET /api/v1/admin/config/persistence`
@@ -299,6 +474,28 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/plans',
+      options,
+    });
+  }
+
+  /**
+   * Registration state, setup progress, and the waitlist
+   *
+   * Answers three things at once because the admin screen needs all three to decide whether the
+   * doors CAN open: the effective registration config, how far platform setup has got, and who
+   * signed up while it was shut.
+   *
+   * The waitlist is real registered tenants in status `waitlisted`, not leads — they activate
+   * lazily on their first login after the doors open.
+   *
+   * `GET /api/v1/admin/config/registration`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminRegistrationConfig(options?: RequestOptions): Promise<GetAdminRegistrationConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/registration',
       options,
     });
   }
@@ -349,6 +546,63 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Platform setup progress
+   *
+   * Answers the state plus the two vocabularies needed to read it — which steps exist and which
+   * are required — so a client does not hard-code either and drift when the list changes.
+   *
+   * `GET /api/v1/admin/config/setup-state`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminSetupState(options?: RequestOptions): Promise<SetupStateResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/setup-state',
+      options,
+    });
+  }
+
+  /**
+   * Get SMTP config, stored and from the environment
+   *
+   * Three-layer read, the shape this whole config family uses: `kv` is what an operator saved,
+   * `env` is what the process environment supplies, and `source` says which of them is actually
+   * in force. The password is never in either — only `has_password`, so a UI can show that a
+   * credential exists without ever holding it.
+   *
+   * `GET /api/v1/admin/config/smtp`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminSmtpConfig(options?: RequestOptions): Promise<GetAdminSmtpConfigResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/smtp',
+      options,
+    });
+  }
+
+  /**
+   * Every SPEC package, archived ones included
+   *
+   * The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
+   * packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
+   * then by name.
+   *
+   * `GET /api/v1/admin/config/spec-packages`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminSpecPackages(options?: RequestOptions): Promise<GetAdminSpecPackagesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/spec-packages',
+      options,
+    });
+  }
+
+  /**
    * Get SSE overrides (heartbeat, polling, reconnect hint)
    *
    * `GET /api/v1/admin/config/sse`
@@ -374,6 +628,23 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/stripe',
+      options,
+    });
+  }
+
+  /**
+   * Per-tool presentation overrides
+   *
+   * A map keyed by tool id. Empty object when nothing is stored — never null.
+   *
+   * `GET /api/v1/admin/config/tool-overrides`
+   *
+   * Required scopes: `admin`.
+   */
+  getAdminToolOverrides(options?: RequestOptions): Promise<GetAdminToolOverridesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/tool-overrides',
       options,
     });
   }
@@ -561,6 +832,66 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * The admin-authored plan catalogue
+   *
+   * Custom plans layer over the four built-in tiers. Ordered by `program` ascending — rows with
+   * no program sort FIRST, because an absent program compares as the empty string — then by
+   * `id`. `count` is `plans.length`, not a total across pages: there is no paging, the catalogue
+   * is one stored record.
+   *
+   * Optional fields are ABSENT rather than null throughout, so a client must test presence and
+   * not compare against null.
+   *
+   * `GET /api/v1/admin/config/custom-plans`
+   *
+   * Required scopes: `admin`.
+   */
+  listCustomPlans(options?: RequestOptions): Promise<ListCustomPlansResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/custom-plans',
+      options,
+    });
+  }
+
+  /**
+   * Referral and promo codes
+   *
+   * A promo code pays its owner tenant bonus tokens for every paid subscription redeemed with
+   * it, and grants the subscriber a welcome balance. `count` is the array length; there is no
+   * paging.
+   *
+   * `GET /api/v1/admin/config/promo-codes`
+   *
+   * Required scopes: `admin`.
+   */
+  listPromoCodes(options?: RequestOptions): Promise<ListPromoCodesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/config/promo-codes',
+      options,
+    });
+  }
+
+  /**
+   * What one promo code has paid out
+   *
+   * One entry per reward actually granted — the audit trail behind a code's `uses`. Matched
+   * before the `{code}` route, so a code literally named `rewards` cannot shadow it.
+   *
+   * `GET /api/v1/admin/config/promo-codes/{code}/rewards`
+   *
+   * Required scopes: `admin`.
+   */
+  listPromoRewards(code: string, options?: RequestOptions): Promise<ListPromoRewardsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/admin/config/promo-codes/${encodeURIComponent(String(code))}/rewards`,
+      options,
+    });
+  }
+
+  /**
    * Run reconciliation
    *
    * `POST /api/v1/admin/config/reconciliation`
@@ -594,6 +925,36 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Override the billed price of one model
+   *
+   * Sets what the platform charges for a model, independent of the catalogue. Validated by hand
+   * rather than by a schema, so the failures are worth stating: a body that is not JSON is 400;
+   * `input_per_million` or `output_per_million` missing, negative, or not coercible to a finite
+   * number is 400; `cached_input_per_million`, when present, must be a non-negative number or
+   * 400.
+   *
+   * WRITE SEMANTICS: the entry replaces, the map merges. This overwrites the override for this
+   * model only and leaves every other model's override untouched. Omitting
+   * `cached_input_per_million` removes it, and cached tokens then bill at the full input rate.
+   *
+   * Note the response key is `modelRef` — camelCase, an outlier in a snake_case API, and
+   * documented as sent.
+   *
+   * `PUT /api/v1/admin/config/model-pricing/{modelRef}`
+   *
+   * Required scopes: `admin`.
+   */
+  setModelPricingOverride(modelRef: string, body: SetModelPricingOverrideRequest, options?: RequestOptions): Promise<SetModelPricingOverrideResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/config/model-pricing/${encodeURIComponent(String(modelRef))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Set rate limits
    *
    * `PUT /api/v1/admin/config/rate-limits`
@@ -604,6 +965,27 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/rate-limits',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Send a test email through the effective SMTP config
+   *
+   * Sends for real, using whichever layer `source` reports — this is not a dry run. A delivery
+   * failure is **500** carrying the SMTP error text, not a 200 with `ok: false`, so a client
+   * must read the status rather than a field.
+   *
+   * `POST /api/v1/admin/config/smtp/test`
+   *
+   * Required scopes: `admin`.
+   */
+  testAdminSmtpConfig(body: TestAdminSmtpConfigRequest, options?: RequestOptions): Promise<TestAdminSmtpConfigResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/admin/config/smtp/test',
       body,
       idempotent: true,
       options,
@@ -695,6 +1077,32 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Replace the platform-wide disabled tool list
+   *
+   * **The body is a bare JSON ARRAY, not an object** — an outlier on a surface where every other
+   * write takes an object, and a client that wraps it in `{disabled_tools: […]}` gets 400.
+   *
+   * Gated on a FRESH MFA challenge.
+   *
+   * WRITE SEMANTICS: replaces. The array given becomes the list. It must be NON-EMPTY and every
+   * element a non-empty string, so there is no way to disable nothing through this route —
+   * clearing the list is not expressible here.
+   *
+   * `PUT /api/v1/admin/config/disabled-tools`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminDisabledTools(body: string[], options?: RequestOptions): Promise<UpdateAdminDisabledToolsResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/disabled-tools',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Update evaluation overrides
    *
    * `PUT /api/v1/admin/config/evaluation`
@@ -705,6 +1113,29 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/evaluation',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Set the stored founder identity
+   *
+   * Answers the same body the GET does.
+   *
+   * WRITE SEMANTICS: merges. Omitted fields keep their stored values. Unlike SMTP, an empty
+   * string IS accepted on every field here and means "leave unset" — deliberately, because the
+   * admin UI echoes current values back and a no-op save of an unset identity must not 422.
+   *
+   * `PUT /api/v1/admin/config/founder`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/founder',
       body,
       idempotent: true,
       options,
@@ -848,6 +1279,28 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Set Apple identifiers and the return-to allowlist
+   *
+   * Answers the same body the GET does.
+   *
+   * WRITE SEMANTICS: merges. Omitted fields keep their stored values; a present
+   * `oauth_return_to_hosts` REPLACES the stored list rather than adding to it.
+   *
+   * `PUT /api/v1/admin/config/oauth-identity`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/oauth-identity',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Update persistence overrides
    *
    * `PUT /api/v1/admin/config/persistence`
@@ -875,6 +1328,38 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/plans',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Open or close registration, and set signup defaults
+   *
+   * **Opening registration when it is currently CLOSED requires `confirm_open: true`.** Without
+   * it the answer is 400, and the message says so. This is not ceremony: on 2026-06-11 a
+   * long-lived admin tab running a stale bundle re-submitted its whole form four times in one
+   * day, each time carrying a stale `registration_open: true`, and silently re-opened doors an
+   * operator had ordered shut. An explicit confirm is something no stale form can send by
+   * accident. Closing, and a no-op re-save while already open, need no confirm.
+   *
+   * A second 400 refuses opening while required setup steps are outstanding, and names them.
+   *
+   * Answers the same body the GET does.
+   *
+   * WRITE SEMANTICS: merges. Omitted fields keep their stored values. `default_signup_plan` and
+   * `allowed_email_domains` are stored only when present; an empty `default_signup_plan` clears
+   * it back to the `free` default.
+   *
+   * `PUT /api/v1/admin/config/registration`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/registration',
       body,
       idempotent: true,
       options,
@@ -933,6 +1418,107 @@ export class AdminConfigResource extends APIResource {
   }
 
   /**
+   * Mark setup steps complete, or flip the registration gate
+   *
+   * WRITE SEMANTICS: mixed, and the mixed half is the point. `completed_steps` is a UNION — the
+   * steps given are ADDED to the stored list and never removed — so re-sending the same PATCH is
+   * idempotent and there is no way to un-complete a step through this route. `registration_open`
+   * is a plain overwrite.
+   *
+   * **Opening registration requires `confirm_open: true`** when it is currently closed, exactly
+   * as `PUT /api/v1/admin/config/registration` does. The guard lives in both places on purpose:
+   * without it here, the lower-level endpoint was a way around the confirm that the launch-day
+   * incident of 2026-06-11 put there.
+   *
+   * Opening also refuses with 400 while any required step is outstanding, naming them.
+   *
+   * `status` reaching `live` is a ONE-WAY latch. Once setup has completed, CLOSING registration
+   * is an operational mode — a pre-registration wave — and does NOT return the platform to
+   * `in_progress`. Before that was fixed, closing sent the super admin back into the setup
+   * wizard on every page, and the wizard's only exit was the very switch they had just turned
+   * off.
+   *
+   * The write is a compare-and-set retried up to six times; a persistently contended record
+   * answers **503** rather than overwriting a concurrent change.
+   *
+   * `PATCH /api/v1/admin/config/setup-state`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminSetupState(body: UpdateAdminSetupStateRequest, options?: RequestOptions): Promise<SetupStateResponse> {
+    return this._client.request({
+      method: 'PATCH',
+      path: '/api/v1/admin/config/setup-state',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Update stored SMTP config
+   *
+   * Answers the same body the GET does, so a client does not re-read to see what took effect.
+   *
+   * WRITE SEMANTICS: merges. A field the body omits keeps its stored value. An empty string
+   * CLEARS, but only where the validator admits one: `password` and `from_name` accept `""`,
+   * while `host`, `user` and `from` are rejected with 422 before the merge is reached — `host`
+   * and `user` require at least one character and `from` must parse as an email. So a stored
+   * host cannot be blanked through this route, only overwritten.
+   *
+   * `password: ""` is the operator-initiated clear: it drops both the encrypted and plaintext
+   * fields so the next read falls back to the environment. A password is stored
+   * AES-GCM-encrypted when an encryption key is configured; without one it is stored in
+   * plaintext and the server logs a warning rather than refusing.
+   *
+   * `PUT /api/v1/admin/config/smtp`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/smtp',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Replace the SPEC-package map
+   *
+   * WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
+   * the body is DELETED. Two guards exist because of that.
+   *
+   * **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
+   * unless the caller opts in per id: `?confirm_drop=<id>[,<id>]`. Tenants may be subscribed
+   * against that price, so losing it silently is not a save, it is a billing incident. The
+   * refusal names every id it is protecting.
+   *
+   * **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
+   * everywhere downstream, so a key that disagrees with its record orphans the package at the
+   * next read.
+   *
+   * `updated_at` is stamped by the server on every record in the payload and is not read from
+   * the body.
+   *
+   * `PUT /api/v1/admin/config/spec-packages`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, params?: UpdateAdminSpecPackagesParams, options?: RequestOptions): Promise<JsonObject> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/spec-packages',
+      query: pick(params, ['confirm_drop']),
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Update SSE overrides
    *
    * `PUT /api/v1/admin/config/sse`
@@ -960,6 +1546,40 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/stripe',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Replace the per-tool presentation overrides
+   *
+   * These affect PRESENTATION only. The runtime tool catalogue is code-defined, so an override
+   * changes what the catalogue page shows and nothing about what an agent can call — including
+   * `hidden`, which hides the row by default while the runtime still serves the tool. An
+   * operator reaching for `hidden` to switch a tool OFF wants `disabled-tools` instead.
+   *
+   * Gated on a FRESH MFA challenge.
+   *
+   * WRITE SEMANTICS: replaces. The map given becomes the whole map, so an id omitted from the
+   * body is deleted. Two further rules follow from that: an entry whose fields are all empty is
+   * DROPPED rather than stored — sending `{}` for an id is how the client deletes just that one
+   * — and `hidden` is stored only when literally `true`, so `hidden: false` deletes the flag
+   * rather than recording it.
+   *
+   * Every key is checked against the runtime's built-in tool ids: an unknown id is **422**,
+   * distinct from the 400 a malformed body gets. The outer object is strict — an unexpected
+   * top-level key is rejected, not stripped.
+   *
+   * `PUT /api/v1/admin/config/tool-overrides`
+   *
+   * Required scopes: `admin`.
+   */
+  updateAdminToolOverrides(body: UpdateAdminToolOverridesRequest, options?: RequestOptions): Promise<UpdateAdminToolOverridesResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/admin/config/tool-overrides',
       body,
       idempotent: true,
       options,
@@ -1096,6 +1716,65 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/webhooks-policy',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Create or replace one custom plan
+   *
+   * WRITE SEMANTICS: replaces. The stored record is rebuilt from this body; only `created_at`
+   * survives from the previous version. An omitted field does NOT keep its stored value — it
+   * takes the schema's default or disappears.
+   *
+   * **Two defaults make an omission destructive, and the dangerous one is `active`.** It is
+   * `default(true)`, so re-saving a DEACTIVATED plan without sending `active` silently
+   * reactivates it. `visibility` is `default("hidden")`, so re-saving a public plan without
+   * sending it hides the plan from every tenant. Neither reports anything: the answer is 200 and
+   * the record looks freshly written.
+   *
+   * Unknown keys are stripped rather than rejected, so a typo'd field name is accepted and
+   * dropped with a 200.
+   *
+   * A built-in plan id (`free`, `starter`, `pro`, `enterprise`) is **409**, pointing at `PUT
+   * /api/v1/admin/config/plans` — the route that does own those.
+   *
+   * `PUT /api/v1/admin/config/custom-plans/{planId}`
+   *
+   * Required scopes: `admin`.
+   */
+  upsertCustomPlan(planId: string, body: CustomPlanInput, options?: RequestOptions): Promise<UpsertCustomPlanResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/config/custom-plans/${encodeURIComponent(String(planId))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Create or replace one promo code
+   *
+   * WRITE SEMANTICS: replaces. Only `uses` and `created_at` survive from the previous version;
+   * every other field comes from this body, and an omitted field is dropped.
+   *
+   * **`target_plan_id` is the omission that costs money.** It scopes the code to one plan, and
+   * the reward path returns early when it is set and does not match the plan being paid for.
+   * Replace a scoped code without resending it and the code becomes redeemable on EVERY plan —
+   * 200, no warning, and the stored row looks the same size as before. `active` behaves the same
+   * way as on custom plans: `default(true)`, so omitting it reactivates a deactivated code.
+   *
+   * `PUT /api/v1/admin/config/promo-codes/{code}`
+   *
+   * Required scopes: `admin`.
+   */
+  upsertPromoCode(code: string, body: PromoCodeInput, options?: RequestOptions): Promise<UpsertPromoCodeResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/admin/config/promo-codes/${encodeURIComponent(String(code))}`,
       body,
       idempotent: true,
       options,

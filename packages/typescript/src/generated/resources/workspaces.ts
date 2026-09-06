@@ -6,14 +6,18 @@ import { pick } from '../../core/util.js';
 import type {
   AssignWorkspaceRequest,
   CopyWorkspaceFileRequest,
-  CopyWorkspaceFileResponse,
   CreateWorkspaceRequest,
+  DeleteWorkspaceFileResponse,
+  DeleteWorkspaceFileTrash,
   EmptyWorkspaceTrashResponse,
   JsonObject,
   JsonValue,
+  ListWorkspaceFilesResponse,
   ListWorkspaceTrashResponse,
   ListWorkspacesResponse,
   MoveWorkspaceFileRequest,
+  RestoreWorkspaceTrashRequest,
+  RestoreWorkspaceTrashResponse,
   RunWorkspaceCommandRequest,
   RunWorkspaceCommandResponse,
   SearchWorkspaceFilesRegex,
@@ -22,6 +26,7 @@ import type {
   UnassignWorkspaceRequest,
   UpdateWorkspaceRequest,
   UploadWorkspaceFileRequest,
+  WorkspaceFile,
 } from '../models.js';
 
 /**
@@ -29,6 +34,11 @@ import type {
  */
 export interface DeleteWorkspaceFileParams {
   path: string;
+  /**
+   * Set to `false` to force a permanent delete even for a user-session (JWT) caller. Ignored for
+   * api-key callers, which always delete permanently.
+   */
+  trash?: DeleteWorkspaceFileTrash;
 }
 
 /**
@@ -117,7 +127,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  copyWorkspaceFile(workspaceId: string, body: CopyWorkspaceFileRequest, options?: RequestOptions): Promise<CopyWorkspaceFileResponse> {
+  copyWorkspaceFile(workspaceId: string, body: CopyWorkspaceFileRequest, options?: RequestOptions): Promise<WorkspaceFile> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/copy`,
@@ -167,11 +177,11 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  deleteWorkspaceFile(workspaceId: string, params: DeleteWorkspaceFileParams, options?: RequestOptions): Promise<JsonValue> {
+  deleteWorkspaceFile(workspaceId: string, params: DeleteWorkspaceFileParams, options?: RequestOptions): Promise<DeleteWorkspaceFileResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,
-      query: pick(params, ['path']),
+      query: pick(params, ['path', 'trash']),
       idempotent: true,
       options,
     });
@@ -278,7 +288,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:read`.
    */
-  listWorkspaceFiles(workspaceId: string, params?: ListWorkspaceFilesParams, options?: RequestOptions): Promise<JsonValue> {
+  listWorkspaceFiles(workspaceId: string, params?: ListWorkspaceFilesParams, options?: RequestOptions): Promise<ListWorkspaceFilesResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,
@@ -313,6 +323,23 @@ export class WorkspacesResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/move`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Restore a trashed file to its original path
+   *
+   * `POST /api/v1/workspaces/{workspaceId}/trash/restore`
+   *
+   * Required scopes: `files:write`.
+   */
+  restoreWorkspaceTrash(workspaceId: string, body: RestoreWorkspaceTrashRequest, options?: RequestOptions): Promise<RestoreWorkspaceTrashResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/trash/restore`,
       body,
       idempotent: true,
       options,

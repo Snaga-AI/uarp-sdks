@@ -132,6 +132,11 @@ export class KnowledgeResource extends APIResource {
   /**
    * Update knowledge base
    *
+   * WRITE SEMANTICS: merges. Measured 2026-08-31 on the wire: `{name}` left `description` intact
+   * and vice versa, and `chunk_size` and `embedding_model` survived both. Note this is the
+   * OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
+   * docs/WRITE_SEMANTICS.md.
+   *
    * `PUT /api/v1/knowledge-bases/{id}`
    *
    * Required scopes: `memory:write`.

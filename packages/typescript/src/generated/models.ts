@@ -127,6 +127,45 @@ export interface AbortMissionRequest {
   reason?: string;
 }
 
+export interface AcceptInviteFromPickerRequest {
+  /**
+   * The invite secret, echoed to the picker by `GET /api/v1/me/tenants`. Compared in constant
+   * time. Defence in depth rather than the primary gate — the email match is that — and it
+   * catches the class where the listing ever shows an invite not addressed to the caller.
+   * Invites created before secrets exist accept without one.
+   */
+  token?: string;
+  /**
+   * Display name for the new member. Omitted, the local part of the invited email is used.
+   */
+  name?: string;
+}
+
+export interface AcceptInviteFromPickerResponse {
+  accepted: boolean;
+  tenant_id: string;
+  user_id: string;
+  role: string;
+}
+
+export interface AcceptInviteRequest {
+  /**
+   * Display name. Omitted, the local part of the invited email is used.
+   */
+  name?: string;
+  /**
+   * The invite secret from the email link's `?t=`, forwarded in the body.
+   */
+  token?: string;
+}
+
+export interface AcceptInviteResponse {
+  accepted: boolean;
+  user_id: string;
+  tenant_id: string;
+  role: string;
+}
+
 /**
  * The JSON form of an account export. The same bundle the zip contains, as one document.
  */
@@ -465,6 +504,17 @@ export interface Agent {
    */
   workspace_id?: string | null;
   context_strategy?: AgentContextStrategy;
+  /**
+   * Number of recent MESSAGES to keep — not a token budget, and read only when
+   * `context_strategy` is `sliding_window`. Default 20. Under any other strategy it is ignored
+   * entirely.
+   *
+   * Said explicitly because the name reads like a token ceiling and was used as one: the Head
+   * Agent tier template set it to 65536/131072/262144 as if it capped context, and a client
+   * posted those values believing they sized the window. The window is the model's — see
+   * `model.capabilities.max_context_tokens` — and what bounds history per call is
+   * `resource_limits.max_tokens_per_run` together with the platform's history-budget ratio.
+   */
   context_window_size?: number;
   created_at: string;
   updated_at?: string;
@@ -1122,6 +1172,70 @@ export type BallotVote = 'approve' | 'reject' | 'abstain';
 
 export const BALLOT_VOTE_VALUES = ['approve', 'reject', 'abstain'] as const;
 
+export interface BlogConfig {
+  enabled: boolean;
+  title: string;
+  description: string;
+  agent_id: string | null;
+  /**
+   * Derived, never sent by a client: set from the caller's tenant when `agent_id` is assigned,
+   * so the cron can run the author without a request context.
+   */
+  agent_tenant_id: string | null;
+  frequency: BlogConfigFrequency;
+  schedule_hour: number;
+  schedule_weekday: number;
+  topic_prompt: string;
+  conditions: string;
+  auto_publish: boolean;
+  /**
+   * Drives scheduling. Null until the first successful generation.
+   */
+  last_generated_at: string | null;
+}
+
+export type BlogConfigFrequency = 'manual' | 'hourly' | 'daily' | 'weekly';
+
+export const BLOG_CONFIG_FREQUENCY_VALUES = ['manual', 'hourly', 'daily', 'weekly'] as const;
+
+export interface BlogPost {
+  id: string;
+  /**
+   * Derived from the title and unique. Re-minted whenever the title changes.
+   */
+  slug: string;
+  title: string;
+  body: string;
+  tags: string[];
+  status: BlogPostStatus;
+  /**
+   * Who last shaped it, not who started it — an edit to the title or body of an agent-written
+   * post re-stamps this to `manual`.
+   */
+  source: BlogPostSource;
+  agent_id: string | null;
+  run_id: string | null;
+  created_at: string;
+  updated_at: string;
+  /**
+   * Null while a draft. Stamped on transition to published and cleared on a return to draft, so
+   * a republished post carries a new timestamp rather than its original.
+   */
+  published_at: string | null;
+}
+
+/**
+ * Who last shaped it, not who started it — an edit to the title or body of an agent-written
+ * post re-stamps this to `manual`.
+ */
+export type BlogPostSource = 'agent' | 'manual';
+
+export const BLOG_POST_SOURCE_VALUES = ['agent', 'manual'] as const;
+
+export type BlogPostStatus = 'draft' | 'published';
+
+export const BLOG_POST_STATUS_VALUES = ['draft', 'published'] as const;
+
 export interface BootstrapAmbassadorResponse {
   ambassador_id?: string;
 }
@@ -1176,8 +1290,12 @@ export interface BridgeDeregisterRequest {
 }
 
 export interface BridgeDeregisterResponse {
-  success?: boolean;
+  status: BridgeDeregisterResponseStatus;
 }
+
+export type BridgeDeregisterResponseStatus = 'offline';
+
+export const BRIDGE_DEREGISTER_RESPONSE_STATUS_VALUES = ['offline'] as const;
 
 export interface BridgeHeartbeatRequest {
   machine_id?: string;
@@ -1229,7 +1347,29 @@ export interface BridgePendingTask {
 export interface BridgePendingTaskInput {
   message: string;
   conversation_history?: BridgePendingTaskInputConversationHistoryItem[];
+  /**
+   * Attachment ids the user added to this message. Fetch each with GET /files/{fileId}/content
+   * (scope files:read). Absent when the message had no attachment.
+   */
   files?: string[];
+  /**
+   * The attachments, in the same order as `files`, with what a client needs BEFORE it spends a
+   * fetch: a 40 MB video and a 2 KB note are not the same decision, and an error that cannot
+   * name the file leaves the model answering about a document it never opened. This is the
+   * SUBSET of `files` whose artifact record still exists when the task is enqueued — a run
+   * dispatched from a schedule was written earlier and the file may have been deleted since. An
+   * id present in `files` with no entry here means the file is gone, not that its metadata was
+   * omitted; fetching it will 404, which is how the client reports the attachment as not
+   * delivered.
+   */
+  attachments?: BridgePendingTaskInputAttachment[];
+}
+
+export interface BridgePendingTaskInputAttachment {
+  file_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
 }
 
 export interface BridgePendingTaskInputConversationHistoryItem {
@@ -1268,10 +1408,7 @@ export interface BridgeRegisterResponse {
 }
 
 export interface BridgeStatusResponse {
-  status?: string;
-  agent_id?: string;
-  last_heartbeat?: string;
-  capabilities?: string[];
+  connections: BridgeConnection[];
 }
 
 export interface BridgeTaskEvent {
@@ -1360,6 +1497,22 @@ export interface CancelTrainingJobResponseVariant2 {
   message: string;
 }
 
+export interface CanvasWorkflowStep {
+  /**
+   * The agent this step runs. An entry without it is silently discarded.
+   */
+  agent_id: string;
+  /**
+   * Display name for the step; falls back to the agent's own name.
+   */
+  label?: string;
+  /**
+   * Per-step instruction. Carried through the SCHEDULE too — dropping it there made every
+   * scheduled run fall back to the bare label while the manual run honoured it.
+   */
+  prompt?: string;
+}
+
 export interface CastBallotRequest {
   agent_id: string;
   vote: string;
@@ -1425,17 +1578,35 @@ export interface CheckGovernanceRequest {
 }
 
 export interface CheckGovernanceResponse {
-  allowed?: boolean;
-  violations?: ConstitutionViolation[];
+  /**
+   * False when any matched rule carries a blocking penalty.
+   */
+  allowed: boolean;
+  checkResult: CheckGovernanceResponseCheckResult;
+  /**
+   * What the matched rules call for. Empty when nothing matched.
+   */
+  penalties: CheckGovernanceResponsePenalty[];
+}
+
+export interface CheckGovernanceResponseCheckResult {
+  allowed: boolean;
+  /**
+   * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+   */
+  checked_rules: string[];
+  violations: ConstitutionViolation[];
+  checked_at: string;
+}
+
+export interface CheckGovernanceResponsePenalty {
+  ruleId: string;
+  penalty: ConstitutionRulePenalty;
 }
 
 export interface CheckSpawnPermissionRequest {
   parent_agent_id: string;
   child_permissions: PermissionSet;
-}
-
-export interface ClearRateLimitsResponse {
-  cleared?: boolean;
 }
 
 /**
@@ -1749,12 +1920,8 @@ export type ConversationEntryToolCallStatus = 'done' | 'error';
 export const CONVERSATION_ENTRY_TOOL_CALL_STATUS_VALUES = ['done', 'error'] as const;
 
 export interface CopyWorkspaceFileRequest {
-  source: string;
-  destination: string;
-}
-
-export interface CopyWorkspaceFileResponse {
-  path?: string;
+  source_path: string;
+  dest_path: string;
 }
 
 export interface CoreMemoryBlock {
@@ -1776,6 +1943,17 @@ export interface CreateA2ATaskRequest {
 export interface CreateA2ATaskRequestMessage {
   role?: string;
   parts?: JsonObject[];
+}
+
+export interface CreateAdminBlogPostRequest {
+  title: string;
+  body: string;
+  tags?: string[];
+  status?: BlogPostStatus;
+}
+
+export interface CreateAdminBlogPostResponse {
+  post: BlogPost;
 }
 
 export interface CreateAgentFriaRequest {
@@ -1803,12 +1981,26 @@ export interface CreateAgentRequest {
   model?: AgentModelConfigInput;
   description?: string;
   prompts?: JsonObject;
-  skills?: JsonValue[];
   thinking?: JsonObject;
+  /**
+   * How runs execute. Accepted by `CreateAgentSchema` (schemas/mod.ts:499) and undocumented
+   * until now — `bridge` is deliberately NOT selectable here: bridge agents are created by the
+   * bridge registration path, not by this route.
+   */
+  execution_mode?: CreateAgentRequestExecutionMode;
   resource_limits?: JsonObject;
   memory?: JsonObject;
   guardrails?: JsonObject;
 }
+
+/**
+ * How runs execute. Accepted by `CreateAgentSchema` (schemas/mod.ts:499) and undocumented
+ * until now — `bridge` is deliberately NOT selectable here: bridge agents are created by the
+ * bridge registration path, not by this route.
+ */
+export type CreateAgentRequestExecutionMode = 'async' | 'worker';
+
+export const CREATE_AGENT_REQUEST_EXECUTION_MODE_VALUES = ['async', 'worker'] as const;
 
 export interface CreateAgentVersionRequest {
   changelog?: string;
@@ -1968,10 +2160,6 @@ export interface CreateMyTenantResponse {
   user_id: string;
 }
 
-export type CreatePlanStripePricePlanId = 'starter' | 'pro' | 'enterprise';
-
-export const CREATE_PLAN_STRIPE_PRICE_PLAN_ID_VALUES = ['starter', 'pro', 'enterprise'] as const;
-
 export interface CreatePlanStripePriceRequest {
   amount_cents: number;
   /**
@@ -1981,13 +2169,9 @@ export interface CreatePlanStripePriceRequest {
   /**
    * @default "month"
    */
-  interval?: CreatePlanStripePriceRequestInterval;
+  interval?: SpecPackagePricingBillingInterval;
   product_name?: string;
 }
-
-export type CreatePlanStripePriceRequestInterval = 'month' | 'year';
-
-export const CREATE_PLAN_STRIPE_PRICE_REQUEST_INTERVAL_VALUES = ['month', 'year'] as const;
 
 export interface CreatePlanStripePriceResponse {
   plan_id?: string;
@@ -2077,9 +2261,15 @@ export interface CreateRunRequest {
   agent_id: string;
   session_id?: string;
   /**
+   * Free-form input for the agent; `message` is the conventional field. `file_ids` attaches
+   * uploaded files (at most 20): every id is resolved against THIS tenant before the run is
+   * created, and an id with no file here is refused with 422 rather than accepted and dropped —
+   * an unresolvable id would otherwise travel to the agent, and to a bridge agent's machine, as
+   * an attachment that cannot be fetched.
+   *
    * @default {}
    */
-  input?: JsonObject;
+  input?: CreateRunRequestInput;
   /**
    * Pin to a specific agent version (1-based). When omitted, runs against the agent's current
    * head version.
@@ -2087,6 +2277,18 @@ export interface CreateRunRequest {
   version?: number;
   resource_limits?: JsonObject;
   metadata?: JsonObject;
+}
+
+/**
+ * Free-form input for the agent; `message` is the conventional field. `file_ids` attaches
+ * uploaded files (at most 20): every id is resolved against THIS tenant before the run is
+ * created, and an id with no file here is refused with 422 rather than accepted and dropped —
+ * an unresolvable id would otherwise travel to the agent, and to a bridge agent's machine, as
+ * an attachment that cannot be fetched.
+ */
+export interface CreateRunRequestInput {
+  message?: string;
+  file_ids?: string[];
 }
 
 export interface CreateSessionAnnotationRequest {
@@ -2145,6 +2347,21 @@ export interface CreateSessionTodoRequest {
   due_at?: string;
   assign_agent_id?: string;
   status?: string;
+}
+
+export interface CreateSpecPackageCheckoutSessionRequest {
+  /**
+   * Same-origin. Defaults to the billing settings page.
+   */
+  success_url?: string;
+  /**
+   * Same-origin. Defaults to the billing settings page.
+   */
+  cancel_url?: string;
+}
+
+export interface CreateSpecPackageCheckoutSessionResponse {
+  url: string;
 }
 
 export interface CreateTrainingDepositResponseVariant1 {
@@ -2231,9 +2448,100 @@ export interface CustomerUpdate {
   metadata?: JsonObject;
 }
 
+export interface CustomPlan {
+  /**
+   * Lower-cased. The identity — not settable through the body.
+   */
+  id: string;
+  name: string;
+  /**
+   * Absent when unset.
+   */
+  description?: string;
+  /**
+   * Pairs the plan with a promo program. Absent when unset.
+   */
+  program?: string;
+  base_plan: SpecPackageIncludedInPlan;
+  price_amount_cents: number;
+  price_currency: string;
+  /**
+   * Absent when unset.
+   */
+  stripe_price_id?: string;
+  quotas?: TenantQuotas;
+  llm?: PlanLLMLimits;
+  visibility: CustomPlanVisibility;
+  active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CustomPlanInput {
+  name: string;
+  description?: string;
+  program?: string;
+  base_plan: SpecPackageIncludedInPlan;
+  price_amount_cents: number;
+  /**
+   * @default "usd"
+   */
+  price_currency?: string;
+  stripe_price_id?: string;
+  quotas?: TenantQuotas;
+  llm?: PlanLLMLimits;
+  /**
+   * Omitting this on an update HIDES a previously public plan.
+   *
+   * @default "hidden"
+   */
+  visibility?: CustomPlanVisibility;
+  /**
+   * Omitting this on an update REACTIVATES a deactivated plan. Send it explicitly on every
+   * write.
+   *
+   * @default true
+   */
+  active?: boolean;
+}
+
+export type CustomPlanVisibility = 'public' | 'hidden';
+
+export const CUSTOM_PLAN_VISIBILITY_VALUES = ['public', 'hidden'] as const;
+
 export interface DeactivateSafeModeResponse {
   ok?: boolean;
   mode?: string;
+}
+
+export interface DeclineInviteFromPickerResponse {
+  declined: boolean;
+  invite: Invite;
+}
+
+export interface DeleteAdminBlogPostResponse {
+  deleted: boolean;
+}
+
+export interface DeleteAdminIntegrationOAuthProviderResponse {
+  provider: string;
+  /**
+   * Always false here.
+   */
+  configured: boolean;
+}
+
+export interface DeleteAdminLLMDefaultResponse {
+  provider: string;
+  /**
+   * Always false here — the key is gone.
+   */
+  configured: boolean;
+}
+
+export interface DeleteAdminProviderResponse {
+  deleted: boolean;
+  id: string;
 }
 
 export interface DeleteCommerceCustomerResponse {
@@ -2242,6 +2550,19 @@ export interface DeleteCommerceCustomerResponse {
 
 export interface DeleteCommerceProductResponse {
   deleted?: boolean;
+}
+
+export type DeleteCustomPlanForce = '1';
+
+export const DELETE_CUSTOM_PLAN_FORCE_VALUES = ['1'] as const;
+
+export interface DeleteCustomPlanResponse {
+  deleted: boolean;
+  id: string;
+  /**
+   * Tenants moved off the plan, when forced.
+   */
+  reassigned?: number;
 }
 
 export interface DeleteDataExplorerValueResponse {
@@ -2258,6 +2579,11 @@ export interface DeleteLLMProviderKeyResponse {
   provider_id?: string;
 }
 
+export interface DeleteModelPricingOverrideResponse {
+  modelRef: string;
+  deleted: boolean;
+}
+
 export interface DeleteNotificationResponse {
   ok?: boolean;
 }
@@ -2270,6 +2596,14 @@ export interface DeleteProjectResponse {
   deleted: boolean;
   project_id: string;
   chats_kept: number;
+}
+
+export interface DeletePromoCodeResponse {
+  deleted: boolean;
+  /**
+   * Upper-cased, which may differ from what was sent.
+   */
+  code: string;
 }
 
 export interface DeleteSessionTodoResponse {
@@ -2314,6 +2648,16 @@ export interface DeleteTeamResponse {
 export interface DeleteUserResponse {
   deleted?: boolean;
 }
+
+export interface DeleteWorkspaceFileResponse {
+  trashed: boolean;
+  trash_path: string;
+  original_path: string;
+}
+
+export type DeleteWorkspaceFileTrash = 'false';
+
+export const DELETE_WORKSPACE_FILE_TRASH_VALUES = ['false'] as const;
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -2361,6 +2705,64 @@ export const DESIGN_REQUEST_STATUS_VALUES = ['pending', 'voting', 'approved', 'r
 export interface DisableMfaResponse {
   disabled: boolean;
 }
+
+export interface DomainCertLifecycle {
+  /**
+   * `renewal_due` is entered 14 days or less before `not_after`.
+   */
+  state: DomainCertLifecycleState;
+  not_before?: string;
+  not_after?: string;
+  /**
+   * Issuer CN, so a CA migration is visible without parsing the leaf.
+   */
+  issuer_cn?: string;
+  last_checked_at?: string;
+  last_error?: string;
+}
+
+/**
+ * `renewal_due` is entered 14 days or less before `not_after`.
+ */
+export type DomainCertLifecycleState = 'none' | 'provisioning' | 'active' | 'renewal_due' | 'failed' | 'revoked';
+
+export const DOMAIN_CERT_LIFECYCLE_STATE_VALUES = ['none', 'provisioning', 'active', 'renewal_due', 'failed', 'revoked'] as const;
+
+export interface DomainDnsLifecycle {
+  /**
+   * `drift` means it verified once and no longer matches — distinct from `failed`, which never
+   * verified.
+   */
+  state: DomainDnsLifecycleState;
+  method: DomainDnsLifecycleMethod;
+  /**
+   * What the customer points DNS at. Stored per record so changing the platform target does not
+   * silently invalidate domains already pinned to the old one.
+   */
+  target: string;
+  /**
+   * Most recent lookup, whatever its result.
+   */
+  last_checked_at?: string;
+  /**
+   * First time it matched. Sticky across verified → drift → verified, so it is not the time of
+   * the LAST success.
+   */
+  verified_at?: string;
+  last_error?: string;
+}
+
+export type DomainDnsLifecycleMethod = 'cname' | 'a';
+
+export const DOMAIN_DNS_LIFECYCLE_METHOD_VALUES = ['cname', 'a'] as const;
+
+/**
+ * `drift` means it verified once and no longer matches — distinct from `failed`, which never
+ * verified.
+ */
+export type DomainDnsLifecycleState = 'pending' | 'verified' | 'failed' | 'drift' | 'deactivated';
+
+export const DOMAIN_DNS_LIFECYCLE_STATE_VALUES = ['pending', 'verified', 'failed', 'drift', 'deactivated'] as const;
 
 export interface EmbeddingsRequest {
   /**
@@ -2419,7 +2821,8 @@ export type EmergencyStateMode = 'normal' | 'safe_mode' | 'arbitration_safe_mode
 export const EMERGENCY_STATE_MODE_VALUES = ['normal', 'safe_mode', 'arbitration_safe_mode', 'bootstrap'] as const;
 
 export interface EmptyWorkspaceTrashResponse {
-  deleted?: number;
+  deleted_count: number;
+  message: string;
 }
 
 export interface EnforcementResult {
@@ -2619,9 +3022,24 @@ export interface FeedEntryMetrics {
 }
 
 export interface FileArbiterAppealRequest {
-  filed_by: string;
+  filed_by?: string;
   reason: string;
 }
+
+export interface FileArbiterAppealResponse {
+  appeal_id: string;
+  case_id: string;
+  filed_by: string;
+  reason: string;
+  panel_arbiter_ids: string[];
+  status: FileArbiterAppealResponseStatus;
+  filed_at: string;
+  resolved_at?: string;
+}
+
+export type FileArbiterAppealResponseStatus = 'pending' | 'upheld' | 'overturned';
+
+export const FILE_ARBITER_APPEAL_RESPONSE_STATUS_VALUES = ['pending', 'upheld', 'overturned'] as const;
 
 export interface FileArbiterCaseRequest {
   filed_by: string;
@@ -2755,6 +3173,15 @@ export interface FleetLayoutUpdateNote {
   frame?: boolean;
 }
 
+export interface FounderIdentity {
+  /**
+   * Empty string when unset — this read never omits the key.
+   */
+  founder_id: string;
+  founder_name: string;
+  founder_public_key: string;
+}
+
 export interface FriaReport {
   agent_id: string;
   risk_level: string;
@@ -2776,14 +3203,57 @@ export type FriaRightImpact = 'none' | 'low' | 'medium' | 'high';
 
 export const FRIA_RIGHT_IMPACT_VALUES = ['none', 'low', 'medium', 'high'] as const;
 
+export interface GenerateAdminBlogPostResponse {
+  post: BlogPost;
+}
+
 export interface GetActivityFeedResponse {
   entries?: FeedEntry[];
   cursor?: string;
   total?: number;
 }
 
+export interface GetAdminBlogConfigResponse {
+  config: BlogConfig;
+}
+
+export interface GetAdminDisabledToolsResponse {
+  ok: boolean;
+  disabled_tools: string[];
+}
+
+export interface GetAdminFounderConfigResponse {
+  kv: FounderIdentity;
+  env: FounderIdentity;
+  effective: FounderIdentity;
+}
+
 export interface GetAdminGuardrailsResponse {
   guardrails?: JsonObject[];
+}
+
+export type GetAdminIntegrationOAuthProviderProvider = 'github' | 'google' | 'slack' | 'notion' | 'stripe' | 'shopify' | 'jira' | 'zendesk' | 'hubspot' | 'linkedin' | 'youtube' | 'instagram' | 'x_twitter' | 'facebook' | 'tiktok';
+
+export const GET_ADMIN_INTEGRATION_OAUTH_PROVIDER_PROVIDER_VALUES = ['github', 'google', 'slack', 'notion', 'stripe', 'shopify', 'jira', 'zendesk', 'hubspot', 'linkedin', 'youtube', 'instagram', 'x_twitter', 'facebook', 'tiktok'] as const;
+
+export interface GetAdminIntegrationOAuthProviderResponse {
+  provider: string;
+  enabled: boolean;
+  configured: boolean;
+  /**
+   * Present only when `configured` is true.
+   */
+  client_id?: string;
+  /**
+   * Last four characters behind dots. Present only when `configured` is true; null when the
+   * stored secret is empty.
+   */
+  client_secret_hint?: string | null;
+  /**
+   * Override of the default scope list. Present only when `configured` is true; null when no
+   * override is stored.
+   */
+  scopes?: string[] | null;
 }
 
 export interface GetAdminIntegrationsResponse {
@@ -2809,7 +3279,31 @@ export type GetAdminIntegrationsResponseIntegrationAuthType = 'oauth2' | 'api_ke
 export const GET_ADMIN_INTEGRATIONS_RESPONSE_INTEGRATION_AUTH_TYPE_VALUES = ['oauth2', 'api_key', 'none'] as const;
 
 export interface GetAdminLLMDefaultsResponse {
-  providers?: JsonObject[];
+  providers: GetAdminLLMDefaultsResponseProvider[];
+  default_provider?: string | null;
+  default_model?: string | null;
+  default_endpoint?: string | null;
+  fallback_provider?: string | null;
+  fallback_model?: string | null;
+  fallback_endpoint?: string | null;
+}
+
+export interface GetAdminLLMDefaultsResponseProvider {
+  provider_id: string;
+  /**
+   * Always true — the list holds configured providers only.
+   */
+  configured: boolean;
+  /**
+   * Masked key: first four and last four, or all dots when the key is 10 characters or fewer.
+   */
+  key_hint: string;
+}
+
+export interface GetAdminOAuthIdentityConfigResponse {
+  kv: OAuthIdentityConfig;
+  env: OAuthIdentityConfig;
+  effective: OAuthIdentityConfig;
 }
 
 export interface GetAdminPlansResponse {
@@ -2825,14 +3319,138 @@ export interface GetAdminPlansResponsePlan {
   quotas: JsonObject;
 }
 
+export interface GetAdminRegistrationConfigResponse {
+  registration_open: boolean;
+  /**
+   * `free` when nothing is stored.
+   */
+  default_signup_plan: string;
+  /**
+   * Empty means no domain restriction.
+   */
+  allowed_email_domains: string[];
+  setup_status: SetupStateResponseStateStatus;
+  /**
+   * Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+   * and this is the list it will name.
+   */
+  missing_required: string[];
+  /**
+   * How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
+   * be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+   * froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+   * admin uses to decide when to open registration, so it is the one that must be complete
+   * rather than the roster.
+   */
+  waitlist_count: number;
+  /**
+   * True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+   * and stays bounded at 1000; the count is not.
+   */
+  waitlist_truncated?: boolean;
+  /**
+   * Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
+   * `waitlist.length` as the total.
+   */
+  waitlist: GetAdminRegistrationConfigResponseWaitlistItem[];
+}
+
+export interface GetAdminRegistrationConfigResponseWaitlistItem {
+  tenant_id: string;
+  email: string;
+  created_at: string;
+}
+
+export interface GetAdminSmtpConfigResponse {
+  /**
+   * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+   */
+  kv: GetAdminSmtpConfigResponseKv;
+  /**
+   * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+   */
+  env: GetAdminSmtpConfigResponseEnv;
+  /**
+   * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+   * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+   * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+   * inert.
+   */
+  source: GetAdminSmtpConfigResponseSource;
+}
+
+/**
+ * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+ */
+export interface GetAdminSmtpConfigResponseEnv {
+  host?: string;
+  port?: number;
+  user?: string;
+  from?: string;
+  from_name?: string;
+  /**
+   * Whether a credential is stored. The password itself is never returned by any read.
+   */
+  has_password?: boolean;
+}
+
+/**
+ * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+ */
+export interface GetAdminSmtpConfigResponseKv {
+  host?: string;
+  port?: number;
+  user?: string;
+  from?: string;
+  from_name?: string;
+  /**
+   * Whether a credential is stored. The password itself is never returned by any read.
+   */
+  has_password?: boolean;
+}
+
+/**
+ * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+ * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+ * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+ * inert.
+ */
+export type GetAdminSmtpConfigResponseSource = 'kv' | 'env' | 'none';
+
+export const GET_ADMIN_SMTP_CONFIG_RESPONSE_SOURCE_VALUES = ['kv', 'env', 'none'] as const;
+
+export interface GetAdminSpecPackagesResponse {
+  packages: SpecPackage[];
+}
+
 export interface GetAdminStatsResponse {
   total_tenants?: number;
   total_agents?: number;
   total_runs?: number;
 }
 
+export interface GetAdminToolOverridesResponse {
+  ok: boolean;
+  overrides: Record<string, ToolOverride>;
+}
+
 export interface GetAdminTraceResponse {
-  trace?: JsonObject[];
+  trace_id: string;
+  count: number;
+  truncated?: boolean;
+  runs: GetAdminTraceResponseRun[];
+}
+
+export interface GetAdminTraceResponseRun {
+  run_id?: string;
+  agent_id?: string;
+  status?: string;
+  parent_run_id?: string;
+  dag_trace_id?: string;
+  created_at?: string;
+  completed_at?: string;
+  duration_ms?: number;
+  error?: string;
 }
 
 export interface GetAgentActivityStatsResponse {
@@ -2968,8 +3586,23 @@ export interface GetCompanyObjectivesResponse {
 }
 
 export interface GetConstitutionResponse {
-  rules?: ConstitutionRule[];
-  version?: number;
+  tenant_id: string;
+  /**
+   * Monotonic. `0` on the virtual genesis view — nothing is stored yet.
+   */
+  version: number;
+  rules: ConstitutionRule[];
+  amendments: ConstitutionAmendment[];
+  founder_id: string;
+  created_at: string;
+  updated_at: string;
+  /**
+   * Present and `true` ONLY when no document is stored: these are the genesis defaults, computed
+   * on read and not persisted (routes/governance.ts:174-196). Absent on every stored
+   * constitution — do not read its absence as `false` being meaningful, and do not re-seed a
+   * document that does not carry it.
+   */
+  virtual?: boolean;
 }
 
 export interface GetDataExplorerValueResponse {
@@ -3007,11 +3640,37 @@ export interface GetHealthResponse {
   timestamp?: string;
   kv_connected?: boolean;
   uptime_seconds?: number;
+  /**
+   * The API contract version, a DATE STAMP — `2025-03-01` — bumped only on a breaking change,
+   * and the same value the `X-API-Version` header carries. Not a release number and not semver:
+   * it cannot be ordered against a semver string, so a client that compares it to one is wrong
+   * in a way that appears to work for as long as both happen to sort the same. Compare it for
+   * equality, or read it as a date. It says nothing about which BUILD is running — for that,
+   * read `build_sha`.
+   */
   version?: string;
   /**
-   * Runs waiting to be resumed after a restart.
+   * The commit this running build was made from, baked in at image build time. This is the only
+   * value on the wire that identifies the deployed code: `version` is the contract stamp and is
+   * constant across deploys, and a restart proves a restart rather than an identity. `"unknown"`
+   * means the image was built without the build argument (a local build, or a deploy predating
+   * this field) and must be read as UNKNOWN, never as a match. Documentation that pins a claim
+   * about platform behaviour can cite it.
+   */
+  build_sha?: string;
+  /**
+   * Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
+   * `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
+   * holding it for resume. It previously reported the queue depth under this name, which reads
+   * as recovery progress on the one endpoint an operator watches during a deploy. Use
+   * `runs_queued` for the queue, and run status for recovery.
    */
   pending_resumes?: number;
+  /**
+   * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
+   * falls as they are picked up — but it is a queue depth, not a count of recoveries.
+   */
+  runs_queued?: number;
 }
 
 export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
@@ -3019,23 +3678,14 @@ export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
 export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
 export interface GetImmutableAuditResponse {
-  entries?: JsonObject[];
+  events: JsonObject[];
+  total: number;
 }
 
 export interface GetListingReviewsResponse {
   reviews?: JsonObject[];
   total?: number;
   cursor?: string;
-}
-
-export interface GetMaintenanceStateResponse {
-  enabled: boolean;
-  message?: string;
-  enabled_at?: string;
-  /**
-   * Empty string for the synthetic default-off state — that state has no author.
-   */
-  enabled_by_email?: string;
 }
 
 export interface GetMarkupConfigResponse {
@@ -3139,10 +3789,6 @@ export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'start
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
 
-export type GetPlatformEconomicsRefresh = '1';
-
-export const GET_PLATFORM_ECONOMICS_REFRESH_VALUES = ['1'] as const;
-
 export interface GetPlatformURLSResponse {
   urls?: GetPlatformURLSResponseURLS;
 }
@@ -3185,12 +3831,108 @@ export interface GetRootAgentResponse {
   root_agent_id: string | null;
 }
 
+export type GetRunChangedFiles = 'true';
+
+export const GET_RUN_CHANGED_FILES_VALUES = ['true'] as const;
+
 export interface GetRunQueuePositionResponse {
   run_id?: string;
   /**
    * 0 means not in queue or currently running
    */
   queue_position?: number;
+}
+
+export interface GetRunResponse {
+  run_id: string;
+  tenant_id: string;
+  agent_id: string;
+  session_id?: string | null;
+  status: RunStatus;
+  input?: JsonObject;
+  /**
+   * Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+   * AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
+   * carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
+   * no key configured no token is minted and the field is absent; the token is an opaque string
+   * to every client.
+   */
+  output?: JsonObject | null;
+  metrics?: RunMetrics;
+  error?: string | null;
+  created_at: string;
+  started_at?: string | null;
+  completed_at?: string | null;
+  /**
+   * Team run ID if part of a team execution
+   */
+  team_run_id?: string | null;
+  /**
+   * User-supplied metadata
+   */
+  metadata?: JsonObject;
+  /**
+   * Current step sequence number
+   */
+  step_seq?: number;
+  /**
+   * Run artifacts
+   */
+  artifacts?: Artifact[];
+  /**
+   * Resource limits for the run
+   */
+  resource_limits?: GetRunResponseResourceLimits;
+  /**
+   * Workspace paths this run WROTE, sorted, present only when the request carries
+   * `?changed_files=true`. Recorded per (run, path) at write time, so a file rewritten three
+   * times appears once and two concurrent tool calls cannot lose one another's entry.
+   *
+   * It is a record of writes, not a diff: a path the run DELETED or moved is not here, and
+   * neither is a change made by something else while the run was going. Recording is best-effort
+   * after the write has already succeeded — a failure to record is logged and leaves the list
+   * short rather than failing the edit — so treat it as "at least these" rather than proof that
+   * nothing else changed. Capped at 500 paths. Rows expire 30 days after the run.
+   */
+  changed_files?: string[];
+  /**
+   * Tool calls the run is blocked on, taken from the most recent `run.awaiting_approval` event.
+   * ABSENT — not empty — when the run is not awaiting approval, and absent too if the scan
+   * fails, which is deliberate: a failed scan must not turn a readable run into an error.
+   */
+  pending_approvals?: JsonObject[];
+  /**
+   * The question the run is blocked on, taken from the most recent `run.awaiting_input` event
+   * (runs.ts:673-681). Like `pending_approvals` it is ABSENT rather than empty when the run is
+   * not awaiting input. A squad chat reads this to render the prompt; the document never
+   * mentioned it, so a client written from the document alone showed a blocked run as merely
+   * running.
+   */
+  pending_input?: GetRunResponsePendingInput;
+}
+
+/**
+ * The question the run is blocked on, taken from the most recent `run.awaiting_input` event
+ * (runs.ts:673-681). Like `pending_approvals` it is ABSENT rather than empty when the run is
+ * not awaiting input. A squad chat reads this to render the prompt; the document never
+ * mentioned it, so a client written from the document alone showed a blocked run as merely
+ * running.
+ */
+export interface GetRunResponsePendingInput {
+  question?: string;
+  context?: string;
+  tool_call_id?: string;
+  options?: JsonValue[];
+}
+
+/**
+ * Resource limits for the run
+ */
+export interface GetRunResponseResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tool_calls?: number;
+  max_tokens_per_run?: number;
 }
 
 export interface GetRunStepsResponse {
@@ -3225,8 +3967,11 @@ export interface GetSquadGraphResponse {
 }
 
 export interface GetSquadRunMessagesResponse {
-  messages?: JsonObject[];
-  total?: number;
+  team_id: string;
+  team_run_id: string;
+  messages: JsonObject[];
+  protocol_messages: JsonObject[];
+  total: number;
 }
 
 export interface GetTeamChatHistoryResponse {
@@ -3242,8 +3987,22 @@ export interface GetTeamGraphResponse {
 }
 
 export interface GetTeamRunMessagesResponse {
-  messages?: JsonObject[];
-  total?: number;
+  team_id: string;
+  team_run_id: string;
+  messages: JsonObject[];
+  protocol_messages: JsonObject[];
+  total: number;
+}
+
+export interface GetTenantDomainHealthResponse {
+  /**
+   * Hostname only — no scheme, no path.
+   */
+  domain: string;
+  created_at: string;
+  updated_at?: string;
+  dns?: DomainDnsLifecycle;
+  cert?: DomainCertLifecycle;
 }
 
 export interface GetTenantUsageResponse {
@@ -3273,7 +4032,9 @@ export interface GetTrainingJobMetricsResponseSery {
 }
 
 export interface GetUnreadCountResponse {
-  unread_count?: number;
+  count: number;
+  unread_count: number;
+  unreadCount: number;
 }
 
 export type GetUsageTimeseriesMetric = 'runs' | 'tokens' | 'cost';
@@ -3790,6 +4551,11 @@ export interface LandingStats {
   total_tokens?: number;
 }
 
+export interface LeaveTenantResponse {
+  left: boolean;
+  tenant_id: string;
+}
+
 export interface LedgerIntegrity {
   valid: boolean;
   entries_checked: number;
@@ -3814,6 +4580,44 @@ export interface ListA2ATasksResponse {
   limit?: number;
   offset?: number;
   has_more?: boolean;
+}
+
+export interface ListAdminBlogPostsResponse {
+  posts: BlogPost[];
+}
+
+export interface ListAdminDomainHealthResponse {
+  count: number;
+  rows: ListAdminDomainHealthResponseRow[];
+}
+
+export interface ListAdminDomainHealthResponseRow {
+  tenant_id: string;
+  tenant_name?: string;
+  tenant_slug?: string;
+  plan?: string;
+  domain: string;
+  dns: DomainDnsLifecycle;
+  cert: DomainCertLifecycle;
+  created_at: string;
+  updated_at?: string;
+}
+
+export interface ListAdminIntegrationOAuthProvidersResponse {
+  providers: ListAdminIntegrationOAuthProvidersResponseProvider[];
+}
+
+export interface ListAdminIntegrationOAuthProvidersResponseProvider {
+  id: string;
+  /**
+   * A record exists for this provider.
+   */
+  configured: boolean;
+  /**
+   * Enabled AND holding both a client id and a secret — a provider switched on with incomplete
+   * credentials reports false here, so this is readiness rather than the stored flag.
+   */
+  enabled: boolean;
 }
 
 export interface ListAdminProvidersResponse {
@@ -3921,6 +4725,31 @@ export interface ListBillingPlansResponsePlan {
   price_currency?: string;
 }
 
+export interface ListBillingSpecPackagesResponse {
+  packages: ListBillingSpecPackagesResponsePackage[];
+}
+
+export interface ListBillingSpecPackagesResponsePackage {
+  package_id: string;
+  name: string;
+  description: string;
+  category: string;
+  included_specs: string[];
+  included_in_plans: string[];
+  program?: SpecPackageProgram;
+  price_amount_cents?: number;
+  price_currency?: string;
+  /**
+   * A Stripe price is wired. False means checkout will refuse with 400.
+   */
+  checkout_available: boolean;
+  entitlement: ListBillingSpecPackagesResponsePackageEntitlement;
+}
+
+export type ListBillingSpecPackagesResponsePackageEntitlement = 'plan_included' | 'purchased' | 'available';
+
+export const LIST_BILLING_SPEC_PACKAGES_RESPONSE_PACKAGE_ENTITLEMENT_VALUES = ['plan_included', 'purchased', 'available'] as const;
+
 export interface ListBuilderRequestsResponse {
   requests: DesignRequest[];
 }
@@ -3981,6 +4810,11 @@ export interface ListCreativityEventsResponse {
 export interface ListCreativitySessionsResponse {
   sessions?: JsonObject[];
   total?: number;
+}
+
+export interface ListCustomPlansResponse {
+  plans: CustomPlan[];
+  count: number;
 }
 
 export interface ListDataExplorerKeysResponse {
@@ -4139,6 +4973,15 @@ export interface ListMyTenantsResponseMembership {
   is_sole_owner: boolean;
   member_count: number;
   joined_at?: string;
+  /**
+   * Whether THIS credential can act in this tenant — its own tenant, or one an `X-Active-Tenant`
+   * override would be accepted for. The list is the PERSON's memberships and a credential may
+   * reach fewer of them: an api-key whose user has no record in the key's own tenant is refused
+   * everywhere but home. Without this field a client had to guess by matching `/me`.tenant.slug
+   * against the list. Describes the header only — `POST /me/tenants/switch` refuses every
+   * api-key regardless.
+   */
+  accessible: boolean;
 }
 
 export interface ListMyTenantsResponsePendingInvite {
@@ -4177,14 +5020,29 @@ export interface ListProgramsResponse {
   programs: Program[];
 }
 
-export type ListProjectsArchived = 'true';
-
-export const LIST_PROJECTS_ARCHIVED_VALUES = ['true'] as const;
-
 export interface ListProjectsResponse {
   items: Project[];
   total: number;
   archived_count: number;
+}
+
+export interface ListPromoCodesResponse {
+  codes: PromoCode[];
+  count: number;
+}
+
+export interface ListPromoRewardsResponse {
+  rewards: ListPromoRewardsResponseReward[];
+  count: number;
+}
+
+export interface ListPromoRewardsResponseReward {
+  code: string;
+  owner_tenant_id: string;
+  subscriber_tenant_id: string;
+  tokens: number;
+  plan_id: string;
+  granted_at: string;
 }
 
 export interface ListProviderModelsResponse {
@@ -4214,6 +5072,29 @@ export interface ListProvidersResponse {
   providers: LLMProvider[];
 }
 
+export interface ListPublicIntegrationsResponse {
+  connectors: ListPublicIntegrationsResponseConnector[];
+  total: number;
+  /**
+   * Counted here rather than by the caller: a total a page derives is a total a page can get
+   * wrong, which is the defect this endpoint replaces.
+   */
+  oauth_count: number;
+  api_key_count: number;
+}
+
+export interface ListPublicIntegrationsResponseConnector {
+  id: string;
+  name: string;
+  description?: string;
+  icon?: string;
+  auth_type: ListPublicIntegrationsResponseConnectorAuthType;
+}
+
+export type ListPublicIntegrationsResponseConnectorAuthType = 'oauth2' | 'api_key';
+
+export const LIST_PUBLIC_INTEGRATIONS_RESPONSE_CONNECTOR_AUTH_TYPE_VALUES = ['oauth2', 'api_key'] as const;
+
 export interface ListPublicPlansResponse {
   plans?: PublicPlan[];
 }
@@ -4235,6 +5116,10 @@ export interface ListPublicTenantsResponse {
 export interface ListRunCheckpointsResponse {
   checkpoints?: RunCheckpoint[];
 }
+
+export type ListRunsOrder = 'asc' | 'desc';
+
+export const LIST_RUNS_ORDER_VALUES = ['asc', 'desc'] as const;
 
 export interface ListRunsResponse {
   items: Run[];
@@ -4457,6 +5342,43 @@ export interface ListWebhooksResponse {
   total: number;
 }
 
+/**
+ * The listing was documented as a description and nothing else, so a client could not learn
+ * from the document that `etag` and `updated_at` are served here — the two fields a caller
+ * needs to tell whether a file changed without downloading it, and the reason a console had to
+ * diff whole workspaces. The projection is explicit in the handler: a field added to the
+ * stored record does NOT appear here on its own.
+ */
+export interface ListWorkspaceFilesResponse {
+  workspace_id: string;
+  /**
+   * The directory listed, empty string for the workspace root.
+   */
+  path: string;
+  directories: string[];
+  files: ListWorkspaceFilesResponseFile[];
+}
+
+export interface ListWorkspaceFilesResponseFile {
+  file_id: string;
+  path: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  created_at?: string;
+  /**
+   * When this file was last written. Absent on records written before the field existed.
+   */
+  updated_at?: string;
+  /**
+   * Opaque version of this file's content. Compare two listings to find what a run changed
+   * without reading any bytes, and send it back as `If-Match` on a write to refuse an overwrite
+   * of something you have not seen. Absent on records written before the field existed — treat
+   * absence as UNKNOWN, not as unchanged.
+   */
+  etag?: string;
+}
+
 export interface ListWorkspacesResponse {
   workspaces: Workspace[];
   total?: number;
@@ -4515,6 +5437,15 @@ export interface LLMSynthesizeSpeechRequest {
   model?: string;
   input: string;
   voice?: string;
+  /**
+   * Passed THROUGH to the configured speech provider unchanged — the platform neither validates
+   * nor translates it, so a rejection here is the provider's, not ours, and its message is the
+   * provider's too. Deliberately not an enum: the accepted set belongs to whichever provider is
+   * configured, and pinning one here would refuse values a future provider accepts. Measured on
+   * production 2026-09-01 by the iOS lane against the current provider: `raw`, `wav` and `mp3`
+   * work; `pcm_s16le` and `pcm_f32le` answer 400. `raw` streams chunked pcm_f32le/44100/mono
+   * with a first byte at roughly 0.4s, which is what progressive playback needs.
+   */
   response_format?: string;
 }
 
@@ -4560,6 +5491,23 @@ export interface LogoutResponse {
   ok: boolean;
   key_id?: string | null;
   already_revoked?: boolean;
+}
+
+export interface MaintenanceState {
+  enabled: boolean;
+  /**
+   * Plain text rendered on the blocked page; the API does not render HTML. Absent when no
+   * message is set — a message that trims to empty is not stored.
+   */
+  message?: string;
+  /**
+   * When the most recent toggle happened.
+   */
+  enabled_at?: string;
+  /**
+   * Empty string for the synthetic default-off state — that state has no author.
+   */
+  enabled_by_email?: string;
 }
 
 /**
@@ -5070,6 +6018,16 @@ export interface OAuthCompleteRequest {
   name?: string;
 }
 
+export interface OAuthIdentityConfig {
+  apple_services_id: string;
+  apple_team_id: string;
+  apple_bundle_id: string;
+  /**
+   * Lower-cased hostnames. Empty means nothing is allowlisted.
+   */
+  oauth_return_to_hosts: string[];
+}
+
 /**
  * Result after DELETE — record removed from admin KV
  */
@@ -5351,6 +6309,18 @@ export interface PermissionSet {
   updated_at?: string;
 }
 
+export interface PlanLLMLimits {
+  tier_access?: PlanLLMLimitsTierAccessItem[];
+  tokens_per_month?: number;
+  requests_per_minute?: number;
+  requests_per_hour?: number;
+  requests_per_day?: number;
+}
+
+export type PlanLLMLimitsTierAccessItem = 'starter' | 'pro' | 'enterprise';
+
+export const PLAN_LLMLIMITS_TIER_ACCESS_ITEM_VALUES = ['starter', 'pro', 'enterprise'] as const;
+
 /**
  * A fully decomposed plan. Supplying one skips the LLM planner entirely.
  */
@@ -5401,12 +6371,18 @@ export interface PlannedObjectiveBudget {
 }
 
 /**
- * Platform profit and loss: Stripe revenue against real host spend. Super-admin only. Served
- * from a short-lived cache — `cache` says which.
+ * Platform profit and loss: Stripe revenue against real host spend and the LLM provider bill.
+ * Super-admin only. Served from a short-lived cache — `cache` says which.
  */
 export interface PlatformEconomics {
   revenue: PlatformEconomicsRevenue;
   costs: PlatformEconomicsCosts;
+  /**
+   * What the platform paid model providers for tokens, from the usage shards' pre-markup
+   * `provider_cost` summed over every tenant. The largest variable cost; absent from this report
+   * until 2026-09-02.
+   */
+  llm: PlatformEconomicsLLM;
   economics: PlatformEconomicsEconomics;
   generated_at: string;
   /**
@@ -5451,6 +6427,13 @@ export const PLATFORM_ECONOMICS_COSTS_PROVIDER_VALUES = ['digitalocean'] as cons
 export interface PlatformEconomicsEconomics {
   monthly_revenue_usd: number;
   monthly_infra_usd: number;
+  /**
+   * `llm.monthly_run_rate_usd` — see `llm.run_rate_basis` for how it was reached.
+   */
+  monthly_llm_usd: number;
+  /**
+   * MRR − infra run rate − LLM run rate.
+   */
   monthly_margin_usd: number;
   /**
    * Null when there is no revenue to divide by — not zero, which would read as a 0% margin.
@@ -5460,6 +6443,60 @@ export interface PlatformEconomicsEconomics {
   markup_percent: number | null;
   pricing_tiers: JsonObject | null;
 }
+
+/**
+ * What the platform paid model providers for tokens, from the usage shards' pre-markup
+ * `provider_cost` summed over every tenant. The largest variable cost; absent from this report
+ * until 2026-09-02.
+ */
+export interface PlatformEconomicsLLM {
+  /**
+   * YYYY-MM, UTC — the period the usage shards are keyed by.
+   */
+  period: string;
+  month_to_date_provider_usd: number;
+  /**
+   * What tenants were billed for the same usage (provider × markup).
+   */
+  month_to_date_billed_usd: number;
+  previous_period: string;
+  previous_period_provider_usd: number;
+  previous_period_billed_usd: number;
+  /**
+   * The figure folded into `economics.monthly_llm_usd`.
+   */
+  monthly_run_rate_usd: number;
+  /**
+   * `previous_period` — last month's full bill; `month_to_date_extrapolated` — this month's
+   * spend scaled to a full month, a guess that is loudest on the 1st; `none` — nothing recorded
+   * yet.
+   */
+  run_rate_basis: PlatformEconomicsLLMRunRateBasis;
+  tenants_with_usage: number;
+  by_model: PlatformEconomicsLLMByModelItem[];
+  /**
+   * What the number does not know: own-key proxy traffic is counted although the tenant paid it;
+   * shards older than the field count 0.
+   */
+  caveats: string[];
+  error?: string;
+}
+
+export interface PlatformEconomicsLLMByModelItem {
+  model: string;
+  provider_usd: number;
+  billed_usd: number;
+  tokens: number;
+}
+
+/**
+ * `previous_period` — last month's full bill; `month_to_date_extrapolated` — this month's
+ * spend scaled to a full month, a guess that is loudest on the 1st; `none` — nothing recorded
+ * yet.
+ */
+export type PlatformEconomicsLLMRunRateBasis = 'previous_period' | 'month_to_date_extrapolated' | 'none';
+
+export const PLATFORM_ECONOMICS_LLMRUN_RATE_BASIS_VALUES = ['previous_period', 'month_to_date_extrapolated', 'none'] as const;
 
 export interface PlatformEconomicsRevenue {
   /**
@@ -5744,6 +6781,68 @@ export type ProjectVisibility = 'tenant' | 'private';
 
 export const PROJECT_VISIBILITY_VALUES = ['tenant', 'private'] as const;
 
+export interface PromoCode {
+  /**
+   * Upper-cased.
+   */
+  code: string;
+  /**
+   * Absent when unset.
+   */
+  program?: string;
+  /**
+   * The tenant that earns the reward.
+   */
+  owner_tenant_id: string;
+  reward_tokens_per_subscription: number;
+  /**
+   * Welcome grant to the redeeming tenant. Absent when unset.
+   */
+  subscriber_bonus_tokens?: number;
+  /**
+   * Absent when unset.
+   */
+  discount_percent?: number;
+  /**
+   * Scopes the code to ONE plan: the reward is skipped when it is set and does not match the
+   * plan being paid for. Absent means the code pays out on every plan.
+   */
+  target_plan_id?: string;
+  /**
+   * Absent means unlimited.
+   */
+  max_uses?: number;
+  /**
+   * Server-maintained; carried across a replacing write.
+   */
+  uses: number;
+  active: boolean;
+  /**
+   * Carried across a replacing write.
+   */
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PromoCodeInput {
+  program?: string;
+  owner_tenant_id: string;
+  reward_tokens_per_subscription: number;
+  subscriber_bonus_tokens?: number;
+  discount_percent?: number;
+  /**
+   * Resend this on every update — the write replaces, so omitting it unscopes the code.
+   */
+  target_plan_id?: string;
+  max_uses?: number;
+  /**
+   * Omitting this on an update REACTIVATES a deactivated code.
+   *
+   * @default true
+   */
+  active?: boolean;
+}
+
 /**
  * Funnel for public (unauthenticated) chat surfaces: visits, engagement, messages, with the
  * usual breakdowns.
@@ -5949,7 +7048,7 @@ export interface RegistryAdminListSpecsResponseSpec {
   scope?: string;
   name?: string;
   owner_tenant_id?: string;
-  visibility?: RegistryPublishResponseVisibility;
+  visibility?: SetRegistrySpecVisibilityRequestVisibility;
   latest_version?: string;
   published_at?: string;
   size_bytes?: number;
@@ -6008,7 +7107,7 @@ export interface RegistryGetSpecMetadataResponse {
   homepage?: string;
   categories: string[];
   keywords: string[];
-  visibility: RegistryPublishResponseVisibility;
+  visibility: SetRegistrySpecVisibilityRequestVisibility;
   shared_with?: string[];
   owner_tenant_id: string;
   latest_version: string;
@@ -6030,7 +7129,7 @@ export interface RegistryGetSpecVersionResponse {
   size_bytes?: number;
   dependencies?: JsonObject[];
   yanked?: boolean;
-  visibility?: RegistryPublishResponseVisibility;
+  visibility?: SetRegistrySpecVisibilityRequestVisibility;
   shared_with?: string[];
   published_at?: string;
   download_url?: string;
@@ -6077,15 +7176,11 @@ export interface RegistryPublishResponse {
   dependencies?: JsonObject[];
   yanked?: boolean;
   yanked_reason?: string;
-  visibility: RegistryPublishResponseVisibility;
+  visibility: SetRegistrySpecVisibilityRequestVisibility;
   shared_with?: string[];
   attestation?: JsonObject;
   published_at: string;
 }
-
-export type RegistryPublishResponseVisibility = 'public' | 'private';
-
-export const REGISTRY_PUBLISH_RESPONSE_VISIBILITY_VALUES = ['public', 'private'] as const;
 
 export interface RegistrySearchResponse {
   hits: RegistrySearchResponseHit[];
@@ -6119,6 +7214,15 @@ export interface RegistrySetShareResponse {
   updated_at?: string;
 }
 
+export interface RegistrySpecFeatureState {
+  scope: string;
+  name: string;
+  /**
+   * True after a POST, false after a DELETE.
+   */
+  featured: boolean;
+}
+
 export interface RegistryVersionEntry {
   version: string;
   sha256: string;
@@ -6134,11 +7238,19 @@ export interface RegistryYankVersionRequest {
 }
 
 export interface RejectRunRequest {
+  /**
+   * Why the tool was refused; recorded on the run and shown to the agent.
+   */
   reason?: string;
 }
 
 export interface ReplaceConstitutionRequest {
   rules: ConstitutionRule[];
+  /**
+   * Why the constitution is being replaced. Recorded in the immutable ledger and on the
+   * amendment record; defaults to a generic string when omitted.
+   */
+  rationale?: string;
 }
 
 export interface ReplaceConstitutionResponse {
@@ -6151,7 +7263,21 @@ export interface ReplaceCreativityEventPayloadRequest {
 }
 
 export interface ResendInviteResponse {
-  ok?: boolean;
+  resent: boolean;
+  email_sent: boolean;
+  invite: JsonObject;
+}
+
+export interface ResetAgentResponse {
+  ok: boolean;
+  /**
+   * Sessions deleted
+   */
+  sessions: number;
+  /**
+   * Runs deleted
+   */
+  runs: number;
 }
 
 export interface ResolveAmbassadorRequestRequest {
@@ -6170,6 +7296,15 @@ export interface ResolveSharedSessionResponse {
   role?: GetSessionShareResponseRole;
 }
 
+/**
+ * Accepted, stored, and enforced by nothing (GOV-D01). The subset check that governs
+ * agent-to-agent spawn examines tools, roles, budget, spawn depth and self-modify, and never
+ * this field; no reader anywhere consults it to gate access to a resource. Granting or
+ * revoking it changes what an operator sees stored and nothing about what an agent may do.
+ * Documented rather than removed or enforced: removing it would break a field tenants may
+ * already have populated, and enforcing it would invent an authorisation rule the platform has
+ * never applied.
+ */
 export interface ResourcePermission {
   resource: string;
   actions: ResourcePermissionAction[];
@@ -6189,6 +7324,19 @@ export interface RespondToRunRequest {
 
 export interface RespondToRunResponse {
   accepted?: boolean;
+}
+
+export interface RestoreWorkspaceTrashRequest {
+  /**
+   * The `.trash/…` path from a trash listing or a soft-delete response.
+   */
+  trash_path: string;
+}
+
+export interface RestoreWorkspaceTrashResponse {
+  restored: boolean;
+  original_path: string;
+  original_workspace_id: string;
 }
 
 export interface ResumeCompanyResponse {
@@ -6318,17 +7466,40 @@ export interface Run {
   resource_limits?: RunResourceLimits;
 }
 
+/**
+ * The body is optional and carries at most a `response` for the agent. An unknown field is
+ * REFUSED, not ignored: `{"approved": false}` sent here used to be stripped in silence while
+ * the endpoint approved anyway and answered `{"approved": true}`. To refuse a tool call, POST
+ * /runs/{runId}/reject.
+ */
 export interface RunApproveRequest {
+  /**
+   * Optional message passed back to the agent alongside the approval.
+   */
   response?: string;
 }
 
 export interface RunCanvasLoopRequest {
   supervisor_agent_id: string;
-  worker_ids?: string[];
   /**
-   * Which drawn loop to run.
+   * The agents drawn inside the loop. An empty array is 400 ("this loop has no worker agents
+   * inside it"), so it is required in practice and declared so here.
    */
-  loop_id?: string;
+  worker_ids: string[];
+  /**
+   * Which drawn loop to run. Required — the handler 400s without it, and it is the key the
+   * persisted layout is looked up by.
+   */
+  loop_id: string;
+  /**
+   * Overrides the exit condition stored on the drawn loop for this run only. Read at
+   * canvas.ts:234; was undocumented, so a client generated from this document could not send it.
+   */
+  condition?: string;
+  /**
+   * Overrides the loop's stored instruction for this run only. Read at canvas.ts:238.
+   */
+  prompt?: string;
 }
 
 export interface RunCanvasLoopResponse {
@@ -6341,8 +7512,17 @@ export interface RunCanvasLoopResponse {
 }
 
 export interface RunCanvasWorkflowRequest {
-  entry_agent_id?: string;
-  max_passes_per_step?: number;
+  /**
+   * The agent steps, in graph order. Fewer than two is 400 — a canvas of unconnected agents has
+   * no order to execute in. This was the whole body and the document did not carry it:
+   * `entry_agent_id` and `max_passes_per_step` were declared instead, and neither is read by any
+   * handler in the platform.
+   */
+  steps: CanvasWorkflowStep[];
+  /**
+   * Mission goal. Defaults to the literal "Workflow" when omitted (canvas.ts:313).
+   */
+  goal?: string;
   budget_usd_per_step?: number;
   time_minutes?: number;
   /**
@@ -6403,6 +7583,11 @@ export interface RunCostEstimate {
  * no history yet and the defaults were used.
  */
 export interface RunCostEstimateBasis {
+  /**
+   * Every cost in this response is at this rate. `user` — what the run will be billed (provider
+   * × markup); never the provider's own rate.
+   */
+  rate: RunCostEstimateBasisRate;
   runs_sampled: number;
   avg_steps: number | null;
   avg_output_tokens_per_step: number | null;
@@ -6429,7 +7614,20 @@ export type RunCostEstimateBasisPricing = 'model' | 'fallback' | 'unknown';
 
 export const RUN_COST_ESTIMATE_BASIS_PRICING_VALUES = ['model', 'fallback', 'unknown'] as const;
 
+/**
+ * Every cost in this response is at this rate. `user` — what the run will be billed (provider
+ * × markup); never the provider's own rate.
+ */
+export type RunCostEstimateBasisRate = 'user';
+
+export const RUN_COST_ESTIMATE_BASIS_RATE_VALUES = ['user'] as const;
+
 export interface RunCostEstimateEstimate {
+  /**
+   * At the user rate — the provider rate times the platform markup, the same rate
+   * `metrics.total_cost_usd` is written at — so it is comparable with `basis.median_cost_usd`
+   * and `basis.p90_cost_usd`.
+   */
   estimated_cost_usd: number;
   /**
    * `medium` only when past runs supplied a step count; `low` otherwise, including when no rate
@@ -6556,7 +7754,23 @@ export interface ScheduleCanvasWorkflowRequest {
    */
   trigger_id: string;
   cron: string;
-  entry_agent_id?: string;
+  /**
+   * The agent steps the schedule fires, in graph order. Fewer than two is 400. Undeclared until
+   * now, alongside `goal` — while `entry_agent_id`, which WAS declared, is read by nothing: a
+   * client built from this document sent the one field the handler ignores and omitted the two
+   * it requires.
+   */
+  steps: CanvasWorkflowStep[];
+  /**
+   * Goal recorded on the schedule. Defaults to the literal "Workflow" (canvas.ts:415).
+   */
+  goal?: string;
+  /**
+   * Persisted on the schedule. Omitted, every scheduled fire silently reverts to the default
+   * per-step budget rather than the one the operator set for the run.
+   */
+  budget_usd_per_step?: number;
+  time_minutes?: number;
 }
 
 export interface ScheduleCanvasWorkflowResponse {
@@ -6604,27 +7818,6 @@ export type SearchMarketplaceSort = 'rating' | 'popularity' | 'recency';
 
 export const SEARCH_MARKETPLACE_SORT_VALUES = ['rating', 'popularity', 'recency'] as const;
 
-export interface SearchMemoryRequest {
-  text: string;
-  /**
-   * @default "hybrid"
-   */
-  strategy?: SearchMemoryRequestStrategy;
-  /**
-   * @default 20
-   */
-  limit?: number;
-  types?: SearchMemoryRequestType[];
-}
-
-export type SearchMemoryRequestStrategy = 'recency' | 'hybrid';
-
-export const SEARCH_MEMORY_REQUEST_STRATEGY_VALUES = ['recency', 'hybrid'] as const;
-
-export type SearchMemoryRequestType = 'episodic' | 'semantic' | 'procedural';
-
-export const SEARCH_MEMORY_REQUEST_TYPE_VALUES = ['episodic', 'semantic', 'procedural'] as const;
-
 export type SearchType = 'agent' | 'session' | 'run';
 
 export const SEARCH_TYPE_VALUES = ['agent', 'session', 'run'] as const;
@@ -6645,6 +7838,32 @@ export interface SearchWorkspaceFilesResponseResult {
   match?: string;
 }
 
+export interface SeedStarterSpecsResponse {
+  /**
+   * Newly published.
+   */
+  added: number;
+  /**
+   * Already present at the bundled version.
+   */
+  skipped: number;
+  /**
+   * How many starter SPECs the build ships. `added + skipped` reaching this is the completion
+   * signal.
+   */
+  total_starter: number;
+  entitlement_updated: boolean;
+  /**
+   * Absent when nothing failed.
+   */
+  errors?: SeedStarterSpecsResponseError[];
+}
+
+export interface SeedStarterSpecsResponseError {
+  name: string;
+  error: string;
+}
+
 export interface SendPublicMessageRequest {
   content: string;
 }
@@ -6654,9 +7873,14 @@ export interface SendPublicMessageResponse {
   messages_remaining?: number;
 }
 
+/**
+ * `content` is always present in the body; it may be the empty string when `file_ids` carries
+ * at least one id.
+ */
 export interface SendSessionMessageRequest {
   /**
-   * Message body. Required.
+   * Message body. May be empty when `file_ids` is non-empty — a photo with no caption is an
+   * ordinary message. A message with neither text nor files is refused.
    */
   content: string;
   /**
@@ -6758,6 +7982,22 @@ export type SessionStatus = 'active' | 'closed' | 'expired';
 
 export const SESSION_STATUS_VALUES = ['active', 'closed', 'expired'] as const;
 
+export interface SetAdminIntegrationOAuthProviderRequest {
+  enabled?: boolean;
+  client_id?: string;
+  /**
+   * Never returned by any read. Omit to keep the stored one.
+   */
+  client_secret?: string;
+  scopes?: string[];
+}
+
+export interface SetAdminIntegrationOAuthProviderResponse {
+  provider: string;
+  enabled: boolean;
+  configured: boolean;
+}
+
 export interface SetAdminLLMDefaultRequest {
   api_key: string;
 }
@@ -6810,29 +8050,96 @@ export interface SetArbiterRegistryResponse {
 
 export interface SetDataExplorerValueRequest {
   namespace: string;
-  key: string;
+  key: Array<string | number>;
   value: JsonValue;
 }
 
 export interface SetDataExplorerValueResponse {
-  success?: boolean;
+  success: boolean;
+  size_bytes: number;
 }
 
 export type SetLLMProviderKeyProvider = 'openai_compat' | 'custom';
 
 export const SET_LLMPROVIDER_KEY_PROVIDER_VALUES = ['openai_compat', 'custom'] as const;
 
+/**
+ * WRITE SEMANTICS: mixed. `api_key` REPLACES on every call. `shared` MERGES — omit it and the
+ * stored consent flag is kept. Verified against the handler and the store (ITG-05): omission
+ * used to drop the flag, and since absent means shareable, a rotation silently returned an
+ * opted-out personal key to the tenant-wide pool. Sending `shared: true` is the only way to
+ * clear an opt-out.
+ */
 export interface SetLLMProviderKeyRequest {
   /**
    * Provider API key (stored encrypted)
    */
   api_key: string;
+  /**
+   * Consent for the tenant-wide fallback tier. `false` keeps this personal key out of other
+   * users' runs. Absent on a first write means shareable; absent on a later write means
+   * unchanged.
+   */
+  shared?: boolean;
 }
 
 export interface SetLLMProviderKeyResponse {
   provider_id?: string;
   configured?: boolean;
+  /**
+   * Effective consent flag after the write. Absent when never set. Returned so a client can send
+   * back what it read — before ITG-05 no read path exposed it, which is why every rotation
+   * cleared it.
+   */
+  shared?: boolean;
   updated_at?: string;
+}
+
+export interface SetMaintenanceStateRequest {
+  /**
+   * Strictly a boolean — the string "true" is 400, not coerced.
+   */
+  enabled: boolean;
+  /**
+   * Plain text shown on the blocked page; the API does not render HTML. Trimmed, and one that
+   * trims to empty is stored as no message at all. Over 500 characters is 400 — the cap exists
+   * so a misconfigured value cannot become an unbounded payload served at the edge.
+   */
+  message?: string;
+}
+
+export interface SetModelPricingOverrideRequest {
+  input_per_million: number;
+  output_per_million: number;
+  /**
+   * Discounted rate for provider prefix-cache hits. Absent means cached tokens bill at the full
+   * input rate.
+   */
+  cached_input_per_million?: number;
+}
+
+export interface SetModelPricingOverrideResponse {
+  modelRef: string;
+  input_per_million: number;
+  output_per_million: number;
+  /**
+   * Absent when not set.
+   */
+  cached_input_per_million?: number;
+}
+
+export interface SetRegistrySpecVisibilityRequest {
+  visibility: SetRegistrySpecVisibilityRequestVisibility;
+}
+
+export type SetRegistrySpecVisibilityRequestVisibility = 'public' | 'private';
+
+export const SET_REGISTRY_SPEC_VISIBILITY_REQUEST_VISIBILITY_VALUES = ['public', 'private'] as const;
+
+export interface SetRegistrySpecVisibilityResponse {
+  scope: string;
+  name: string;
+  visibility: SetRegistrySpecVisibilityRequestVisibility;
 }
 
 export interface SetRootAgentRequest {
@@ -6890,12 +8197,56 @@ export interface SetSpawnPolicyResponse {
   ok?: boolean;
 }
 
+export interface SetupStateResponse {
+  state: SetupStateResponseState;
+  /**
+   * The subset that gates going live. Read it rather than hard-coding it.
+   */
+  required_steps: string[];
+  /**
+   * Every known step id, required and optional.
+   */
+  all_steps: string[];
+  /**
+   * Required steps still outstanding. Non-empty means an attempt to open registration is refused
+   * and will name this list.
+   */
+  missing_required: string[];
+}
+
+export interface SetupStateResponseState {
+  /**
+   * `live` is a one-way latch; closing registration afterwards does not undo it.
+   */
+  status: SetupStateResponseStateStatus;
+  completed_steps: string[];
+  registration_open: boolean;
+  started_at: string;
+  /**
+   * Set once setup first completed. Its presence is what makes the latch one-way.
+   */
+  completed_at?: string;
+  version: number;
+}
+
+/**
+ * `live` is a one-way latch; closing registration afterwards does not undo it.
+ */
+export type SetupStateResponseStateStatus = 'in_progress' | 'live';
+
+export const SETUP_STATE_RESPONSE_STATE_STATUS_VALUES = ['in_progress', 'live'] as const;
+
 export interface SetUserRoleRequest {
   role: string;
 }
 
 export interface SetUserRoleResponse {
-  updated?: boolean;
+  updated: boolean;
+  user_id: string;
+  /**
+   * The role now in force — echoed so a client need not re-read.
+   */
+  role: string;
 }
 
 export interface ShareWorkspaceRequest {
@@ -6912,6 +8263,69 @@ export interface SpawnPolicy {
   allowed_roles: string[];
   require_approval_above_depth: number;
   max_children_per_agent: number;
+}
+
+export interface SpecPackage {
+  /**
+   * Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
+   */
+  package_id: string;
+  name: string;
+  /**
+   * @default ""
+   */
+  description?: string;
+  category: string;
+  /**
+   * SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
+   * `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
+   * fails later.
+   */
+  included_specs: string[];
+  included_in_plans?: SpecPackageIncludedInPlan[];
+  pricing?: SpecPackagePricing;
+  display_order?: number;
+  archived?: boolean;
+  program?: SpecPackageProgram;
+  /**
+   * Stamped by the server on every write; not read from the body.
+   */
+  updated_at?: string;
+}
+
+export type SpecPackageIncludedInPlan = 'free' | 'starter' | 'pro' | 'enterprise';
+
+export const SPEC_PACKAGE_INCLUDED_IN_PLAN_VALUES = ['free', 'starter', 'pro', 'enterprise'] as const;
+
+export interface SpecPackagePricing {
+  price_amount_cents?: number;
+  price_currency?: string;
+  billing_interval?: SpecPackagePricingBillingInterval;
+  /**
+   * Never returned by the tenant-facing read. Its presence is what protects the package from a
+   * silent drop.
+   */
+  stripe_price_id?: string;
+}
+
+export type SpecPackagePricingBillingInterval = 'month' | 'year';
+
+export const SPEC_PACKAGE_PRICING_BILLING_INTERVAL_VALUES = ['month', 'year'] as const;
+
+export interface SpecPackageProgram {
+  nav: SpecPackageProgramNav;
+  pages: SpecPackageProgramPage[];
+}
+
+export interface SpecPackageProgramNav {
+  label: string;
+  icon?: string;
+}
+
+export interface SpecPackageProgramPage {
+  id: string;
+  title: string;
+  route?: string;
 }
 
 /**
@@ -7068,7 +8482,8 @@ export interface SuspendTenantRequest {
 }
 
 export interface SuspendUserResponse {
-  suspended?: boolean;
+  suspended: boolean;
+  user_id: string;
 }
 
 export interface SwitchTenantRequest {
@@ -7080,6 +8495,29 @@ export interface SwitchTenantResponse {
   tenant_id: string;
   user_id: string;
   role: string;
+}
+
+export interface SyncProviderModelsResponse {
+  /**
+   * New catalogue entries.
+   */
+  added: number;
+  /**
+   * Ids of the added entries; capped.
+   */
+  addedIds: string[];
+  /**
+   * Catalogue size after the merge.
+   */
+  total: number;
+  /**
+   * Models the provider reported.
+   */
+  scanned: number;
+  /**
+   * Present when the run was scoped to one provider, as it is here.
+   */
+  provider?: string;
 }
 
 export interface TallyVotesResponse {
@@ -7486,6 +8924,40 @@ export interface TenantInboxCounts {
   failed: number;
 }
 
+export interface TenantMefConfigResponse {
+  tenant_id: string;
+  /**
+   * What an operator stored. Null when nothing is overridden — never an empty object.
+   */
+  mef_config: TenantMefConfigResponseMefConfig | null;
+  /**
+   * What the runtime will do. All false when the mission service is absent platform-wide,
+   * whatever the overrides say.
+   */
+  effective: TenantMefConfigResponseEffective;
+}
+
+/**
+ * What the runtime will do. All false when the mission service is absent platform-wide,
+ * whatever the overrides say.
+ */
+export interface TenantMefConfigResponseEffective {
+  enabled: boolean;
+  planner_enabled: boolean;
+  judge_enabled: boolean;
+  auto_classify: boolean;
+}
+
+/**
+ * What an operator stored. Null when nothing is overridden — never an empty object.
+ */
+export interface TenantMefConfigResponseMefConfig {
+  enabled?: boolean;
+  planner_enabled?: boolean;
+  judge_enabled?: boolean;
+  auto_classify?: boolean;
+}
+
 /**
  * The single aggregate behind Mission Control: fleet, run buckets, approvals, quota, worker
  * health and schedule risk in one call instead of N.
@@ -7676,6 +9148,15 @@ export interface TerminateAgentResponse {
   agent_id?: string;
 }
 
+export interface TestAdminSmtpConfigRequest {
+  to: string;
+}
+
+export interface TestAdminSmtpConfigResponse {
+  ok: boolean;
+  sent_to: string;
+}
+
 export interface TestAgentIntegrationResponse {
   /**
    * False when the connector could not reach the remote or the credentials were refused. This is
@@ -7764,6 +9245,16 @@ export interface TodoRecurrence {
 export type TodoStatus = 'pending' | 'pending_confirmation' | 'in_progress' | 'done' | 'cancelled';
 
 export const TODO_STATUS_VALUES = ['pending', 'pending_confirmation', 'in_progress', 'done', 'cancelled'] as const;
+
+export interface ToolOverride {
+  category?: string;
+  description?: string;
+  /**
+   * Hides the catalogue row. Presentation only — the runtime still serves the tool. Stored only
+   * when true.
+   */
+  hidden?: boolean;
+}
 
 /**
  * A provisioned GPU droplet.
@@ -8038,8 +9529,9 @@ export interface TrainingSettings {
 }
 
 export interface TransferTenantOwnershipResponse {
-  ok?: boolean;
-  new_owner_id?: string;
+  transferred: boolean;
+  new_owner: string;
+  previous_owner: string;
 }
 
 /**
@@ -8073,7 +9565,63 @@ export interface UnsubscribeFromListingResponse {
 }
 
 export interface UnsuspendUserResponse {
-  ok?: boolean;
+  unsuspended: boolean;
+  user_id: string;
+}
+
+export interface UpdateAdminBlogConfigRequest {
+  enabled?: boolean;
+  title?: string;
+  description?: string;
+  /**
+   * Null detaches the author and clears the pinned tenant.
+   */
+  agent_id?: string | null;
+  /**
+   * `manual` never auto-generates.
+   */
+  frequency?: BlogConfigFrequency;
+  schedule_hour?: number;
+  /**
+   * 0 = Sunday, UTC.
+   */
+  schedule_weekday?: number;
+  topic_prompt?: string;
+  conditions?: string;
+  auto_publish?: boolean;
+}
+
+export interface UpdateAdminBlogConfigResponse {
+  config: BlogConfig;
+}
+
+export interface UpdateAdminBlogPostRequest {
+  title?: string;
+  body?: string;
+  tags?: string[];
+  status?: BlogPostStatus;
+}
+
+export interface UpdateAdminBlogPostResponse {
+  post: BlogPost;
+}
+
+export interface UpdateAdminDisabledToolsResponse {
+  ok: boolean;
+  disabled_tools: string[];
+}
+
+export interface UpdateAdminFounderConfigRequest {
+  founder_id?: string;
+  founder_name?: string;
+  founder_public_key?: string;
+}
+
+export interface UpdateAdminOAuthIdentityConfigRequest {
+  apple_services_id?: string;
+  apple_team_id?: string;
+  apple_bundle_id?: string;
+  oauth_return_to_hosts?: string[];
 }
 
 export interface UpdateAdminPlansRequest {
@@ -8083,6 +9631,52 @@ export interface UpdateAdminPlansRequest {
 export interface UpdateAdminPlansResponse {
   plans?: JsonObject;
   updated?: boolean;
+}
+
+export interface UpdateAdminRegistrationConfigRequest {
+  registration_open?: boolean;
+  /**
+   * Required alongside `registration_open: true` when registration is currently closed. Ignored
+   * otherwise.
+   */
+  confirm_open?: boolean;
+  default_signup_plan?: string;
+  allowed_email_domains?: string[];
+}
+
+export interface UpdateAdminSetupStateRequest {
+  /**
+   * Unioned with what is stored. Unknown ids are rejected.
+   */
+  completed_steps?: UpdateAdminSetupStateRequestCompletedStep[];
+  registration_open?: boolean;
+  /**
+   * Required alongside `registration_open: true` when registration is currently closed.
+   */
+  confirm_open?: boolean;
+}
+
+export type UpdateAdminSetupStateRequestCompletedStep = 'super_admin_login' | 'platform_identity' | 'public_url' | 'llm_provider' | 'registration_open' | 'smtp' | 'oauth_login' | 'stripe' | 'spec_seed' | 'custom_domain' | 'integrations';
+
+export const UPDATE_ADMIN_SETUP_STATE_REQUEST_COMPLETED_STEP_VALUES = ['super_admin_login', 'platform_identity', 'public_url', 'llm_provider', 'registration_open', 'smtp', 'oauth_login', 'stripe', 'spec_seed', 'custom_domain', 'integrations'] as const;
+
+export interface UpdateAdminSmtpConfigRequest {
+  host?: string;
+  port?: number;
+  user?: string;
+  /**
+   * Empty string clears the stored credential.
+   */
+  password?: string;
+  from?: string;
+  from_name?: string;
+}
+
+export interface UpdateAdminSpecPackagesRequest {
+  /**
+   * Keyed by `package_id`.
+   */
+  packages: Record<string, SpecPackage>;
 }
 
 export interface UpdateAdminStripeConfigRequest {
@@ -8100,6 +9694,15 @@ export type UpdateAdminStripeConfigRequestMode = 'test' | 'live';
 
 export const UPDATE_ADMIN_STRIPE_CONFIG_REQUEST_MODE_VALUES = ['test', 'live'] as const;
 
+export interface UpdateAdminToolOverridesRequest {
+  overrides: Record<string, ToolOverride>;
+}
+
+export interface UpdateAdminToolOverridesResponse {
+  ok: boolean;
+  overrides: Record<string, ToolOverride>;
+}
+
 export interface UpdateAgentIntegrationRequest {
   name?: string;
   config?: JsonObject;
@@ -8107,11 +9710,31 @@ export interface UpdateAgentIntegrationRequest {
 
 export interface UpdateBridgeAgentCapabilityRequest {
   capabilities: string[];
+  /**
+   * Where the bridge process is running. Stored on the connection record and shown to the
+   * operator; read at bridge.ts:3479.
+   */
+  working_directory?: string;
+  /**
+   * The reporting machine's hostname; read at bridge.ts:3480.
+   */
+  hostname?: string;
+  /**
+   * Outcome of the local spec sync, feeding the web drawer's "Installed locally" badges. Bounded
+   * server-side: at most 100 entries, 200 tool names each, errors truncated to 500 characters.
+   * Entries without a string `spec_id` are dropped, and `reported_at` is ignored on input — the
+   * server stamps its own.
+   */
+  installed_specs?: BridgeInstalledSpec[];
 }
 
 export interface UpdateBridgeAgentCapabilityResponse {
-  success?: boolean;
+  status: UpdateBridgeAgentCapabilityResponseStatus;
 }
+
+export type UpdateBridgeAgentCapabilityResponseStatus = 'ok';
+
+export const UPDATE_BRIDGE_AGENT_CAPABILITY_RESPONSE_STATUS_VALUES = ['ok'] as const;
 
 export interface UpdateBuilderRequestStatusRequest {
   status: DesignRequestStatus;
@@ -8119,6 +9742,7 @@ export interface UpdateBuilderRequestStatusRequest {
 
 export interface UpdateCoreMemoryBlockRequest {
   content: string;
+  max_tokens?: number;
 }
 
 export interface UpdateCreativitySceneRequest {
@@ -8131,14 +9755,28 @@ export interface UpdateCreativitySceneResponse {
   scene_state?: JsonObject;
 }
 
-export interface UpdateFeedbackStatusRequest {
-  id: string;
-  status: ErrorReportStatus;
+export interface UpdateFeedbackReportStatusRequest {
+  /**
+   * Anything other than the exact string `resolved` — including an absent body — results in
+   * `new`.
+   */
+  status?: UpdateFeedbackReportStatusRequestStatus;
 }
 
-export interface UpdateFeedbackStatusResponse {
+/**
+ * Anything other than the exact string `resolved` — including an absent body — results in
+ * `new`.
+ */
+export type UpdateFeedbackReportStatusRequestStatus = 'resolved' | 'new';
+
+export const UPDATE_FEEDBACK_REPORT_STATUS_REQUEST_STATUS_VALUES = ['resolved', 'new'] as const;
+
+export interface UpdateFeedbackReportStatusResponse {
   ok: boolean;
-  status: ErrorReportStatus;
+  /**
+   * Read this back — it is how a caller learns its value was not understood.
+   */
+  status: UpdateFeedbackReportStatusRequestStatus;
 }
 
 export interface UpdateGoalStatusRequest {
@@ -8257,9 +9895,51 @@ export interface UpdateTeamGraphNodeRequest {
   goal_summary?: string;
 }
 
+/**
+ * Null clears an override. Any other non-boolean is 422.
+ */
+export interface UpdateTenantMefConfigRequest {
+  enabled?: boolean | null;
+  planner_enabled?: boolean | null;
+  judge_enabled?: boolean | null;
+  auto_classify?: boolean | null;
+}
+
+export interface UpdateTenantPlanRequest {
+  /**
+   * A built-in plan (`free`, `starter`, `pro`, `enterprise`) or the id of an ACTIVE custom plan
+   * from `/admin/config/custom-plans`. Matched case-insensitively and trimmed. Anything else is
+   * 400 rather than a silently stored value.
+   */
+  plan: string;
+  quotas?: TenantQuotas;
+  /**
+   * Partial quota grant that outlives subscription changes — only the dimensions being raised
+   * need be present.
+   */
+  quota_overrides?: JsonObject;
+  name?: string;
+  /**
+   * Lowercase letters, numbers and hyphens. Changing it re-points the public tenant index.
+   */
+  slug?: string;
+}
+
+export interface UpdateTenantPlanResponse {
+  tenant_id: string;
+  /**
+   * The RESOLVED plan id, which may differ in case from what was sent.
+   */
+  plan: string;
+  quotas: TenantQuotas;
+}
+
 export interface UpdateTenantRequest {
   name?: string;
   settings?: JsonObject;
+  description?: string;
+  head_agent_id?: string | null;
+  shared_workspace_id?: string | null;
 }
 
 export interface UpdateWebhooksPolicyRequest {
@@ -8285,6 +9965,10 @@ export interface UploadFileRequest {
 
 export interface UploadWorkspaceFileRequest {
   file: BinaryInput;
+}
+
+export interface UpsertCustomPlanResponse {
+  plan: CustomPlan;
 }
 
 export interface UpsertNotificationTargetRequest {
@@ -8336,6 +10020,10 @@ export interface UpsertNotificationTargetRequestConfigVariant4 {
 export interface UpsertNotificationTargetRequestConfigVariant4keys {
   p256dh: string;
   auth: string;
+}
+
+export interface UpsertPromoCodeResponse {
+  promo_code: PromoCode;
 }
 
 export interface UsageMarginSummary {

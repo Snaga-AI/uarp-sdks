@@ -6,7 +6,7 @@ import { pick } from '../../core/util.js';
 import type {
   CreateProjectRequest,
   DeleteProjectResponse,
-  ListProjectsArchived,
+  GetRunChangedFiles,
   ListProjectsResponse,
   Project,
   ProjectDetail,
@@ -20,7 +20,7 @@ export interface ListProjectsParams {
   /**
    * `true` returns the archived projects instead of the live ones.
    */
-  archived?: ListProjectsArchived;
+  archived?: GetRunChangedFiles;
 }
 
 /**

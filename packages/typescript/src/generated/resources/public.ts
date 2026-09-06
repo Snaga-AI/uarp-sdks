@@ -14,6 +14,7 @@ import type {
   GetRegistrationStatusResponse,
   JsonObject,
   LandingOverrides,
+  ListPublicIntegrationsResponse,
   ListPublicPlansResponse,
   ListPublicStatesResponse,
   ListPublicTenantsResponse,
@@ -247,6 +248,32 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/public/registration-status',
+      options,
+    });
+  }
+
+  /**
+   * List the integrations a visitor could connect
+   *
+   * The connectors the platform offers today: the registry MINUS anything an admin has switched
+   * off, which is the same answer `GET /integrations/catalog` gives a signed-in tenant — both
+   * call one function, so a page rendered from this cannot advertise what the product refuses.
+   *
+   * It exists because a hand-kept list drifted: a marketing page counted the connector registry
+   * and said twenty, naming three integrations that are not in the catalogue at all, while a
+   * tenant was served seven. A number a page keeps by hand is a number that can be wrong; this
+   * one cannot.
+   *
+   * Deliberately thinner than the tenant catalogue — no `config_schema`, because a visitor
+   * deciding whether to sign up does not need to know which credential fields a connector wants.
+   * Anonymous, and it says nothing about any tenant.
+   *
+   * `GET /api/v1/public/integrations`
+   */
+  listPublicIntegrations(options?: RequestOptions): Promise<ListPublicIntegrationsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/integrations',
       options,
     });
   }

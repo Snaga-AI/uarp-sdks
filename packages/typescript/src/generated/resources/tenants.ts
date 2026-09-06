@@ -4,12 +4,17 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   APIKeyResponse,
+  AcceptInviteFromPickerRequest,
+  AcceptInviteFromPickerResponse,
   CreateAPIKeyRequest,
   CreateMyTenantRequest,
   CreateMyTenantResponse,
+  DeclineInviteFromPickerResponse,
   GetMyHeadAgentTemplateResponse,
+  GetTenantDomainHealthResponse,
   JsonObject,
   JsonValue,
+  LeaveTenantResponse,
   ListAPIKeysResponse,
   ListMyTenantsResponse,
   LocateMyAgentResponse,
@@ -22,6 +27,35 @@ import type {
  * Tenant management and API keys
  */
 export class TenantsResource extends APIResource {
+  /**
+   * Accept a pending invite from the tenant picker
+   *
+   * The tenant is in the PATH, and that is the whole reason this route exists beside `POST
+   * /api/v1/users/invites/{inviteId}/accept`. The older route resolves the invite against the
+   * caller's active tenant, which cannot work here: the caller is not a member of the inviting
+   * tenant yet — making them one is what the call is for. Without a tenant-in-path route the
+   * picker's Accept button can never succeed for a cross-tenant invite.
+   *
+   * Semantics are otherwise identical to the older route: the same atomic create-user + email
+   * index + membership index + `invite.status = accepted` write.
+   *
+   * Four refusals, and they are different questions: **403** the invite is addressed to another
+   * email, or the `token` does not match; **409** the invite is not `pending` (already accepted,
+   * revoked, declined) or the email already belongs to a member; **410** the invite has expired;
+   * **404** no such invite, or the caller has no user record.
+   *
+   * `POST /api/v1/me/invites/{tenantId}/{inviteId}/accept`
+   */
+  acceptInviteFromPicker(tenantId: string, inviteId: string, body?: AcceptInviteFromPickerRequest, options?: RequestOptions): Promise<AcceptInviteFromPickerResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/me/invites/${encodeURIComponent(String(tenantId))}/${encodeURIComponent(String(inviteId))}/accept`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Create a new API key
    *
@@ -59,6 +93,27 @@ export class TenantsResource extends APIResource {
   }
 
   /**
+   * Decline a pending invite
+   *
+   * Deliberately distinct from an admin's revoke, so the audit trail and the Members page can
+   * tell "the invitee said no" from "an admin pulled it". The caller's email must match the
+   * invite's — without that check anyone with a current session could decline someone else's
+   * invites.
+   *
+   * No token is required here, unlike accept: declining grants nothing.
+   *
+   * `POST /api/v1/me/invites/{tenantId}/{inviteId}/decline`
+   */
+  declineInviteFromPicker(tenantId: string, inviteId: string, options?: RequestOptions): Promise<DeclineInviteFromPickerResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/me/invites/${encodeURIComponent(String(tenantId))}/${encodeURIComponent(String(inviteId))}/decline`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Get current tenant
    *
    * Returns the calling tenant's profile. Any authenticated key passes — no scope required.
@@ -89,6 +144,52 @@ export class TenantsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/me/head-agent-template',
+      options,
+    });
+  }
+
+  /**
+   * DNS and certificate state for this tenant's custom domain
+   *
+   * **Two different 404s, and a client should tell them apart:** no such tenant, and a tenant
+   * with no custom domain configured. The second is the ordinary state of most tenants and is
+   * not an error condition — a UI that renders both as a failure will report a fault to every
+   * customer who has not set up a vanity domain.
+   *
+   * Records written before the lifecycle schema are lifted on read, so `dns` and `cert` are
+   * present here even for a domain added under the old flat fields.
+   *
+   * `GET /api/v1/tenants/me/domain/health`
+   *
+   * Required scopes: `api_keys:read`.
+   */
+  getTenantDomainHealth(options?: RequestOptions): Promise<GetTenantDomainHealthResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/tenants/me/domain/health',
+      options,
+    });
+  }
+
+  /**
+   * Leave a tenant
+   *
+   * Removes the caller's own membership. The user-record cascade matches an admin-driven
+   * removal.
+   *
+   * Two refusals, both **409**, and both name a specific thing to do first. The caller is the
+   * only ACTIVE owner: transfer ownership before leaving. Or the caller is the only veto-holding
+   * ambassador: rotate the founder ambassador via `/api/v1/governance/ambassadors` first. The
+   * second check is skipped entirely when governance is not enabled, so its absence is not a
+   * promise that no such constraint exists.
+   *
+   * `DELETE /api/v1/me/memberships/{tenantId}`
+   */
+  leaveTenant(tenantId: string, options?: RequestOptions): Promise<LeaveTenantResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/me/memberships/${encodeURIComponent(String(tenantId))}`,
+      idempotent: true,
       options,
     });
   }

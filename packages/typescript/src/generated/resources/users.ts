@@ -3,6 +3,8 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
+  AcceptInviteRequest,
+  AcceptInviteResponse,
   DeleteUserResponse,
   InviteUserRequest,
   JsonObject,
@@ -20,6 +22,35 @@ import type {
  * User management, invites, roles
  */
 export class UsersResource extends APIResource {
+  /**
+   * Accept an invite from its email link
+   *
+   * The email-link flow. The invite is resolved against the CALLER'S ACTIVE TENANT, which is
+   * what makes this route unusable from the tenant picker — a cross-tenant invitee is not a
+   * member of the inviting tenant yet. `POST /api/v1/me/invites/{tenantId}/{inviteId}/accept`
+   * exists for that case and takes the tenant in the path.
+   *
+   * Same two gates as its sibling, in the same order: the presented `token` is compared
+   * constant-time to the invite's secret, and the caller's email must match the invite's,
+   * compared case-insensitively. The email check is what stops a member who knows another
+   * invitee's id from burning that invite — which would create the user record with the
+   * invitee's email while the audit trail named the wrong actor, and leave the real invitee
+   * facing an unexplained "already accepted".
+   *
+   * `POST /api/v1/users/invites/{inviteId}/accept`
+   *
+   * Required scopes: `users:write`.
+   */
+  acceptInvite(inviteId: string, body?: AcceptInviteRequest, options?: RequestOptions): Promise<AcceptInviteResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/users/invites/${encodeURIComponent(String(inviteId))}/accept`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Delete user
    *
