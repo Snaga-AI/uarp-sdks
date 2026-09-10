@@ -219,8 +219,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/agents/{agentId}`
      */
-    public suspend fun getPublicAgentCard(agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPublicAgentCard(agentId: String, options: RequestOptions = RequestOptions()): PublicAgentCard {
+        return client.request<PublicAgentCard>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/agents/${encodePathSegment(agentId)}",
@@ -300,8 +300,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/sessions/{sessionId}`
      */
-    public suspend fun getPublicSession(sessionId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPublicSession(sessionId: String, options: RequestOptions = RequestOptions()): PublicSessionView {
+        return client.request<PublicSessionView>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/sessions/${encodePathSegment(sessionId)}",
@@ -543,8 +543,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/public/sessions/{sessionId}/respond`
      */
-    public suspend fun respondToPublicHitl(sessionId: String, body: RespondToPublicHitlRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun respondToPublicHitl(sessionId: String, body: RespondToPublicHitlRequest, options: RequestOptions = RequestOptions()): RespondToPublicHitlResponse {
+        return client.request<RespondToPublicHitlResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/public/sessions/${encodePathSegment(sessionId)}/respond",

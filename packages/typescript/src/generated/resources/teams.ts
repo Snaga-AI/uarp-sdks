@@ -15,7 +15,6 @@ import type {
   GetTeamChatHistoryResponse,
   GetTeamGraphResponse,
   GetTeamRunMessagesResponse,
-  JsonObject,
   ListTeamGraphEdgesResponse,
   ListTeamGraphNodesResponse,
   ListTeamRunsResponse,
@@ -24,6 +23,7 @@ import type {
   StartTeamRunResponse,
   Team,
   TeamCreate,
+  TeamGraphEdge,
   TeamGraphNode,
   TeamRunDetail,
   TeamRunSummary,
@@ -68,7 +68,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  addTeamGraphEdge(teamId: string, body: AddTeamGraphEdgeRequest, options?: RequestOptions): Promise<JsonObject> {
+  addTeamGraphEdge(teamId: string, body: AddTeamGraphEdgeRequest, options?: RequestOptions): Promise<TeamGraphEdge> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/graph/edges`,
@@ -85,7 +85,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  addTeamGraphNode(teamId: string, body: AddTeamGraphNodeRequest, options?: RequestOptions): Promise<JsonObject> {
+  addTeamGraphNode(teamId: string, body: AddTeamGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/graph/nodes`,
@@ -443,7 +443,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  updateTeamGraphNode(teamId: string, agentId: string, body: UpdateTeamGraphNodeRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateTeamGraphNode(teamId: string, agentId: string, body: UpdateTeamGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/graph/nodes/${encodeURIComponent(String(agentId))}`,

@@ -3,7 +3,6 @@
 --  First-time platform setup
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Bootstrap is
 
@@ -18,6 +17,6 @@ package UARP.API.Bootstrap is
       Payload : UARP.Models.Bootstrap_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Bootstrap_Response;
 
 end UARP.API.Bootstrap;

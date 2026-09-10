@@ -17,6 +17,7 @@ import type {
   CreateAgentRequest,
   CreateAgentVersionRequest,
   DeleteAgentBookmarkResponse,
+  DeleteAgentResponse,
   DeleteAllAgentBookmarksResponse,
   FriaReport,
   GetAgentActivityStatsResponse,
@@ -25,7 +26,6 @@ import type {
   GetAgentTrafficResponse,
   GetAgentVersionDiffResponse,
   JsonObject,
-  JsonValue,
   ListAgentBookmarksResponse,
   ListAgentMailResponse,
   ListAgentVersionsResponse,
@@ -206,7 +206,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  delete(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  delete(agentId: string, options?: RequestOptions): Promise<DeleteAgentResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}`,
@@ -512,6 +512,12 @@ export class AgentsResource extends APIResource {
 
   /**
    * Partial update agent
+   *
+   * WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
+   * `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
+   * (agent-genome.ts mergeAgentMetadata) — so a client may send `{metadata: {ui: {avatar: {hue:
+   * 40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
+   * other nested object is replaced whole.
    *
    * `PATCH /api/v1/agents/{agentId}`
    *

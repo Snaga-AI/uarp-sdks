@@ -72,14 +72,14 @@ export class IntegrationsResource extends APIResource {
   /**
    * Delete integration
    *
-   * `DELETE /api/v1/integrations/{id}`
+   * `DELETE /api/v1/integrations/{integrationId}`
    *
    * Required scopes: `agents:write`.
    */
-  delete(id: string, options?: RequestOptions): Promise<void> {
+  delete(integrationId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
-      path: `/api/v1/integrations/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/integrations/${encodeURIComponent(String(integrationId))}`,
       idempotent: true,
       responseType: 'void',
       options,
@@ -93,11 +93,12 @@ export class IntegrationsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  deleteAgentIntegration(agentId: string, integrationId: string, options?: RequestOptions): Promise<JsonValue> {
+  deleteAgentIntegration(agentId: string, integrationId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/integrations/${encodeURIComponent(String(integrationId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }
@@ -229,14 +230,14 @@ export class IntegrationsResource extends APIResource {
   /**
    * Test integration
    *
-   * `POST /api/v1/integrations/{id}/test`
+   * `POST /api/v1/integrations/{integrationId}/test`
    *
    * Required scopes: `agents:write`.
    */
-  testIntegration(id: string, options?: RequestOptions): Promise<TestIntegrationResponse> {
+  testIntegration(integrationId: string, options?: RequestOptions): Promise<TestIntegrationResponse> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/integrations/${encodeURIComponent(String(id))}/test`,
+      path: `/api/v1/integrations/${encodeURIComponent(String(integrationId))}/test`,
       idempotent: true,
       options,
     });
@@ -245,14 +246,14 @@ export class IntegrationsResource extends APIResource {
   /**
    * Update integration
    *
-   * `PATCH /api/v1/integrations/{id}`
+   * `PATCH /api/v1/integrations/{integrationId}`
    *
    * Required scopes: `agents:write`.
    */
-  update(id: string, body: UpdateIntegrationRequest, options?: RequestOptions): Promise<Integration> {
+  update(integrationId: string, body: UpdateIntegrationRequest, options?: RequestOptions): Promise<Integration> {
     return this._client.request({
       method: 'PATCH',
-      path: `/api/v1/integrations/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/integrations/${encodeURIComponent(String(integrationId))}`,
       body,
       idempotent: true,
       options,

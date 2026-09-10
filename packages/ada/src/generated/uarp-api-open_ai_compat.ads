@@ -3,7 +3,6 @@
 --  OpenAI-compatible ChatCompletion endpoint
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Open_Ai_Compat is
 
@@ -22,7 +21,7 @@ package UARP.API.Open_Ai_Compat is
      (Self : Client_Type;
       Payload : UARP.Models.Chat_Completion_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Open_Ai_Chat_Completion;
 
    --  Create response (OpenAI Responses API)
    --
@@ -59,7 +58,7 @@ package UARP.API.Open_Ai_Compat is
      (Self : Client_Type;
       Response_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Get_Response_Response;
 
    --  List available models (OpenAI-compatible)
    --

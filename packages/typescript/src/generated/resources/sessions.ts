@@ -17,6 +17,7 @@ import type {
   CreateSessionShareRequest,
   CreateSessionShareResponse,
   CreateSessionTodoRequest,
+  CreatedTask,
   DeleteSessionTodoResponse,
   ExportSessionFormat,
   GetSessionAuditLogResponse,
@@ -38,6 +39,7 @@ import type {
   SendSessionMessageRequest,
   SendSessionMessageResponse,
   Session,
+  SessionAnnotation,
   SessionBranch,
   SessionExport,
   Todo,
@@ -266,7 +268,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/todos`
    */
-  createTask(body: JsonValue, options?: RequestOptions): Promise<JsonObject> {
+  createTask(body: JsonValue, options?: RequestOptions): Promise<CreatedTask> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/todos',
@@ -657,7 +659,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  updateSessionAnnotation(sessionId: string, annotationId: string, body?: UpdateSessionAnnotationRequest, options?: RequestOptions): Promise<JsonValue> {
+  updateSessionAnnotation(sessionId: string, annotationId: string, body?: UpdateSessionAnnotationRequest, options?: RequestOptions): Promise<SessionAnnotation> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/annotations/${encodeURIComponent(String(annotationId))}`,

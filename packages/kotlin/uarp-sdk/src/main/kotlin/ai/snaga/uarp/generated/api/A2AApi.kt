@@ -41,8 +41,8 @@ public class A2AApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun a2aJSONRpc(body: A2ajsonRpcRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun a2aJSONRpc(body: A2ajsonRpcRequest, options: RequestOptions = RequestOptions()): JSONRpcResponse {
+        return client.request<JSONRpcResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/a2a",
@@ -114,11 +114,11 @@ public class A2AApi internal constructor(private val client: UarpClient) {
      *
      * `GET /.well-known/agent.json`
      */
-    public suspend fun getAgentCard(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun getAgentCard(agentId: String, options: RequestOptions = RequestOptions()): A2AAgentCard {
         val query = buildList {
             add("agent_id" to agentId)
         }
-        return client.request<JsonElement>(
+        return client.request<A2AAgentCard>(
             RequestSpec(
                 method = "GET",
                 path = "/.well-known/agent.json",

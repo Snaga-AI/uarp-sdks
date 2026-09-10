@@ -17,7 +17,6 @@ import type {
   GetRunQueuePositionResponse,
   GetRunResponse,
   GetRunStepsResponse,
-  JsonObject,
   ListRunArtifactsResponse,
   ListRunCheckpointsResponse,
   ListRunsOrder,
@@ -25,6 +24,7 @@ import type {
   PauseRunResponse,
   RejectRunRequest,
   RejectRunResponse,
+  ReplayResult,
   RespondToRunRequest,
   RespondToRunResponse,
   ResumeRunResponse,
@@ -426,7 +426,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  replayRun(runId: string, options?: RequestOptions): Promise<JsonObject> {
+  replayRun(runId: string, options?: RequestOptions): Promise<ReplayResult> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/replay`,

@@ -68,7 +68,7 @@ impl AnalyticsApi {
     ///
     /// `GET /api/v1/analytics/public-chat`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     pub async fn get_public_chat_analytics(&self, params: &GetPublicChatAnalyticsParams) -> Result<models::PublicChatAnalytics> {
         self.client
             .request_json(Request {
@@ -92,7 +92,7 @@ impl AnalyticsApi {
     ///
     /// `GET /api/v1/analytics/inbox`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     pub async fn get_tenant_inbox(&self, params: &GetTenantInboxParams) -> Result<models::TenantInbox> {
         self.client
             .request_json(Request {
@@ -116,7 +116,7 @@ impl AnalyticsApi {
     ///
     /// `GET /api/v1/analytics/overview`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     pub async fn get_tenant_overview(&self, params: &GetTenantOverviewParams) -> Result<models::TenantOverview> {
         self.client
             .request_json(Request {
@@ -134,7 +134,7 @@ impl AnalyticsApi {
     ///
     /// `GET /api/v1/analytics/agents`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     pub async fn tenant_analytics_agents(&self, params: &TenantAnalyticsAgentsParams) -> Result<models::AgentAnalyticsSummary> {
         self.client
             .request_json(Request {

@@ -8,16 +8,17 @@ package body UARP.API.Open_Ai_Compat is
      (Self : Client_Type;
       Payload : UARP.Models.Chat_Completion_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Open_Ai_Chat_Completion
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/v1/chat/completions",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/v1/chat/completions",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Options => Options));
    end Chat_Completion;
 
    function Create_Response
@@ -58,14 +59,15 @@ package body UARP.API.Open_Ai_Compat is
      (Self : Client_Type;
       Response_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Get_Response_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/v1/responses/" & UARP.Types.Encode_Path_Segment (Response_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/v1/responses/" & UARP.Types.Encode_Path_Segment (Response_Id),
+             Options => Options));
    end Get_Response;
 
    function List_Models

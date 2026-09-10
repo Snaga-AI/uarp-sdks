@@ -548,7 +548,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  uploadWorkspaceFile(workspaceId: string, body: UploadWorkspaceFileRequest, params: UploadWorkspaceFileParams, options?: RequestOptions): Promise<JsonValue> {
+  uploadWorkspaceFile(workspaceId: string, body: UploadWorkspaceFileRequest, params: UploadWorkspaceFileParams, options?: RequestOptions): Promise<WorkspaceFile> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,

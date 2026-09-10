@@ -40,13 +40,13 @@ public struct IntegrationsAPI: Sendable {
 
     /// Delete integration
     ///
-    /// `DELETE /api/v1/integrations/{id}`
+    /// `DELETE /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    public func delete(id: String, options: RequestOptions = .init()) async throws {
+    public func delete(integrationId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/integrations/\(encodePathSegment(id))",
+            path: "/api/v1/integrations/\(encodePathSegment(integrationId))",
             idempotent: true,
             options: options
         ))
@@ -57,8 +57,8 @@ public struct IntegrationsAPI: Sendable {
     /// `DELETE /api/v1/agents/{agentId}/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    public func deleteAgentIntegration(agentId: String, integrationId: String, options: RequestOptions = .init()) async throws -> JSONValue {
-        return try await client.send(RequestSpec(
+    public func deleteAgentIntegration(agentId: String, integrationId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/integrations/\(encodePathSegment(integrationId))",
             idempotent: true,
@@ -181,13 +181,13 @@ public struct IntegrationsAPI: Sendable {
 
     /// Test integration
     ///
-    /// `POST /api/v1/integrations/{id}/test`
+    /// `POST /api/v1/integrations/{integrationId}/test`
     ///
     /// Required scopes: `agents:write`.
-    public func testIntegration(id: String, options: RequestOptions = .init()) async throws -> TestIntegrationResponse {
+    public func testIntegration(integrationId: String, options: RequestOptions = .init()) async throws -> TestIntegrationResponse {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/integrations/\(encodePathSegment(id))/test",
+            path: "/api/v1/integrations/\(encodePathSegment(integrationId))/test",
             idempotent: true,
             options: options
         ))
@@ -195,13 +195,13 @@ public struct IntegrationsAPI: Sendable {
 
     /// Update integration
     ///
-    /// `PATCH /api/v1/integrations/{id}`
+    /// `PATCH /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(id: String, body: UpdateIntegrationRequest, options: RequestOptions = .init()) async throws -> Integration {
+    public func update(integrationId: String, body: UpdateIntegrationRequest, options: RequestOptions = .init()) async throws -> Integration {
         return try await client.send(RequestSpec(
             method: "PATCH",
-            path: "/api/v1/integrations/\(encodePathSegment(id))",
+            path: "/api/v1/integrations/\(encodePathSegment(integrationId))",
             body: try client.encode(body),
             idempotent: true,
             options: options

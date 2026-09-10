@@ -38,14 +38,14 @@ export class CompaniesResource extends APIResource {
   /**
    * Delete company
    *
-   * `DELETE /api/v1/companies/{id}`
+   * `DELETE /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:write`.
    */
-  delete(id: string, options?: RequestOptions): Promise<void> {
+  delete(companyId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
-      path: `/api/v1/companies/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/companies/${encodeURIComponent(String(companyId))}`,
       idempotent: true,
       responseType: 'void',
       options,
@@ -55,14 +55,14 @@ export class CompaniesResource extends APIResource {
   /**
    * Get company
    *
-   * `GET /api/v1/companies/{id}`
+   * `GET /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:read`.
    */
-  get(id: string, options?: RequestOptions): Promise<Company> {
+  get(companyId: string, options?: RequestOptions): Promise<Company> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/companies/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/companies/${encodeURIComponent(String(companyId))}`,
       options,
     });
   }
@@ -162,14 +162,14 @@ export class CompaniesResource extends APIResource {
   /**
    * Update company
    *
-   * `PUT /api/v1/companies/{id}`
+   * `PUT /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:write`.
    */
-  update(id: string, body: CompanyUpdate, options?: RequestOptions): Promise<Company> {
+  update(companyId: string, body: CompanyUpdate, options?: RequestOptions): Promise<Company> {
     return this._client.request({
       method: 'PUT',
-      path: `/api/v1/companies/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/companies/${encodeURIComponent(String(companyId))}`,
       body,
       idempotent: true,
       options,

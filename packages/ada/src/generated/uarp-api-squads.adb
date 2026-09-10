@@ -7,17 +7,18 @@ package body UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Add_Squad_Graph_Edge_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Graph_Edge
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/edges",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/edges",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Add_Squad_Graph_Edge;
 
    function Add_Squad_Graph_Node
@@ -25,17 +26,18 @@ package body UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Add_Squad_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Graph_Node
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Add_Squad_Graph_Node;
 
    function Cancel_Squad_Run
@@ -363,16 +365,17 @@ package body UARP.API.Squads is
       Agent_Id : String;
       Payload : UARP.Models.Update_Squad_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Graph_Node
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Squad_Graph_Node;
 end UARP.API.Squads;

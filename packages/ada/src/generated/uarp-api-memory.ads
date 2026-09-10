@@ -64,7 +64,7 @@ package UARP.API.Memory is
       Agent_Id : String;
       Entry_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Memory_Entry;
 
    --  Put back what an export took out
    --

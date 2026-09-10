@@ -13,7 +13,7 @@ public struct BillingAPI: Sendable {
     /// `GET /api/v1/usage/quota`
     ///
     /// Required scopes: `billing:read`.
-    public func checkQuota(options: RequestOptions = .init()) async throws -> JSONValue {
+    public func checkQuota(options: RequestOptions = .init()) async throws -> UsageQuota {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/usage/quota",

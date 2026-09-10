@@ -221,7 +221,7 @@ package UARP.API.Auth is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Register_Response;
 
    --  Request OTP code
    --
@@ -230,7 +230,7 @@ package UARP.API.Auth is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Request_Otp_Code_Response;
 
    --  Revoke a specific device session
    --
@@ -279,7 +279,7 @@ package UARP.API.Auth is
    function Verify_Email
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Verify_Email_Response;
 
    --  Verify a TOTP code
    --

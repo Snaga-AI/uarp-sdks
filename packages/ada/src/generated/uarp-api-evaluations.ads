@@ -20,7 +20,7 @@ package UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent_Scorer;
 
    --  Create an evaluation dataset
    --
@@ -32,7 +32,7 @@ package UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.Models.Create_Dataset_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Eval_Dataset;
 
    --  Create an evaluation experiment
    --
@@ -58,7 +58,7 @@ package UARP.API.Evaluations is
       Agent_Id : String;
       Dataset_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Eval_Dataset;
 
    --  Get evaluation run results
    --
@@ -70,7 +70,7 @@ package UARP.API.Evaluations is
       Agent_Id : String;
       Eval_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Eval_Run;
 
    --  Get experiment details
    --
@@ -127,6 +127,6 @@ package UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.Models.Run_Evaluation_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Eval_Run;
 
 end UARP.API.Evaluations;

@@ -55,7 +55,7 @@ impl MCPApi {
     /// Delete MCP server
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
-    pub async fn delete_mcp_server(&self, server_id: &str) -> Result<serde_json::Value> {
+    pub async fn delete_mcp_server(&self, server_id: &str) -> Result<models::DeleteMCPServerResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -107,7 +107,7 @@ impl MCPApi {
     /// headers return 400.
     ///
     /// `POST /api/v1/mcp`
-    pub async fn mcp_json_rpc(&self, body: &models::McpjsonRpcRequest, params: &MCPJSONRpcParams) -> Result<serde_json::Value> {
+    pub async fn mcp_json_rpc(&self, body: &models::McpjsonRpcRequest, params: &MCPJSONRpcParams) -> Result<models::JSONRpcResponse> {
         let mut headers: Vec<(&'static str, String)> = Vec::new();
         headers.push(("X-UARP-Agent-Id", params.x_uarp_agent_id.clone()));
         self.client

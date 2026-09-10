@@ -64,15 +64,15 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
     /**
      * Delete integration
      *
-     * `DELETE /api/v1/integrations/{id}`
+     * `DELETE /api/v1/integrations/{integrationId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()) {
+    public suspend fun delete(integrationId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
             RequestSpec(
                 method = "DELETE",
-                path = "/api/v1/integrations/${encodePathSegment(id)}",
+                path = "/api/v1/integrations/${encodePathSegment(integrationId)}",
                 idempotent = true,
                 options = options,
             )
@@ -86,8 +86,8 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun deleteAgentIntegration(agentId: String, integrationId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun deleteAgentIntegration(agentId: String, integrationId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/integrations/${encodePathSegment(integrationId)}",
@@ -242,15 +242,15 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
     /**
      * Test integration
      *
-     * `POST /api/v1/integrations/{id}/test`
+     * `POST /api/v1/integrations/{integrationId}/test`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun testIntegration(id: String, options: RequestOptions = RequestOptions()): TestIntegrationResponse {
+    public suspend fun testIntegration(integrationId: String, options: RequestOptions = RequestOptions()): TestIntegrationResponse {
         return client.request<TestIntegrationResponse>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/integrations/${encodePathSegment(id)}/test",
+                path = "/api/v1/integrations/${encodePathSegment(integrationId)}/test",
                 idempotent = true,
                 options = options,
             )
@@ -260,15 +260,15 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
     /**
      * Update integration
      *
-     * `PATCH /api/v1/integrations/{id}`
+     * `PATCH /api/v1/integrations/{integrationId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(id: String, body: UpdateIntegrationRequest, options: RequestOptions = RequestOptions()): Integration {
+    public suspend fun update(integrationId: String, body: UpdateIntegrationRequest, options: RequestOptions = RequestOptions()): Integration {
         return client.request<Integration>(
             RequestSpec(
                 method = "PATCH",
-                path = "/api/v1/integrations/${encodePathSegment(id)}",
+                path = "/api/v1/integrations/${encodePathSegment(integrationId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

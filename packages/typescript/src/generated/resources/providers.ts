@@ -7,11 +7,13 @@ import type {
   JsonObject,
   LLMSynthesizeSpeechRequest,
   LLMTranscribeAudioRequest,
+  LLMTranscribeAudioResponse,
   LLMUsageSummary,
   ListLLMModelsResponse,
   ListProviderModelsResponse,
   ListProvidersResponse,
   ListVideoProvidersResponse,
+  OpenAiChatCompletion,
   PlatformLLMDefaults,
   VoiceConfig,
   VoiceProviderList,
@@ -151,7 +153,7 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmChatCompletion(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  llmChatCompletion(body: JsonObject, options?: RequestOptions): Promise<OpenAiChatCompletion> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/chat/completions',
@@ -186,7 +188,7 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmTranscribeAudio(body: LLMTranscribeAudioRequest, options?: RequestOptions): Promise<JsonObject> {
+  llmTranscribeAudio(body: LLMTranscribeAudioRequest, options?: RequestOptions): Promise<LLMTranscribeAudioResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/audio/transcriptions',

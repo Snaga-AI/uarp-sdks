@@ -455,7 +455,7 @@ package body UARP.API.Workspaces is
       Payload : UARP.Models.Upload_Workspace_File_Request;
       Params : Upload_Workspace_File_Params := No_Upload_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace_File
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
@@ -477,7 +477,7 @@ package body UARP.API.Workspaces is
                 Has_Payload => True,
                 Content_Type => UARP.Multipart.Content_Type (Form));
          begin
-            return JS.Parse (UARP.Types.SU.To_String (Raw_Body));
+            return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));
          end;
       end;
    end Upload_Workspace_File;

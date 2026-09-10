@@ -182,7 +182,7 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/chat/completions`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_chat_completion(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn llm_chat_completion(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::OpenAiChatCompletion> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -218,7 +218,7 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/audio/transcriptions`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_transcribe_audio(&self, body: &models::LLMTranscribeAudioRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn llm_transcribe_audio(&self, body: &models::LLMTranscribeAudioRequest) -> Result<models::LLMTranscribeAudioResponse> {
         self.client
             .request_multipart(
                 Request {

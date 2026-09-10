@@ -45,15 +45,15 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
     /**
      * Delete document
      *
-     * `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
+     * `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}/documents/{docId}`
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteKbDocument(id: String, docId: String, options: RequestOptions = RequestOptions()) {
+    public suspend fun deleteKbDocument(knowledgeBaseId: String, docId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
             RequestSpec(
                 method = "DELETE",
-                path = "/api/v1/knowledge-bases/${encodePathSegment(id)}/documents/${encodePathSegment(docId)}",
+                path = "/api/v1/knowledge-bases/${encodePathSegment(knowledgeBaseId)}/documents/${encodePathSegment(docId)}",
                 idempotent = true,
                 options = options,
             )
@@ -63,15 +63,15 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
     /**
      * Delete knowledge base
      *
-     * `DELETE /api/v1/knowledge-bases/{id}`
+     * `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}`
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteKnowledgeBase(id: String, options: RequestOptions = RequestOptions()) {
+    public suspend fun deleteKnowledgeBase(knowledgeBaseId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
             RequestSpec(
                 method = "DELETE",
-                path = "/api/v1/knowledge-bases/${encodePathSegment(id)}",
+                path = "/api/v1/knowledge-bases/${encodePathSegment(knowledgeBaseId)}",
                 idempotent = true,
                 options = options,
             )
@@ -81,15 +81,15 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
     /**
      * Get knowledge base
      *
-     * `GET /api/v1/knowledge-bases/{id}`
+     * `GET /api/v1/knowledge-bases/{knowledgeBaseId}`
      *
      * Required scopes: `memory:read`.
      */
-    public suspend fun getKnowledgeBase(id: String, options: RequestOptions = RequestOptions()): KnowledgeBase {
+    public suspend fun getKnowledgeBase(knowledgeBaseId: String, options: RequestOptions = RequestOptions()): KnowledgeBase {
         return client.request<KnowledgeBase>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/knowledge-bases/${encodePathSegment(id)}",
+                path = "/api/v1/knowledge-bases/${encodePathSegment(knowledgeBaseId)}",
                 options = options,
             )
         )
@@ -203,15 +203,15 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      * OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
      * docs/WRITE_SEMANTICS.md.
      *
-     * `PUT /api/v1/knowledge-bases/{id}`
+     * `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun updateKnowledgeBase(id: String, body: KnowledgeBaseUpdate, options: RequestOptions = RequestOptions()): KnowledgeBase {
+    public suspend fun updateKnowledgeBase(knowledgeBaseId: String, body: KnowledgeBaseUpdate, options: RequestOptions = RequestOptions()): KnowledgeBase {
         return client.request<KnowledgeBase>(
             RequestSpec(
                 method = "PUT",
-                path = "/api/v1/knowledge-bases/${encodePathSegment(id)}",
+                path = "/api/v1/knowledge-bases/${encodePathSegment(knowledgeBaseId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

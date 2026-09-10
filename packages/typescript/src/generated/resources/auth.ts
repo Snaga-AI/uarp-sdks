@@ -27,8 +27,11 @@ import type {
   OAuthLoginProviderConfigStatusProvider,
   OAuthLoginProviderItemId,
   OAuthLoginProvidersList,
+  RegisterResponse,
+  RequestOtpCodeResponse,
   RevokeMeSessionResponse,
   UnlinkAuthProviderResponse,
+  VerifyEmailResponse,
   VerifyMfaRecoveryRequest,
   VerifyMfaRecoveryResponse,
   VerifyMfaRequest,
@@ -320,7 +323,7 @@ export class AuthResource extends APIResource {
    *
    * `POST /api/v1/register`
    */
-  register(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  register(body: JsonObject, options?: RequestOptions): Promise<RegisterResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/register',
@@ -335,7 +338,7 @@ export class AuthResource extends APIResource {
    *
    * `POST /api/v1/auth/request-code`
    */
-  requestOtpCode(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  requestOtpCode(body: JsonObject, options?: RequestOptions): Promise<RequestOtpCodeResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/auth/request-code',
@@ -405,7 +408,7 @@ export class AuthResource extends APIResource {
    *
    * `GET /api/v1/verify-email`
    */
-  verifyEmail(options?: RequestOptions): Promise<JsonObject> {
+  verifyEmail(options?: RequestOptions): Promise<VerifyEmailResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/verify-email',

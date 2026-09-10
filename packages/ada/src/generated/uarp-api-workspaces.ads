@@ -401,6 +401,6 @@ package UARP.API.Workspaces is
       Payload : UARP.Models.Upload_Workspace_File_Request;
       Params : Upload_Workspace_File_Params := No_Upload_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace_File;
 
 end UARP.API.Workspaces;

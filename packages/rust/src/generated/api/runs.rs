@@ -452,7 +452,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/replay`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn replay_run(&self, run_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn replay_run(&self, run_id: &str) -> Result<models::ReplayResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,

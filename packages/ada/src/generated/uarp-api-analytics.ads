@@ -55,7 +55,7 @@ package UARP.API.Analytics is
    --
    --  GET /api/v1/analytics/public-chat
    --
-   --  Required scopes: read:analytics.
+   --  Required scopes: analytics:read.
    function Get_Public_Chat_Analytics
      (Self : Client_Type;
       Params : Get_Public_Chat_Analytics_Params := No_Get_Public_Chat_Analytics_Params;
@@ -72,7 +72,7 @@ package UARP.API.Analytics is
    --
    --  GET /api/v1/analytics/inbox
    --
-   --  Required scopes: read:analytics.
+   --  Required scopes: analytics:read.
    function Get_Tenant_Inbox
      (Self : Client_Type;
       Params : Get_Tenant_Inbox_Params := No_Get_Tenant_Inbox_Params;
@@ -89,7 +89,7 @@ package UARP.API.Analytics is
    --
    --  GET /api/v1/analytics/overview
    --
-   --  Required scopes: read:analytics.
+   --  Required scopes: analytics:read.
    function Get_Tenant_Overview
      (Self : Client_Type;
       Params : Get_Tenant_Overview_Params := No_Get_Tenant_Overview_Params;
@@ -100,7 +100,7 @@ package UARP.API.Analytics is
    --
    --  GET /api/v1/analytics/agents
    --
-   --  Required scopes: read:analytics.
+   --  Required scopes: analytics:read.
    function Tenant_Analytics_Agents
      (Self : Client_Type;
       Params : Tenant_Analytics_Agents_Params := No_Tenant_Analytics_Agents_Params;

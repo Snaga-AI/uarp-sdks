@@ -60,7 +60,7 @@ impl A2AApi {
     /// `POST /api/v1/a2a`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn a2a_json_rpc(&self, body: &models::A2ajsonRpcRequest) -> Result<serde_json::Value> {
+    pub async fn a2a_json_rpc(&self, body: &models::A2ajsonRpcRequest) -> Result<models::JSONRpcResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -132,7 +132,7 @@ impl A2AApi {
     /// Get A2A agent card for discovery
     ///
     /// `GET /.well-known/agent.json`
-    pub async fn get_agent_card(&self, params: &GetAgentCardParams) -> Result<serde_json::Value> {
+    pub async fn get_agent_card(&self, params: &GetAgentCardParams) -> Result<models::A2AAgentCard> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -3,7 +3,6 @@
 --  Squads - multi-agent groups that run a shared brief
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -42,7 +41,7 @@ package UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Add_Squad_Graph_Edge_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Edge;
 
    --  Add graph node
    --
@@ -56,7 +55,7 @@ package UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Add_Squad_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
    --  Cancel a squad run
    --
@@ -345,6 +344,6 @@ package UARP.API.Squads is
       Agent_Id : String;
       Payload : UARP.Models.Update_Squad_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
 end UARP.API.Squads;

@@ -40,7 +40,7 @@ package UARP.API.Tenants is
    --
    --  POST /api/v1/tenants/me/keys
    --
-   --  Required scopes: tenants:write.
+   --  Required scopes: api_keys:write.
    function Create_API_Key
      (Self : Client_Type;
       Payload : UARP.Models.Create_API_Key_Request;
@@ -183,13 +183,13 @@ package UARP.API.Tenants is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Tenant;
 
    --  Revoke an API key
    --
    --  DELETE /api/v1/tenants/me/keys/{keyId}
    --
-   --  Required scopes: tenants:write.
+   --  Required scopes: api_keys:write.
    function Revoke_API_Key
      (Self : Client_Type;
       Key_Id : String;
@@ -206,7 +206,7 @@ package UARP.API.Tenants is
       Payload : UARP.Models.Update_Tenant_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Tenant;
 
    --  Verify domain
    --

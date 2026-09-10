@@ -22,22 +22,22 @@ package UARP.API.Companies is
 
    --  Delete company
    --
-   --  DELETE /api/v1/companies/{id}
+   --  DELETE /api/v1/companies/{companyId}
    --
    --  Required scopes: agents:write.
    procedure Delete
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Get company
    --
-   --  GET /api/v1/companies/{id}
+   --  GET /api/v1/companies/{companyId}
    --
    --  Required scopes: agents:read.
    function Get
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company;
 
@@ -108,12 +108,12 @@ package UARP.API.Companies is
 
    --  Update company
    --
-   --  PUT /api/v1/companies/{id}
+   --  PUT /api/v1/companies/{companyId}
    --
    --  Required scopes: agents:write.
    function Update
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Payload : UARP.Models.Company_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company;

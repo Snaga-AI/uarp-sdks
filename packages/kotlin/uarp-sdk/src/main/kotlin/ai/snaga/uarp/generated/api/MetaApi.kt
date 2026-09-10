@@ -95,13 +95,13 @@ public class MetaApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `search:read`.
      */
-    public suspend fun search(q: String, type: SearchType? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun search(q: String, type: SearchType? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): SearchResponse {
         val query = buildList {
             add("q" to q)
             if (type != null) add("type" to type.value)
             if (limit != null) add("limit" to limit.toString())
         }
-        return client.request<JsonElement>(
+        return client.request<SearchResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/search",

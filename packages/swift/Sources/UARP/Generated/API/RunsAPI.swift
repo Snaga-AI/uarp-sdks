@@ -318,7 +318,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/replay`
     ///
     /// Required scopes: `runs:read`.
-    public func replayRun(runId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func replayRun(runId: String, options: RequestOptions = .init()) async throws -> ReplayResult {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/replay",

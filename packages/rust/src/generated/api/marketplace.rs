@@ -258,7 +258,7 @@ impl MarketplaceApi {
     /// `POST /api/v1/marketplace/listings/{listingId}/subscribe`
     ///
     /// Required scopes: `marketplace:write`.
-    pub async fn subscribe_to_listing(&self, listing_id: &str, body: &models::SubscribeToListingRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn subscribe_to_listing(&self, listing_id: &str, body: &models::SubscribeToListingRequest) -> Result<models::MarketplaceSubscription> {
         self.client
             .request_json(Request {
                 method: Method::POST,

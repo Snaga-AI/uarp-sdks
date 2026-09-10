@@ -3,7 +3,6 @@
 --  Agent marketplace: publish, search, rate
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Marketplace is
@@ -155,7 +154,7 @@ package UARP.API.Marketplace is
       Payload : UARP.Models.Subscribe_To_Listing_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Marketplace_Subscription;
 
    --  Unpublish a marketplace listing
    --

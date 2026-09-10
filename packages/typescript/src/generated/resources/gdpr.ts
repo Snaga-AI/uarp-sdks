@@ -3,6 +3,8 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
+  DataSubjectAccessReport,
+  DataSubjectErasureResult,
   JsonObject,
 } from '../models.js';
 
@@ -15,7 +17,7 @@ export class GDPRResource extends APIResource {
    *
    * `GET /api/v1/data-subject/access`
    */
-  dataSubjectAccess(options?: RequestOptions): Promise<JsonObject> {
+  dataSubjectAccess(options?: RequestOptions): Promise<DataSubjectAccessReport> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/data-subject/access',
@@ -28,7 +30,7 @@ export class GDPRResource extends APIResource {
    *
    * `POST /api/v1/data-subject/erasure`
    */
-  dataSubjectErasure(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  dataSubjectErasure(body: JsonObject, options?: RequestOptions): Promise<DataSubjectErasureResult> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/data-subject/erasure',

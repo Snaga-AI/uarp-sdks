@@ -7,8 +7,8 @@ import type {
   GetAppleAppSiteAssociationResponse,
   GetClientConfigResponse,
   JsonObject,
-  JsonValue,
   LandingStats,
+  SearchResponse,
   SearchType,
 } from '../models.js';
 
@@ -92,7 +92,7 @@ export class MetaResource extends APIResource {
    *
    * Required scopes: `search:read`.
    */
-  search(params: SearchParams, options?: RequestOptions): Promise<JsonValue> {
+  search(params: SearchParams, options?: RequestOptions): Promise<SearchResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/search',

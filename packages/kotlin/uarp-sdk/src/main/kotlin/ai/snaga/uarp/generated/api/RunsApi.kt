@@ -389,8 +389,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun replayRun(runId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun replayRun(runId: String, options: RequestOptions = RequestOptions()): ReplayResult {
+        return client.request<ReplayResult>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/replay",

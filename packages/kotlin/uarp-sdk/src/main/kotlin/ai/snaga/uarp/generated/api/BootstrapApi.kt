@@ -28,8 +28,8 @@ public class BootstrapApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/bootstrap`
      */
-    public suspend fun bootstrap(body: BootstrapRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun bootstrap(body: BootstrapRequest? = null, options: RequestOptions = RequestOptions()): BootstrapResponse {
+        return client.request<BootstrapResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/bootstrap",

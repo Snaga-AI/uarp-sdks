@@ -182,7 +182,7 @@ impl AgentsApi {
     /// `DELETE /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn delete(&self, agent_id: &str) -> Result<models::DeleteAgentResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -543,6 +543,12 @@ impl AgentsApi {
     }
 
     /// Partial update agent
+    ///
+    /// WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
+    /// `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
+    /// (agent-genome.ts mergeAgentMetadata) — so a client may send `{metadata: {ui: {avatar: {hue:
+    /// 40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
+    /// other nested object is replaced whole.
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///

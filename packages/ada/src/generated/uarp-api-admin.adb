@@ -814,14 +814,15 @@ package body UARP.API.Admin is
    function Internal_Verify_Domain
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Internal_Verify_Domain_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/internal/verify-domain",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/internal/verify-domain",
+             Options => Options));
    end Internal_Verify_Domain;
 
    function List_Admin_Blog_Posts

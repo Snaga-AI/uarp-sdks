@@ -8,8 +8,9 @@ import type {
   CreateResponseResponse,
   EmbeddingsRequest,
   EmbeddingsResponse,
-  JsonValue,
+  GetResponseResponse,
   ListModelsResponse,
+  OpenAiChatCompletion,
 } from '../models.js';
 
 /**
@@ -26,7 +27,7 @@ export class OpenAiCompatResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  chatCompletion(body: ChatCompletionRequest, options?: RequestOptions): Promise<JsonValue> {
+  chatCompletion(body: ChatCompletionRequest, options?: RequestOptions): Promise<OpenAiChatCompletion> {
     return this._client.request({
       method: 'POST',
       path: '/v1/chat/completions',
@@ -78,7 +79,7 @@ export class OpenAiCompatResource extends APIResource {
    *
    * `GET /v1/responses/{responseId}`
    */
-  getResponse(responseId: string, options?: RequestOptions): Promise<JsonValue> {
+  getResponse(responseId: string, options?: RequestOptions): Promise<GetResponseResponse> {
     return this._client.request({
       method: 'GET',
       path: `/v1/responses/${encodeURIComponent(String(responseId))}`,

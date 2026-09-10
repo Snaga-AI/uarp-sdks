@@ -7,6 +7,64 @@ import type { BinaryInput, JsonObject, JsonValue } from '../core/json.js';
 
 export type { BinaryInput, JsonObject, JsonValue };
 
+/**
+ * a2a/agent-card.ts A2AAgentCard, built by buildAgentCard. `provider` is declared on the type
+ * and never emitted.
+ */
+export interface A2AAgentCard {
+  name: string;
+  description: string;
+  /**
+   * `{origin}/api/v1/a2a`.
+   */
+  url: string;
+  agent_id: string;
+  version: string;
+  schema_version: A2AAgentCardSchemaVersion;
+  protocol_version: A2AAgentCardProtocolVersion;
+  capabilities: A2AAgentCardCapabilities;
+  skills: A2AAgentCardSkill[];
+  authentication: A2AAgentCardAuthentication;
+  default_input_modes: string[];
+  default_output_modes: string[];
+  mcp_resources: string[];
+}
+
+export interface A2AAgentCardAuthentication {
+  type: A2AAgentCardAuthenticationType;
+  header?: A2AAgentCardAuthenticationHeader;
+}
+
+export type A2AAgentCardAuthenticationHeader = 'Authorization';
+
+export const A2_AAGENT_CARD_AUTHENTICATION_HEADER_VALUES = ['Authorization'] as const;
+
+export type A2AAgentCardAuthenticationType = 'none' | 'apiKey';
+
+export const A2_AAGENT_CARD_AUTHENTICATION_TYPE_VALUES = ['none', 'apiKey'] as const;
+
+export interface A2AAgentCardCapabilities {
+  streaming: boolean;
+  push_notifications: boolean;
+  state_transition_history: boolean;
+}
+
+export type A2AAgentCardProtocolVersion = '0.2' | '0.3';
+
+export const A2_AAGENT_CARD_PROTOCOL_VERSION_VALUES = ['0.2', '0.3'] as const;
+
+export type A2AAgentCardSchemaVersion = '1.0';
+
+export const A2_AAGENT_CARD_SCHEMA_VERSION_VALUES = ['1.0'] as const;
+
+export interface A2AAgentCardSkill {
+  id: string;
+  name: string;
+  description: string;
+  tags: string[];
+  examples: string[];
+}
+
 export interface A2ajsonRpcRequest {
   jsonrpc: '2.0';
   method: A2ajsonRpcRequestMethod;
@@ -402,9 +460,9 @@ export interface Agent {
    */
   access_control?: AgentAccessControl;
   /**
-   * Free-form caller-supplied metadata.
+   * Free-form caller-supplied metadata; `ui` is the one key with a shared, documented shape.
    */
-  metadata?: JsonObject;
+  metadata?: AgentMetadata;
   agent_id: string;
   tenant_id: string;
   name: string;
@@ -706,6 +764,57 @@ export interface AgentMessage {
 export type AgentMessagePrecedence = 'flash' | 'immediate' | 'priority' | 'routine';
 
 export const AGENT_MESSAGE_PRECEDENCE_VALUES = ['flash', 'immediate', 'priority', 'routine'] as const;
+
+/**
+ * Free-form caller-supplied metadata; `ui` is the one key with a shared, documented shape.
+ */
+export interface AgentMetadata {
+  ui?: AgentMetadataUi;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+/**
+ * The `metadata.ui` record three clients and the platform share. PATCH merges it one level,
+ * and `avatar` one level deeper: a client that sends `{protocol, variant}` keeps the stored
+ * `hue`, one that sends `{hue}` keeps `protocol` and `variant` (agent-genome.ts
+ * mergeAgentMetadata; owner 2026-09-10).
+ */
+export interface AgentMetadataUi {
+  /**
+   * Identity: which drawing protocol, which variant, and the hue (degrees). Merged field by
+   * field on PATCH.
+   */
+  avatar?: AgentMetadataUiAvatar;
+  drop_genome?: DropGenome;
+  /**
+   * Provenance of the FIRST server-written genome — set only by the platform (ensureAgentGenome
+   * / the create path), never by a client, and left untouched by client PATCHes of
+   * `drop_genome`. Absent when the genome was client-authored or predates the field.
+   */
+  drop_genome_source?: AgentMetadataUiDropGenomeSource;
+}
+
+/**
+ * Identity: which drawing protocol, which variant, and the hue (degrees). Merged field by
+ * field on PATCH.
+ */
+export interface AgentMetadataUiAvatar {
+  protocol?: string;
+  variant?: number;
+  hue?: number;
+}
+
+/**
+ * Provenance of the FIRST server-written genome — set only by the platform (ensureAgentGenome
+ * / the create path), never by a client, and left untouched by client PATCHes of
+ * `drop_genome`. Absent when the genome was client-authored or predates the field.
+ */
+export type AgentMetadataUiDropGenomeSource = 'llm' | 'fallback';
+
+export const AGENT_METADATA_UI_DROP_GENOME_SOURCE_VALUES = ['llm', 'fallback'] as const;
 
 /**
  * Model capabilities. Deliberately carries no provider or model identifier — see the model
@@ -1289,10 +1398,6 @@ export type BlogPostStatus = 'draft' | 'published';
 
 export const BLOG_POST_STATUS_VALUES = ['draft', 'published'] as const;
 
-export interface BootstrapAmbassadorResponse {
-  ambassador_id?: string;
-}
-
 export interface BootstrapRequest {
   /**
    * @default "Admin Tenant"
@@ -1302,6 +1407,27 @@ export interface BootstrapRequest {
    * @default "admin"
    */
   tenant_slug?: string;
+}
+
+export interface BootstrapResponse {
+  message: string;
+  tenant: BootstrapResponseTenant;
+  api_key: BootstrapResponseAPIKey;
+}
+
+export interface BootstrapResponseAPIKey {
+  key_id: string;
+  prefix: string;
+  raw_key: string;
+  scopes: string[];
+  warning: string;
+}
+
+export interface BootstrapResponseTenant {
+  tenant_id: string;
+  name: string;
+  slug: string;
+  plan: string;
 }
 
 export interface BridgeAgentSummary {
@@ -1725,7 +1851,7 @@ export interface CompanyCreateBudget {
 }
 
 /**
- * Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.
+ * Body for `PUT /api/v1/companies/{companyId}`. Every field optional — send only what changes.
  */
 export interface CompanyUpdate {
   name?: string;
@@ -1937,7 +2063,7 @@ export interface ContinueRunResponse {
 }
 
 export interface ConversationEntry {
-  role: ConversationEntryRole;
+  role: PublicSessionViewMessageRole;
   /**
    * Message content
    */
@@ -1957,10 +2083,6 @@ export interface ConversationEntry {
    */
   thinking?: string;
 }
-
-export type ConversationEntryRole = 'user' | 'assistant' | 'system' | 'tool_result';
-
-export const CONVERSATION_ENTRY_ROLE_VALUES = ['user', 'assistant', 'system', 'tool_result'] as const;
 
 export interface ConversationEntryToolCall {
   id: string;
@@ -2117,6 +2239,34 @@ export interface CreateDatasetRequestCas {
   expected_output?: JsonObject;
   tags?: string[];
 }
+
+/**
+ * sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
+ * multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
+ * name the assignee and `run_id`/`team_run_id` appear only when the item was dispatched
+ * immediately.
+ */
+export interface CreatedTask {
+  task_id: string;
+  parent_task_id?: string;
+  title: string;
+  due_at?: string;
+  items: CreatedTaskItem[];
+}
+
+export interface CreatedTaskItem {
+  session_id: string;
+  todo_id: string;
+  agent_id?: string;
+  team_id?: string;
+  run_id?: string;
+  team_run_id?: string;
+  status: CreatedTaskItemStatus;
+}
+
+export type CreatedTaskItemStatus = 'pending' | 'pending_confirmation' | 'in_progress' | 'cancelled';
+
+export const CREATED_TASK_ITEM_STATUS_VALUES = ['pending', 'pending_confirmation', 'in_progress', 'cancelled'] as const;
 
 export interface CreateExperimentRequest {
   name: string;
@@ -2472,9 +2622,57 @@ export type CustomPlanVisibility = 'public' | 'hidden';
 
 export const CUSTOM_PLAN_VISIBILITY_VALUES = ['public', 'hidden'] as const;
 
+/**
+ * data-subject.ts dataSubjectAccess — ids per store plus their counts; every field always
+ * present.
+ */
+export interface DataSubjectAccessReport {
+  subject_id: string;
+  tenant_id: string;
+  runs: string[];
+  sessions: string[];
+  memory: string[];
+  files: string[];
+  feedback: string[];
+  runs_count: number;
+  sessions_count: number;
+  memory_count: number;
+  files_count: number;
+  feedback_count: number;
+}
+
+/**
+ * data-subject.ts dataSubjectErasure — `erased` plus the SubjectErasureCounts spread.
+ */
+export interface DataSubjectErasureResult {
+  erased: boolean;
+  subject_id: string;
+  runs_deleted: number;
+  sessions_deleted: number;
+  memory_deleted: number;
+  files_deleted: number;
+  feedback_deleted: number;
+}
+
 export interface DeactivateSafeModeResponse {
   ok?: boolean;
   mode?: string;
+}
+
+/**
+ * governance/emergency.ts DeadlockReport — computed, not stored. Field names are camelCase on
+ * the wire.
+ */
+export interface DeadlockReport {
+  hasDeadlock: boolean;
+  conflictingRules: DeadlockReportConflictingRule[];
+  recommendation: string;
+  checked_at: string;
+}
+
+export interface DeadlockReportConflictingRule {
+  prohibition: string;
+  requirement: string;
 }
 
 export interface DeclineInviteFromPickerResponse {
@@ -2512,6 +2710,11 @@ export interface DeleteAgentBookmarkResponse {
   message_id: string;
 }
 
+export interface DeleteAgentResponse {
+  deleted: boolean;
+  agent_id: string;
+}
+
 export interface DeleteAllAgentBookmarksResponse {
   removed: number;
 }
@@ -2541,6 +2744,19 @@ export interface DeleteGuardrailResponse {
 export interface DeleteLLMProviderKeyResponse {
   deleted?: boolean;
   provider_id?: string;
+}
+
+export interface DeleteMCPServerResponse {
+  ok: boolean;
+  cascade: DeleteMCPServerResponseCascade;
+}
+
+export interface DeleteMCPServerResponseCascade {
+  agents_with_stale_ref: number;
+  /**
+   * Capped at 50.
+   */
+  agent_ids: string[];
 }
 
 export interface DeleteMeResponse {
@@ -2743,6 +2959,41 @@ export type DomainDnsLifecycleState = 'pending' | 'verified' | 'failed' | 'drift
 
 export const DOMAIN_DNS_LIFECYCLE_STATE_VALUES = ['pending', 'verified', 'failed', 'drift', 'deactivated'] as const;
 
+/**
+ * The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
+ * affect parameters plus a signature pose. Written by the platform at create/backfill or by a
+ * client from the builder.
+ */
+export interface DropGenome {
+  v: number;
+  archetype: string;
+  silhouette: DropGenomeSilhouette;
+  motion: DropGenomeMotion;
+  affect: DropGenomeAffect;
+  signature_pose: string;
+}
+
+export interface DropGenomeAffect {
+  expressiveness?: number;
+  baseline_valence?: number;
+  reactivity?: number;
+}
+
+export interface DropGenomeMotion {
+  tempo?: number;
+  springiness?: number;
+  amplitude?: number;
+  jitter?: number;
+  settle_bias?: number;
+}
+
+export interface DropGenomeSilhouette {
+  height?: number;
+  width?: number;
+  tip?: number;
+  weight?: number;
+}
+
 export interface EmbeddingsRequest {
   /**
    * Embedding model (optional; platform default used)
@@ -2924,6 +3175,72 @@ export interface EstimateRunCostRequest {
    * Picks up a per-session model override, when one is set.
    */
   session_id?: string;
+}
+
+/**
+ * evaluation/evaluator.ts EvalCase.
+ */
+export interface EvalCase {
+  case_id: string;
+  input: JsonObject;
+  expected_output?: JsonObject;
+  expected_tool_calls?: string[];
+  tags: string[];
+  metadata: JsonObject;
+}
+
+/**
+ * evaluation/evaluator.ts EvalDataset — the stored record, unsanitized.
+ */
+export interface EvalDataset {
+  dataset_id: string;
+  tenant_id: string;
+  agent_id: string;
+  name: string;
+  cases: EvalCase[];
+  created_at: string;
+}
+
+/**
+ * evaluation/evaluator.ts EvalRun — the stored record; `agent_version`, `errored_cases` and
+ * `summary` are conditional.
+ */
+export interface EvalRun {
+  eval_run_id: string;
+  tenant_id: string;
+  agent_id: string;
+  dataset_id: string;
+  agent_version?: string;
+  results: EvalRunResult[];
+  errored_cases?: EvalRunErroredCas[];
+  summary?: EvalRunSummary;
+  created_at: string;
+}
+
+export interface EvalRunErroredCas {
+  case_id: string;
+  error: string;
+}
+
+export interface EvalRunResult {
+  case_id: string;
+  run_id: string;
+  scores: JsonObject;
+  passed: boolean;
+  duration_ms: number;
+  tokens_used: number;
+}
+
+export interface EvalRunSummary {
+  total_cases: number;
+  passed: number;
+  failed: number;
+  errored: number;
+  avg_scores: JsonObject;
+  avg_duration_ms: number;
+  total_tokens: number;
+  total_cost_usd: number;
+  regression_detected: boolean;
 }
 
 export interface Experiment {
@@ -3798,6 +4115,50 @@ export interface GetRegistrationStatusResponse {
   registration_open: boolean;
 }
 
+export interface GetResponseResponse {
+  id: string;
+  object: GetResponseResponseObject;
+  output: GetResponseResponseOutputItem[];
+  usage: GetResponseResponseUsage;
+  /**
+   * The agent id.
+   */
+  model: string;
+  /**
+   * Unix seconds.
+   */
+  created_at: number;
+}
+
+export type GetResponseResponseObject = 'response';
+
+export const GET_RESPONSE_RESPONSE_OBJECT_VALUES = ['response'] as const;
+
+export interface GetResponseResponseOutputItem {
+  type: GetResponseResponseOutputItemType;
+  role: OpenAiChatCompletionChoiceMessageRole;
+  content: GetResponseResponseOutputItemContentItem[];
+}
+
+export interface GetResponseResponseOutputItemContentItem {
+  type: GetResponseResponseOutputItemContentItemType;
+  text: string;
+}
+
+export type GetResponseResponseOutputItemContentItemType = 'output_text';
+
+export const GET_RESPONSE_RESPONSE_OUTPUT_ITEM_CONTENT_ITEM_TYPE_VALUES = ['output_text'] as const;
+
+export type GetResponseResponseOutputItemType = 'message';
+
+export const GET_RESPONSE_RESPONSE_OUTPUT_ITEM_TYPE_VALUES = ['message'] as const;
+
+export interface GetResponseResponseUsage {
+  input_tokens: number;
+  output_tokens: number;
+  total_tokens: number;
+}
+
 export interface GetRootAgentResponse {
   /**
    * Designated root agent, or null when none is set.
@@ -3838,13 +4199,14 @@ export interface GetRunResponse {
   status: RunStatus;
   input?: JsonObject;
   /**
-   * Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+   * Run output — the same object rides in run events and in a public session's stream
+   * (RunOutput). When a run is truncated by its step-budget cutoff (output.truncated === true)
    * AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
    * carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
    * no key configured no token is minted and the field is absent; the token is an opaque string
    * to every client.
    */
-  output?: JsonObject | null;
+  output?: RunOutput | null;
   metrics?: RunMetrics;
   error?: string | null;
   created_at: string;
@@ -4427,6 +4789,10 @@ export type IntegrationStatus = 'active' | 'inactive' | 'error';
 
 export const INTEGRATION_STATUS_VALUES = ['active', 'inactive', 'error'] as const;
 
+export interface InternalVerifyDomainResponse {
+  ok: boolean;
+}
+
 export interface Invite {
   created_at?: string;
   email?: string;
@@ -4469,6 +4835,29 @@ export interface IssueArbiterRulingRequest {
 export interface IssueArbiterRulingResponse {
   ok?: boolean;
 }
+
+/**
+ * A JSON-RPC 2.0 envelope. Exactly one of `result` and `error` is present.
+ */
+export interface JSONRpcResponse {
+  jsonrpc: JSONRpcResponseJsonrpc;
+  id: string | number | null;
+  /**
+   * Method-specific.
+   */
+  result?: JsonValue;
+  error?: JSONRpcResponseError;
+}
+
+export interface JSONRpcResponseError {
+  code: number;
+  message: string;
+  data?: JsonValue;
+}
+
+export type JSONRpcResponseJsonrpc = '2.0';
+
+export const JSONRPC_RESPONSE_JSONRPC_VALUES = ['2.0'] as const;
 
 export interface KnowledgeBase {
   id: string;
@@ -4572,7 +4961,7 @@ export type KnowledgeBaseSearchResultStatus = 'KB_EMPTY' | 'NO_MATCHES' | 'RESUL
 export const KNOWLEDGE_BASE_SEARCH_RESULT_STATUS_VALUES = ['KB_EMPTY', 'NO_MATCHES', 'RESULTS_FOUND'] as const;
 
 /**
- * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
+ * Body for `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`. Every field optional.
  */
 export interface KnowledgeBaseUpdate {
   name?: string;
@@ -4732,6 +5121,11 @@ export interface ListAgentVersionsResponse {
    * @deprecated
    */
   versions?: AgentVersion[];
+  /**
+   * `items.length` — the snapshots this response carries, which retention caps at the newest 50
+   * (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
+   * as, and there is no paging parameter to reach further back.
+   */
   total: number;
 }
 
@@ -5242,7 +5636,7 @@ export interface ListSessionsResponseItem {
   session_id: string;
   tenant_id: string;
   agent_id: string;
-  status: SessionStatus;
+  status: PublicSessionViewStatus;
   conversation_history?: ConversationEntry[];
   metadata?: JsonObject;
   runs?: string[];
@@ -5508,6 +5902,19 @@ export interface LLMTranscribeAudioRequest {
   language?: string;
 }
 
+/**
+ * The provider body, byte for byte (llm-proxy.ts handleAudioTranscriptions): `{ text }` for
+ * the default `response_format: json`; `verbose_json` adds `task`, `language`, `duration`,
+ * `segments`.
+ */
+export interface LLMTranscribeAudioResponse {
+  text?: string;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
 export interface LLMUsageSummary {
   billing_period?: LLMUsageSummaryBillingPeriod;
   by_model?: string[];
@@ -5659,6 +6066,23 @@ export interface MarketplaceListingStats {
 export type MarketplaceListingStatus = 'draft' | 'published' | 'suspended' | 'archived';
 
 export const MARKETPLACE_LISTING_STATUS_VALUES = ['draft', 'published', 'suspended', 'archived'] as const;
+
+/**
+ * marketplace/listing-store.ts MarketplaceSubscription — on subscribe, `status` is `active`,
+ * `stripe_subscription_id` is always present (the route rejects a body without it) and
+ * `created_at` equals `updated_at`.
+ */
+export interface MarketplaceSubscription {
+  listing_id: string;
+  status: MarketplaceSubscriptionStatus;
+  stripe_subscription_id?: string;
+  created_at: string;
+  updated_at?: string;
+}
+
+export type MarketplaceSubscriptionStatus = 'active' | 'cancelled';
+
+export const MARKETPLACE_SUBSCRIPTION_STATUS_VALUES = ['active', 'cancelled'] as const;
 
 export interface MarkNotificationReadResponse {
   ok: boolean;
@@ -6511,6 +6935,66 @@ export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'completed
 export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'completed', 'failed'] as const;
 
 /**
+ * An OpenAI Chat Completions object. `/v1/chat/completions` builds it (openai-compat.ts:
+ * exactly one choice, no `logprobs`, no `system_fingerprint`); `/api/v1/llm/chat/completions`
+ * passes the provider's body through (llm-proxy.ts) — `model` is then the provider's id, and a
+ * reasoning-only reply has its reasoning copied into `content`.
+ */
+export interface OpenAiChatCompletion {
+  id: string;
+  object: OpenAiChatCompletionObject;
+  /**
+   * Unix seconds.
+   */
+  created: number;
+  model: string;
+  choices: OpenAiChatCompletionChoice[];
+  usage?: OpenAiChatCompletionUsage;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface OpenAiChatCompletionChoice {
+  index: number;
+  message: OpenAiChatCompletionChoiceMessage;
+  finish_reason?: string | null;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface OpenAiChatCompletionChoiceMessage {
+  role: OpenAiChatCompletionChoiceMessageRole;
+  content?: string | null;
+  tool_calls?: JsonObject[];
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export type OpenAiChatCompletionChoiceMessageRole = 'assistant';
+
+export const OPEN_AI_CHAT_COMPLETION_CHOICE_MESSAGE_ROLE_VALUES = ['assistant'] as const;
+
+export type OpenAiChatCompletionObject = 'chat.completion';
+
+export const OPEN_AI_CHAT_COMPLETION_OBJECT_VALUES = ['chat.completion'] as const;
+
+export interface OpenAiChatCompletionUsage {
+  prompt_tokens: number;
+  completion_tokens: number;
+  total_tokens: number;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+/**
  * Error envelope used by the OpenAI-compatible surface (`/v1/*`). Deliberately NOT RFC 9457:
  * callers here are OpenAI SDKs pointed at this base URL, and they decode this shape.
  */
@@ -7119,6 +7603,35 @@ export interface PromoCodeInput {
   active?: boolean;
 }
 
+/**
+ * public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
+ * whose value is undefined are dropped from the JSON, so everything but `agent_id`, `name` and
+ * `icon` is conditional; `specs` is omitted entirely when empty.
+ */
+export interface PublicAgentCard {
+  agent_id: string;
+  name: string;
+  description?: string;
+  /**
+   * `metadata.icon`, `""` when unset.
+   */
+  icon: JsonValue;
+  greeting?: string;
+  /**
+   * `"N tools available"`, only when `public_config.allowed_tools` is set.
+   */
+  capabilities?: string;
+  specs?: PublicAgentCardSpec[];
+  ui_avatar?: JsonObject;
+  ui_drop_genome?: JsonObject;
+}
+
+export interface PublicAgentCardSpec {
+  spec_id: string;
+  name: string;
+  version?: string;
+}
+
 export interface PublicBlogPost {
   slug: string;
   title: string;
@@ -7251,6 +7764,36 @@ export interface PublicPlan {
   quotas: JsonObject;
 }
 
+/**
+ * public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
+ * are filtered out and non-string content is JSON-stringified.
+ */
+export interface PublicSessionView {
+  session_id: string;
+  agent_name: string;
+  greeting: string;
+  description: string;
+  messages: PublicSessionViewMessage[];
+  message_count: number;
+  messages_remaining: number;
+  status: PublicSessionViewStatus;
+}
+
+export interface PublicSessionViewMessage {
+  role: PublicSessionViewMessageRole;
+  content: string;
+  timestamp: string;
+  run_id: string;
+}
+
+export type PublicSessionViewMessageRole = 'user' | 'assistant' | 'system' | 'tool_result';
+
+export const PUBLIC_SESSION_VIEW_MESSAGE_ROLE_VALUES = ['user', 'assistant', 'system', 'tool_result'] as const;
+
+export type PublicSessionViewStatus = 'active' | 'closed' | 'expired';
+
+export const PUBLIC_SESSION_VIEW_STATUS_VALUES = ['active', 'closed', 'expired'] as const;
+
 export interface PublicState {
   marketplace?: JsonObject;
   agents?: JsonObject[];
@@ -7371,6 +7914,10 @@ export interface RegisterAmbassadorRequest {
 
 export interface RegisterAmbassadorResponse {
   ok: boolean;
+}
+
+export interface RegisterResponse {
+  message: string;
 }
 
 export interface RegistryAdminListSpecsResponse {
@@ -7610,6 +8157,42 @@ export interface ReplaceConstitutionRequest {
   rationale?: string;
 }
 
+/**
+ * runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
+ * the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
+ * conditional.
+ */
+export interface ReplayResult {
+  deterministic: boolean;
+  verified: ReplayResultVerified;
+  eventsReplayed: number;
+  runId: string;
+  mode: ReplayResultMode;
+  divergencePoint?: number;
+  divergenceReason?: string;
+  stepComparisons?: ReplayResultStepComparison[];
+}
+
+export type ReplayResultMode = 'verify' | 'execute';
+
+export const REPLAY_RESULT_MODE_VALUES = ['verify', 'execute'] as const;
+
+export interface ReplayResultStepComparison {
+  seq: number;
+  type: string;
+  matches: boolean;
+  mismatchDetail?: string;
+}
+
+export type ReplayResultVerified = 'recorded_log';
+
+export const REPLAY_RESULT_VERIFIED_VALUES = ['recorded_log'] as const;
+
+export interface RequestOtpCodeResponse {
+  ok: boolean;
+  message: string;
+}
+
 export interface ResendInviteResponse {
   resent: boolean;
   email_sent: boolean;
@@ -7662,9 +8245,27 @@ export type ResourcePermissionAction = 'read' | 'write' | 'delete' | 'execute';
 
 export const RESOURCE_PERMISSION_ACTION_VALUES = ['read', 'write', 'delete', 'execute'] as const;
 
+export interface ResourceUsageEntry {
+  count: number;
+  limit: number;
+  over_by: number;
+}
+
 export interface RespondToPublicHitlRequest {
   response: string;
 }
+
+export interface RespondToPublicHitlResponse {
+  status: RespondToPublicHitlResponseStatus;
+  /**
+   * The resumed run, not a new one (public.ts handlePublicRespond).
+   */
+  run_id: string;
+}
+
+export type RespondToPublicHitlResponseStatus = 'ok';
+
+export const RESPOND_TO_PUBLIC_HITL_RESPONSE_STATUS_VALUES = ['ok'] as const;
 
 export interface RespondToRunRequest {
   response: string;
@@ -7766,6 +8367,17 @@ export interface RollbackAgentRequest {
   version: number;
 }
 
+/**
+ * governance/emergency.ts RootAttestation — the KV record, unsanitized.
+ */
+export interface RootAttestation {
+  root_agent_id: string;
+  founder_id: string;
+  founder_signature: string;
+  constitution_hash: string;
+  created_at: string;
+}
+
 export interface RotateAgentIdentityResponse {
   public_key?: string;
   rotated_at?: string;
@@ -7786,13 +8398,14 @@ export interface Run {
   status: RunStatus;
   input?: JsonObject;
   /**
-   * Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+   * Run output — the same object rides in run events and in a public session's stream
+   * (RunOutput). When a run is truncated by its step-budget cutoff (output.truncated === true)
    * AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
    * carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
    * no key configured no token is minted and the field is absent; the token is an opaque string
    * to every client.
    */
-  output?: JsonObject | null;
+  output?: RunOutput | null;
   metrics?: RunMetrics;
   error?: string | null;
   created_at: string;
@@ -8079,6 +8692,51 @@ export interface RunMissionResponse {
 }
 
 /**
+ * What the runtime writes as a run's `output` (agent-runtime.ts, the normal completion and the
+ * max-steps cutoff). Measured 2026-09-10 on production, 8 640 stored runs: `{ response }` 6
+ * 722; `{ response, search_sources }` 334; `{ response, output_truncated }` 23; `{ response,
+ * search_sources, output_truncated }` 3; `{ response, truncated, continuation_token }` 3; `{
+ * response, truncated }` 2; `{}` 3. A bridge agent (execution_mode bridge) reports its own
+ * output — `{ response: "" }` is what it has been sending. Additional keys are possible from
+ * that path; the five below are the platform's own.
+ */
+export interface RunOutput {
+  /**
+   * The final assistant text.
+   */
+  response?: string;
+  /**
+   * URLs a real `web_search` tool call returned during this run — read back out of the tool
+   * results (`URL:` lines, response-postprocessing.ts extractSearchSources, deduplicated, at
+   * most 8), NOT out of the model's text. Present only when non-empty. Provenance is the point:
+   * a chat surface unfurls only these into preview cards, so a URL the model wrote from memory
+   * is never dressed up as a verified source. Witness: run 019faf2c… on tenant 019d9364…
+   * (2026-07-29) carries 8, the first on en.wikipedia.org.
+   */
+  search_sources?: string[];
+  /**
+   * The model stopped because it ran out of OUTPUT tokens (`finish_reason: length`), not because
+   * it was finished — the answer ends mid-sentence. Present only when true; the chat offers
+   * "Continue generating" on this flag alone. Distinct from `truncated` (step budget). 26 stored
+   * runs carry it.
+   */
+  output_truncated?: boolean;
+  /**
+   * The run hit its step budget (max_steps) before finishing. Present only when true.
+   */
+  truncated?: boolean;
+  /**
+   * Opaque HMAC-signed token minted with `truncated` when UARP_CONTINUATION_TOKEN_KEY is
+   * configured; resumes the run via POST /runs/{id}/continue.
+   */
+  continuation_token?: string;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+/**
  * Resource limits for the run
  */
 export interface RunResourceLimits {
@@ -8270,6 +8928,26 @@ export interface SearchMemoryResponse {
   total: number;
 }
 
+export interface SearchResponse {
+  results: SearchResult[];
+}
+
+/**
+ * search.ts SearchResult — `subtitle` is omitted for some result kinds.
+ */
+export interface SearchResult {
+  type: SearchResultType;
+  id: string;
+  title: string;
+  subtitle?: string;
+  href: string;
+  icon: string;
+}
+
+export type SearchResultType = 'agent' | 'run' | 'session' | 'file' | 'image' | 'project' | 'memory';
+
+export const SEARCH_RESULT_TYPE_VALUES = ['agent', 'run', 'session', 'file', 'image', 'project', 'memory'] as const;
+
 export type SearchType = 'agent' | 'session' | 'run';
 
 export const SEARCH_TYPE_VALUES = ['agent', 'session', 'run'] as const;
@@ -8362,7 +9040,7 @@ export interface Session {
   session_id: string;
   tenant_id: string;
   agent_id: string;
-  status: SessionStatus;
+  status: PublicSessionViewStatus;
   conversation_history?: ConversationEntry[];
   metadata?: JsonObject;
   runs?: string[];
@@ -8390,6 +9068,19 @@ export interface Session {
    * resolve their LLM from this config instead of the agent's default. Absent → agent default.
    */
   model_override?: SessionModelOverride | null;
+}
+
+/**
+ * sessions.ts AnnotationRecord — the six-field projection create, list and PATCH all answer
+ * with.
+ */
+export interface SessionAnnotation {
+  id: string;
+  message_id: string;
+  content: string;
+  author: string;
+  created_at: string;
+  resolved: boolean;
 }
 
 export interface SessionBranch {
@@ -8456,10 +9147,6 @@ export interface SessionModelOverride {
 export type SessionQueueMode = 'allow' | 'reject';
 
 export const SESSION_QUEUE_MODE_VALUES = ['allow', 'reject'] as const;
-
-export type SessionStatus = 'active' | 'closed' | 'expired';
-
-export const SESSION_STATUS_VALUES = ['active', 'closed', 'expired'] as const;
 
 export interface SetAdminIntegrationOAuthProviderRequest {
   enabled?: boolean;
@@ -9653,6 +10340,8 @@ export interface TenantTrial {
 }
 
 export interface TenantUser {
+  avatar_url?: string;
+  last_login_at?: string;
   created_at?: string;
   email?: string;
   id?: string;
@@ -9817,6 +10506,11 @@ export interface UnsuspendUserResponse {
   user_id: string;
 }
 
+export interface UpdateACPSessionResponse {
+  saved: boolean;
+  sessionId: string;
+}
+
 export interface UpdateAdminBlogConfigRequest {
   enabled?: boolean;
   title?: string;
@@ -9977,12 +10671,8 @@ export interface UpdateBridgeAgentCapabilityRequest {
 }
 
 export interface UpdateBridgeAgentCapabilityResponse {
-  status: UpdateBridgeAgentCapabilityResponseStatus;
+  status: RespondToPublicHitlResponseStatus;
 }
-
-export type UpdateBridgeAgentCapabilityResponseStatus = 'ok';
-
-export const UPDATE_BRIDGE_AGENT_CAPABILITY_RESPONSE_STATUS_VALUES = ['ok'] as const;
 
 export interface UpdateBuilderRequestStatusRequest {
   status: DesignRequestStatus;
@@ -10297,6 +10987,77 @@ export interface UsageMarginSummary {
 }
 
 /**
+ * billing.ts GET /usage/quota. `reason` only when `allowed` is false (billing/usage-tracker.ts
+ * checkQuota).
+ */
+export interface UsageQuota {
+  plan: string;
+  allowed: boolean;
+  reason?: string;
+  /**
+   * billing/usage-tracker.ts AggregatedUsage for the current month.
+   */
+  usage: UsageQuotaUsage;
+  daily: UsageQuotaDaily;
+  resets_at: UsageQuotaResetsAt;
+  limits: UsageQuotaLimits;
+  /**
+   * api/lib/resource-usage.ts TenantResourceUsage.
+   */
+  resource_usage: UsageQuotaResourceUsage;
+}
+
+export interface UsageQuotaDaily {
+  used: number;
+  limit: number;
+  remaining: number | null;
+  resets_at: string;
+}
+
+export interface UsageQuotaLimits {
+  max_monthly_tokens: number;
+  max_monthly_runs: number;
+  max_daily_tokens: number;
+  max_agents: number;
+  max_teams: number;
+  max_knowledge_bases: number;
+  max_workspaces: number;
+}
+
+export interface UsageQuotaResetsAt {
+  day: string;
+  month: string;
+}
+
+/**
+ * api/lib/resource-usage.ts TenantResourceUsage.
+ */
+export interface UsageQuotaResourceUsage {
+  agents: ResourceUsageEntry;
+  workspaces: ResourceUsageEntry;
+  knowledge_bases: ResourceUsageEntry;
+  teams: ResourceUsageEntry;
+  any_over_tier: boolean;
+}
+
+/**
+ * billing/usage-tracker.ts AggregatedUsage for the current month.
+ */
+export interface UsageQuotaUsage {
+  input_tokens: number;
+  output_tokens: number;
+  thinking_tokens: number;
+  total_tokens: number;
+  runs_count: number;
+  tool_calls_count: number;
+  storage_bytes: number;
+  total_cost: number;
+  provider_cost: number;
+  non_run_cost: number;
+  period: string;
+}
+
+/**
  * Tenant usage for one billing period. Flat — the counters are top-level, not nested under a
  * `usage` object.
  */
@@ -10405,6 +11166,14 @@ export interface Value3 {
 export interface Value4 {
   from?: JsonValue;
   to?: JsonValue;
+}
+
+/**
+ * The API key is e-mailed, never returned here (register.ts handleVerifyEmail).
+ */
+export interface VerifyEmailResponse {
+  tenant_id: string;
+  message: string;
 }
 
 export interface VerifyMfaRecoveryRequest {
@@ -10553,6 +11322,11 @@ export interface Workspace {
 }
 
 export interface WorkspaceFile {
+  /**
+   * Lowercase hex sha256 of the content; absent on records written before 2026-09-03
+   * (workspace-store.ts).
+   */
+  etag?: string;
   file_id: string;
   tenant_id?: string;
   workspace_id: string;

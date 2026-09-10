@@ -129,8 +129,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun delete(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun delete(agentId: String, options: RequestOptions = RequestOptions()): DeleteAgentResponse {
+        return client.request<DeleteAgentResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}",
@@ -488,6 +488,12 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Partial update agent
+     *
+     * WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
+     * `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
+     * (agent-genome.ts mergeAgentMetadata) — so a client may send `{metadata: {ui: {avatar: {hue:
+     * 40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
+     * other nested object is replaced whole.
      *
      * `PATCH /api/v1/agents/{agentId}`
      *

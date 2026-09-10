@@ -23,7 +23,7 @@ public struct A2AAPI: Sendable {
     /// `POST /api/v1/a2a`
     ///
     /// Required scopes: `agents:write`.
-    public func a2aJSONRpc(body: A2ajsonRpcRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func a2aJSONRpc(body: A2ajsonRpcRequest, options: RequestOptions = .init()) async throws -> JSONRpcResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/a2a",
@@ -80,7 +80,7 @@ public struct A2AAPI: Sendable {
     /// Get A2A agent card for discovery
     ///
     /// `GET /.well-known/agent.json`
-    public func getAgentCard(agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getAgentCard(agentId: String, options: RequestOptions = .init()) async throws -> A2AAgentCard {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "agent_id", value: agentId))
         return try await client.send(RequestSpec(

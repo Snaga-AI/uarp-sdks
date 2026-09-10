@@ -197,7 +197,7 @@ package UARP.API.Public is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Public_Agent_Card;
 
    --  One published post, with its body
    --
@@ -246,7 +246,7 @@ package UARP.API.Public is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Public_Session_View;
 
    --  Get public state detail
    --
@@ -390,7 +390,7 @@ package UARP.API.Public is
       Session_Id : String;
       Payload : UARP.Models.Respond_To_Public_Hitl_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Respond_To_Public_Hitl_Response;
 
    --  Send public message
    --

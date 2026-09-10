@@ -69,6 +69,6 @@ package UARP.API.Meta is
      (Self : Client_Type;
       Params : Search_Params := No_Search_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Search_Response;
 
 end UARP.API.Meta;

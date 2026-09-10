@@ -7,16 +7,17 @@ package body UARP.API.Bootstrap is
       Payload : UARP.Models.Bootstrap_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Bootstrap_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/bootstrap",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/bootstrap",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Bootstrap;
 end UARP.API.Bootstrap;

@@ -16,7 +16,7 @@ public struct OpenAiCompatAPI: Sendable {
     /// `POST /v1/chat/completions`
     ///
     /// Required scopes: `runs:create`.
-    public func chatCompletion(body: ChatCompletionRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func chatCompletion(body: ChatCompletionRequest, options: RequestOptions = .init()) async throws -> OpenAiChatCompletion {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/v1/chat/completions",
@@ -62,7 +62,7 @@ public struct OpenAiCompatAPI: Sendable {
     /// Get response by ID (OpenAI Responses API)
     ///
     /// `GET /v1/responses/{responseId}`
-    public func getResponse(responseId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getResponse(responseId: String, options: RequestOptions = .init()) async throws -> GetResponseResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/v1/responses/\(encodePathSegment(responseId))",

@@ -183,17 +183,18 @@ package body UARP.API.Tenants is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Tenant
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/tenants/me",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/tenants/me",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Patch;
 
    function Revoke_API_Key
@@ -217,17 +218,18 @@ package body UARP.API.Tenants is
       Payload : UARP.Models.Update_Tenant_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Tenant
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/tenants/me",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/tenants/me",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Update;
 
    function Verify_Tenant_Domain

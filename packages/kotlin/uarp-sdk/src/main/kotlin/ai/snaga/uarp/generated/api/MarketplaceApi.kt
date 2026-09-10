@@ -229,8 +229,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:write`.
      */
-    public suspend fun subscribeToListing(listingId: String, body: SubscribeToListingRequest? = null, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun subscribeToListing(listingId: String, body: SubscribeToListingRequest? = null, options: RequestOptions = RequestOptions()): MarketplaceSubscription {
+        return client.request<MarketplaceSubscription>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}/subscribe",

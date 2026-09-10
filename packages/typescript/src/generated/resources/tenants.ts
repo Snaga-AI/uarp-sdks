@@ -13,7 +13,6 @@ import type {
   GetMyHeadAgentTemplateResponse,
   GetTenantDomainHealthResponse,
   JsonObject,
-  JsonValue,
   LeaveTenantResponse,
   ListAPIKeysResponse,
   ListMyTenantsResponse,
@@ -62,7 +61,7 @@ export class TenantsResource extends APIResource {
    *
    * `POST /api/v1/tenants/me/keys`
    *
-   * Required scopes: `tenants:write`.
+   * Required scopes: `api_keys:write`.
    */
   createAPIKey(body: CreateAPIKeyRequest, options?: RequestOptions): Promise<APIKeyResponse> {
     return this._client.request({
@@ -252,7 +251,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `tenants:write`.
    */
-  patch(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  patch(body: JsonObject, options?: RequestOptions): Promise<Tenant> {
     return this._client.request({
       method: 'PATCH',
       path: '/api/v1/tenants/me',
@@ -267,7 +266,7 @@ export class TenantsResource extends APIResource {
    *
    * `DELETE /api/v1/tenants/me/keys/{keyId}`
    *
-   * Required scopes: `tenants:write`.
+   * Required scopes: `api_keys:write`.
    */
   revokeAPIKey(keyId: string, options?: RequestOptions): Promise<RevokeAPIKeyResponse> {
     return this._client.request({
@@ -285,7 +284,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `tenants:write`.
    */
-  update(body?: UpdateTenantRequest, options?: RequestOptions): Promise<JsonValue> {
+  update(body?: UpdateTenantRequest, options?: RequestOptions): Promise<Tenant> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/tenants/me',

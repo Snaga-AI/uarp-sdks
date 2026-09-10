@@ -24,7 +24,7 @@ public struct ACPAPI: Sendable {
     /// Send message / update ACP session
     ///
     /// `PUT /api/v1/acp/session/{sessionId}`
-    public func updateACPSession(sessionId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func updateACPSession(sessionId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateACPSessionResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/acp/session/\(encodePathSegment(sessionId))",

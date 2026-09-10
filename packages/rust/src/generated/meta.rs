@@ -7,11 +7,13 @@ pub const SPEC_VERSION: &str = "0.4.0";
 pub const DEFAULT_BASE_URL: &str = "https://api.snaga.ai";
 
 /// Every scope named by the UARP security scheme.
-pub const SCOPES: [&str; 31] = [
+pub const SCOPES: [&str; 32] = [
     "admin",
     "agents:read",
     "agents:write",
+    "analytics:read",
     "api_keys:read",
+    "api_keys:write",
     "billing:read",
     "billing:write",
     "evaluations:read",
@@ -28,7 +30,6 @@ pub const SCOPES: [&str; 31] = [
     "memory:write",
     "notifications:read",
     "notifications:write",
-    "read:analytics",
     "runs:create",
     "runs:read",
     "search:read",

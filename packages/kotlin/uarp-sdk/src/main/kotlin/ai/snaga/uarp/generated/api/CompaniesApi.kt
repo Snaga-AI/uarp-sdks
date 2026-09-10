@@ -45,15 +45,15 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
     /**
      * Delete company
      *
-     * `DELETE /api/v1/companies/{id}`
+     * `DELETE /api/v1/companies/{companyId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()) {
+    public suspend fun delete(companyId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
             RequestSpec(
                 method = "DELETE",
-                path = "/api/v1/companies/${encodePathSegment(id)}",
+                path = "/api/v1/companies/${encodePathSegment(companyId)}",
                 idempotent = true,
                 options = options,
             )
@@ -63,15 +63,15 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
     /**
      * Get company
      *
-     * `GET /api/v1/companies/{id}`
+     * `GET /api/v1/companies/{companyId}`
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun `get`(id: String, options: RequestOptions = RequestOptions()): Company {
+    public suspend fun `get`(companyId: String, options: RequestOptions = RequestOptions()): Company {
         return client.request<Company>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/companies/${encodePathSegment(id)}",
+                path = "/api/v1/companies/${encodePathSegment(companyId)}",
                 options = options,
             )
         )
@@ -184,15 +184,15 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
     /**
      * Update company
      *
-     * `PUT /api/v1/companies/{id}`
+     * `PUT /api/v1/companies/{companyId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(id: String, body: CompanyUpdate, options: RequestOptions = RequestOptions()): Company {
+    public suspend fun update(companyId: String, body: CompanyUpdate, options: RequestOptions = RequestOptions()): Company {
         return client.request<Company>(
             RequestSpec(
                 method = "PUT",
-                path = "/api/v1/companies/${encodePathSegment(id)}",
+                path = "/api/v1/companies/${encodePathSegment(companyId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

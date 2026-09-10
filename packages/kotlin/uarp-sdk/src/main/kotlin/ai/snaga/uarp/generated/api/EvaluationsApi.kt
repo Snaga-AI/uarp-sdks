@@ -30,8 +30,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:write`.
      */
-    public suspend fun createAgentScorer(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createAgentScorer(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): AgentScorer {
+        return client.request<AgentScorer>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/scorers",
@@ -49,8 +49,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:write`.
      */
-    public suspend fun createDataset(agentId: String, body: CreateDatasetRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun createDataset(agentId: String, body: CreateDatasetRequest, options: RequestOptions = RequestOptions()): EvalDataset {
+        return client.request<EvalDataset>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/datasets",
@@ -89,8 +89,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:read`.
      */
-    public suspend fun getDataset(agentId: String, datasetId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getDataset(agentId: String, datasetId: String, options: RequestOptions = RequestOptions()): EvalDataset {
+        return client.request<EvalDataset>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/datasets/${encodePathSegment(datasetId)}",
@@ -106,8 +106,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:read`.
      */
-    public suspend fun getEvalRun(agentId: String, evalRunId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getEvalRun(agentId: String, evalRunId: String, options: RequestOptions = RequestOptions()): EvalRun {
+        return client.request<EvalRun>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/evaluations/${encodePathSegment(evalRunId)}",
@@ -191,8 +191,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:write`.
      */
-    public suspend fun run(agentId: String, body: RunEvaluationRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun run(agentId: String, body: RunEvaluationRequest, options: RequestOptions = RequestOptions()): EvalRun {
+        return client.request<EvalRun>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/evaluations",

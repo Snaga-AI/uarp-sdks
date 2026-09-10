@@ -181,7 +181,7 @@ public struct MarketplaceAPI: Sendable {
     /// `POST /api/v1/marketplace/listings/{listingId}/subscribe`
     ///
     /// Required scopes: `marketplace:write`.
-    public func subscribeToListing(listingId: String, body: SubscribeToListingRequest? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func subscribeToListing(listingId: String, body: SubscribeToListingRequest? = nil, options: RequestOptions = .init()) async throws -> MarketplaceSubscription {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

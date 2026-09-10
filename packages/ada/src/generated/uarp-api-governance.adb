@@ -61,7 +61,7 @@ package body UARP.API.Governance is
    function Bootstrap_Ambassador
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Bootstrap_Ambassador_Response
+      return UARP.Models.Ambassador
    is
    begin
       return UARP.Models.From_JSON
@@ -75,7 +75,7 @@ package body UARP.API.Governance is
 
    function Cast_Ballot
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Payload : UARP.Models.Cast_Ballot_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Ballot
@@ -85,7 +85,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Id) & "/ballot",
+             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Proposal_Id) & "/ballot",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
@@ -95,15 +95,16 @@ package body UARP.API.Governance is
    function Check_Deadlock
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Deadlock_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/emergency/deadlock-check",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/emergency/deadlock-check",
+             Idempotent => True,
+             Options => Options));
    end Check_Deadlock;
 
    function Check_Governance
@@ -146,17 +147,18 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Ambassador_Request_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Ambassador_Request
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/ambassador/requests",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/ambassador/requests",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Ambassador_Request;
 
    function Create_Builder_Request
@@ -264,7 +266,7 @@ package body UARP.API.Governance is
 
    function File_Arbiter_Appeal
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Payload : UARP.Models.File_Arbiter_Appeal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.File_Arbiter_Appeal_Response
@@ -274,7 +276,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Id) & "/appeal",
+             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Case_Id) & "/appeal",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
@@ -285,17 +287,18 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.File_Arbiter_Case_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Arbiter_Case
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/arbiter/cases",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/arbiter/cases",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end File_Arbiter_Case;
 
    function Get_Agent_Obligations
@@ -345,7 +348,7 @@ package body UARP.API.Governance is
 
    function Get_Ambassador
      (Self : Client_Type;
-      Id : String;
+      Ambassador_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Ambassador
    is
@@ -354,13 +357,13 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/ambassador/ambassadors/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/governance/ambassador/ambassadors/" & UARP.Types.Encode_Path_Segment (Ambassador_Id),
              Options => Options));
    end Get_Ambassador;
 
    function Get_Arbiter_Case
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Arbiter_Case
    is
@@ -369,7 +372,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Case_Id),
              Options => Options));
    end Get_Arbiter_Case;
 
@@ -389,7 +392,7 @@ package body UARP.API.Governance is
 
    function Get_Builder_Request
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Design_Request
    is
@@ -398,7 +401,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/builder/requests/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/governance/builder/requests/" & UARP.Types.Encode_Path_Segment (Request_Id),
              Options => Options));
    end Get_Builder_Request;
 
@@ -432,7 +435,7 @@ package body UARP.API.Governance is
 
    function Get_Goal
      (Self : Client_Type;
-      Id : String;
+      Goal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Goal
    is
@@ -441,7 +444,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/goals/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/governance/goals/" & UARP.Types.Encode_Path_Segment (Goal_Id),
              Options => Options));
    end Get_Goal;
 
@@ -519,14 +522,15 @@ package body UARP.API.Governance is
    function Get_Root_Attestation
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Root_Attestation
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/governance/emergency/root-attestation",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/governance/emergency/root-attestation",
+             Options => Options));
    end Get_Root_Attestation;
 
    function Get_Spawn_Policy
@@ -545,7 +549,7 @@ package body UARP.API.Governance is
 
    function Get_Voting_Proposal
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Voting_Proposal
    is
@@ -554,13 +558,13 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Proposal_Id),
              Options => Options));
    end Get_Voting_Proposal;
 
    function Issue_Arbiter_Ruling
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Payload : UARP.Models.Issue_Arbiter_Ruling_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Issue_Arbiter_Ruling_Response
@@ -570,7 +574,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Id) & "/ruling",
+             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Case_Id) & "/ruling",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
@@ -649,7 +653,7 @@ package body UARP.API.Governance is
 
    function List_Ballots
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Ballots_Response
    is
@@ -658,7 +662,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Id) & "/ballots",
+             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Proposal_Id) & "/ballots",
              Options => Options));
    end List_Ballots;
 
@@ -771,20 +775,21 @@ package body UARP.API.Governance is
 
    function Resolve_Ambassador_Request
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Payload : UARP.Models.Resolve_Ambassador_Request_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Ambassador_Request
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/ambassador/requests/" & UARP.Types.Encode_Path_Segment (Id) & "/resolve",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/ambassador/requests/" & UARP.Types.Encode_Path_Segment (Request_Id) & "/resolve",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Resolve_Ambassador_Request;
 
    function Set_Agent_Permissions
@@ -880,7 +885,7 @@ package body UARP.API.Governance is
 
    function Tally_Votes
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Vote_Result
    is
@@ -889,14 +894,14 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Id) & "/tally",
+             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Proposal_Id) & "/tally",
              Idempotent => True,
              Options => Options));
    end Tally_Votes;
 
    function Update_Builder_Request_Status
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Payload : UARP.Models.Update_Builder_Request_Status_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Design_Request
@@ -906,7 +911,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "PUT",
-             "/api/v1/governance/builder/requests/" & UARP.Types.Encode_Path_Segment (Id) & "/status",
+             "/api/v1/governance/builder/requests/" & UARP.Types.Encode_Path_Segment (Request_Id) & "/status",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
@@ -915,20 +920,21 @@ package body UARP.API.Governance is
 
    function Update_Goal_Status
      (Self : Client_Type;
-      Id : String;
+      Goal_Id : String;
       Payload : UARP.Models.Update_Goal_Status_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Goal
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/governance/goals/" & UARP.Types.Encode_Path_Segment (Id) & "/status",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/governance/goals/" & UARP.Types.Encode_Path_Segment (Goal_Id) & "/status",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Goal_Status;
 
    function Update_Improvement_Status
@@ -976,7 +982,7 @@ package body UARP.API.Governance is
 
    function Veto_Proposal
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Payload : UARP.Models.Veto_Proposal_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -987,7 +993,7 @@ package body UARP.API.Governance is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Id) & "/veto",
+             "/api/v1/governance/voting/proposals/" & UARP.Types.Encode_Path_Segment (Proposal_Id) & "/veto",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => Include_Payload,
              Idempotent => True,

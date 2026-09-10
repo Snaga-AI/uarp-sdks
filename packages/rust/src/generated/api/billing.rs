@@ -60,7 +60,7 @@ impl BillingApi {
     /// `GET /api/v1/usage/quota`
     ///
     /// Required scopes: `billing:read`.
-    pub async fn check_quota(&self) -> Result<serde_json::Value> {
+    pub async fn check_quota(&self) -> Result<models::UsageQuota> {
         self.client
             .request_json(Request {
                 method: Method::GET,

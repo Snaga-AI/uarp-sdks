@@ -15,6 +15,7 @@ import type {
   MarketplaceListing,
   MarketplaceListingCategory,
   MarketplaceListingRating,
+  MarketplaceSubscription,
   PublishListingRequest,
   RateListingRequest,
   SearchMarketplaceResponse,
@@ -222,7 +223,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:write`.
    */
-  subscribeToListing(listingId: string, body?: SubscribeToListingRequest, options?: RequestOptions): Promise<JsonObject> {
+  subscribeToListing(listingId: string, body?: SubscribeToListingRequest, options?: RequestOptions): Promise<MarketplaceSubscription> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}/subscribe`,

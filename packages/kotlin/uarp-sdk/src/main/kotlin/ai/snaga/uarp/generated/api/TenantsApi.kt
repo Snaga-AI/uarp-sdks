@@ -59,7 +59,7 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/tenants/me/keys`
      *
-     * Required scopes: `tenants:write`.
+     * Required scopes: `api_keys:write`.
      */
     public suspend fun createAPIKey(body: CreateAPIKeyRequest, options: RequestOptions = RequestOptions()): APIKeyResponse {
         return client.request<APIKeyResponse>(
@@ -269,8 +269,8 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `tenants:write`.
      */
-    public suspend fun patch(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun patch(body: JsonObject, options: RequestOptions = RequestOptions()): Tenant {
+        return client.request<Tenant>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/tenants/me",
@@ -286,7 +286,7 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/tenants/me/keys/{keyId}`
      *
-     * Required scopes: `tenants:write`.
+     * Required scopes: `api_keys:write`.
      */
     public suspend fun revokeAPIKey(keyId: String, options: RequestOptions = RequestOptions()): RevokeAPIKeyResponse {
         return client.request<RevokeAPIKeyResponse>(
@@ -306,8 +306,8 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `tenants:write`.
      */
-    public suspend fun update(body: UpdateTenantRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun update(body: UpdateTenantRequest? = null, options: RequestOptions = RequestOptions()): Tenant {
+        return client.request<Tenant>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/tenants/me",

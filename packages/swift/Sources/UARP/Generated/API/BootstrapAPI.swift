@@ -11,7 +11,7 @@ public struct BootstrapAPI: Sendable {
     /// Bootstrap the platform (first-time setup)
     ///
     /// `POST /api/v1/bootstrap`
-    public func bootstrap(body: BootstrapRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func bootstrap(body: BootstrapRequest? = nil, options: RequestOptions = .init()) async throws -> BootstrapResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

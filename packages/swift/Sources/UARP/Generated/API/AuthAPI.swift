@@ -241,7 +241,7 @@ public struct AuthAPI: Sendable {
     /// Register new user
     ///
     /// `POST /api/v1/register`
-    public func register(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func register(body: JSONObject, options: RequestOptions = .init()) async throws -> RegisterResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/register",
@@ -254,7 +254,7 @@ public struct AuthAPI: Sendable {
     /// Request OTP code
     ///
     /// `POST /api/v1/auth/request-code`
-    public func requestOtpCode(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func requestOtpCode(body: JSONObject, options: RequestOptions = .init()) async throws -> RequestOtpCodeResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/auth/request-code",
@@ -323,7 +323,7 @@ public struct AuthAPI: Sendable {
     /// Verify email link
     ///
     /// `GET /api/v1/verify-email`
-    public func verifyEmail(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func verifyEmail(options: RequestOptions = .init()) async throws -> VerifyEmailResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/verify-email",

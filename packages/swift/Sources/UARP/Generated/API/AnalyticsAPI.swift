@@ -18,7 +18,7 @@ public struct AnalyticsAPI: Sendable {
     ///
     /// `GET /api/v1/analytics/public-chat`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     public func getPublicChatAnalytics(days: Int? = nil, options: RequestOptions = .init()) async throws -> PublicChatAnalytics {
         var query: [URLQueryItem] = []
         if let days {
@@ -42,7 +42,7 @@ public struct AnalyticsAPI: Sendable {
     ///
     /// `GET /api/v1/analytics/inbox`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     public func getTenantInbox(limit: Int? = nil, options: RequestOptions = .init()) async throws -> TenantInbox {
         var query: [URLQueryItem] = []
         if let limit {
@@ -66,7 +66,7 @@ public struct AnalyticsAPI: Sendable {
     ///
     /// `GET /api/v1/analytics/overview`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     public func getTenantOverview(days: Int? = nil, options: RequestOptions = .init()) async throws -> TenantOverview {
         var query: [URLQueryItem] = []
         if let days {
@@ -84,7 +84,7 @@ public struct AnalyticsAPI: Sendable {
     ///
     /// `GET /api/v1/analytics/agents`
     ///
-    /// Required scopes: `read:analytics`.
+    /// Required scopes: `analytics:read`.
     public func tenantAnalyticsAgents(days: Int? = nil, options: RequestOptions = .init()) async throws -> AgentAnalyticsSummary {
         var query: [URLQueryItem] = []
         if let days {

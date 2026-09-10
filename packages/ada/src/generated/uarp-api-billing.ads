@@ -3,7 +3,6 @@
 --  Usage tracking, quota management, and Stripe webhooks
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Billing is
@@ -49,7 +48,7 @@ package UARP.API.Billing is
    function Check_Quota
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Usage_Quota;
 
    --  Create a Stripe Customer Portal session URL
    --

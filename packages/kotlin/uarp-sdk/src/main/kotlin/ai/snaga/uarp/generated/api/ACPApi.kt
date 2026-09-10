@@ -46,8 +46,8 @@ public class ACPApi internal constructor(private val client: UarpClient) {
      *
      * `PUT /api/v1/acp/session/{sessionId}`
      */
-    public suspend fun updateACPSession(sessionId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun updateACPSession(sessionId: String, body: JsonObject, options: RequestOptions = RequestOptions()): UpdateACPSessionResponse {
+        return client.request<UpdateACPSessionResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/acp/session/${encodePathSegment(sessionId)}",

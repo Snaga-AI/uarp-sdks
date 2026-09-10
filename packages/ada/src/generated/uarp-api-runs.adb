@@ -361,15 +361,16 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Replay_Result
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/replay",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/replay",
+             Idempotent => True,
+             Options => Options));
    end Replay_Run;
 
    function Respond_To_Run

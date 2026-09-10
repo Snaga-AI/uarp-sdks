@@ -189,7 +189,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Created_Task;
 
    --  Delete annotation
    --
@@ -480,7 +480,7 @@ package UARP.API.Sessions is
       Payload : UARP.Models.Update_Session_Annotation_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Session_Annotation;
 
    --  Update a todo
    --

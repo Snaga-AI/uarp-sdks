@@ -47,14 +47,14 @@ impl KnowledgeApi {
 
     /// Delete document
     ///
-    /// `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
+    /// `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}/documents/{docId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_kb_document(&self, id: &str, doc_id: &str) -> Result<()> {
+    pub async fn delete_kb_document(&self, knowledge_base_id: &str, doc_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
                 method: Method::DELETE,
-                path: format!("/api/v1/knowledge-bases/{}/documents/{}", encode_path(id), encode_path(doc_id)),
+                path: format!("/api/v1/knowledge-bases/{}/documents/{}", encode_path(knowledge_base_id), encode_path(doc_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -65,14 +65,14 @@ impl KnowledgeApi {
 
     /// Delete knowledge base
     ///
-    /// `DELETE /api/v1/knowledge-bases/{id}`
+    /// `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
+    pub async fn delete_knowledge_base(&self, knowledge_base_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
                 method: Method::DELETE,
-                path: format!("/api/v1/knowledge-bases/{}", encode_path(id)),
+                path: format!("/api/v1/knowledge-bases/{}", encode_path(knowledge_base_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -83,14 +83,14 @@ impl KnowledgeApi {
 
     /// Get knowledge base
     ///
-    /// `GET /api/v1/knowledge-bases/{id}`
+    /// `GET /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:read`.
-    pub async fn get_knowledge_base(&self, id: &str) -> Result<models::KnowledgeBase> {
+    pub async fn get_knowledge_base(&self, knowledge_base_id: &str) -> Result<models::KnowledgeBase> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/knowledge-bases/{}", encode_path(id)),
+                path: format!("/api/v1/knowledge-bases/{}", encode_path(knowledge_base_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -206,14 +206,14 @@ impl KnowledgeApi {
     /// OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
     /// docs/WRITE_SEMANTICS.md.
     ///
-    /// `PUT /api/v1/knowledge-bases/{id}`
+    /// `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn update_knowledge_base(&self, id: &str, body: &models::KnowledgeBaseUpdate) -> Result<models::KnowledgeBase> {
+    pub async fn update_knowledge_base(&self, knowledge_base_id: &str, body: &models::KnowledgeBaseUpdate) -> Result<models::KnowledgeBase> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
-                path: format!("/api/v1/knowledge-bases/{}", encode_path(id)),
+                path: format!("/api/v1/knowledge-bases/{}", encode_path(knowledge_base_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

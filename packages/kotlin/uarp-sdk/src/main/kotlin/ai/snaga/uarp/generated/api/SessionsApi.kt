@@ -206,8 +206,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/todos`
      */
-    public suspend fun createTask(body: JsonElement, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createTask(body: JsonElement, options: RequestOptions = RequestOptions()): CreatedTask {
+        return client.request<CreatedTask>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/todos",
@@ -658,8 +658,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = null, options: RequestOptions = RequestOptions()): SessionAnnotation {
+        return client.request<SessionAnnotation>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/annotations/${encodePathSegment(annotationId)}",

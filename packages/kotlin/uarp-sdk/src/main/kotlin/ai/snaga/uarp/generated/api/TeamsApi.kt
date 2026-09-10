@@ -31,8 +31,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun addTeamGraphEdge(teamId: String, body: AddTeamGraphEdgeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun addTeamGraphEdge(teamId: String, body: AddTeamGraphEdgeRequest, options: RequestOptions = RequestOptions()): TeamGraphEdge {
+        return client.request<TeamGraphEdge>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/graph/edges",
@@ -50,8 +50,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun addTeamGraphNode(teamId: String, body: AddTeamGraphNodeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun addTeamGraphNode(teamId: String, body: AddTeamGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/graph/nodes",
@@ -456,8 +456,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun updateTeamGraphNode(teamId: String, agentId: String, body: UpdateTeamGraphNodeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateTeamGraphNode(teamId: String, agentId: String, body: UpdateTeamGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/graph/nodes/${encodePathSegment(agentId)}",

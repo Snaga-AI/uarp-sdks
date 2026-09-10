@@ -24,7 +24,7 @@ public struct MCPAPI: Sendable {
     /// Delete MCP server
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
-    public func deleteMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func deleteMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> DeleteMCPServerResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))",
@@ -62,7 +62,7 @@ public struct MCPAPI: Sendable {
     /// headers return 400.
     ///
     /// `POST /api/v1/mcp`
-    public func mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = .init()) async throws -> JSONRpcResponse {
         var headers: [String: String] = [:]
         headers["X-UARP-Agent-Id"] = xUarpAgentId
         return try await client.send(RequestSpec(

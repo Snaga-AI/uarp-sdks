@@ -51,7 +51,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/edges`
-    pub async fn add_squad_graph_edge(&self, squad_id: &str, body: &models::AddSquadGraphEdgeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn add_squad_graph_edge(&self, squad_id: &str, body: &models::AddSquadGraphEdgeRequest) -> Result<models::TeamGraphEdge> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -71,7 +71,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/nodes`
-    pub async fn add_squad_graph_node(&self, squad_id: &str, body: &models::AddSquadGraphNodeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn add_squad_graph_node(&self, squad_id: &str, body: &models::AddSquadGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -478,7 +478,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
-    pub async fn update_squad_graph_node(&self, squad_id: &str, agent_id: &str, body: &models::UpdateSquadGraphNodeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_squad_graph_node(&self, squad_id: &str, agent_id: &str, body: &models::UpdateSquadGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

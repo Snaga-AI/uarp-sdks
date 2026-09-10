@@ -53,7 +53,7 @@ public struct MemoryAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:read`.
-    public func getMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws -> MemoryEntry {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/\(encodePathSegment(entryId))",

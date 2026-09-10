@@ -5,14 +5,15 @@ package body UARP.API.Billing is
    function Check_Quota
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Usage_Quota
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/usage/quota",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/usage/quota",
+             Options => Options));
    end Check_Quota;
 
    function Create_Billing_Portal_Session

@@ -317,7 +317,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Replay_Result;
 
    --  Send user input response to a paused run
    --

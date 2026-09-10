@@ -171,8 +171,8 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmChatCompletion(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun llmChatCompletion(body: JsonObject, options: RequestOptions = RequestOptions()): OpenAiChatCompletion {
+        return client.request<OpenAiChatCompletion>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/chat/completions",
@@ -209,13 +209,13 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = RequestOptions()): LLMTranscribeAudioResponse {
         val parts = buildList {
             add(Part.File("file", body.`file`))
             body.model?.let { add(Part.Text("model", it)) }
             body.language?.let { add(Part.Text("language", it)) }
         }
-        return client.request<JsonObject>(
+        return client.request<LLMTranscribeAudioResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/audio/transcriptions",

@@ -3,7 +3,6 @@
 --  Agent-to-Agent protocol: discovery and task execution
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -48,7 +47,7 @@ package UARP.API.A2A is
      (Self : Client_Type;
       Payload : UARP.Models.A2ajson_Rpc_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.JSON_Rpc_Response;
 
    --  Cancel an A2A task
    --
@@ -92,7 +91,7 @@ package UARP.API.A2A is
      (Self : Client_Type;
       Params : Get_Agent_Card_Params := No_Get_Agent_Card_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.A2A_Agent_Card;
 
    --  List A2A tasks
    --

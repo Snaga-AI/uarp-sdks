@@ -13,7 +13,7 @@ public struct TeamsAPI: Sendable {
     /// `POST /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:write`.
-    public func addTeamGraphEdge(teamId: String, body: AddTeamGraphEdgeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func addTeamGraphEdge(teamId: String, body: AddTeamGraphEdgeRequest, options: RequestOptions = .init()) async throws -> TeamGraphEdge {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/graph/edges",
@@ -28,7 +28,7 @@ public struct TeamsAPI: Sendable {
     /// `POST /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:write`.
-    public func addTeamGraphNode(teamId: String, body: AddTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func addTeamGraphNode(teamId: String, body: AddTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/graph/nodes",
@@ -361,7 +361,7 @@ public struct TeamsAPI: Sendable {
     /// `PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func updateTeamGraphNode(teamId: String, agentId: String, body: UpdateTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateTeamGraphNode(teamId: String, agentId: String, body: UpdateTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/graph/nodes/\(encodePathSegment(agentId))",

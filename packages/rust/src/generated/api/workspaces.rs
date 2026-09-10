@@ -556,7 +556,7 @@ impl WorkspacesApi {
     /// `PUT /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    pub async fn upload_workspace_file(&self, workspace_id: &str, body: &models::UploadWorkspaceFileRequest, params: &UploadWorkspaceFileParams) -> Result<serde_json::Value> {
+    pub async fn upload_workspace_file(&self, workspace_id: &str, body: &models::UploadWorkspaceFileRequest, params: &UploadWorkspaceFileParams) -> Result<models::WorkspaceFile> {
         self.client
             .request_multipart(
                 Request {

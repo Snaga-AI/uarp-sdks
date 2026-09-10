@@ -22,33 +22,33 @@ package UARP.API.Knowledge is
 
    --  Delete document
    --
-   --  DELETE /api/v1/knowledge-bases/{id}/documents/{docId}
+   --  DELETE /api/v1/knowledge-bases/{knowledgeBaseId}/documents/{docId}
    --
    --  Required scopes: memory:write.
    procedure Delete_Kb_Document
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Doc_Id : String;
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Delete knowledge base
    --
-   --  DELETE /api/v1/knowledge-bases/{id}
+   --  DELETE /api/v1/knowledge-bases/{knowledgeBaseId}
    --
    --  Required scopes: memory:write.
    procedure Delete_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Get knowledge base
    --
-   --  GET /api/v1/knowledge-bases/{id}
+   --  GET /api/v1/knowledge-bases/{knowledgeBaseId}
    --
    --  Required scopes: memory:read.
    function Get_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base;
 
@@ -125,12 +125,12 @@ package UARP.API.Knowledge is
    --  OPPOSITE of `PUT /agents/{id}/schedule`, which replaces - the verb decides nothing here, see
    --  docs/WRITE_SEMANTICS.md.
    --
-   --  PUT /api/v1/knowledge-bases/{id}
+   --  PUT /api/v1/knowledge-bases/{knowledgeBaseId}
    --
    --  Required scopes: memory:write.
    function Update_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Payload : UARP.Models.Knowledge_Base_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base;

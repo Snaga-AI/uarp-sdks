@@ -793,7 +793,7 @@ public struct AdminAPI: Sendable {
     /// Internal domain verification
     ///
     /// `GET /api/v1/internal/verify-domain`
-    public func internalVerifyDomain(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func internalVerifyDomain(options: RequestOptions = .init()) async throws -> InternalVerifyDomainResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/internal/verify-domain",

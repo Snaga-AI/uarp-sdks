@@ -39,14 +39,14 @@ export class KnowledgeResource extends APIResource {
   /**
    * Delete document
    *
-   * `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
+   * `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}/documents/{docId}`
    *
    * Required scopes: `memory:write`.
    */
-  deleteKbDocument(id: string, docId: string, options?: RequestOptions): Promise<void> {
+  deleteKbDocument(knowledgeBaseId: string, docId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
-      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}/documents/${encodeURIComponent(String(docId))}`,
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(knowledgeBaseId))}/documents/${encodeURIComponent(String(docId))}`,
       idempotent: true,
       responseType: 'void',
       options,
@@ -56,14 +56,14 @@ export class KnowledgeResource extends APIResource {
   /**
    * Delete knowledge base
    *
-   * `DELETE /api/v1/knowledge-bases/{id}`
+   * `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}`
    *
    * Required scopes: `memory:write`.
    */
-  deleteKnowledgeBase(id: string, options?: RequestOptions): Promise<void> {
+  deleteKnowledgeBase(knowledgeBaseId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
-      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(knowledgeBaseId))}`,
       idempotent: true,
       responseType: 'void',
       options,
@@ -73,14 +73,14 @@ export class KnowledgeResource extends APIResource {
   /**
    * Get knowledge base
    *
-   * `GET /api/v1/knowledge-bases/{id}`
+   * `GET /api/v1/knowledge-bases/{knowledgeBaseId}`
    *
    * Required scopes: `memory:read`.
    */
-  getKnowledgeBase(id: string, options?: RequestOptions): Promise<KnowledgeBase> {
+  getKnowledgeBase(knowledgeBaseId: string, options?: RequestOptions): Promise<KnowledgeBase> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(knowledgeBaseId))}`,
       options,
     });
   }
@@ -183,14 +183,14 @@ export class KnowledgeResource extends APIResource {
    * OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
    * docs/WRITE_SEMANTICS.md.
    *
-   * `PUT /api/v1/knowledge-bases/{id}`
+   * `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`
    *
    * Required scopes: `memory:write`.
    */
-  updateKnowledgeBase(id: string, body: KnowledgeBaseUpdate, options?: RequestOptions): Promise<KnowledgeBase> {
+  updateKnowledgeBase(knowledgeBaseId: string, body: KnowledgeBaseUpdate, options?: RequestOptions): Promise<KnowledgeBase> {
     return this._client.request({
       method: 'PUT',
-      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(knowledgeBaseId))}`,
       body,
       idempotent: true,
       options,

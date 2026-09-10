@@ -30,7 +30,7 @@ impl BootstrapApi {
     /// Bootstrap the platform (first-time setup)
     ///
     /// `POST /api/v1/bootstrap`
-    pub async fn bootstrap(&self, body: &models::BootstrapRequest) -> Result<serde_json::Value> {
+    pub async fn bootstrap(&self, body: &models::BootstrapRequest) -> Result<models::BootstrapResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

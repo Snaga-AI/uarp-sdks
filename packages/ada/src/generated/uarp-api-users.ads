@@ -3,7 +3,6 @@
 --  User management, invites, roles
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Users is
 
@@ -64,7 +63,7 @@ package UARP.API.Users is
      (Self : Client_Type;
       User_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Tenant_User;
 
    --  Invite user
    --

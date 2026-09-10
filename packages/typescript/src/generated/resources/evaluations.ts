@@ -3,11 +3,13 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
+  AgentScorer,
   CreateDatasetRequest,
   CreateExperimentRequest,
+  EvalDataset,
+  EvalRun,
   Experiment,
   JsonObject,
-  JsonValue,
   ListAgentScorersResponse,
   ListDatasetsResponse,
   ListEvalRunsResponse,
@@ -25,7 +27,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:write`.
    */
-  createAgentScorer(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  createAgentScorer(agentId: string, body: JsonObject, options?: RequestOptions): Promise<AgentScorer> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/scorers`,
@@ -42,7 +44,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:write`.
    */
-  createDataset(agentId: string, body: CreateDatasetRequest, options?: RequestOptions): Promise<JsonValue> {
+  createDataset(agentId: string, body: CreateDatasetRequest, options?: RequestOptions): Promise<EvalDataset> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/datasets`,
@@ -78,7 +80,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:read`.
    */
-  getDataset(agentId: string, datasetId: string, options?: RequestOptions): Promise<JsonValue> {
+  getDataset(agentId: string, datasetId: string, options?: RequestOptions): Promise<EvalDataset> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/datasets/${encodeURIComponent(String(datasetId))}`,
@@ -93,7 +95,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:read`.
    */
-  getEvalRun(agentId: string, evalRunId: string, options?: RequestOptions): Promise<JsonValue> {
+  getEvalRun(agentId: string, evalRunId: string, options?: RequestOptions): Promise<EvalRun> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/evaluations/${encodeURIComponent(String(evalRunId))}`,
@@ -168,7 +170,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:write`.
    */
-  run(agentId: string, body: RunEvaluationRequest, options?: RequestOptions): Promise<JsonValue> {
+  run(agentId: string, body: RunEvaluationRequest, options?: RequestOptions): Promise<EvalRun> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/evaluations`,

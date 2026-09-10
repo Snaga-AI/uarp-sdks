@@ -30,7 +30,7 @@ impl GDPRApi {
     /// Data subject access request
     ///
     /// `GET /api/v1/data-subject/access`
-    pub async fn data_subject_access(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn data_subject_access(&self) -> Result<models::DataSubjectAccessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -46,7 +46,7 @@ impl GDPRApi {
     /// Data subject erasure request
     ///
     /// `POST /api/v1/data-subject/erasure`
-    pub async fn data_subject_erasure(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn data_subject_erasure(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::DataSubjectErasureResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,

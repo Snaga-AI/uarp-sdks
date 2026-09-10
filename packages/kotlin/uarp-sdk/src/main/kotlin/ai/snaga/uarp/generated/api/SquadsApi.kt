@@ -33,8 +33,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/squads/{squadId}/graph/edges`
      */
-    public suspend fun addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = RequestOptions()): TeamGraphEdge {
+        return client.request<TeamGraphEdge>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/graph/edges",
@@ -54,8 +54,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/squads/{squadId}/graph/nodes`
      */
-    public suspend fun addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/graph/nodes",
@@ -472,8 +472,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
      */
-    public suspend fun updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/graph/nodes/${encodePathSegment(agentId)}",

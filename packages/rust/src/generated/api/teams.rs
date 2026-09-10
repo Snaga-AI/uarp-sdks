@@ -61,7 +61,7 @@ impl TeamsApi {
     /// `POST /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn add_team_graph_edge(&self, team_id: &str, body: &models::AddTeamGraphEdgeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn add_team_graph_edge(&self, team_id: &str, body: &models::AddTeamGraphEdgeRequest) -> Result<models::TeamGraphEdge> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -79,7 +79,7 @@ impl TeamsApi {
     /// `POST /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn add_team_graph_node(&self, team_id: &str, body: &models::AddTeamGraphNodeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn add_team_graph_node(&self, team_id: &str, body: &models::AddTeamGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -481,7 +481,7 @@ impl TeamsApi {
     /// `PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update_team_graph_node(&self, team_id: &str, agent_id: &str, body: &models::UpdateTeamGraphNodeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_team_graph_node(&self, team_id: &str, agent_id: &str, body: &models::UpdateTeamGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

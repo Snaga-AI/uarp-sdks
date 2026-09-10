@@ -41,27 +41,26 @@ package body UARP.API.Integrations is
 
    procedure Delete
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
    is
    begin
       UARP.Client.Call_And_Discard
          (Self,
           "DELETE",
-          "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Id),
+          "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Integration_Id),
           Idempotent => True,
           Options => Options);
    end Delete;
 
-   function Delete_Agent_Integration
+   procedure Delete_Agent_Integration
      (Self : Client_Type;
       Agent_Id : String;
       Integration_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
    is
    begin
-      return UARP.Client.Call
+      UARP.Client.Call_And_Discard
          (Self,
           "DELETE",
           "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/integrations/" & UARP.Types.Encode_Path_Segment (Integration_Id),
@@ -188,7 +187,7 @@ package body UARP.API.Integrations is
 
    function Test_Integration
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Test_Integration_Response
    is
@@ -197,14 +196,14 @@ package body UARP.API.Integrations is
          (UARP.Client.Call
             (Self,
              "POST",
-             "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Id) & "/test",
+             "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Integration_Id) & "/test",
              Idempotent => True,
              Options => Options));
    end Test_Integration;
 
    function Update
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Payload : UARP.Models.Update_Integration_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Integration
@@ -214,7 +213,7 @@ package body UARP.API.Integrations is
          (UARP.Client.Call
             (Self,
              "PATCH",
-             "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/integrations/" & UARP.Types.Encode_Path_Segment (Integration_Id),
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,

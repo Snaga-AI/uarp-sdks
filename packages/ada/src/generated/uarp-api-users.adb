@@ -57,14 +57,15 @@ package body UARP.API.Users is
      (Self : Client_Type;
       User_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Tenant_User
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/users/" & UARP.Types.Encode_Path_Segment (User_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/users/" & UARP.Types.Encode_Path_Segment (User_Id),
+             Options => Options));
    end Get;
 
    function Invite_User

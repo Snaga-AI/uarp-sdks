@@ -97,15 +97,16 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Delete_Agent_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Idempotent => True,
+             Options => Options));
    end Delete;
 
    function Delete_Agent_Bookmark

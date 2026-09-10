@@ -34,6 +34,7 @@ import type {
   GetAdminTraceResponse,
   GetImmutableAuditResponse,
   GetTenantUsageResponse,
+  InternalVerifyDomainResponse,
   JsonObject,
   JsonValue,
   ListAdminBlogPostsResponse,
@@ -1000,7 +1001,7 @@ export class AdminResource extends APIResource {
    *
    * `GET /api/v1/internal/verify-domain`
    */
-  internalVerifyDomain(options?: RequestOptions): Promise<JsonObject> {
+  internalVerifyDomain(options?: RequestOptions): Promise<InternalVerifyDomainResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/internal/verify-domain',

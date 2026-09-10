@@ -7,13 +7,13 @@ import type {
   ActivateSafeModeRequest,
   AgentLineage,
   Ambassador,
+  AmbassadorRequest,
   AmbassadorRequestStatus,
   AmbassadorVetoRequest,
   AmendConstitutionRequest,
   ArbiterCase,
   ArbiterRegistry,
   Ballot,
-  BootstrapAmbassadorResponse,
   CastBallotRequest,
   CheckGovernanceRequest,
   CheckSpawnPermissionRequest,
@@ -23,6 +23,7 @@ import type {
   CreateImprovementProposalRequest,
   CreateVotingProposalRequest,
   DeactivateSafeModeResponse,
+  DeadlockReport,
   DeleteSpawnPolicyResponse,
   DesignRequest,
   DesignRequestCreate,
@@ -55,6 +56,7 @@ import type {
   RegisterAmbassadorResponse,
   ReplaceConstitutionRequest,
   ResolveAmbassadorRequestRequest,
+  RootAttestation,
   SetAgentPermissionsResponse,
   SetArbiterRegistryResponse,
   SetRootAgentRequest,
@@ -178,7 +180,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/ambassador/ambassadors/bootstrap`
    */
-  bootstrapAmbassador(options?: RequestOptions): Promise<BootstrapAmbassadorResponse> {
+  bootstrapAmbassador(options?: RequestOptions): Promise<Ambassador> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/ambassador/ambassadors/bootstrap',
@@ -190,12 +192,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Cast ballot
    *
-   * `POST /api/v1/governance/voting/proposals/{id}/ballot`
+   * `POST /api/v1/governance/voting/proposals/{proposalId}/ballot`
    */
-  castBallot(id: string, body: CastBallotRequest, options?: RequestOptions): Promise<Ballot> {
+  castBallot(proposalId: string, body: CastBallotRequest, options?: RequestOptions): Promise<Ballot> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/ballot`,
+      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(proposalId))}/ballot`,
       body,
       idempotent: true,
       options,
@@ -207,7 +209,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/emergency/deadlock-check`
    */
-  checkDeadlock(options?: RequestOptions): Promise<JsonObject> {
+  checkDeadlock(options?: RequestOptions): Promise<DeadlockReport> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/emergency/deadlock-check',
@@ -251,7 +253,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/ambassador/requests`
    */
-  createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options?: RequestOptions): Promise<JsonObject> {
+  createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options?: RequestOptions): Promise<AmbassadorRequest> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/ambassador/requests',
@@ -354,12 +356,12 @@ export class GovernanceResource extends APIResource {
   /**
    * File appeal
    *
-   * `POST /api/v1/governance/arbiter/cases/{id}/appeal`
+   * `POST /api/v1/governance/arbiter/cases/{caseId}/appeal`
    */
-  fileArbiterAppeal(id: string, body: FileArbiterAppealRequest, options?: RequestOptions): Promise<FileArbiterAppealResponse> {
+  fileArbiterAppeal(caseId: string, body: FileArbiterAppealRequest, options?: RequestOptions): Promise<FileArbiterAppealResponse> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(id))}/appeal`,
+      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(caseId))}/appeal`,
       body,
       idempotent: true,
       options,
@@ -374,7 +376,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/arbiter/cases`
    */
-  fileArbiterCase(body: FileArbiterCaseRequest, options?: RequestOptions): Promise<JsonObject> {
+  fileArbiterCase(body: FileArbiterCaseRequest, options?: RequestOptions): Promise<ArbiterCase> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/arbiter/cases',
@@ -426,12 +428,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Get ambassador
    *
-   * `GET /api/v1/governance/ambassador/ambassadors/{id}`
+   * `GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}`
    */
-  getAmbassador(id: string, options?: RequestOptions): Promise<Ambassador> {
+  getAmbassador(ambassadorId: string, options?: RequestOptions): Promise<Ambassador> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/ambassador/ambassadors/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/governance/ambassador/ambassadors/${encodeURIComponent(String(ambassadorId))}`,
       options,
     });
   }
@@ -439,12 +441,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Get case
    *
-   * `GET /api/v1/governance/arbiter/cases/{id}`
+   * `GET /api/v1/governance/arbiter/cases/{caseId}`
    */
-  getArbiterCase(id: string, options?: RequestOptions): Promise<ArbiterCase> {
+  getArbiterCase(caseId: string, options?: RequestOptions): Promise<ArbiterCase> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(caseId))}`,
       options,
     });
   }
@@ -465,12 +467,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Get design request
    *
-   * `GET /api/v1/governance/builder/requests/{id}`
+   * `GET /api/v1/governance/builder/requests/{requestId}`
    */
-  getBuilderRequest(id: string, options?: RequestOptions): Promise<DesignRequest> {
+  getBuilderRequest(requestId: string, options?: RequestOptions): Promise<DesignRequest> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/builder/requests/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/governance/builder/requests/${encodeURIComponent(String(requestId))}`,
       options,
     });
   }
@@ -504,12 +506,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Get goal
    *
-   * `GET /api/v1/governance/goals/{id}`
+   * `GET /api/v1/governance/goals/{goalId}`
    */
-  getGoal(id: string, options?: RequestOptions): Promise<Goal> {
+  getGoal(goalId: string, options?: RequestOptions): Promise<Goal> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/goals/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/governance/goals/${encodeURIComponent(String(goalId))}`,
       options,
     });
   }
@@ -587,7 +589,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/emergency/root-attestation`
    */
-  getRootAttestation(options?: RequestOptions): Promise<JsonObject> {
+  getRootAttestation(options?: RequestOptions): Promise<RootAttestation> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/emergency/root-attestation',
@@ -611,12 +613,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Get proposal
    *
-   * `GET /api/v1/governance/voting/proposals/{id}`
+   * `GET /api/v1/governance/voting/proposals/{proposalId}`
    */
-  getVotingProposal(id: string, options?: RequestOptions): Promise<VotingProposal> {
+  getVotingProposal(proposalId: string, options?: RequestOptions): Promise<VotingProposal> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}`,
+      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(proposalId))}`,
       options,
     });
   }
@@ -624,12 +626,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Issue ruling
    *
-   * `POST /api/v1/governance/arbiter/cases/{id}/ruling`
+   * `POST /api/v1/governance/arbiter/cases/{caseId}/ruling`
    */
-  issueArbiterRuling(id: string, body: IssueArbiterRulingRequest, options?: RequestOptions): Promise<IssueArbiterRulingResponse> {
+  issueArbiterRuling(caseId: string, body: IssueArbiterRulingRequest, options?: RequestOptions): Promise<IssueArbiterRulingResponse> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(id))}/ruling`,
+      path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(caseId))}/ruling`,
       body,
       idempotent: true,
       options,
@@ -692,12 +694,12 @@ export class GovernanceResource extends APIResource {
   /**
    * List ballots
    *
-   * `GET /api/v1/governance/voting/proposals/{id}/ballots`
+   * `GET /api/v1/governance/voting/proposals/{proposalId}/ballots`
    */
-  listBallots(id: string, options?: RequestOptions): Promise<ListBallotsResponse> {
+  listBallots(proposalId: string, options?: RequestOptions): Promise<ListBallotsResponse> {
     return this._client.request({
       method: 'GET',
-      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/ballots`,
+      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(proposalId))}/ballots`,
       options,
     });
   }
@@ -788,12 +790,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Resolve request
    *
-   * `POST /api/v1/governance/ambassador/requests/{id}/resolve`
+   * `POST /api/v1/governance/ambassador/requests/{requestId}/resolve`
    */
-  resolveAmbassadorRequest(id: string, body: ResolveAmbassadorRequestRequest, options?: RequestOptions): Promise<JsonObject> {
+  resolveAmbassadorRequest(requestId: string, body: ResolveAmbassadorRequestRequest, options?: RequestOptions): Promise<AmbassadorRequest> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/ambassador/requests/${encodeURIComponent(String(id))}/resolve`,
+      path: `/api/v1/governance/ambassador/requests/${encodeURIComponent(String(requestId))}/resolve`,
       body,
       idempotent: true,
       options,
@@ -888,12 +890,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Tally votes
    *
-   * `POST /api/v1/governance/voting/proposals/{id}/tally`
+   * `POST /api/v1/governance/voting/proposals/{proposalId}/tally`
    */
-  tallyVotes(id: string, options?: RequestOptions): Promise<VoteResult> {
+  tallyVotes(proposalId: string, options?: RequestOptions): Promise<VoteResult> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/tally`,
+      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(proposalId))}/tally`,
       idempotent: true,
       options,
     });
@@ -902,12 +904,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Update request status
    *
-   * `PUT /api/v1/governance/builder/requests/{id}/status`
+   * `PUT /api/v1/governance/builder/requests/{requestId}/status`
    */
-  updateBuilderRequestStatus(id: string, body: UpdateBuilderRequestStatusRequest, options?: RequestOptions): Promise<DesignRequest> {
+  updateBuilderRequestStatus(requestId: string, body: UpdateBuilderRequestStatusRequest, options?: RequestOptions): Promise<DesignRequest> {
     return this._client.request({
       method: 'PUT',
-      path: `/api/v1/governance/builder/requests/${encodeURIComponent(String(id))}/status`,
+      path: `/api/v1/governance/builder/requests/${encodeURIComponent(String(requestId))}/status`,
       body,
       idempotent: true,
       options,
@@ -917,12 +919,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Update goal status
    *
-   * `PUT /api/v1/governance/goals/{id}/status`
+   * `PUT /api/v1/governance/goals/{goalId}/status`
    */
-  updateGoalStatus(id: string, body: UpdateGoalStatusRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateGoalStatus(goalId: string, body: UpdateGoalStatusRequest, options?: RequestOptions): Promise<Goal> {
     return this._client.request({
       method: 'PUT',
-      path: `/api/v1/governance/goals/${encodeURIComponent(String(id))}/status`,
+      path: `/api/v1/governance/goals/${encodeURIComponent(String(goalId))}/status`,
       body,
       idempotent: true,
       options,
@@ -970,12 +972,12 @@ export class GovernanceResource extends APIResource {
   /**
    * Veto proposal
    *
-   * `POST /api/v1/governance/voting/proposals/{id}/veto`
+   * `POST /api/v1/governance/voting/proposals/{proposalId}/veto`
    */
-  vetoProposal(id: string, body?: VetoProposalRequest, options?: RequestOptions): Promise<VetoProposalResponse> {
+  vetoProposal(proposalId: string, body?: VetoProposalRequest, options?: RequestOptions): Promise<VetoProposalResponse> {
     return this._client.request({
       method: 'POST',
-      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/veto`,
+      path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(proposalId))}/veto`,
       body,
       idempotent: true,
       options,

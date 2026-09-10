@@ -18,7 +18,6 @@ import type {
   GetPublicBlogPostResponse,
   GetPublicFeaturedAgentResponse,
   GetRegistrationStatusResponse,
-  JsonObject,
   LandingOverrides,
   ListPublicBlogPostsResponse,
   ListPublicIntegrationsResponse,
@@ -27,11 +26,14 @@ import type {
   ListPublicTenantsResponse,
   MaintenanceStatus,
   PlatformInfo,
+  PublicAgentCard,
   PublicDomainLookupResponse,
+  PublicSessionView,
   PublicState,
   PublicTenant,
   PublicTrackEventRequest,
   RespondToPublicHitlRequest,
+  RespondToPublicHitlResponse,
   SendPublicMessageRequest,
   SendPublicMessageResponse,
   SharePublicSessionResponse,
@@ -267,7 +269,7 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/agents/{agentId}`
    */
-  getPublicAgentCard(agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  getPublicAgentCard(agentId: string, options?: RequestOptions): Promise<PublicAgentCard> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/agents/${encodeURIComponent(String(agentId))}`,
@@ -340,7 +342,7 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/sessions/{sessionId}`
    */
-  getPublicSession(sessionId: string, options?: RequestOptions): Promise<JsonObject> {
+  getPublicSession(sessionId: string, options?: RequestOptions): Promise<PublicSessionView> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}`,
@@ -547,7 +549,7 @@ export class PublicResource extends APIResource {
    *
    * `POST /api/v1/public/sessions/{sessionId}/respond`
    */
-  respondToPublicHitl(sessionId: string, body: RespondToPublicHitlRequest, options?: RequestOptions): Promise<JsonObject> {
+  respondToPublicHitl(sessionId: string, body: RespondToPublicHitlRequest, options?: RequestOptions): Promise<RespondToPublicHitlResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/respond`,

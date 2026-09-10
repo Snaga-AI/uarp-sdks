@@ -447,8 +447,16 @@ test('parses the production document into the expected shape', () => {
   // layer's in-flight 202 body mistaken for the answer of a 204 operation
   // (see the in-flight test below); they were never a wire shape those
   // operations return.
-  assert.equal(spec.types.length, 1132);
-  assert.equal(spec.scopes.length, 31);
+  // 1132 -> 1212 on 2026-09-10 (build 5011669e, uarp #453): CTR-07 tranche
+  // 2b typed the 56 non-admin responses — 21 named schemas (RunOutput,
+  // UsageQuota, EvalRun, PublicAgentCard, JsonRpcResponse, …) plus the inline
+  // objects nested under them (search results, eval cases, task items).
+  assert.equal(spec.types.length, 1212);
+  // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
+  // (billing.ts required it on four operations, the prose lacked it);
+  // `read:analytics` became `analytics:read` in the same build (a rename,
+  // not a count change — the old spelling stays a server-side alias).
+  assert.equal(spec.scopes.length, 32);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.
   assert.equal(ops.filter((o) => o.sse).length, 14);

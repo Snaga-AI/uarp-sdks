@@ -28,8 +28,8 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/data-subject/access`
      */
-    public suspend fun dataSubjectAccess(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun dataSubjectAccess(options: RequestOptions = RequestOptions()): DataSubjectAccessReport {
+        return client.request<DataSubjectAccessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/data-subject/access",
@@ -43,8 +43,8 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/data-subject/erasure`
      */
-    public suspend fun dataSubjectErasure(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun dataSubjectErasure(body: JsonObject, options: RequestOptions = RequestOptions()): DataSubjectErasureResult {
+        return client.request<DataSubjectErasureResult>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/data-subject/erasure",

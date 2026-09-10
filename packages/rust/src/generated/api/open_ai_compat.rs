@@ -35,7 +35,7 @@ impl OpenAiCompatApi {
     /// `POST /v1/chat/completions`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn chat_completion(&self, body: &models::ChatCompletionRequest) -> Result<serde_json::Value> {
+    pub async fn chat_completion(&self, body: &models::ChatCompletionRequest) -> Result<models::OpenAiChatCompletion> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -93,7 +93,7 @@ impl OpenAiCompatApi {
     /// Get response by ID (OpenAI Responses API)
     ///
     /// `GET /v1/responses/{responseId}`
-    pub async fn get_response(&self, response_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_response(&self, response_id: &str) -> Result<models::GetResponseResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -82,8 +82,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/ambassador/ambassadors/bootstrap`
      */
-    public suspend fun bootstrapAmbassador(options: RequestOptions = RequestOptions()): BootstrapAmbassadorResponse {
-        return client.request<BootstrapAmbassadorResponse>(
+    public suspend fun bootstrapAmbassador(options: RequestOptions = RequestOptions()): Ambassador {
+        return client.request<Ambassador>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/ambassador/ambassadors/bootstrap",
@@ -96,13 +96,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Cast ballot
      *
-     * `POST /api/v1/governance/voting/proposals/{id}/ballot`
+     * `POST /api/v1/governance/voting/proposals/{proposalId}/ballot`
      */
-    public suspend fun castBallot(id: String, body: CastBallotRequest, options: RequestOptions = RequestOptions()): Ballot {
+    public suspend fun castBallot(proposalId: String, body: CastBallotRequest, options: RequestOptions = RequestOptions()): Ballot {
         return client.request<Ballot>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/ballot",
+                path = "/api/v1/governance/voting/proposals/${encodePathSegment(proposalId)}/ballot",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -115,8 +115,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/emergency/deadlock-check`
      */
-    public suspend fun checkDeadlock(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun checkDeadlock(options: RequestOptions = RequestOptions()): DeadlockReport {
+        return client.request<DeadlockReport>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/emergency/deadlock-check",
@@ -165,8 +165,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/ambassador/requests`
      */
-    public suspend fun createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options: RequestOptions = RequestOptions()): AmbassadorRequest {
+        return client.request<AmbassadorRequest>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/ambassador/requests",
@@ -282,13 +282,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * File appeal
      *
-     * `POST /api/v1/governance/arbiter/cases/{id}/appeal`
+     * `POST /api/v1/governance/arbiter/cases/{caseId}/appeal`
      */
-    public suspend fun fileArbiterAppeal(id: String, body: FileArbiterAppealRequest, options: RequestOptions = RequestOptions()): FileArbiterAppealResponse {
+    public suspend fun fileArbiterAppeal(caseId: String, body: FileArbiterAppealRequest, options: RequestOptions = RequestOptions()): FileArbiterAppealResponse {
         return client.request<FileArbiterAppealResponse>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(id)}/appeal",
+                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(caseId)}/appeal",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -304,8 +304,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/arbiter/cases`
      */
-    public suspend fun fileArbiterCase(body: FileArbiterCaseRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun fileArbiterCase(body: FileArbiterCaseRequest, options: RequestOptions = RequestOptions()): ArbiterCase {
+        return client.request<ArbiterCase>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/arbiter/cases",
@@ -364,13 +364,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get ambassador
      *
-     * `GET /api/v1/governance/ambassador/ambassadors/{id}`
+     * `GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}`
      */
-    public suspend fun getAmbassador(id: String, options: RequestOptions = RequestOptions()): Ambassador {
+    public suspend fun getAmbassador(ambassadorId: String, options: RequestOptions = RequestOptions()): Ambassador {
         return client.request<Ambassador>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/ambassador/ambassadors/${encodePathSegment(id)}",
+                path = "/api/v1/governance/ambassador/ambassadors/${encodePathSegment(ambassadorId)}",
                 options = options,
             )
         )
@@ -379,13 +379,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get case
      *
-     * `GET /api/v1/governance/arbiter/cases/{id}`
+     * `GET /api/v1/governance/arbiter/cases/{caseId}`
      */
-    public suspend fun getArbiterCase(id: String, options: RequestOptions = RequestOptions()): ArbiterCase {
+    public suspend fun getArbiterCase(caseId: String, options: RequestOptions = RequestOptions()): ArbiterCase {
         return client.request<ArbiterCase>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(id)}",
+                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(caseId)}",
                 options = options,
             )
         )
@@ -409,13 +409,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get design request
      *
-     * `GET /api/v1/governance/builder/requests/{id}`
+     * `GET /api/v1/governance/builder/requests/{requestId}`
      */
-    public suspend fun getBuilderRequest(id: String, options: RequestOptions = RequestOptions()): DesignRequest {
+    public suspend fun getBuilderRequest(requestId: String, options: RequestOptions = RequestOptions()): DesignRequest {
         return client.request<DesignRequest>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/builder/requests/${encodePathSegment(id)}",
+                path = "/api/v1/governance/builder/requests/${encodePathSegment(requestId)}",
                 options = options,
             )
         )
@@ -454,13 +454,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get goal
      *
-     * `GET /api/v1/governance/goals/{id}`
+     * `GET /api/v1/governance/goals/{goalId}`
      */
-    public suspend fun getGoal(id: String, options: RequestOptions = RequestOptions()): Goal {
+    public suspend fun getGoal(goalId: String, options: RequestOptions = RequestOptions()): Goal {
         return client.request<Goal>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/goals/${encodePathSegment(id)}",
+                path = "/api/v1/governance/goals/${encodePathSegment(goalId)}",
                 options = options,
             )
         )
@@ -552,8 +552,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/emergency/root-attestation`
      */
-    public suspend fun getRootAttestation(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getRootAttestation(options: RequestOptions = RequestOptions()): RootAttestation {
+        return client.request<RootAttestation>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/emergency/root-attestation",
@@ -580,13 +580,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get proposal
      *
-     * `GET /api/v1/governance/voting/proposals/{id}`
+     * `GET /api/v1/governance/voting/proposals/{proposalId}`
      */
-    public suspend fun getVotingProposal(id: String, options: RequestOptions = RequestOptions()): VotingProposal {
+    public suspend fun getVotingProposal(proposalId: String, options: RequestOptions = RequestOptions()): VotingProposal {
         return client.request<VotingProposal>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}",
+                path = "/api/v1/governance/voting/proposals/${encodePathSegment(proposalId)}",
                 options = options,
             )
         )
@@ -595,13 +595,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Issue ruling
      *
-     * `POST /api/v1/governance/arbiter/cases/{id}/ruling`
+     * `POST /api/v1/governance/arbiter/cases/{caseId}/ruling`
      */
-    public suspend fun issueArbiterRuling(id: String, body: IssueArbiterRulingRequest, options: RequestOptions = RequestOptions()): IssueArbiterRulingResponse {
+    public suspend fun issueArbiterRuling(caseId: String, body: IssueArbiterRulingRequest, options: RequestOptions = RequestOptions()): IssueArbiterRulingResponse {
         return client.request<IssueArbiterRulingResponse>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(id)}/ruling",
+                path = "/api/v1/governance/arbiter/cases/${encodePathSegment(caseId)}/ruling",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -676,13 +676,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List ballots
      *
-     * `GET /api/v1/governance/voting/proposals/{id}/ballots`
+     * `GET /api/v1/governance/voting/proposals/{proposalId}/ballots`
      */
-    public suspend fun listBallots(id: String, options: RequestOptions = RequestOptions()): ListBallotsResponse {
+    public suspend fun listBallots(proposalId: String, options: RequestOptions = RequestOptions()): ListBallotsResponse {
         return client.request<ListBallotsResponse>(
             RequestSpec(
                 method = "GET",
-                path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/ballots",
+                path = "/api/v1/governance/voting/proposals/${encodePathSegment(proposalId)}/ballots",
                 options = options,
             )
         )
@@ -789,13 +789,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Resolve request
      *
-     * `POST /api/v1/governance/ambassador/requests/{id}/resolve`
+     * `POST /api/v1/governance/ambassador/requests/{requestId}/resolve`
      */
-    public suspend fun resolveAmbassadorRequest(id: String, body: ResolveAmbassadorRequestRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun resolveAmbassadorRequest(requestId: String, body: ResolveAmbassadorRequestRequest, options: RequestOptions = RequestOptions()): AmbassadorRequest {
+        return client.request<AmbassadorRequest>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/ambassador/requests/${encodePathSegment(id)}/resolve",
+                path = "/api/v1/governance/ambassador/requests/${encodePathSegment(requestId)}/resolve",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -901,13 +901,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Tally votes
      *
-     * `POST /api/v1/governance/voting/proposals/{id}/tally`
+     * `POST /api/v1/governance/voting/proposals/{proposalId}/tally`
      */
-    public suspend fun tallyVotes(id: String, options: RequestOptions = RequestOptions()): VoteResult {
+    public suspend fun tallyVotes(proposalId: String, options: RequestOptions = RequestOptions()): VoteResult {
         return client.request<VoteResult>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/tally",
+                path = "/api/v1/governance/voting/proposals/${encodePathSegment(proposalId)}/tally",
                 idempotent = true,
                 options = options,
             )
@@ -917,13 +917,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Update request status
      *
-     * `PUT /api/v1/governance/builder/requests/{id}/status`
+     * `PUT /api/v1/governance/builder/requests/{requestId}/status`
      */
-    public suspend fun updateBuilderRequestStatus(id: String, body: UpdateBuilderRequestStatusRequest, options: RequestOptions = RequestOptions()): DesignRequest {
+    public suspend fun updateBuilderRequestStatus(requestId: String, body: UpdateBuilderRequestStatusRequest, options: RequestOptions = RequestOptions()): DesignRequest {
         return client.request<DesignRequest>(
             RequestSpec(
                 method = "PUT",
-                path = "/api/v1/governance/builder/requests/${encodePathSegment(id)}/status",
+                path = "/api/v1/governance/builder/requests/${encodePathSegment(requestId)}/status",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -934,13 +934,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Update goal status
      *
-     * `PUT /api/v1/governance/goals/{id}/status`
+     * `PUT /api/v1/governance/goals/{goalId}/status`
      */
-    public suspend fun updateGoalStatus(id: String, body: UpdateGoalStatusRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateGoalStatus(goalId: String, body: UpdateGoalStatusRequest, options: RequestOptions = RequestOptions()): Goal {
+        return client.request<Goal>(
             RequestSpec(
                 method = "PUT",
-                path = "/api/v1/governance/goals/${encodePathSegment(id)}/status",
+                path = "/api/v1/governance/goals/${encodePathSegment(goalId)}/status",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -997,13 +997,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Veto proposal
      *
-     * `POST /api/v1/governance/voting/proposals/{id}/veto`
+     * `POST /api/v1/governance/voting/proposals/{proposalId}/veto`
      */
-    public suspend fun vetoProposal(id: String, body: VetoProposalRequest? = null, options: RequestOptions = RequestOptions()): VetoProposalResponse {
+    public suspend fun vetoProposal(proposalId: String, body: VetoProposalRequest? = null, options: RequestOptions = RequestOptions()): VetoProposalResponse {
         return client.request<VetoProposalResponse>(
             RequestSpec(
                 method = "POST",
-                path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/veto",
+                path = "/api/v1/governance/voting/proposals/${encodePathSegment(proposalId)}/veto",
                 body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
                 idempotent = true,
                 options = options,

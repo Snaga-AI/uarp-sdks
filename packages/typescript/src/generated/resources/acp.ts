@@ -5,7 +5,7 @@ import type { RequestOptions } from '../../core/transport.js';
 import type { EventStream } from '../../core/sse.js';
 import type {
   JsonObject,
-  JsonValue,
+  UpdateACPSessionResponse,
 } from '../models.js';
 
 /**
@@ -32,7 +32,7 @@ export class ACPResource extends APIResource {
    *
    * `PUT /api/v1/acp/session/{sessionId}`
    */
-  updateACPSession(sessionId: string, body: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  updateACPSession(sessionId: string, body: JsonObject, options?: RequestOptions): Promise<UpdateACPSessionResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/acp/session/${encodeURIComponent(String(sessionId))}`,

@@ -82,8 +82,8 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:read`.
      */
-    public suspend fun getMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()): MemoryEntry {
+        return client.request<MemoryEntry>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/${encodePathSegment(entryId)}",

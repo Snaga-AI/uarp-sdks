@@ -25,13 +25,13 @@ public struct CompaniesAPI: Sendable {
 
     /// Delete company
     ///
-    /// `DELETE /api/v1/companies/{id}`
+    /// `DELETE /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:write`.
-    public func delete(id: String, options: RequestOptions = .init()) async throws {
+    public func delete(companyId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/companies/\(encodePathSegment(id))",
+            path: "/api/v1/companies/\(encodePathSegment(companyId))",
             idempotent: true,
             options: options
         ))
@@ -39,13 +39,13 @@ public struct CompaniesAPI: Sendable {
 
     /// Get company
     ///
-    /// `GET /api/v1/companies/{id}`
+    /// `GET /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:read`.
-    public func get(id: String, options: RequestOptions = .init()) async throws -> Company {
+    public func get(companyId: String, options: RequestOptions = .init()) async throws -> Company {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/companies/\(encodePathSegment(id))",
+            path: "/api/v1/companies/\(encodePathSegment(companyId))",
             options: options
         ))
     }
@@ -132,13 +132,13 @@ public struct CompaniesAPI: Sendable {
 
     /// Update company
     ///
-    /// `PUT /api/v1/companies/{id}`
+    /// `PUT /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(id: String, body: CompanyUpdate, options: RequestOptions = .init()) async throws -> Company {
+    public func update(companyId: String, body: CompanyUpdate, options: RequestOptions = .init()) async throws -> Company {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/companies/\(encodePathSegment(id))",
+            path: "/api/v1/companies/\(encodePathSegment(companyId))",
             body: try client.encode(body),
             idempotent: true,
             options: options

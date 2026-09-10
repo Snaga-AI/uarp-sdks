@@ -4,7 +4,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   BootstrapRequest,
-  JsonValue,
+  BootstrapResponse,
 } from '../models.js';
 
 /**
@@ -16,7 +16,7 @@ export class BootstrapResource extends APIResource {
    *
    * `POST /api/v1/bootstrap`
    */
-  bootstrap(body?: BootstrapRequest, options?: RequestOptions): Promise<JsonValue> {
+  bootstrap(body?: BootstrapRequest, options?: RequestOptions): Promise<BootstrapResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/bootstrap',

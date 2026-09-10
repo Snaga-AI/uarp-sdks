@@ -328,7 +328,7 @@ impl AuthApi {
     /// Register new user
     ///
     /// `POST /api/v1/register`
-    pub async fn register(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn register(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::RegisterResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -344,7 +344,7 @@ impl AuthApi {
     /// Request OTP code
     ///
     /// `POST /api/v1/auth/request-code`
-    pub async fn request_otp_code(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn request_otp_code(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::RequestOtpCodeResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -421,7 +421,7 @@ impl AuthApi {
     /// Verify email link
     ///
     /// `GET /api/v1/verify-email`
-    pub async fn verify_email(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn verify_email(&self) -> Result<models::VerifyEmailResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

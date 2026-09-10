@@ -4,6 +4,7 @@
 
 with UARP.Client;
 with UARP.JSON_Support;
+with UARP.Models;
 with UARP.SSE;
 package UARP.API.ACP is
 
@@ -29,6 +30,6 @@ package UARP.API.ACP is
       Session_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_ACP_Session_Response;
 
 end UARP.API.ACP;

@@ -11,7 +11,7 @@ public struct GDPRAPI: Sendable {
     /// Data subject access request
     ///
     /// `GET /api/v1/data-subject/access`
-    public func dataSubjectAccess(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func dataSubjectAccess(options: RequestOptions = .init()) async throws -> DataSubjectAccessReport {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/data-subject/access",
@@ -22,7 +22,7 @@ public struct GDPRAPI: Sendable {
     /// Data subject erasure request
     ///
     /// `POST /api/v1/data-subject/erasure`
-    public func dataSubjectErasure(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func dataSubjectErasure(body: JSONObject, options: RequestOptions = .init()) async throws -> DataSubjectErasureResult {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/data-subject/erasure",

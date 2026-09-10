@@ -24,7 +24,7 @@ package body UARP.API.Knowledge is
 
    procedure Delete_Kb_Document
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Doc_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
    is
@@ -32,28 +32,28 @@ package body UARP.API.Knowledge is
       UARP.Client.Call_And_Discard
          (Self,
           "DELETE",
-          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id) & "/documents/" & UARP.Types.Encode_Path_Segment (Doc_Id),
+          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Knowledge_Base_Id) & "/documents/" & UARP.Types.Encode_Path_Segment (Doc_Id),
           Idempotent => True,
           Options => Options);
    end Delete_Kb_Document;
 
    procedure Delete_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
    is
    begin
       UARP.Client.Call_And_Discard
          (Self,
           "DELETE",
-          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id),
+          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Knowledge_Base_Id),
           Idempotent => True,
           Options => Options);
    end Delete_Knowledge_Base;
 
    function Get_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base
    is
@@ -62,7 +62,7 @@ package body UARP.API.Knowledge is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Knowledge_Base_Id),
              Options => Options));
    end Get_Knowledge_Base;
 
@@ -151,7 +151,7 @@ package body UARP.API.Knowledge is
 
    function Update_Knowledge_Base
      (Self : Client_Type;
-      Id : String;
+      Knowledge_Base_Id : String;
       Payload : UARP.Models.Knowledge_Base_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Knowledge_Base
@@ -161,7 +161,7 @@ package body UARP.API.Knowledge is
          (UARP.Client.Call
             (Self,
              "PUT",
-             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Knowledge_Base_Id),
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,

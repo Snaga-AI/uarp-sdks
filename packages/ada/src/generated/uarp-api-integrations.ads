@@ -44,12 +44,12 @@ package UARP.API.Integrations is
 
    --  Delete integration
    --
-   --  DELETE /api/v1/integrations/{id}
+   --  DELETE /api/v1/integrations/{integrationId}
    --
    --  Required scopes: agents:write.
    procedure Delete
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Remove an integration from an agent
@@ -57,12 +57,11 @@ package UARP.API.Integrations is
    --  DELETE /api/v1/agents/{agentId}/integrations/{integrationId}
    --
    --  Required scopes: agents:write.
-   function Delete_Agent_Integration
+   procedure Delete_Agent_Integration
      (Self : Client_Type;
       Agent_Id : String;
       Integration_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  List tenant integrations
    --
@@ -158,23 +157,23 @@ package UARP.API.Integrations is
 
    --  Test integration
    --
-   --  POST /api/v1/integrations/{id}/test
+   --  POST /api/v1/integrations/{integrationId}/test
    --
    --  Required scopes: agents:write.
    function Test_Integration
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Test_Integration_Response;
 
    --  Update integration
    --
-   --  PATCH /api/v1/integrations/{id}
+   --  PATCH /api/v1/integrations/{integrationId}
    --
    --  Required scopes: agents:write.
    function Update
      (Self : Client_Type;
-      Id : String;
+      Integration_Id : String;
       Payload : UARP.Models.Update_Integration_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Integration;

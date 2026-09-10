@@ -33,8 +33,8 @@ public class OpenAiCompatApi internal constructor(private val client: UarpClient
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun chatCompletion(body: ChatCompletionRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun chatCompletion(body: ChatCompletionRequest, options: RequestOptions = RequestOptions()): OpenAiChatCompletion {
+        return client.request<OpenAiChatCompletion>(
             RequestSpec(
                 method = "POST",
                 path = "/v1/chat/completions",
@@ -91,8 +91,8 @@ public class OpenAiCompatApi internal constructor(private val client: UarpClient
      *
      * `GET /v1/responses/{responseId}`
      */
-    public suspend fun getResponse(responseId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getResponse(responseId: String, options: RequestOptions = RequestOptions()): GetResponseResponse {
+        return client.request<GetResponseResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/v1/responses/${encodePathSegment(responseId)}",

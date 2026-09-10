@@ -72,14 +72,14 @@ impl IntegrationsApi {
 
     /// Delete integration
     ///
-    /// `DELETE /api/v1/integrations/{id}`
+    /// `DELETE /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, integration_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
                 method: Method::DELETE,
-                path: format!("/api/v1/integrations/{}", encode_path(id)),
+                path: format!("/api/v1/integrations/{}", encode_path(integration_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -93,9 +93,9 @@ impl IntegrationsApi {
     /// `DELETE /api/v1/agents/{agentId}/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete_agent_integration(&self, agent_id: &str, integration_id: &str) -> Result<serde_json::Value> {
+    pub async fn delete_agent_integration(&self, agent_id: &str, integration_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/agents/{}/integrations/{}", encode_path(agent_id), encode_path(integration_id)),
                 query: NO_QUERY,
@@ -247,14 +247,14 @@ impl IntegrationsApi {
 
     /// Test integration
     ///
-    /// `POST /api/v1/integrations/{id}/test`
+    /// `POST /api/v1/integrations/{integrationId}/test`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn test_integration(&self, id: &str) -> Result<models::TestIntegrationResponse> {
+    pub async fn test_integration(&self, integration_id: &str) -> Result<models::TestIntegrationResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/integrations/{}/test", encode_path(id)),
+                path: format!("/api/v1/integrations/{}/test", encode_path(integration_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -265,14 +265,14 @@ impl IntegrationsApi {
 
     /// Update integration
     ///
-    /// `PATCH /api/v1/integrations/{id}`
+    /// `PATCH /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update(&self, id: &str, body: &models::UpdateIntegrationRequest) -> Result<models::Integration> {
+    pub async fn update(&self, integration_id: &str, body: &models::UpdateIntegrationRequest) -> Result<models::Integration> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
-                path: format!("/api/v1/integrations/{}", encode_path(id)),
+                path: format!("/api/v1/integrations/{}", encode_path(integration_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

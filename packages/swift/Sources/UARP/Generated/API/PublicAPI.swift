@@ -162,7 +162,7 @@ public struct PublicAPI: Sendable {
     /// Get public agent card
     ///
     /// `GET /api/v1/public/agents/{agentId}`
-    public func getPublicAgentCard(agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPublicAgentCard(agentId: String, options: RequestOptions = .init()) async throws -> PublicAgentCard {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/agents/\(encodePathSegment(agentId))",
@@ -223,7 +223,7 @@ public struct PublicAPI: Sendable {
     /// Get public session
     ///
     /// `GET /api/v1/public/sessions/{sessionId}`
-    public func getPublicSession(sessionId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPublicSession(sessionId: String, options: RequestOptions = .init()) async throws -> PublicSessionView {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))",
@@ -433,7 +433,7 @@ public struct PublicAPI: Sendable {
     /// Respond to public HITL
     ///
     /// `POST /api/v1/public/sessions/{sessionId}/respond`
-    public func respondToPublicHitl(sessionId: String, body: RespondToPublicHitlRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func respondToPublicHitl(sessionId: String, body: RespondToPublicHitlRequest, options: RequestOptions = .init()) async throws -> RespondToPublicHitlResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/respond",

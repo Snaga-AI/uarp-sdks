@@ -99,7 +99,7 @@ package UARP.API.Providers is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Open_Ai_Chat_Completion;
 
    --  Text-to-speech via the LLM proxy
    --
@@ -121,6 +121,6 @@ package UARP.API.Providers is
      (Self : Client_Type;
       Payload : UARP.Models.LLM_Transcribe_Audio_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.LLM_Transcribe_Audio_Response;
 
 end UARP.API.Providers;

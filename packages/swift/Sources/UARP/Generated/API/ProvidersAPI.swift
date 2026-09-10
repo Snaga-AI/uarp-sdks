@@ -118,7 +118,7 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/chat/completions`
     ///
     /// Required scopes: `agents:read`.
-    public func llmChatCompletion(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func llmChatCompletion(body: JSONObject, options: RequestOptions = .init()) async throws -> OpenAiChatCompletion {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/llm/chat/completions",
@@ -148,7 +148,7 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/audio/transcriptions`
     ///
     /// Required scopes: `agents:read`.
-    public func llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = .init()) async throws -> LLMTranscribeAudioResponse {
         var parts: [MultipartPart] = []
         parts.append(MultipartPart(name: "file", value: .file(body.file)))
         if let value = body.model {

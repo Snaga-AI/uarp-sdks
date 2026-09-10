@@ -93,7 +93,7 @@ impl MemoryApi {
     /// `GET /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:read`.
-    pub async fn get_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<models::MemoryEntry> {
         self.client
             .request_json(Request {
                 method: Method::GET,

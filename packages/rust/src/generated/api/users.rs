@@ -98,7 +98,7 @@ impl UsersApi {
     /// `GET /api/v1/users/{userId}`
     ///
     /// Required scopes: `users:read`.
-    pub async fn get(&self, user_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get(&self, user_id: &str) -> Result<models::TenantUser> {
         self.client
             .request_json(Request {
                 method: Method::GET,

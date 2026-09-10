@@ -14,7 +14,6 @@ import type {
   GetSquadChatHistoryResponse,
   GetSquadGraphResponse,
   GetSquadRunMessagesResponse,
-  JsonObject,
   ListSquadGraphEdgesResponse,
   ListSquadGraphNodesResponse,
   ListSquadRunsResponse,
@@ -23,6 +22,7 @@ import type {
   StartSquadRunResponse,
   Team,
   TeamCreate,
+  TeamGraphEdge,
   TeamGraphNode,
   TeamRunDetail,
   TeamUpdate,
@@ -57,7 +57,7 @@ export class SquadsResource extends APIResource {
    *
    * `POST /api/v1/squads/{squadId}/graph/edges`
    */
-  addSquadGraphEdge(squadId: string, body: AddSquadGraphEdgeRequest, options?: RequestOptions): Promise<JsonObject> {
+  addSquadGraphEdge(squadId: string, body: AddSquadGraphEdgeRequest, options?: RequestOptions): Promise<TeamGraphEdge> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/graph/edges`,
@@ -76,7 +76,7 @@ export class SquadsResource extends APIResource {
    *
    * `POST /api/v1/squads/{squadId}/graph/nodes`
    */
-  addSquadGraphNode(squadId: string, body: AddSquadGraphNodeRequest, options?: RequestOptions): Promise<JsonObject> {
+  addSquadGraphNode(squadId: string, body: AddSquadGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/graph/nodes`,
@@ -447,7 +447,7 @@ export class SquadsResource extends APIResource {
    *
    * `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
    */
-  updateSquadGraphNode(squadId: string, agentId: string, body: UpdateSquadGraphNodeRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateSquadGraphNode(squadId: string, agentId: string, body: UpdateSquadGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/graph/nodes/${encodeURIComponent(String(agentId))}`,

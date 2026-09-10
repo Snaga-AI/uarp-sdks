@@ -9,17 +9,18 @@ package body UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent_Scorer
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/scorers",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/scorers",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Agent_Scorer;
 
    function Create_Dataset
@@ -27,17 +28,18 @@ package body UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.Models.Create_Dataset_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Eval_Dataset
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Dataset;
 
    function Create_Experiment
@@ -64,14 +66,15 @@ package body UARP.API.Evaluations is
       Agent_Id : String;
       Dataset_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Eval_Dataset
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets/" & UARP.Types.Encode_Path_Segment (Dataset_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets/" & UARP.Types.Encode_Path_Segment (Dataset_Id),
+             Options => Options));
    end Get_Dataset;
 
    function Get_Eval_Run
@@ -79,14 +82,15 @@ package body UARP.API.Evaluations is
       Agent_Id : String;
       Eval_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Eval_Run
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations/" & UARP.Types.Encode_Path_Segment (Eval_Run_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations/" & UARP.Types.Encode_Path_Segment (Eval_Run_Id),
+             Options => Options));
    end Get_Eval_Run;
 
    function Get_Experiment
@@ -155,16 +159,17 @@ package body UARP.API.Evaluations is
       Agent_Id : String;
       Payload : UARP.Models.Run_Evaluation_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Eval_Run
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Run;
 end UARP.API.Evaluations;

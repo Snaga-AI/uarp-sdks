@@ -717,7 +717,7 @@ package UARP.API.Admin is
    function Internal_Verify_Domain
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Internal_Verify_Domain_Response;
 
    --  List every post, drafts included
    --

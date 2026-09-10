@@ -61,7 +61,7 @@ package body UARP.API.Meta is
      (Self : Client_Type;
       Params : Search_Params := No_Search_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Search_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
@@ -72,11 +72,12 @@ package body UARP.API.Meta is
       if Params.Has_Limit then
          UARP.Types.Add (Query, "limit", Params.Limit);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/search",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/search",
+             Query => Query,
+             Options => Options));
    end Search;
 end UARP.API.Meta;

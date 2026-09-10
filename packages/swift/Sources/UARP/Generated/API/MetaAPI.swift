@@ -62,7 +62,7 @@ public struct MetaAPI: Sendable {
     /// `GET /api/v1/search`
     ///
     /// Required scopes: `search:read`.
-    public func search(q: String, type: SearchType? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func search(q: String, type: SearchType? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> SearchResponse {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "q", value: q))
         if let type {

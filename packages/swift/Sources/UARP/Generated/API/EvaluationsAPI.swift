@@ -13,7 +13,7 @@ public struct EvaluationsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/scorers`
     ///
     /// Required scopes: `evaluations:write`.
-    public func createAgentScorer(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createAgentScorer(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> AgentScorer {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/scorers",
@@ -28,7 +28,7 @@ public struct EvaluationsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/datasets`
     ///
     /// Required scopes: `evaluations:write`.
-    public func createDataset(agentId: String, body: CreateDatasetRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func createDataset(agentId: String, body: CreateDatasetRequest, options: RequestOptions = .init()) async throws -> EvalDataset {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/datasets",
@@ -60,7 +60,7 @@ public struct EvaluationsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/datasets/{datasetId}`
     ///
     /// Required scopes: `evaluations:read`.
-    public func getDataset(agentId: String, datasetId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getDataset(agentId: String, datasetId: String, options: RequestOptions = .init()) async throws -> EvalDataset {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/datasets/\(encodePathSegment(datasetId))",
@@ -73,7 +73,7 @@ public struct EvaluationsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/evaluations/{evalRunId}`
     ///
     /// Required scopes: `evaluations:read`.
-    public func getEvalRun(agentId: String, evalRunId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getEvalRun(agentId: String, evalRunId: String, options: RequestOptions = .init()) async throws -> EvalRun {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/evaluations/\(encodePathSegment(evalRunId))",
@@ -138,7 +138,7 @@ public struct EvaluationsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:write`.
-    public func run(agentId: String, body: RunEvaluationRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func run(agentId: String, body: RunEvaluationRequest, options: RequestOptions = .init()) async throws -> EvalRun {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/evaluations",

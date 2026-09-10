@@ -91,7 +91,7 @@ public struct AgentsAPI: Sendable {
     /// `DELETE /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func delete(agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func delete(agentId: String, options: RequestOptions = .init()) async throws -> DeleteAgentResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))",
@@ -394,6 +394,12 @@ public struct AgentsAPI: Sendable {
     }
 
     /// Partial update agent
+    ///
+    /// WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
+    /// `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
+    /// (agent-genome.ts mergeAgentMetadata) — so a client may send `{metadata: {ui: {avatar: {hue:
+    /// 40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
+    /// other nested object is replaced whole.
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///

@@ -46,8 +46,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/mcp/servers/{serverId}`
      */
-    public suspend fun deleteMCPServer(serverId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun deleteMCPServer(serverId: String, options: RequestOptions = RequestOptions()): DeleteMCPServerResponse {
+        return client.request<DeleteMCPServerResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}",
@@ -96,11 +96,11 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/mcp`
      */
-    public suspend fun mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = RequestOptions()): JSONRpcResponse {
         val headers = buildList {
             add("X-UARP-Agent-Id" to xUarpAgentId)
         }
-        return client.request<JsonElement>(
+        return client.request<JSONRpcResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/mcp",

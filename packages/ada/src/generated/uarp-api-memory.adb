@@ -54,14 +54,15 @@ package body UARP.API.Memory is
       Agent_Id : String;
       Entry_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Memory_Entry
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
+             Options => Options));
    end Get_Memory_Entry;
 
    function Import_Agent_Memory

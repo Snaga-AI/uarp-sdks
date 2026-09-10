@@ -62,7 +62,7 @@ export class AnalyticsResource extends APIResource {
    *
    * `GET /api/v1/analytics/public-chat`
    *
-   * Required scopes: `read:analytics`.
+   * Required scopes: `analytics:read`.
    */
   getPublicChatAnalytics(params?: GetPublicChatAnalyticsParams, options?: RequestOptions): Promise<PublicChatAnalytics> {
     return this._client.request({
@@ -84,7 +84,7 @@ export class AnalyticsResource extends APIResource {
    *
    * `GET /api/v1/analytics/inbox`
    *
-   * Required scopes: `read:analytics`.
+   * Required scopes: `analytics:read`.
    */
   getTenantInbox(params?: GetTenantInboxParams, options?: RequestOptions): Promise<TenantInbox> {
     return this._client.request({
@@ -106,7 +106,7 @@ export class AnalyticsResource extends APIResource {
    *
    * `GET /api/v1/analytics/overview`
    *
-   * Required scopes: `read:analytics`.
+   * Required scopes: `analytics:read`.
    */
   getTenantOverview(params?: GetTenantOverviewParams, options?: RequestOptions): Promise<TenantOverview> {
     return this._client.request({
@@ -122,7 +122,7 @@ export class AnalyticsResource extends APIResource {
    *
    * `GET /api/v1/analytics/agents`
    *
-   * Required scopes: `read:analytics`.
+   * Required scopes: `analytics:read`.
    */
   tenantAnalyticsAgents(params?: TenantAnalyticsAgentsParams, options?: RequestOptions): Promise<AgentAnalyticsSummary> {
     return this._client.request({

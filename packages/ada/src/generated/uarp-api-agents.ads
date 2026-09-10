@@ -141,7 +141,7 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Delete_Agent_Response;
 
    --  Unpin one message
    --
@@ -362,6 +362,12 @@ package UARP.API.Agents is
       return UARP.Models.List_Agent_Versions_Response;
 
    --  Partial update agent
+   --
+   --  WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
+   --  `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
+   --  (agent-genome.ts mergeAgentMetadata) - so a client may send `{metadata: {ui: {avatar: {hue:
+   --  40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
+   --  other nested object is replaced whole.
    --
    --  PATCH /api/v1/agents/{agentId}
    --

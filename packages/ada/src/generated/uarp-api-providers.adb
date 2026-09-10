@@ -137,17 +137,18 @@ package body UARP.API.Providers is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Open_Ai_Chat_Completion
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/llm/chat/completions",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/llm/chat/completions",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end LLM_Chat_Completion;
 
    function LLM_Synthesize_Speech
@@ -171,7 +172,7 @@ package body UARP.API.Providers is
      (Self : Client_Type;
       Payload : UARP.Models.LLM_Transcribe_Audio_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.LLM_Transcribe_Audio_Response
    is
    begin
       declare
@@ -196,7 +197,7 @@ package body UARP.API.Providers is
                 Has_Payload => True,
                 Content_Type => UARP.Multipart.Content_Type (Form));
          begin
-            return JS.Parse (UARP.Types.SU.To_String (Raw_Body));
+            return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));
          end;
       end;
    end LLM_Transcribe_Audio;

@@ -24,21 +24,21 @@ package body UARP.API.Companies is
 
    procedure Delete
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
    is
    begin
       UARP.Client.Call_And_Discard
          (Self,
           "DELETE",
-          "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Id),
+          "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Company_Id),
           Idempotent => True,
           Options => Options);
    end Delete;
 
    function Get
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company
    is
@@ -47,7 +47,7 @@ package body UARP.API.Companies is
          (UARP.Client.Call
             (Self,
              "GET",
-             "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Company_Id),
              Options => Options));
    end Get;
 
@@ -144,7 +144,7 @@ package body UARP.API.Companies is
 
    function Update
      (Self : Client_Type;
-      Id : String;
+      Company_Id : String;
       Payload : UARP.Models.Company_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Company
@@ -154,7 +154,7 @@ package body UARP.API.Companies is
          (UARP.Client.Call
             (Self,
              "PUT",
-             "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Id),
+             "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Company_Id),
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,

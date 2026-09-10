@@ -112,7 +112,7 @@ impl MetaApi {
     /// `GET /api/v1/search`
     ///
     /// Required scopes: `search:read`.
-    pub async fn search(&self, params: &SearchParams) -> Result<serde_json::Value> {
+    pub async fn search(&self, params: &SearchParams) -> Result<models::SearchResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

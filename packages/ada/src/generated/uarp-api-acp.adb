@@ -23,16 +23,17 @@ package body UARP.API.ACP is
       Session_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Update_ACP_Session_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/acp/session/" & UARP.Types.Encode_Path_Segment (Session_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/acp/session/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_ACP_Session;
 end UARP.API.ACP;

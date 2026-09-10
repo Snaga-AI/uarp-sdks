@@ -61,7 +61,7 @@ impl TenantsApi {
     ///
     /// `POST /api/v1/tenants/me/keys`
     ///
-    /// Required scopes: `tenants:write`.
+    /// Required scopes: `api_keys:write`.
     pub async fn create_api_key(&self, body: &models::CreateAPIKeyRequest) -> Result<models::APIKeyResponse> {
         self.client
             .request_json(Request {
@@ -274,7 +274,7 @@ impl TenantsApi {
     /// `PATCH /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    pub async fn patch(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn patch(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
@@ -291,7 +291,7 @@ impl TenantsApi {
     ///
     /// `DELETE /api/v1/tenants/me/keys/{keyId}`
     ///
-    /// Required scopes: `tenants:write`.
+    /// Required scopes: `api_keys:write`.
     pub async fn revoke_api_key(&self, key_id: &str) -> Result<models::RevokeAPIKeyResponse> {
         self.client
             .request_json(Request {
@@ -310,7 +310,7 @@ impl TenantsApi {
     /// `PUT /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    pub async fn update(&self, body: &models::UpdateTenantRequest) -> Result<serde_json::Value> {
+    pub async fn update(&self, body: &models::UpdateTenantRequest) -> Result<models::Tenant> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

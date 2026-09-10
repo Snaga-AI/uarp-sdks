@@ -44,7 +44,7 @@ impl ACPApi {
     /// Send message / update ACP session
     ///
     /// `PUT /api/v1/acp/session/{sessionId}`
-    pub async fn update_acp_session(&self, session_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Value> {
+    pub async fn update_acp_session(&self, session_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateACPSessionResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

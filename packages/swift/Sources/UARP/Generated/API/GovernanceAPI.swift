@@ -53,7 +53,7 @@ public struct GovernanceAPI: Sendable {
     /// Bootstrap first ambassador
     ///
     /// `POST /api/v1/governance/ambassador/ambassadors/bootstrap`
-    public func bootstrapAmbassador(options: RequestOptions = .init()) async throws -> BootstrapAmbassadorResponse {
+    public func bootstrapAmbassador(options: RequestOptions = .init()) async throws -> Ambassador {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/ambassador/ambassadors/bootstrap",
@@ -64,11 +64,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Cast ballot
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/ballot`
-    public func castBallot(id: String, body: CastBallotRequest, options: RequestOptions = .init()) async throws -> Ballot {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/ballot`
+    public func castBallot(proposalId: String, body: CastBallotRequest, options: RequestOptions = .init()) async throws -> Ballot {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/ballot",
+            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(proposalId))/ballot",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -78,7 +78,7 @@ public struct GovernanceAPI: Sendable {
     /// Check for deadlock
     ///
     /// `POST /api/v1/governance/emergency/deadlock-check`
-    public func checkDeadlock(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func checkDeadlock(options: RequestOptions = .init()) async throws -> DeadlockReport {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/emergency/deadlock-check",
@@ -116,7 +116,7 @@ public struct GovernanceAPI: Sendable {
     /// Create request
     ///
     /// `POST /api/v1/governance/ambassador/requests`
-    public func createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createAmbassadorRequest(body: CreateAmbassadorRequestRequest, options: RequestOptions = .init()) async throws -> AmbassadorRequest {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/ambassador/requests",
@@ -206,11 +206,11 @@ public struct GovernanceAPI: Sendable {
 
     /// File appeal
     ///
-    /// `POST /api/v1/governance/arbiter/cases/{id}/appeal`
-    public func fileArbiterAppeal(id: String, body: FileArbiterAppealRequest, options: RequestOptions = .init()) async throws -> FileArbiterAppealResponse {
+    /// `POST /api/v1/governance/arbiter/cases/{caseId}/appeal`
+    public func fileArbiterAppeal(caseId: String, body: FileArbiterAppealRequest, options: RequestOptions = .init()) async throws -> FileArbiterAppealResponse {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(id))/appeal",
+            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(caseId))/appeal",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -223,7 +223,7 @@ public struct GovernanceAPI: Sendable {
     /// with the chosen arbiter pool (server checks before persisting).
     ///
     /// `POST /api/v1/governance/arbiter/cases`
-    public func fileArbiterCase(body: FileArbiterCaseRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func fileArbiterCase(body: FileArbiterCaseRequest, options: RequestOptions = .init()) async throws -> ArbiterCase {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/arbiter/cases",
@@ -268,22 +268,22 @@ public struct GovernanceAPI: Sendable {
 
     /// Get ambassador
     ///
-    /// `GET /api/v1/governance/ambassador/ambassadors/{id}`
-    public func getAmbassador(id: String, options: RequestOptions = .init()) async throws -> Ambassador {
+    /// `GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}`
+    public func getAmbassador(ambassadorId: String, options: RequestOptions = .init()) async throws -> Ambassador {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/ambassador/ambassadors/\(encodePathSegment(id))",
+            path: "/api/v1/governance/ambassador/ambassadors/\(encodePathSegment(ambassadorId))",
             options: options
         ))
     }
 
     /// Get case
     ///
-    /// `GET /api/v1/governance/arbiter/cases/{id}`
-    public func getArbiterCase(id: String, options: RequestOptions = .init()) async throws -> ArbiterCase {
+    /// `GET /api/v1/governance/arbiter/cases/{caseId}`
+    public func getArbiterCase(caseId: String, options: RequestOptions = .init()) async throws -> ArbiterCase {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(id))",
+            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(caseId))",
             options: options
         ))
     }
@@ -301,11 +301,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Get design request
     ///
-    /// `GET /api/v1/governance/builder/requests/{id}`
-    public func getBuilderRequest(id: String, options: RequestOptions = .init()) async throws -> DesignRequest {
+    /// `GET /api/v1/governance/builder/requests/{requestId}`
+    public func getBuilderRequest(requestId: String, options: RequestOptions = .init()) async throws -> DesignRequest {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/builder/requests/\(encodePathSegment(id))",
+            path: "/api/v1/governance/builder/requests/\(encodePathSegment(requestId))",
             options: options
         ))
     }
@@ -334,11 +334,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Get goal
     ///
-    /// `GET /api/v1/governance/goals/{id}`
-    public func getGoal(id: String, options: RequestOptions = .init()) async throws -> Goal {
+    /// `GET /api/v1/governance/goals/{goalId}`
+    public func getGoal(goalId: String, options: RequestOptions = .init()) async throws -> Goal {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/goals/\(encodePathSegment(id))",
+            path: "/api/v1/governance/goals/\(encodePathSegment(goalId))",
             options: options
         ))
     }
@@ -416,7 +416,7 @@ public struct GovernanceAPI: Sendable {
     /// Get root attestation
     ///
     /// `GET /api/v1/governance/emergency/root-attestation`
-    public func getRootAttestation(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getRootAttestation(options: RequestOptions = .init()) async throws -> RootAttestation {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/emergency/root-attestation",
@@ -437,22 +437,22 @@ public struct GovernanceAPI: Sendable {
 
     /// Get proposal
     ///
-    /// `GET /api/v1/governance/voting/proposals/{id}`
-    public func getVotingProposal(id: String, options: RequestOptions = .init()) async throws -> VotingProposal {
+    /// `GET /api/v1/governance/voting/proposals/{proposalId}`
+    public func getVotingProposal(proposalId: String, options: RequestOptions = .init()) async throws -> VotingProposal {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))",
+            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(proposalId))",
             options: options
         ))
     }
 
     /// Issue ruling
     ///
-    /// `POST /api/v1/governance/arbiter/cases/{id}/ruling`
-    public func issueArbiterRuling(id: String, body: IssueArbiterRulingRequest, options: RequestOptions = .init()) async throws -> IssueArbiterRulingResponse {
+    /// `POST /api/v1/governance/arbiter/cases/{caseId}/ruling`
+    public func issueArbiterRuling(caseId: String, body: IssueArbiterRulingRequest, options: RequestOptions = .init()) async throws -> IssueArbiterRulingResponse {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(id))/ruling",
+            path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(caseId))/ruling",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -510,11 +510,11 @@ public struct GovernanceAPI: Sendable {
 
     /// List ballots
     ///
-    /// `GET /api/v1/governance/voting/proposals/{id}/ballots`
-    public func listBallots(id: String, options: RequestOptions = .init()) async throws -> ListBallotsResponse {
+    /// `GET /api/v1/governance/voting/proposals/{proposalId}/ballots`
+    public func listBallots(proposalId: String, options: RequestOptions = .init()) async throws -> ListBallotsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/ballots",
+            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(proposalId))/ballots",
             options: options
         ))
     }
@@ -596,11 +596,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Resolve request
     ///
-    /// `POST /api/v1/governance/ambassador/requests/{id}/resolve`
-    public func resolveAmbassadorRequest(id: String, body: ResolveAmbassadorRequestRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    /// `POST /api/v1/governance/ambassador/requests/{requestId}/resolve`
+    public func resolveAmbassadorRequest(requestId: String, body: ResolveAmbassadorRequestRequest, options: RequestOptions = .init()) async throws -> AmbassadorRequest {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/ambassador/requests/\(encodePathSegment(id))/resolve",
+            path: "/api/v1/governance/ambassador/requests/\(encodePathSegment(requestId))/resolve",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -684,11 +684,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Tally votes
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/tally`
-    public func tallyVotes(id: String, options: RequestOptions = .init()) async throws -> VoteResult {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/tally`
+    public func tallyVotes(proposalId: String, options: RequestOptions = .init()) async throws -> VoteResult {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/tally",
+            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(proposalId))/tally",
             idempotent: true,
             options: options
         ))
@@ -696,11 +696,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Update request status
     ///
-    /// `PUT /api/v1/governance/builder/requests/{id}/status`
-    public func updateBuilderRequestStatus(id: String, body: UpdateBuilderRequestStatusRequest, options: RequestOptions = .init()) async throws -> DesignRequest {
+    /// `PUT /api/v1/governance/builder/requests/{requestId}/status`
+    public func updateBuilderRequestStatus(requestId: String, body: UpdateBuilderRequestStatusRequest, options: RequestOptions = .init()) async throws -> DesignRequest {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/governance/builder/requests/\(encodePathSegment(id))/status",
+            path: "/api/v1/governance/builder/requests/\(encodePathSegment(requestId))/status",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -709,11 +709,11 @@ public struct GovernanceAPI: Sendable {
 
     /// Update goal status
     ///
-    /// `PUT /api/v1/governance/goals/{id}/status`
-    public func updateGoalStatus(id: String, body: UpdateGoalStatusRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    /// `PUT /api/v1/governance/goals/{goalId}/status`
+    public func updateGoalStatus(goalId: String, body: UpdateGoalStatusRequest, options: RequestOptions = .init()) async throws -> Goal {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/governance/goals/\(encodePathSegment(id))/status",
+            path: "/api/v1/governance/goals/\(encodePathSegment(goalId))/status",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -763,12 +763,12 @@ public struct GovernanceAPI: Sendable {
 
     /// Veto proposal
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/veto`
-    public func vetoProposal(id: String, body: VetoProposalRequest? = nil, options: RequestOptions = .init()) async throws -> VetoProposalResponse {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/veto`
+    public func vetoProposal(proposalId: String, body: VetoProposalRequest? = nil, options: RequestOptions = .init()) async throws -> VetoProposalResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/veto",
+            path: "/api/v1/governance/voting/proposals/\(encodePathSegment(proposalId))/veto",
             body: encodedBody,
             idempotent: true,
             options: options

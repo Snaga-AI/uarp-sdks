@@ -308,8 +308,8 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/register`
      */
-    public suspend fun register(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun register(body: JsonObject, options: RequestOptions = RequestOptions()): RegisterResponse {
+        return client.request<RegisterResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/register",
@@ -325,8 +325,8 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/auth/request-code`
      */
-    public suspend fun requestOtpCode(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun requestOtpCode(body: JsonObject, options: RequestOptions = RequestOptions()): RequestOtpCodeResponse {
+        return client.request<RequestOtpCodeResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/auth/request-code",
@@ -407,8 +407,8 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/verify-email`
      */
-    public suspend fun verifyEmail(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun verifyEmail(options: RequestOptions = RequestOptions()): VerifyEmailResponse {
+        return client.request<VerifyEmailResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/verify-email",

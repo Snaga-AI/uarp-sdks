@@ -3,7 +3,6 @@
 --  Team management and team chat
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -51,7 +50,7 @@ package UARP.API.Teams is
       Team_Id : String;
       Payload : UARP.Models.Add_Team_Graph_Edge_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Edge;
 
    --  Add graph node
    --
@@ -63,7 +62,7 @@ package UARP.API.Teams is
       Team_Id : String;
       Payload : UARP.Models.Add_Team_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
    --  Cancel a team run
    --
@@ -334,6 +333,6 @@ package UARP.API.Teams is
       Agent_Id : String;
       Payload : UARP.Models.Update_Team_Graph_Node_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
 end UARP.API.Teams;

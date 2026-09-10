@@ -11,6 +11,6 @@ export const DEFAULT_BASE_URL = 'https://api.snaga.ai';
 /**
  * Every scope named by the UARP security scheme.
  */
-export const SCOPES = ['admin', 'agents:read', 'agents:write', 'api_keys:read', 'billing:read', 'billing:write', 'evaluations:read', 'evaluations:write', 'events:read', 'files:read', 'files:write', 'guardrails:read', 'guardrails:write', 'marketplace:invoke', 'marketplace:read', 'marketplace:write', 'memory:read', 'memory:write', 'notifications:read', 'notifications:write', 'read:analytics', 'runs:create', 'runs:read', 'search:read', 'sessions:read', 'sessions:write', 'tenants:write', 'users:read', 'users:write', 'webhooks:read', 'webhooks:write'] as const;
+export const SCOPES = ['admin', 'agents:read', 'agents:write', 'analytics:read', 'api_keys:read', 'api_keys:write', 'billing:read', 'billing:write', 'evaluations:read', 'evaluations:write', 'events:read', 'files:read', 'files:write', 'guardrails:read', 'guardrails:write', 'marketplace:invoke', 'marketplace:read', 'marketplace:write', 'memory:read', 'memory:write', 'notifications:read', 'notifications:write', 'runs:create', 'runs:read', 'search:read', 'sessions:read', 'sessions:write', 'tenants:write', 'users:read', 'users:write', 'webhooks:read', 'webhooks:write'] as const;
 
 export type Scope = (typeof SCOPES)[number];

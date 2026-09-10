@@ -8,13 +8,13 @@ import type {
   DeleteUserResponse,
   InviteUserRequest,
   InviteUserResponse,
-  JsonObject,
   ListInvitesResponse,
   ListUsersResponse,
   ResendInviteResponse,
   SetUserRoleRequest,
   SetUserRoleResponse,
   SuspendUserResponse,
+  TenantUser,
   TransferTenantOwnershipResponse,
   UnsuspendUserResponse,
 } from '../models.js';
@@ -92,7 +92,7 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:read`.
    */
-  get(userId: string, options?: RequestOptions): Promise<JsonObject> {
+  get(userId: string, options?: RequestOptions): Promise<TenantUser> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/users/${encodeURIComponent(String(userId))}`,

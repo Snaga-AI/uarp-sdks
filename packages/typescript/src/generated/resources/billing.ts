@@ -16,9 +16,9 @@ import type {
   GetUsageTimeseriesResponse,
   HandleStripeWebhookRequest,
   HandleStripeWebhookResponse,
-  JsonValue,
   ListBillingPlansResponse,
   ListBillingSpecPackagesResponse,
+  UsageQuota,
   UsageSummary,
 } from '../models.js';
 
@@ -63,7 +63,7 @@ export class BillingResource extends APIResource {
    *
    * Required scopes: `billing:read`.
    */
-  checkQuota(options?: RequestOptions): Promise<JsonValue> {
+  checkQuota(options?: RequestOptions): Promise<UsageQuota> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/usage/quota',

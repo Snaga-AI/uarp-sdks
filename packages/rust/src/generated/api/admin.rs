@@ -1070,7 +1070,7 @@ impl AdminApi {
     /// Internal domain verification
     ///
     /// `GET /api/v1/internal/verify-domain`
-    pub async fn internal_verify_domain(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn internal_verify_domain(&self) -> Result<models::InternalVerifyDomainResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -6,11 +6,12 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  A2AAgentCard,
   A2ATask,
   A2ajsonRpcRequest,
   CancelA2ATaskResponse,
   CreateA2ATaskRequest,
-  JsonValue,
+  JSONRpcResponse,
   ListA2ATasksResponse,
 } from '../models.js';
 
@@ -50,7 +51,7 @@ export class A2AResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  a2aJSONRpc(body: A2ajsonRpcRequest, options?: RequestOptions): Promise<JsonValue> {
+  a2aJSONRpc(body: A2ajsonRpcRequest, options?: RequestOptions): Promise<JSONRpcResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/a2a',
@@ -115,7 +116,7 @@ export class A2AResource extends APIResource {
    *
    * `GET /.well-known/agent.json`
    */
-  getAgentCard(params: GetAgentCardParams, options?: RequestOptions): Promise<JsonValue> {
+  getAgentCard(params: GetAgentCardParams, options?: RequestOptions): Promise<A2AAgentCard> {
     return this._client.request({
       method: 'GET',
       path: '/.well-known/agent.json',

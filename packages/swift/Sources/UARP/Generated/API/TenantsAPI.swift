@@ -40,7 +40,7 @@ public struct TenantsAPI: Sendable {
     ///
     /// `POST /api/v1/tenants/me/keys`
     ///
-    /// Required scopes: `tenants:write`.
+    /// Required scopes: `api_keys:write`.
     public func createAPIKey(body: CreateAPIKeyRequest, options: RequestOptions = .init()) async throws -> APIKeyResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -209,7 +209,7 @@ public struct TenantsAPI: Sendable {
     /// `PATCH /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    public func patch(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func patch(body: JSONObject, options: RequestOptions = .init()) async throws -> Tenant {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/tenants/me",
@@ -223,7 +223,7 @@ public struct TenantsAPI: Sendable {
     ///
     /// `DELETE /api/v1/tenants/me/keys/{keyId}`
     ///
-    /// Required scopes: `tenants:write`.
+    /// Required scopes: `api_keys:write`.
     public func revokeAPIKey(keyId: String, options: RequestOptions = .init()) async throws -> RevokeAPIKeyResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -238,7 +238,7 @@ public struct TenantsAPI: Sendable {
     /// `PUT /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    public func update(body: UpdateTenantRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func update(body: UpdateTenantRequest? = nil, options: RequestOptions = .init()) async throws -> Tenant {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "PUT",

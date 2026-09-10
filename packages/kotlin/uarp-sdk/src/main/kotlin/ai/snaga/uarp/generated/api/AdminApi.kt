@@ -969,8 +969,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/internal/verify-domain`
      */
-    public suspend fun internalVerifyDomain(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun internalVerifyDomain(options: RequestOptions = RequestOptions()): InternalVerifyDomainResponse {
+        return client.request<InternalVerifyDomainResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/internal/verify-domain",

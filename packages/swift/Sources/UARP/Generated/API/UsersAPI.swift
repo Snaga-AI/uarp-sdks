@@ -68,7 +68,7 @@ public struct UsersAPI: Sendable {
     /// `GET /api/v1/users/{userId}`
     ///
     /// Required scopes: `users:read`.
-    public func get(userId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func get(userId: String, options: RequestOptions = .init()) async throws -> TenantUser {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/users/\(encodePathSegment(userId))",

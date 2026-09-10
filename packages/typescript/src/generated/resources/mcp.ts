@@ -6,8 +6,9 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import type {
   CreateMCPServerRequest,
+  DeleteMCPServerResponse,
+  JSONRpcResponse,
   JsonObject,
-  JsonValue,
   ListMCPServersResponse,
   MCPServer,
   MCPServerTestResult,
@@ -49,7 +50,7 @@ export class MCPResource extends APIResource {
    *
    * `DELETE /api/v1/mcp/servers/{serverId}`
    */
-  deleteMCPServer(serverId: string, options?: RequestOptions): Promise<JsonValue> {
+  deleteMCPServer(serverId: string, options?: RequestOptions): Promise<DeleteMCPServerResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}`,
@@ -93,7 +94,7 @@ export class MCPResource extends APIResource {
    *
    * `POST /api/v1/mcp`
    */
-  mcpJSONRpc(body: McpjsonRpcRequest, params: MCPJSONRpcParams, options?: RequestOptions): Promise<JsonValue> {
+  mcpJSONRpc(body: McpjsonRpcRequest, params: MCPJSONRpcParams, options?: RequestOptions): Promise<JSONRpcResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/mcp',

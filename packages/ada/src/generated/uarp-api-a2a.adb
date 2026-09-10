@@ -6,17 +6,18 @@ package body UARP.API.A2A is
      (Self : Client_Type;
       Payload : UARP.Models.A2ajson_Rpc_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.JSON_Rpc_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/a2a",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/a2a",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end A2A_JSON_Rpc;
 
    function Cancel_A2A_Task
@@ -72,17 +73,18 @@ package body UARP.API.A2A is
      (Self : Client_Type;
       Params : Get_Agent_Card_Params := No_Get_Agent_Card_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.A2A_Agent_Card
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/.well-known/agent.json",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/.well-known/agent.json",
+             Query => Query,
+             Options => Options));
    end Get_Agent_Card;
 
    function List_A2A_Tasks

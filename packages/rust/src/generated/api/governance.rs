@@ -126,7 +126,7 @@ impl GovernanceApi {
     /// Bootstrap first ambassador
     ///
     /// `POST /api/v1/governance/ambassador/ambassadors/bootstrap`
-    pub async fn bootstrap_ambassador(&self) -> Result<models::BootstrapAmbassadorResponse> {
+    pub async fn bootstrap_ambassador(&self) -> Result<models::Ambassador> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -141,12 +141,12 @@ impl GovernanceApi {
 
     /// Cast ballot
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/ballot`
-    pub async fn cast_ballot(&self, id: &str, body: &models::CastBallotRequest) -> Result<models::Ballot> {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/ballot`
+    pub async fn cast_ballot(&self, proposal_id: &str, body: &models::CastBallotRequest) -> Result<models::Ballot> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/voting/proposals/{}/ballot", encode_path(id)),
+                path: format!("/api/v1/governance/voting/proposals/{}/ballot", encode_path(proposal_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -158,7 +158,7 @@ impl GovernanceApi {
     /// Check for deadlock
     ///
     /// `POST /api/v1/governance/emergency/deadlock-check`
-    pub async fn check_deadlock(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn check_deadlock(&self) -> Result<models::DeadlockReport> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -206,7 +206,7 @@ impl GovernanceApi {
     /// Create request
     ///
     /// `POST /api/v1/governance/ambassador/requests`
-    pub async fn create_ambassador_request(&self, body: &models::CreateAmbassadorRequestRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_ambassador_request(&self, body: &models::CreateAmbassadorRequestRequest) -> Result<models::AmbassadorRequest> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -319,12 +319,12 @@ impl GovernanceApi {
 
     /// File appeal
     ///
-    /// `POST /api/v1/governance/arbiter/cases/{id}/appeal`
-    pub async fn file_arbiter_appeal(&self, id: &str, body: &models::FileArbiterAppealRequest) -> Result<models::FileArbiterAppealResponse> {
+    /// `POST /api/v1/governance/arbiter/cases/{caseId}/appeal`
+    pub async fn file_arbiter_appeal(&self, case_id: &str, body: &models::FileArbiterAppealRequest) -> Result<models::FileArbiterAppealResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/arbiter/cases/{}/appeal", encode_path(id)),
+                path: format!("/api/v1/governance/arbiter/cases/{}/appeal", encode_path(case_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -339,7 +339,7 @@ impl GovernanceApi {
     /// with the chosen arbiter pool (server checks before persisting).
     ///
     /// `POST /api/v1/governance/arbiter/cases`
-    pub async fn file_arbiter_case(&self, body: &models::FileArbiterCaseRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn file_arbiter_case(&self, body: &models::FileArbiterCaseRequest) -> Result<models::ArbiterCase> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -402,12 +402,12 @@ impl GovernanceApi {
 
     /// Get ambassador
     ///
-    /// `GET /api/v1/governance/ambassador/ambassadors/{id}`
-    pub async fn get_ambassador(&self, id: &str) -> Result<models::Ambassador> {
+    /// `GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}`
+    pub async fn get_ambassador(&self, ambassador_id: &str) -> Result<models::Ambassador> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/ambassador/ambassadors/{}", encode_path(id)),
+                path: format!("/api/v1/governance/ambassador/ambassadors/{}", encode_path(ambassador_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -418,12 +418,12 @@ impl GovernanceApi {
 
     /// Get case
     ///
-    /// `GET /api/v1/governance/arbiter/cases/{id}`
-    pub async fn get_arbiter_case(&self, id: &str) -> Result<models::ArbiterCase> {
+    /// `GET /api/v1/governance/arbiter/cases/{caseId}`
+    pub async fn get_arbiter_case(&self, case_id: &str) -> Result<models::ArbiterCase> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/arbiter/cases/{}", encode_path(id)),
+                path: format!("/api/v1/governance/arbiter/cases/{}", encode_path(case_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -450,12 +450,12 @@ impl GovernanceApi {
 
     /// Get design request
     ///
-    /// `GET /api/v1/governance/builder/requests/{id}`
-    pub async fn get_builder_request(&self, id: &str) -> Result<models::DesignRequest> {
+    /// `GET /api/v1/governance/builder/requests/{requestId}`
+    pub async fn get_builder_request(&self, request_id: &str) -> Result<models::DesignRequest> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/builder/requests/{}", encode_path(id)),
+                path: format!("/api/v1/governance/builder/requests/{}", encode_path(request_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -498,12 +498,12 @@ impl GovernanceApi {
 
     /// Get goal
     ///
-    /// `GET /api/v1/governance/goals/{id}`
-    pub async fn get_goal(&self, id: &str) -> Result<models::Goal> {
+    /// `GET /api/v1/governance/goals/{goalId}`
+    pub async fn get_goal(&self, goal_id: &str) -> Result<models::Goal> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/goals/{}", encode_path(id)),
+                path: format!("/api/v1/governance/goals/{}", encode_path(goal_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -594,7 +594,7 @@ impl GovernanceApi {
     /// Get root attestation
     ///
     /// `GET /api/v1/governance/emergency/root-attestation`
-    pub async fn get_root_attestation(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_root_attestation(&self) -> Result<models::RootAttestation> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -625,12 +625,12 @@ impl GovernanceApi {
 
     /// Get proposal
     ///
-    /// `GET /api/v1/governance/voting/proposals/{id}`
-    pub async fn get_voting_proposal(&self, id: &str) -> Result<models::VotingProposal> {
+    /// `GET /api/v1/governance/voting/proposals/{proposalId}`
+    pub async fn get_voting_proposal(&self, proposal_id: &str) -> Result<models::VotingProposal> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/voting/proposals/{}", encode_path(id)),
+                path: format!("/api/v1/governance/voting/proposals/{}", encode_path(proposal_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -641,12 +641,12 @@ impl GovernanceApi {
 
     /// Issue ruling
     ///
-    /// `POST /api/v1/governance/arbiter/cases/{id}/ruling`
-    pub async fn issue_arbiter_ruling(&self, id: &str, body: &models::IssueArbiterRulingRequest) -> Result<models::IssueArbiterRulingResponse> {
+    /// `POST /api/v1/governance/arbiter/cases/{caseId}/ruling`
+    pub async fn issue_arbiter_ruling(&self, case_id: &str, body: &models::IssueArbiterRulingRequest) -> Result<models::IssueArbiterRulingResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/arbiter/cases/{}/ruling", encode_path(id)),
+                path: format!("/api/v1/governance/arbiter/cases/{}/ruling", encode_path(case_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -721,12 +721,12 @@ impl GovernanceApi {
 
     /// List ballots
     ///
-    /// `GET /api/v1/governance/voting/proposals/{id}/ballots`
-    pub async fn list_ballots(&self, id: &str) -> Result<models::ListBallotsResponse> {
+    /// `GET /api/v1/governance/voting/proposals/{proposalId}/ballots`
+    pub async fn list_ballots(&self, proposal_id: &str) -> Result<models::ListBallotsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/governance/voting/proposals/{}/ballots", encode_path(id)),
+                path: format!("/api/v1/governance/voting/proposals/{}/ballots", encode_path(proposal_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -833,12 +833,12 @@ impl GovernanceApi {
 
     /// Resolve request
     ///
-    /// `POST /api/v1/governance/ambassador/requests/{id}/resolve`
-    pub async fn resolve_ambassador_request(&self, id: &str, body: &models::ResolveAmbassadorRequestRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    /// `POST /api/v1/governance/ambassador/requests/{requestId}/resolve`
+    pub async fn resolve_ambassador_request(&self, request_id: &str, body: &models::ResolveAmbassadorRequestRequest) -> Result<models::AmbassadorRequest> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/ambassador/requests/{}/resolve", encode_path(id)),
+                path: format!("/api/v1/governance/ambassador/requests/{}/resolve", encode_path(request_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -939,12 +939,12 @@ impl GovernanceApi {
 
     /// Tally votes
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/tally`
-    pub async fn tally_votes(&self, id: &str) -> Result<models::VoteResult> {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/tally`
+    pub async fn tally_votes(&self, proposal_id: &str) -> Result<models::VoteResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/voting/proposals/{}/tally", encode_path(id)),
+                path: format!("/api/v1/governance/voting/proposals/{}/tally", encode_path(proposal_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -955,12 +955,12 @@ impl GovernanceApi {
 
     /// Update request status
     ///
-    /// `PUT /api/v1/governance/builder/requests/{id}/status`
-    pub async fn update_builder_request_status(&self, id: &str, body: &models::UpdateBuilderRequestStatusRequest) -> Result<models::DesignRequest> {
+    /// `PUT /api/v1/governance/builder/requests/{requestId}/status`
+    pub async fn update_builder_request_status(&self, request_id: &str, body: &models::UpdateBuilderRequestStatusRequest) -> Result<models::DesignRequest> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
-                path: format!("/api/v1/governance/builder/requests/{}/status", encode_path(id)),
+                path: format!("/api/v1/governance/builder/requests/{}/status", encode_path(request_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -971,12 +971,12 @@ impl GovernanceApi {
 
     /// Update goal status
     ///
-    /// `PUT /api/v1/governance/goals/{id}/status`
-    pub async fn update_goal_status(&self, id: &str, body: &models::UpdateGoalStatusRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    /// `PUT /api/v1/governance/goals/{goalId}/status`
+    pub async fn update_goal_status(&self, goal_id: &str, body: &models::UpdateGoalStatusRequest) -> Result<models::Goal> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
-                path: format!("/api/v1/governance/goals/{}/status", encode_path(id)),
+                path: format!("/api/v1/governance/goals/{}/status", encode_path(goal_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -1028,12 +1028,12 @@ impl GovernanceApi {
 
     /// Veto proposal
     ///
-    /// `POST /api/v1/governance/voting/proposals/{id}/veto`
-    pub async fn veto_proposal(&self, id: &str, body: &models::VetoProposalRequest) -> Result<models::VetoProposalResponse> {
+    /// `POST /api/v1/governance/voting/proposals/{proposalId}/veto`
+    pub async fn veto_proposal(&self, proposal_id: &str, body: &models::VetoProposalRequest) -> Result<models::VetoProposalResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
-                path: format!("/api/v1/governance/voting/proposals/{}/veto", encode_path(id)),
+                path: format!("/api/v1/governance/voting/proposals/{}/veto", encode_path(proposal_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

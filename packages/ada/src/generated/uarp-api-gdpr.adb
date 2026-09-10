@@ -5,30 +5,32 @@ package body UARP.API.GDPR is
    function Data_Subject_Access
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Data_Subject_Access_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/data-subject/access",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/data-subject/access",
+             Options => Options));
    end Data_Subject_Access;
 
    function Data_Subject_Erasure
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Data_Subject_Erasure_Result
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/data-subject/erasure",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/data-subject/erasure",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Data_Subject_Erasure;
 end UARP.API.GDPR;

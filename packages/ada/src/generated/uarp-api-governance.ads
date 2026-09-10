@@ -96,14 +96,14 @@ package UARP.API.Governance is
    function Bootstrap_Ambassador
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Bootstrap_Ambassador_Response;
+      return UARP.Models.Ambassador;
 
    --  Cast ballot
    --
-   --  POST /api/v1/governance/voting/proposals/{id}/ballot
+   --  POST /api/v1/governance/voting/proposals/{proposalId}/ballot
    function Cast_Ballot
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Payload : UARP.Models.Cast_Ballot_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Ballot;
@@ -114,7 +114,7 @@ package UARP.API.Governance is
    function Check_Deadlock
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Deadlock_Report;
 
    --  Check governance compliance
    --
@@ -141,7 +141,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Ambassador_Request_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Ambassador_Request;
 
    --  Create design request
    --
@@ -200,10 +200,10 @@ package UARP.API.Governance is
 
    --  File appeal
    --
-   --  POST /api/v1/governance/arbiter/cases/{id}/appeal
+   --  POST /api/v1/governance/arbiter/cases/{caseId}/appeal
    function File_Arbiter_Appeal
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Payload : UARP.Models.File_Arbiter_Appeal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.File_Arbiter_Appeal_Response;
@@ -218,7 +218,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.File_Arbiter_Case_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Arbiter_Case;
 
    --  Get agent obligations
    --
@@ -249,19 +249,19 @@ package UARP.API.Governance is
 
    --  Get ambassador
    --
-   --  GET /api/v1/governance/ambassador/ambassadors/{id}
+   --  GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}
    function Get_Ambassador
      (Self : Client_Type;
-      Id : String;
+      Ambassador_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Ambassador;
 
    --  Get case
    --
-   --  GET /api/v1/governance/arbiter/cases/{id}
+   --  GET /api/v1/governance/arbiter/cases/{caseId}
    function Get_Arbiter_Case
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Arbiter_Case;
 
@@ -275,10 +275,10 @@ package UARP.API.Governance is
 
    --  Get design request
    --
-   --  GET /api/v1/governance/builder/requests/{id}
+   --  GET /api/v1/governance/builder/requests/{requestId}
    function Get_Builder_Request
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Design_Request;
 
@@ -300,10 +300,10 @@ package UARP.API.Governance is
 
    --  Get goal
    --
-   --  GET /api/v1/governance/goals/{id}
+   --  GET /api/v1/governance/goals/{goalId}
    function Get_Goal
      (Self : Client_Type;
-      Id : String;
+      Goal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Goal;
 
@@ -364,7 +364,7 @@ package UARP.API.Governance is
    function Get_Root_Attestation
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Root_Attestation;
 
    --  Get spawn policy
    --
@@ -376,19 +376,19 @@ package UARP.API.Governance is
 
    --  Get proposal
    --
-   --  GET /api/v1/governance/voting/proposals/{id}
+   --  GET /api/v1/governance/voting/proposals/{proposalId}
    function Get_Voting_Proposal
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Voting_Proposal;
 
    --  Issue ruling
    --
-   --  POST /api/v1/governance/arbiter/cases/{id}/ruling
+   --  POST /api/v1/governance/arbiter/cases/{caseId}/ruling
    function Issue_Arbiter_Ruling
      (Self : Client_Type;
-      Id : String;
+      Case_Id : String;
       Payload : UARP.Models.Issue_Arbiter_Ruling_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Issue_Arbiter_Ruling_Response;
@@ -428,10 +428,10 @@ package UARP.API.Governance is
 
    --  List ballots
    --
-   --  GET /api/v1/governance/voting/proposals/{id}/ballots
+   --  GET /api/v1/governance/voting/proposals/{proposalId}/ballots
    function List_Ballots
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Ballots_Response;
 
@@ -489,13 +489,13 @@ package UARP.API.Governance is
 
    --  Resolve request
    --
-   --  POST /api/v1/governance/ambassador/requests/{id}/resolve
+   --  POST /api/v1/governance/ambassador/requests/{requestId}/resolve
    function Resolve_Ambassador_Request
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Payload : UARP.Models.Resolve_Ambassador_Request_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Ambassador_Request;
 
    --  Set agent permissions
    --
@@ -555,32 +555,32 @@ package UARP.API.Governance is
 
    --  Tally votes
    --
-   --  POST /api/v1/governance/voting/proposals/{id}/tally
+   --  POST /api/v1/governance/voting/proposals/{proposalId}/tally
    function Tally_Votes
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Vote_Result;
 
    --  Update request status
    --
-   --  PUT /api/v1/governance/builder/requests/{id}/status
+   --  PUT /api/v1/governance/builder/requests/{requestId}/status
    function Update_Builder_Request_Status
      (Self : Client_Type;
-      Id : String;
+      Request_Id : String;
       Payload : UARP.Models.Update_Builder_Request_Status_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Design_Request;
 
    --  Update goal status
    --
-   --  PUT /api/v1/governance/goals/{id}/status
+   --  PUT /api/v1/governance/goals/{goalId}/status
    function Update_Goal_Status
      (Self : Client_Type;
-      Id : String;
+      Goal_Id : String;
       Payload : UARP.Models.Update_Goal_Status_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Goal;
 
    --  Update proposal status (state machine enforced)
    --
@@ -613,10 +613,10 @@ package UARP.API.Governance is
 
    --  Veto proposal
    --
-   --  POST /api/v1/governance/voting/proposals/{id}/veto
+   --  POST /api/v1/governance/voting/proposals/{proposalId}/veto
    function Veto_Proposal
      (Self : Client_Type;
-      Id : String;
+      Proposal_Id : String;
       Payload : UARP.Models.Veto_Proposal_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)

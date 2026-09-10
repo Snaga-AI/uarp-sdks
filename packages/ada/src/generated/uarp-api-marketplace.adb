@@ -189,17 +189,18 @@ package body UARP.API.Marketplace is
       Payload : UARP.Models.Subscribe_To_Listing_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Marketplace_Subscription
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/subscribe",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/subscribe",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Subscribe_To_Listing;
 
    procedure Unpublish_Listing

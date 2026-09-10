@@ -4,6 +4,7 @@
 
 with UARP.Client;
 with UARP.JSON_Support;
+with UARP.Models;
 package UARP.API.GDPR is
 
    subtype Client_Type is UARP.Client.Client_Type;
@@ -15,7 +16,7 @@ package UARP.API.GDPR is
    function Data_Subject_Access
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Data_Subject_Access_Report;
 
    --  Data subject erasure request
    --
@@ -24,6 +25,6 @@ package UARP.API.GDPR is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Data_Subject_Erasure_Result;
 
 end UARP.API.GDPR;

@@ -154,7 +154,7 @@ public struct SessionsAPI: Sendable {
     /// schedules it; explicit `null` files it in the backlog with no schedule at all.
     ///
     /// `POST /api/v1/todos`
-    public func createTask(body: JSONValue, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createTask(body: JSONValue, options: RequestOptions = .init()) async throws -> CreatedTask {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/todos",
@@ -530,7 +530,7 @@ public struct SessionsAPI: Sendable {
     /// `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = nil, options: RequestOptions = .init()) async throws -> SessionAnnotation {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "PATCH",

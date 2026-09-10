@@ -155,14 +155,15 @@ package body UARP.API.Public is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Public_Agent_Card
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/public/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Options => Options));
    end Get_Public_Agent_Card;
 
    function Get_Public_Blog_Post
@@ -225,14 +226,15 @@ package body UARP.API.Public is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Public_Session_View
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Options => Options));
    end Get_Public_Session;
 
    function Get_Public_State
@@ -482,17 +484,18 @@ package body UARP.API.Public is
       Session_Id : String;
       Payload : UARP.Models.Respond_To_Public_Hitl_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Respond_To_Public_Hitl_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/respond",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/respond",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Respond_To_Public_Hitl;
 
    function Send_Public_Message

@@ -34,7 +34,7 @@ public class AnalyticsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/analytics/public-chat`
      *
-     * Required scopes: `read:analytics`.
+     * Required scopes: `analytics:read`.
      */
     public suspend fun getPublicChatAnalytics(days: Long? = null, options: RequestOptions = RequestOptions()): PublicChatAnalytics {
         val query = buildList {
@@ -61,7 +61,7 @@ public class AnalyticsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/analytics/inbox`
      *
-     * Required scopes: `read:analytics`.
+     * Required scopes: `analytics:read`.
      */
     public suspend fun getTenantInbox(limit: Long? = null, options: RequestOptions = RequestOptions()): TenantInbox {
         val query = buildList {
@@ -88,7 +88,7 @@ public class AnalyticsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/analytics/overview`
      *
-     * Required scopes: `read:analytics`.
+     * Required scopes: `analytics:read`.
      */
     public suspend fun getTenantOverview(days: Long? = null, options: RequestOptions = RequestOptions()): TenantOverview {
         val query = buildList {
@@ -109,7 +109,7 @@ public class AnalyticsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/analytics/agents`
      *
-     * Required scopes: `read:analytics`.
+     * Required scopes: `analytics:read`.
      */
     public suspend fun tenantAnalyticsAgents(days: Long? = null, options: RequestOptions = RequestOptions()): AgentAnalyticsSummary {
         val query = buildList {

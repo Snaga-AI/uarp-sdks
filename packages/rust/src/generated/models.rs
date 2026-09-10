@@ -10,6 +10,204 @@ use serde::{Deserialize, Serialize};
 
 use crate::multipart::FilePart;
 
+/// a2a/agent-card.ts A2AAgentCard, built by buildAgentCard. `provider` is declared on the type
+/// and never emitted.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2AAgentCard {
+    pub name: String,
+    pub description: String,
+    /// `{origin}/api/v1/a2a`.
+    pub url: String,
+    pub agent_id: String,
+    pub version: String,
+    pub schema_version: A2AAgentCardSchemaVersion,
+    pub protocol_version: A2AAgentCardProtocolVersion,
+    pub capabilities: A2AAgentCardCapabilities,
+    pub skills: Vec<A2AAgentCardSkill>,
+    pub authentication: A2AAgentCardAuthentication,
+    pub default_input_modes: Vec<String>,
+    pub default_output_modes: Vec<String>,
+    pub mcp_resources: Vec<String>,
+}
+
+/// `A2AAgentCardAuthentication` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2AAgentCardAuthentication {
+    pub r#type: A2AAgentCardAuthenticationType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header: Option<A2AAgentCardAuthenticationHeader>,
+}
+
+/// `A2AAgentCardAuthenticationHeader` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum A2AAgentCardAuthenticationHeader {
+    #[default]
+    #[serde(rename = "Authorization")]
+    Authorization,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl A2AAgentCardAuthenticationHeader {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Authorization => "Authorization",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for A2AAgentCardAuthenticationHeader {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for A2AAgentCardAuthenticationHeader {
+    fn from(value: &str) -> Self {
+        match value {
+            "Authorization" => Self::Authorization,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `A2AAgentCardAuthenticationType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum A2AAgentCardAuthenticationType {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "apiKey")]
+    APIKey,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl A2AAgentCardAuthenticationType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => "none",
+            Self::APIKey => "apiKey",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for A2AAgentCardAuthenticationType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for A2AAgentCardAuthenticationType {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => Self::None,
+            "apiKey" => Self::APIKey,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `A2AAgentCardCapabilities` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2AAgentCardCapabilities {
+    pub streaming: bool,
+    pub push_notifications: bool,
+    pub state_transition_history: bool,
+}
+
+/// `A2AAgentCardProtocolVersion` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum A2AAgentCardProtocolVersion {
+    #[default]
+    #[serde(rename = "0.2")]
+    V02,
+    #[serde(rename = "0.3")]
+    V03,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl A2AAgentCardProtocolVersion {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::V02 => "0.2",
+            Self::V03 => "0.3",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for A2AAgentCardProtocolVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for A2AAgentCardProtocolVersion {
+    fn from(value: &str) -> Self {
+        match value {
+            "0.2" => Self::V02,
+            "0.3" => Self::V03,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `A2AAgentCardSchemaVersion` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum A2AAgentCardSchemaVersion {
+    #[default]
+    #[serde(rename = "1.0")]
+    V10,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl A2AAgentCardSchemaVersion {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::V10 => "1.0",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for A2AAgentCardSchemaVersion {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for A2AAgentCardSchemaVersion {
+    fn from(value: &str) -> Self {
+        match value {
+            "1.0" => Self::V10,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `A2AAgentCardSkill` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2AAgentCardSkill {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub tags: Vec<String>,
+    pub examples: Vec<String>,
+}
+
 /// `A2ajsonRpcRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct A2ajsonRpcRequest {
@@ -923,9 +1121,9 @@ pub struct Agent {
     /// Security clearance and compartment access.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub access_control: Option<AgentAccessControl>,
-    /// Free-form caller-supplied metadata.
+    /// Free-form caller-supplied metadata; `ui` is the one key with a shared, documented shape.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    pub metadata: Option<AgentMetadata>,
     pub agent_id: String,
     pub tenant_id: String,
     pub name: String,
@@ -1455,6 +1653,89 @@ impl From<&str> for AgentMessagePrecedence {
             "immediate" => Self::Immediate,
             "priority" => Self::Priority,
             "routine" => Self::Routine,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Free-form caller-supplied metadata; `ui` is the one key with a shared, documented shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentMetadata {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ui: Option<AgentMetadataUi>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// The `metadata.ui` record three clients and the platform share. PATCH merges it one level,
+/// and `avatar` one level deeper: a client that sends `{protocol, variant}` keeps the stored
+/// `hue`, one that sends `{hue}` keeps `protocol` and `variant` (agent-genome.ts
+/// mergeAgentMetadata; owner 2026-09-10).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentMetadataUi {
+    /// Identity: which drawing protocol, which variant, and the hue (degrees). Merged field by
+    /// field on PATCH.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar: Option<AgentMetadataUiAvatar>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drop_genome: Option<DropGenome>,
+    /// Provenance of the FIRST server-written genome — set only by the platform (ensureAgentGenome
+    /// / the create path), never by a client, and left untouched by client PATCHes of
+    /// `drop_genome`. Absent when the genome was client-authored or predates the field.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub drop_genome_source: Option<AgentMetadataUiDropGenomeSource>,
+}
+
+/// Identity: which drawing protocol, which variant, and the hue (degrees). Merged field by
+/// field on PATCH.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentMetadataUiAvatar {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub variant: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hue: Option<f64>,
+}
+
+/// Provenance of the FIRST server-written genome — set only by the platform (ensureAgentGenome
+/// / the create path), never by a client, and left untouched by client PATCHes of
+/// `drop_genome`. Absent when the genome was client-authored or predates the field.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentMetadataUiDropGenomeSource {
+    #[default]
+    #[serde(rename = "llm")]
+    LLM,
+    #[serde(rename = "fallback")]
+    Fallback,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentMetadataUiDropGenomeSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::LLM => "llm",
+            Self::Fallback => "fallback",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentMetadataUiDropGenomeSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentMetadataUiDropGenomeSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "llm" => Self::LLM,
+            "fallback" => Self::Fallback,
             other => Self::Other(other.to_string()),
         }
     }
@@ -2856,13 +3137,6 @@ impl From<&str> for BlogPostStatus {
     }
 }
 
-/// `BootstrapAmbassadorResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct BootstrapAmbassadorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ambassador_id: Option<String>,
-}
-
 /// `BootstrapRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BootstrapRequest {
@@ -2872,6 +3146,33 @@ pub struct BootstrapRequest {
     /// Server default: `"admin"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_slug: Option<String>,
+}
+
+/// `BootstrapResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct BootstrapResponse {
+    pub message: String,
+    pub tenant: BootstrapResponseTenant,
+    pub api_key: BootstrapResponseAPIKey,
+}
+
+/// `BootstrapResponseAPIKey` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct BootstrapResponseAPIKey {
+    pub key_id: String,
+    pub prefix: String,
+    pub raw_key: String,
+    pub scopes: Vec<String>,
+    pub warning: String,
+}
+
+/// `BootstrapResponseTenant` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct BootstrapResponseTenant {
+    pub tenant_id: String,
+    pub name: String,
+    pub slug: String,
+    pub plan: String,
 }
 
 /// `BridgeAgentSummary` model.
@@ -3708,7 +4009,7 @@ pub struct CompanyCreateBudget {
     pub spent_usd: Option<f64>,
 }
 
-/// Body for `PUT /api/v1/companies/{id}`. Every field optional — send only what changes.
+/// Body for `PUT /api/v1/companies/{companyId}`. Every field optional — send only what changes.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CompanyUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4352,7 +4653,7 @@ pub struct ContinueRunResponse {
 /// `ConversationEntry` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConversationEntry {
-    pub role: ConversationEntryRole,
+    pub role: PublicSessionViewMessageRole,
     /// Message content
     pub content: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -4370,54 +4671,6 @@ pub struct ConversationEntry {
     /// Thinking section above the assistant text.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
-}
-
-/// `ConversationEntryRole` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ConversationEntryRole {
-    #[default]
-    #[serde(rename = "user")]
-    User,
-    #[serde(rename = "assistant")]
-    Assistant,
-    #[serde(rename = "system")]
-    System,
-    #[serde(rename = "tool_result")]
-    ToolResult,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl ConversationEntryRole {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::User => "user",
-            Self::Assistant => "assistant",
-            Self::System => "system",
-            Self::ToolResult => "tool_result",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for ConversationEntryRole {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for ConversationEntryRole {
-    fn from(value: &str) -> Self {
-        match value {
-            "user" => Self::User,
-            "assistant" => Self::Assistant,
-            "system" => Self::System,
-            "tool_result" => Self::ToolResult,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `ConversationEntryToolCall` model.
@@ -4708,6 +4961,85 @@ pub struct CreateDatasetRequestCas {
     pub expected_output: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
+}
+
+/// sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
+/// multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
+/// name the assignee and `run_id`/`team_run_id` appear only when the item was dispatched
+/// immediately.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreatedTask {
+    pub task_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_task_id: Option<String>,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub due_at: Option<String>,
+    pub items: Vec<CreatedTaskItem>,
+}
+
+/// `CreatedTaskItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreatedTaskItem {
+    pub session_id: String,
+    pub todo_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub team_run_id: Option<String>,
+    pub status: CreatedTaskItemStatus,
+}
+
+/// `CreatedTaskItemStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreatedTaskItemStatus {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "pending_confirmation")]
+    PendingConfirmation,
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreatedTaskItemStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Pending => "pending",
+            Self::PendingConfirmation => "pending_confirmation",
+            Self::InProgress => "in_progress",
+            Self::Cancelled => "cancelled",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreatedTaskItemStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreatedTaskItemStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "pending" => Self::Pending,
+            "pending_confirmation" => Self::PendingConfirmation,
+            "in_progress" => Self::InProgress,
+            "cancelled" => Self::Cancelled,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreateExperimentRequest` model.
@@ -5341,6 +5673,36 @@ impl From<&str> for CustomPlanVisibility {
     }
 }
 
+/// data-subject.ts dataSubjectAccess — ids per store plus their counts; every field always
+/// present.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataSubjectAccessReport {
+    pub subject_id: String,
+    pub tenant_id: String,
+    pub runs: Vec<String>,
+    pub sessions: Vec<String>,
+    pub memory: Vec<String>,
+    pub files: Vec<String>,
+    pub feedback: Vec<String>,
+    pub runs_count: i64,
+    pub sessions_count: i64,
+    pub memory_count: i64,
+    pub files_count: i64,
+    pub feedback_count: i64,
+}
+
+/// data-subject.ts dataSubjectErasure — `erased` plus the SubjectErasureCounts spread.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataSubjectErasureResult {
+    pub erased: bool,
+    pub subject_id: String,
+    pub runs_deleted: i64,
+    pub sessions_deleted: i64,
+    pub memory_deleted: i64,
+    pub files_deleted: i64,
+    pub feedback_deleted: i64,
+}
+
 /// `DeactivateSafeModeResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeactivateSafeModeResponse {
@@ -5348,6 +5710,25 @@ pub struct DeactivateSafeModeResponse {
     pub ok: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mode: Option<String>,
+}
+
+/// governance/emergency.ts DeadlockReport — computed, not stored. Field names are camelCase on
+/// the wire.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeadlockReport {
+    #[serde(rename = "hasDeadlock")]
+    pub has_deadlock: bool,
+    #[serde(rename = "conflictingRules")]
+    pub conflicting_rules: Vec<DeadlockReportConflictingRule>,
+    pub recommendation: String,
+    pub checked_at: String,
+}
+
+/// `DeadlockReportConflictingRule` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeadlockReportConflictingRule {
+    pub prohibition: String,
+    pub requirement: String,
 }
 
 /// `DeclineInviteFromPickerResponse` model.
@@ -5391,6 +5772,13 @@ pub struct DeleteAdminProviderResponse {
 pub struct DeleteAgentBookmarkResponse {
     pub removed: bool,
     pub message_id: String,
+}
+
+/// `DeleteAgentResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteAgentResponse {
+    pub deleted: bool,
+    pub agent_id: String,
 }
 
 /// `DeleteAllAgentBookmarksResponse` model.
@@ -5468,6 +5856,21 @@ pub struct DeleteLLMProviderKeyResponse {
     pub deleted: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider_id: Option<String>,
+}
+
+/// `DeleteMCPServerResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteMCPServerResponse {
+    pub ok: bool,
+    pub cascade: DeleteMCPServerResponseCascade,
+}
+
+/// `DeleteMCPServerResponseCascade` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteMCPServerResponseCascade {
+    pub agents_with_stale_ref: i64,
+    /// Capped at 50.
+    pub agent_ids: Vec<String>,
 }
 
 /// `DeleteMeResponse` model.
@@ -5942,6 +6345,58 @@ impl From<&str> for DomainDnsLifecycleState {
     }
 }
 
+/// The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
+/// affect parameters plus a signature pose. Written by the platform at create/backfill or by a
+/// client from the builder.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DropGenome {
+    pub v: i64,
+    pub archetype: String,
+    pub silhouette: DropGenomeSilhouette,
+    pub motion: DropGenomeMotion,
+    pub affect: DropGenomeAffect,
+    pub signature_pose: String,
+}
+
+/// `DropGenomeAffect` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DropGenomeAffect {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expressiveness: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub baseline_valence: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reactivity: Option<f64>,
+}
+
+/// `DropGenomeMotion` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DropGenomeMotion {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tempo: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub springiness: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub amplitude: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub jitter: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settle_bias: Option<f64>,
+}
+
+/// `DropGenomeSilhouette` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DropGenomeSilhouette {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub height: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub width: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tip: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub weight: Option<f64>,
+}
+
 /// `EmbeddingsRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EmbeddingsRequest {
@@ -6328,6 +6783,80 @@ pub struct EstimateRunCostRequest {
     /// Picks up a per-session model override, when one is set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub session_id: Option<String>,
+}
+
+/// evaluation/evaluator.ts EvalCase.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalCase {
+    pub case_id: String,
+    pub input: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_output: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expected_tool_calls: Option<Vec<String>>,
+    pub tags: Vec<String>,
+    pub metadata: serde_json::Map<String, serde_json::Value>,
+}
+
+/// evaluation/evaluator.ts EvalDataset — the stored record, unsanitized.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalDataset {
+    pub dataset_id: String,
+    pub tenant_id: String,
+    pub agent_id: String,
+    pub name: String,
+    pub cases: Vec<EvalCase>,
+    pub created_at: String,
+}
+
+/// evaluation/evaluator.ts EvalRun — the stored record; `agent_version`, `errored_cases` and
+/// `summary` are conditional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalRun {
+    pub eval_run_id: String,
+    pub tenant_id: String,
+    pub agent_id: String,
+    pub dataset_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_version: Option<String>,
+    pub results: Vec<EvalRunResult>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errored_cases: Option<Vec<EvalRunErroredCas>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<EvalRunSummary>,
+    pub created_at: String,
+}
+
+/// `EvalRunErroredCas` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalRunErroredCas {
+    pub case_id: String,
+    pub error: String,
+}
+
+/// `EvalRunResult` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalRunResult {
+    pub case_id: String,
+    pub run_id: String,
+    pub scores: serde_json::Map<String, serde_json::Value>,
+    pub passed: bool,
+    pub duration_ms: f64,
+    pub tokens_used: f64,
+}
+
+/// `EvalRunSummary` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EvalRunSummary {
+    pub total_cases: i64,
+    pub passed: i64,
+    pub failed: i64,
+    pub errored: i64,
+    pub avg_scores: serde_json::Map<String, serde_json::Value>,
+    pub avg_duration_ms: f64,
+    pub total_tokens: f64,
+    pub total_cost_usd: f64,
+    pub regression_detected: bool,
 }
 
 /// `Experiment` model.
@@ -8201,6 +8730,150 @@ pub struct GetRegistrationStatusResponse {
     pub registration_open: bool,
 }
 
+/// `GetResponseResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetResponseResponse {
+    pub id: String,
+    pub object: GetResponseResponseObject,
+    pub output: Vec<GetResponseResponseOutputItem>,
+    pub usage: GetResponseResponseUsage,
+    /// The agent id.
+    pub model: String,
+    /// Unix seconds.
+    pub created_at: i64,
+}
+
+/// `GetResponseResponseObject` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetResponseResponseObject {
+    #[default]
+    #[serde(rename = "response")]
+    Response,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetResponseResponseObject {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Response => "response",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetResponseResponseObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetResponseResponseObject {
+    fn from(value: &str) -> Self {
+        match value {
+            "response" => Self::Response,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetResponseResponseOutputItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetResponseResponseOutputItem {
+    pub r#type: GetResponseResponseOutputItemType,
+    pub role: OpenAiChatCompletionChoiceMessageRole,
+    pub content: Vec<GetResponseResponseOutputItemContentItem>,
+}
+
+/// `GetResponseResponseOutputItemContentItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetResponseResponseOutputItemContentItem {
+    pub r#type: GetResponseResponseOutputItemContentItemType,
+    pub text: String,
+}
+
+/// `GetResponseResponseOutputItemContentItemType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetResponseResponseOutputItemContentItemType {
+    #[default]
+    #[serde(rename = "output_text")]
+    OutputText,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetResponseResponseOutputItemContentItemType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::OutputText => "output_text",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetResponseResponseOutputItemContentItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetResponseResponseOutputItemContentItemType {
+    fn from(value: &str) -> Self {
+        match value {
+            "output_text" => Self::OutputText,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetResponseResponseOutputItemType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetResponseResponseOutputItemType {
+    #[default]
+    #[serde(rename = "message")]
+    Message,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetResponseResponseOutputItemType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Message => "message",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetResponseResponseOutputItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetResponseResponseOutputItemType {
+    fn from(value: &str) -> Self {
+        match value {
+            "message" => Self::Message,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetResponseResponseUsage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetResponseResponseUsage {
+    pub input_tokens: i64,
+    pub output_tokens: i64,
+    pub total_tokens: i64,
+}
+
 /// `GetRootAgentResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRootAgentResponse {
@@ -8280,13 +8953,14 @@ pub struct GetRunResponse {
     pub status: RunStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<serde_json::Map<String, serde_json::Value>>,
-    /// Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+    /// Run output — the same object rides in run events and in a public session's stream
+    /// (RunOutput). When a run is truncated by its step-budget cutoff (output.truncated === true)
     /// AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
     /// carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
     /// no key configured no token is minted and the field is absent; the token is an opaque string
     /// to every client.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<serde_json::Map<String, serde_json::Value>>,
+    pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9380,6 +10054,12 @@ impl From<&str> for IntegrationStatus {
     }
 }
 
+/// `InternalVerifyDomainResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InternalVerifyDomainResponse {
+    pub ok: bool,
+}
+
 /// `Invite` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Invite {
@@ -9453,6 +10133,64 @@ pub struct IssueArbiterRulingRequest {
 pub struct IssueArbiterRulingResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ok: Option<bool>,
+}
+
+/// A JSON-RPC 2.0 envelope. Exactly one of `result` and `error` is present.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JSONRpcResponse {
+    pub jsonrpc: JSONRpcResponseJsonrpc,
+    #[serde(default)]
+    pub id: Option<serde_json::Value>,
+    /// Method-specific.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub result: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<JSONRpcResponseError>,
+}
+
+/// `JSONRpcResponseError` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JSONRpcResponseError {
+    pub code: i64,
+    pub message: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Value>,
+}
+
+/// `JSONRpcResponseJsonrpc` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JSONRpcResponseJsonrpc {
+    #[default]
+    #[serde(rename = "2.0")]
+    V20,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JSONRpcResponseJsonrpc {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::V20 => "2.0",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JSONRpcResponseJsonrpc {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JSONRpcResponseJsonrpc {
+    fn from(value: &str) -> Self {
+        match value {
+            "2.0" => Self::V20,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `KnowledgeBase` model.
@@ -9746,7 +10484,7 @@ impl From<&str> for KnowledgeBaseSearchResultStatus {
     }
 }
 
-/// Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
+/// Body for `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`. Every field optional.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct KnowledgeBaseUpdate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9947,6 +10685,9 @@ pub struct ListAgentVersionsResponse {
     /// Legacy alias for `items`. Will be removed in API v1.x.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub versions: Option<Vec<AgentVersion>>,
+    /// `items.length` — the snapshots this response carries, which retention caps at the newest 50
+    /// (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
+    /// as, and there is no paging parameter to reach further back.
     pub total: i64,
 }
 
@@ -10798,7 +11539,7 @@ pub struct ListSessionsResponseItem {
     pub session_id: String,
     pub tenant_id: String,
     pub agent_id: String,
-    pub status: SessionStatus,
+    pub status: PublicSessionViewStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversation_history: Option<Vec<ConversationEntry>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11131,6 +11872,18 @@ pub struct LLMTranscribeAudioRequest {
     pub model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub language: Option<String>,
+}
+
+/// The provider body, byte for byte (llm-proxy.ts handleAudioTranscriptions): `{ text }` for
+/// the default `response_format: json`; `verbose_json` adds `task`, `language`, `duration`,
+/// `segments`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMTranscribeAudioResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
 }
 
 /// `LLMUsageSummary` model.
@@ -11526,6 +12279,60 @@ impl From<&str> for MarketplaceListingStatus {
             "published" => Self::Published,
             "suspended" => Self::Suspended,
             "archived" => Self::Archived,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// marketplace/listing-store.ts MarketplaceSubscription — on subscribe, `status` is `active`,
+/// `stripe_subscription_id` is always present (the route rejects a body without it) and
+/// `created_at` equals `updated_at`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MarketplaceSubscription {
+    pub listing_id: String,
+    pub status: MarketplaceSubscriptionStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stripe_subscription_id: Option<String>,
+    pub created_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub updated_at: Option<String>,
+}
+
+/// `MarketplaceSubscriptionStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MarketplaceSubscriptionStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "cancelled")]
+    Cancelled,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MarketplaceSubscriptionStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Active => "active",
+            Self::Cancelled => "cancelled",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MarketplaceSubscriptionStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MarketplaceSubscriptionStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "active" => Self::Active,
+            "cancelled" => Self::Cancelled,
             other => Self::Other(other.to_string()),
         }
     }
@@ -13245,6 +14052,133 @@ impl From<&str> for ObjectiveStatus {
     }
 }
 
+/// An OpenAI Chat Completions object. `/v1/chat/completions` builds it (openai-compat.ts:
+/// exactly one choice, no `logprobs`, no `system_fingerprint`); `/api/v1/llm/chat/completions`
+/// passes the provider's body through (llm-proxy.ts) — `model` is then the provider's id, and a
+/// reasoning-only reply has its reasoning copied into `content`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiChatCompletion {
+    pub id: String,
+    pub object: OpenAiChatCompletionObject,
+    /// Unix seconds.
+    pub created: i64,
+    pub model: String,
+    pub choices: Vec<OpenAiChatCompletionChoice>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage: Option<OpenAiChatCompletionUsage>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `OpenAiChatCompletionChoice` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiChatCompletionChoice {
+    pub index: i64,
+    pub message: OpenAiChatCompletionChoiceMessage,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub finish_reason: Option<String>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `OpenAiChatCompletionChoiceMessage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiChatCompletionChoiceMessage {
+    pub role: OpenAiChatCompletionChoiceMessageRole,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub content: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `OpenAiChatCompletionChoiceMessageRole` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum OpenAiChatCompletionChoiceMessageRole {
+    #[default]
+    #[serde(rename = "assistant")]
+    Assistant,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl OpenAiChatCompletionChoiceMessageRole {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Assistant => "assistant",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for OpenAiChatCompletionChoiceMessageRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for OpenAiChatCompletionChoiceMessageRole {
+    fn from(value: &str) -> Self {
+        match value {
+            "assistant" => Self::Assistant,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `OpenAiChatCompletionObject` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum OpenAiChatCompletionObject {
+    #[default]
+    #[serde(rename = "chat.completion")]
+    ChatCompletion,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl OpenAiChatCompletionObject {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ChatCompletion => "chat.completion",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for OpenAiChatCompletionObject {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for OpenAiChatCompletionObject {
+    fn from(value: &str) -> Self {
+        match value {
+            "chat.completion" => Self::ChatCompletion,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `OpenAiChatCompletionUsage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiChatCompletionUsage {
+    pub prompt_tokens: i64,
+    pub completion_tokens: i64,
+    pub total_tokens: i64,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
 /// Error envelope used by the OpenAI-compatible surface (`/v1/*`). Deliberately NOT RFC 9457:
 /// callers here are OpenAI SDKs pointed at this base URL, and they decode this shape.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -14062,6 +14996,39 @@ pub struct PromoCodeInput {
     pub active: Option<bool>,
 }
 
+/// public.ts GET /public/agents/{agentId} — a hand-built projection, not the Agent record. Keys
+/// whose value is undefined are dropped from the JSON, so everything but `agent_id`, `name` and
+/// `icon` is conditional; `specs` is omitted entirely when empty.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicAgentCard {
+    pub agent_id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// `metadata.icon`, `""` when unset.
+    pub icon: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub greeting: Option<String>,
+    /// `"N tools available"`, only when `public_config.allowed_tools` is set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<PublicAgentCardSpec>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ui_avatar: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ui_drop_genome: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `PublicAgentCardSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicAgentCardSpec {
+    pub spec_id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub version: Option<String>,
+}
+
 /// `PublicBlogPost` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicBlogPost {
@@ -14208,6 +15175,121 @@ pub struct PublicPlan {
     pub price_amount_cents: i64,
     pub price_currency: String,
     pub quotas: serde_json::Map<String, serde_json::Value>,
+}
+
+/// public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
+/// are filtered out and non-string content is JSON-stringified.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicSessionView {
+    pub session_id: String,
+    pub agent_name: String,
+    pub greeting: String,
+    pub description: String,
+    pub messages: Vec<PublicSessionViewMessage>,
+    pub message_count: i64,
+    pub messages_remaining: i64,
+    pub status: PublicSessionViewStatus,
+}
+
+/// `PublicSessionViewMessage` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicSessionViewMessage {
+    pub role: PublicSessionViewMessageRole,
+    pub content: String,
+    pub timestamp: String,
+    pub run_id: String,
+}
+
+/// `PublicSessionViewMessageRole` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PublicSessionViewMessageRole {
+    #[default]
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "assistant")]
+    Assistant,
+    #[serde(rename = "system")]
+    System,
+    #[serde(rename = "tool_result")]
+    ToolResult,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PublicSessionViewMessageRole {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::User => "user",
+            Self::Assistant => "assistant",
+            Self::System => "system",
+            Self::ToolResult => "tool_result",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PublicSessionViewMessageRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PublicSessionViewMessageRole {
+    fn from(value: &str) -> Self {
+        match value {
+            "user" => Self::User,
+            "assistant" => Self::Assistant,
+            "system" => Self::System,
+            "tool_result" => Self::ToolResult,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `PublicSessionViewStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum PublicSessionViewStatus {
+    #[default]
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "closed")]
+    Closed,
+    #[serde(rename = "expired")]
+    Expired,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl PublicSessionViewStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Active => "active",
+            Self::Closed => "closed",
+            Self::Expired => "expired",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for PublicSessionViewStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for PublicSessionViewStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "active" => Self::Active,
+            "closed" => Self::Closed,
+            "expired" => Self::Expired,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `PublicState` model.
@@ -14385,6 +15467,12 @@ pub struct RegisterAmbassadorRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RegisterAmbassadorResponse {
     pub ok: bool,
+}
+
+/// `RegisterResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RegisterResponse {
+    pub message: String,
 }
 
 /// `RegistryAdminListSpecsResponse` model.
@@ -14717,6 +15805,119 @@ pub struct ReplaceConstitutionRequest {
     pub rationale: Option<String>,
 }
 
+/// runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
+/// the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
+/// conditional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReplayResult {
+    pub deterministic: bool,
+    pub verified: ReplayResultVerified,
+    #[serde(rename = "eventsReplayed")]
+    pub events_replayed: i64,
+    #[serde(rename = "runId")]
+    pub run_id: String,
+    pub mode: ReplayResultMode,
+    #[serde(rename = "divergencePoint", default, skip_serializing_if = "Option::is_none")]
+    pub divergence_point: Option<i64>,
+    #[serde(rename = "divergenceReason", default, skip_serializing_if = "Option::is_none")]
+    pub divergence_reason: Option<String>,
+    #[serde(rename = "stepComparisons", default, skip_serializing_if = "Option::is_none")]
+    pub step_comparisons: Option<Vec<ReplayResultStepComparison>>,
+}
+
+/// `ReplayResultMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ReplayResultMode {
+    #[default]
+    #[serde(rename = "verify")]
+    Verify,
+    #[serde(rename = "execute")]
+    Execute,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ReplayResultMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Verify => "verify",
+            Self::Execute => "execute",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ReplayResultMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ReplayResultMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "verify" => Self::Verify,
+            "execute" => Self::Execute,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ReplayResultStepComparison` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReplayResultStepComparison {
+    pub seq: i64,
+    pub r#type: String,
+    pub matches: bool,
+    #[serde(rename = "mismatchDetail", default, skip_serializing_if = "Option::is_none")]
+    pub mismatch_detail: Option<String>,
+}
+
+/// `ReplayResultVerified` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ReplayResultVerified {
+    #[default]
+    #[serde(rename = "recorded_log")]
+    RecordedLog,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ReplayResultVerified {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RecordedLog => "recorded_log",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ReplayResultVerified {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ReplayResultVerified {
+    fn from(value: &str) -> Self {
+        match value {
+            "recorded_log" => Self::RecordedLog,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `RequestOtpCodeResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RequestOtpCodeResponse {
+    pub ok: bool,
+    pub message: String,
+}
+
 /// `ResendInviteResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ResendInviteResponse {
@@ -14821,10 +16022,62 @@ impl From<&str> for ResourcePermissionAction {
     }
 }
 
+/// `ResourceUsageEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResourceUsageEntry {
+    pub count: f64,
+    pub limit: f64,
+    pub over_by: f64,
+}
+
 /// `RespondToPublicHitlRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RespondToPublicHitlRequest {
     pub response: String,
+}
+
+/// `RespondToPublicHitlResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RespondToPublicHitlResponse {
+    pub status: RespondToPublicHitlResponseStatus,
+    /// The resumed run, not a new one (public.ts handlePublicRespond).
+    pub run_id: String,
+}
+
+/// `RespondToPublicHitlResponseStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RespondToPublicHitlResponseStatus {
+    #[default]
+    #[serde(rename = "ok")]
+    Ok,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RespondToPublicHitlResponseStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ok => "ok",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RespondToPublicHitlResponseStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RespondToPublicHitlResponseStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ok" => Self::Ok,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `RespondToRunRequest` model.
@@ -15040,6 +16293,16 @@ pub struct RollbackAgentRequest {
     pub version: i64,
 }
 
+/// governance/emergency.ts RootAttestation — the KV record, unsanitized.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RootAttestation {
+    pub root_agent_id: String,
+    pub founder_id: String,
+    pub founder_signature: String,
+    pub constitution_hash: String,
+    pub created_at: String,
+}
+
 /// `RotateAgentIdentityResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RotateAgentIdentityResponse {
@@ -15066,13 +16329,14 @@ pub struct Run {
     pub status: RunStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub input: Option<serde_json::Map<String, serde_json::Value>>,
-    /// Run output. When a run is truncated by its step-budget cutoff (output.truncated === true)
+    /// Run output — the same object rides in run events and in a public session's stream
+    /// (RunOutput). When a run is truncated by its step-budget cutoff (output.truncated === true)
     /// AND the platform has UARP_CONTINUATION_TOKEN_KEY configured, output.continuation_token
     /// carries an opaque HMAC-signed token that resumes the run via POST /runs/{id}/continue. With
     /// no key configured no token is minted and the field is absent; the token is an opaque string
     /// to every client.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub output: Option<serde_json::Map<String, serde_json::Value>>,
+    pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15531,6 +16795,44 @@ pub struct RunMissionResponse {
     pub mission: Mission,
 }
 
+/// What the runtime writes as a run's `output` (agent-runtime.ts, the normal completion and the
+/// max-steps cutoff). Measured 2026-09-10 on production, 8 640 stored runs: `{ response }` 6
+/// 722; `{ response, search_sources }` 334; `{ response, output_truncated }` 23; `{ response,
+/// search_sources, output_truncated }` 3; `{ response, truncated, continuation_token }` 3; `{
+/// response, truncated }` 2; `{}` 3. A bridge agent (execution_mode bridge) reports its own
+/// output — `{ response: "" }` is what it has been sending. Additional keys are possible from
+/// that path; the five below are the platform's own.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunOutput {
+    /// The final assistant text.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response: Option<String>,
+    /// URLs a real `web_search` tool call returned during this run — read back out of the tool
+    /// results (`URL:` lines, response-postprocessing.ts extractSearchSources, deduplicated, at
+    /// most 8), NOT out of the model's text. Present only when non-empty. Provenance is the point:
+    /// a chat surface unfurls only these into preview cards, so a URL the model wrote from memory
+    /// is never dressed up as a verified source. Witness: run 019faf2c… on tenant 019d9364…
+    /// (2026-07-29) carries 8, the first on en.wikipedia.org.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub search_sources: Option<Vec<String>>,
+    /// The model stopped because it ran out of OUTPUT tokens (`finish_reason: length`), not because
+    /// it was finished — the answer ends mid-sentence. Present only when true; the chat offers
+    /// "Continue generating" on this flag alone. Distinct from `truncated` (step budget). 26 stored
+    /// runs carry it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_truncated: Option<bool>,
+    /// The run hit its step budget (max_steps) before finishing. Present only when true.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
+    /// Opaque HMAC-signed token minted with `truncated` when UARP_CONTINUATION_TOKEN_KEY is
+    /// configured; resumes the run via POST /runs/{id}/continue.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continuation_token: Option<String>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
 /// Resource limits for the run
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunResourceLimits {
@@ -15977,6 +17279,84 @@ pub struct SearchMemoryResponse {
     pub total: i64,
 }
 
+/// `SearchResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SearchResponse {
+    pub results: Vec<SearchResult>,
+}
+
+/// search.ts SearchResult — `subtitle` is omitted for some result kinds.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub r#type: SearchResultType,
+    pub id: String,
+    pub title: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subtitle: Option<String>,
+    pub href: String,
+    pub icon: String,
+}
+
+/// `SearchResultType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SearchResultType {
+    #[default]
+    #[serde(rename = "agent")]
+    Agent,
+    #[serde(rename = "run")]
+    Run,
+    #[serde(rename = "session")]
+    Session,
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "project")]
+    Project,
+    #[serde(rename = "memory")]
+    Memory,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SearchResultType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Agent => "agent",
+            Self::Run => "run",
+            Self::Session => "session",
+            Self::File => "file",
+            Self::Image => "image",
+            Self::Project => "project",
+            Self::Memory => "memory",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SearchResultType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SearchResultType {
+    fn from(value: &str) -> Self {
+        match value {
+            "agent" => Self::Agent,
+            "run" => Self::Run,
+            "session" => Self::Session,
+            "file" => Self::File,
+            "image" => Self::Image,
+            "project" => Self::Project,
+            "memory" => Self::Memory,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `SearchType` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum SearchType {
@@ -16160,7 +17540,7 @@ pub struct Session {
     pub session_id: String,
     pub tenant_id: String,
     pub agent_id: String,
-    pub status: SessionStatus,
+    pub status: PublicSessionViewStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversation_history: Option<Vec<ConversationEntry>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16189,6 +17569,18 @@ pub struct Session {
     /// resolve their LLM from this config instead of the agent's default. Absent → agent default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub model_override: Option<SessionModelOverride>,
+}
+
+/// sessions.ts AnnotationRecord — the six-field projection create, list and PATCH all answer
+/// with.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SessionAnnotation {
+    pub id: String,
+    pub message_id: String,
+    pub content: String,
+    pub author: String,
+    pub created_at: String,
+    pub resolved: bool,
 }
 
 /// `SessionBranch` model.
@@ -16340,50 +17732,6 @@ impl From<&str> for SessionQueueMode {
         match value {
             "allow" => Self::Allow,
             "reject" => Self::Reject,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `SessionStatus` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SessionStatus {
-    #[default]
-    #[serde(rename = "active")]
-    Active,
-    #[serde(rename = "closed")]
-    Closed,
-    #[serde(rename = "expired")]
-    Expired,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SessionStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Active => "active",
-            Self::Closed => "closed",
-            Self::Expired => "expired",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SessionStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SessionStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "active" => Self::Active,
-            "closed" => Self::Closed,
-            "expired" => Self::Expired,
             other => Self::Other(other.to_string()),
         }
     }
@@ -18730,6 +20078,10 @@ pub struct TenantTrial {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantUser {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub avatar_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_login_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
@@ -19073,6 +20425,14 @@ pub struct UnsuspendUserResponse {
     pub user_id: String,
 }
 
+/// `UpdateACPSessionResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateACPSessionResponse {
+    pub saved: bool,
+    #[serde(rename = "sessionId")]
+    pub session_id: String,
+}
+
 /// `UpdateAdminBlogConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminBlogConfigRequest {
@@ -19407,43 +20767,7 @@ pub struct UpdateBridgeAgentCapabilityRequest {
 /// `UpdateBridgeAgentCapabilityResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateBridgeAgentCapabilityResponse {
-    pub status: UpdateBridgeAgentCapabilityResponseStatus,
-}
-
-/// `UpdateBridgeAgentCapabilityResponseStatus` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum UpdateBridgeAgentCapabilityResponseStatus {
-    #[default]
-    #[serde(rename = "ok")]
-    Ok,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl UpdateBridgeAgentCapabilityResponseStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Ok => "ok",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for UpdateBridgeAgentCapabilityResponseStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for UpdateBridgeAgentCapabilityResponseStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "ok" => Self::Ok,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub status: RespondToPublicHitlResponseStatus,
 }
 
 /// `UpdateBuilderRequestStatusRequest` model.
@@ -19892,6 +21216,78 @@ pub struct UsageMarginSummary {
     pub effective_margin_percent: f64,
 }
 
+/// billing.ts GET /usage/quota. `reason` only when `allowed` is false (billing/usage-tracker.ts
+/// checkQuota).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuota {
+    pub plan: String,
+    pub allowed: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    /// billing/usage-tracker.ts AggregatedUsage for the current month.
+    pub usage: UsageQuotaUsage,
+    pub daily: UsageQuotaDaily,
+    pub resets_at: UsageQuotaResetsAt,
+    pub limits: UsageQuotaLimits,
+    /// api/lib/resource-usage.ts TenantResourceUsage.
+    pub resource_usage: UsageQuotaResourceUsage,
+}
+
+/// `UsageQuotaDaily` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaDaily {
+    pub used: f64,
+    pub limit: f64,
+    #[serde(default)]
+    pub remaining: Option<f64>,
+    pub resets_at: String,
+}
+
+/// `UsageQuotaLimits` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaLimits {
+    pub max_monthly_tokens: f64,
+    pub max_monthly_runs: f64,
+    pub max_daily_tokens: f64,
+    pub max_agents: f64,
+    pub max_teams: f64,
+    pub max_knowledge_bases: f64,
+    pub max_workspaces: f64,
+}
+
+/// `UsageQuotaResetsAt` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaResetsAt {
+    pub day: String,
+    pub month: String,
+}
+
+/// api/lib/resource-usage.ts TenantResourceUsage.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaResourceUsage {
+    pub agents: ResourceUsageEntry,
+    pub workspaces: ResourceUsageEntry,
+    pub knowledge_bases: ResourceUsageEntry,
+    pub teams: ResourceUsageEntry,
+    pub any_over_tier: bool,
+}
+
+/// billing/usage-tracker.ts AggregatedUsage for the current month.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaUsage {
+    pub input_tokens: f64,
+    pub output_tokens: f64,
+    pub thinking_tokens: f64,
+    pub total_tokens: f64,
+    pub runs_count: f64,
+    pub tool_calls_count: f64,
+    pub storage_bytes: f64,
+    pub total_cost: f64,
+    pub provider_cost: f64,
+    pub non_run_cost: f64,
+    pub period: String,
+}
+
 /// Tenant usage for one billing period. Flat — the counters are top-level, not nested under a
 /// `usage` object.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -19989,6 +21385,13 @@ pub struct Value4 {
     pub from: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub to: Option<serde_json::Value>,
+}
+
+/// The API key is e-mailed, never returned here (register.ts handleVerifyEmail).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VerifyEmailResponse {
+    pub tenant_id: String,
+    pub message: String,
 }
 
 /// `VerifyMfaRecoveryRequest` model.
@@ -20375,6 +21778,10 @@ pub struct Workspace {
 /// `WorkspaceFile` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct WorkspaceFile {
+    /// Lowercase hex sha256 of the content; absent on records written before 2026-09-03
+    /// (workspace-store.ts).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
     pub file_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,

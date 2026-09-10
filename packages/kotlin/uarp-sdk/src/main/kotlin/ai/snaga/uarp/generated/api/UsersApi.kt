@@ -97,8 +97,8 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:read`.
      */
-    public suspend fun `get`(userId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun `get`(userId: String, options: RequestOptions = RequestOptions()): TenantUser {
+        return client.request<TenantUser>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/users/${encodePathSegment(userId)}",

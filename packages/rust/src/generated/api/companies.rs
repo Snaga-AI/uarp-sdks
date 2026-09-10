@@ -47,14 +47,14 @@ impl CompaniesApi {
 
     /// Delete company
     ///
-    /// `DELETE /api/v1/companies/{id}`
+    /// `DELETE /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, company_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
                 method: Method::DELETE,
-                path: format!("/api/v1/companies/{}", encode_path(id)),
+                path: format!("/api/v1/companies/{}", encode_path(company_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -65,14 +65,14 @@ impl CompaniesApi {
 
     /// Get company
     ///
-    /// `GET /api/v1/companies/{id}`
+    /// `GET /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get(&self, id: &str) -> Result<models::Company> {
+    pub async fn get(&self, company_id: &str) -> Result<models::Company> {
         self.client
             .request_json(Request {
                 method: Method::GET,
-                path: format!("/api/v1/companies/{}", encode_path(id)),
+                path: format!("/api/v1/companies/{}", encode_path(company_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -191,14 +191,14 @@ impl CompaniesApi {
 
     /// Update company
     ///
-    /// `PUT /api/v1/companies/{id}`
+    /// `PUT /api/v1/companies/{companyId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn update(&self, id: &str, body: &models::CompanyUpdate) -> Result<models::Company> {
+    pub async fn update(&self, company_id: &str, body: &models::CompanyUpdate) -> Result<models::Company> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
-                path: format!("/api/v1/companies/{}", encode_path(id)),
+                path: format!("/api/v1/companies/{}", encode_path(company_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

@@ -409,7 +409,7 @@ public struct WorkspacesAPI: Sendable {
     /// `PUT /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    public func uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = .init()) async throws -> WorkspaceFile {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "path", value: path))
         var parts: [MultipartPart] = []

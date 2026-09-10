@@ -15,7 +15,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/edges`
-    public func addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = .init()) async throws -> TeamGraphEdge {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/graph/edges",
@@ -32,7 +32,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/nodes`
-    public func addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/graph/nodes",
@@ -374,7 +374,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
-    public func updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/graph/nodes/\(encodePathSegment(agentId))",

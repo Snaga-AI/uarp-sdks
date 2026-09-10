@@ -25,13 +25,13 @@ public struct KnowledgeAPI: Sendable {
 
     /// Delete document
     ///
-    /// `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
+    /// `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}/documents/{docId}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteKbDocument(id: String, docId: String, options: RequestOptions = .init()) async throws {
+    public func deleteKbDocument(knowledgeBaseId: String, docId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/knowledge-bases/\(encodePathSegment(id))/documents/\(encodePathSegment(docId))",
+            path: "/api/v1/knowledge-bases/\(encodePathSegment(knowledgeBaseId))/documents/\(encodePathSegment(docId))",
             idempotent: true,
             options: options
         ))
@@ -39,13 +39,13 @@ public struct KnowledgeAPI: Sendable {
 
     /// Delete knowledge base
     ///
-    /// `DELETE /api/v1/knowledge-bases/{id}`
+    /// `DELETE /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteKnowledgeBase(id: String, options: RequestOptions = .init()) async throws {
+    public func deleteKnowledgeBase(knowledgeBaseId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/knowledge-bases/\(encodePathSegment(id))",
+            path: "/api/v1/knowledge-bases/\(encodePathSegment(knowledgeBaseId))",
             idempotent: true,
             options: options
         ))
@@ -53,13 +53,13 @@ public struct KnowledgeAPI: Sendable {
 
     /// Get knowledge base
     ///
-    /// `GET /api/v1/knowledge-bases/{id}`
+    /// `GET /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:read`.
-    public func getKnowledgeBase(id: String, options: RequestOptions = .init()) async throws -> KnowledgeBase {
+    public func getKnowledgeBase(knowledgeBaseId: String, options: RequestOptions = .init()) async throws -> KnowledgeBase {
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/knowledge-bases/\(encodePathSegment(id))",
+            path: "/api/v1/knowledge-bases/\(encodePathSegment(knowledgeBaseId))",
             options: options
         ))
     }
@@ -151,13 +151,13 @@ public struct KnowledgeAPI: Sendable {
     /// OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
     /// docs/WRITE_SEMANTICS.md.
     ///
-    /// `PUT /api/v1/knowledge-bases/{id}`
+    /// `PUT /api/v1/knowledge-bases/{knowledgeBaseId}`
     ///
     /// Required scopes: `memory:write`.
-    public func updateKnowledgeBase(id: String, body: KnowledgeBaseUpdate, options: RequestOptions = .init()) async throws -> KnowledgeBase {
+    public func updateKnowledgeBase(knowledgeBaseId: String, body: KnowledgeBaseUpdate, options: RequestOptions = .init()) async throws -> KnowledgeBase {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/knowledge-bases/\(encodePathSegment(id))",
+            path: "/api/v1/knowledge-bases/\(encodePathSegment(knowledgeBaseId))",
             body: try client.encode(body),
             idempotent: true,
             options: options

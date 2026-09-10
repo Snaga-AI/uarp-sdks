@@ -24,15 +24,16 @@ package body UARP.API.MCP is
      (Self : Client_Type;
       Server_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Delete_MCP_Server_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
+             Idempotent => True,
+             Options => Options));
    end Delete_MCP_Server;
 
    function Get_MCP_Server
@@ -69,20 +70,21 @@ package body UARP.API.MCP is
       Payload : UARP.Models.Mcpjson_Rpc_Request;
       Params : MCP_JSON_Rpc_Params := No_MCP_JSON_Rpc_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.JSON_Rpc_Response
    is
       Headers : UARP.Types.Pair_Vectors.Vector;
    begin
       UARP.Types.Add (Headers, "X-UARP-Agent-Id", Params.X_Uarp_Agent_Id);
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/mcp",
-          Headers => Headers,
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp",
+             Headers => Headers,
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end MCP_JSON_Rpc;
 
    procedure MCP_SSE

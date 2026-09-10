@@ -36,7 +36,7 @@ package UARP.API.MCP is
      (Self : Client_Type;
       Server_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Delete_MCP_Server_Response;
 
    --  Get MCP server
    --
@@ -67,7 +67,7 @@ package UARP.API.MCP is
       Payload : UARP.Models.Mcpjson_Rpc_Request;
       Params : MCP_JSON_Rpc_Params := No_MCP_JSON_Rpc_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.JSON_Rpc_Response;
 
    --  MCP SSE transport (Server-Sent Events)
    --

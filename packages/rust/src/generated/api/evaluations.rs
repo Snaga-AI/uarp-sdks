@@ -32,7 +32,7 @@ impl EvaluationsApi {
     /// `POST /api/v1/agents/{agentId}/scorers`
     ///
     /// Required scopes: `evaluations:write`.
-    pub async fn create_agent_scorer(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_agent_scorer(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AgentScorer> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -50,7 +50,7 @@ impl EvaluationsApi {
     /// `POST /api/v1/agents/{agentId}/datasets`
     ///
     /// Required scopes: `evaluations:write`.
-    pub async fn create_dataset(&self, agent_id: &str, body: &models::CreateDatasetRequest) -> Result<serde_json::Value> {
+    pub async fn create_dataset(&self, agent_id: &str, body: &models::CreateDatasetRequest) -> Result<models::EvalDataset> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -88,7 +88,7 @@ impl EvaluationsApi {
     /// `GET /api/v1/agents/{agentId}/datasets/{datasetId}`
     ///
     /// Required scopes: `evaluations:read`.
-    pub async fn get_dataset(&self, agent_id: &str, dataset_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_dataset(&self, agent_id: &str, dataset_id: &str) -> Result<models::EvalDataset> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -106,7 +106,7 @@ impl EvaluationsApi {
     /// `GET /api/v1/agents/{agentId}/evaluations/{evalRunId}`
     ///
     /// Required scopes: `evaluations:read`.
-    pub async fn get_eval_run(&self, agent_id: &str, eval_run_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_eval_run(&self, agent_id: &str, eval_run_id: &str) -> Result<models::EvalRun> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -196,7 +196,7 @@ impl EvaluationsApi {
     /// `POST /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:write`.
-    pub async fn run(&self, agent_id: &str, body: &models::RunEvaluationRequest) -> Result<serde_json::Value> {
+    pub async fn run(&self, agent_id: &str, body: &models::RunEvaluationRequest) -> Result<models::EvalRun> {
         self.client
             .request_json(Request {
                 method: Method::POST,

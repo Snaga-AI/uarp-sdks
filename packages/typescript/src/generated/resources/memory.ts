@@ -83,7 +83,7 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:read`.
    */
-  getMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<JsonValue> {
+  getMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<MemoryEntry> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,

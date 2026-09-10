@@ -269,7 +269,7 @@ impl PublicApi {
     /// Get public agent card
     ///
     /// `GET /api/v1/public/agents/{agentId}`
-    pub async fn get_public_agent_card(&self, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_public_agent_card(&self, agent_id: &str) -> Result<models::PublicAgentCard> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -355,7 +355,7 @@ impl PublicApi {
     /// Get public session
     ///
     /// `GET /api/v1/public/sessions/{sessionId}`
-    pub async fn get_public_session(&self, session_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_public_session(&self, session_id: &str) -> Result<models::PublicSessionView> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -601,7 +601,7 @@ impl PublicApi {
     /// Respond to public HITL
     ///
     /// `POST /api/v1/public/sessions/{sessionId}/respond`
-    pub async fn respond_to_public_hitl(&self, session_id: &str, body: &models::RespondToPublicHitlRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn respond_to_public_hitl(&self, session_id: &str, body: &models::RespondToPublicHitlRequest) -> Result<models::RespondToPublicHitlResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

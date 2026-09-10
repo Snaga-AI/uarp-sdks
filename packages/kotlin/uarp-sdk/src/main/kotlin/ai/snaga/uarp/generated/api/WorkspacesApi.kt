@@ -517,14 +517,14 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = RequestOptions()): WorkspaceFile {
         val query = buildList {
             add("path" to path)
         }
         val parts = buildList {
             add(Part.File("file", body.`file`))
         }
-        return client.request<JsonElement>(
+        return client.request<WorkspaceFile>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files",
