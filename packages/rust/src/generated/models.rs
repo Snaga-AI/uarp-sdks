@@ -8354,6 +8354,12 @@ pub struct GetRunQueuePositionResponse {
 /// `GetRunResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRunResponse {
+    /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+    /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+    /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+    /// run records: absent 7738, bridge 867, async 0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<RunExecutionMode>,
     pub run_id: String,
     pub tenant_id: String,
     pub agent_id: String,
@@ -15194,6 +15200,12 @@ pub struct RotateAgentIdentityResponse {
 /// `Run` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Run {
+    /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+    /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+    /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+    /// run records: absent 7738, bridge 867, async 0).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<RunExecutionMode>,
     pub run_id: String,
     pub tenant_id: String,
     pub agent_id: String,
@@ -15515,6 +15527,49 @@ pub struct RunEvaluationRequest {
     pub dataset_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_version: Option<String>,
+}
+
+/// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+/// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+/// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+/// run records: absent 7738, bridge 867, async 0).
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunExecutionMode {
+    #[default]
+    #[serde(rename = "async")]
+    Async,
+    #[serde(rename = "bridge")]
+    Bridge,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunExecutionMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Async => "async",
+            Self::Bridge => "bridge",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunExecutionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunExecutionMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "async" => Self::Async,
+            "bridge" => Self::Bridge,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
@@ -18628,51 +18683,12 @@ pub struct TenantOverviewRunsRecentItem {
     pub duration_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
-    /// Passed through from the run record (same values as `Run.execution_mode`); absent when the
-    /// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+    /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
+    /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
+    /// client supplied at run creation and has never been stored on production (measured 2026-09-10
+    /// over 8605 run records: absent 7738, bridge 867, async 0).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub execution_mode: Option<TenantOverviewRunsRecentItemExecutionMode>,
-}
-
-/// Passed through from the run record (same values as `Run.execution_mode`); absent when the
-/// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum TenantOverviewRunsRecentItemExecutionMode {
-    #[default]
-    #[serde(rename = "async")]
-    Async,
-    #[serde(rename = "bridge")]
-    Bridge,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl TenantOverviewRunsRecentItemExecutionMode {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Async => "async",
-            Self::Bridge => "bridge",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for TenantOverviewRunsRecentItemExecutionMode {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for TenantOverviewRunsRecentItemExecutionMode {
-    fn from(value: &str) -> Self {
-        match value {
-            "async" => Self::Async,
-            "bridge" => Self::Bridge,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub execution_mode: Option<RunExecutionMode>,
 }
 
 /// `TenantOverviewSchedules` model.

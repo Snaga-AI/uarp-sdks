@@ -20206,6 +20206,40 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Run_Execution_Mode (Value : String) return Run_Execution_Mode is
+   begin
+      if Value = "async" then
+         return (Kind => Run_Execution_Mode_Async, Raw => UARP.Types."+" (Value));
+      elsif Value = "bridge" then
+         return (Kind => Run_Execution_Mode_Bridge, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Execution_Mode_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Execution_Mode;
+
+   function To_Run_Execution_Mode (Kind : Run_Execution_Mode_Kind) return Run_Execution_Mode is
+   begin
+      case Kind is
+         when Run_Execution_Mode_Async =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("async"));
+         when Run_Execution_Mode_Bridge =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("bridge"));
+         when Run_Execution_Mode_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Execution_Mode;
+
+   function Image (Model : Run_Execution_Mode) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Execution_Mode (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Execution_Mode) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Execution_Mode is
+      (To_Run_Execution_Mode (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_Run_Status (Value : String) return Run_Status is
    begin
       if Value = "queued" then
@@ -20459,6 +20493,9 @@ package body UARP.Models is
    function To_JSON (Model : Get_Run_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Execution_Mode then
+         JS.Set (Result, "execution_mode", To_JSON (Model.Execution_Mode));
+      end if;
       JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
       JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
@@ -20529,6 +20566,10 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Run_Response is
       Result : Get_Run_Response;
    begin
+      if JS.Present (Node, "execution_mode") then
+         Result.Has_Execution_Mode := True;
+         Result.Execution_Mode := From_JSON (JS.Get_Value (Node, "execution_mode"));
+      end if;
       if JS.Present (Node, "run_id") then
          Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
       end if;
@@ -29542,6 +29583,9 @@ package body UARP.Models is
    function To_JSON (Model : Run) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Execution_Mode then
+         JS.Set (Result, "execution_mode", To_JSON (Model.Execution_Mode));
+      end if;
       JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
       JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
@@ -29596,6 +29640,10 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run is
       Result : Run;
    begin
+      if JS.Present (Node, "execution_mode") then
+         Result.Has_Execution_Mode := True;
+         Result.Execution_Mode := From_JSON (JS.Get_Value (Node, "execution_mode"));
+      end if;
       if JS.Present (Node, "run_id") then
          Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
       end if;
@@ -43830,40 +43878,6 @@ package body UARP.Models is
       end if;
       return Result;
    end From_JSON;
-
-   function To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (Value : String) return Tenant_Overview_Runs_Recent_Item_Execution_Mode is
-   begin
-      if Value = "async" then
-         return (Kind => Tenant_Overview_Runs_Recent_Item_Execution_Mode_Async, Raw => UARP.Types."+" (Value));
-      elsif Value = "bridge" then
-         return (Kind => Tenant_Overview_Runs_Recent_Item_Execution_Mode_Bridge, Raw => UARP.Types."+" (Value));
-      else
-         return (Kind => Tenant_Overview_Runs_Recent_Item_Execution_Mode_Unrecognized, Raw => UARP.Types."+" (Value));
-      end if;
-   end To_Tenant_Overview_Runs_Recent_Item_Execution_Mode;
-
-   function To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (Kind : Tenant_Overview_Runs_Recent_Item_Execution_Mode_Kind) return Tenant_Overview_Runs_Recent_Item_Execution_Mode is
-   begin
-      case Kind is
-         when Tenant_Overview_Runs_Recent_Item_Execution_Mode_Async =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("async"));
-         when Tenant_Overview_Runs_Recent_Item_Execution_Mode_Bridge =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("bridge"));
-         when Tenant_Overview_Runs_Recent_Item_Execution_Mode_Unrecognized =>
-            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
-      end case;
-   end To_Tenant_Overview_Runs_Recent_Item_Execution_Mode;
-
-   function Image (Model : Tenant_Overview_Runs_Recent_Item_Execution_Mode) return String is
-      (if UARP.Types.SU.Length (Model.Raw) > 0
-         then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (Model.Kind).Raw));
-
-   function To_JSON (Model : Tenant_Overview_Runs_Recent_Item_Execution_Mode) return UARP.JSON_Support.JSON_Value is
-      (JS.JSON.Create (Image (Model)));
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Runs_Recent_Item_Execution_Mode is
-      (To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (UARP.Types."+" (JS.As_Text (Node))));
 
    function To_JSON (Model : Tenant_Overview_Runs_Recent_Item) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;

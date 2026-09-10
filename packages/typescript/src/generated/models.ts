@@ -3890,6 +3890,13 @@ export interface GetRunQueuePositionResponse {
 }
 
 export interface GetRunResponse {
+  /**
+   * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+   * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+   * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+   * run records: absent 7738, bridge 867, async 0).
+   */
+  execution_mode?: RunExecutionMode;
   run_id: string;
   tenant_id: string;
   agent_id: string;
@@ -7853,6 +7860,13 @@ export interface RotateAgentIdentityResponse {
 }
 
 export interface Run {
+  /**
+   * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+   * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+   * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+   * run records: absent 7738, bridge 867, async 0).
+   */
+  execution_mode?: RunExecutionMode;
   run_id: string;
   tenant_id: string;
   agent_id: string;
@@ -8084,6 +8098,16 @@ export interface RunEvaluationRequest {
   dataset_id: string;
   agent_version?: string;
 }
+
+/**
+ * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+ * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+ * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+ * run records: absent 7738, bridge 867, async 0).
+ */
+export type RunExecutionMode = 'async' | 'bridge';
+
+export const RUN_EXECUTION_MODE_VALUES = ['async', 'bridge'] as const;
 
 /**
  * GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
@@ -9612,19 +9636,13 @@ export interface TenantOverviewRunsRecentItem {
   duration_ms?: number;
   error?: string;
   /**
-   * Passed through from the run record (same values as `Run.execution_mode`); absent when the
-   * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+   * Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
+   * the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
+   * client supplied at run creation and has never been stored on production (measured 2026-09-10
+   * over 8605 run records: absent 7738, bridge 867, async 0).
    */
-  execution_mode?: TenantOverviewRunsRecentItemExecutionMode;
+  execution_mode?: RunExecutionMode;
 }
-
-/**
- * Passed through from the run record (same values as `Run.execution_mode`); absent when the
- * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
- */
-export type TenantOverviewRunsRecentItemExecutionMode = 'async' | 'bridge';
-
-export const TENANT_OVERVIEW_RUNS_RECENT_ITEM_EXECUTION_MODE_VALUES = ['async', 'bridge'] as const;
 
 export interface TenantOverviewSchedules {
   total: number;

@@ -8081,6 +8081,28 @@ package UARP.Models is
    function To_JSON (Model : Get_Run_Queue_Position_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Run_Queue_Position_Response;
 
+   --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+   --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+   --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+   --  run records: absent 7738, bridge 867, async 0).
+   --  A value the API introduces later decodes as Run_Execution_Mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Execution_Mode_Kind is
+     (Run_Execution_Mode_Async,
+   Run_Execution_Mode_Bridge,
+   Run_Execution_Mode_Unrecognized);
+
+   type Run_Execution_Mode is record
+      Kind : Run_Execution_Mode_Kind := Run_Execution_Mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Execution_Mode (Value : String) return Run_Execution_Mode;
+   function To_Run_Execution_Mode (Kind : Run_Execution_Mode_Kind) return Run_Execution_Mode;
+   function Image (Model : Run_Execution_Mode) return String;
+   function To_JSON (Model : Run_Execution_Mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Execution_Mode;
+
    --  Values of `RunStatus`.
    --  A value the API introduces later decodes as Run_Status_Unrecognized
    --  with the original text kept in Raw.
@@ -8178,6 +8200,12 @@ package UARP.Models is
 
    --  `GetRunResponse` model.
    type Get_Run_Response is record
+      --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+      --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+      --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+      --  run records: absent 7738, bridge 867, async 0).
+      Has_Execution_Mode : Boolean := False;
+      Execution_Mode : UARP.Models.Run_Execution_Mode;
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -11507,6 +11535,12 @@ package UARP.Models is
 
    --  `Run` model.
    type Run is record
+      --  Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+      --  agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+      --  client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+      --  run records: absent 7738, bridge 867, async 0).
+      Has_Execution_Mode : Boolean := False;
+      Execution_Mode : UARP.Models.Run_Execution_Mode;
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -16984,26 +17018,6 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Overview_Fleet) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Fleet;
 
-   --  Passed through from the run record (same values as `Run.execution_mode`); absent when the
-   --  record has none. `bridge` marks a report from a local agent, which may carry no transcript.
-   --  A value the API introduces later decodes as Tenant_Overview_Runs_Recent_Item_Execution_Mode_Unrecognized
-   --  with the original text kept in Raw.
-   type Tenant_Overview_Runs_Recent_Item_Execution_Mode_Kind is
-     (Tenant_Overview_Runs_Recent_Item_Execution_Mode_Async,
-   Tenant_Overview_Runs_Recent_Item_Execution_Mode_Bridge,
-   Tenant_Overview_Runs_Recent_Item_Execution_Mode_Unrecognized);
-
-   type Tenant_Overview_Runs_Recent_Item_Execution_Mode is record
-      Kind : Tenant_Overview_Runs_Recent_Item_Execution_Mode_Kind := Tenant_Overview_Runs_Recent_Item_Execution_Mode_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (Value : String) return Tenant_Overview_Runs_Recent_Item_Execution_Mode;
-   function To_Tenant_Overview_Runs_Recent_Item_Execution_Mode (Kind : Tenant_Overview_Runs_Recent_Item_Execution_Mode_Kind) return Tenant_Overview_Runs_Recent_Item_Execution_Mode;
-   function Image (Model : Tenant_Overview_Runs_Recent_Item_Execution_Mode) return String;
-   function To_JSON (Model : Tenant_Overview_Runs_Recent_Item_Execution_Mode) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Runs_Recent_Item_Execution_Mode;
-
    --  `TenantOverviewRunsRecentItem` model.
    type Tenant_Overview_Runs_Recent_Item is record
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -17017,10 +17031,12 @@ package UARP.Models is
       Duration_Ms : UARP.Types.Integer_Value := 0;
       Has_Error : Boolean := False;
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Passed through from the run record (same values as `Run.execution_mode`); absent when the
-      --  record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+      --  Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
+      --  the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
+      --  client supplied at run creation and has never been stored on production (measured 2026-09-10
+      --  over 8605 run records: absent 7738, bridge 867, async 0).
       Has_Execution_Mode : Boolean := False;
-      Execution_Mode : UARP.Models.Tenant_Overview_Runs_Recent_Item_Execution_Mode;
+      Execution_Mode : UARP.Models.Run_Execution_Mode;
    end record;
 
    function To_JSON (Model : Tenant_Overview_Runs_Recent_Item) return UARP.JSON_Support.JSON_Value;

@@ -8051,6 +8051,14 @@ public data class GetRunQueuePositionResponse(
  */
 @Serializable
 public data class GetRunResponse(
+    /**
+     * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+     * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+     * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+     * run records: absent 7738, bridge 867, async 0).
+     */
+    @SerialName("execution_mode")
+    public val executionMode: RunExecutionMode? = null,
     @SerialName("run_id")
     public val runId: String,
     @SerialName("tenant_id")
@@ -15149,6 +15157,14 @@ public data class RotateAgentIdentityResponse(
  */
 @Serializable
 public data class Run(
+    /**
+     * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+     * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+     * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+     * run records: absent 7738, bridge 867, async 0).
+     */
+    @SerialName("execution_mode")
+    public val executionMode: RunExecutionMode? = null,
     @SerialName("run_id")
     public val runId: String,
     @SerialName("tenant_id")
@@ -15515,6 +15531,37 @@ public data class RunEvaluationRequest(
     @SerialName("agent_version")
     public val agentVersion: String? = null,
 )
+
+/**
+ * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+ * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+ * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+ * run records: absent 7738, bridge 867, async 0).
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunExecutionModeSerializer::class)
+@JvmInline
+public value class RunExecutionMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ASYNC: RunExecutionMode = RunExecutionMode("async")
+        public val BRIDGE: RunExecutionMode = RunExecutionMode("bridge")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunExecutionMode> = listOf(ASYNC, BRIDGE)
+    }
+}
+
+public object RunExecutionModeSerializer : KSerializer<RunExecutionMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunExecutionMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunExecutionMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunExecutionMode = RunExecutionMode(decoder.decodeString())
+}
 
 /**
  * GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
@@ -18582,41 +18629,14 @@ public data class TenantOverviewRunsRecentItem(
     public val durationMs: Long? = null,
     public val error: String? = null,
     /**
-     * Passed through from the run record (same values as `Run.execution_mode`); absent when the
-     * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+     * Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
+     * the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
+     * client supplied at run creation and has never been stored on production (measured 2026-09-10
+     * over 8605 run records: absent 7738, bridge 867, async 0).
      */
     @SerialName("execution_mode")
-    public val executionMode: TenantOverviewRunsRecentItemExecutionMode? = null,
+    public val executionMode: RunExecutionMode? = null,
 )
-
-/**
- * Passed through from the run record (same values as `Run.execution_mode`); absent when the
- * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = TenantOverviewRunsRecentItemExecutionModeSerializer::class)
-@JvmInline
-public value class TenantOverviewRunsRecentItemExecutionMode(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ASYNC: TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode("async")
-        public val BRIDGE: TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode("bridge")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<TenantOverviewRunsRecentItemExecutionMode> = listOf(ASYNC, BRIDGE)
-    }
-}
-
-public object TenantOverviewRunsRecentItemExecutionModeSerializer : KSerializer<TenantOverviewRunsRecentItemExecutionMode> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TenantOverviewRunsRecentItemExecutionMode", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: TenantOverviewRunsRecentItemExecutionMode): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode(decoder.decodeString())
-}
 
 /**
  * `TenantOverviewSchedules` model.

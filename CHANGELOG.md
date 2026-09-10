@@ -6,6 +6,19 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.22 — 2026-09-10
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`22c24643fbacbc35027e5058cc08433610fa7d77adf7a83971350a9049adf76f`, build `4c12c94a`, `info.version` 0.4.0. 709 operations, 249 schemas.
+
+### Changed
+
+- `Run.execution_mode` is documented (`async` | `bridge`); the descriptions on
+  it and on the overview row say what production writes: `bridge` by the
+  platform, `async` only as an echo of a client value — never stored so far
+  (8605 run records measured: absent 7738, bridge 867, async 0).
+
 ## 0.5.21 — 2026-09-10
 
 The copy follows the served document byte for byte: `spec/openapi.json` is

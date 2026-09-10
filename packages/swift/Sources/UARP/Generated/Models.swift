@@ -10722,6 +10722,11 @@ public struct GetRunQueuePositionResponse: Codable, Hashable, Sendable {
 
 /// `GetRunResponse` model.
 public struct GetRunResponse: Codable, Hashable, Sendable {
+    /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+    /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+    /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+    /// run records: absent 7738, bridge 867, async 0).
+    public var executionMode: RunExecutionMode?
     public var runId: String
     public var tenantId: String
     public var agentId: String
@@ -10770,7 +10775,8 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// running.
     public var pendingInput: GetRunResponsePendingInput?
 
-    public init(runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: JSONObject? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [JSONObject]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: JSONObject? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [JSONObject]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+        self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
         self.agentId = agentId
@@ -10794,6 +10800,7 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case executionMode = "execution_mode"
         case runId = "run_id"
         case tenantId = "tenant_id"
         case agentId = "agent_id"
@@ -20438,6 +20445,11 @@ public struct RotateAgentIdentityResponse: Codable, Hashable, Sendable {
 
 /// `Run` model.
 public struct Run: Codable, Hashable, Sendable {
+    /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+    /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+    /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+    /// run records: absent 7738, bridge 867, async 0).
+    public var executionMode: RunExecutionMode?
     public var runId: String
     public var tenantId: String
     public var agentId: String
@@ -20466,7 +20478,8 @@ public struct Run: Codable, Hashable, Sendable {
     /// Resource limits for the run
     public var resourceLimits: RunResourceLimits?
 
-    public init(runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: JSONObject? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: JSONObject? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+        self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
         self.agentId = agentId
@@ -20487,6 +20500,7 @@ public struct Run: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case executionMode = "execution_mode"
         case runId = "run_id"
         case tenantId = "tenant_id"
         case agentId = "agent_id"
@@ -20857,6 +20871,32 @@ public struct RunEvaluationRequest: Codable, Hashable, Sendable {
         case datasetId = "dataset_id"
         case agentVersion = "agent_version"
     }
+}
+
+/// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
+/// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
+/// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
+/// run records: absent 7738, bridge 867, async 0).
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunExecutionMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let async = RunExecutionMode(rawValue: "async")
+    public static let bridge = RunExecutionMode(rawValue: "bridge")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunExecutionMode] = [.async, .bridge]
 }
 
 /// GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
@@ -24745,11 +24785,13 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
     public var costUsd: Double?
     public var durationMs: Int?
     public var error: String?
-    /// Passed through from the run record (same values as `Run.execution_mode`); absent when the
-    /// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
-    public var executionMode: TenantOverviewRunsRecentItemExecutionMode?
+    /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
+    /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
+    /// client supplied at run creation and has never been stored on production (measured 2026-09-10
+    /// over 8605 run records: absent 7738, bridge 867, async 0).
+    public var executionMode: RunExecutionMode?
 
-    public init(runId: String, agentId: String, status: String, createdAt: String? = nil, costUsd: Double? = nil, durationMs: Int? = nil, error: String? = nil, executionMode: TenantOverviewRunsRecentItemExecutionMode? = nil) {
+    public init(runId: String, agentId: String, status: String, createdAt: String? = nil, costUsd: Double? = nil, durationMs: Int? = nil, error: String? = nil, executionMode: RunExecutionMode? = nil) {
         self.runId = runId
         self.agentId = agentId
         self.status = status
@@ -24770,30 +24812,6 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
         case error = "error"
         case executionMode = "execution_mode"
     }
-}
-
-/// Passed through from the run record (same values as `Run.execution_mode`); absent when the
-/// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TenantOverviewRunsRecentItemExecutionMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let async = TenantOverviewRunsRecentItemExecutionMode(rawValue: "async")
-    public static let bridge = TenantOverviewRunsRecentItemExecutionMode(rawValue: "bridge")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TenantOverviewRunsRecentItemExecutionMode] = [.async, .bridge]
 }
 
 /// `TenantOverviewSchedules` model.
