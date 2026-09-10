@@ -3,7 +3,6 @@
 --  File upload for multimodal content
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Files is
@@ -54,7 +53,7 @@ package UARP.API.Files is
      (Self : Client_Type;
       File_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.File_Record;
 
    --  List files
    --
@@ -88,6 +87,6 @@ package UARP.API.Files is
      (Self : Client_Type;
       Payload : UARP.Models.Upload_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Upload_File_Response;
 
 end UARP.API.Files;

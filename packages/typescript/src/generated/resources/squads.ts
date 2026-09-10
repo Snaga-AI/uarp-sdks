@@ -20,8 +20,11 @@ import type {
   ListSquadRunsResponse,
   ListSquadsResponse,
   StartSquadRunRequest,
+  StartSquadRunResponse,
   Team,
   TeamCreate,
+  TeamGraphNode,
+  TeamRunDetail,
   TeamUpdate,
   UpdateSquadGraphNodeRequest,
 } from '../models.js';
@@ -244,7 +247,7 @@ export class SquadsResource extends APIResource {
    *
    * `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
    */
-  getSquadGraphNode(squadId: string, agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  getSquadGraphNode(squadId: string, agentId: string, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/graph/nodes/${encodeURIComponent(String(agentId))}`,
@@ -261,7 +264,7 @@ export class SquadsResource extends APIResource {
    *
    * `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
    */
-  getSquadRun(squadId: string, teamRunId: string, options?: RequestOptions): Promise<JsonObject> {
+  getSquadRun(squadId: string, teamRunId: string, options?: RequestOptions): Promise<TeamRunDetail> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/runs/${encodeURIComponent(String(teamRunId))}`,
@@ -363,7 +366,7 @@ export class SquadsResource extends APIResource {
    *
    * `POST /api/v1/squads/{squadId}/runs`
    */
-  startSquadRun(squadId: string, body: StartSquadRunRequest, options?: RequestOptions): Promise<JsonObject> {
+  startSquadRun(squadId: string, body: StartSquadRunRequest, options?: RequestOptions): Promise<StartSquadRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/runs`,

@@ -30,7 +30,7 @@ impl PlaygroundApi {
     /// Load agent canvas state for visual builder
     ///
     /// `GET /api/v1/playground/agents/{agentId}`
-    pub async fn get_playground_canvas(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_playground_canvas(&self, agent_id: &str) -> Result<models::PlaygroundAgentState> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -46,7 +46,7 @@ impl PlaygroundApi {
     /// List starter templates for visual builder
     ///
     /// `GET /api/v1/playground/templates`
-    pub async fn list_playground_templates(&self) -> Result<serde_json::Value> {
+    pub async fn list_playground_templates(&self) -> Result<models::ListPlaygroundTemplatesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -64,7 +64,7 @@ impl PlaygroundApi {
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn run(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Value> {
+    pub async fn run(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Run> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -80,7 +80,7 @@ impl PlaygroundApi {
     /// Save agent canvas state
     ///
     /// `PUT /api/v1/playground/agents/{agentId}`
-    pub async fn save_playground_canvas(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Value> {
+    pub async fn save_playground_canvas(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::PlaygroundAgentState> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

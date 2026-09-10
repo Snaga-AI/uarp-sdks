@@ -40,7 +40,7 @@ public struct FilesAPI: Sendable {
     /// `GET /api/v1/files/{fileId}`
     ///
     /// Required scopes: `files:read`.
-    public func getFileMetadata(fileId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getFileMetadata(fileId: String, options: RequestOptions = .init()) async throws -> FileRecord {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/files/\(encodePathSegment(fileId))",
@@ -91,7 +91,7 @@ public struct FilesAPI: Sendable {
     /// `POST /api/v1/files`
     ///
     /// Required scopes: `files:write`.
-    public func upload(body: UploadFileRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func upload(body: UploadFileRequest, options: RequestOptions = .init()) async throws -> UploadFileResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/files",

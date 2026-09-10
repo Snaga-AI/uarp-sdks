@@ -74,14 +74,15 @@ package body UARP.API.Health is
    function Health_Ready
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Readiness_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/health/ready",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/health/ready",
+             Options => Options));
    end Health_Ready;
 
    procedure Health_SSE
@@ -114,13 +115,14 @@ package body UARP.API.Health is
    function Readyz_Alias
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Readiness_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/readyz",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/readyz",
+             Options => Options));
    end Readyz_Alias;
 end UARP.API.Health;

@@ -56,7 +56,7 @@ public struct MarketplaceAPI: Sendable {
     /// `GET /api/v1/marketplace/categories`
     ///
     /// Required scopes: `marketplace:read`.
-    public func getMarketplaceCategories(options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getMarketplaceCategories(options: RequestOptions = .init()) async throws -> GetMarketplaceCategoriesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/marketplace/categories",
@@ -82,7 +82,7 @@ public struct MarketplaceAPI: Sendable {
     /// `POST /api/v1/marketplace/listings/{listingId}/invoke`
     ///
     /// Required scopes: `marketplace:invoke`.
-    public func invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = .init()) async throws -> MarketplaceInvocation {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/marketplace/listings/\(encodePathSegment(listingId))/invoke",
@@ -197,7 +197,7 @@ public struct MarketplaceAPI: Sendable {
     /// `DELETE /api/v1/marketplace/listings/{listingId}`
     ///
     /// Required scopes: `marketplace:write`.
-    public func unpublishListing(listingId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func unpublishListing(listingId: String, options: RequestOptions = .init()) async throws -> UnpublishListingResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/marketplace/listings/\(encodePathSegment(listingId))",

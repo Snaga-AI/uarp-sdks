@@ -117,7 +117,7 @@ impl AuthApi {
     /// issuer?, algorithm? }`.
     ///
     /// `POST /api/v1/auth/mfa/enrol`
-    pub async fn enrol_mfa(&self, body: &models::EnrolMfaRequest) -> Result<models::EnrolMfaResponse> {
+    pub async fn enrol_mfa(&self, body: &models::EnrolMfaRequest) -> Result<models::MfaEnrolment> {
         self.client
             .request_json(Request {
                 method: Method::POST,

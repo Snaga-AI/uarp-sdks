@@ -292,7 +292,7 @@ impl TenantsApi {
     /// `DELETE /api/v1/tenants/me/keys/{keyId}`
     ///
     /// Required scopes: `tenants:write`.
-    pub async fn revoke_api_key(&self, key_id: &str) -> Result<serde_json::Value> {
+    pub async fn revoke_api_key(&self, key_id: &str) -> Result<models::RevokeAPIKeyResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,

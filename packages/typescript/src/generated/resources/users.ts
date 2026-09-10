@@ -8,6 +8,7 @@ import type {
   DeleteInviteResponse,
   DeleteUserResponse,
   InviteUserRequest,
+  InviteUserResponse,
   JsonObject,
   ListInvitesResponse,
   ListUsersResponse,
@@ -106,7 +107,7 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:write`.
    */
-  inviteUser(body: InviteUserRequest, options?: RequestOptions): Promise<JsonObject> {
+  inviteUser(body: InviteUserRequest, options?: RequestOptions): Promise<InviteUserResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/users/invites',

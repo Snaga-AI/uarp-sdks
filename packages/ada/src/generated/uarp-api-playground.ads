@@ -4,6 +4,7 @@
 
 with UARP.Client;
 with UARP.JSON_Support;
+with UARP.Models;
 package UARP.API.Playground is
 
    subtype Client_Type is UARP.Client.Client_Type;
@@ -16,7 +17,7 @@ package UARP.API.Playground is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Playground_Agent_State;
 
    --  List starter templates for visual builder
    --
@@ -24,7 +25,7 @@ package UARP.API.Playground is
    function List_Playground_Templates
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Playground_Templates_Response;
 
    --  Execute agent in playground
    --
@@ -36,7 +37,7 @@ package UARP.API.Playground is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Run;
 
    --  Save agent canvas state
    --
@@ -46,6 +47,6 @@ package UARP.API.Playground is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Playground_Agent_State;
 
 end UARP.API.Playground;

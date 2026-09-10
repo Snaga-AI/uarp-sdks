@@ -6,6 +6,30 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.21 — 2026-09-10
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`ba5a7338214ddbe6cb76b9cac203ddf726f7f52692ee637bf8c1cd64125112ca`, build `eaa42cb2`, `info.version` 0.4.0. 709 operations, 249 schemas.
+
+### Added
+
+- `execution_mode` (`async` | `bridge`) on `GET /analytics/overview` →
+  `runs.recent[]`, passed through from the run record — a bridge report with
+  no transcript is now distinguishable from "nothing ran".
+
+### Changed
+
+- uarp #450 (CTR-07 tranche 2a): 48 responses on governance, teams/squads,
+  a2a, public, playground, files, programs, users, webhooks, mfa, guardrails,
+  marketplace, workspaces, notifications and tenant keys now have the shape
+  they serve — new `ReadinessReport`, `FileRecord`, `TeamRunDetail`,
+  `PlaygroundAgentState`, `PlaygroundTemplate`, `MfaEnrolment`.
+- Status codes the wire actually answers: `POST /governance/ambassador/
+  ambassadors`, `POST /governance/goals`, `POST /governance/improvement/
+  {agentId}` are **201** (not 200); `POST /playground/agents/{agentId}/run`
+  is **202**; `DELETE /marketplace/listings/{listingId}` is **204**.
+
 ## 0.5.20 — 2026-09-10
 
 The copy follows the served document byte for byte: `spec/openapi.json` is

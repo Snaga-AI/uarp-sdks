@@ -59,7 +59,7 @@ package UARP.API.A2A is
      (Self : Client_Type;
       Task_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Cancel_A2A_Task_Response;
 
    --  Create an A2A task
    --
@@ -72,7 +72,7 @@ package UARP.API.A2A is
      (Self : Client_Type;
       Payload : UARP.Models.Create_A2A_Task_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.A2A_Task;
 
    --  Get A2A task status
    --
@@ -83,7 +83,7 @@ package UARP.API.A2A is
      (Self : Client_Type;
       Task_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.A2A_Task;
 
    --  Get A2A agent card for discovery
    --

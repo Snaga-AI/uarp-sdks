@@ -11,7 +11,7 @@ public struct PlaygroundAPI: Sendable {
     /// Load agent canvas state for visual builder
     ///
     /// `GET /api/v1/playground/agents/{agentId}`
-    public func getPlaygroundCanvas(agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getPlaygroundCanvas(agentId: String, options: RequestOptions = .init()) async throws -> PlaygroundAgentState {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))",
@@ -22,7 +22,7 @@ public struct PlaygroundAPI: Sendable {
     /// List starter templates for visual builder
     ///
     /// `GET /api/v1/playground/templates`
-    public func listPlaygroundTemplates(options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listPlaygroundTemplates(options: RequestOptions = .init()) async throws -> ListPlaygroundTemplatesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/playground/templates",
@@ -35,7 +35,7 @@ public struct PlaygroundAPI: Sendable {
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
     /// Required scopes: `runs:create`.
-    public func run(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func run(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Run {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))/run",
@@ -48,7 +48,7 @@ public struct PlaygroundAPI: Sendable {
     /// Save agent canvas state
     ///
     /// `PUT /api/v1/playground/agents/{agentId}`
-    public func savePlaygroundCanvas(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func savePlaygroundCanvas(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> PlaygroundAgentState {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))",

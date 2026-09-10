@@ -151,20 +151,21 @@ package body UARP.API.Billing is
       Payload : UARP.Models.Handle_Stripe_Webhook_Request;
       Params : Handle_Stripe_Webhook_Params := No_Handle_Stripe_Webhook_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Handle_Stripe_Webhook_Response
    is
       Headers : UARP.Types.Pair_Vectors.Vector;
    begin
       UARP.Types.Add (Headers, "Stripe-Signature", Params.Stripe_Signature);
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/webhooks/stripe",
-          Headers => Headers,
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/webhooks/stripe",
+             Headers => Headers,
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Handle_Stripe_Webhook;
 
    function List_Billing_Plans

@@ -43,7 +43,7 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces`
     ///
     /// Required scopes: `files:write`.
-    public func create(body: CreateWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func create(body: CreateWorkspaceRequest, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces",

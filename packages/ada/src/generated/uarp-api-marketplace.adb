@@ -44,14 +44,15 @@ package body UARP.API.Marketplace is
    function Get_Marketplace_Categories
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Get_Marketplace_Categories_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/marketplace/categories",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/marketplace/categories",
+             Options => Options));
    end Get_Marketplace_Categories;
 
    function Get_Marketplace_Invocation
@@ -74,17 +75,18 @@ package body UARP.API.Marketplace is
       Listing_Id : String;
       Payload : UARP.Models.Invoke_Listing_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Marketplace_Invocation
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/invoke",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/invoke",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Invoke_Listing_Agent;
 
    function List_Featured_Specs
@@ -204,15 +206,16 @@ package body UARP.API.Marketplace is
      (Self : Client_Type;
       Listing_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Unpublish_Listing_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id),
+             Idempotent => True,
+             Options => Options));
    end Unpublish_Listing;
 
    function Unsubscribe_From_Listing

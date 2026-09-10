@@ -14,7 +14,7 @@ public struct GovernanceAPI: Sendable {
     /// sufficient.
     ///
     /// `POST /api/v1/governance/emergency/safe-mode`
-    public func activateSafeMode(body: ActivateSafeModeRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func activateSafeMode(body: ActivateSafeModeRequest, options: RequestOptions = .init()) async throws -> EmergencyState {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/emergency/safe-mode",
@@ -65,7 +65,7 @@ public struct GovernanceAPI: Sendable {
     /// Cast ballot
     ///
     /// `POST /api/v1/governance/voting/proposals/{id}/ballot`
-    public func castBallot(id: String, body: CastBallotRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func castBallot(id: String, body: CastBallotRequest, options: RequestOptions = .init()) async throws -> Ballot {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/ballot",
@@ -142,7 +142,7 @@ public struct GovernanceAPI: Sendable {
     /// Create goal
     ///
     /// `POST /api/v1/governance/goals`
-    public func createGoal(body: CreateGoalRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createGoal(body: CreateGoalRequest, options: RequestOptions = .init()) async throws -> Goal {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/goals",
@@ -155,7 +155,7 @@ public struct GovernanceAPI: Sendable {
     /// Create improvement proposal
     ///
     /// `POST /api/v1/governance/improvement/{agentId}`
-    public func createImprovementProposal(agentId: String, body: CreateImprovementProposalRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createImprovementProposal(agentId: String, body: CreateImprovementProposalRequest, options: RequestOptions = .init()) async throws -> ImprovementProposal {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/improvement/\(encodePathSegment(agentId))",
@@ -168,7 +168,7 @@ public struct GovernanceAPI: Sendable {
     /// Create proposal
     ///
     /// `POST /api/v1/governance/voting/proposals`
-    public func createVotingProposal(body: CreateVotingProposalRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createVotingProposal(body: CreateVotingProposalRequest, options: RequestOptions = .init()) async throws -> VotingProposal {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/voting/proposals",
@@ -280,7 +280,7 @@ public struct GovernanceAPI: Sendable {
     /// Get case
     ///
     /// `GET /api/v1/governance/arbiter/cases/{id}`
-    public func getArbiterCase(id: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getArbiterCase(id: String, options: RequestOptions = .init()) async throws -> ArbiterCase {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(id))",
@@ -335,7 +335,7 @@ public struct GovernanceAPI: Sendable {
     /// Get goal
     ///
     /// `GET /api/v1/governance/goals/{id}`
-    public func getGoal(id: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getGoal(id: String, options: RequestOptions = .init()) async throws -> Goal {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/goals/\(encodePathSegment(id))",
@@ -383,7 +383,7 @@ public struct GovernanceAPI: Sendable {
     /// Get proposal
     ///
     /// `GET /api/v1/governance/improvement/{agentId}/{version}`
-    public func getImprovementProposal(agentId: String, version: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getImprovementProposal(agentId: String, version: String, options: RequestOptions = .init()) async throws -> ImprovementProposal {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/improvement/\(encodePathSegment(agentId))/\(encodePathSegment(version))",
@@ -438,7 +438,7 @@ public struct GovernanceAPI: Sendable {
     /// Get proposal
     ///
     /// `GET /api/v1/governance/voting/proposals/{id}`
-    public func getVotingProposal(id: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getVotingProposal(id: String, options: RequestOptions = .init()) async throws -> VotingProposal {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))",
@@ -732,7 +732,7 @@ public struct GovernanceAPI: Sendable {
     /// Any other transition returns 400. Requires admin/founder role.
     ///
     /// `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
-    public func updateImprovementStatus(agentId: String, version: String, body: UpdateImprovementStatusRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateImprovementStatus(agentId: String, version: String, body: UpdateImprovementStatusRequest, options: RequestOptions = .init()) async throws -> ImprovementProposal {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/governance/improvement/\(encodePathSegment(agentId))/\(encodePathSegment(version))/status",

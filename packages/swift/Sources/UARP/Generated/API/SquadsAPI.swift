@@ -192,7 +192,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
-    public func getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/graph/nodes/\(encodePathSegment(agentId))",
@@ -207,7 +207,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
-    public func getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> TeamRunDetail {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/runs/\(encodePathSegment(teamRunId))",
@@ -297,7 +297,7 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/runs`
-    public func startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = .init()) async throws -> StartSquadRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/runs",

@@ -76,7 +76,7 @@ package UARP.API.Users is
      (Self : Client_Type;
       Payload : UARP.Models.Invite_User_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Invite_User_Response;
 
    --  List users
    --

@@ -114,7 +114,7 @@ impl HealthApi {
     /// Kubernetes readiness probe
     ///
     /// `GET /health/ready`
-    pub async fn health_ready(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn health_ready(&self) -> Result<models::ReadinessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -159,7 +159,7 @@ impl HealthApi {
     /// Readiness alias (/readyz)
     ///
     /// `GET /readyz`
-    pub async fn readyz_alias(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn readyz_alias(&self) -> Result<models::ReadinessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,

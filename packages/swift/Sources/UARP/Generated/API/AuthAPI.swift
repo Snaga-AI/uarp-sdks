@@ -71,7 +71,7 @@ public struct AuthAPI: Sendable {
     /// issuer?, algorithm? }`.
     ///
     /// `POST /api/v1/auth/mfa/enrol`
-    public func enrolMfa(body: EnrolMfaRequest? = nil, options: RequestOptions = .init()) async throws -> EnrolMfaResponse {
+    public func enrolMfa(body: EnrolMfaRequest? = nil, options: RequestOptions = .init()) async throws -> MfaEnrolment {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

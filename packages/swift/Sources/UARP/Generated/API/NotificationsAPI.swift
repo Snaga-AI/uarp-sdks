@@ -143,7 +143,7 @@ public struct NotificationsAPI: Sendable {
     /// `PUT /api/v1/notifications/{notifId}/read`
     ///
     /// Required scopes: `notifications:write`.
-    public func markNotificationRead(notifId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func markNotificationRead(notifId: String, options: RequestOptions = .init()) async throws -> MarkNotificationReadResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/notifications/\(encodePathSegment(notifId))/read",

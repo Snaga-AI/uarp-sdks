@@ -9,48 +9,51 @@ package body UARP.API.Programs is
       Program_Id : String;
       Payload : UARP.Models.Apply_Program_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Apply_Program_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/programs/" & UARP.Types.Encode_Path_Segment (Program_Id) & "/apply",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/programs/" & UARP.Types.Encode_Path_Segment (Program_Id) & "/apply",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Apply_Program;
 
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Create_Program_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Program
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/programs",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/programs",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create;
 
    function Get
      (Self : Client_Type;
       Program_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Program
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/programs/" & UARP.Types.Encode_Path_Segment (Program_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/programs/" & UARP.Types.Encode_Path_Segment (Program_Id),
+             Options => Options));
    end Get;
 
    function List

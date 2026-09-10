@@ -6,6 +6,7 @@ import { pick } from '../../core/util.js';
 import type {
   GetAppleAppSiteAssociationResponse,
   GetClientConfigResponse,
+  JsonObject,
   JsonValue,
   LandingStats,
   SearchType,
@@ -63,7 +64,7 @@ export class MetaResource extends APIResource {
    *
    * `GET /api/v1/openapi.json`
    */
-  getOpenAPISpec(options?: RequestOptions): Promise<JsonValue> {
+  getOpenAPISpec(options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/openapi.json',

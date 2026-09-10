@@ -4,9 +4,10 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   ApplyProgramRequest,
+  ApplyProgramResponse,
   CreateProgramRequest,
-  JsonValue,
   ListProgramsResponse,
+  Program,
 } from '../models.js';
 
 /**
@@ -20,7 +21,7 @@ export class ProgramsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  applyProgram(programId: string, body: ApplyProgramRequest, options?: RequestOptions): Promise<JsonValue> {
+  applyProgram(programId: string, body: ApplyProgramRequest, options?: RequestOptions): Promise<ApplyProgramResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/programs/${encodeURIComponent(String(programId))}/apply`,
@@ -37,7 +38,7 @@ export class ProgramsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  create(body: CreateProgramRequest, options?: RequestOptions): Promise<JsonValue> {
+  create(body: CreateProgramRequest, options?: RequestOptions): Promise<Program> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/programs',
@@ -54,7 +55,7 @@ export class ProgramsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  get(programId: string, options?: RequestOptions): Promise<JsonValue> {
+  get(programId: string, options?: RequestOptions): Promise<Program> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/programs/${encodeURIComponent(String(programId))}`,

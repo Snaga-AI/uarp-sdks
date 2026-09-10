@@ -8,6 +8,7 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   A2ATask,
   A2ajsonRpcRequest,
+  CancelA2ATaskResponse,
   CreateA2ATaskRequest,
   JsonValue,
   ListA2ATasksResponse,
@@ -66,7 +67,7 @@ export class A2AResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  cancelA2ATask(taskId: string, options?: RequestOptions): Promise<JsonValue> {
+  cancelA2ATask(taskId: string, options?: RequestOptions): Promise<CancelA2ATaskResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/a2a/tasks/${encodeURIComponent(String(taskId))}/cancel`,
@@ -84,7 +85,7 @@ export class A2AResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  createA2ATask(body: CreateA2ATaskRequest, options?: RequestOptions): Promise<JsonValue> {
+  createA2ATask(body: CreateA2ATaskRequest, options?: RequestOptions): Promise<A2ATask> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/a2a/tasks',
@@ -101,7 +102,7 @@ export class A2AResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getA2ATask(taskId: string, options?: RequestOptions): Promise<JsonValue> {
+  getA2ATask(taskId: string, options?: RequestOptions): Promise<A2ATask> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/a2a/tasks/${encodeURIComponent(String(taskId))}`,

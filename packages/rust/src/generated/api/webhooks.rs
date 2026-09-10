@@ -58,7 +58,7 @@ impl WebhooksApi {
     /// `DELETE /api/v1/webhooks/{webhookId}`
     ///
     /// Required scopes: `webhooks:write`.
-    pub async fn delete(&self, webhook_id: &str) -> Result<serde_json::Value> {
+    pub async fn delete(&self, webhook_id: &str) -> Result<models::DeleteWebhookResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -76,7 +76,7 @@ impl WebhooksApi {
     /// `GET /api/v1/webhooks/{webhookId}`
     ///
     /// Required scopes: `webhooks:read`.
-    pub async fn get(&self, webhook_id: &str) -> Result<serde_json::Value> {
+    pub async fn get(&self, webhook_id: &str) -> Result<models::WebhookSubscription> {
         self.client
             .request_json(Request {
                 method: Method::GET,

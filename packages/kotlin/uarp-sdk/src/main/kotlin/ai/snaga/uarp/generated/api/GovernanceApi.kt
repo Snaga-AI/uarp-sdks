@@ -31,8 +31,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/emergency/safe-mode`
      */
-    public suspend fun activateSafeMode(body: ActivateSafeModeRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun activateSafeMode(body: ActivateSafeModeRequest, options: RequestOptions = RequestOptions()): EmergencyState {
+        return client.request<EmergencyState>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/emergency/safe-mode",
@@ -98,8 +98,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/voting/proposals/{id}/ballot`
      */
-    public suspend fun castBallot(id: String, body: CastBallotRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun castBallot(id: String, body: CastBallotRequest, options: RequestOptions = RequestOptions()): Ballot {
+        return client.request<Ballot>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/ballot",
@@ -199,8 +199,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/goals`
      */
-    public suspend fun createGoal(body: CreateGoalRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createGoal(body: CreateGoalRequest, options: RequestOptions = RequestOptions()): Goal {
+        return client.request<Goal>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/goals",
@@ -216,8 +216,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/improvement/{agentId}`
      */
-    public suspend fun createImprovementProposal(agentId: String, body: CreateImprovementProposalRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createImprovementProposal(agentId: String, body: CreateImprovementProposalRequest, options: RequestOptions = RequestOptions()): ImprovementProposal {
+        return client.request<ImprovementProposal>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/improvement/${encodePathSegment(agentId)}",
@@ -233,8 +233,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/voting/proposals`
      */
-    public suspend fun createVotingProposal(body: CreateVotingProposalRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createVotingProposal(body: CreateVotingProposalRequest, options: RequestOptions = RequestOptions()): VotingProposal {
+        return client.request<VotingProposal>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/voting/proposals",
@@ -381,8 +381,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/arbiter/cases/{id}`
      */
-    public suspend fun getArbiterCase(id: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getArbiterCase(id: String, options: RequestOptions = RequestOptions()): ArbiterCase {
+        return client.request<ArbiterCase>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/arbiter/cases/${encodePathSegment(id)}",
@@ -456,8 +456,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/goals/{id}`
      */
-    public suspend fun getGoal(id: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getGoal(id: String, options: RequestOptions = RequestOptions()): Goal {
+        return client.request<Goal>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/goals/${encodePathSegment(id)}",
@@ -507,8 +507,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/improvement/{agentId}/{version}`
      */
-    public suspend fun getImprovementProposal(agentId: String, version: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getImprovementProposal(agentId: String, version: String, options: RequestOptions = RequestOptions()): ImprovementProposal {
+        return client.request<ImprovementProposal>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/improvement/${encodePathSegment(agentId)}/${encodePathSegment(version)}",
@@ -582,8 +582,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/voting/proposals/{id}`
      */
-    public suspend fun getVotingProposal(id: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getVotingProposal(id: String, options: RequestOptions = RequestOptions()): VotingProposal {
+        return client.request<VotingProposal>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}",
@@ -962,8 +962,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
      */
-    public suspend fun updateImprovementStatus(agentId: String, version: String, body: UpdateImprovementStatusRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateImprovementStatus(agentId: String, version: String, body: UpdateImprovementStatusRequest, options: RequestOptions = RequestOptions()): ImprovementProposal {
+        return client.request<ImprovementProposal>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/governance/improvement/${encodePathSegment(agentId)}/${encodePathSegment(version)}/status",

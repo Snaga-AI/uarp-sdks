@@ -9,7 +9,7 @@ import type {
   HealthCheckV1aliasResponse,
   HealthLiveResponse,
   HealthzAliasResponse,
-  JsonObject,
+  ReadinessReport,
 } from '../models.js';
 
 /**
@@ -90,7 +90,7 @@ export class HealthResource extends APIResource {
    *
    * `GET /health/ready`
    */
-  healthReady(options?: RequestOptions): Promise<JsonObject> {
+  healthReady(options?: RequestOptions): Promise<ReadinessReport> {
     return this._client.request({
       method: 'GET',
       path: '/health/ready',
@@ -131,7 +131,7 @@ export class HealthResource extends APIResource {
    *
    * `GET /readyz`
    */
-  readyzAlias(options?: RequestOptions): Promise<JsonObject> {
+  readyzAlias(options?: RequestOptions): Promise<ReadinessReport> {
     return this._client.request({
       method: 'GET',
       path: '/readyz',

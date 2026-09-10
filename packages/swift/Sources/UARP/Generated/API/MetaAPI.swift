@@ -38,7 +38,7 @@ public struct MetaAPI: Sendable {
     /// Get OpenAPI spec
     ///
     /// `GET /api/v1/openapi.json`
-    public func getOpenAPISpec(options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getOpenAPISpec(options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/openapi.json",

@@ -122,7 +122,7 @@ package UARP.API.Workspaces is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Delete workspace and all files
    --

@@ -38,7 +38,7 @@ public struct A2AAPI: Sendable {
     /// `POST /api/v1/a2a/tasks/{taskId}/cancel`
     ///
     /// Required scopes: `agents:write`.
-    public func cancelA2ATask(taskId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func cancelA2ATask(taskId: String, options: RequestOptions = .init()) async throws -> CancelA2ATaskResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/a2a/tasks/\(encodePathSegment(taskId))/cancel",
@@ -54,7 +54,7 @@ public struct A2AAPI: Sendable {
     /// `POST /api/v1/a2a/tasks`
     ///
     /// Required scopes: `agents:write`.
-    public func createA2ATask(body: CreateA2ATaskRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func createA2ATask(body: CreateA2ATaskRequest, options: RequestOptions = .init()) async throws -> A2ATask {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/a2a/tasks",
@@ -69,7 +69,7 @@ public struct A2AAPI: Sendable {
     /// `GET /api/v1/a2a/tasks/{taskId}`
     ///
     /// Required scopes: `agents:read`.
-    public func getA2ATask(taskId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getA2ATask(taskId: String, options: RequestOptions = .init()) async throws -> A2ATask {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/a2a/tasks/\(encodePathSegment(taskId))",

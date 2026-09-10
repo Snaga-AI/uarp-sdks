@@ -4,7 +4,9 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
   JsonObject,
-  JsonValue,
+  ListPlaygroundTemplatesResponse,
+  PlaygroundAgentState,
+  Run,
 } from '../models.js';
 
 /**
@@ -16,7 +18,7 @@ export class PlaygroundResource extends APIResource {
    *
    * `GET /api/v1/playground/agents/{agentId}`
    */
-  getPlaygroundCanvas(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  getPlaygroundCanvas(agentId: string, options?: RequestOptions): Promise<PlaygroundAgentState> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}`,
@@ -29,7 +31,7 @@ export class PlaygroundResource extends APIResource {
    *
    * `GET /api/v1/playground/templates`
    */
-  listPlaygroundTemplates(options?: RequestOptions): Promise<JsonValue> {
+  listPlaygroundTemplates(options?: RequestOptions): Promise<ListPlaygroundTemplatesResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/playground/templates',
@@ -44,7 +46,7 @@ export class PlaygroundResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  run(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  run(agentId: string, body: JsonObject, options?: RequestOptions): Promise<Run> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}/run`,
@@ -59,7 +61,7 @@ export class PlaygroundResource extends APIResource {
    *
    * `PUT /api/v1/playground/agents/{agentId}`
    */
-  savePlaygroundCanvas(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  savePlaygroundCanvas(agentId: string, body: JsonObject, options?: RequestOptions): Promise<PlaygroundAgentState> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}`,

@@ -28,8 +28,8 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/playground/agents/{agentId}`
      */
-    public suspend fun getPlaygroundCanvas(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getPlaygroundCanvas(agentId: String, options: RequestOptions = RequestOptions()): PlaygroundAgentState {
+        return client.request<PlaygroundAgentState>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/playground/agents/${encodePathSegment(agentId)}",
@@ -43,8 +43,8 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/playground/templates`
      */
-    public suspend fun listPlaygroundTemplates(options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun listPlaygroundTemplates(options: RequestOptions = RequestOptions()): ListPlaygroundTemplatesResponse {
+        return client.request<ListPlaygroundTemplatesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/playground/templates",
@@ -60,8 +60,8 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun run(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun run(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Run {
+        return client.request<Run>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/playground/agents/${encodePathSegment(agentId)}/run",
@@ -77,8 +77,8 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/playground/agents/{agentId}`
      */
-    public suspend fun savePlaygroundCanvas(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun savePlaygroundCanvas(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): PlaygroundAgentState {
+        return client.request<PlaygroundAgentState>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/playground/agents/${encodePathSegment(agentId)}",

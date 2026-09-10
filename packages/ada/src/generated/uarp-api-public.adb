@@ -239,28 +239,30 @@ package body UARP.API.Public is
      (Self : Client_Type;
       State_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Public_State
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/public/states/" & UARP.Types.Encode_Path_Segment (State_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/states/" & UARP.Types.Encode_Path_Segment (State_Id),
+             Options => Options));
    end Get_Public_State;
 
    function Get_Public_Tenant_Profile
      (Self : Client_Type;
       Slug : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Public_Tenant
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/public/tenants/" & UARP.Types.Encode_Path_Segment (Slug),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/tenants/" & UARP.Types.Encode_Path_Segment (Slug),
+             Options => Options));
    end Get_Public_Tenant_Profile;
 
    function Get_Public_Tenant_Stylesheet

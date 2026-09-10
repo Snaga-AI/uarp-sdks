@@ -371,7 +371,7 @@ impl PublicApi {
     /// Get public state detail
     ///
     /// `GET /api/v1/public/states/{stateId}`
-    pub async fn get_public_state(&self, state_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_public_state(&self, state_id: &str) -> Result<models::PublicState> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -387,7 +387,7 @@ impl PublicApi {
     /// Get public tenant profile
     ///
     /// `GET /api/v1/public/tenants/{slug}`
-    pub async fn get_public_tenant_profile(&self, slug: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_public_tenant_profile(&self, slug: &str) -> Result<models::PublicTenant> {
         self.client
             .request_json(Request {
                 method: Method::GET,

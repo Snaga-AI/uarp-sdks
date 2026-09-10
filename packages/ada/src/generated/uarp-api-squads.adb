@@ -182,14 +182,15 @@ package body UARP.API.Squads is
       Squad_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Graph_Node
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Options => Options));
    end Get_Squad_Graph_Node;
 
    function Get_Squad_Run
@@ -197,14 +198,15 @@ package body UARP.API.Squads is
       Squad_Id : String;
       Team_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Run_Detail
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id),
+             Options => Options));
    end Get_Squad_Run;
 
    function Get_Squad_Run_Messages
@@ -287,17 +289,18 @@ package body UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Start_Squad_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Start_Squad_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/runs",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/runs",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Start_Squad_Run;
 
    procedure Stream_Squad_Chat_Events

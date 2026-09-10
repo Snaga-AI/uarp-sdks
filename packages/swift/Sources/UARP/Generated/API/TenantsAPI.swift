@@ -224,7 +224,7 @@ public struct TenantsAPI: Sendable {
     /// `DELETE /api/v1/tenants/me/keys/{keyId}`
     ///
     /// Required scopes: `tenants:write`.
-    public func revokeAPIKey(keyId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func revokeAPIKey(keyId: String, options: RequestOptions = .init()) async throws -> RevokeAPIKeyResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/tenants/me/keys/\(encodePathSegment(keyId))",

@@ -180,7 +180,7 @@ package UARP.API.Teams is
       Team_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
    --  Get specific team run
    --
@@ -192,7 +192,7 @@ package UARP.API.Teams is
       Team_Id : String;
       Team_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Run_Detail;
 
    --  Get team run messages
    --

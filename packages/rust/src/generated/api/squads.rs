@@ -260,7 +260,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
-    pub async fn get_squad_graph_node(&self, squad_id: &str, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_squad_graph_node(&self, squad_id: &str, agent_id: &str) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -280,7 +280,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
-    pub async fn get_squad_run(&self, squad_id: &str, team_run_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_squad_run(&self, squad_id: &str, team_run_id: &str) -> Result<models::TeamRunDetail> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -400,7 +400,7 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/runs`
-    pub async fn start_squad_run(&self, squad_id: &str, body: &models::StartSquadRunRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn start_squad_run(&self, squad_id: &str, body: &models::StartSquadRunRequest) -> Result<models::StartSquadRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

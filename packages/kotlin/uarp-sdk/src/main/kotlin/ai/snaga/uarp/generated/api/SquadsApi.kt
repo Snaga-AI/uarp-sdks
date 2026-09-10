@@ -247,8 +247,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
      */
-    public suspend fun getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/graph/nodes/${encodePathSegment(agentId)}",
@@ -266,8 +266,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
      */
-    public suspend fun getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = RequestOptions()): TeamRunDetail {
+        return client.request<TeamRunDetail>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/runs/${encodePathSegment(teamRunId)}",
@@ -380,8 +380,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/squads/{squadId}/runs`
      */
-    public suspend fun startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = RequestOptions()): StartSquadRunResponse {
+        return client.request<StartSquadRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/runs",

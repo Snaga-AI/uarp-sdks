@@ -315,8 +315,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/states/{stateId}`
      */
-    public suspend fun getPublicState(stateId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPublicState(stateId: String, options: RequestOptions = RequestOptions()): PublicState {
+        return client.request<PublicState>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/states/${encodePathSegment(stateId)}",
@@ -330,8 +330,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/tenants/{slug}`
      */
-    public suspend fun getPublicTenantProfile(slug: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getPublicTenantProfile(slug: String, options: RequestOptions = RequestOptions()): PublicTenant {
+        return client.request<PublicTenant>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/tenants/${encodePathSegment(slug)}",

@@ -63,8 +63,8 @@ public class MetaApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/openapi.json`
      */
-    public suspend fun getOpenAPISpec(options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getOpenAPISpec(options: RequestOptions = RequestOptions()): JsonObject {
+        return client.request<JsonObject>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/openapi.json",

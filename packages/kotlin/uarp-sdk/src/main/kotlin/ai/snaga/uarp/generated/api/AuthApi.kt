@@ -99,8 +99,8 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/auth/mfa/enrol`
      */
-    public suspend fun enrolMfa(body: EnrolMfaRequest? = null, options: RequestOptions = RequestOptions()): EnrolMfaResponse {
-        return client.request<EnrolMfaResponse>(
+    public suspend fun enrolMfa(body: EnrolMfaRequest? = null, options: RequestOptions = RequestOptions()): MfaEnrolment {
+        return client.request<MfaEnrolment>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/auth/mfa/enrol",

@@ -10,10 +10,10 @@ import type {
   DeleteNotificationResponse,
   DeleteNotificationTargetResponse,
   GetUnreadCountResponse,
-  JsonObject,
   ListNotificationTargetsResponse,
   ListNotificationsResponse,
   MarkAllNotificationsReadResponse,
+  MarkNotificationReadResponse,
   NotificationPreferences,
   NotificationPreferencesInput,
   NotificationTarget,
@@ -201,7 +201,7 @@ export class NotificationsResource extends APIResource {
    *
    * Required scopes: `notifications:write`.
    */
-  markNotificationRead(notifId: string, options?: RequestOptions): Promise<JsonObject> {
+  markNotificationRead(notifId: string, options?: RequestOptions): Promise<MarkNotificationReadResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/notifications/${encodeURIComponent(String(notifId))}/read`,

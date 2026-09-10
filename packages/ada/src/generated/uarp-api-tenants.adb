@@ -200,15 +200,16 @@ package body UARP.API.Tenants is
      (Self : Client_Type;
       Key_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Revoke_API_Key_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/tenants/me/keys/" & UARP.Types.Encode_Path_Segment (Key_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/tenants/me/keys/" & UARP.Types.Encode_Path_Segment (Key_Id),
+             Idempotent => True,
+             Options => Options));
    end Revoke_API_Key;
 
    function Update

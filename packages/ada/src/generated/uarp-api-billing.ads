@@ -156,7 +156,7 @@ package UARP.API.Billing is
       Payload : UARP.Models.Handle_Stripe_Webhook_Request;
       Params : Handle_Stripe_Webhook_Params := No_Handle_Stripe_Webhook_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Handle_Stripe_Webhook_Response;
 
    --  List available billing plans
    --

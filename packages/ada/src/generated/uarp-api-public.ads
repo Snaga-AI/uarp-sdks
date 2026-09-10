@@ -255,7 +255,7 @@ package UARP.API.Public is
      (Self : Client_Type;
       State_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Public_State;
 
    --  Get public tenant profile
    --
@@ -264,7 +264,7 @@ package UARP.API.Public is
      (Self : Client_Type;
       Slug : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Public_Tenant;
 
    --  Tenant custom CSS stylesheet
    --

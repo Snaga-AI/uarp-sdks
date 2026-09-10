@@ -187,7 +187,7 @@ package UARP.API.Squads is
       Squad_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Graph_Node;
 
    --  Get specific squad run
    --
@@ -201,7 +201,7 @@ package UARP.API.Squads is
       Squad_Id : String;
       Team_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Team_Run_Detail;
 
    --  Get squad run messages
    --
@@ -280,7 +280,7 @@ package UARP.API.Squads is
       Squad_Id : String;
       Payload : UARP.Models.Start_Squad_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Start_Squad_Run_Response;
 
    --  SSE stream for squad chat
    --

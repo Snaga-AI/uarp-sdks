@@ -13,7 +13,7 @@ public struct ProgramsAPI: Sendable {
     /// `POST /api/v1/programs/{programId}/apply`
     ///
     /// Required scopes: `sessions:write`.
-    public func applyProgram(programId: String, body: ApplyProgramRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func applyProgram(programId: String, body: ApplyProgramRequest, options: RequestOptions = .init()) async throws -> ApplyProgramResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/programs/\(encodePathSegment(programId))/apply",
@@ -28,7 +28,7 @@ public struct ProgramsAPI: Sendable {
     /// `POST /api/v1/programs`
     ///
     /// Required scopes: `agents:write`.
-    public func create(body: CreateProgramRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func create(body: CreateProgramRequest, options: RequestOptions = .init()) async throws -> Program {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/programs",
@@ -43,7 +43,7 @@ public struct ProgramsAPI: Sendable {
     /// `GET /api/v1/programs/{programId}`
     ///
     /// Required scopes: `agents:read`.
-    public func get(programId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func get(programId: String, options: RequestOptions = .init()) async throws -> Program {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/programs/\(encodePathSegment(programId))",

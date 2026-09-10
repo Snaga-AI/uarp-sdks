@@ -158,7 +158,7 @@ public struct BillingAPI: Sendable {
     /// HMAC-verified against the webhook signing secret.
     ///
     /// `POST /api/v1/webhooks/stripe`
-    public func handleStripeWebhook(body: HandleStripeWebhookRequest, stripeSignature: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func handleStripeWebhook(body: HandleStripeWebhookRequest, stripeSignature: String, options: RequestOptions = .init()) async throws -> HandleStripeWebhookResponse {
         var headers: [String: String] = [:]
         headers["Stripe-Signature"] = stripeSignature
         return try await client.send(RequestSpec(

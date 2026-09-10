@@ -49,8 +49,8 @@ public class WebhooksApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `webhooks:write`.
      */
-    public suspend fun delete(webhookId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun delete(webhookId: String, options: RequestOptions = RequestOptions()): DeleteWebhookResponse {
+        return client.request<DeleteWebhookResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/webhooks/${encodePathSegment(webhookId)}",
@@ -67,8 +67,8 @@ public class WebhooksApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `webhooks:read`.
      */
-    public suspend fun `get`(webhookId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun `get`(webhookId: String, options: RequestOptions = RequestOptions()): WebhookSubscription {
+        return client.request<WebhookSubscription>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/webhooks/${encodePathSegment(webhookId)}",

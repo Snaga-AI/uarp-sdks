@@ -5,8 +5,8 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
   CreateWebhookRequest,
+  DeleteWebhookResponse,
   JsonObject,
-  JsonValue,
   ListWebhookDeliveriesResponse,
   ListWebhooksResponse,
   SensorWebhookResponse,
@@ -52,7 +52,7 @@ export class WebhooksResource extends APIResource {
    *
    * Required scopes: `webhooks:write`.
    */
-  delete(webhookId: string, options?: RequestOptions): Promise<JsonValue> {
+  delete(webhookId: string, options?: RequestOptions): Promise<DeleteWebhookResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/webhooks/${encodeURIComponent(String(webhookId))}`,
@@ -68,7 +68,7 @@ export class WebhooksResource extends APIResource {
    *
    * Required scopes: `webhooks:read`.
    */
-  get(webhookId: string, options?: RequestOptions): Promise<JsonValue> {
+  get(webhookId: string, options?: RequestOptions): Promise<WebhookSubscription> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/webhooks/${encodeURIComponent(String(webhookId))}`,

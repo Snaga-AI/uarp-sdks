@@ -2376,6 +2376,17 @@ public data class ApplyProgramRequest(
 )
 
 /**
+ * `ApplyProgramResponse` model.
+ */
+@Serializable
+public data class ApplyProgramResponse(
+    public val applied: Boolean,
+    @SerialName("program_id")
+    public val programId: String,
+    public val todos: List<Todo>,
+)
+
+/**
  * `ApproveRunResponse` model.
  */
 @Serializable
@@ -3273,6 +3284,16 @@ public data class BulkDeleteSessionsRequest(
 public data class BulkDeleteSessionsResponse(
     public val deleted: Long,
     public val failed: List<String>,
+)
+
+/**
+ * `CancelA2ATaskResponse` model.
+ */
+@Serializable
+public data class CancelA2ATaskResponse(
+    public val cancelled: Boolean,
+    @SerialName("task_id")
+    public val taskId: String,
 )
 
 /**
@@ -5524,6 +5545,16 @@ public data class DeleteUserResponse(
 )
 
 /**
+ * `DeleteWebhookResponse` model.
+ */
+@Serializable
+public data class DeleteWebhookResponse(
+    public val deleted: Boolean,
+    @SerialName("webhook_id")
+    public val webhookId: String,
+)
+
+/**
  * `DeleteWorkspaceFileResponse` model.
  */
 @Serializable
@@ -6040,21 +6071,6 @@ public object EnrolMfaRequestAlgorithmSerializer : KSerializer<EnrolMfaRequestAl
 }
 
 /**
- * `EnrolMfaResponse` model.
- */
-@Serializable
-public data class EnrolMfaResponse(
-    @SerialName("otpauth_url")
-    public val otpauthURL: String,
-    /**
-     * Base32 secret.
-     */
-    public val secret: String,
-    @SerialName("recovery_codes")
-    public val recoveryCodes: List<String>,
-)
-
-/**
  * RFC 9457 problem+json style error; correlationId for request tracing.
  */
 @Serializable
@@ -6507,6 +6523,26 @@ public data class FileEntry(
     public val sizeBytes: Long,
     @SerialName("tenant_id")
     public val tenantId: String,
+)
+
+/**
+ * A stored file as GET /files/{fileId} serves it (measured 2026-09-10 on e2e-canon). POST
+ * /files returns the same record plus `url`.
+ */
+@Serializable
+public data class FileRecord(
+    @SerialName("file_id")
+    public val fileId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val filename: String,
+    @SerialName("mime_type")
+    public val mimeType: String,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long,
+    public val sha256: String,
+    @SerialName("created_at")
+    public val createdAt: String,
 )
 
 /**
@@ -7587,6 +7623,14 @@ public data class GetListingReviewsResponse(
 )
 
 /**
+ * `GetMarketplaceCategoriesResponse` model.
+ */
+@Serializable
+public data class GetMarketplaceCategoriesResponse(
+    public val categories: List<String>,
+)
+
+/**
  * `GetMarkupConfigResponse` model.
  */
 @Serializable
@@ -8582,6 +8626,17 @@ public data class HandleStripeWebhookRequest(
 )
 
 /**
+ * `HandleStripeWebhookResponse` model.
+ */
+@Serializable
+public data class HandleStripeWebhookResponse(
+    public val received: Boolean,
+    public val handled: Boolean,
+    public val action: String? = null,
+    public val duplicate: Boolean? = null,
+)
+
+/**
  * `HealthCheckV1aliasResponse` model.
  */
 @Serializable
@@ -9118,6 +9173,28 @@ public data class Invite(
 public data class InviteUserRequest(
     public val email: String,
     public val role: String,
+)
+
+/**
+ * `InviteUserResponse` model.
+ */
+@Serializable
+public data class InviteUserResponse(
+    @SerialName("created_at")
+    public val createdAt: String? = null,
+    public val email: String? = null,
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    public val id: String? = null,
+    @SerialName("invited_by")
+    public val invitedBy: String? = null,
+    public val role: String? = null,
+    public val secret: String? = null,
+    public val status: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("email_sent")
+    public val emailSent: Boolean,
 )
 
 /**
@@ -10238,6 +10315,14 @@ public data class ListNotificationTargetsResponse(
 )
 
 /**
+ * `ListPlaygroundTemplatesResponse` model.
+ */
+@Serializable
+public data class ListPlaygroundTemplatesResponse(
+    public val templates: List<PlaygroundTemplate>,
+)
+
+/**
  * `ListProgramsResponse` model.
  */
 @Serializable
@@ -11335,6 +11420,14 @@ public object MarketplaceListingStatusSerializer : KSerializer<MarketplaceListin
 }
 
 /**
+ * `MarkNotificationReadResponse` model.
+ */
+@Serializable
+public data class MarkNotificationReadResponse(
+    public val ok: Boolean,
+)
+
+/**
  * `MaterializeCanvasSquadRequest` model.
  */
 @Serializable
@@ -11621,6 +11714,19 @@ public data class MemoryImportEntry(
     public val tags: List<String>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
+)
+
+/**
+ * POST /auth/mfa/enrol (mfa.ts): the TOTP secret, its otpauth URL and the one-time recovery
+ * codes — shown once.
+ */
+@Serializable
+public data class MfaEnrolment(
+    @SerialName("otpauth_url")
+    public val otpauthURL: String,
+    public val secret: String,
+    @SerialName("recovery_codes")
+    public val recoveryCodes: List<String>,
 )
 
 /**
@@ -13520,6 +13626,36 @@ public data class PlatformLLMDefaults(
 )
 
 /**
+ * The visual-builder canvas of an agent as GET /playground/agents/{agentId} serves it
+ * (measured 2026-09-10 on e2e-canon); PUT returns the same shape after the write.
+ */
+@Serializable
+public data class PlaygroundAgentState(
+    @SerialName("agent_id")
+    public val agentId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val nodes: List<JsonObject>,
+    public val edges: List<JsonObject>,
+    public val metadata: JsonObject,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+)
+
+/**
+ * One starter template from GET /playground/templates (element keys measured 2026-09-10).
+ */
+@Serializable
+public data class PlaygroundTemplate(
+    public val id: String,
+    public val name: String,
+    public val description: String,
+    public val category: String,
+    public val nodes: List<JsonObject>,
+    public val edges: List<JsonObject>,
+)
+
+/**
  * An ordered curriculum an agent delivers.
  */
 @Serializable
@@ -14047,6 +14183,10 @@ public data class PublicPlan(
  */
 @Serializable
 public data class PublicState(
+    public val marketplace: JsonObject? = null,
+    public val agents: List<JsonObject>? = null,
+    public val governance: JsonObject? = null,
+    public val plan: String? = null,
     public val branding: JsonObject? = null,
     public val category: String,
     public val description: String? = null,
@@ -14071,6 +14211,10 @@ public data class PublicState(
  */
 @Serializable
 public data class PublicTenant(
+    /**
+     * Served 2026-09-10; contents not asserted.
+     */
+    public val marketplace: JsonObject? = null,
     @SerialName("tenant_id")
     public val tenantId: String,
     public val slug: String,
@@ -14200,6 +14344,17 @@ public data class RateListingRequest(
 )
 
 /**
+ * GET /health/ready and GET /readyz (measured 2026-09-10): overall status, the check's
+ * timestamp, and one entry per component — cron, events, kv, mcp, workers.
+ */
+@Serializable
+public data class ReadinessReport(
+    public val status: String,
+    public val timestamp: String,
+    public val components: JsonObject,
+)
+
+/**
  * `RegisterAmbassadorRequest` model.
  */
 @Serializable
@@ -14216,7 +14371,7 @@ public data class RegisterAmbassadorRequest(
  */
 @Serializable
 public data class RegisterAmbassadorResponse(
-    public val ok: Boolean? = null,
+    public val ok: Boolean,
 )
 
 /**
@@ -14797,6 +14952,16 @@ public data class ResumeRunResponse(
     public val resumed: Boolean,
     @SerialName("run_id")
     public val runId: String,
+)
+
+/**
+ * `RevokeAPIKeyResponse` model.
+ */
+@Serializable
+public data class RevokeAPIKeyResponse(
+    public val revoked: Boolean,
+    @SerialName("key_id")
+    public val keyId: String,
 )
 
 /**
@@ -16742,9 +16907,6 @@ public data class SetUserRoleResponse(
     public val updated: Boolean,
     @SerialName("user_id")
     public val userId: String,
-    /**
-     * The role now in force — echoed so a client need not re-read.
-     */
     public val role: String,
 )
 
@@ -17096,6 +17258,15 @@ public data class StartSquadRunRequest(
     public val message: String? = null,
     @SerialName("chat_mode")
     public val chatMode: StartTeamRunRequestInputVariant2chatMode? = null,
+)
+
+/**
+ * `StartSquadRunResponse` model.
+ */
+@Serializable
+public data class StartSquadRunResponse(
+    @SerialName("team_run_id")
+    public val teamRunId: String,
 )
 
 /**
@@ -17757,6 +17928,23 @@ public object TeamPoliciesOnWorkerFailureSerializer : KSerializer<TeamPoliciesOn
 }
 
 /**
+ * GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
+ * 2026-09-10 on e2e-canon, identical on both routes): the team run and the member runs it
+ * spawned.
+ */
+@Serializable
+public data class TeamRunDetail(
+    @SerialName("team_run_id")
+    public val teamRunId: String,
+    @SerialName("team_id")
+    public val teamId: String,
+    public val status: String,
+    public val runs: List<Run>,
+    @SerialName("total_runs")
+    public val totalRuns: Long,
+)
+
+/**
  * `TeamRunSummary` model.
  */
 @Serializable
@@ -18393,7 +18581,42 @@ public data class TenantOverviewRunsRecentItem(
     @SerialName("duration_ms")
     public val durationMs: Long? = null,
     public val error: String? = null,
+    /**
+     * Passed through from the run record (same values as `Run.execution_mode`); absent when the
+     * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+     */
+    @SerialName("execution_mode")
+    public val executionMode: TenantOverviewRunsRecentItemExecutionMode? = null,
 )
+
+/**
+ * Passed through from the run record (same values as `Run.execution_mode`); absent when the
+ * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = TenantOverviewRunsRecentItemExecutionModeSerializer::class)
+@JvmInline
+public value class TenantOverviewRunsRecentItemExecutionMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ASYNC: TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode("async")
+        public val BRIDGE: TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode("bridge")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<TenantOverviewRunsRecentItemExecutionMode> = listOf(ASYNC, BRIDGE)
+    }
+}
+
+public object TenantOverviewRunsRecentItemExecutionModeSerializer : KSerializer<TenantOverviewRunsRecentItemExecutionMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.TenantOverviewRunsRecentItemExecutionMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: TenantOverviewRunsRecentItemExecutionMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): TenantOverviewRunsRecentItemExecutionMode = TenantOverviewRunsRecentItemExecutionMode(decoder.decodeString())
+}
 
 /**
  * `TenantOverviewSchedules` model.
@@ -18888,6 +19111,17 @@ public data class UnlinkAuthProviderResponse(
     public val remainingFactors: Long? = null,
     @SerialName("already_unlinked")
     public val alreadyUnlinked: Boolean? = null,
+)
+
+/**
+ * `UnpublishListingResponse` model.
+ */
+@Serializable
+public data class UnpublishListingResponse(
+    public val error: RevokeSessionShareResponseError,
+    public val message: String,
+    @SerialName("retry_after_seconds")
+    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -19665,6 +19899,26 @@ public data class UploadFileRequest(
 )
 
 /**
+ * `UploadFileResponse` model.
+ */
+@Serializable
+public data class UploadFileResponse(
+    @SerialName("file_id")
+    public val fileId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val filename: String,
+    @SerialName("mime_type")
+    public val mimeType: String,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long,
+    public val sha256: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+    public val url: String,
+)
+
+/**
  * `UploadPublicSessionImageResponse` model.
  */
 @Serializable
@@ -19998,6 +20252,8 @@ public data class VerifyMfaRequest(
 @Serializable
 public data class VerifyMfaResponse(
     public val verified: Boolean,
+    @SerialName("recovery_remaining")
+    public val recoveryRemaining: Long? = null,
 )
 
 /**

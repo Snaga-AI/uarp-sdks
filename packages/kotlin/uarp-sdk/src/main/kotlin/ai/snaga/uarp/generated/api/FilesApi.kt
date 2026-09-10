@@ -66,8 +66,8 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun getFileMetadata(fileId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getFileMetadata(fileId: String, options: RequestOptions = RequestOptions()): FileRecord {
+        return client.request<FileRecord>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/files/${encodePathSegment(fileId)}",
@@ -120,8 +120,8 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun upload(body: UploadFileRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun upload(body: UploadFileRequest, options: RequestOptions = RequestOptions()): UploadFileResponse {
+        return client.request<UploadFileResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/files",

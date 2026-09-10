@@ -69,7 +69,7 @@ public struct HealthAPI: Sendable {
     /// Kubernetes readiness probe
     ///
     /// `GET /health/ready`
-    public func healthReady(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func healthReady(options: RequestOptions = .init()) async throws -> ReadinessReport {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/health/ready",
@@ -104,7 +104,7 @@ public struct HealthAPI: Sendable {
     /// Readiness alias (/readyz)
     ///
     /// `GET /readyz`
-    public func readyzAlias(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func readyzAlias(options: RequestOptions = .init()) async throws -> ReadinessReport {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/readyz",

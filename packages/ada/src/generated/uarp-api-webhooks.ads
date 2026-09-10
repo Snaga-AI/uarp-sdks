@@ -39,7 +39,7 @@ package UARP.API.Webhooks is
      (Self : Client_Type;
       Webhook_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Delete_Webhook_Response;
 
    --  Get a webhook subscription
    --
@@ -50,7 +50,7 @@ package UARP.API.Webhooks is
      (Self : Client_Type;
       Webhook_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Webhook_Subscription;
 
    --  List webhook subscriptions
    --

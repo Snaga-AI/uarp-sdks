@@ -234,7 +234,7 @@ public struct PublicAPI: Sendable {
     /// Get public state detail
     ///
     /// `GET /api/v1/public/states/{stateId}`
-    public func getPublicState(stateId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPublicState(stateId: String, options: RequestOptions = .init()) async throws -> PublicState {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/states/\(encodePathSegment(stateId))",
@@ -245,7 +245,7 @@ public struct PublicAPI: Sendable {
     /// Get public tenant profile
     ///
     /// `GET /api/v1/public/tenants/{slug}`
-    public func getPublicTenantProfile(slug: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getPublicTenantProfile(slug: String, options: RequestOptions = .init()) async throws -> PublicTenant {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/tenants/\(encodePathSegment(slug))",

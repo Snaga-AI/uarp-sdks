@@ -15,6 +15,7 @@ import type {
   GetUsageTimeseriesMetric,
   GetUsageTimeseriesResponse,
   HandleStripeWebhookRequest,
+  HandleStripeWebhookResponse,
   JsonValue,
   ListBillingPlansResponse,
   ListBillingSpecPackagesResponse,
@@ -207,7 +208,7 @@ export class BillingResource extends APIResource {
    *
    * `POST /api/v1/webhooks/stripe`
    */
-  handleStripeWebhook(body: HandleStripeWebhookRequest, params: HandleStripeWebhookParams, options?: RequestOptions): Promise<JsonValue> {
+  handleStripeWebhook(body: HandleStripeWebhookRequest, params: HandleStripeWebhookParams, options?: RequestOptions): Promise<HandleStripeWebhookResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/webhooks/stripe',

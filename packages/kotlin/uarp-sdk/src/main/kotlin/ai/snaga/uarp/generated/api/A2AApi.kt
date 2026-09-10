@@ -60,8 +60,8 @@ public class A2AApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun cancelA2ATask(taskId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun cancelA2ATask(taskId: String, options: RequestOptions = RequestOptions()): CancelA2ATaskResponse {
+        return client.request<CancelA2ATaskResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/a2a/tasks/${encodePathSegment(taskId)}/cancel",
@@ -80,8 +80,8 @@ public class A2AApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun createA2ATask(body: CreateA2ATaskRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun createA2ATask(body: CreateA2ATaskRequest, options: RequestOptions = RequestOptions()): A2ATask {
+        return client.request<A2ATask>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/a2a/tasks",
@@ -99,8 +99,8 @@ public class A2AApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getA2ATask(taskId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getA2ATask(taskId: String, options: RequestOptions = RequestOptions()): A2ATask {
+        return client.request<A2ATask>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/a2a/tasks/${encodePathSegment(taskId)}",

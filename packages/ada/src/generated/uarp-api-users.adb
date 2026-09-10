@@ -73,17 +73,18 @@ package body UARP.API.Users is
      (Self : Client_Type;
       Payload : UARP.Models.Invite_User_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Invite_User_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/users/invites",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/users/invites",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Invite_User;
 
    function List

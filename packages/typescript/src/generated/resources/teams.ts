@@ -24,6 +24,8 @@ import type {
   StartTeamRunResponse,
   Team,
   TeamCreate,
+  TeamGraphNode,
+  TeamRunDetail,
   TeamRunSummary,
   TeamUpdate,
   UpdateTeamGraphNodeRequest,
@@ -242,7 +244,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getTeamGraphNode(teamId: string, agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  getTeamGraphNode(teamId: string, agentId: string, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/graph/nodes/${encodeURIComponent(String(agentId))}`,
@@ -257,7 +259,7 @@ export class TeamsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getTeamRun(teamId: string, teamRunId: string, options?: RequestOptions): Promise<JsonObject> {
+  getTeamRun(teamId: string, teamRunId: string, options?: RequestOptions): Promise<TeamRunDetail> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/runs/${encodeURIComponent(String(teamRunId))}`,

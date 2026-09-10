@@ -175,7 +175,7 @@ public struct TeamsAPI: Sendable {
     /// `GET /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:read`.
-    public func getTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/graph/nodes/\(encodePathSegment(agentId))",
@@ -188,7 +188,7 @@ public struct TeamsAPI: Sendable {
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
     ///
     /// Required scopes: `agents:read`.
-    public func getTeamRun(teamId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getTeamRun(teamId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> TeamRunDetail {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/teams/\(encodePathSegment(teamId))/runs/\(encodePathSegment(teamRunId))",

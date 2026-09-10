@@ -403,7 +403,10 @@ test('parses the production document into the expected shape', () => {
   // 1109 -> 1130 on 2026-09-10 (0.5.20): uarp #448 gave 39 responses their
   // shapes — AuditLogEntry, AgentCapabilities, RunFeedback* and the inline
   // result objects of runs/sessions/workspaces became named types.
-  assert.equal(spec.types.length, 1130);
+  // 1130 -> 1148 on 2026-09-10 (0.5.21): uarp #450 typed 48 more responses
+  // (ReadinessReport, FileRecord, TeamRunDetail, PlaygroundAgentState,
+  // PlaygroundTemplate, MfaEnrolment and the governance/a2a/team result shapes).
+  assert.equal(spec.types.length, 1148);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.

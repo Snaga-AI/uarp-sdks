@@ -216,7 +216,7 @@ impl NotificationsApi {
     /// `PUT /api/v1/notifications/{notifId}/read`
     ///
     /// Required scopes: `notifications:write`.
-    pub async fn mark_notification_read(&self, notif_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn mark_notification_read(&self, notif_id: &str) -> Result<models::MarkNotificationReadResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

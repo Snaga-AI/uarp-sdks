@@ -18,6 +18,7 @@ import type {
   ListAPIKeysResponse,
   ListMyTenantsResponse,
   LocateMyAgentResponse,
+  RevokeAPIKeyResponse,
   Tenant,
   UpdateTenantRequest,
   VerifyTenantDomainResponse,
@@ -268,7 +269,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `tenants:write`.
    */
-  revokeAPIKey(keyId: string, options?: RequestOptions): Promise<JsonValue> {
+  revokeAPIKey(keyId: string, options?: RequestOptions): Promise<RevokeAPIKeyResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/tenants/me/keys/${encodeURIComponent(String(keyId))}`,

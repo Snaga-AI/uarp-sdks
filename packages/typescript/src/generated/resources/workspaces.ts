@@ -11,7 +11,6 @@ import type {
   DeleteWorkspaceFileTrash,
   DeleteWorkspaceResponse,
   EmptyWorkspaceTrashResponse,
-  JsonObject,
   JsonValue,
   ListAgentWorkspaceFilesResponse,
   ListWorkspaceFileHistoryResponse,
@@ -168,7 +167,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  create(body: CreateWorkspaceRequest, options?: RequestOptions): Promise<JsonObject> {
+  create(body: CreateWorkspaceRequest, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/workspaces',

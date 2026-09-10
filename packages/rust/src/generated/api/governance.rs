@@ -78,7 +78,7 @@ impl GovernanceApi {
     /// sufficient.
     ///
     /// `POST /api/v1/governance/emergency/safe-mode`
-    pub async fn activate_safe_mode(&self, body: &models::ActivateSafeModeRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn activate_safe_mode(&self, body: &models::ActivateSafeModeRequest) -> Result<models::EmergencyState> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -142,7 +142,7 @@ impl GovernanceApi {
     /// Cast ballot
     ///
     /// `POST /api/v1/governance/voting/proposals/{id}/ballot`
-    pub async fn cast_ballot(&self, id: &str, body: &models::CastBallotRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn cast_ballot(&self, id: &str, body: &models::CastBallotRequest) -> Result<models::Ballot> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -238,7 +238,7 @@ impl GovernanceApi {
     /// Create goal
     ///
     /// `POST /api/v1/governance/goals`
-    pub async fn create_goal(&self, body: &models::CreateGoalRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_goal(&self, body: &models::CreateGoalRequest) -> Result<models::Goal> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -254,7 +254,7 @@ impl GovernanceApi {
     /// Create improvement proposal
     ///
     /// `POST /api/v1/governance/improvement/{agentId}`
-    pub async fn create_improvement_proposal(&self, agent_id: &str, body: &models::CreateImprovementProposalRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_improvement_proposal(&self, agent_id: &str, body: &models::CreateImprovementProposalRequest) -> Result<models::ImprovementProposal> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -270,7 +270,7 @@ impl GovernanceApi {
     /// Create proposal
     ///
     /// `POST /api/v1/governance/voting/proposals`
-    pub async fn create_voting_proposal(&self, body: &models::CreateVotingProposalRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_voting_proposal(&self, body: &models::CreateVotingProposalRequest) -> Result<models::VotingProposal> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -419,7 +419,7 @@ impl GovernanceApi {
     /// Get case
     ///
     /// `GET /api/v1/governance/arbiter/cases/{id}`
-    pub async fn get_arbiter_case(&self, id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_arbiter_case(&self, id: &str) -> Result<models::ArbiterCase> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -499,7 +499,7 @@ impl GovernanceApi {
     /// Get goal
     ///
     /// `GET /api/v1/governance/goals/{id}`
-    pub async fn get_goal(&self, id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_goal(&self, id: &str) -> Result<models::Goal> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -546,7 +546,7 @@ impl GovernanceApi {
     /// Get proposal
     ///
     /// `GET /api/v1/governance/improvement/{agentId}/{version}`
-    pub async fn get_improvement_proposal(&self, agent_id: &str, version: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_improvement_proposal(&self, agent_id: &str, version: &str) -> Result<models::ImprovementProposal> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -626,7 +626,7 @@ impl GovernanceApi {
     /// Get proposal
     ///
     /// `GET /api/v1/governance/voting/proposals/{id}`
-    pub async fn get_voting_proposal(&self, id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_voting_proposal(&self, id: &str) -> Result<models::VotingProposal> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -997,7 +997,7 @@ impl GovernanceApi {
     /// Any other transition returns 400. Requires admin/founder role.
     ///
     /// `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
-    pub async fn update_improvement_status(&self, agent_id: &str, version: &str, body: &models::UpdateImprovementStatusRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_improvement_status(&self, agent_id: &str, version: &str, body: &models::UpdateImprovementStatusRequest) -> Result<models::ImprovementProposal> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

@@ -230,8 +230,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = RequestOptions()): TeamGraphNode {
+        return client.request<TeamGraphNode>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/graph/nodes/${encodePathSegment(agentId)}",
@@ -247,8 +247,8 @@ public class TeamsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getTeamRun(teamId: String, teamRunId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getTeamRun(teamId: String, teamRunId: String, options: RequestOptions = RequestOptions()): TeamRunDetail {
+        return client.request<TeamRunDetail>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/teams/${encodePathSegment(teamId)}/runs/${encodePathSegment(teamRunId)}",

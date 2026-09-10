@@ -182,14 +182,15 @@ package body UARP.API.Teams is
       Team_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Graph_Node
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/graph/nodes/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Options => Options));
    end Get_Team_Graph_Node;
 
    function Get_Team_Run
@@ -197,14 +198,15 @@ package body UARP.API.Teams is
       Team_Id : String;
       Team_Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Team_Run_Detail
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/teams/" & UARP.Types.Encode_Path_Segment (Team_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Team_Run_Id),
+             Options => Options));
    end Get_Team_Run;
 
    function Get_Team_Run_Messages

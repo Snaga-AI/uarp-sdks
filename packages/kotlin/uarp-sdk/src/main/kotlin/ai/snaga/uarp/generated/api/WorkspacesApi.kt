@@ -68,8 +68,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun create(body: CreateWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun create(body: CreateWorkspaceRequest, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces",

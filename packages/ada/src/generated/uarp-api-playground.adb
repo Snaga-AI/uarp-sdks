@@ -8,27 +8,29 @@ package body UARP.API.Playground is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Playground_Agent_State
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Options => Options));
    end Get_Playground_Canvas;
 
    function List_Playground_Templates
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Playground_Templates_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/playground/templates",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/playground/templates",
+             Options => Options));
    end List_Playground_Templates;
 
    function Run
@@ -36,17 +38,18 @@ package body UARP.API.Playground is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Run
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/run",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/run",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Run;
 
    function Save_Playground_Canvas
@@ -54,16 +57,17 @@ package body UARP.API.Playground is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Playground_Agent_State
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/playground/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Save_Playground_Canvas;
 end UARP.API.Playground;

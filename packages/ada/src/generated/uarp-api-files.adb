@@ -36,14 +36,15 @@ package body UARP.API.Files is
      (Self : Client_Type;
       File_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.File_Record
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/files/" & UARP.Types.Encode_Path_Segment (File_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/files/" & UARP.Types.Encode_Path_Segment (File_Id),
+             Options => Options));
    end Get_File_Metadata;
 
    function List
@@ -123,16 +124,17 @@ package body UARP.API.Files is
      (Self : Client_Type;
       Payload : UARP.Models.Upload_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Upload_File_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/files",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/files",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Upload;
 end UARP.API.Files;

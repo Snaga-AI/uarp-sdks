@@ -116,7 +116,7 @@ impl UsersApi {
     /// `POST /api/v1/users/invites`
     ///
     /// Required scopes: `users:write`.
-    pub async fn invite_user(&self, body: &models::InviteUserRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn invite_user(&self, body: &models::InviteUserRequest) -> Result<models::InviteUserResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

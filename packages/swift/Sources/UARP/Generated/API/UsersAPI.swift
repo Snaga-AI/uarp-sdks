@@ -81,7 +81,7 @@ public struct UsersAPI: Sendable {
     /// `POST /api/v1/users/invites`
     ///
     /// Required scopes: `users:write`.
-    public func inviteUser(body: InviteUserRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func inviteUser(body: InviteUserRequest, options: RequestOptions = .init()) async throws -> InviteUserResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/users/invites",

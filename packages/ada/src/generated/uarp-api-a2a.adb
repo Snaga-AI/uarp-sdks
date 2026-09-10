@@ -23,46 +23,49 @@ package body UARP.API.A2A is
      (Self : Client_Type;
       Task_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Cancel_A2A_Task_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/a2a/tasks/" & UARP.Types.Encode_Path_Segment (Task_Id) & "/cancel",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/a2a/tasks/" & UARP.Types.Encode_Path_Segment (Task_Id) & "/cancel",
+             Idempotent => True,
+             Options => Options));
    end Cancel_A2A_Task;
 
    function Create_A2A_Task
      (Self : Client_Type;
       Payload : UARP.Models.Create_A2A_Task_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.A2A_Task
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/a2a/tasks",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/a2a/tasks",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_A2A_Task;
 
    function Get_A2A_Task
      (Self : Client_Type;
       Task_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.A2A_Task
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/a2a/tasks/" & UARP.Types.Encode_Path_Segment (Task_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/a2a/tasks/" & UARP.Types.Encode_Path_Segment (Task_Id),
+             Options => Options));
    end Get_A2A_Task;
 
    function Get_Agent_Card

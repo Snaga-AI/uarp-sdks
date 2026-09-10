@@ -114,8 +114,8 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:write`.
      */
-    public suspend fun inviteUser(body: InviteUserRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun inviteUser(body: InviteUserRequest, options: RequestOptions = RequestOptions()): InviteUserResponse {
+        return client.request<InviteUserResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/users/invites",

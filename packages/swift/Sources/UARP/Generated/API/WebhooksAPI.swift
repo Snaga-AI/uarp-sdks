@@ -28,7 +28,7 @@ public struct WebhooksAPI: Sendable {
     /// `DELETE /api/v1/webhooks/{webhookId}`
     ///
     /// Required scopes: `webhooks:write`.
-    public func delete(webhookId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func delete(webhookId: String, options: RequestOptions = .init()) async throws -> DeleteWebhookResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/webhooks/\(encodePathSegment(webhookId))",
@@ -42,7 +42,7 @@ public struct WebhooksAPI: Sendable {
     /// `GET /api/v1/webhooks/{webhookId}`
     ///
     /// Required scopes: `webhooks:read`.
-    public func get(webhookId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func get(webhookId: String, options: RequestOptions = .init()) async throws -> WebhookSubscription {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/webhooks/\(encodePathSegment(webhookId))",

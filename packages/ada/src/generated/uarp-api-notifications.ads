@@ -3,7 +3,6 @@
 --  User notifications
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -147,7 +146,7 @@ package UARP.API.Notifications is
      (Self : Client_Type;
       Notif_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Mark_Notification_Read_Response;
 
    --  Replace the tenant's notification routing preferences
    --

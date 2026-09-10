@@ -11,7 +11,6 @@ import type {
   CompleteOAuthLoginResponse,
   DisableMfaResponse,
   EnrolMfaRequest,
-  EnrolMfaResponse,
   GetMeResponse,
   GetMfaStatusResponse,
   GoogleOneTapAuthRequest,
@@ -21,6 +20,7 @@ import type {
   ListAuthProvidersResponse,
   ListMeSessionsResponse,
   LogoutResponse,
+  MfaEnrolment,
   MintSSETokenResponse,
   OAuthAppExchangeRequest,
   OAuthAppExchangeResponse,
@@ -131,7 +131,7 @@ export class AuthResource extends APIResource {
    *
    * `POST /api/v1/auth/mfa/enrol`
    */
-  enrolMfa(body?: EnrolMfaRequest, options?: RequestOptions): Promise<EnrolMfaResponse> {
+  enrolMfa(body?: EnrolMfaRequest, options?: RequestOptions): Promise<MfaEnrolment> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/auth/mfa/enrol',

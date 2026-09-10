@@ -6,9 +6,9 @@ import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   GetListingReviewsResponse,
+  GetMarketplaceCategoriesResponse,
   InvokeListingAgentRequest,
   JsonObject,
-  JsonValue,
   ListFeaturedSpecsResponse,
   ListSubscriptionsResponse,
   MarketplaceInvocation,
@@ -20,6 +20,7 @@ import type {
   SearchMarketplaceResponse,
   SearchMarketplaceSort,
   SubscribeToListingRequest,
+  UnpublishListingResponse,
   UnsubscribeFromListingResponse,
 } from '../models.js';
 
@@ -94,7 +95,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:read`.
    */
-  getMarketplaceCategories(options?: RequestOptions): Promise<JsonValue> {
+  getMarketplaceCategories(options?: RequestOptions): Promise<GetMarketplaceCategoriesResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/marketplace/categories',
@@ -124,7 +125,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:invoke`.
    */
-  invokeListingAgent(listingId: string, body: InvokeListingAgentRequest, options?: RequestOptions): Promise<JsonObject> {
+  invokeListingAgent(listingId: string, body: InvokeListingAgentRequest, options?: RequestOptions): Promise<MarketplaceInvocation> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}/invoke`,
@@ -239,7 +240,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:write`.
    */
-  unpublishListing(listingId: string, options?: RequestOptions): Promise<JsonValue> {
+  unpublishListing(listingId: string, options?: RequestOptions): Promise<UnpublishListingResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}`,

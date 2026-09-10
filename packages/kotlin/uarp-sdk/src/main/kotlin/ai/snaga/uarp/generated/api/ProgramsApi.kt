@@ -30,8 +30,8 @@ public class ProgramsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun applyProgram(programId: String, body: ApplyProgramRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun applyProgram(programId: String, body: ApplyProgramRequest, options: RequestOptions = RequestOptions()): ApplyProgramResponse {
+        return client.request<ApplyProgramResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/programs/${encodePathSegment(programId)}/apply",
@@ -49,8 +49,8 @@ public class ProgramsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun create(body: CreateProgramRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun create(body: CreateProgramRequest, options: RequestOptions = RequestOptions()): Program {
+        return client.request<Program>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/programs",
@@ -68,8 +68,8 @@ public class ProgramsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun `get`(programId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun `get`(programId: String, options: RequestOptions = RequestOptions()): Program {
+        return client.request<Program>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/programs/${encodePathSegment(programId)}",

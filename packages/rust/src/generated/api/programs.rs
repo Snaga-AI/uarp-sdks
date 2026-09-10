@@ -32,7 +32,7 @@ impl ProgramsApi {
     /// `POST /api/v1/programs/{programId}/apply`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn apply_program(&self, program_id: &str, body: &models::ApplyProgramRequest) -> Result<serde_json::Value> {
+    pub async fn apply_program(&self, program_id: &str, body: &models::ApplyProgramRequest) -> Result<models::ApplyProgramResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -50,7 +50,7 @@ impl ProgramsApi {
     /// `POST /api/v1/programs`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create(&self, body: &models::CreateProgramRequest) -> Result<serde_json::Value> {
+    pub async fn create(&self, body: &models::CreateProgramRequest) -> Result<models::Program> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -68,7 +68,7 @@ impl ProgramsApi {
     /// `GET /api/v1/programs/{programId}`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get(&self, program_id: &str) -> Result<serde_json::Value> {
+    pub async fn get(&self, program_id: &str) -> Result<models::Program> {
         self.client
             .request_json(Request {
                 method: Method::GET,

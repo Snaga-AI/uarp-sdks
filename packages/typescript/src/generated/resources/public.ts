@@ -28,6 +28,7 @@ import type {
   MaintenanceStatus,
   PlatformInfo,
   PublicDomainLookupResponse,
+  PublicState,
   PublicTenant,
   PublicTrackEventRequest,
   RespondToPublicHitlRequest,
@@ -352,7 +353,7 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/states/{stateId}`
    */
-  getPublicState(stateId: string, options?: RequestOptions): Promise<JsonObject> {
+  getPublicState(stateId: string, options?: RequestOptions): Promise<PublicState> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/states/${encodeURIComponent(String(stateId))}`,
@@ -365,7 +366,7 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/tenants/{slug}`
    */
-  getPublicTenantProfile(slug: string, options?: RequestOptions): Promise<JsonObject> {
+  getPublicTenantProfile(slug: string, options?: RequestOptions): Promise<PublicTenant> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/tenants/${encodeURIComponent(String(slug))}`,

@@ -81,7 +81,7 @@ impl FilesApi {
     /// `GET /api/v1/files/{fileId}`
     ///
     /// Required scopes: `files:read`.
-    pub async fn get_file_metadata(&self, file_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_file_metadata(&self, file_id: &str) -> Result<models::FileRecord> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -143,7 +143,7 @@ impl FilesApi {
     /// `POST /api/v1/files`
     ///
     /// Required scopes: `files:write`.
-    pub async fn upload(&self, body: &models::UploadFileRequest) -> Result<serde_json::Value> {
+    pub async fn upload(&self, body: &models::UploadFileRequest) -> Result<models::UploadFileResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

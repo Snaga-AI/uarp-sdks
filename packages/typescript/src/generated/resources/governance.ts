@@ -10,7 +10,9 @@ import type {
   AmbassadorRequestStatus,
   AmbassadorVetoRequest,
   AmendConstitutionRequest,
+  ArbiterCase,
   ArbiterRegistry,
+  Ballot,
   BootstrapAmbassadorResponse,
   CastBallotRequest,
   CheckGovernanceRequest,
@@ -33,6 +35,7 @@ import type {
   GetAgentViolationsResponse,
   GetGovernanceLedgerResponse,
   GetRootAgentResponse,
+  Goal,
   ImprovementProposal,
   IssueArbiterRulingRequest,
   IssueArbiterRulingResponse,
@@ -67,6 +70,7 @@ import type {
   VetoProposalResponse,
   VetoRecord,
   VoteResult,
+  VotingProposal,
 } from '../models.js';
 
 /**
@@ -129,7 +133,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/emergency/safe-mode`
    */
-  activateSafeMode(body: ActivateSafeModeRequest, options?: RequestOptions): Promise<JsonObject> {
+  activateSafeMode(body: ActivateSafeModeRequest, options?: RequestOptions): Promise<EmergencyState> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/emergency/safe-mode',
@@ -188,7 +192,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/voting/proposals/{id}/ballot`
    */
-  castBallot(id: string, body: CastBallotRequest, options?: RequestOptions): Promise<JsonObject> {
+  castBallot(id: string, body: CastBallotRequest, options?: RequestOptions): Promise<Ballot> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/ballot`,
@@ -277,7 +281,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/goals`
    */
-  createGoal(body: CreateGoalRequest, options?: RequestOptions): Promise<JsonObject> {
+  createGoal(body: CreateGoalRequest, options?: RequestOptions): Promise<Goal> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/goals',
@@ -292,7 +296,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/improvement/{agentId}`
    */
-  createImprovementProposal(agentId: string, body: CreateImprovementProposalRequest, options?: RequestOptions): Promise<JsonObject> {
+  createImprovementProposal(agentId: string, body: CreateImprovementProposalRequest, options?: RequestOptions): Promise<ImprovementProposal> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/governance/improvement/${encodeURIComponent(String(agentId))}`,
@@ -307,7 +311,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/voting/proposals`
    */
-  createVotingProposal(body: CreateVotingProposalRequest, options?: RequestOptions): Promise<JsonObject> {
+  createVotingProposal(body: CreateVotingProposalRequest, options?: RequestOptions): Promise<VotingProposal> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/voting/proposals',
@@ -437,7 +441,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/arbiter/cases/{id}`
    */
-  getArbiterCase(id: string, options?: RequestOptions): Promise<JsonObject> {
+  getArbiterCase(id: string, options?: RequestOptions): Promise<ArbiterCase> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/governance/arbiter/cases/${encodeURIComponent(String(id))}`,
@@ -502,7 +506,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/goals/{id}`
    */
-  getGoal(id: string, options?: RequestOptions): Promise<JsonObject> {
+  getGoal(id: string, options?: RequestOptions): Promise<Goal> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/governance/goals/${encodeURIComponent(String(id))}`,
@@ -544,7 +548,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/improvement/{agentId}/{version}`
    */
-  getImprovementProposal(agentId: string, version: string, options?: RequestOptions): Promise<JsonObject> {
+  getImprovementProposal(agentId: string, version: string, options?: RequestOptions): Promise<ImprovementProposal> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/governance/improvement/${encodeURIComponent(String(agentId))}/${encodeURIComponent(String(version))}`,
@@ -609,7 +613,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/voting/proposals/{id}`
    */
-  getVotingProposal(id: string, options?: RequestOptions): Promise<JsonObject> {
+  getVotingProposal(id: string, options?: RequestOptions): Promise<VotingProposal> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}`,
@@ -939,7 +943,7 @@ export class GovernanceResource extends APIResource {
    *
    * `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
    */
-  updateImprovementStatus(agentId: string, version: string, body: UpdateImprovementStatusRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateImprovementStatus(agentId: string, version: string, body: UpdateImprovementStatusRequest, options?: RequestOptions): Promise<ImprovementProposal> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/governance/improvement/${encodeURIComponent(String(agentId))}/${encodeURIComponent(String(version))}/status`,

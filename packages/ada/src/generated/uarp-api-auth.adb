@@ -63,7 +63,7 @@ package body UARP.API.Auth is
       Payload : UARP.Models.Enrol_Mfa_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Enrol_Mfa_Response
+      return UARP.Models.Mfa_Enrolment
    is
    begin
       return UARP.Models.From_JSON

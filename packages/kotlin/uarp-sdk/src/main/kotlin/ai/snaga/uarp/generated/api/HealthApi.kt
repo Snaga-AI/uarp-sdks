@@ -107,8 +107,8 @@ public class HealthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /health/ready`
      */
-    public suspend fun healthReady(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun healthReady(options: RequestOptions = RequestOptions()): ReadinessReport {
+        return client.request<ReadinessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/health/ready",
@@ -154,8 +154,8 @@ public class HealthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /readyz`
      */
-    public suspend fun readyzAlias(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun readyzAlias(options: RequestOptions = RequestOptions()): ReadinessReport {
+        return client.request<ReadinessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/readyz",

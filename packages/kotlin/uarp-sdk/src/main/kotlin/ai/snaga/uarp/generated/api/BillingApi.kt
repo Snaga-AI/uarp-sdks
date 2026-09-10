@@ -199,11 +199,11 @@ public class BillingApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/webhooks/stripe`
      */
-    public suspend fun handleStripeWebhook(body: HandleStripeWebhookRequest, stripeSignature: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun handleStripeWebhook(body: HandleStripeWebhookRequest, stripeSignature: String, options: RequestOptions = RequestOptions()): HandleStripeWebhookResponse {
         val headers = buildList {
             add("Stripe-Signature" to stripeSignature)
         }
-        return client.request<JsonElement>(
+        return client.request<HandleStripeWebhookResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/webhooks/stripe",

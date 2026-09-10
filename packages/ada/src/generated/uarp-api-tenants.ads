@@ -194,7 +194,7 @@ package UARP.API.Tenants is
      (Self : Client_Type;
       Key_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Revoke_API_Key_Response;
 
    --  Update current tenant settings
    --

@@ -3,7 +3,6 @@
 --  Guardrail policies
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Guardrails is
 
@@ -19,7 +18,7 @@ package UARP.API.Guardrails is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Guardrail_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Guardrail;
 
    --  Delete a guardrail
    --

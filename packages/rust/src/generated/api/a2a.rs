@@ -78,7 +78,7 @@ impl A2AApi {
     /// `POST /api/v1/a2a/tasks/{taskId}/cancel`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn cancel_a2a_task(&self, task_id: &str) -> Result<serde_json::Value> {
+    pub async fn cancel_a2a_task(&self, task_id: &str) -> Result<models::CancelA2ATaskResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -98,7 +98,7 @@ impl A2AApi {
     /// `POST /api/v1/a2a/tasks`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create_a2a_task(&self, body: &models::CreateA2ATaskRequest) -> Result<serde_json::Value> {
+    pub async fn create_a2a_task(&self, body: &models::CreateA2ATaskRequest) -> Result<models::A2ATask> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -116,7 +116,7 @@ impl A2AApi {
     /// `GET /api/v1/a2a/tasks/{taskId}`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_a2a_task(&self, task_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_a2a_task(&self, task_id: &str) -> Result<models::A2ATask> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -288,8 +288,8 @@ public class TenantsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `tenants:write`.
      */
-    public suspend fun revokeAPIKey(keyId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun revokeAPIKey(keyId: String, options: RequestOptions = RequestOptions()): RevokeAPIKeyResponse {
+        return client.request<RevokeAPIKeyResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/tenants/me/keys/${encodePathSegment(keyId)}",

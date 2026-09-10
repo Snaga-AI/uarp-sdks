@@ -139,15 +139,16 @@ package body UARP.API.Notifications is
      (Self : Client_Type;
       Notif_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Mark_Notification_Read_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/notifications/" & UARP.Types.Encode_Path_Segment (Notif_Id) & "/read",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/notifications/" & UARP.Types.Encode_Path_Segment (Notif_Id) & "/read",
+             Idempotent => True,
+             Options => Options));
    end Mark_Notification_Read;
 
    function Replace_Notification_Preferences

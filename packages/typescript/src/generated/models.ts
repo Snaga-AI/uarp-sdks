@@ -1107,6 +1107,12 @@ export interface ApplyProgramRequest {
   agent_id?: string;
 }
 
+export interface ApplyProgramResponse {
+  applied: boolean;
+  program_id: string;
+  todos: Todo[];
+}
+
 export interface ApproveRunResponse {
   approved: boolean;
   run_id: string;
@@ -1519,6 +1525,11 @@ export interface BulkDeleteSessionsRequest {
 export interface BulkDeleteSessionsResponse {
   deleted: number;
   failed: string[];
+}
+
+export interface CancelA2ATaskResponse {
+  cancelled: boolean;
+  task_id: string;
 }
 
 export interface CancelPublicSessionRunResponse {
@@ -2672,6 +2683,11 @@ export interface DeleteUserResponse {
   deleted?: boolean;
 }
 
+export interface DeleteWebhookResponse {
+  deleted: boolean;
+  webhook_id: string;
+}
+
 export interface DeleteWorkspaceFileResponse {
   trashed: boolean;
   trash_path: string;
@@ -2897,15 +2913,6 @@ export type EnrolMfaRequestAlgorithm = 'SHA-1' | 'SHA-256' | 'SHA-512';
 
 export const ENROL_MFA_REQUEST_ALGORITHM_VALUES = ['SHA-1', 'SHA-256', 'SHA-512'] as const;
 
-export interface EnrolMfaResponse {
-  otpauth_url: string;
-  /**
-   * Base32 secret.
-   */
-  secret: string;
-  recovery_codes: string[];
-}
-
 /**
  * RFC 9457 problem+json style error; correlationId for request tracing.
  */
@@ -3086,6 +3093,20 @@ export interface FileEntry {
   sha256: string;
   size_bytes: number;
   tenant_id: string;
+}
+
+/**
+ * A stored file as GET /files/{fileId} serves it (measured 2026-09-10 on e2e-canon). POST
+ * /files returns the same record plus `url`.
+ */
+export interface FileRecord {
+  file_id: string;
+  tenant_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256: string;
+  created_at: string;
 }
 
 /**
@@ -3699,6 +3720,10 @@ export interface GetListingReviewsResponse {
   cursor?: string;
 }
 
+export interface GetMarketplaceCategoriesResponse {
+  categories: string[];
+}
+
 export interface GetMarkupConfigResponse {
   markup?: JsonObject;
 }
@@ -4181,6 +4206,13 @@ export interface HandleStripeWebhookRequest {
   data: JsonObject;
 }
 
+export interface HandleStripeWebhookResponse {
+  received: boolean;
+  handled: boolean;
+  action?: string;
+  duplicate?: boolean;
+}
+
 export interface HealthCheckV1aliasResponse {
   status?: GetHealthResponseStatus;
   timestamp?: string;
@@ -4469,6 +4501,19 @@ export interface Invite {
 export interface InviteUserRequest {
   email: string;
   role: string;
+}
+
+export interface InviteUserResponse {
+  created_at?: string;
+  email?: string;
+  expires_at?: string;
+  id?: string;
+  invited_by?: string;
+  role?: string;
+  secret?: string;
+  status?: string;
+  tenant_id?: string;
+  email_sent: boolean;
 }
 
 export interface InvokeListingAgentRequest {
@@ -5078,6 +5123,10 @@ export interface ListNotificationTargetsResponse {
   targets: NotificationTarget[];
 }
 
+export interface ListPlaygroundTemplatesResponse {
+  templates: PlaygroundTemplate[];
+}
+
 export interface ListProgramsResponse {
   programs: Program[];
 }
@@ -5670,6 +5719,10 @@ export type MarketplaceListingStatus = 'draft' | 'published' | 'suspended' | 'ar
 
 export const MARKETPLACE_LISTING_STATUS_VALUES = ['draft', 'published', 'suspended', 'archived'] as const;
 
+export interface MarkNotificationReadResponse {
+  ok: boolean;
+}
+
 export interface MaterializeCanvasSquadRequest {
   supervisor_agent_id: string;
   /**
@@ -5826,6 +5879,16 @@ export interface MemoryImportEntry {
   type?: string;
   tags?: string[];
   created_at?: string;
+}
+
+/**
+ * POST /auth/mfa/enrol (mfa.ts): the TOTP secret, its otpauth URL and the one-time recovery
+ * codes — shown once.
+ */
+export interface MfaEnrolment {
+  otpauth_url: string;
+  secret: string;
+  recovery_codes: string[];
 }
 
 export interface MintSSETokenResponse {
@@ -6884,6 +6947,31 @@ export interface PlatformLLMDefaults {
 }
 
 /**
+ * The visual-builder canvas of an agent as GET /playground/agents/{agentId} serves it
+ * (measured 2026-09-10 on e2e-canon); PUT returns the same shape after the write.
+ */
+export interface PlaygroundAgentState {
+  agent_id: string;
+  tenant_id: string;
+  nodes: JsonObject[];
+  edges: JsonObject[];
+  metadata: JsonObject;
+  updated_at: string;
+}
+
+/**
+ * One starter template from GET /playground/templates (element keys measured 2026-09-10).
+ */
+export interface PlaygroundTemplate {
+  id: string;
+  name: string;
+  description: string;
+  category: string;
+  nodes: JsonObject[];
+  edges: JsonObject[];
+}
+
+/**
  * An ordered curriculum an agent delivers.
  */
 export interface Program {
@@ -7223,6 +7311,10 @@ export interface PublicPlan {
 }
 
 export interface PublicState {
+  marketplace?: JsonObject;
+  agents?: JsonObject[];
+  governance?: JsonObject;
+  plan?: string;
   branding?: JsonObject;
   category: string;
   description?: string;
@@ -7238,6 +7330,10 @@ export interface PublicState {
 }
 
 export interface PublicTenant {
+  /**
+   * Served 2026-09-10; contents not asserted.
+   */
+  marketplace?: JsonObject;
   tenant_id: string;
   slug: string;
   name: string;
@@ -7315,6 +7411,16 @@ export interface RateListingRequest {
   comment?: string;
 }
 
+/**
+ * GET /health/ready and GET /readyz (measured 2026-09-10): overall status, the check's
+ * timestamp, and one entry per component — cron, events, kv, mcp, workers.
+ */
+export interface ReadinessReport {
+  status: string;
+  timestamp: string;
+  components: JsonObject;
+}
+
 export interface RegisterAmbassadorRequest {
   ambassador_id: string;
   name?: string;
@@ -7323,7 +7429,7 @@ export interface RegisterAmbassadorRequest {
 }
 
 export interface RegisterAmbassadorResponse {
-  ok?: boolean;
+  ok: boolean;
 }
 
 export interface RegistryAdminListSpecsResponse {
@@ -7664,6 +7770,11 @@ export interface ResumeMissionResponse {
 export interface ResumeRunResponse {
   resumed: boolean;
   run_id: string;
+}
+
+export interface RevokeAPIKeyResponse {
+  revoked: boolean;
+  key_id: string;
 }
 
 export interface RevokeMeSessionResponse {
@@ -8682,9 +8793,6 @@ export interface SetUserRoleRequest {
 export interface SetUserRoleResponse {
   updated: boolean;
   user_id: string;
-  /**
-   * The role now in force — echoed so a client need not re-read.
-   */
   role: string;
 }
 
@@ -8875,6 +8983,10 @@ export interface StartSquadRunRequest {
   addressed_to?: string[];
   message?: string;
   chat_mode?: StartTeamRunRequestInputVariant2chatMode;
+}
+
+export interface StartSquadRunResponse {
+  team_run_id: string;
 }
 
 /**
@@ -9163,6 +9275,19 @@ export const TEAM_POLICIES_EFFORT_VALUES = ['low', 'medium', 'high', 'max'] as c
 export type TeamPoliciesOnWorkerFailure = 'retry' | 'skip' | 'abort_team';
 
 export const TEAM_POLICIES_ON_WORKER_FAILURE_VALUES = ['retry', 'skip', 'abort_team'] as const;
+
+/**
+ * GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
+ * 2026-09-10 on e2e-canon, identical on both routes): the team run and the member runs it
+ * spawned.
+ */
+export interface TeamRunDetail {
+  team_run_id: string;
+  team_id: string;
+  status: string;
+  runs: Run[];
+  total_runs: number;
+}
 
 export interface TeamRunSummary {
   team_run_id: string;
@@ -9486,7 +9611,20 @@ export interface TenantOverviewRunsRecentItem {
   cost_usd?: number;
   duration_ms?: number;
   error?: string;
+  /**
+   * Passed through from the run record (same values as `Run.execution_mode`); absent when the
+   * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+   */
+  execution_mode?: TenantOverviewRunsRecentItemExecutionMode;
 }
+
+/**
+ * Passed through from the run record (same values as `Run.execution_mode`); absent when the
+ * record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+ */
+export type TenantOverviewRunsRecentItemExecutionMode = 'async' | 'bridge';
+
+export const TENANT_OVERVIEW_RUNS_RECENT_ITEM_EXECUTION_MODE_VALUES = ['async', 'bridge'] as const;
 
 export interface TenantOverviewSchedules {
   total: number;
@@ -9728,6 +9866,12 @@ export interface UnlinkAuthProviderResponse {
   provider: string;
   remaining_factors?: number;
   already_unlinked?: boolean;
+}
+
+export interface UnpublishListingResponse {
+  error: RevokeSessionShareResponseError;
+  message: string;
+  retry_after_seconds: number;
 }
 
 export interface UnscheduleCanvasWorkflowResponse {
@@ -10133,6 +10277,17 @@ export interface UploadFileRequest {
   filename?: string;
 }
 
+export interface UploadFileResponse {
+  file_id: string;
+  tenant_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes: number;
+  sha256: string;
+  created_at: string;
+  url: string;
+}
+
 export interface UploadPublicSessionImageResponse {
   file_id: string;
   mime_type: string;
@@ -10346,6 +10501,7 @@ export interface VerifyMfaRequest {
 
 export interface VerifyMfaResponse {
   verified: boolean;
+  recovery_remaining?: number;
 }
 
 export interface VerifyTenantDomainResponse {

@@ -30,8 +30,8 @@ public class GuardrailsApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `guardrails:write`.
      */
-    public suspend fun create(body: CreateGuardrailRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun create(body: CreateGuardrailRequest, options: RequestOptions = RequestOptions()): Guardrail {
+        return client.request<Guardrail>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/guardrails",

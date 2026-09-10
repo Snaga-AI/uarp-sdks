@@ -138,7 +138,7 @@ impl WorkspacesApi {
     /// `POST /api/v1/workspaces`
     ///
     /// Required scopes: `files:write`.
-    pub async fn create(&self, body: &models::CreateWorkspaceRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create(&self, body: &models::CreateWorkspaceRequest) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::POST,

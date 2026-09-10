@@ -113,7 +113,7 @@ impl MarketplaceApi {
     /// `GET /api/v1/marketplace/categories`
     ///
     /// Required scopes: `marketplace:read`.
-    pub async fn get_marketplace_categories(&self) -> Result<serde_json::Value> {
+    pub async fn get_marketplace_categories(&self) -> Result<models::GetMarketplaceCategoriesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -149,7 +149,7 @@ impl MarketplaceApi {
     /// `POST /api/v1/marketplace/listings/{listingId}/invoke`
     ///
     /// Required scopes: `marketplace:invoke`.
-    pub async fn invoke_listing_agent(&self, listing_id: &str, body: &models::InvokeListingAgentRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn invoke_listing_agent(&self, listing_id: &str, body: &models::InvokeListingAgentRequest) -> Result<models::MarketplaceInvocation> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -276,7 +276,7 @@ impl MarketplaceApi {
     /// `DELETE /api/v1/marketplace/listings/{listingId}`
     ///
     /// Required scopes: `marketplace:write`.
-    pub async fn unpublish_listing(&self, listing_id: &str) -> Result<serde_json::Value> {
+    pub async fn unpublish_listing(&self, listing_id: &str) -> Result<models::UnpublishListingResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,

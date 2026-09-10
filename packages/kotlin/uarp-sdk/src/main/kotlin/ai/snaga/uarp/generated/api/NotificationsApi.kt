@@ -189,8 +189,8 @@ public class NotificationsApi internal constructor(private val client: UarpClien
      *
      * Required scopes: `notifications:write`.
      */
-    public suspend fun markNotificationRead(notifId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun markNotificationRead(notifId: String, options: RequestOptions = RequestOptions()): MarkNotificationReadResponse {
+        return client.request<MarkNotificationReadResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/notifications/${encodePathSegment(notifId)}/read",

@@ -64,7 +64,7 @@ package UARP.API.Marketplace is
    function Get_Marketplace_Categories
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Get_Marketplace_Categories_Response;
 
    --  Get invocation status
    --
@@ -87,7 +87,7 @@ package UARP.API.Marketplace is
       Listing_Id : String;
       Payload : UARP.Models.Invoke_Listing_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Marketplace_Invocation;
 
    --  Featured spec ids
    --
@@ -166,7 +166,7 @@ package UARP.API.Marketplace is
      (Self : Client_Type;
       Listing_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Unpublish_Listing_Response;
 
    --  Unsubscribe from a listing
    --

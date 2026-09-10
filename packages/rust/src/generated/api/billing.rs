@@ -221,7 +221,7 @@ impl BillingApi {
     /// HMAC-verified against the webhook signing secret.
     ///
     /// `POST /api/v1/webhooks/stripe`
-    pub async fn handle_stripe_webhook(&self, body: &models::HandleStripeWebhookRequest, params: &HandleStripeWebhookParams) -> Result<serde_json::Value> {
+    pub async fn handle_stripe_webhook(&self, body: &models::HandleStripeWebhookRequest, params: &HandleStripeWebhookParams) -> Result<models::HandleStripeWebhookResponse> {
         let mut headers: Vec<(&'static str, String)> = Vec::new();
         headers.push(("Stripe-Signature", params.stripe_signature.clone()));
         self.client

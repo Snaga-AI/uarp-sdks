@@ -2450,6 +2450,14 @@ pub struct ApplyProgramRequest {
     pub agent_id: Option<String>,
 }
 
+/// `ApplyProgramResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplyProgramResponse {
+    pub applied: bool,
+    pub program_id: String,
+    pub todos: Vec<Todo>,
+}
+
 /// `ApproveRunResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ApproveRunResponse {
@@ -3399,6 +3407,13 @@ pub struct BulkDeleteSessionsRequest {
 pub struct BulkDeleteSessionsResponse {
     pub deleted: i64,
     pub failed: Vec<String>,
+}
+
+/// `CancelA2ATaskResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CancelA2ATaskResponse {
+    pub cancelled: bool,
+    pub task_id: String,
 }
 
 /// `CancelPublicSessionRunResponse` model.
@@ -5661,6 +5676,13 @@ pub struct DeleteUserResponse {
     pub deleted: Option<bool>,
 }
 
+/// `DeleteWebhookResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteWebhookResponse {
+    pub deleted: bool,
+    pub webhook_id: String,
+}
+
 /// `DeleteWorkspaceFileResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteWorkspaceFileResponse {
@@ -6249,15 +6271,6 @@ impl From<&str> for EnrolMfaRequestAlgorithm {
     }
 }
 
-/// `EnrolMfaResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct EnrolMfaResponse {
-    pub otpauth_url: String,
-    /// Base32 secret.
-    pub secret: String,
-    pub recovery_codes: Vec<String>,
-}
-
 /// RFC 9457 problem+json style error; correlationId for request tracing.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Error {
@@ -6799,6 +6812,19 @@ pub struct FileEntry {
     pub sha256: String,
     pub size_bytes: i64,
     pub tenant_id: String,
+}
+
+/// A stored file as GET /files/{fileId} serves it (measured 2026-09-10 on e2e-canon). POST
+/// /files returns the same record plus `url`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FileRecord {
+    pub file_id: String,
+    pub tenant_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub size_bytes: i64,
+    pub sha256: String,
+    pub created_at: String,
 }
 
 /// The operator's canvas: where each agent sits, how they are wired, and the notes and
@@ -7876,6 +7902,12 @@ pub struct GetListingReviewsResponse {
     pub cursor: Option<String>,
 }
 
+/// `GetMarketplaceCategoriesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMarketplaceCategoriesResponse {
+    pub categories: Vec<String>,
+}
+
 /// `GetMarkupConfigResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetMarkupConfigResponse {
@@ -8884,6 +8916,17 @@ pub struct HandleStripeWebhookRequest {
     pub data: serde_json::Map<String, serde_json::Value>,
 }
 
+/// `HandleStripeWebhookResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct HandleStripeWebhookResponse {
+    pub received: bool,
+    pub handled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duplicate: Option<bool>,
+}
+
 /// `HealthCheckV1aliasResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct HealthCheckV1aliasResponse {
@@ -9447,6 +9490,30 @@ pub struct Invite {
 pub struct InviteUserRequest {
     pub email: String,
     pub role: String,
+}
+
+/// `InviteUserResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InviteUserResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub invited_by: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub role: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub secret: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    pub email_sent: bool,
 }
 
 /// `InvokeListingAgentRequest` model.
@@ -10497,6 +10564,12 @@ pub struct ListNotificationTargetsResponse {
     pub targets: Vec<NotificationTarget>,
 }
 
+/// `ListPlaygroundTemplatesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListPlaygroundTemplatesResponse {
+    pub templates: Vec<PlaygroundTemplate>,
+}
+
 /// `ListProgramsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListProgramsResponse {
@@ -11540,6 +11613,12 @@ impl From<&str> for MarketplaceListingStatus {
     }
 }
 
+/// `MarkNotificationReadResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MarkNotificationReadResponse {
+    pub ok: bool,
+}
+
 /// `MaterializeCanvasSquadRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MaterializeCanvasSquadRequest {
@@ -11840,6 +11919,15 @@ pub struct MemoryImportEntry {
     pub tags: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+}
+
+/// POST /auth/mfa/enrol (mfa.ts): the TOTP secret, its otpauth URL and the one-time recovery
+/// codes — shown once.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MfaEnrolment {
+    pub otpauth_url: String,
+    pub secret: String,
+    pub recovery_codes: Vec<String>,
 }
 
 /// `MintSSETokenResponse` model.
@@ -13777,6 +13865,29 @@ pub struct PlatformLLMDefaults {
     pub fallback_model_ref: Option<String>,
 }
 
+/// The visual-builder canvas of an agent as GET /playground/agents/{agentId} serves it
+/// (measured 2026-09-10 on e2e-canon); PUT returns the same shape after the write.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlaygroundAgentState {
+    pub agent_id: String,
+    pub tenant_id: String,
+    pub nodes: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub edges: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub metadata: serde_json::Map<String, serde_json::Value>,
+    pub updated_at: String,
+}
+
+/// One starter template from GET /playground/templates (element keys measured 2026-09-10).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PlaygroundTemplate {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub category: String,
+    pub nodes: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub edges: Vec<serde_json::Map<String, serde_json::Value>>,
+}
+
 /// An ordered curriculum an agent delivers.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Program {
@@ -14185,6 +14296,14 @@ pub struct PublicPlan {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marketplace: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agents: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub governance: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<serde_json::Map<String, serde_json::Value>>,
     pub category: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -14207,6 +14326,9 @@ pub struct PublicState {
 /// `PublicTenant` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicTenant {
+    /// Served 2026-09-10; contents not asserted.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marketplace: Option<serde_json::Map<String, serde_json::Value>>,
     pub tenant_id: String,
     pub slug: String,
     pub name: String,
@@ -14320,6 +14442,15 @@ pub struct RateListingRequest {
     pub comment: Option<String>,
 }
 
+/// GET /health/ready and GET /readyz (measured 2026-09-10): overall status, the check's
+/// timestamp, and one entry per component — cron, events, kv, mcp, workers.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReadinessReport {
+    pub status: String,
+    pub timestamp: String,
+    pub components: serde_json::Map<String, serde_json::Value>,
+}
+
 /// `RegisterAmbassadorRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RegisterAmbassadorRequest {
@@ -14335,8 +14466,7 @@ pub struct RegisterAmbassadorRequest {
 /// `RegisterAmbassadorResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RegisterAmbassadorResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub ok: Option<bool>,
+    pub ok: bool,
 }
 
 /// `RegistryAdminListSpecsResponse` model.
@@ -14842,6 +14972,13 @@ pub struct ResumeMissionResponse {
 pub struct ResumeRunResponse {
     pub resumed: bool,
     pub run_id: String,
+}
+
+/// `RevokeAPIKeyResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RevokeAPIKeyResponse {
+    pub revoked: bool,
+    pub key_id: String,
 }
 
 /// `RevokeMeSessionResponse` model.
@@ -16768,7 +16905,6 @@ pub struct SetUserRoleRequest {
 pub struct SetUserRoleResponse {
     pub updated: bool,
     pub user_id: String,
-    /// The role now in force — echoed so a client need not re-read.
     pub role: String,
 }
 
@@ -17115,6 +17251,12 @@ pub struct StartSquadRunRequest {
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub chat_mode: Option<StartTeamRunRequestInputVariant2chatMode>,
+}
+
+/// `StartSquadRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StartSquadRunResponse {
+    pub team_run_id: String,
 }
 
 /// `addressed_to`, `message` and `chat_mode` were declared at the TOP level here and the
@@ -17833,6 +17975,18 @@ impl From<&str> for TeamPoliciesOnWorkerFailure {
     }
 }
 
+/// GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
+/// 2026-09-10 on e2e-canon, identical on both routes): the team run and the member runs it
+/// spawned.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamRunDetail {
+    pub team_run_id: String,
+    pub team_id: String,
+    pub status: String,
+    pub runs: Vec<Run>,
+    pub total_runs: i64,
+}
+
 /// `TeamRunSummary` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TeamRunSummary {
@@ -18474,6 +18628,51 @@ pub struct TenantOverviewRunsRecentItem {
     pub duration_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Passed through from the run record (same values as `Run.execution_mode`); absent when the
+    /// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub execution_mode: Option<TenantOverviewRunsRecentItemExecutionMode>,
+}
+
+/// Passed through from the run record (same values as `Run.execution_mode`); absent when the
+/// record has none. `bridge` marks a report from a local agent, which may carry no transcript.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TenantOverviewRunsRecentItemExecutionMode {
+    #[default]
+    #[serde(rename = "async")]
+    Async,
+    #[serde(rename = "bridge")]
+    Bridge,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TenantOverviewRunsRecentItemExecutionMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Async => "async",
+            Self::Bridge => "bridge",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TenantOverviewRunsRecentItemExecutionMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TenantOverviewRunsRecentItemExecutionMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "async" => Self::Async,
+            "bridge" => Self::Bridge,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `TenantOverviewSchedules` model.
@@ -18945,6 +19144,14 @@ pub struct UnlinkAuthProviderResponse {
     pub remaining_factors: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub already_unlinked: Option<bool>,
+}
+
+/// `UnpublishListingResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UnpublishListingResponse {
+    pub error: RevokeSessionShareResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
 }
 
 /// `UnscheduleCanvasWorkflowResponse` model.
@@ -19706,6 +19913,19 @@ pub struct UploadFileRequest {
     pub filename: Option<String>,
 }
 
+/// `UploadFileResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UploadFileResponse {
+    pub file_id: String,
+    pub tenant_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    pub size_bytes: i64,
+    pub sha256: String,
+    pub created_at: String,
+    pub url: String,
+}
+
 /// `UploadPublicSessionImageResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UploadPublicSessionImageResponse {
@@ -19935,6 +20155,8 @@ pub struct VerifyMfaRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct VerifyMfaResponse {
     pub verified: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recovery_remaining: Option<i64>,
 }
 
 /// `VerifyTenantDomainResponse` model.

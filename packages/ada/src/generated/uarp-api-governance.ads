@@ -70,7 +70,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Activate_Safe_Mode_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Emergency_State;
 
    --  Veto
    --
@@ -106,7 +106,7 @@ package UARP.API.Governance is
       Id : String;
       Payload : UARP.Models.Cast_Ballot_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Ballot;
 
    --  Check for deadlock
    --
@@ -159,7 +159,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Goal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Goal;
 
    --  Create improvement proposal
    --
@@ -169,7 +169,7 @@ package UARP.API.Governance is
       Agent_Id : String;
       Payload : UARP.Models.Create_Improvement_Proposal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Improvement_Proposal;
 
    --  Create proposal
    --
@@ -178,7 +178,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Voting_Proposal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Voting_Proposal;
 
    --  Deactivate safe mode
    --
@@ -263,7 +263,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Arbiter_Case;
 
    --  Get arbiter registry
    --
@@ -305,7 +305,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Goal;
 
    --  Get governance ledger
    --
@@ -339,7 +339,7 @@ package UARP.API.Governance is
       Agent_Id : String;
       Version : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Improvement_Proposal;
 
    --  Get permission lineage
    --
@@ -381,7 +381,7 @@ package UARP.API.Governance is
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Voting_Proposal;
 
    --  Issue ruling
    --
@@ -600,7 +600,7 @@ package UARP.API.Governance is
       Version : String;
       Payload : UARP.Models.Update_Improvement_Status_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Improvement_Proposal;
 
    --  Verify ledger integrity
    --

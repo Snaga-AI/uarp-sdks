@@ -7,9 +7,10 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   DeleteFileResponse,
   FileEntry,
-  JsonValue,
+  FileRecord,
   ListFilesResponse,
   UploadFileRequest,
+  UploadFileResponse,
 } from '../models.js';
 
 /**
@@ -64,7 +65,7 @@ export class FilesResource extends APIResource {
    *
    * Required scopes: `files:read`.
    */
-  getFileMetadata(fileId: string, options?: RequestOptions): Promise<JsonValue> {
+  getFileMetadata(fileId: string, options?: RequestOptions): Promise<FileRecord> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/files/${encodeURIComponent(String(fileId))}`,
@@ -111,7 +112,7 @@ export class FilesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  upload(body: UploadFileRequest, options?: RequestOptions): Promise<JsonValue> {
+  upload(body: UploadFileRequest, options?: RequestOptions): Promise<UploadFileResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/files',

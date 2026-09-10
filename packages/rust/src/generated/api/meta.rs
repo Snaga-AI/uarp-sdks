@@ -78,7 +78,7 @@ impl MetaApi {
     /// Get OpenAPI spec
     ///
     /// `GET /api/v1/openapi.json`
-    pub async fn get_open_api_spec(&self) -> Result<serde_json::Value> {
+    pub async fn get_open_api_spec(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
                 method: Method::GET,

@@ -3,7 +3,6 @@
 --  Program (curriculum) management
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Programs is
 
@@ -20,7 +19,7 @@ package UARP.API.Programs is
       Program_Id : String;
       Payload : UARP.Models.Apply_Program_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Apply_Program_Response;
 
    --  Create a program (curriculum)
    --
@@ -31,7 +30,7 @@ package UARP.API.Programs is
      (Self : Client_Type;
       Payload : UARP.Models.Create_Program_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Program;
 
    --  Get program
    --
@@ -42,7 +41,7 @@ package UARP.API.Programs is
      (Self : Client_Type;
       Program_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Program;
 
    --  List programs
    --

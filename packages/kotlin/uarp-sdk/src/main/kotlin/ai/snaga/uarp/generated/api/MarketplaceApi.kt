@@ -79,8 +79,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:read`.
      */
-    public suspend fun getMarketplaceCategories(options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getMarketplaceCategories(options: RequestOptions = RequestOptions()): GetMarketplaceCategoriesResponse {
+        return client.request<GetMarketplaceCategoriesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/marketplace/categories",
@@ -113,8 +113,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:invoke`.
      */
-    public suspend fun invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = RequestOptions()): MarketplaceInvocation {
+        return client.request<MarketplaceInvocation>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}/invoke",
@@ -248,8 +248,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:write`.
      */
-    public suspend fun unpublishListing(listingId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun unpublishListing(listingId: String, options: RequestOptions = RequestOptions()): UnpublishListingResponse {
+        return client.request<UnpublishListingResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}",

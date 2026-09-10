@@ -255,7 +255,7 @@ impl TeamsApi {
     /// `GET /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_team_graph_node(&self, team_id: &str, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_team_graph_node(&self, team_id: &str, agent_id: &str) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -273,7 +273,7 @@ impl TeamsApi {
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_team_run(&self, team_id: &str, team_run_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_team_run(&self, team_id: &str, team_run_id: &str) -> Result<models::TeamRunDetail> {
         self.client
             .request_json(Request {
                 method: Method::GET,

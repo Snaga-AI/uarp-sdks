@@ -3,7 +3,6 @@
 --  Health checks, readiness, and metrics
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -61,7 +60,7 @@ package UARP.API.Health is
    function Health_Ready
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Readiness_Report;
 
    --  SSE end-to-end health check
    --
@@ -87,6 +86,6 @@ package UARP.API.Health is
    function Readyz_Alias
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Readiness_Report;
 
 end UARP.API.Health;
