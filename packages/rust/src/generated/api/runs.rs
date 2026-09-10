@@ -16,6 +16,16 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `getRun`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetRunParams {
+    /// Set to `true` to include `changed_files` in the response. Opt-in because this endpoint is
+    /// polled and the paths live in their own key range: serving them unconditionally would add a
+    /// KV list to a hot read for every caller that never looks at them.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub changed_files: Option<models::GetRunChangedFiles>,
+}
+
 /// Query and header parameters for `getRunFeedback`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRunFeedbackParams {
@@ -36,6 +46,13 @@ pub struct ListRunsParams {
     pub limit: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
+    /// `desc` (default) newest first, `asc` oldest first. Any other value is a 400 rather than a
+    /// silent default, so a typo surfaces as an error instead of as plausible-looking data.
+    ///
+    /// Use `asc` instead of paging toward the end: the cursor is opaque, so there is no way to jump
+    /// to the far end, but `asc` puts that end on page one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order: Option<models::ListRunsOrder>,
 }
 
 /// Query and header parameters for `streamRunEvents`.
@@ -221,12 +238,12 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn get(&self, run_id: &str) -> Result<models::Run> {
+    pub async fn get(&self, run_id: &str, params: &GetRunParams) -> Result<models::GetRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/runs/{}", encode_path(run_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -310,6 +327,14 @@ impl RunsApi {
     }
 
     /// List all runs for tenant
+    ///
+    /// Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
+    /// most recent runs. Do not page toward the end to find recent activity — a client that walks
+    /// `has_more` looking for the newest page now walks away from it. This was previously true only
+    /// of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop
+    /// walk that reversed meaning the day the order changed. Note the sibling
+    /// `/api/v1/teams/{teamId}/runs` is deliberately the other way round — oldest first — because a
+    /// team transcript reads forward.
     ///
     /// `GET /api/v1/runs`
     ///

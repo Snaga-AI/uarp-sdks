@@ -2,6 +2,24 @@
 
 package body UARP.API.Admin is
 
+   function Add_Android_Testers
+     (Self : Client_Type;
+      Payload : UARP.Models.Add_Android_Testers_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Add_Android_Testers_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/testers/android",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Add_Android_Testers;
+
    function Admin_Analytics_Agents
      (Self : Client_Type;
       Params : Admin_Analytics_Agents_Params := No_Admin_Analytics_Agents_Params;
@@ -398,6 +416,24 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_Replay_Webhook_DLQ;
 
+   function Create_Admin_Blog_Post
+     (Self : Client_Type;
+      Payload : UARP.Models.Create_Admin_Blog_Post_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Create_Admin_Blog_Post_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/blog/posts",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Create_Admin_Blog_Post;
+
    function Create_Admin_Provider
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
@@ -432,6 +468,128 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Create_Tenant;
+
+   function Delete_Admin_Blog_Post
+     (Self : Client_Type;
+      Post_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Admin_Blog_Post_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/admin/blog/posts/" & UARP.Types.Encode_Path_Segment (Post_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Admin_Blog_Post;
+
+   function Delete_Admin_Integration_O_Auth_Provider
+     (Self : Client_Type;
+      Provider : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Admin_Integration_O_Auth_Provider_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/admin/integration-oauth-providers/" & UARP.Types.Encode_Path_Segment (Provider),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Admin_Integration_O_Auth_Provider;
+
+   function Delete_Admin_LLM_Default
+     (Self : Client_Type;
+      Provider_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Admin_LLM_Default_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/admin/llm-defaults/" & UARP.Types.Encode_Path_Segment (Provider_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Admin_LLM_Default;
+
+   function Delete_Admin_Provider
+     (Self : Client_Type;
+      Provider_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Admin_Provider_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Admin_Provider;
+
+   procedure Delete_Android_Tester
+     (Self : Client_Type;
+      Email : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/admin/testers/android/" & UARP.Types.Encode_Path_Segment (Email),
+          Idempotent => True,
+          Options => Options);
+   end Delete_Android_Tester;
+
+   function Generate_Admin_Blog_Post
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Generate_Admin_Blog_Post_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/blog/generate",
+             Idempotent => True,
+             Options => Options));
+   end Generate_Admin_Blog_Post;
+
+   function Get_Admin_Blog_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Blog_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/blog/config",
+             Options => Options));
+   end Get_Admin_Blog_Config;
+
+   function Get_Admin_Integration_O_Auth_Provider
+     (Self : Client_Type;
+      Provider : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Integration_O_Auth_Provider_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/integration-oauth-providers/" & UARP.Types.Encode_Path_Segment (Provider),
+             Options => Options));
+   end Get_Admin_Integration_O_Auth_Provider;
 
    function Get_Admin_LLM_Defaults
      (Self : Client_Type;
@@ -571,7 +729,7 @@ package body UARP.API.Admin is
    function Get_Maintenance_State
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Maintenance_State_Response
+      return UARP.Models.Maintenance_State
    is
    begin
       return UARP.Models.From_JSON
@@ -617,6 +775,21 @@ package body UARP.API.Admin is
              Options => Options));
    end Get_Tenant;
 
+   function Get_Tenant_Mef_Config
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Mef_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/mef-config",
+             Options => Options));
+   end Get_Tenant_Mef_Config;
+
    function Get_Tenant_Usage
      (Self : Client_Type;
       Tenant_Id : String;
@@ -651,6 +824,48 @@ package body UARP.API.Admin is
           Options => Options);
    end Internal_Verify_Domain;
 
+   function List_Admin_Blog_Posts
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Admin_Blog_Posts_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/blog/posts",
+             Options => Options));
+   end List_Admin_Blog_Posts;
+
+   function List_Admin_Domain_Health
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Admin_Domain_Health_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/domains/health",
+             Options => Options));
+   end List_Admin_Domain_Health;
+
+   function List_Admin_Integration_O_Auth_Providers
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Admin_Integration_O_Auth_Providers_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/integration-oauth-providers",
+             Options => Options));
+   end List_Admin_Integration_O_Auth_Providers;
+
    function List_Admin_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -664,6 +879,75 @@ package body UARP.API.Admin is
              "/api/v1/admin/providers",
              Options => Options));
    end List_Admin_Providers;
+
+   function List_Android_Testers
+     (Self : Client_Type;
+      Params : List_Android_Testers_Params := No_List_Android_Testers_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Android_Testers_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/testers/android",
+             Query => Query,
+             Options => Options));
+   end List_Android_Testers;
+
+   function List_Android_Testers_All
+     (Self : Client_Type;
+      Params : List_Android_Testers_Params := No_List_Android_Testers_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Android_Tester_Vectors.Vector
+   is
+      Collected : UARP.Models.Android_Tester_Vectors.Vector;
+      Page_Params : List_Android_Testers_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Android_Testers_Response :=
+               List_Android_Testers
+                  (Self,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Testers loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Testers.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Android_Testers_All;
 
    function List_Feedback
      (Self : Client_Type;
@@ -758,6 +1042,25 @@ package body UARP.API.Admin is
           Options => Options);
    end Reactivate_Tenant;
 
+   function Set_Admin_Integration_O_Auth_Provider
+     (Self : Client_Type;
+      Provider : String;
+      Payload : UARP.Models.Set_Admin_Integration_O_Auth_Provider_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Admin_Integration_O_Auth_Provider_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/integration-oauth-providers/" & UARP.Types.Encode_Path_Segment (Provider),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Admin_Integration_O_Auth_Provider;
+
    function Set_Admin_LLM_Default
      (Self : Client_Type;
       Provider_Id : String;
@@ -794,6 +1097,24 @@ package body UARP.API.Admin is
           Options => Options);
    end Set_Admin_Model_Config;
 
+   function Set_Maintenance_State
+     (Self : Client_Type;
+      Payload : UARP.Models.Set_Maintenance_State_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Maintenance_State
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/maintenance",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Maintenance_State;
+
    function Suspend_Tenant
      (Self : Client_Type;
       Tenant_Id : String;
@@ -812,6 +1133,59 @@ package body UARP.API.Admin is
           Idempotent => True,
           Options => Options);
    end Suspend_Tenant;
+
+   function Sync_Provider_Models
+     (Self : Client_Type;
+      Provider_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Sync_Provider_Models_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id) & "/sync-models",
+             Idempotent => True,
+             Options => Options));
+   end Sync_Provider_Models;
+
+   function Update_Admin_Blog_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Blog_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Admin_Blog_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/blog/config",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Admin_Blog_Config;
+
+   function Update_Admin_Blog_Post
+     (Self : Client_Type;
+      Post_Id : String;
+      Payload : UARP.Models.Update_Admin_Blog_Post_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Admin_Blog_Post_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/blog/posts/" & UARP.Types.Encode_Path_Segment (Post_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Admin_Blog_Post;
 
    function Update_Admin_Pricing
      (Self : Client_Type;
@@ -867,40 +1241,60 @@ package body UARP.API.Admin is
           Options => Options);
    end Update_Admin_Tenant_Settings;
 
-   function Update_Feedback_Status
+   function Update_Feedback_Report_Status
      (Self : Client_Type;
-      Payload : UARP.Models.Update_Feedback_Status_Request;
+      Report_Id : String;
+      Payload : UARP.Models.Update_Feedback_Report_Status_Request;
+      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Update_Feedback_Status_Response
+      return UARP.Models.Update_Feedback_Report_Status_Response
    is
    begin
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "PATCH",
-             "/api/v1/admin/feedback",
+             "/api/v1/admin/feedback/" & UARP.Types.Encode_Path_Segment (Report_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Update_Feedback_Report_Status;
+
+   function Update_Tenant_Mef_Config
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Payload : UARP.Models.Update_Tenant_Mef_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tenant_Mef_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/mef-config",
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
-   end Update_Feedback_Status;
+   end Update_Tenant_Mef_Config;
 
-   function Update_Tenant_By_Id
+   function Update_Tenant_Plan
      (Self : Client_Type;
-      Tenant_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Tenant_Plan_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Tenant
+      return UARP.Models.Update_Tenant_Plan_Response
    is
    begin
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
-             "PATCH",
-             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id),
-             Payload => Payload,
+             "PUT",
+             "/api/v1/admin/tenants/{tenantId}",
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
-   end Update_Tenant_By_Id;
+   end Update_Tenant_Plan;
 end UARP.API.Admin;

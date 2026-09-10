@@ -320,7 +320,7 @@ impl GovernanceApi {
     /// File appeal
     ///
     /// `POST /api/v1/governance/arbiter/cases/{id}/appeal`
-    pub async fn file_arbiter_appeal(&self, id: &str, body: &models::FileArbiterAppealRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn file_arbiter_appeal(&self, id: &str, body: &models::FileArbiterAppealRequest) -> Result<models::FileArbiterAppealResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -849,6 +849,12 @@ impl GovernanceApi {
 
     /// Set agent permissions
     ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; only a FIRST write
+    /// falls back to the documented defaults (budget 1.0, spawn depth 3, empty lists). A field that
+    /// IS present but of the wrong type falls to the safe default rather than to the stored value —
+    /// on a permissions surface a malformed write must fail closed, not become a silent no-op.
+    /// `created_at` is server-owned and ignored from the body.
+    ///
     /// `PUT /api/v1/governance/permissions/{agentId}`
     pub async fn set_agent_permissions(&self, agent_id: &str, body: &models::PermissionSet) -> Result<models::SetAgentPermissionsResponse> {
         self.client
@@ -896,6 +902,10 @@ impl GovernanceApi {
     }
 
     /// Set root attestation
+    ///
+    /// WRITE SEMANTICS: replaces. The body IS the attestation record — every field is required and
+    /// nothing is carried over, which is why a body missing one answers 422 rather than storing a
+    /// partial record. `created_at` is server-stamped, never taken from the caller.
     ///
     /// `PUT /api/v1/governance/emergency/root-attestation`
     pub async fn set_root_attestation(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetRootAttestationResponse> {

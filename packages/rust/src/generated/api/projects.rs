@@ -18,7 +18,7 @@ use crate::util::encode_path;
 pub struct ListProjectsParams {
     /// `true` returns the archived projects instead of the live ones.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub archived: Option<models::ListProjectsArchived>,
+    pub archived: Option<models::GetRunChangedFiles>,
 }
 
 /// Operations tagged `Projects`.

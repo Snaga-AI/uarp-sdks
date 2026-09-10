@@ -49,8 +49,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun copyWorkspaceFile(workspaceId: String, body: CopyWorkspaceFileRequest, options: RequestOptions = RequestOptions()): CopyWorkspaceFileResponse {
-        return client.request<CopyWorkspaceFileResponse>(
+    public suspend fun copyWorkspaceFile(workspaceId: String, body: CopyWorkspaceFileRequest, options: RequestOptions = RequestOptions()): WorkspaceFile {
+        return client.request<WorkspaceFile>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/copy",
@@ -105,11 +105,12 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun deleteWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun deleteWorkspaceFile(workspaceId: String, path: String, trash: DeleteWorkspaceFileTrash? = null, options: RequestOptions = RequestOptions()): DeleteWorkspaceFileResponse {
         val query = buildList {
             add("path" to path)
+            if (trash != null) add("trash" to trash.value)
         }
-        return client.request<JsonElement>(
+        return client.request<DeleteWorkspaceFileResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files",
@@ -238,12 +239,12 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, recursive: Boolean? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun listWorkspaceFiles(workspaceId: String, path: String? = null, recursive: Boolean? = null, options: RequestOptions = RequestOptions()): ListWorkspaceFilesResponse {
         val query = buildList {
             if (path != null) add("path" to path)
             if (recursive != null) add("recursive" to recursive.toString())
         }
-        return client.request<JsonElement>(
+        return client.request<ListWorkspaceFilesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files",
@@ -282,6 +283,25 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/move",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Restore a trashed file to its original path
+     *
+     * `POST /api/v1/workspaces/{workspaceId}/trash/restore`
+     *
+     * Required scopes: `files:write`.
+     */
+    public suspend fun restoreWorkspaceTrash(workspaceId: String, body: RestoreWorkspaceTrashRequest, options: RequestOptions = RequestOptions()): RestoreWorkspaceTrashResponse {
+        return client.request<RestoreWorkspaceTrashResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/trash/restore",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

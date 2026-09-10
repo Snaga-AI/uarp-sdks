@@ -14,6 +14,10 @@ package UARP.API.Workspaces is
    --  Query and header parameters for `deleteWorkspaceFile`.
    type Delete_Workspace_File_Params is record
       Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Set to `false` to force a permanent delete even for a user-session (JWT) caller. Ignored for
+      --  api-key callers, which always delete permanently.
+      Has_Trash : Boolean := False;
+      Trash : UARP.Models.Delete_Workspace_File_Trash;
    end record;
 
    No_Delete_Workspace_File_Params : constant Delete_Workspace_File_Params := (others => <>);
@@ -92,7 +96,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Copy_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Copy_Workspace_File_Response;
+      return UARP.Models.Workspace_File;
 
    --  Create a workspace
    --
@@ -127,7 +131,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Params : Delete_Workspace_File_Params := No_Delete_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Delete_Workspace_File_Response;
 
    --  Download file content
    --
@@ -206,7 +210,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Params : List_Workspace_Files_Params := No_List_Workspace_Files_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Workspace_Files_Response;
 
    --  List trashed files in workspace
    --
@@ -230,6 +234,18 @@ package UARP.API.Workspaces is
       Payload : UARP.Models.Move_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Restore a trashed file to its original path
+   --
+   --  POST /api/v1/workspaces/{workspaceId}/trash/restore
+   --
+   --  Required scopes: files:write.
+   function Restore_Workspace_Trash
+     (Self : Client_Type;
+      Workspace_Id : String;
+      Payload : UARP.Models.Restore_Workspace_Trash_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Restore_Workspace_Trash_Response;
 
    --  Revoke workspace sharing
    --

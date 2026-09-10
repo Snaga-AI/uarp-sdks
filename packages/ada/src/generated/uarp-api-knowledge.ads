@@ -85,7 +85,45 @@ package UARP.API.Knowledge is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Knowledge_Bases_Response;
 
+   --  Re-embed every chunk with the current model
+   --
+   --  Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
+   --  embedding drift after a model change. Requires an embeddings backend: without one the answer
+   --  is 503 and nothing is written.
+   --
+   --  POST /api/v1/knowledge-bases/{kbId}/reindex
+   --
+   --  Required scopes: memory:write.
+   function Reindex_Knowledge_Base
+     (Self : Client_Type;
+      Kb_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Reindex_Knowledge_Base_Response;
+
+   --  Retrieve chunks from one knowledge base
+   --
+   --  Vector search when an embeddings backend is configured, keyword scoring when it is not -
+   --  `mode` says which ran, and a vector pass that matches nothing falls back to keyword rather
+   --  than answering empty. `status` distinguishes the three outcomes a caller must render
+   --  differently: `KB_EMPTY` (nothing indexed yet), `NO_MATCHES` (indexed, nothing matched) and
+   --  `RESULTS_FOUND`. All three are 200: an empty result is an answer here, not a failure.
+   --
+   --  POST /api/v1/knowledge-bases/{kbId}/search
+   --
+   --  Required scopes: memory:write.
+   function Search_Knowledge_Base
+     (Self : Client_Type;
+      Kb_Id : String;
+      Payload : UARP.Models.Search_Knowledge_Base_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Knowledge_Base_Search_Result;
+
    --  Update knowledge base
+   --
+   --  WRITE SEMANTICS: merges. Measured 2026-08-31 on the wire: `{name}` left `description` intact
+   --  and vice versa, and `chunk_size` and `embedding_model` survived both. Note this is the
+   --  OPPOSITE of `PUT /agents/{id}/schedule`, which replaces - the verb decides nothing here, see
+   --  docs/WRITE_SEMANTICS.md.
    --
    --  PUT /api/v1/knowledge-bases/{id}
    --

@@ -153,7 +153,58 @@ impl KnowledgeApi {
             .await
     }
 
+    /// Re-embed every chunk with the current model
+    ///
+    /// Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
+    /// embedding drift after a model change. Requires an embeddings backend: without one the answer
+    /// is 503 and nothing is written.
+    ///
+    /// `POST /api/v1/knowledge-bases/{kbId}/reindex`
+    ///
+    /// Required scopes: `memory:write`.
+    pub async fn reindex_knowledge_base(&self, kb_id: &str) -> Result<models::ReindexKnowledgeBaseResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/knowledge-bases/{}/reindex", encode_path(kb_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Retrieve chunks from one knowledge base
+    ///
+    /// Vector search when an embeddings backend is configured, keyword scoring when it is not —
+    /// `mode` says which ran, and a vector pass that matches nothing falls back to keyword rather
+    /// than answering empty. `status` distinguishes the three outcomes a caller must render
+    /// differently: `KB_EMPTY` (nothing indexed yet), `NO_MATCHES` (indexed, nothing matched) and
+    /// `RESULTS_FOUND`. All three are 200: an empty result is an answer here, not a failure.
+    ///
+    /// `POST /api/v1/knowledge-bases/{kbId}/search`
+    ///
+    /// Required scopes: `memory:write`.
+    pub async fn search_knowledge_base(&self, kb_id: &str, body: &models::SearchKnowledgeBaseRequest) -> Result<models::KnowledgeBaseSearchResult> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/knowledge-bases/{}/search", encode_path(kb_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Update knowledge base
+    ///
+    /// WRITE SEMANTICS: merges. Measured 2026-08-31 on the wire: `{name}` left `description` intact
+    /// and vice versa, and `chunk_size` and `embedding_model` survived both. Note this is the
+    /// OPPOSITE of `PUT /agents/{id}/schedule`, which replaces — the verb decides nothing here, see
+    /// docs/WRITE_SEMANTICS.md.
     ///
     /// `PUT /api/v1/knowledge-bases/{id}`
     ///

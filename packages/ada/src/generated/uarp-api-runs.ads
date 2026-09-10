@@ -12,6 +12,17 @@ package UARP.API.Runs is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `getRun`.
+   type Get_Run_Params is record
+      --  Set to `true` to include `changed_files` in the response. Opt-in because this endpoint is
+      --  polled and the paths live in their own key range: serving them unconditionally would add a
+      --  KV list to a hot read for every caller that never looks at them.
+      Has_Changed_Files : Boolean := False;
+      Changed_Files : UARP.Models.Get_Run_Changed_Files;
+   end record;
+
+   No_Get_Run_Params : constant Get_Run_Params := (others => <>);
+
    --  Query and header parameters for `getRunFeedback`.
    type Get_Run_Feedback_Params is record
       Has_Message_Id : Boolean := False;
@@ -32,6 +43,13 @@ package UARP.API.Runs is
       Limit : UARP.Types.Integer_Value := 0;
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `desc` (default) newest first, `asc` oldest first. Any other value is a 400 rather than a
+      --  silent default, so a typo surfaces as an error instead of as plausible-looking data.
+      --
+      --  Use `asc` instead of paging toward the end: the cursor is opaque, so there is no way to jump
+      --  to the far end, but `asc` puts that end on page one.
+      Has_Order : Boolean := False;
+      Order : UARP.Models.List_Runs_Order;
    end record;
 
    No_List_Runs_Params : constant List_Runs_Params := (others => <>);
@@ -164,8 +182,9 @@ package UARP.API.Runs is
    function Get
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Params := No_Get_Run_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Run;
+      return UARP.Models.Get_Run_Response;
 
    --  Get audit trail for a run
    --
@@ -216,6 +235,14 @@ package UARP.API.Runs is
       return UARP.Models.Get_Run_Steps_Response;
 
    --  List all runs for tenant
+   --
+   --  Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
+   --  most recent runs. Do not page toward the end to find recent activity - a client that walks
+   --  `has_more` looking for the newest page now walks away from it. This was previously true only
+   --  of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop
+   --  walk that reversed meaning the day the order changed. Note the sibling
+   --  `/api/v1/teams/{teamId}/runs` is deliberately the other way round - oldest first - because a
+   --  team transcript reads forward.
    --
    --  GET /api/v1/runs
    --

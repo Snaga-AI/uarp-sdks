@@ -70,6 +70,24 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Liveness (alias of /health)
+     *
+     * Identical body to `GET /health`. Kept for callers that assume every route lives under
+     * `/api/v1`; new callers should use `/health`.
+     *
+     * `GET /api/v1/health`
+     */
+    public suspend fun healthCheckV1alias(options: RequestOptions = RequestOptions()): HealthCheckV1aliasResponse {
+        return client.request<HealthCheckV1aliasResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/health",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Kubernetes liveness probe
      *
      * `GET /health/live`

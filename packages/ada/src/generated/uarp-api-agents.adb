@@ -406,6 +406,22 @@ package body UARP.API.Agents is
              Options => Options));
    end Patch;
 
+   function Reset_Agent
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Reset_Agent_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/reset",
+             Idempotent => True,
+             Options => Options));
+   end Reset_Agent;
+
    function Rollback_Agent
      (Self : Client_Type;
       Agent_Id : String;
@@ -537,16 +553,17 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Risk_Classification_Update;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/risk-classification",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/risk-classification",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Agent_Risk_Classification;
 end UARP.API.Agents;

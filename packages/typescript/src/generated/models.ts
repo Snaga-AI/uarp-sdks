@@ -219,6 +219,20 @@ export interface ActiveSession {
   last_used_at?: string | null;
 }
 
+export interface AddAndroidTestersRequest {
+  emails: string[];
+  /**
+   * @default "admin"
+   */
+  source?: string;
+}
+
+export interface AddAndroidTestersResponse {
+  added: string[];
+  already: string[];
+  invalid: string[];
+}
+
 export interface AddSquadGraphEdgeRequest {
   from: string;
   to: string;
@@ -994,6 +1008,36 @@ export interface AmendConstitutionRequest {
 export interface AmendConstitutionResponse {
   rules?: ConstitutionRule[];
   version?: number;
+}
+
+export interface AndroidTester {
+  email: string;
+  source?: string;
+  /**
+   * Truncated hash of the first submitting address. The raw IP is never stored.
+   */
+  first_ip_hash?: string;
+  created_at: string;
+  emails_sent: number;
+  /**
+   * `last_email_at` under the name the admin table renders; null rather than absent so a column
+   * can bind to it.
+   */
+  emailed_at: string | null;
+  send_failures?: number;
+}
+
+export interface AndroidTesterSignupResult {
+  ok: boolean;
+  already_registered: boolean;
+  /**
+   * Whether a letter went out on THIS request. False when no testing URL is configured, when
+   * SMTP refused, when the address is inside its 24-hour resend cooldown, or when the
+   * platform-wide hourly send ceiling is reached. The address is recorded in every one of those
+   * cases — a "here is your link" letter without a link is worse than silence — so a client must
+   * NOT read `emailed: false` as "testing has not opened yet".
+   */
+  emailed: boolean;
 }
 
 export interface APIKeyResponse {
@@ -2331,13 +2375,17 @@ export interface CreateSessionRequest {
 }
 
 export interface CreateSessionShareRequest {
-  role: GetSessionShareResponseRole;
+  role: CreateSessionShareRequestRole;
   expires_in_hours?: number;
 }
 
+export type CreateSessionShareRequestRole = 'viewer' | 'editor';
+
+export const CREATE_SESSION_SHARE_REQUEST_ROLE_VALUES = ['viewer', 'editor'] as const;
+
 export interface CreateSessionShareResponse {
   share_url?: string | null;
-  role?: GetSessionShareResponseRole | null;
+  role?: string | null;
   expires_at?: string | null;
 }
 
@@ -3522,6 +3570,11 @@ export interface GetAgentViolationsResponse {
   count?: number;
 }
 
+export interface GetAndroidTestingStatusResponse {
+  registered: boolean;
+  emailed: boolean;
+}
+
 export interface GetAppleAppSiteAssociationResponse {
   applinks: GetAppleAppSiteAssociationResponseApplinks;
   webcredentials?: GetAppleAppSiteAssociationResponseWebcredentials;
@@ -3682,6 +3735,10 @@ export interface GetImmutableAuditResponse {
   total: number;
 }
 
+export interface GetLinkPreviewResponse {
+  preview: LinkPreview;
+}
+
 export interface GetListingReviewsResponse {
   reviews?: JsonObject[];
   total?: number;
@@ -3796,6 +3853,10 @@ export interface GetPlatformURLSResponse {
 export interface GetPlatformURLSResponseURLS {
   public_base_url?: string;
   webhook_base_url?: string;
+}
+
+export interface GetPublicBlogPostResponse {
+  post: PublicBlogPost;
 }
 
 export interface GetPublicFeaturedAgentResponse {
@@ -3946,13 +4007,9 @@ export interface GetRuntimeConfigResponse {
 
 export interface GetSessionShareResponse {
   share_url?: string | null;
-  role?: GetSessionShareResponseRole | null;
+  role?: string | null;
   expires_at?: string | null;
 }
-
-export type GetSessionShareResponseRole = 'viewer' | 'editor';
-
-export const GET_SESSION_SHARE_RESPONSE_ROLE_VALUES = ['viewer', 'editor'] as const;
 
 export interface GetSquadChatHistoryResponse {
   team_id?: string;
@@ -4160,6 +4217,17 @@ export const GUARDRAIL_PHASE_VALUES = ['input', 'output', 'both'] as const;
 export interface HandleStripeWebhookRequest {
   type: string;
   data: JsonObject;
+}
+
+export interface HealthCheckV1aliasResponse {
+  status?: GetHealthResponseStatus;
+  timestamp?: string;
+  kv_connected?: boolean;
+  uptime_seconds?: number;
+  version?: string;
+  build_sha?: string;
+  pending_resumes?: number;
+  runs_queued?: number;
 }
 
 export interface HealthLiveResponse {
@@ -4511,6 +4579,35 @@ export type KnowledgeBaseDocumentType = 'pdf' | 'markdown' | 'csv' | 'html' | 'p
 
 export const KNOWLEDGE_BASE_DOCUMENT_TYPE_VALUES = ['pdf', 'markdown', 'csv', 'html', 'plain', 'docx', 'image'] as const;
 
+export interface KnowledgeBaseSearchResult {
+  status: KnowledgeBaseSearchResultStatus;
+  query: string;
+  /**
+   * Which pass produced the results; null when the knowledge base is empty and neither ran.
+   */
+  mode: string | null;
+  count: number;
+  results: KnowledgeBaseSearchResultResult[];
+}
+
+export interface KnowledgeBaseSearchResultResult {
+  /**
+   * 1-based citation number.
+   */
+  index: number;
+  /**
+   * Document label, sanitised before it is rendered into a prompt.
+   */
+  source: string;
+  page?: number;
+  text: string;
+  score: number;
+}
+
+export type KnowledgeBaseSearchResultStatus = 'KB_EMPTY' | 'NO_MATCHES' | 'RESULTS_FOUND';
+
+export const KNOWLEDGE_BASE_SEARCH_RESULT_STATUS_VALUES = ['KB_EMPTY', 'NO_MATCHES', 'RESULTS_FOUND'] as const;
+
 /**
  * Body for `PUT /api/v1/knowledge-bases/{id}`. Every field optional.
  */
@@ -4565,6 +4662,15 @@ export interface LedgerIntegrity {
   first_invalid_seq?: number;
   error?: string;
   checked_at: string;
+}
+
+export interface LinkPreview {
+  url: string;
+  site: string;
+  title?: string | null;
+  description?: string | null;
+  image?: string | null;
+  favicon?: string | null;
 }
 
 export interface ListA2ATasksResponse {
@@ -4674,6 +4780,14 @@ export interface ListAmbassadorRequestsResponse {
 
 export interface ListAmbassadorVetoesResponse {
   vetoes?: Veto[];
+}
+
+export interface ListAndroidTestersResponse {
+  testers: AndroidTester[];
+  count: number;
+  not_yet_emailed: number;
+  given_up: number;
+  cursor: string | null;
 }
 
 export interface ListAPIKeysResponse {
@@ -5070,6 +5184,21 @@ export interface ListProviderModelsResponseModel {
 
 export interface ListProvidersResponse {
   providers: LLMProvider[];
+}
+
+export interface ListPublicBlogPostsResponse {
+  blog: ListPublicBlogPostsResponseBlog;
+  posts: PublicBlogPostSummary[];
+  all_tags: string[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface ListPublicBlogPostsResponseBlog {
+  title: string;
+  description: string;
 }
 
 export interface ListPublicIntegrationsResponse {
@@ -6999,6 +7128,30 @@ export interface PromoCodeInput {
   active?: boolean;
 }
 
+export interface PublicBlogPost {
+  slug: string;
+  title: string;
+  /**
+   * Markdown.
+   */
+  body: string;
+  tags: string[];
+  published_at: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface PublicBlogPostSummary {
+  slug: string;
+  title: string;
+  tags: string[];
+  /**
+   * Body with its leading heading and markdown punctuation stripped, first 240 characters.
+   */
+  excerpt: string;
+  published_at: string;
+}
+
 /**
  * Funnel for public (unauthenticated) chat surfaces: visits, engagement, messages, with the
  * usual breakdowns.
@@ -7393,6 +7546,18 @@ export interface RegistryYankVersionRequest {
   reason?: string;
 }
 
+export interface ReindexKnowledgeBaseResponse {
+  reindexed: boolean;
+  total_chunks: number;
+  /**
+   * Chunks that came back with a vector. Lower than `total_chunks` means some failed.
+   */
+  embedded: number;
+  documents: number;
+  embedding_model: string;
+  embedding_dimensions: number;
+}
+
 export interface RejectRunRequest {
   /**
    * Why the tool was refused; recorded on the run and shown to the agent.
@@ -7449,7 +7614,7 @@ export interface ResolvedDep {
 export interface ResolveSharedSessionResponse {
   session_id?: string;
   agent_name?: string;
-  role?: GetSessionShareResponseRole;
+  role?: CreateSessionShareRequestRole;
 }
 
 /**
@@ -7959,6 +8124,14 @@ export interface ScheduleSummary {
   next_fire_at?: string;
 }
 
+export interface SearchKnowledgeBaseRequest {
+  query: string;
+  /**
+   * Maximum chunks to return.
+   */
+  limit?: number;
+}
+
 export interface SearchMarketplaceResponse {
   items: MarketplaceListing[];
   /**
@@ -8407,6 +8580,14 @@ export interface SetUserRoleResponse {
 
 export interface ShareWorkspaceRequest {
   agent_id: string;
+}
+
+export interface SignUpForAndroidTestingRequest {
+  email: string;
+  /**
+   * Where the sign-up came from, e.g. `landing`. Truncated to 40 chars.
+   */
+  source?: string;
 }
 
 export interface SpawnPolicy {

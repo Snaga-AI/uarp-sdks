@@ -36,6 +36,17 @@ package UARP.API.Health is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Ready_Response;
 
+   --  Liveness (alias of /health)
+   --
+   --  Identical body to `GET /health`. Kept for callers that assume every route lives under
+   --  `/api/v1`; new callers should use `/health`.
+   --
+   --  GET /api/v1/health
+   function Health_Check_V1alias
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Health_Check_V1alias_Response;
+
    --  Kubernetes liveness probe
    --
    --  GET /health/live

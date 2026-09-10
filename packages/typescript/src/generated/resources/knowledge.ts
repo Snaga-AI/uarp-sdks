@@ -7,9 +7,12 @@ import type {
   IngestKbDocumentResponse,
   KnowledgeBase,
   KnowledgeBaseCreate,
+  KnowledgeBaseSearchResult,
   KnowledgeBaseUpdate,
   ListKbDocumentsResponse,
   ListKnowledgeBasesResponse,
+  ReindexKnowledgeBaseResponse,
+  SearchKnowledgeBaseRequest,
 } from '../models.js';
 
 /**
@@ -125,6 +128,49 @@ export class KnowledgeResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/knowledge-bases',
+      options,
+    });
+  }
+
+  /**
+   * Re-embed every chunk with the current model
+   *
+   * Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
+   * embedding drift after a model change. Requires an embeddings backend: without one the answer
+   * is 503 and nothing is written.
+   *
+   * `POST /api/v1/knowledge-bases/{kbId}/reindex`
+   *
+   * Required scopes: `memory:write`.
+   */
+  reindexKnowledgeBase(kbId: string, options?: RequestOptions): Promise<ReindexKnowledgeBaseResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(kbId))}/reindex`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Retrieve chunks from one knowledge base
+   *
+   * Vector search when an embeddings backend is configured, keyword scoring when it is not —
+   * `mode` says which ran, and a vector pass that matches nothing falls back to keyword rather
+   * than answering empty. `status` distinguishes the three outcomes a caller must render
+   * differently: `KB_EMPTY` (nothing indexed yet), `NO_MATCHES` (indexed, nothing matched) and
+   * `RESULTS_FOUND`. All three are 200: an empty result is an answer here, not a failure.
+   *
+   * `POST /api/v1/knowledge-bases/{kbId}/search`
+   *
+   * Required scopes: `memory:write`.
+   */
+  searchKnowledgeBase(kbId: string, body: SearchKnowledgeBaseRequest, options?: RequestOptions): Promise<KnowledgeBaseSearchResult> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/knowledge-bases/${encodeURIComponent(String(kbId))}/search`,
+      body,
+      idempotent: true,
       options,
     });
   }

@@ -60,6 +60,29 @@ impl Client {
 }
 
 impl RegistryApi {
+    /// Add a SPEC to the featured set (super-admin)
+    ///
+    /// The SPEC's existence is confirmed BEFORE the featured set is touched, so a typo cannot leave
+    /// a dangling id in a shared list — that is what the 404 protects. The set itself is mutated
+    /// under a compare-and-set retry, because it is one shared record and a plain read-modify-write
+    /// was last-writer-wins.
+    ///
+    /// Idempotent: featuring an already-featured SPEC is 200, not a conflict.
+    ///
+    /// `POST /api/v1/registry/admin/specs/{scope}/{name}/feature`
+    pub async fn feature_registry_spec(&self, scope: &str, name: &str) -> Result<models::RegistrySpecFeatureState> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/registry/admin/specs/{}/{}/feature", encode_path(scope), encode_path(name)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Admin: list all specs (regardless of visibility)
     ///
     /// `GET /api/v1/registry/admin/specs`
@@ -299,6 +322,71 @@ impl RegistryApi {
                 path: format!("/api/v1/registry/spec/{}/{}/{}/yank", encode_path(scope), encode_path(name), encode_path(version)),
                 query: NO_QUERY,
                 body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Bulk-publish the bundled starter SPECs (super-admin)
+    ///
+    /// Idempotent: a starter SPEC already present is counted in `skipped`, not republished, so
+    /// re-running is safe and is how a partially-failed seed is completed.
+    ///
+    /// `errors` is present ONLY when at least one SPEC failed. Its absence means no failures — not
+    /// that the field is unavailable — so a client should treat missing as empty rather than
+    /// unknown. A run can be partially successful: `added` and `errors` are both meaningful in the
+    /// same response, and the status is still 200.
+    ///
+    /// `POST /api/v1/registry/admin/specs/seed`
+    pub async fn seed_starter_specs(&self) -> Result<models::SeedStarterSpecsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/registry/admin/specs/seed".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Make a SPEC public or private (super-admin)
+    ///
+    /// PATCH and only PATCH — a PUT is 405 with the allowed methods named.
+    ///
+    /// WRITE SEMANTICS: replaces the visibility, which is the only field this route touches.
+    /// `visibility` is required and must be exactly `public` or `private`; anything else, including
+    /// a missing body or a near-miss like `unlisted`, is 400 rather than being coerced or ignored.
+    ///
+    /// `PATCH /api/v1/registry/admin/specs/{scope}/{name}/visibility`
+    pub async fn set_registry_spec_visibility(&self, scope: &str, name: &str, body: &models::SetRegistrySpecVisibilityRequest) -> Result<models::SetRegistrySpecVisibilityResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: format!("/api/v1/registry/admin/specs/{}/{}/visibility", encode_path(scope), encode_path(name)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove a SPEC from the featured set (super-admin)
+    ///
+    /// Same shape and same guards as the POST; the response's `featured` is simply `false`.
+    /// Idempotent — un-featuring something that was not featured is 200.
+    ///
+    /// `DELETE /api/v1/registry/admin/specs/{scope}/{name}/feature`
+    pub async fn unfeature_registry_spec(&self, scope: &str, name: &str) -> Result<models::RegistrySpecFeatureState> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/registry/admin/specs/{}/{}/feature", encode_path(scope), encode_path(name)),
+                query: NO_QUERY,
+                body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
             })

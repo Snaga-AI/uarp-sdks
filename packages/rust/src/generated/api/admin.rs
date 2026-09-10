@@ -82,7 +82,7 @@ pub struct GetImmutableAuditParams {
 pub struct GetPlatformEconomicsParams {
     /// `1` bypasses the cache and recomputes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub refresh: Option<models::GetPlatformEconomicsRefresh>,
+    pub refresh: Option<models::DeleteCustomPlanForce>,
 }
 
 /// Query and header parameters for `getTenantUsage`.
@@ -91,6 +91,15 @@ pub struct GetTenantUsageParams {
     /// ISO YYYY-MM period (defaults to current month)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub period: Option<String>,
+}
+
+/// Query and header parameters for `listAndroidTesters`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAndroidTestersParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `listFeedback`.
@@ -127,6 +136,28 @@ impl Client {
 }
 
 impl AdminApi {
+    /// Add addresses to the roster by hand
+    ///
+    /// **Super-admin only.** Addresses reach the owner from the Play console and from people who
+    /// write directly, so the landing form is not the only door. Partial success is normal: each
+    /// address lands in exactly one of the three lists and the call is still 200.
+    ///
+    /// `POST /api/v1/admin/testers/android`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn add_android_testers(&self, body: &models::AddAndroidTestersRequest) -> Result<models::AddAndroidTestersResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/testers/android".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Platform-wide agent analytics
     ///
     /// `GET /api/v1/admin/analytics/agents`
@@ -538,6 +569,27 @@ impl AdminApi {
             .await
     }
 
+    /// Write a post by hand
+    ///
+    /// `source` is stamped `manual` and cannot be set by the caller. The slug is derived from the
+    /// title and made unique; `status` defaults to `draft`.
+    ///
+    /// `POST /api/v1/admin/blog/posts`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn create_admin_blog_post(&self, body: &models::CreateAdminBlogPostRequest) -> Result<models::CreateAdminBlogPostResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/blog/posts".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create custom provider
     ///
     /// `POST /api/v1/admin/providers`
@@ -570,6 +622,193 @@ impl AdminApi {
                 body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// Delete a post
+    ///
+    /// `DELETE /api/v1/admin/blog/posts/{postId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_admin_blog_post(&self, post_id: &str) -> Result<models::DeleteAdminBlogPostResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/blog/posts/{}", encode_path(post_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove one provider's stored OAuth credentials
+    ///
+    /// Deletes the record outright — this is the only way to clear a stored credential, since the
+    /// PUT treats a blank value as "keep". Idempotent: deleting a provider that has nothing stored
+    /// is still 200.
+    ///
+    /// `DELETE /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_admin_integration_o_auth_provider(&self, provider: &models::GetAdminIntegrationOAuthProviderProvider) -> Result<models::DeleteAdminIntegrationOAuthProviderResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/integration-oauth-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove the platform API key for a provider
+    ///
+    /// Drops the stored platform key. The PROVIDER survives — this is the key, not the definition;
+    /// `DELETE /api/v1/admin/providers/{providerId}` is the other one, and it removes a custom
+    /// provider outright.
+    ///
+    /// Answers `configured: false` for the provider, which is the same field `GET
+    /// /api/v1/admin/llm-defaults` reports per provider, so the caller can apply the answer without
+    /// a re-read.
+    ///
+    /// `DELETE /api/v1/admin/llm-defaults/{providerId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_admin_llm_default(&self, provider_id: &str) -> Result<models::DeleteAdminLLMDefaultResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/llm-defaults/{}", encode_path(provider_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove a custom provider (super-admin, fresh MFA)
+    ///
+    /// Removes a CUSTOM provider and its settings. A built-in provider is not deletable and answers
+    /// 404 here — that 404 means "no such CUSTOM provider", not "no such provider", which is worth
+    /// knowing before reading it as a routing mistake.
+    ///
+    /// Gated on a fresh MFA challenge because it is irreversible: the definition and its settings
+    /// are deleted outright, not disabled. To stop using a provider without losing it, PATCH
+    /// `enabled: false` instead. To drop the platform API KEY while keeping the provider, use
+    /// `DELETE /api/v1/admin/llm-defaults/{providerId}` — a different route with a different
+    /// subject.
+    ///
+    /// `DELETE /api/v1/admin/providers/{providerId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_admin_provider(&self, provider_id: &str) -> Result<models::DeleteAdminProviderResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/providers/{}", encode_path(provider_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Take one address off the roster
+    ///
+    /// **Super-admin only.** The address is a path segment, so it arrives percent-encoded.
+    ///
+    /// `DELETE /api/v1/admin/testers/android/{email}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_android_tester(&self, email: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/testers/android/{}", encode_path(email)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Run the authoring agent now and create a post
+    ///
+    /// Generates immediately, ignoring `frequency` — this is the operator's manual trigger, not a
+    /// schedule nudge. Whether the result lands published or as a draft follows the stored
+    /// `auto_publish`.
+    ///
+    /// A generation that FAILS is **422**, not a 200 carrying an error field, so a client reads the
+    /// status. Success is **201**.
+    ///
+    /// `POST /api/v1/admin/blog/generate`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn generate_admin_blog_post(&self) -> Result<models::GenerateAdminBlogPostResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/blog/generate".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Get the blog's authoring configuration
+    ///
+    /// Super-admin only. Wrapped in `{config}` rather than returned bare — the whole blog surface
+    /// uses envelopes.
+    ///
+    /// `GET /api/v1/admin/blog/config`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_blog_config(&self) -> Result<models::GetAdminBlogConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/blog/config".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Read one provider's stored OAuth credentials (secret masked)
+    ///
+    /// **The response has two shapes and a client must handle both.** With nothing stored it is the
+    /// three-field form — `{provider, enabled: false, configured: false}` — and `client_id`,
+    /// `client_secret_hint` and `scopes` are ABSENT, not null. With a record stored, all six are
+    /// present.
+    ///
+    /// The secret is never echoed. `client_secret_hint` is the last four characters behind dots,
+    /// enough for an operator to confirm which credential is stored without seeing it, and it is
+    /// null when the stored secret is empty.
+    ///
+    /// `GET /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_integration_o_auth_provider(&self, provider: &models::GetAdminIntegrationOAuthProviderProvider) -> Result<models::GetAdminIntegrationOAuthProviderResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/integration-oauth-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }
@@ -727,7 +966,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/maintenance`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_maintenance_state(&self) -> Result<models::GetMaintenanceStateResponse> {
+    pub async fn get_maintenance_state(&self) -> Result<models::MaintenanceState> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -784,6 +1023,32 @@ impl AdminApi {
             .await
     }
 
+    /// One tenant's mission-framework overrides, and what they resolve to
+    ///
+    /// Answers both layers at once: `mef_config` is what an operator stored for this tenant,
+    /// `effective` is what the runtime will actually do. They differ whenever the platform is the
+    /// deciding factor — with the mission service absent, every effective flag is false no matter
+    /// what the tenant record says, so an operator reading only `mef_config` sees settings that do
+    /// nothing.
+    ///
+    /// `mef_config` is `null` when nothing is overridden, not an empty object.
+    ///
+    /// `GET /api/v1/admin/tenants/{tenantId}/mef-config`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_tenant_mef_config(&self, tenant_id: &str) -> Result<models::TenantMefConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/tenants/{}/mef-config", encode_path(tenant_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get tenant usage metrics
     ///
     /// `GET /api/v1/admin/tenants/{tenantId}/usage`
@@ -818,6 +1083,84 @@ impl AdminApi {
             .await
     }
 
+    /// List every post, drafts included
+    ///
+    /// The admin view: unlike the public blog read, drafts are included. Unpaged.
+    ///
+    /// `GET /api/v1/admin/blog/posts`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_admin_blog_posts(&self) -> Result<models::ListAdminBlogPostsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/blog/posts".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Every tenant's custom domain, worst first
+    ///
+    /// **The order is the product.** Rows are sorted by problem severity — failed, then drift, then
+    /// renewal_due, then pending, then healthy — so an operator's eye lands on what is broken. A
+    /// client that re-sorts alphabetically throws that away and should sort back, or not sort at
+    /// all.
+    ///
+    /// Tenants with no custom domain are omitted entirely, so `count` is the number of configured
+    /// domains and not the number of tenants.
+    ///
+    /// Bounded: the tenant registry scan takes at most 5000 entries in one pass and is not paged,
+    /// so on a platform past that size this list is silently partial.
+    ///
+    /// `GET /api/v1/admin/domains/health`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_admin_domain_health(&self) -> Result<models::ListAdminDomainHealthResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/domains/health".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Which integration providers an operator has configured
+    ///
+    /// Super-admin only, and never returns a secret — provider id, an enabled bit, and whether
+    /// credentials exist at all. The dashboard uses it to decide which connector rows need a
+    /// "Configure" call to action.
+    ///
+    /// Distinct from `/api/v1/integrations/catalog`, which is tenant-facing and lists every known
+    /// connector regardless of OAuth-readiness.
+    ///
+    /// The list is the SUPPORTED set, not the stored set: every supported provider appears, with
+    /// `configured: false` where nothing is stored. So an empty result means the supported set is
+    /// empty, never that nothing is configured.
+    ///
+    /// `GET /api/v1/admin/integration-oauth-providers`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_admin_integration_o_auth_providers(&self) -> Result<models::ListAdminIntegrationOAuthProvidersResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/integration-oauth-providers".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List providers with admin settings
     ///
     /// `GET /api/v1/admin/providers`
@@ -834,6 +1177,54 @@ impl AdminApi {
                 idempotent: false,
             })
             .await
+    }
+
+    /// The Android closed-testing roster
+    ///
+    /// **Super-admin only.** The addresses the owner works from when adding people to the Play
+    /// group. `count`, `not_yet_emailed` and `given_up` describe THIS PAGE, not the whole roster:
+    /// all three are computed over the rows returned, so a roster longer than `limit` under-reports
+    /// until every page is walked with `cursor`. `not_yet_emailed` counts rows no letter has gone
+    /// to; `given_up` counts the ones the backfill has stopped retrying after repeated refusals,
+    /// which need an eye rather than another pass.
+    ///
+    /// `GET /api/v1/admin/testers/android`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_android_testers(&self, params: &ListAndroidTestersParams) -> Result<models::ListAndroidTestersResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/testers/android".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Stream every item returned by `listAndroidTesters`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn list_android_testers_all<'a>(&'a self, params: &'a ListAndroidTestersParams) -> impl Stream<Item = Result<models::AndroidTester>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_android_testers(&page_params).await?;
+                let items = page.testers;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, None, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// The reports inbox
@@ -930,6 +1321,39 @@ impl AdminApi {
             .await
     }
 
+    /// Store or update one provider's OAuth credentials
+    ///
+    /// WRITE SEMANTICS: merges, and the merge is what makes the route usable. An omitted or blank
+    /// `client_id` or `client_secret` keeps the stored one, so an operator can flip `enabled` or
+    /// rotate `scopes` WITHOUT re-pasting a secret they cannot read back. Blank counts as omitted
+    /// here: a whitespace-only value does not clear anything.
+    ///
+    /// The consequence is that there is no way to clear a credential through this route — DELETE
+    /// the provider instead.
+    ///
+    /// A FIRST write still needs both: with no stored record and either missing, the answer is 400.
+    /// `enabled` defaults to true on a first write and otherwise keeps its stored value. A present
+    /// `scopes` REPLACES the stored list.
+    ///
+    /// The response is the short form, not the record: `{provider, enabled, configured: true}`,
+    /// with no echo of the credentials just written.
+    ///
+    /// `PUT /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn set_admin_integration_o_auth_provider(&self, provider: &models::GetAdminIntegrationOAuthProviderProvider, body: &models::SetAdminIntegrationOAuthProviderRequest) -> Result<models::SetAdminIntegrationOAuthProviderResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/admin/integration-oauth-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Set platform API key
     ///
     /// `PUT /api/v1/admin/llm-defaults/{providerId}`
@@ -966,6 +1390,37 @@ impl AdminApi {
             .await
     }
 
+    /// Turn maintenance mode on or off (super-admin)
+    ///
+    /// Undocumented until now, while the GET beside it was described in full — so a generated
+    /// client could READ the maintenance state and had no way to change it. The web has been
+    /// calling this all along (`lib/hooks/use-maintenance-mode.ts`).
+    ///
+    /// Answers the whole record back, the same shape the GET serves, so a client need not re-read
+    /// to learn `enabled_at` and `enabled_by_email`.
+    ///
+    /// WRITE SEMANTICS: replaces. The record is rebuilt from this body and written whole; nothing
+    /// is read first. Turning maintenance ON without a `message` DROPS the message a previous ON
+    /// had set, and turning it OFF wipes the message unconditionally, keeping only the timestamp
+    /// and the actor so the audit trail still shows who closed the window. `enabled_at` and
+    /// `enabled_by_email` are stamped on EVERY call, including one that changes nothing.
+    ///
+    /// `PUT /api/v1/admin/maintenance`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn set_maintenance_state(&self, body: &models::SetMaintenanceStateRequest) -> Result<models::MaintenanceState> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/maintenance".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Suspend a tenant
     ///
     /// `PUT /api/v1/admin/tenants/{tenantId}/suspend`
@@ -976,6 +1431,89 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: format!("/api/v1/admin/tenants/{}/suspend", encode_path(tenant_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Pull one provider's model list into the catalogue
+    ///
+    /// Asks the provider what models it offers and MERGES the result into the platform catalogue.
+    /// Additive only — nothing is removed, so a model the provider has withdrawn stays in the
+    /// catalogue until it is deleted deliberately.
+    ///
+    /// CUSTOM providers only: the 404 means "no custom provider with that id", so a built-in
+    /// provider id is also 404 here. `added` counts new entries, `scanned` is the provider's
+    /// reported inventory, and `total` is the catalogue size after the merge — so `added` is zero
+    /// on a run that changed nothing, which is the normal result of a second run.
+    ///
+    /// `POST /api/v1/admin/providers/{providerId}/sync-models`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn sync_provider_models(&self, provider_id: &str) -> Result<models::SyncProviderModelsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/admin/providers/{}/sync-models", encode_path(provider_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Update the blog's authoring configuration
+    ///
+    /// WRITE SEMANTICS: merges. The body is spread over the stored record, so an omitted field
+    /// keeps its value.
+    ///
+    /// One field is not a plain merge: setting `agent_id` also pins `agent_tenant_id` to the
+    /// CALLING tenant, because the cron that auto-writes posts runs without a request context and
+    /// would otherwise have no tenant to run the agent in. Clearing `agent_id` to `null` nulls
+    /// both. `agent_tenant_id` is therefore never sent by a client and never has to be — it is
+    /// derived.
+    ///
+    /// Answers the stored record, so a client sees what took effect.
+    ///
+    /// `PUT /api/v1/admin/blog/config`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_blog_config(&self, body: &models::UpdateAdminBlogConfigRequest) -> Result<models::UpdateAdminBlogConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/blog/config".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Edit a post
+    ///
+    /// WRITE SEMANTICS: merges. An omitted field keeps its value; `tags` present REPLACES the list.
+    ///
+    /// Three things move on their own and a client should not try to send them. Editing the `title`
+    /// or the `body` re-stamps `source` to `manual`, even on a post the agent wrote — the record
+    /// then says who last shaped it rather than who started it. Changing the `title` mints a new
+    /// unique `slug`, so a published post's URL changes under it. And `published_at` follows
+    /// `status`: it is stamped on the first transition to `published` and set back to null on
+    /// `draft`, so a republished post carries a NEW timestamp rather than its original one.
+    ///
+    /// `PATCH /api/v1/admin/blog/posts/{postId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_blog_post(&self, post_id: &str, body: &models::UpdateAdminBlogPostRequest) -> Result<models::UpdateAdminBlogPostResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: format!("/api/v1/admin/blog/posts/{}", encode_path(post_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -1038,18 +1576,24 @@ impl AdminApi {
             .await
     }
 
-    /// Resolve or reopen a report
+    /// Mark one feedback report resolved, or reopen it
     ///
-    /// **Super-admin only.**
+    /// **Only the exact string `resolved` resolves a report; every other value sets it to `new`.**
+    /// There is no validation and no error path: `"Resolved"`, `"closed"`, a typo, a missing
+    /// `status`, or a body that is not JSON at all are each accepted with 200 and REOPEN a resolved
+    /// report. A client must send the literal value and must not rely on being told when it did
+    /// not.
     ///
-    /// `PATCH /api/v1/admin/feedback`
+    /// WRITE SEMANTICS: replaces the status field only; nothing else on the report is touched.
+    ///
+    /// `PATCH /api/v1/admin/feedback/{reportId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_feedback_status(&self, body: &models::UpdateFeedbackStatusRequest) -> Result<models::UpdateFeedbackStatusResponse> {
+    pub async fn update_feedback_report_status(&self, report_id: &str, body: &models::UpdateFeedbackReportStatusRequest) -> Result<models::UpdateFeedbackReportStatusResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
-                path: "/api/v1/admin/feedback".to_string(),
+                path: format!("/api/v1/admin/feedback/{}", encode_path(report_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -1058,16 +1602,68 @@ impl AdminApi {
             .await
     }
 
-    /// Update tenant
+    /// Set or clear one tenant's mission-framework overrides
     ///
-    /// `PATCH /api/v1/admin/tenants/{tenantId}`
+    /// WRITE SEMANTICS: merges, per key. Only the four known keys are read; a key the body omits
+    /// keeps its stored value, and a key sent as `null` CLEARS that override so the flag falls back
+    /// to the platform default. Unknown keys are ignored silently rather than rejected.
+    ///
+    /// A non-boolean, non-null value for a known key is **422**. Note the title on that one is
+    /// `ValidationError` without a space, unlike the `Validation Error` used elsewhere on this
+    /// surface.
+    ///
+    /// When clearing the last override leaves nothing set, the whole `mef_config` is dropped rather
+    /// than stored as `{}` — a later read answers `null`. And every accepted request writes: even a
+    /// body that changes nothing stamps a new `updated_at` on the tenant record.
+    ///
+    /// Answers the same body as the GET, so a client sees both the stored overrides and what they
+    /// now resolve to.
+    ///
+    /// `PATCH /api/v1/admin/tenants/{tenantId}/mef-config`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_tenant_by_id(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
+    pub async fn update_tenant_mef_config(&self, tenant_id: &str, body: &models::UpdateTenantMefConfigRequest) -> Result<models::TenantMefConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
-                path: format!("/api/v1/admin/tenants/{}", encode_path(tenant_id)),
+                path: format!("/api/v1/admin/tenants/{}/mef-config", encode_path(tenant_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Set a tenant's plan (super-admin)
+    ///
+    /// The operator's manual plan grant, undocumented while GET, PATCH and DELETE on this same path
+    /// were described. It is not a general tenant update: `plan` is required and it is what the
+    /// route is for.
+    ///
+    /// WRITE SEMANTICS: mixed. The write is a compare-and-set MERGE onto the current record, so
+    /// `name`, `slug` and `quota_overrides` keep their stored values when omitted. `plan` and
+    /// `quotas` do not: both are written on every call, and omitting `quotas` REPLACES the tenant
+    /// quotas with the resolved plan defaults rather than leaving them alone. A caller raising one
+    /// dimension must send `quota_overrides`, not `quotas`.
+    ///
+    /// `quotas` REPLACES the plan's quotas for this tenant. `quota_overrides` is the durable one —
+    /// a partial grant that survives a later Stripe subscription change, where a plain `quotas`
+    /// write does not. When a tenant's plan keeps reverting, the override is the field that makes
+    /// it stick, and it must be set BEFORE the plan is put back, not after.
+    ///
+    /// Granting any paid plan clears a stale `billing_status` (a "cancelled" left over from an
+    /// earlier Stripe cancellation becomes "active"); a downgrade to free leaves the status alone,
+    /// since free is never gated.
+    ///
+    /// `PUT /api/v1/admin/tenants/{tenantId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_tenant_plan(&self, body: &models::UpdateTenantPlanRequest) -> Result<models::UpdateTenantPlanResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/tenants/{tenantId}".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

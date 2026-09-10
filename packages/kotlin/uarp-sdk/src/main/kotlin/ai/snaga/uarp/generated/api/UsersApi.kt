@@ -24,6 +24,37 @@ import kotlinx.serialization.json.JsonObject
  */
 public class UsersApi internal constructor(private val client: UarpClient) {
     /**
+     * Accept an invite from its email link
+     *
+     * The email-link flow. The invite is resolved against the CALLER'S ACTIVE TENANT, which is
+     * what makes this route unusable from the tenant picker — a cross-tenant invitee is not a
+     * member of the inviting tenant yet. `POST /api/v1/me/invites/{tenantId}/{inviteId}/accept`
+     * exists for that case and takes the tenant in the path.
+     *
+     * Same two gates as its sibling, in the same order: the presented `token` is compared
+     * constant-time to the invite's secret, and the caller's email must match the invite's,
+     * compared case-insensitively. The email check is what stops a member who knows another
+     * invitee's id from burning that invite — which would create the user record with the
+     * invitee's email while the audit trail named the wrong actor, and leave the real invitee
+     * facing an unexplained "already accepted".
+     *
+     * `POST /api/v1/users/invites/{inviteId}/accept`
+     *
+     * Required scopes: `users:write`.
+     */
+    public suspend fun acceptInvite(inviteId: String, body: AcceptInviteRequest? = null, options: RequestOptions = RequestOptions()): AcceptInviteResponse {
+        return client.request<AcceptInviteResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/users/invites/${encodePathSegment(inviteId)}/accept",
+                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Delete user
      *
      * `DELETE /api/v1/users/{userId}`

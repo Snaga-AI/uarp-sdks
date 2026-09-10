@@ -81,6 +81,20 @@ package UARP.API.Notifications is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Delete_Notification_Target_Response;
 
+   --  Read the tenant's notification routing preferences
+   --
+   --  Returns the stored preferences, or the server defaults (critical ? in_app+email, everything
+   --  else ? in_app) when none are stored. Note: `email` in a channel list only delivers when the
+   --  tenant also has an email target configured (see POST /notifications/targets).
+   --
+   --  GET /api/v1/notifications/prefs
+   --
+   --  Required scopes: notifications:read.
+   function Get_Notification_Preferences
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Preferences;
+
    --  Get unread notification count
    --
    --  GET /api/v1/notifications/unread
@@ -134,6 +148,21 @@ package UARP.API.Notifications is
       Notif_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Replace the tenant's notification routing preferences
+   --
+   --  WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear
+   --  muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored - the server
+   --  derives them.
+   --
+   --  PUT /api/v1/notifications/prefs
+   --
+   --  Required scopes: notifications:write.
+   function Replace_Notification_Preferences
+     (Self : Client_Type;
+      Payload : UARP.Models.Notification_Preferences_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Preferences;
 
    --  Open SSE stream of notifications for the tenant
    --

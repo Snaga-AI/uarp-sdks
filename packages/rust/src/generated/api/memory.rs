@@ -151,7 +151,7 @@ impl MemoryApi {
     /// `POST /api/v1/agents/{agentId}/memory/search`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn search(&self, agent_id: &str, body: &models::SearchMemoryRequest) -> Result<serde_json::Value> {
+    pub async fn search(&self, agent_id: &str, body: &serde_json::Value) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::POST,

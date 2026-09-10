@@ -132,10 +132,15 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}`
     ///
     /// Required scopes: `runs:read`.
-    public func get(runId: String, options: RequestOptions = .init()) async throws -> Run {
+    public func get(runId: String, changedFiles: GetRunChangedFiles? = nil, options: RequestOptions = .init()) async throws -> GetRunResponse {
+        var query: [URLQueryItem] = []
+        if let changedFiles {
+            query.append(URLQueryItem(name: "changed_files", value: changedFiles.rawValue))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))",
+            query: query,
             options: options
         ))
     }
@@ -202,10 +207,18 @@ public struct RunsAPI: Sendable {
 
     /// List all runs for tenant
     ///
+    /// Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
+    /// most recent runs. Do not page toward the end to find recent activity — a client that walks
+    /// `has_more` looking for the newest page now walks away from it. This was previously true only
+    /// of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop
+    /// walk that reversed meaning the day the order changed. Note the sibling
+    /// `/api/v1/teams/{teamId}/runs` is deliberately the other way round — oldest first — because a
+    /// team transcript reads forward.
+    ///
     /// `GET /api/v1/runs`
     ///
     /// Required scopes: `runs:read`.
-    public func list(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
+    public func list(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) async throws -> ListRunsResponse {
         var query: [URLQueryItem] = []
         if let agentId {
             query.append(URLQueryItem(name: "agent_id", value: agentId))
@@ -222,6 +235,9 @@ public struct RunsAPI: Sendable {
         if let cursor {
             query.append(URLQueryItem(name: "cursor", value: cursor))
         }
+        if let order {
+            query.append(URLQueryItem(name: "order", value: order.rawValue))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs",
@@ -232,9 +248,9 @@ public struct RunsAPI: Sendable {
 
     /// Stream every item returned by `listRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
+    public func listAll(agentId: String? = nil, sessionId: String? = nil, status: String? = nil, limit: Int? = nil, cursor: String? = nil, order: ListRunsOrder? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Run, Error> {
         autoPaginate(
-            fetch: { cursor in try await self.list(agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, options: options) },
+            fetch: { cursor in try await self.list(agentId: agentId, sessionId: sessionId, status: status, limit: limit, cursor: cursor, order: order, options: options) },
             items: { $0.items },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }

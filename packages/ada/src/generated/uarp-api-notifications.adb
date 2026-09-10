@@ -55,6 +55,20 @@ package body UARP.API.Notifications is
              Options => Options));
    end Delete_Notification_Target;
 
+   function Get_Notification_Preferences
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Preferences
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/notifications/prefs",
+             Options => Options));
+   end Get_Notification_Preferences;
+
    function Get_Unread_Count
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -135,6 +149,24 @@ package body UARP.API.Notifications is
           Idempotent => True,
           Options => Options);
    end Mark_Notification_Read;
+
+   function Replace_Notification_Preferences
+     (Self : Client_Type;
+      Payload : UARP.Models.Notification_Preferences_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Notification_Preferences
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/notifications/prefs",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Replace_Notification_Preferences;
 
    procedure Stream
      (Self : Client_Type;

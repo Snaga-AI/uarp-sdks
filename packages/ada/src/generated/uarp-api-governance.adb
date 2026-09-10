@@ -261,17 +261,18 @@ package body UARP.API.Governance is
       Id : String;
       Payload : UARP.Models.File_Arbiter_Appeal_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.File_Arbiter_Appeal_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Id) & "/appeal",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/arbiter/cases/" & UARP.Types.Encode_Path_Segment (Id) & "/appeal",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end File_Arbiter_Appeal;
 
    function File_Arbiter_Case

@@ -12,7 +12,7 @@ package UARP.API.Projects is
    type List_Projects_Params is record
       --  `true` returns the archived projects instead of the live ones.
       Has_Archived : Boolean := False;
-      Archived : UARP.Models.List_Projects_Archived;
+      Archived : UARP.Models.Get_Run_Changed_Files;
    end record;
 
    No_List_Projects_Params : constant List_Projects_Params := (others => <>);

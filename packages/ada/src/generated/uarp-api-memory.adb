@@ -106,7 +106,7 @@ package body UARP.API.Memory is
    function Search
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.Models.Search_Memory_Request;
+      Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -115,7 +115,7 @@ package body UARP.API.Memory is
          (Self,
           "POST",
           "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/search",
-          Payload => UARP.Models.To_JSON (Payload),
+          Payload => Payload,
           Has_Payload => True,
           Idempotent => True,
           Options => Options);

@@ -5,6 +5,8 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  AddAndroidTestersRequest,
+  AddAndroidTestersResponse,
   AdminAnalyticsEventsResponse,
   AdminAnalyticsOverviewResponse,
   AdminDataExplorerRawKeysResponse,
@@ -18,6 +20,7 @@ import type {
   AdminPutOAuthProviderResponse,
   AdminReplayWebhookDLQResponse,
   AgentAnalyticsSummary,
+  AndroidTester,
   CreateAdminBlogPostRequest,
   CreateAdminBlogPostResponse,
   DeleteAdminBlogPostResponse,
@@ -41,6 +44,7 @@ import type {
   ListAdminDomainHealthResponse,
   ListAdminIntegrationOAuthProvidersResponse,
   ListAdminProvidersResponse,
+  ListAndroidTestersResponse,
   ListFeedbackResponse,
   ListTenantsResponse,
   MaintenanceState,
@@ -145,6 +149,14 @@ export interface GetTenantUsageParams {
 }
 
 /**
+ * Query and header parameters for `listAndroidTesters`.
+ */
+export interface ListAndroidTestersParams {
+  limit?: number;
+  cursor?: string;
+}
+
+/**
  * Query and header parameters for `listFeedback`.
  */
 export interface ListFeedbackParams {
@@ -165,6 +177,27 @@ export interface QueryAuditLogParams {
  * Platform admin: tenants, audit, reconciliation, DLQ, analytics
  */
 export class AdminResource extends APIResource {
+  /**
+   * Add addresses to the roster by hand
+   *
+   * **Super-admin only.** Addresses reach the owner from the Play console and from people who
+   * write directly, so the landing form is not the only door. Partial success is normal: each
+   * address lands in exactly one of the three lists and the call is still 200.
+   *
+   * `POST /api/v1/admin/testers/android`
+   *
+   * Required scopes: `admin`.
+   */
+  addAndroidTesters(body: AddAndroidTestersRequest, options?: RequestOptions): Promise<AddAndroidTestersResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/admin/testers/android',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Platform-wide agent analytics
    *
@@ -660,6 +693,25 @@ export class AdminResource extends APIResource {
   }
 
   /**
+   * Take one address off the roster
+   *
+   * **Super-admin only.** The address is a path segment, so it arrives percent-encoded.
+   *
+   * `DELETE /api/v1/admin/testers/android/{email}`
+   *
+   * Required scopes: `admin`.
+   */
+  deleteAndroidTester(email: string, options?: RequestOptions): Promise<void> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/admin/testers/android/${encodeURIComponent(String(email))}`,
+      idempotent: true,
+      responseType: 'void',
+      options,
+    });
+  }
+
+  /**
    * Run the authoring agent now and create a post
    *
    * Generates immediately, ignoring `frequency` — this is the operator's manual trigger, not a
@@ -1038,6 +1090,42 @@ export class AdminResource extends APIResource {
       path: '/api/v1/admin/providers',
       options,
     });
+  }
+
+  /**
+   * The Android closed-testing roster
+   *
+   * **Super-admin only.** The addresses the owner works from when adding people to the Play
+   * group. `count`, `not_yet_emailed` and `given_up` describe THIS PAGE, not the whole roster:
+   * all three are computed over the rows returned, so a roster longer than `limit` under-reports
+   * until every page is walked with `cursor`. `not_yet_emailed` counts rows no letter has gone
+   * to; `given_up` counts the ones the backfill has stopped retrying after repeated refusals,
+   * which need an eye rather than another pass.
+   *
+   * `GET /api/v1/admin/testers/android`
+   *
+   * Required scopes: `admin`.
+   */
+  listAndroidTesters(params?: ListAndroidTestersParams, options?: RequestOptions): Promise<ListAndroidTestersResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/admin/testers/android',
+      query: pick(params, ['limit', 'cursor']),
+      options,
+    });
+  }
+
+  /**
+   * Iterate every item returned by `listAndroidTesters`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listAndroidTestersAll(params?: ListAndroidTestersParams, options?: RequestOptions): AsyncIterableIterator<AndroidTester> {
+    return autoPaginate<AndroidTester>(
+      (cursor) => this.listAndroidTesters({ ...params, cursor }, options),
+      'testers',
+      'cursor',
+      undefined,
+    );
   }
 
   /**

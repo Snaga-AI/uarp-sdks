@@ -4,6 +4,26 @@ with UARP.Types;
 
 package body UARP.API.Users is
 
+   function Accept_Invite
+     (Self : Client_Type;
+      Invite_Id : String;
+      Payload : UARP.Models.Accept_Invite_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Accept_Invite_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/users/invites/" & UARP.Types.Encode_Path_Segment (Invite_Id) & "/accept",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Accept_Invite;
+
    function Delete
      (Self : Client_Type;
       User_Id : String;

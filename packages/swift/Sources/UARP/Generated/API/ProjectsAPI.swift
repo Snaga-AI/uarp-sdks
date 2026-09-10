@@ -63,7 +63,7 @@ public struct ProjectsAPI: Sendable {
     /// second call.
     ///
     /// `GET /api/v1/projects`
-    public func list(archived: ListProjectsArchived? = nil, options: RequestOptions = .init()) async throws -> ListProjectsResponse {
+    public func list(archived: GetRunChangedFiles? = nil, options: RequestOptions = .init()) async throws -> ListProjectsResponse {
         var query: [URLQueryItem] = []
         if let archived {
             query.append(URLQueryItem(name: "archived", value: archived.rawValue))

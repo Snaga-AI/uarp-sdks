@@ -102,7 +102,7 @@ package UARP.API.Memory is
    function Search
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.Models.Search_Memory_Request;
+      Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

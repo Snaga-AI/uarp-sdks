@@ -250,6 +250,10 @@ public struct TeamsAPI: Sendable {
 
     /// List runs for a team
     ///
+    /// Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a team run is a transcript and
+    /// reads forward. Stated here because the two endpoints differ and nothing in the schema said
+    /// so, which left clients to infer an order from the data they happened to receive.
+    ///
     /// `limit` and `cursor` were undeclared, so a client generated from this document saw the first
     /// fifty runs and had no way to page past them.
     ///

@@ -114,6 +114,41 @@ package body UARP.API.Knowledge is
              Options => Options));
    end List_Knowledge_Bases;
 
+   function Reindex_Knowledge_Base
+     (Self : Client_Type;
+      Kb_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Reindex_Knowledge_Base_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Kb_Id) & "/reindex",
+             Idempotent => True,
+             Options => Options));
+   end Reindex_Knowledge_Base;
+
+   function Search_Knowledge_Base
+     (Self : Client_Type;
+      Kb_Id : String;
+      Payload : UARP.Models.Search_Knowledge_Base_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Knowledge_Base_Search_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Kb_Id) & "/search",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Search_Knowledge_Base;
+
    function Update_Knowledge_Base
      (Self : Client_Type;
       Id : String;

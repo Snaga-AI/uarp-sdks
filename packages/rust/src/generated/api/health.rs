@@ -76,6 +76,25 @@ impl HealthApi {
             .await
     }
 
+    /// Liveness (alias of /health)
+    ///
+    /// Identical body to `GET /health`. Kept for callers that assume every route lives under
+    /// `/api/v1`; new callers should use `/health`.
+    ///
+    /// `GET /api/v1/health`
+    pub async fn health_check_v1alias(&self) -> Result<models::HealthCheckV1aliasResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/health".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Kubernetes liveness probe
     ///
     /// `GET /health/live`

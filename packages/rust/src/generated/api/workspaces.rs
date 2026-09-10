@@ -17,6 +17,10 @@ use crate::util::encode_path;
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteWorkspaceFileParams {
     pub path: String,
+    /// Set to `false` to force a permanent delete even for a user-session (JWT) caller. Ignored for
+    /// api-key callers, which always delete permanently.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trash: Option<models::DeleteWorkspaceFileTrash>,
 }
 
 /// Query and header parameters for `downloadWorkspaceFile`.
@@ -102,7 +106,7 @@ impl WorkspacesApi {
     /// `POST /api/v1/workspaces/{workspaceId}/files/copy`
     ///
     /// Required scopes: `files:write`.
-    pub async fn copy_workspace_file(&self, workspace_id: &str, body: &models::CopyWorkspaceFileRequest) -> Result<models::CopyWorkspaceFileResponse> {
+    pub async fn copy_workspace_file(&self, workspace_id: &str, body: &models::CopyWorkspaceFileRequest) -> Result<models::WorkspaceFile> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -156,7 +160,7 @@ impl WorkspacesApi {
     /// `DELETE /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    pub async fn delete_workspace_file(&self, workspace_id: &str, params: &DeleteWorkspaceFileParams) -> Result<serde_json::Value> {
+    pub async fn delete_workspace_file(&self, workspace_id: &str, params: &DeleteWorkspaceFileParams) -> Result<models::DeleteWorkspaceFileResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -282,7 +286,7 @@ impl WorkspacesApi {
     /// `GET /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:read`.
-    pub async fn list_workspace_files(&self, workspace_id: &str, params: &ListWorkspaceFilesParams) -> Result<serde_json::Value> {
+    pub async fn list_workspace_files(&self, workspace_id: &str, params: &ListWorkspaceFilesParams) -> Result<models::ListWorkspaceFilesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -323,6 +327,24 @@ impl WorkspacesApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/workspaces/{}/files/move", encode_path(workspace_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Restore a trashed file to its original path
+    ///
+    /// `POST /api/v1/workspaces/{workspaceId}/trash/restore`
+    ///
+    /// Required scopes: `files:write`.
+    pub async fn restore_workspace_trash(&self, workspace_id: &str, body: &models::RestoreWorkspaceTrashRequest) -> Result<models::RestoreWorkspaceTrashResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/workspaces/{}/trash/restore", encode_path(workspace_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

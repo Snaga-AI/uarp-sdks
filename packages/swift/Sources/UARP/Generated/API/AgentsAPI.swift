@@ -347,6 +347,31 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Clear an agent's memory and conversation history
+    ///
+    /// Purges the agent's memory store and every session it owns — with their runs, events and
+    /// todos — plus any session-less runs. The agent RECORD is untouched: prompts, model, tools,
+    /// specs, workspaces and marketplace listings all survive. The same purge the super-agent's
+    /// cross-tenant `manageAgent("reset")` hook calls, deliberately shared rather than copied.
+    ///
+    /// Undeclared until 2026-08-31 while the console shipped a button for it — a route can be
+    /// missing from the contract and still be in people's hands. The two symptoms differ by client:
+    /// a hand-written client BUILDS a workaround (the web calls it with a direct POST, past the
+    /// SDK), while a generated one simply has no method and nobody notices. That makes the SDK side
+    /// the quieter of the two — there is not even a crutch to show someone came looking.
+    ///
+    /// `POST /api/v1/agents/{agentId}/reset`
+    ///
+    /// Required scopes: `agents:write`.
+    public func resetAgent(agentId: String, options: RequestOptions = .init()) async throws -> ResetAgentResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/reset",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Rollback an agent to a previous version
     ///
     /// `POST /api/v1/agents/{agentId}/rollback`
@@ -457,7 +482,7 @@ public struct AgentsAPI: Sendable {
     /// `PATCH /api/v1/agents/{agentId}/risk-classification`
     ///
     /// Required scopes: `agents:write`.
-    public func updateAgentRiskClassification(agentId: String, body: RiskClassificationUpdate, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAgentRiskClassification(agentId: String, body: RiskClassificationUpdate, options: RequestOptions = .init()) async throws -> Agent {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/risk-classification",

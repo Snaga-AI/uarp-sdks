@@ -92,7 +92,7 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/projects`
      */
-    public suspend fun list(archived: ListProjectsArchived? = null, options: RequestOptions = RequestOptions()): ListProjectsResponse {
+    public suspend fun list(archived: GetRunChangedFiles? = null, options: RequestOptions = RequestOptions()): ListProjectsResponse {
         val query = buildList {
             if (archived != null) add("archived" to archived.value)
         }

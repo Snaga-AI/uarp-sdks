@@ -110,6 +110,19 @@ package UARP.API.Auth is
    --  header. Resolves the user via api-key.user_id, then JWT `sub` claim, then
    --  tenant_primary_email lookup.
    --
+   --  **Read `role` from the top level, never from `user.role`.** The top-level field is required
+   --  and always present; it resolves as `user?.role ?? extractRole(auth)`, so it answers for
+   --  every caller. `user` is nullable and NOT required - it is null whenever the caller
+   --  authenticated with an api key rather than a signed-in session, and the nested `role` exists
+   --  only in the other case.
+   --
+   --  Spelled out because the schema alone did not prevent it: two mobile clients independently
+   --  modelled the response as `{user, tenant}`, read `user.role`, and so could not tell an owner
+   --  from a viewer for any key-authed caller - one of them had gated no settings on role at all
+   --  as a result. A client tested only against a JWT session sees `user.role` work perfectly and
+   --  ships. `scopes` and `auth_method` are required for the same reason and answer for every
+   --  caller too.
+   --
    --  GET /api/v1/me
    function Get_Me
      (Self : Client_Type;

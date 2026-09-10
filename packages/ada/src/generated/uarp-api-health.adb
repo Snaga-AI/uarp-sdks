@@ -43,6 +43,20 @@ package body UARP.API.Health is
              Options => Options));
    end Get_Ready;
 
+   function Health_Check_V1alias
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Health_Check_V1alias_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/health",
+             Options => Options));
+   end Health_Check_V1alias;
+
    function Health_Live
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

@@ -8,6 +8,25 @@ public struct AdminAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Add addresses to the roster by hand
+    ///
+    /// **Super-admin only.** Addresses reach the owner from the Play console and from people who
+    /// write directly, so the landing form is not the only door. Partial success is normal: each
+    /// address lands in exactly one of the three lists and the call is still 200.
+    ///
+    /// `POST /api/v1/admin/testers/android`
+    ///
+    /// Required scopes: `admin`.
+    public func addAndroidTesters(body: AddAndroidTestersRequest, options: RequestOptions = .init()) async throws -> AddAndroidTestersResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/admin/testers/android",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Platform-wide agent analytics
     ///
     /// `GET /api/v1/admin/analytics/agents`
@@ -349,6 +368,24 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Write a post by hand
+    ///
+    /// `source` is stamped `manual` and cannot be set by the caller. The slug is derived from the
+    /// title and made unique; `status` defaults to `draft`.
+    ///
+    /// `POST /api/v1/admin/blog/posts`
+    ///
+    /// Required scopes: `admin`.
+    public func createAdminBlogPost(body: CreateAdminBlogPostRequest, options: RequestOptions = .init()) async throws -> CreateAdminBlogPostResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/admin/blog/posts",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Create custom provider
     ///
     /// `POST /api/v1/admin/providers`
@@ -375,6 +412,159 @@ public struct AdminAPI: Sendable {
             path: "/api/v1/admin/tenants",
             body: try client.encode(body),
             idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Delete a post
+    ///
+    /// `DELETE /api/v1/admin/blog/posts/{postId}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAdminBlogPost(postId: String, options: RequestOptions = .init()) async throws -> DeleteAdminBlogPostResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/blog/posts/\(encodePathSegment(postId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Remove one provider's stored OAuth credentials
+    ///
+    /// Deletes the record outright — this is the only way to clear a stored credential, since the
+    /// PUT treats a blank value as "keep". Idempotent: deleting a provider that has nothing stored
+    /// is still 200.
+    ///
+    /// `DELETE /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, options: RequestOptions = .init()) async throws -> DeleteAdminIntegrationOAuthProviderResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/integration-oauth-providers/\(encodePathSegment(String(describing: provider)))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Remove the platform API key for a provider
+    ///
+    /// Drops the stored platform key. The PROVIDER survives — this is the key, not the definition;
+    /// `DELETE /api/v1/admin/providers/{providerId}` is the other one, and it removes a custom
+    /// provider outright.
+    ///
+    /// Answers `configured: false` for the provider, which is the same field `GET
+    /// /api/v1/admin/llm-defaults` reports per provider, so the caller can apply the answer without
+    /// a re-read.
+    ///
+    /// `DELETE /api/v1/admin/llm-defaults/{providerId}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAdminLLMDefault(providerId: String, options: RequestOptions = .init()) async throws -> DeleteAdminLLMDefaultResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/llm-defaults/\(encodePathSegment(providerId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Remove a custom provider (super-admin, fresh MFA)
+    ///
+    /// Removes a CUSTOM provider and its settings. A built-in provider is not deletable and answers
+    /// 404 here — that 404 means "no such CUSTOM provider", not "no such provider", which is worth
+    /// knowing before reading it as a routing mistake.
+    ///
+    /// Gated on a fresh MFA challenge because it is irreversible: the definition and its settings
+    /// are deleted outright, not disabled. To stop using a provider without losing it, PATCH
+    /// `enabled: false` instead. To drop the platform API KEY while keeping the provider, use
+    /// `DELETE /api/v1/admin/llm-defaults/{providerId}` — a different route with a different
+    /// subject.
+    ///
+    /// `DELETE /api/v1/admin/providers/{providerId}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAdminProvider(providerId: String, options: RequestOptions = .init()) async throws -> DeleteAdminProviderResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/providers/\(encodePathSegment(providerId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Take one address off the roster
+    ///
+    /// **Super-admin only.** The address is a path segment, so it arrives percent-encoded.
+    ///
+    /// `DELETE /api/v1/admin/testers/android/{email}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAndroidTester(email: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/testers/android/\(encodePathSegment(email))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Run the authoring agent now and create a post
+    ///
+    /// Generates immediately, ignoring `frequency` — this is the operator's manual trigger, not a
+    /// schedule nudge. Whether the result lands published or as a draft follows the stored
+    /// `auto_publish`.
+    ///
+    /// A generation that FAILS is **422**, not a 200 carrying an error field, so a client reads the
+    /// status. Success is **201**.
+    ///
+    /// `POST /api/v1/admin/blog/generate`
+    ///
+    /// Required scopes: `admin`.
+    public func generateAdminBlogPost(options: RequestOptions = .init()) async throws -> GenerateAdminBlogPostResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/admin/blog/generate",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Get the blog's authoring configuration
+    ///
+    /// Super-admin only. Wrapped in `{config}` rather than returned bare — the whole blog surface
+    /// uses envelopes.
+    ///
+    /// `GET /api/v1/admin/blog/config`
+    ///
+    /// Required scopes: `admin`.
+    public func getAdminBlogConfig(options: RequestOptions = .init()) async throws -> GetAdminBlogConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/blog/config",
+            options: options
+        ))
+    }
+
+    /// Read one provider's stored OAuth credentials (secret masked)
+    ///
+    /// **The response has two shapes and a client must handle both.** With nothing stored it is the
+    /// three-field form — `{provider, enabled: false, configured: false}` — and `client_id`,
+    /// `client_secret_hint` and `scopes` are ABSENT, not null. With a record stored, all six are
+    /// present.
+    ///
+    /// The secret is never echoed. `client_secret_hint` is the last four characters behind dots,
+    /// enough for an operator to confirm which credential is stored without seeing it, and it is
+    /// null when the stored secret is empty.
+    ///
+    /// `GET /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    public func getAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, options: RequestOptions = .init()) async throws -> GetAdminIntegrationOAuthProviderResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/integration-oauth-providers/\(encodePathSegment(String(describing: provider)))",
             options: options
         ))
     }
@@ -514,7 +704,7 @@ public struct AdminAPI: Sendable {
     /// `GET /api/v1/admin/maintenance`
     ///
     /// Required scopes: `admin`.
-    public func getMaintenanceState(options: RequestOptions = .init()) async throws -> GetMaintenanceStateResponse {
+    public func getMaintenanceState(options: RequestOptions = .init()) async throws -> MaintenanceState {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/maintenance",
@@ -535,7 +725,7 @@ public struct AdminAPI: Sendable {
     /// `GET /api/v1/admin/economics`
     ///
     /// Required scopes: `admin`.
-    public func getPlatformEconomics(refresh: GetPlatformEconomicsRefresh? = nil, options: RequestOptions = .init()) async throws -> PlatformEconomics {
+    public func getPlatformEconomics(refresh: DeleteCustomPlanForce? = nil, options: RequestOptions = .init()) async throws -> PlatformEconomics {
         var query: [URLQueryItem] = []
         if let refresh {
             query.append(URLQueryItem(name: "refresh", value: refresh.rawValue))
@@ -557,6 +747,27 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))",
+            options: options
+        ))
+    }
+
+    /// One tenant's mission-framework overrides, and what they resolve to
+    ///
+    /// Answers both layers at once: `mef_config` is what an operator stored for this tenant,
+    /// `effective` is what the runtime will actually do. They differ whenever the platform is the
+    /// deciding factor — with the mission service absent, every effective flag is false no matter
+    /// what the tenant record says, so an operator reading only `mef_config` sees settings that do
+    /// nothing.
+    ///
+    /// `mef_config` is `null` when nothing is overridden, not an empty object.
+    ///
+    /// `GET /api/v1/admin/tenants/{tenantId}/mef-config`
+    ///
+    /// Required scopes: `admin`.
+    public func getTenantMefConfig(tenantId: String, options: RequestOptions = .init()) async throws -> TenantMefConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))/mef-config",
             options: options
         ))
     }
@@ -590,6 +801,69 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// List every post, drafts included
+    ///
+    /// The admin view: unlike the public blog read, drafts are included. Unpaged.
+    ///
+    /// `GET /api/v1/admin/blog/posts`
+    ///
+    /// Required scopes: `admin`.
+    public func listAdminBlogPosts(options: RequestOptions = .init()) async throws -> ListAdminBlogPostsResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/blog/posts",
+            options: options
+        ))
+    }
+
+    /// Every tenant's custom domain, worst first
+    ///
+    /// **The order is the product.** Rows are sorted by problem severity — failed, then drift, then
+    /// renewal_due, then pending, then healthy — so an operator's eye lands on what is broken. A
+    /// client that re-sorts alphabetically throws that away and should sort back, or not sort at
+    /// all.
+    ///
+    /// Tenants with no custom domain are omitted entirely, so `count` is the number of configured
+    /// domains and not the number of tenants.
+    ///
+    /// Bounded: the tenant registry scan takes at most 5000 entries in one pass and is not paged,
+    /// so on a platform past that size this list is silently partial.
+    ///
+    /// `GET /api/v1/admin/domains/health`
+    ///
+    /// Required scopes: `admin`.
+    public func listAdminDomainHealth(options: RequestOptions = .init()) async throws -> ListAdminDomainHealthResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/domains/health",
+            options: options
+        ))
+    }
+
+    /// Which integration providers an operator has configured
+    ///
+    /// Super-admin only, and never returns a secret — provider id, an enabled bit, and whether
+    /// credentials exist at all. The dashboard uses it to decide which connector rows need a
+    /// "Configure" call to action.
+    ///
+    /// Distinct from `/api/v1/integrations/catalog`, which is tenant-facing and lists every known
+    /// connector regardless of OAuth-readiness.
+    ///
+    /// The list is the SUPPORTED set, not the stored set: every supported provider appears, with
+    /// `configured: false` where nothing is stored. So an empty result means the supported set is
+    /// empty, never that nothing is configured.
+    ///
+    /// `GET /api/v1/admin/integration-oauth-providers`
+    ///
+    /// Required scopes: `admin`.
+    public func listAdminIntegrationOAuthProviders(options: RequestOptions = .init()) async throws -> ListAdminIntegrationOAuthProvidersResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/integration-oauth-providers",
+            options: options
+        ))
+    }
+
     /// List providers with admin settings
     ///
     /// `GET /api/v1/admin/providers`
@@ -601,6 +875,45 @@ public struct AdminAPI: Sendable {
             path: "/api/v1/admin/providers",
             options: options
         ))
+    }
+
+    /// The Android closed-testing roster
+    ///
+    /// **Super-admin only.** The addresses the owner works from when adding people to the Play
+    /// group. `count`, `not_yet_emailed` and `given_up` describe THIS PAGE, not the whole roster:
+    /// all three are computed over the rows returned, so a roster longer than `limit` under-reports
+    /// until every page is walked with `cursor`. `not_yet_emailed` counts rows no letter has gone
+    /// to; `given_up` counts the ones the backfill has stopped retrying after repeated refusals,
+    /// which need an eye rather than another pass.
+    ///
+    /// `GET /api/v1/admin/testers/android`
+    ///
+    /// Required scopes: `admin`.
+    public func listAndroidTesters(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListAndroidTestersResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/testers/android",
+            query: query,
+            options: options
+        ))
+    }
+
+    /// Stream every item returned by `listAndroidTesters`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func listAndroidTestersAll(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AndroidTester, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listAndroidTesters(limit: limit, cursor: cursor, options: options) },
+            items: { $0.testers },
+            cursor: { $0.cursor },
+            hasMore: { _ in nil }
+        )
     }
 
     /// The reports inbox
@@ -693,6 +1006,36 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Store or update one provider's OAuth credentials
+    ///
+    /// WRITE SEMANTICS: merges, and the merge is what makes the route usable. An omitted or blank
+    /// `client_id` or `client_secret` keeps the stored one, so an operator can flip `enabled` or
+    /// rotate `scopes` WITHOUT re-pasting a secret they cannot read back. Blank counts as omitted
+    /// here: a whitespace-only value does not clear anything.
+    ///
+    /// The consequence is that there is no way to clear a credential through this route — DELETE
+    /// the provider instead.
+    ///
+    /// A FIRST write still needs both: with no stored record and either missing, the answer is 400.
+    /// `enabled` defaults to true on a first write and otherwise keeps its stored value. A present
+    /// `scopes` REPLACES the stored list.
+    ///
+    /// The response is the short form, not the record: `{provider, enabled, configured: true}`,
+    /// with no echo of the credentials just written.
+    ///
+    /// `PUT /api/v1/admin/integration-oauth-providers/{provider}`
+    ///
+    /// Required scopes: `admin`.
+    public func setAdminIntegrationOAuthProvider(provider: GetAdminIntegrationOAuthProviderProvider, body: SetAdminIntegrationOAuthProviderRequest, options: RequestOptions = .init()) async throws -> SetAdminIntegrationOAuthProviderResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/admin/integration-oauth-providers/\(encodePathSegment(String(describing: provider)))",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Set platform API key
     ///
     /// `PUT /api/v1/admin/llm-defaults/{providerId}`
@@ -723,6 +1066,34 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Turn maintenance mode on or off (super-admin)
+    ///
+    /// Undocumented until now, while the GET beside it was described in full — so a generated
+    /// client could READ the maintenance state and had no way to change it. The web has been
+    /// calling this all along (`lib/hooks/use-maintenance-mode.ts`).
+    ///
+    /// Answers the whole record back, the same shape the GET serves, so a client need not re-read
+    /// to learn `enabled_at` and `enabled_by_email`.
+    ///
+    /// WRITE SEMANTICS: replaces. The record is rebuilt from this body and written whole; nothing
+    /// is read first. Turning maintenance ON without a `message` DROPS the message a previous ON
+    /// had set, and turning it OFF wipes the message unconditionally, keeping only the timestamp
+    /// and the actor so the audit trail still shows who closed the window. `enabled_at` and
+    /// `enabled_by_email` are stamped on EVERY call, including one that changes nothing.
+    ///
+    /// `PUT /api/v1/admin/maintenance`
+    ///
+    /// Required scopes: `admin`.
+    public func setMaintenanceState(body: SetMaintenanceStateRequest, options: RequestOptions = .init()) async throws -> MaintenanceState {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/admin/maintenance",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Suspend a tenant
     ///
     /// `PUT /api/v1/admin/tenants/{tenantId}/suspend`
@@ -734,6 +1105,79 @@ public struct AdminAPI: Sendable {
             method: "PUT",
             path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))/suspend",
             body: encodedBody,
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Pull one provider's model list into the catalogue
+    ///
+    /// Asks the provider what models it offers and MERGES the result into the platform catalogue.
+    /// Additive only — nothing is removed, so a model the provider has withdrawn stays in the
+    /// catalogue until it is deleted deliberately.
+    ///
+    /// CUSTOM providers only: the 404 means "no custom provider with that id", so a built-in
+    /// provider id is also 404 here. `added` counts new entries, `scanned` is the provider's
+    /// reported inventory, and `total` is the catalogue size after the merge — so `added` is zero
+    /// on a run that changed nothing, which is the normal result of a second run.
+    ///
+    /// `POST /api/v1/admin/providers/{providerId}/sync-models`
+    ///
+    /// Required scopes: `admin`.
+    public func syncProviderModels(providerId: String, options: RequestOptions = .init()) async throws -> SyncProviderModelsResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/admin/providers/\(encodePathSegment(providerId))/sync-models",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Update the blog's authoring configuration
+    ///
+    /// WRITE SEMANTICS: merges. The body is spread over the stored record, so an omitted field
+    /// keeps its value.
+    ///
+    /// One field is not a plain merge: setting `agent_id` also pins `agent_tenant_id` to the
+    /// CALLING tenant, because the cron that auto-writes posts runs without a request context and
+    /// would otherwise have no tenant to run the agent in. Clearing `agent_id` to `null` nulls
+    /// both. `agent_tenant_id` is therefore never sent by a client and never has to be — it is
+    /// derived.
+    ///
+    /// Answers the stored record, so a client sees what took effect.
+    ///
+    /// `PUT /api/v1/admin/blog/config`
+    ///
+    /// Required scopes: `admin`.
+    public func updateAdminBlogConfig(body: UpdateAdminBlogConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminBlogConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/admin/blog/config",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Edit a post
+    ///
+    /// WRITE SEMANTICS: merges. An omitted field keeps its value; `tags` present REPLACES the list.
+    ///
+    /// Three things move on their own and a client should not try to send them. Editing the `title`
+    /// or the `body` re-stamps `source` to `manual`, even on a post the agent wrote — the record
+    /// then says who last shaped it rather than who started it. Changing the `title` mints a new
+    /// unique `slug`, so a published post's URL changes under it. And `published_at` follows
+    /// `status`: it is stamped on the first transition to `published` and set back to null on
+    /// `draft`, so a republished post carries a NEW timestamp rather than its original one.
+    ///
+    /// `PATCH /api/v1/admin/blog/posts/{postId}`
+    ///
+    /// Required scopes: `admin`.
+    public func updateAdminBlogPost(postId: String, body: UpdateAdminBlogPostRequest, options: RequestOptions = .init()) async throws -> UpdateAdminBlogPostResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/admin/blog/posts/\(encodePathSegment(postId))",
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -785,32 +1229,88 @@ public struct AdminAPI: Sendable {
         ))
     }
 
-    /// Resolve or reopen a report
+    /// Mark one feedback report resolved, or reopen it
     ///
-    /// **Super-admin only.**
+    /// **Only the exact string `resolved` resolves a report; every other value sets it to `new`.**
+    /// There is no validation and no error path: `"Resolved"`, `"closed"`, a typo, a missing
+    /// `status`, or a body that is not JSON at all are each accepted with 200 and REOPEN a resolved
+    /// report. A client must send the literal value and must not rely on being told when it did
+    /// not.
     ///
-    /// `PATCH /api/v1/admin/feedback`
+    /// WRITE SEMANTICS: replaces the status field only; nothing else on the report is touched.
+    ///
+    /// `PATCH /api/v1/admin/feedback/{reportId}`
     ///
     /// Required scopes: `admin`.
-    public func updateFeedbackStatus(body: UpdateFeedbackStatusRequest, options: RequestOptions = .init()) async throws -> UpdateFeedbackStatusResponse {
+    public func updateFeedbackReportStatus(reportId: String, body: UpdateFeedbackReportStatusRequest? = nil, options: RequestOptions = .init()) async throws -> UpdateFeedbackReportStatusResponse {
+        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "PATCH",
-            path: "/api/v1/admin/feedback",
+            path: "/api/v1/admin/feedback/\(encodePathSegment(reportId))",
+            body: encodedBody,
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Set or clear one tenant's mission-framework overrides
+    ///
+    /// WRITE SEMANTICS: merges, per key. Only the four known keys are read; a key the body omits
+    /// keeps its stored value, and a key sent as `null` CLEARS that override so the flag falls back
+    /// to the platform default. Unknown keys are ignored silently rather than rejected.
+    ///
+    /// A non-boolean, non-null value for a known key is **422**. Note the title on that one is
+    /// `ValidationError` without a space, unlike the `Validation Error` used elsewhere on this
+    /// surface.
+    ///
+    /// When clearing the last override leaves nothing set, the whole `mef_config` is dropped rather
+    /// than stored as `{}` — a later read answers `null`. And every accepted request writes: even a
+    /// body that changes nothing stamps a new `updated_at` on the tenant record.
+    ///
+    /// Answers the same body as the GET, so a client sees both the stored overrides and what they
+    /// now resolve to.
+    ///
+    /// `PATCH /api/v1/admin/tenants/{tenantId}/mef-config`
+    ///
+    /// Required scopes: `admin`.
+    public func updateTenantMefConfig(tenantId: String, body: UpdateTenantMefConfigRequest, options: RequestOptions = .init()) async throws -> TenantMefConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))/mef-config",
             body: try client.encode(body),
             idempotent: true,
             options: options
         ))
     }
 
-    /// Update tenant
+    /// Set a tenant's plan (super-admin)
     ///
-    /// `PATCH /api/v1/admin/tenants/{tenantId}`
+    /// The operator's manual plan grant, undocumented while GET, PATCH and DELETE on this same path
+    /// were described. It is not a general tenant update: `plan` is required and it is what the
+    /// route is for.
+    ///
+    /// WRITE SEMANTICS: mixed. The write is a compare-and-set MERGE onto the current record, so
+    /// `name`, `slug` and `quota_overrides` keep their stored values when omitted. `plan` and
+    /// `quotas` do not: both are written on every call, and omitting `quotas` REPLACES the tenant
+    /// quotas with the resolved plan defaults rather than leaving them alone. A caller raising one
+    /// dimension must send `quota_overrides`, not `quotas`.
+    ///
+    /// `quotas` REPLACES the plan's quotas for this tenant. `quota_overrides` is the durable one —
+    /// a partial grant that survives a later Stripe subscription change, where a plain `quotas`
+    /// write does not. When a tenant's plan keeps reverting, the override is the field that makes
+    /// it stick, and it must be set BEFORE the plan is put back, not after.
+    ///
+    /// Granting any paid plan clears a stale `billing_status` (a "cancelled" left over from an
+    /// earlier Stripe cancellation becomes "active"); a downgrade to free leaves the status alone,
+    /// since free is never gated.
+    ///
+    /// `PUT /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
-    public func updateTenantById(tenantId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Tenant {
+    public func updateTenantPlan(body: UpdateTenantPlanRequest, options: RequestOptions = .init()) async throws -> UpdateTenantPlanResponse {
         return try await client.send(RequestSpec(
-            method: "PATCH",
-            path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))",
+            method: "PUT",
+            path: "/api/v1/admin/tenants/{tenantId}",
             body: try client.encode(body),
             idempotent: true,
             options: options

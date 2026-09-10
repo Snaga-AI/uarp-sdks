@@ -10,6 +10,32 @@ package UARP.API.Tenants is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Accept a pending invite from the tenant picker
+   --
+   --  The tenant is in the PATH, and that is the whole reason this route exists beside `POST
+   --  /api/v1/users/invites/{inviteId}/accept`. The older route resolves the invite against the
+   --  caller's active tenant, which cannot work here: the caller is not a member of the inviting
+   --  tenant yet - making them one is what the call is for. Without a tenant-in-path route the
+   --  picker's Accept button can never succeed for a cross-tenant invite.
+   --
+   --  Semantics are otherwise identical to the older route: the same atomic create-user + email
+   --  index + membership index + `invite.status = accepted` write.
+   --
+   --  Four refusals, and they are different questions: **403** the invite is addressed to another
+   --  email, or the `token` does not match; **409** the invite is not `pending` (already accepted,
+   --  revoked, declined) or the email already belongs to a member; **410** the invite has expired;
+   --  **404** no such invite, or the caller has no user record.
+   --
+   --  POST /api/v1/me/invites/{tenantId}/{inviteId}/accept
+   function Accept_Invite_From_Picker
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Invite_Id : String;
+      Payload : UARP.Models.Accept_Invite_From_Picker_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Accept_Invite_From_Picker_Response;
+
    --  Create a new API key
    --
    --  POST /api/v1/tenants/me/keys
@@ -33,6 +59,23 @@ package UARP.API.Tenants is
       Payload : UARP.Models.Create_My_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_My_Tenant_Response;
+
+   --  Decline a pending invite
+   --
+   --  Deliberately distinct from an admin's revoke, so the audit trail and the Members page can
+   --  tell "the invitee said no" from "an admin pulled it". The caller's email must match the
+   --  invite's - without that check anyone with a current session could decline someone else's
+   --  invites.
+   --
+   --  No token is required here, unlike accept: declining grants nothing.
+   --
+   --  POST /api/v1/me/invites/{tenantId}/{inviteId}/decline
+   function Decline_Invite_From_Picker
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Invite_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Decline_Invite_From_Picker_Response;
 
    --  Get current tenant
    --
@@ -58,6 +101,42 @@ package UARP.API.Tenants is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_My_Head_Agent_Template_Response;
+
+   --  DNS and certificate state for this tenant's custom domain
+   --
+   --  **Two different 404s, and a client should tell them apart:** no such tenant, and a tenant
+   --  with no custom domain configured. The second is the ordinary state of most tenants and is
+   --  not an error condition - a UI that renders both as a failure will report a fault to every
+   --  customer who has not set up a vanity domain.
+   --
+   --  Records written before the lifecycle schema are lifted on read, so `dns` and `cert` are
+   --  present here even for a domain added under the old flat fields.
+   --
+   --  GET /api/v1/tenants/me/domain/health
+   --
+   --  Required scopes: api_keys:read.
+   function Get_Tenant_Domain_Health
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Tenant_Domain_Health_Response;
+
+   --  Leave a tenant
+   --
+   --  Removes the caller's own membership. The user-record cascade matches an admin-driven
+   --  removal.
+   --
+   --  Two refusals, both **409**, and both name a specific thing to do first. The caller is the
+   --  only ACTIVE owner: transfer ownership before leaving. Or the caller is the only veto-holding
+   --  ambassador: rotate the founder ambassador via `/api/v1/governance/ambassadors` first. The
+   --  second check is skipped entirely when governance is not enabled, so its absence is not a
+   --  promise that no such constraint exists.
+   --
+   --  DELETE /api/v1/me/memberships/{tenantId}
+   function Leave_Tenant
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Leave_Tenant_Response;
 
    --  List API keys
    --

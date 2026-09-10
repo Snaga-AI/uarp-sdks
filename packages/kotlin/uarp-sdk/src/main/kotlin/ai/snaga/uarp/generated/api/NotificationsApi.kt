@@ -86,6 +86,27 @@ public class NotificationsApi internal constructor(private val client: UarpClien
     }
 
     /**
+     * Read the tenant's notification routing preferences
+     *
+     * Returns the stored preferences, or the server defaults (critical → in_app+email, everything
+     * else → in_app) when none are stored. Note: `email` in a channel list only delivers when the
+     * tenant also has an email target configured (see POST /notifications/targets).
+     *
+     * `GET /api/v1/notifications/prefs`
+     *
+     * Required scopes: `notifications:read`.
+     */
+    public suspend fun getNotificationPreferences(options: RequestOptions = RequestOptions()): NotificationPreferences {
+        return client.request<NotificationPreferences>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/notifications/prefs",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get unread notification count
      *
      * `GET /api/v1/notifications/unread`
@@ -173,6 +194,29 @@ public class NotificationsApi internal constructor(private val client: UarpClien
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/notifications/${encodePathSegment(notifId)}/read",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Replace the tenant's notification routing preferences
+     *
+     * WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear
+     * muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored — the server
+     * derives them.
+     *
+     * `PUT /api/v1/notifications/prefs`
+     *
+     * Required scopes: `notifications:write`.
+     */
+    public suspend fun replaceNotificationPreferences(body: NotificationPreferencesInput, options: RequestOptions = RequestOptions()): NotificationPreferences {
+        return client.request<NotificationPreferences>(
+            RequestSpec(
+                method = "PUT",
+                path = "/api/v1/notifications/prefs",
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )

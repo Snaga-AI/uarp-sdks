@@ -27,6 +27,36 @@ impl Client {
 }
 
 impl UsersApi {
+    /// Accept an invite from its email link
+    ///
+    /// The email-link flow. The invite is resolved against the CALLER'S ACTIVE TENANT, which is
+    /// what makes this route unusable from the tenant picker — a cross-tenant invitee is not a
+    /// member of the inviting tenant yet. `POST /api/v1/me/invites/{tenantId}/{inviteId}/accept`
+    /// exists for that case and takes the tenant in the path.
+    ///
+    /// Same two gates as its sibling, in the same order: the presented `token` is compared
+    /// constant-time to the invite's secret, and the caller's email must match the invite's,
+    /// compared case-insensitively. The email check is what stops a member who knows another
+    /// invitee's id from burning that invite — which would create the user record with the
+    /// invitee's email while the audit trail named the wrong actor, and leave the real invitee
+    /// facing an unexplained "already accepted".
+    ///
+    /// `POST /api/v1/users/invites/{inviteId}/accept`
+    ///
+    /// Required scopes: `users:write`.
+    pub async fn accept_invite(&self, invite_id: &str, body: &models::AcceptInviteRequest) -> Result<models::AcceptInviteResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/users/invites/{}/accept", encode_path(invite_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Delete user
     ///
     /// `DELETE /api/v1/users/{userId}`

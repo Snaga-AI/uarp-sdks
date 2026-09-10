@@ -5,20 +5,45 @@
 with UARP.Client;
 with UARP.JSON_Support;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.Admin_Config is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
-   --  Clear rate limit overrides
+   --  Query and header parameters for `deleteCustomPlan`.
+   type Delete_Custom_Plan_Params is record
+      --  Exactly `1`. Deletes despite assigned tenants.
+      Has_Force : Boolean := False;
+      Force : UARP.Models.Delete_Custom_Plan_Force;
+   end record;
+
+   No_Delete_Custom_Plan_Params : constant Delete_Custom_Plan_Params := (others => <>);
+
+   --  Query and header parameters for `updateAdminSpecPackages`.
+   type Update_Admin_Spec_Packages_Params is record
+      --  Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
+      --  not listed still refuse.
+      Has_Confirm_Drop : Boolean := False;
+      Confirm_Drop : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Update_Admin_Spec_Packages_Params : constant Update_Admin_Spec_Packages_Params := (others => <>);
+
+   --  Create the Stripe product and price for a package
    --
-   --  DELETE /api/v1/admin/config/rate-limits
+   --  Creates the product and price in Stripe and persists the resulting price id onto the
+   --  package. Until this has run, the package cannot be bought: `POST
+   --  /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
+   --
+   --  POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price
    --
    --  Required scopes: admin.
-   function Clear_Rate_Limits
+   function Create_Admin_Spec_Package_Stripe_Price
      (Self : Client_Type;
+      Package_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Clear_Rate_Limits_Response;
+      return UARP.JSON_Support.JSON_Value;
 
    --  Create Stripe Product+Price for plan
    --
@@ -31,6 +56,56 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Create_Plan_Stripe_Price_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Plan_Stripe_Price_Response;
+
+   --  Remove a custom plan
+   --
+   --  **Refuses while tenants are assigned to the plan.** The answer is 409 naming how many, and
+   --  the caller opts in with `?force=1` - an exact string match, so `?force=true` does NOT force.
+   --  Deleting a plan out from under its tenants leaves them on an id that no longer resolves,
+   --  which is why the guard is there.
+   --
+   --  The count in the message is a floor, not a census: it is what the tenant scan saw at that
+   --  moment.
+   --
+   --  DELETE /api/v1/admin/config/custom-plans/{planId}
+   --
+   --  Required scopes: admin.
+   function Delete_Custom_Plan
+     (Self : Client_Type;
+      Plan_Id : String;
+      Params : Delete_Custom_Plan_Params := No_Delete_Custom_Plan_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Custom_Plan_Response;
+
+   --  Drop the price override for one model
+   --
+   --  Removes the override so the model bills at its catalogue rate again. The 404 is keyed on the
+   --  OVERRIDE map, not the model catalogue: deleting an override that was never set is 404 even
+   --  for a model that exists.
+   --
+   --  DELETE /api/v1/admin/config/model-pricing/{modelRef}
+   --
+   --  Required scopes: admin.
+   function Delete_Model_Pricing_Override
+     (Self : Client_Type;
+      Model_Ref : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Model_Pricing_Override_Response;
+
+   --  Remove a promo code
+   --
+   --  Removes the code only. Redemption and reward records already written against it are NOT
+   --  cascaded - they remain, keyed by the code string, so a code deleted and later re-created
+   --  inherits the history of its name.
+   --
+   --  DELETE /api/v1/admin/config/promo-codes/{code}
+   --
+   --  Required scopes: admin.
+   function Delete_Promo_Code
+     (Self : Client_Type;
+      Code : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Promo_Code_Response;
 
    --  Bulk download of every admin-config KV override
    --
@@ -82,6 +157,16 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Tool ids disabled platform-wide
+   --
+   --  GET /api/v1/admin/config/disabled-tools
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Disabled_Tools
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Disabled_Tools_Response;
+
    --  Get evaluation overrides (timeouts, regression threshold, auto-rollback)
    --
    --  GET /api/v1/admin/config/evaluation
@@ -91,6 +176,20 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Founder identity, stored and from the environment
+   --
+   --  Same three-layer read as SMTP, except the third key is `effective` rather than `source`: the
+   --  resolved values themselves, not a label saying where they came from. Resolution is per
+   --  FIELD, so a founder id from storage can sit beside a public key from the environment.
+   --
+   --  GET /api/v1/admin/config/founder
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Founder_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Founder_Config_Response;
 
    --  Get guardrail config
    --
@@ -172,6 +271,20 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Apple native sign-in identifiers and the OAuth return-to allowlist
+   --
+   --  Three-layer read with `effective`, as with founder identity. The environment's
+   --  `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before
+   --  it appears here.
+   --
+   --  GET /api/v1/admin/config/oauth-identity
+   --
+   --  Required scopes: admin.
+   function Get_Admin_O_Auth_Identity_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_O_Auth_Identity_Config_Response;
+
    --  Get persistence overrides (snapshot interval, KV auto-cap)
    --
    --  GET /api/v1/admin/config/persistence
@@ -191,6 +304,23 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Admin_Plans_Response;
+
+   --  Registration state, setup progress, and the waitlist
+   --
+   --  Answers three things at once because the admin screen needs all three to decide whether the
+   --  doors CAN open: the effective registration config, how far platform setup has got, and who
+   --  signed up while it was shut.
+   --
+   --  The waitlist is real registered tenants in status `waitlisted`, not leads - they activate
+   --  lazily on their first login after the doors open.
+   --
+   --  GET /api/v1/admin/config/registration
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Registration_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Registration_Config_Response;
 
    --  Get retention overrides (run / event / audit / feed / artifact TTLs)
    --
@@ -222,6 +352,48 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Platform setup progress
+   --
+   --  Answers the state plus the two vocabularies needed to read it - which steps exist and which
+   --  are required - so a client does not hard-code either and drift when the list changes.
+   --
+   --  GET /api/v1/admin/config/setup-state
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Setup_State
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Setup_State_Response;
+
+   --  Get SMTP config, stored and from the environment
+   --
+   --  Three-layer read, the shape this whole config family uses: `kv` is what an operator saved,
+   --  `env` is what the process environment supplies, and `source` says which of them is actually
+   --  in force. The password is never in either - only `has_password`, so a UI can show that a
+   --  credential exists without ever holding it.
+   --
+   --  GET /api/v1/admin/config/smtp
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Smtp_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Smtp_Config_Response;
+
+   --  Every SPEC package, archived ones included
+   --
+   --  The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
+   --  packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
+   --  then by name.
+   --
+   --  GET /api/v1/admin/config/spec-packages
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Spec_Packages
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Spec_Packages_Response;
+
    --  Get SSE overrides (heartbeat, polling, reconnect hint)
    --
    --  GET /api/v1/admin/config/sse
@@ -241,6 +413,18 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Per-tool presentation overrides
+   --
+   --  A map keyed by tool id. Empty object when nothing is stored - never null.
+   --
+   --  GET /api/v1/admin/config/tool-overrides
+   --
+   --  Required scopes: admin.
+   function Get_Admin_Tool_Overrides
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Tool_Overrides_Response;
 
    --  Get tool security overrides (egress, SSRF, payload caps, concurrency)
    --
@@ -363,6 +547,52 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  The admin-authored plan catalogue
+   --
+   --  Custom plans layer over the four built-in tiers. Ordered by `program` ascending - rows with
+   --  no program sort FIRST, because an absent program compares as the empty string - then by
+   --  `id`. `count` is `plans.length`, not a total across pages: there is no paging, the catalogue
+   --  is one stored record.
+   --
+   --  Optional fields are ABSENT rather than null throughout, so a client must test presence and
+   --  not compare against null.
+   --
+   --  GET /api/v1/admin/config/custom-plans
+   --
+   --  Required scopes: admin.
+   function List_Custom_Plans
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Custom_Plans_Response;
+
+   --  Referral and promo codes
+   --
+   --  A promo code pays its owner tenant bonus tokens for every paid subscription redeemed with
+   --  it, and grants the subscriber a welcome balance. `count` is the array length; there is no
+   --  paging.
+   --
+   --  GET /api/v1/admin/config/promo-codes
+   --
+   --  Required scopes: admin.
+   function List_Promo_Codes
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Promo_Codes_Response;
+
+   --  What one promo code has paid out
+   --
+   --  One entry per reward actually granted - the audit trail behind a code's `uses`. Matched
+   --  before the `{code}` route, so a code literally named `rewards` cannot shadow it.
+   --
+   --  GET /api/v1/admin/config/promo-codes/{code}/rewards
+   --
+   --  Required scopes: admin.
+   function List_Promo_Rewards
+     (Self : Client_Type;
+      Code : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Promo_Rewards_Response;
+
    --  Run reconciliation
    --
    --  POST /api/v1/admin/config/reconciliation
@@ -384,6 +614,31 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Override the billed price of one model
+   --
+   --  Sets what the platform charges for a model, independent of the catalogue. Validated by hand
+   --  rather than by a schema, so the failures are worth stating: a body that is not JSON is 400;
+   --  `input_per_million` or `output_per_million` missing, negative, or not coercible to a finite
+   --  number is 400; `cached_input_per_million`, when present, must be a non-negative number or
+   --  400.
+   --
+   --  WRITE SEMANTICS: the entry replaces, the map merges. This overwrites the override for this
+   --  model only and leaves every other model's override untouched. Omitting
+   --  `cached_input_per_million` removes it, and cached tokens then bill at the full input rate.
+   --
+   --  Note the response key is `modelRef` - camelCase, an outlier in a snake_case API, and
+   --  documented as sent.
+   --
+   --  PUT /api/v1/admin/config/model-pricing/{modelRef}
+   --
+   --  Required scopes: admin.
+   function Set_Model_Pricing_Override
+     (Self : Client_Type;
+      Model_Ref : String;
+      Payload : UARP.Models.Set_Model_Pricing_Override_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Model_Pricing_Override_Response;
+
    --  Set rate limits
    --
    --  PUT /api/v1/admin/config/rate-limits
@@ -394,6 +649,21 @@ package UARP.API.Admin_Config is
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Send a test email through the effective SMTP config
+   --
+   --  Sends for real, using whichever layer `source` reports - this is not a dry run. A delivery
+   --  failure is **500** carrying the SMTP error text, not a 200 with `ok: false`, so a client
+   --  must read the status rather than a field.
+   --
+   --  POST /api/v1/admin/config/smtp/test
+   --
+   --  Required scopes: admin.
+   function Test_Admin_Smtp_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Test_Admin_Smtp_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Test_Admin_Smtp_Config_Response;
 
    --  Verify stored secret_key authenticates against Stripe (read-only)
    --
@@ -449,6 +719,26 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Replace the platform-wide disabled tool list
+   --
+   --  **The body is a bare JSON ARRAY, not an object** - an outlier on a surface where every other
+   --  write takes an object, and a client that wraps it in `{disabled_tools: [...]}` gets 400.
+   --
+   --  Gated on a FRESH MFA challenge.
+   --
+   --  WRITE SEMANTICS: replaces. The array given becomes the list. It must be NON-EMPTY and every
+   --  element a non-empty string, so there is no way to disable nothing through this route -
+   --  clearing the list is not expressible here.
+   --
+   --  PUT /api/v1/admin/config/disabled-tools
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Disabled_Tools
+     (Self : Client_Type;
+      Payload : UARP.JSON_Support.JSON_Value;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Admin_Disabled_Tools_Response;
+
    --  Update evaluation overrides
    --
    --  PUT /api/v1/admin/config/evaluation
@@ -457,6 +747,23 @@ package UARP.API.Admin_Config is
    function Update_Admin_Evaluation_Config
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
+   --  Set the stored founder identity
+   --
+   --  Answers the same body the GET does.
+   --
+   --  WRITE SEMANTICS: merges. Omitted fields keep their stored values. Unlike SMTP, an empty
+   --  string IS accepted on every field here and means "leave unset" - deliberately, because the
+   --  admin UI echoes current values back and a no-op save of an unset identity must not 422.
+   --
+   --  PUT /api/v1/admin/config/founder
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Founder_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Founder_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -548,6 +855,22 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Set Apple identifiers and the return-to allowlist
+   --
+   --  Answers the same body the GET does.
+   --
+   --  WRITE SEMANTICS: merges. Omitted fields keep their stored values; a present
+   --  `oauth_return_to_hosts` REPLACES the stored list rather than adding to it.
+   --
+   --  PUT /api/v1/admin/config/oauth-identity
+   --
+   --  Required scopes: admin.
+   function Update_Admin_O_Auth_Identity_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_O_Auth_Identity_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
    --  Update persistence overrides
    --
    --  PUT /api/v1/admin/config/persistence
@@ -569,6 +892,32 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Update_Admin_Plans_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Plans_Response;
+
+   --  Open or close registration, and set signup defaults
+   --
+   --  **Opening registration when it is currently CLOSED requires `confirm_open: true`.** Without
+   --  it the answer is 400, and the message says so. This is not ceremony: on 2026-06-11 a
+   --  long-lived admin tab running a stale bundle re-submitted its whole form four times in one
+   --  day, each time carrying a stale `registration_open: true`, and silently re-opened doors an
+   --  operator had ordered shut. An explicit confirm is something no stale form can send by
+   --  accident. Closing, and a no-op re-save while already open, need no confirm.
+   --
+   --  A second 400 refuses opening while required setup steps are outstanding, and names them.
+   --
+   --  Answers the same body the GET does.
+   --
+   --  WRITE SEMANTICS: merges. Omitted fields keep their stored values. `default_signup_plan` and
+   --  `allowed_email_domains` are stored only when present; an empty `default_signup_plan` clears
+   --  it back to the `free` default.
+   --
+   --  PUT /api/v1/admin/config/registration
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Registration_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Registration_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
 
    --  Update retention overrides
    --
@@ -603,6 +952,89 @@ package UARP.API.Admin_Config is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Mark setup steps complete, or flip the registration gate
+   --
+   --  WRITE SEMANTICS: mixed, and the mixed half is the point. `completed_steps` is a UNION - the
+   --  steps given are ADDED to the stored list and never removed - so re-sending the same PATCH is
+   --  idempotent and there is no way to un-complete a step through this route. `registration_open`
+   --  is a plain overwrite.
+   --
+   --  **Opening registration requires `confirm_open: true`** when it is currently closed, exactly
+   --  as `PUT /api/v1/admin/config/registration` does. The guard lives in both places on purpose:
+   --  without it here, the lower-level endpoint was a way around the confirm that the launch-day
+   --  incident of 2026-06-11 put there.
+   --
+   --  Opening also refuses with 400 while any required step is outstanding, naming them.
+   --
+   --  `status` reaching `live` is a ONE-WAY latch. Once setup has completed, CLOSING registration
+   --  is an operational mode - a pre-registration wave - and does NOT return the platform to
+   --  `in_progress`. Before that was fixed, closing sent the super admin back into the setup
+   --  wizard on every page, and the wizard's only exit was the very switch they had just turned
+   --  off.
+   --
+   --  The write is a compare-and-set retried up to six times; a persistently contended record
+   --  answers **503** rather than overwriting a concurrent change.
+   --
+   --  PATCH /api/v1/admin/config/setup-state
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Setup_State
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Setup_State_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Setup_State_Response;
+
+   --  Update stored SMTP config
+   --
+   --  Answers the same body the GET does, so a client does not re-read to see what took effect.
+   --
+   --  WRITE SEMANTICS: merges. A field the body omits keeps its stored value. An empty string
+   --  CLEARS, but only where the validator admits one: `password` and `from_name` accept `""`,
+   --  while `host`, `user` and `from` are rejected with 422 before the merge is reached - `host`
+   --  and `user` require at least one character and `from` must parse as an email. So a stored
+   --  host cannot be blanked through this route, only overwritten.
+   --
+   --  `password: ""` is the operator-initiated clear: it drops both the encrypted and plaintext
+   --  fields so the next read falls back to the environment. A password is stored
+   --  AES-GCM-encrypted when an encryption key is configured; without one it is stored in
+   --  plaintext and the server logs a warning rather than refusing.
+   --
+   --  PUT /api/v1/admin/config/smtp
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Smtp_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Smtp_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
+   --  Replace the SPEC-package map
+   --
+   --  WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
+   --  the body is DELETED. Two guards exist because of that.
+   --
+   --  **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
+   --  unless the caller opts in per id: `?confirm_drop=<id>[,<id>]`. Tenants may be subscribed
+   --  against that price, so losing it silently is not a save, it is a billing incident. The
+   --  refusal names every id it is protecting.
+   --
+   --  **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
+   --  everywhere downstream, so a key that disagrees with its record orphans the package at the
+   --  next read.
+   --
+   --  `updated_at` is stamped by the server on every record in the payload and is not read from
+   --  the body.
+   --
+   --  PUT /api/v1/admin/config/spec-packages
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Spec_Packages
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Spec_Packages_Request;
+      Params : Update_Admin_Spec_Packages_Params := No_Update_Admin_Spec_Packages_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
    --  Update SSE overrides
    --
    --  PUT /api/v1/admin/config/sse
@@ -624,6 +1056,34 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Update_Admin_Stripe_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Replace the per-tool presentation overrides
+   --
+   --  These affect PRESENTATION only. The runtime tool catalogue is code-defined, so an override
+   --  changes what the catalogue page shows and nothing about what an agent can call - including
+   --  `hidden`, which hides the row by default while the runtime still serves the tool. An
+   --  operator reaching for `hidden` to switch a tool OFF wants `disabled-tools` instead.
+   --
+   --  Gated on a FRESH MFA challenge.
+   --
+   --  WRITE SEMANTICS: replaces. The map given becomes the whole map, so an id omitted from the
+   --  body is deleted. Two further rules follow from that: an entry whose fields are all empty is
+   --  DROPPED rather than stored - sending `{}` for an id is how the client deletes just that one
+   --  - and `hidden` is stored only when literally `true`, so `hidden: false` deletes the flag
+   --  rather than recording it.
+   --
+   --  Every key is checked against the runtime's built-in tool ids: an unknown id is **422**,
+   --  distinct from the 400 a malformed body gets. The outer object is strict - an unexpected
+   --  top-level key is rejected, not stripped.
+   --
+   --  PUT /api/v1/admin/config/tool-overrides
+   --
+   --  Required scopes: admin.
+   function Update_Admin_Tool_Overrides
+     (Self : Client_Type;
+      Payload : UARP.Models.Update_Admin_Tool_Overrides_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Admin_Tool_Overrides_Response;
 
    --  Update tool security overrides
    --
@@ -712,5 +1172,54 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Update_Webhooks_Policy_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Create or replace one custom plan
+   --
+   --  WRITE SEMANTICS: replaces. The stored record is rebuilt from this body; only `created_at`
+   --  survives from the previous version. An omitted field does NOT keep its stored value - it
+   --  takes the schema's default or disappears.
+   --
+   --  **Two defaults make an omission destructive, and the dangerous one is `active`.** It is
+   --  `default(true)`, so re-saving a DEACTIVATED plan without sending `active` silently
+   --  reactivates it. `visibility` is `default("hidden")`, so re-saving a public plan without
+   --  sending it hides the plan from every tenant. Neither reports anything: the answer is 200 and
+   --  the record looks freshly written.
+   --
+   --  Unknown keys are stripped rather than rejected, so a typo'd field name is accepted and
+   --  dropped with a 200.
+   --
+   --  A built-in plan id (`free`, `starter`, `pro`, `enterprise`) is **409**, pointing at `PUT
+   --  /api/v1/admin/config/plans` - the route that does own those.
+   --
+   --  PUT /api/v1/admin/config/custom-plans/{planId}
+   --
+   --  Required scopes: admin.
+   function Upsert_Custom_Plan
+     (Self : Client_Type;
+      Plan_Id : String;
+      Payload : UARP.Models.Custom_Plan_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upsert_Custom_Plan_Response;
+
+   --  Create or replace one promo code
+   --
+   --  WRITE SEMANTICS: replaces. Only `uses` and `created_at` survive from the previous version;
+   --  every other field comes from this body, and an omitted field is dropped.
+   --
+   --  **`target_plan_id` is the omission that costs money.** It scopes the code to one plan, and
+   --  the reward path returns early when it is set and does not match the plan being paid for.
+   --  Replace a scoped code without resending it and the code becomes redeemable on EVERY plan -
+   --  200, no warning, and the stored row looks the same size as before. `active` behaves the same
+   --  way as on custom plans: `default(true)`, so omitting it reactivates a deactivated code.
+   --
+   --  PUT /api/v1/admin/config/promo-codes/{code}
+   --
+   --  Required scopes: admin.
+   function Upsert_Promo_Code
+     (Self : Client_Type;
+      Code : String;
+      Payload : UARP.Models.Promo_Code_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upsert_Promo_Code_Response;
 
 end UARP.API.Admin_Config;

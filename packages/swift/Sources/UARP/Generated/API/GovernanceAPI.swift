@@ -207,7 +207,7 @@ public struct GovernanceAPI: Sendable {
     /// File appeal
     ///
     /// `POST /api/v1/governance/arbiter/cases/{id}/appeal`
-    public func fileArbiterAppeal(id: String, body: FileArbiterAppealRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func fileArbiterAppeal(id: String, body: FileArbiterAppealRequest, options: RequestOptions = .init()) async throws -> FileArbiterAppealResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/arbiter/cases/\(encodePathSegment(id))/appeal",
@@ -609,6 +609,12 @@ public struct GovernanceAPI: Sendable {
 
     /// Set agent permissions
     ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; only a FIRST write
+    /// falls back to the documented defaults (budget 1.0, spawn depth 3, empty lists). A field that
+    /// IS present but of the wrong type falls to the safe default rather than to the stored value —
+    /// on a permissions surface a malformed write must fail closed, not become a silent no-op.
+    /// `created_at` is server-owned and ignored from the body.
+    ///
     /// `PUT /api/v1/governance/permissions/{agentId}`
     public func setAgentPermissions(agentId: String, body: PermissionSet, options: RequestOptions = .init()) async throws -> SetAgentPermissionsResponse {
         return try await client.send(RequestSpec(
@@ -647,6 +653,10 @@ public struct GovernanceAPI: Sendable {
     }
 
     /// Set root attestation
+    ///
+    /// WRITE SEMANTICS: replaces. The body IS the attestation record — every field is required and
+    /// nothing is carried over, which is why a body missing one answers 422 rather than storing a
+    /// partial record. `created_at` is server-stamped, never taken from the caller.
     ///
     /// `PUT /api/v1/governance/emergency/root-attestation`
     public func setRootAttestation(body: JSONObject, options: RequestOptions = .init()) async throws -> SetRootAttestationResponse {

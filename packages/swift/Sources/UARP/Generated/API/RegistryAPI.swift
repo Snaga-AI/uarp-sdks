@@ -8,6 +8,25 @@ public struct RegistryAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Add a SPEC to the featured set (super-admin)
+    ///
+    /// The SPEC's existence is confirmed BEFORE the featured set is touched, so a typo cannot leave
+    /// a dangling id in a shared list — that is what the 404 protects. The set itself is mutated
+    /// under a compare-and-set retry, because it is one shared record and a plain read-modify-write
+    /// was last-writer-wins.
+    ///
+    /// Idempotent: featuring an already-featured SPEC is 200, not a conflict.
+    ///
+    /// `POST /api/v1/registry/admin/specs/{scope}/{name}/feature`
+    public func featureRegistrySpec(scope: String, name: String, options: RequestOptions = .init()) async throws -> RegistrySpecFeatureState {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/registry/admin/specs/\(encodePathSegment(scope))/\(encodePathSegment(name))/feature",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Admin: list all specs (regardless of visibility)
     ///
     /// `GET /api/v1/registry/admin/specs`
@@ -212,6 +231,60 @@ public struct RegistryAPI: Sendable {
             method: "POST",
             path: "/api/v1/registry/spec/\(encodePathSegment(scope))/\(encodePathSegment(name))/\(encodePathSegment(version))/yank",
             body: encodedBody,
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Bulk-publish the bundled starter SPECs (super-admin)
+    ///
+    /// Idempotent: a starter SPEC already present is counted in `skipped`, not republished, so
+    /// re-running is safe and is how a partially-failed seed is completed.
+    ///
+    /// `errors` is present ONLY when at least one SPEC failed. Its absence means no failures — not
+    /// that the field is unavailable — so a client should treat missing as empty rather than
+    /// unknown. A run can be partially successful: `added` and `errors` are both meaningful in the
+    /// same response, and the status is still 200.
+    ///
+    /// `POST /api/v1/registry/admin/specs/seed`
+    public func seedStarterSpecs(options: RequestOptions = .init()) async throws -> SeedStarterSpecsResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/registry/admin/specs/seed",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Make a SPEC public or private (super-admin)
+    ///
+    /// PATCH and only PATCH — a PUT is 405 with the allowed methods named.
+    ///
+    /// WRITE SEMANTICS: replaces the visibility, which is the only field this route touches.
+    /// `visibility` is required and must be exactly `public` or `private`; anything else, including
+    /// a missing body or a near-miss like `unlisted`, is 400 rather than being coerced or ignored.
+    ///
+    /// `PATCH /api/v1/registry/admin/specs/{scope}/{name}/visibility`
+    public func setRegistrySpecVisibility(scope: String, name: String, body: SetRegistrySpecVisibilityRequest, options: RequestOptions = .init()) async throws -> SetRegistrySpecVisibilityResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/registry/admin/specs/\(encodePathSegment(scope))/\(encodePathSegment(name))/visibility",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Remove a SPEC from the featured set (super-admin)
+    ///
+    /// Same shape and same guards as the POST; the response's `featured` is simply `false`.
+    /// Idempotent — un-featuring something that was not featured is 200.
+    ///
+    /// `DELETE /api/v1/registry/admin/specs/{scope}/{name}/feature`
+    public func unfeatureRegistrySpec(scope: String, name: String, options: RequestOptions = .init()) async throws -> RegistrySpecFeatureState {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/registry/admin/specs/\(encodePathSegment(scope))/\(encodePathSegment(name))/feature",
             idempotent: true,
             options: options
         ))

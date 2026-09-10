@@ -12,6 +12,43 @@ package UARP.API.Public is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `getAndroidTestingStatus`.
+   type Get_Android_Testing_Status_Params is record
+      Email : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Android_Testing_Status_Params : constant Get_Android_Testing_Status_Params := (others => <>);
+
+   --  Query and header parameters for `getLinkPreview`.
+   type Get_Link_Preview_Params is record
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Link_Preview_Params : constant Get_Link_Preview_Params := (others => <>);
+
+   --  Query and header parameters for `getLinkPreviewImage`.
+   type Get_Link_Preview_Image_Params is record
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Link_Preview_Image_Params : constant Get_Link_Preview_Image_Params := (others => <>);
+
+   --  Query and header parameters for `listPublicBlogPosts`.
+   type List_Public_Blog_Posts_Params is record
+      --  Exact tag match, case-insensitive.
+      Has_Tag : Boolean := False;
+      Tag : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Free-text search across title, body and tags.
+      Has_Q : Boolean := False;
+      Q : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Page : Boolean := False;
+      Page : UARP.Types.Integer_Value := 0;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_List_Public_Blog_Posts_Params : constant List_Public_Blog_Posts_Params := (others => <>);
+
    --  Query and header parameters for `listPublicTenants`.
    type List_Public_Tenants_Params is record
       Has_Category : Boolean := False;
@@ -60,6 +97,21 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Content_Report_Accepted;
 
+   --  Has THIS browser already signed up?
+   --
+   --  Deliberately not an address oracle. The answer is `registered: true` only when the caller
+   --  carries the sign-up cookie this browser was given AND it matches the address asked about;
+   --  any other address, or the same address from a browser that did not sign up, answers
+   --  `registered: false`. So the route cannot be used to test whether an address is on the
+   --  roster.
+   --
+   --  GET /api/v1/public/testing/android/status
+   function Get_Android_Testing_Status
+     (Self : Client_Type;
+      Params : Get_Android_Testing_Status_Params := No_Get_Android_Testing_Status_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Android_Testing_Status_Response;
+
    --  Public landing overrides
    --
    --  No authentication. Text overrides and partner logos for the landing page.
@@ -69,6 +121,35 @@ package UARP.API.Public is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Landing_Overrides;
+
+   --  Unfurl a cited link into card metadata
+   --
+   --  Open Graph metadata for a URL an agent cited, so the client renders a card instead of a bare
+   --  link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched.
+   --  Every member of `preview` except `url` and `site` may be null.
+   --
+   --  GET /api/v1/public/link-preview
+   function Get_Link_Preview
+     (Self : Client_Type;
+      Params : Get_Link_Preview_Params := No_Get_Link_Preview_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Link_Preview_Response;
+
+   --  Proxy the og:image
+   --
+   --  Serves the preview image through this origin so the visitor never connects to the
+   --  third-party host. Answers the image bytes with the upstream content type, `Cache-Control:
+   --  public, max-age=86400, immutable`, `nosniff` and a `default-src 'none'` CSP. A target that
+   --  is not an image, or that the fetch could not complete, is 404 rather than a broken picture;
+   --  one over the size cap is 413, including when the responder simply had more to send - half an
+   --  image renders as our bug rather than their oversized file.
+   --
+   --  GET /api/v1/public/link-preview/image
+   function Get_Link_Preview_Image
+     (Self : Client_Type;
+      Params : Get_Link_Preview_Image_Params := No_Get_Link_Preview_Image_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  Maintenance state
    --
@@ -103,6 +184,29 @@ package UARP.API.Public is
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  One published post, with its body
+   --
+   --  A post that exists but is not published is 404, the same as one that does not exist - a
+   --  draft must not be discoverable by its status.
+   --
+   --  GET /api/v1/public/blog/posts/{slug}
+   function Get_Public_Blog_Post
+     (Self : Client_Type;
+      Slug : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Public_Blog_Post_Response;
+
+   --  RSS 2.0 feed of published posts
+   --
+   --  `/api/v1/public/blog/rss.xml` is the same feed under the extension readers expect; both
+   --  paths answer identically.
+   --
+   --  GET /api/v1/public/blog/rss
+   function Get_Public_Blog_Rss
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
 
    --  Get the public featured agent for the landing-page hero
    --
@@ -174,6 +278,41 @@ package UARP.API.Public is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Registration_Status_Response;
+
+   --  List published blog posts
+   --
+   --  Published posts only, newest first, paged. `all_tags` is the distinct tag set across every
+   --  published post - the whole set, not just this page - so a filter UI can be built from one
+   --  call. `excerpt` is the body with its leading heading and markdown punctuation stripped, cut
+   --  to 240 characters. `total` and `total_pages` count posts AFTER `tag` and `q` are applied.
+   --
+   --  GET /api/v1/public/blog
+   function List_Public_Blog_Posts
+     (Self : Client_Type;
+      Params : List_Public_Blog_Posts_Params := No_List_Public_Blog_Posts_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Blog_Posts_Response;
+
+   --  List the integrations a visitor could connect
+   --
+   --  The connectors the platform offers today: the registry MINUS anything an admin has switched
+   --  off, which is the same answer `GET /integrations/catalog` gives a signed-in tenant - both
+   --  call one function, so a page rendered from this cannot advertise what the product refuses.
+   --
+   --  It exists because a hand-kept list drifted: a marketing page counted the connector registry
+   --  and said twenty, naming three integrations that are not in the catalogue at all, while a
+   --  tenant was served seven. A number a page keeps by hand is a number that can be wrong; this
+   --  one cannot.
+   --
+   --  Deliberately thinner than the tenant catalogue - no `config_schema`, because a visitor
+   --  deciding whether to sign up does not need to know which credential fields a connector wants.
+   --  Anonymous, and it says nothing about any tenant.
+   --
+   --  GET /api/v1/public/integrations
+   function List_Public_Integrations
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Integrations_Response;
 
    --  List public plans
    --
@@ -248,6 +387,19 @@ package UARP.API.Public is
       Payload : UARP.Models.Send_Public_Message_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Send_Public_Message_Response;
+
+   --  Sign up for Android closed testing
+   --
+   --  Records the address and, when a testing URL is configured, mails the join link. A repeat
+   --  submit is NOT an error: the same address answers 200 with `already_registered: true` instead
+   --  of 201, and no second letter goes out.
+   --
+   --  POST /api/v1/public/testing/android
+   function Sign_Up_For_Android_Testing
+     (Self : Client_Type;
+      Payload : UARP.Models.Sign_Up_For_Android_Testing_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Android_Tester_Signup_Result;
 
    --  SSE stream for public session
    --

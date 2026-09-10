@@ -30,7 +30,7 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Copy_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Copy_Workspace_File_Response
+      return UARP.Models.Workspace_File
    is
    begin
       return UARP.Models.From_JSON
@@ -82,18 +82,22 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Params : Delete_Workspace_File_Params := No_Delete_Workspace_File_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Delete_Workspace_File_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       UARP.Types.Add (Query, "path", Params.Path);
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files",
-          Query => Query,
-          Idempotent => True,
-          Options => Options);
+      if Params.Has_Trash then
+         UARP.Types.Add (Query, "trash", UARP.Models.Image (Params.Trash));
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files",
+             Query => Query,
+             Idempotent => True,
+             Options => Options));
    end Delete_Workspace_File;
 
    function Download_Workspace_File
@@ -197,7 +201,7 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Params : List_Workspace_Files_Params := No_List_Workspace_Files_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Workspace_Files_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
@@ -207,12 +211,13 @@ package body UARP.API.Workspaces is
       if Params.Has_Recursive then
          UARP.Types.Add (Query, "recursive", Params.Recursive);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files",
+             Query => Query,
+             Options => Options));
    end List_Workspace_Files;
 
    function List_Workspace_Trash
@@ -247,6 +252,25 @@ package body UARP.API.Workspaces is
           Idempotent => True,
           Options => Options);
    end Move_Workspace_File;
+
+   function Restore_Workspace_Trash
+     (Self : Client_Type;
+      Workspace_Id : String;
+      Payload : UARP.Models.Restore_Workspace_Trash_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Restore_Workspace_Trash_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/trash/restore",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Restore_Workspace_Trash;
 
    function Revoke_Workspace_Share
      (Self : Client_Type;

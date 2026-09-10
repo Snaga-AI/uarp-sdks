@@ -177,11 +177,15 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun `get`(runId: String, options: RequestOptions = RequestOptions()): Run {
-        return client.request<Run>(
+    public suspend fun `get`(runId: String, changedFiles: GetRunChangedFiles? = null, options: RequestOptions = RequestOptions()): GetRunResponse {
+        val query = buildList {
+            if (changedFiles != null) add("changed_files" to changedFiles.value)
+        }
+        return client.request<GetRunResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}",
+                query = query,
                 options = options,
             )
         )
@@ -265,17 +269,26 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     /**
      * List all runs for tenant
      *
+     * Ordered NEWEST FIRST, and that is a guarantee, not an accident of storage: page one is the
+     * most recent runs. Do not page toward the end to find recent activity — a client that walks
+     * `has_more` looking for the newest page now walks away from it. This was previously true only
+     * of the handler, so clients hedged by paging or by re-sorting, and one shipped a twelve-hop
+     * walk that reversed meaning the day the order changed. Note the sibling
+     * `/api/v1/teams/{teamId}/runs` is deliberately the other way round — oldest first — because a
+     * team transcript reads forward.
+     *
      * `GET /api/v1/runs`
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun list(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
+    public suspend fun list(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): ListRunsResponse {
         val query = buildList {
             if (agentId != null) add("agent_id" to agentId)
             if (sessionId != null) add("session_id" to sessionId)
             if (status != null) add("status" to status)
             if (limit != null) add("limit" to limit.toString())
             if (cursor != null) add("cursor" to cursor)
+            if (order != null) add("order" to order.value)
         }
         return client.request<ListRunsResponse>(
             RequestSpec(
@@ -291,8 +304,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listRuns`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
-        fetch = { pageCursor -> list(agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, options = options) },
+    public fun listAll(agentId: String? = null, sessionId: String? = null, status: String? = null, limit: Long? = null, cursor: String? = null, order: ListRunsOrder? = null, options: RequestOptions = RequestOptions()): Flow<Run> = autoPaginate(
+        fetch = { pageCursor -> list(agentId = agentId, sessionId = sessionId, status = status, limit = limit, cursor = pageCursor, order = order, options = options) },
         items = { it.items },
         cursor = { it.cursor },
         hasMore = { it.hasMore },

@@ -6,14 +6,19 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  AndroidTesterSignupResult,
   ContentReportAccepted,
   ContentReportInput,
   CreatePublicSessionRequest,
   CreatePublicSessionResponse,
+  GetAndroidTestingStatusResponse,
+  GetLinkPreviewResponse,
+  GetPublicBlogPostResponse,
   GetPublicFeaturedAgentResponse,
   GetRegistrationStatusResponse,
   JsonObject,
   LandingOverrides,
+  ListPublicBlogPostsResponse,
   ListPublicIntegrationsResponse,
   ListPublicPlansResponse,
   ListPublicStatesResponse,
@@ -26,7 +31,45 @@ import type {
   RespondToPublicHitlRequest,
   SendPublicMessageRequest,
   SendPublicMessageResponse,
+  SignUpForAndroidTestingRequest,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `getAndroidTestingStatus`.
+ */
+export interface GetAndroidTestingStatusParams {
+  email: string;
+}
+
+/**
+ * Query and header parameters for `getLinkPreview`.
+ */
+export interface GetLinkPreviewParams {
+  url: string;
+}
+
+/**
+ * Query and header parameters for `getLinkPreviewImage`.
+ */
+export interface GetLinkPreviewImageParams {
+  url: string;
+}
+
+/**
+ * Query and header parameters for `listPublicBlogPosts`.
+ */
+export interface ListPublicBlogPostsParams {
+  /**
+   * Exact tag match, case-insensitive.
+   */
+  tag?: string;
+  /**
+   * Free-text search across title, body and tags.
+   */
+  q?: string;
+  page?: number;
+  limit?: number;
+}
 
 /**
  * Query and header parameters for `listPublicTenants`.
@@ -87,6 +130,26 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * Has THIS browser already signed up?
+   *
+   * Deliberately not an address oracle. The answer is `registered: true` only when the caller
+   * carries the sign-up cookie this browser was given AND it matches the address asked about;
+   * any other address, or the same address from a browser that did not sign up, answers
+   * `registered: false`. So the route cannot be used to test whether an address is on the
+   * roster.
+   *
+   * `GET /api/v1/public/testing/android/status`
+   */
+  getAndroidTestingStatus(params: GetAndroidTestingStatusParams, options?: RequestOptions): Promise<GetAndroidTestingStatusResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/testing/android/status',
+      query: pick(params, ['email']),
+      options,
+    });
+  }
+
+  /**
    * Public landing overrides
    *
    * No authentication. Text overrides and partner logos for the landing page.
@@ -97,6 +160,46 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/public/landing/overrides',
+      options,
+    });
+  }
+
+  /**
+   * Unfurl a cited link into card metadata
+   *
+   * Open Graph metadata for a URL an agent cited, so the client renders a card instead of a bare
+   * link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched.
+   * Every member of `preview` except `url` and `site` may be null.
+   *
+   * `GET /api/v1/public/link-preview`
+   */
+  getLinkPreview(params: GetLinkPreviewParams, options?: RequestOptions): Promise<GetLinkPreviewResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/link-preview',
+      query: pick(params, ['url']),
+      options,
+    });
+  }
+
+  /**
+   * Proxy the og:image
+   *
+   * Serves the preview image through this origin so the visitor never connects to the
+   * third-party host. Answers the image bytes with the upstream content type, `Cache-Control:
+   * public, max-age=86400, immutable`, `nosniff` and a `default-src 'none'` CSP. A target that
+   * is not an image, or that the fetch could not complete, is 404 rather than a broken picture;
+   * one over the size cap is 413, including when the responder simply had more to send — half an
+   * image renders as our bug rather than their oversized file.
+   *
+   * `GET /api/v1/public/link-preview/image`
+   */
+  getLinkPreviewImage(params: GetLinkPreviewImageParams, options?: RequestOptions): Promise<Blob> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/link-preview/image',
+      query: pick(params, ['url']),
+      responseType: 'binary',
       options,
     });
   }
@@ -145,6 +248,39 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/agents/${encodeURIComponent(String(agentId))}`,
+      options,
+    });
+  }
+
+  /**
+   * One published post, with its body
+   *
+   * A post that exists but is not published is 404, the same as one that does not exist — a
+   * draft must not be discoverable by its status.
+   *
+   * `GET /api/v1/public/blog/posts/{slug}`
+   */
+  getPublicBlogPost(slug: string, options?: RequestOptions): Promise<GetPublicBlogPostResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/blog/posts/${encodeURIComponent(String(slug))}`,
+      options,
+    });
+  }
+
+  /**
+   * RSS 2.0 feed of published posts
+   *
+   * `/api/v1/public/blog/rss.xml` is the same feed under the extension readers expect; both
+   * paths answer identically.
+   *
+   * `GET /api/v1/public/blog/rss`
+   */
+  getPublicBlogRss(options?: RequestOptions): Promise<string> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/blog/rss',
+      responseType: 'text',
       options,
     });
   }
@@ -248,6 +384,25 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/public/registration-status',
+      options,
+    });
+  }
+
+  /**
+   * List published blog posts
+   *
+   * Published posts only, newest first, paged. `all_tags` is the distinct tag set across every
+   * published post — the whole set, not just this page — so a filter UI can be built from one
+   * call. `excerpt` is the body with its leading heading and markdown punctuation stripped, cut
+   * to 240 characters. `total` and `total_pages` count posts AFTER `tag` and `q` are applied.
+   *
+   * `GET /api/v1/public/blog`
+   */
+  listPublicBlogPosts(params?: ListPublicBlogPostsParams, options?: RequestOptions): Promise<ListPublicBlogPostsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/blog',
+      query: pick(params, ['tag', 'q', 'page', 'limit']),
       options,
     });
   }
@@ -388,6 +543,25 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/messages`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Sign up for Android closed testing
+   *
+   * Records the address and, when a testing URL is configured, mails the join link. A repeat
+   * submit is NOT an error: the same address answers 200 with `already_registered: true` instead
+   * of 201, and no second letter goes out.
+   *
+   * `POST /api/v1/public/testing/android`
+   */
+  signUpForAndroidTesting(body: SignUpForAndroidTestingRequest, options?: RequestOptions): Promise<AndroidTesterSignupResult> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/public/testing/android',
       body,
       idempotent: true,
       options,

@@ -16,6 +16,39 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `getAndroidTestingStatus`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAndroidTestingStatusParams {
+    pub email: String,
+}
+
+/// Query and header parameters for `getLinkPreview`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetLinkPreviewParams {
+    pub url: String,
+}
+
+/// Query and header parameters for `getLinkPreviewImage`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetLinkPreviewImageParams {
+    pub url: String,
+}
+
+/// Query and header parameters for `listPublicBlogPosts`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListPublicBlogPostsParams {
+    /// Exact tag match, case-insensitive.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tag: Option<String>,
+    /// Free-text search across title, body and tags.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
 /// Query and header parameters for `listPublicTenants`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicTenantsParams {
@@ -89,6 +122,28 @@ impl PublicApi {
             .await
     }
 
+    /// Has THIS browser already signed up?
+    ///
+    /// Deliberately not an address oracle. The answer is `registered: true` only when the caller
+    /// carries the sign-up cookie this browser was given AND it matches the address asked about;
+    /// any other address, or the same address from a browser that did not sign up, answers
+    /// `registered: false`. So the route cannot be used to test whether an address is on the
+    /// roster.
+    ///
+    /// `GET /api/v1/public/testing/android/status`
+    pub async fn get_android_testing_status(&self, params: &GetAndroidTestingStatusParams) -> Result<models::GetAndroidTestingStatusResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/testing/android/status".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Public landing overrides
     ///
     /// No authentication. Text overrides and partner logos for the landing page.
@@ -100,6 +155,49 @@ impl PublicApi {
                 method: Method::GET,
                 path: "/api/v1/public/landing/overrides".to_string(),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Unfurl a cited link into card metadata
+    ///
+    /// Open Graph metadata for a URL an agent cited, so the client renders a card instead of a bare
+    /// link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched.
+    /// Every member of `preview` except `url` and `site` may be null.
+    ///
+    /// `GET /api/v1/public/link-preview`
+    pub async fn get_link_preview(&self, params: &GetLinkPreviewParams) -> Result<models::GetLinkPreviewResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/link-preview".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Proxy the og:image
+    ///
+    /// Serves the preview image through this origin so the visitor never connects to the
+    /// third-party host. Answers the image bytes with the upstream content type, `Cache-Control:
+    /// public, max-age=86400, immutable`, `nosniff` and a `default-src 'none'` CSP. A target that
+    /// is not an image, or that the fetch could not complete, is 404 rather than a broken picture;
+    /// one over the size cap is 413, including when the responder simply had more to send — half an
+    /// image renders as our bug rather than their oversized file.
+    ///
+    /// `GET /api/v1/public/link-preview/image`
+    pub async fn get_link_preview_image(&self, params: &GetLinkPreviewImageParams) -> Result<bytes::Bytes> {
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: "/api/v1/public/link-preview/image".to_string(),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -156,6 +254,44 @@ impl PublicApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/public/agents/{}", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// One published post, with its body
+    ///
+    /// A post that exists but is not published is 404, the same as one that does not exist — a
+    /// draft must not be discoverable by its status.
+    ///
+    /// `GET /api/v1/public/blog/posts/{slug}`
+    pub async fn get_public_blog_post(&self, slug: &str) -> Result<models::GetPublicBlogPostResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/blog/posts/{}", encode_path(slug)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// RSS 2.0 feed of published posts
+    ///
+    /// `/api/v1/public/blog/rss.xml` is the same feed under the extension readers expect; both
+    /// paths answer identically.
+    ///
+    /// `GET /api/v1/public/blog/rss`
+    pub async fn get_public_blog_rss(&self) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::GET,
+                path: "/api/v1/public/blog/rss".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -278,6 +414,56 @@ impl PublicApi {
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/public/registration-status".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// List published blog posts
+    ///
+    /// Published posts only, newest first, paged. `all_tags` is the distinct tag set across every
+    /// published post — the whole set, not just this page — so a filter UI can be built from one
+    /// call. `excerpt` is the body with its leading heading and markdown punctuation stripped, cut
+    /// to 240 characters. `total` and `total_pages` count posts AFTER `tag` and `q` are applied.
+    ///
+    /// `GET /api/v1/public/blog`
+    pub async fn list_public_blog_posts(&self, params: &ListPublicBlogPostsParams) -> Result<models::ListPublicBlogPostsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/blog".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// List the integrations a visitor could connect
+    ///
+    /// The connectors the platform offers today: the registry MINUS anything an admin has switched
+    /// off, which is the same answer `GET /integrations/catalog` gives a signed-in tenant — both
+    /// call one function, so a page rendered from this cannot advertise what the product refuses.
+    ///
+    /// It exists because a hand-kept list drifted: a marketing page counted the connector registry
+    /// and said twenty, naming three integrations that are not in the catalogue at all, while a
+    /// tenant was served seven. A number a page keeps by hand is a number that can be wrong; this
+    /// one cannot.
+    ///
+    /// Deliberately thinner than the tenant catalogue — no `config_schema`, because a visitor
+    /// deciding whether to sign up does not need to know which credential fields a connector wants.
+    /// Anonymous, and it says nothing about any tenant.
+    ///
+    /// `GET /api/v1/public/integrations`
+    pub async fn list_public_integrations(&self) -> Result<models::ListPublicIntegrationsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/integrations".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -416,6 +602,26 @@ impl PublicApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/public/sessions/{}/messages", encode_path(session_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Sign up for Android closed testing
+    ///
+    /// Records the address and, when a testing URL is configured, mails the join link. A repeat
+    /// submit is NOT an error: the same address answers 200 with `already_registered: true` instead
+    /// of 201, and no second letter goes out.
+    ///
+    /// `POST /api/v1/public/testing/android`
+    pub async fn sign_up_for_android_testing(&self, body: &models::SignUpForAndroidTestingRequest) -> Result<models::AndroidTesterSignupResult> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/public/testing/android".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

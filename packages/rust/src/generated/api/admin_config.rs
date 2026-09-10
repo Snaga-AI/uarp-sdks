@@ -13,6 +13,23 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `deleteCustomPlan`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteCustomPlanParams {
+    /// Exactly `1`. Deletes despite assigned tenants.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub force: Option<models::DeleteCustomPlanForce>,
+}
+
+/// Query and header parameters for `updateAdminSpecPackages`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminSpecPackagesParams {
+    /// Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
+    /// not listed still refuse.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub confirm_drop: Option<String>,
+}
+
 /// Platform configuration: pricing, plans, feature flags, rate limits, runtime
 #[derive(Debug, Clone)]
 pub struct AdminConfigApi {
@@ -27,16 +44,20 @@ impl Client {
 }
 
 impl AdminConfigApi {
-    /// Clear rate limit overrides
+    /// Create the Stripe product and price for a package
     ///
-    /// `DELETE /api/v1/admin/config/rate-limits`
+    /// Creates the product and price in Stripe and persists the resulting price id onto the
+    /// package. Until this has run, the package cannot be bought: `POST
+    /// /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
+    ///
+    /// `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
     ///
     /// Required scopes: `admin`.
-    pub async fn clear_rate_limits(&self) -> Result<models::ClearRateLimitsResponse> {
+    pub async fn create_admin_spec_package_stripe_price(&self, package_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
         self.client
             .request_json(Request {
-                method: Method::DELETE,
-                path: "/api/v1/admin/config/rate-limits".to_string(),
+                method: Method::POST,
+                path: format!("/api/v1/admin/config/spec-packages/{}/stripe-price", encode_path(package_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -50,13 +71,83 @@ impl AdminConfigApi {
     /// `POST /api/v1/admin/config/plans/{planId}/stripe-price`
     ///
     /// Required scopes: `admin`.
-    pub async fn create_plan_stripe_price(&self, plan_id: &models::CreatePlanStripePricePlanId, body: &models::CreatePlanStripePriceRequest) -> Result<models::CreatePlanStripePriceResponse> {
+    pub async fn create_plan_stripe_price(&self, plan_id: &models::PlanLLMLimitsTierAccessItem, body: &models::CreatePlanStripePriceRequest) -> Result<models::CreatePlanStripePriceResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/admin/config/plans/{}/stripe-price", encode_path(&plan_id.to_string())),
                 query: NO_QUERY,
                 body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove a custom plan
+    ///
+    /// **Refuses while tenants are assigned to the plan.** The answer is 409 naming how many, and
+    /// the caller opts in with `?force=1` — an exact string match, so `?force=true` does NOT force.
+    /// Deleting a plan out from under its tenants leaves them on an id that no longer resolves,
+    /// which is why the guard is there.
+    ///
+    /// The count in the message is a floor, not a census: it is what the tenant scan saw at that
+    /// moment.
+    ///
+    /// `DELETE /api/v1/admin/config/custom-plans/{planId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_custom_plan(&self, plan_id: &str, params: &DeleteCustomPlanParams) -> Result<models::DeleteCustomPlanResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/config/custom-plans/{}", encode_path(plan_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Drop the price override for one model
+    ///
+    /// Removes the override so the model bills at its catalogue rate again. The 404 is keyed on the
+    /// OVERRIDE map, not the model catalogue: deleting an override that was never set is 404 even
+    /// for a model that exists.
+    ///
+    /// `DELETE /api/v1/admin/config/model-pricing/{modelRef}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_model_pricing_override(&self, model_ref: &str) -> Result<models::DeleteModelPricingOverrideResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/config/model-pricing/{}", encode_path(model_ref)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Remove a promo code
+    ///
+    /// Removes the code only. Redemption and reward records already written against it are NOT
+    /// cascaded — they remain, keyed by the code string, so a code deleted and later re-created
+    /// inherits the history of its name.
+    ///
+    /// `DELETE /api/v1/admin/config/promo-codes/{code}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_promo_code(&self, code: &str) -> Result<models::DeletePromoCodeResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/config/promo-codes/{}", encode_path(code)),
+                query: NO_QUERY,
+                body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
             })
@@ -153,6 +244,24 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Tool ids disabled platform-wide
+    ///
+    /// `GET /api/v1/admin/config/disabled-tools`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_disabled_tools(&self) -> Result<models::GetAdminDisabledToolsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/disabled-tools".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get evaluation overrides (timeouts, regression threshold, auto-rollback)
     ///
     /// `GET /api/v1/admin/config/evaluation`
@@ -163,6 +272,28 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/admin/config/evaluation".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Founder identity, stored and from the environment
+    ///
+    /// Same three-layer read as SMTP, except the third key is `effective` rather than `source`: the
+    /// resolved values themselves, not a label saying where they came from. Resolution is per
+    /// FIELD, so a founder id from storage can sit beside a public key from the environment.
+    ///
+    /// `GET /api/v1/admin/config/founder`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_founder_config(&self) -> Result<models::GetAdminFounderConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/founder".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -315,6 +446,28 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Apple native sign-in identifiers and the OAuth return-to allowlist
+    ///
+    /// Three-layer read with `effective`, as with founder identity. The environment's
+    /// `oauth_return_to_hosts` is a comma-separated variable, split, trimmed and lower-cased before
+    /// it appears here.
+    ///
+    /// `GET /api/v1/admin/config/oauth-identity`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_o_auth_identity_config(&self) -> Result<models::GetAdminOAuthIdentityConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/oauth-identity".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get persistence overrides (snapshot interval, KV auto-cap)
     ///
     /// `GET /api/v1/admin/config/persistence`
@@ -343,6 +496,31 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/admin/config/plans".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Registration state, setup progress, and the waitlist
+    ///
+    /// Answers three things at once because the admin screen needs all three to decide whether the
+    /// doors CAN open: the effective registration config, how far platform setup has got, and who
+    /// signed up while it was shut.
+    ///
+    /// The waitlist is real registered tenants in status `waitlisted`, not leads — they activate
+    /// lazily on their first login after the doors open.
+    ///
+    /// `GET /api/v1/admin/config/registration`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_registration_config(&self) -> Result<models::GetAdminRegistrationConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/registration".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -405,6 +583,72 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Platform setup progress
+    ///
+    /// Answers the state plus the two vocabularies needed to read it — which steps exist and which
+    /// are required — so a client does not hard-code either and drift when the list changes.
+    ///
+    /// `GET /api/v1/admin/config/setup-state`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_setup_state(&self) -> Result<models::SetupStateResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/setup-state".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Get SMTP config, stored and from the environment
+    ///
+    /// Three-layer read, the shape this whole config family uses: `kv` is what an operator saved,
+    /// `env` is what the process environment supplies, and `source` says which of them is actually
+    /// in force. The password is never in either — only `has_password`, so a UI can show that a
+    /// credential exists without ever holding it.
+    ///
+    /// `GET /api/v1/admin/config/smtp`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_smtp_config(&self) -> Result<models::GetAdminSmtpConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/smtp".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Every SPEC package, archived ones included
+    ///
+    /// The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
+    /// packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
+    /// then by name.
+    ///
+    /// `GET /api/v1/admin/config/spec-packages`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_spec_packages(&self) -> Result<models::GetAdminSpecPackagesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/spec-packages".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get SSE overrides (heartbeat, polling, reconnect hint)
     ///
     /// `GET /api/v1/admin/config/sse`
@@ -433,6 +677,26 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/admin/config/stripe".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Per-tool presentation overrides
+    ///
+    /// A map keyed by tool id. Empty object when nothing is stored — never null.
+    ///
+    /// `GET /api/v1/admin/config/tool-overrides`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_tool_overrides(&self) -> Result<models::GetAdminToolOverridesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/tool-overrides".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -657,6 +921,75 @@ impl AdminConfigApi {
             .await
     }
 
+    /// The admin-authored plan catalogue
+    ///
+    /// Custom plans layer over the four built-in tiers. Ordered by `program` ascending — rows with
+    /// no program sort FIRST, because an absent program compares as the empty string — then by
+    /// `id`. `count` is `plans.length`, not a total across pages: there is no paging, the catalogue
+    /// is one stored record.
+    ///
+    /// Optional fields are ABSENT rather than null throughout, so a client must test presence and
+    /// not compare against null.
+    ///
+    /// `GET /api/v1/admin/config/custom-plans`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_custom_plans(&self) -> Result<models::ListCustomPlansResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/custom-plans".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Referral and promo codes
+    ///
+    /// A promo code pays its owner tenant bonus tokens for every paid subscription redeemed with
+    /// it, and grants the subscriber a welcome balance. `count` is the array length; there is no
+    /// paging.
+    ///
+    /// `GET /api/v1/admin/config/promo-codes`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_promo_codes(&self) -> Result<models::ListPromoCodesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/promo-codes".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// What one promo code has paid out
+    ///
+    /// One entry per reward actually granted — the audit trail behind a code's `uses`. Matched
+    /// before the `{code}` route, so a code literally named `rewards` cannot shadow it.
+    ///
+    /// `GET /api/v1/admin/config/promo-codes/{code}/rewards`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_promo_rewards(&self, code: &str) -> Result<models::ListPromoRewardsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/config/promo-codes/{}/rewards", encode_path(code)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Run reconciliation
     ///
     /// `POST /api/v1/admin/config/reconciliation`
@@ -693,6 +1026,37 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Override the billed price of one model
+    ///
+    /// Sets what the platform charges for a model, independent of the catalogue. Validated by hand
+    /// rather than by a schema, so the failures are worth stating: a body that is not JSON is 400;
+    /// `input_per_million` or `output_per_million` missing, negative, or not coercible to a finite
+    /// number is 400; `cached_input_per_million`, when present, must be a non-negative number or
+    /// 400.
+    ///
+    /// WRITE SEMANTICS: the entry replaces, the map merges. This overwrites the override for this
+    /// model only and leaves every other model's override untouched. Omitting
+    /// `cached_input_per_million` removes it, and cached tokens then bill at the full input rate.
+    ///
+    /// Note the response key is `modelRef` — camelCase, an outlier in a snake_case API, and
+    /// documented as sent.
+    ///
+    /// `PUT /api/v1/admin/config/model-pricing/{modelRef}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn set_model_pricing_override(&self, model_ref: &str, body: &models::SetModelPricingOverrideRequest) -> Result<models::SetModelPricingOverrideResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/admin/config/model-pricing/{}", encode_path(model_ref)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Set rate limits
     ///
     /// `PUT /api/v1/admin/config/rate-limits`
@@ -703,6 +1067,28 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/rate-limits".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Send a test email through the effective SMTP config
+    ///
+    /// Sends for real, using whichever layer `source` reports — this is not a dry run. A delivery
+    /// failure is **500** carrying the SMTP error text, not a 200 with `ok: false`, so a client
+    /// must read the status rather than a field.
+    ///
+    /// `POST /api/v1/admin/config/smtp/test`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn test_admin_smtp_config(&self, body: &models::TestAdminSmtpConfigRequest) -> Result<models::TestAdminSmtpConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/config/smtp/test".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -801,6 +1187,33 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Replace the platform-wide disabled tool list
+    ///
+    /// **The body is a bare JSON ARRAY, not an object** — an outlier on a surface where every other
+    /// write takes an object, and a client that wraps it in `{disabled_tools: \[…\]}` gets 400.
+    ///
+    /// Gated on a FRESH MFA challenge.
+    ///
+    /// WRITE SEMANTICS: replaces. The array given becomes the list. It must be NON-EMPTY and every
+    /// element a non-empty string, so there is no way to disable nothing through this route —
+    /// clearing the list is not expressible here.
+    ///
+    /// `PUT /api/v1/admin/config/disabled-tools`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_disabled_tools(&self, body: &Vec<String>) -> Result<models::UpdateAdminDisabledToolsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/disabled-tools".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Update evaluation overrides
     ///
     /// `PUT /api/v1/admin/config/evaluation`
@@ -811,6 +1224,30 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/evaluation".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Set the stored founder identity
+    ///
+    /// Answers the same body the GET does.
+    ///
+    /// WRITE SEMANTICS: merges. Omitted fields keep their stored values. Unlike SMTP, an empty
+    /// string IS accepted on every field here and means "leave unset" — deliberately, because the
+    /// admin UI echoes current values back and a no-op save of an unset identity must not 422.
+    ///
+    /// `PUT /api/v1/admin/config/founder`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_founder_config(&self, body: &models::UpdateAdminFounderConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/founder".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -963,6 +1400,29 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Set Apple identifiers and the return-to allowlist
+    ///
+    /// Answers the same body the GET does.
+    ///
+    /// WRITE SEMANTICS: merges. Omitted fields keep their stored values; a present
+    /// `oauth_return_to_hosts` REPLACES the stored list rather than adding to it.
+    ///
+    /// `PUT /api/v1/admin/config/oauth-identity`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_o_auth_identity_config(&self, body: &models::UpdateAdminOAuthIdentityConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/oauth-identity".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Update persistence overrides
     ///
     /// `PUT /api/v1/admin/config/persistence`
@@ -991,6 +1451,39 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/plans".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Open or close registration, and set signup defaults
+    ///
+    /// **Opening registration when it is currently CLOSED requires `confirm_open: true`.** Without
+    /// it the answer is 400, and the message says so. This is not ceremony: on 2026-06-11 a
+    /// long-lived admin tab running a stale bundle re-submitted its whole form four times in one
+    /// day, each time carrying a stale `registration_open: true`, and silently re-opened doors an
+    /// operator had ordered shut. An explicit confirm is something no stale form can send by
+    /// accident. Closing, and a no-op re-save while already open, need no confirm.
+    ///
+    /// A second 400 refuses opening while required setup steps are outstanding, and names them.
+    ///
+    /// Answers the same body the GET does.
+    ///
+    /// WRITE SEMANTICS: merges. Omitted fields keep their stored values. `default_signup_plan` and
+    /// `allowed_email_domains` are stored only when present; an empty `default_signup_plan` clears
+    /// it back to the `free` default.
+    ///
+    /// `PUT /api/v1/admin/config/registration`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_registration_config(&self, body: &models::UpdateAdminRegistrationConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/registration".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -1053,6 +1546,109 @@ impl AdminConfigApi {
             .await
     }
 
+    /// Mark setup steps complete, or flip the registration gate
+    ///
+    /// WRITE SEMANTICS: mixed, and the mixed half is the point. `completed_steps` is a UNION — the
+    /// steps given are ADDED to the stored list and never removed — so re-sending the same PATCH is
+    /// idempotent and there is no way to un-complete a step through this route. `registration_open`
+    /// is a plain overwrite.
+    ///
+    /// **Opening registration requires `confirm_open: true`** when it is currently closed, exactly
+    /// as `PUT /api/v1/admin/config/registration` does. The guard lives in both places on purpose:
+    /// without it here, the lower-level endpoint was a way around the confirm that the launch-day
+    /// incident of 2026-06-11 put there.
+    ///
+    /// Opening also refuses with 400 while any required step is outstanding, naming them.
+    ///
+    /// `status` reaching `live` is a ONE-WAY latch. Once setup has completed, CLOSING registration
+    /// is an operational mode — a pre-registration wave — and does NOT return the platform to
+    /// `in_progress`. Before that was fixed, closing sent the super admin back into the setup
+    /// wizard on every page, and the wizard's only exit was the very switch they had just turned
+    /// off.
+    ///
+    /// The write is a compare-and-set retried up to six times; a persistently contended record
+    /// answers **503** rather than overwriting a concurrent change.
+    ///
+    /// `PATCH /api/v1/admin/config/setup-state`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_setup_state(&self, body: &models::UpdateAdminSetupStateRequest) -> Result<models::SetupStateResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: "/api/v1/admin/config/setup-state".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Update stored SMTP config
+    ///
+    /// Answers the same body the GET does, so a client does not re-read to see what took effect.
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value. An empty string
+    /// CLEARS, but only where the validator admits one: `password` and `from_name` accept `""`,
+    /// while `host`, `user` and `from` are rejected with 422 before the merge is reached — `host`
+    /// and `user` require at least one character and `from` must parse as an email. So a stored
+    /// host cannot be blanked through this route, only overwritten.
+    ///
+    /// `password: ""` is the operator-initiated clear: it drops both the encrypted and plaintext
+    /// fields so the next read falls back to the environment. A password is stored
+    /// AES-GCM-encrypted when an encryption key is configured; without one it is stored in
+    /// plaintext and the server logs a warning rather than refusing.
+    ///
+    /// `PUT /api/v1/admin/config/smtp`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_smtp_config(&self, body: &models::UpdateAdminSmtpConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/smtp".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Replace the SPEC-package map
+    ///
+    /// WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
+    /// the body is DELETED. Two guards exist because of that.
+    ///
+    /// **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
+    /// unless the caller opts in per id: `?confirm_drop=\<id\>\[,\<id\>\]`. Tenants may be
+    /// subscribed against that price, so losing it silently is not a save, it is a billing
+    /// incident. The refusal names every id it is protecting.
+    ///
+    /// **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
+    /// everywhere downstream, so a key that disagrees with its record orphans the package at the
+    /// next read.
+    ///
+    /// `updated_at` is stamped by the server on every record in the payload and is not read from
+    /// the body.
+    ///
+    /// `PUT /api/v1/admin/config/spec-packages`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_spec_packages(&self, body: &models::UpdateAdminSpecPackagesRequest, params: &UpdateAdminSpecPackagesParams) -> Result<serde_json::Map<String, serde_json::Value>> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/spec-packages".to_string(),
+                query: Some(params),
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Update SSE overrides
     ///
     /// `PUT /api/v1/admin/config/sse`
@@ -1081,6 +1677,41 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/stripe".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Replace the per-tool presentation overrides
+    ///
+    /// These affect PRESENTATION only. The runtime tool catalogue is code-defined, so an override
+    /// changes what the catalogue page shows and nothing about what an agent can call — including
+    /// `hidden`, which hides the row by default while the runtime still serves the tool. An
+    /// operator reaching for `hidden` to switch a tool OFF wants `disabled-tools` instead.
+    ///
+    /// Gated on a FRESH MFA challenge.
+    ///
+    /// WRITE SEMANTICS: replaces. The map given becomes the whole map, so an id omitted from the
+    /// body is deleted. Two further rules follow from that: an entry whose fields are all empty is
+    /// DROPPED rather than stored — sending `{}` for an id is how the client deletes just that one
+    /// — and `hidden` is stored only when literally `true`, so `hidden: false` deletes the flag
+    /// rather than recording it.
+    ///
+    /// Every key is checked against the runtime's built-in tool ids: an unknown id is **422**,
+    /// distinct from the 400 a malformed body gets. The outer object is strict — an unexpected
+    /// top-level key is rejected, not stripped.
+    ///
+    /// `PUT /api/v1/admin/config/tool-overrides`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_tool_overrides(&self, body: &models::UpdateAdminToolOverridesRequest) -> Result<models::UpdateAdminToolOverridesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/tool-overrides".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -1225,6 +1856,67 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/webhooks-policy".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Create or replace one custom plan
+    ///
+    /// WRITE SEMANTICS: replaces. The stored record is rebuilt from this body; only `created_at`
+    /// survives from the previous version. An omitted field does NOT keep its stored value — it
+    /// takes the schema's default or disappears.
+    ///
+    /// **Two defaults make an omission destructive, and the dangerous one is `active`.** It is
+    /// `default(true)`, so re-saving a DEACTIVATED plan without sending `active` silently
+    /// reactivates it. `visibility` is `default("hidden")`, so re-saving a public plan without
+    /// sending it hides the plan from every tenant. Neither reports anything: the answer is 200 and
+    /// the record looks freshly written.
+    ///
+    /// Unknown keys are stripped rather than rejected, so a typo'd field name is accepted and
+    /// dropped with a 200.
+    ///
+    /// A built-in plan id (`free`, `starter`, `pro`, `enterprise`) is **409**, pointing at `PUT
+    /// /api/v1/admin/config/plans` — the route that does own those.
+    ///
+    /// `PUT /api/v1/admin/config/custom-plans/{planId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn upsert_custom_plan(&self, plan_id: &str, body: &models::CustomPlanInput) -> Result<models::UpsertCustomPlanResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/admin/config/custom-plans/{}", encode_path(plan_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Create or replace one promo code
+    ///
+    /// WRITE SEMANTICS: replaces. Only `uses` and `created_at` survive from the previous version;
+    /// every other field comes from this body, and an omitted field is dropped.
+    ///
+    /// **`target_plan_id` is the omission that costs money.** It scopes the code to one plan, and
+    /// the reward path returns early when it is set and does not match the plan being paid for.
+    /// Replace a scoped code without resending it and the code becomes redeemable on EVERY plan —
+    /// 200, no warning, and the stored row looks the same size as before. `active` behaves the same
+    /// way as on custom plans: `default(true)`, so omitting it reactivates a deactivated code.
+    ///
+    /// `PUT /api/v1/admin/config/promo-codes/{code}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn upsert_promo_code(&self, code: &str, body: &models::PromoCodeInput) -> Result<models::UpsertPromoCodeResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/admin/config/promo-codes/{}", encode_path(code)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

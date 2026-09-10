@@ -6,6 +6,32 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.16 — 2026-09-10
+
+Cut from the bytes production serves, not from a copy of the source document.
+`spec/openapi.json` is now `curl https://api.snaga.ai/api/v1/openapi.json`
+verbatim, sha256 `2d0119336bb7b507343b9b2ec41b80b2d6bafc6863ecddfdc54597e4f682e938`,
+build `53ab19ed`. The previous copy had drifted to 712 operations against the
+platform's 725 — the three Android closed-testing routes, the public blog, the
+link-preview pair, `/api/v1/health`, the knowledge-base retrieval routes and
+the `410` a public session now answers when its TTL has passed.
+
+- 712 operations to **725**, 242 schemas to **248**.
+- Every `nullable: true` from OpenAPI 3.0 is gone; null is a type union now, so
+  generated optionals stop depending on a keyword 3.1 does not define. Seven
+  enums that sat beside a nullable gained `null` as a member — without it a
+  strict decoder rejects the very value the field exists to carry.
+- `OAuthLoginProviderItem.id` lists `apple` beside `github` and `google`. The
+  wire has answered all three for months; a generated Swift or Kotlin decoder
+  throws on a value outside an enum, and this is the login screen's provider
+  list, where a throw means no buttons at all.
+- `info.license` carries an SPDX `identifier`, so the document validates as 3.1
+  rather than failing at the first schema check.
+
+Verified both directions rather than by count: every method+path pair in the
+document has a call site in `packages/typescript/dist`, and every call site in
+`dist` is in the document — 725 to 725, none missing, none extra.
+
 ## 0.5.15 — 2026-08-28
 
 The first release cut from a document that matches what the platform serves.

@@ -7,6 +7,23 @@ package body UARP.API.Registry is
 
    package JS renames UARP.JSON_Support;
 
+   function Feature_Registry_Spec
+     (Self : Client_Type;
+      Scope : String;
+      Name : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Registry_Spec_Feature_State
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/registry/admin/specs/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/feature",
+             Idempotent => True,
+             Options => Options));
+   end Feature_Registry_Spec;
+
    function Registry_Admin_List_Specs
      (Self : Client_Type;
       Params : Registry_Admin_List_Specs_Params := No_Registry_Admin_List_Specs_Params;
@@ -292,4 +309,56 @@ package body UARP.API.Registry is
           Idempotent => True,
           Options => Options);
    end Registry_Yank_Version;
+
+   function Seed_Starter_Specs
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Seed_Starter_Specs_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/registry/admin/specs/seed",
+             Idempotent => True,
+             Options => Options));
+   end Seed_Starter_Specs;
+
+   function Set_Registry_Spec_Visibility
+     (Self : Client_Type;
+      Scope : String;
+      Name : String;
+      Payload : UARP.Models.Set_Registry_Spec_Visibility_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Registry_Spec_Visibility_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/registry/admin/specs/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/visibility",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Registry_Spec_Visibility;
+
+   function Unfeature_Registry_Spec
+     (Self : Client_Type;
+      Scope : String;
+      Name : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Registry_Spec_Feature_State
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/registry/admin/specs/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/feature",
+             Idempotent => True,
+             Options => Options));
+   end Unfeature_Registry_Spec;
 end UARP.API.Registry;

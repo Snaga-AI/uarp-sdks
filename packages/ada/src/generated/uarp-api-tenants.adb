@@ -4,6 +4,27 @@ with UARP.Types;
 
 package body UARP.API.Tenants is
 
+   function Accept_Invite_From_Picker
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Invite_Id : String;
+      Payload : UARP.Models.Accept_Invite_From_Picker_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Accept_Invite_From_Picker_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/me/invites/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/" & UARP.Types.Encode_Path_Segment (Invite_Id) & "/accept",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Accept_Invite_From_Picker;
+
    function Create_API_Key
      (Self : Client_Type;
       Payload : UARP.Models.Create_API_Key_Request;
@@ -40,6 +61,23 @@ package body UARP.API.Tenants is
              Options => Options));
    end Create_My_Tenant;
 
+   function Decline_Invite_From_Picker
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Invite_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Decline_Invite_From_Picker_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/me/invites/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/" & UARP.Types.Encode_Path_Segment (Invite_Id) & "/decline",
+             Idempotent => True,
+             Options => Options));
+   end Decline_Invite_From_Picker;
+
    function Get_Current_Tenant
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -67,6 +105,36 @@ package body UARP.API.Tenants is
              "/api/v1/me/head-agent-template",
              Options => Options));
    end Get_My_Head_Agent_Template;
+
+   function Get_Tenant_Domain_Health
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Tenant_Domain_Health_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/tenants/me/domain/health",
+             Options => Options));
+   end Get_Tenant_Domain_Health;
+
+   function Leave_Tenant
+     (Self : Client_Type;
+      Tenant_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Leave_Tenant_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/me/memberships/" & UARP.Types.Encode_Path_Segment (Tenant_Id),
+             Idempotent => True,
+             Options => Options));
+   end Leave_Tenant;
 
    function List_API_Keys
      (Self : Client_Type;

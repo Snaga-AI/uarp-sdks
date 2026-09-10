@@ -6,6 +6,7 @@ import type { EventStream } from '../../core/sse.js';
 import type {
   GetHealthResponse,
   GetReadyResponse,
+  HealthCheckV1aliasResponse,
   HealthLiveResponse,
   HealthzAliasResponse,
   JsonObject,
@@ -51,6 +52,22 @@ export class HealthResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/ready',
+      options,
+    });
+  }
+
+  /**
+   * Liveness (alias of /health)
+   *
+   * Identical body to `GET /health`. Kept for callers that assume every route lives under
+   * `/api/v1`; new callers should use `/health`.
+   *
+   * `GET /api/v1/health`
+   */
+  healthCheckV1alias(options?: RequestOptions): Promise<HealthCheckV1aliasResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/health',
       options,
     });
   }

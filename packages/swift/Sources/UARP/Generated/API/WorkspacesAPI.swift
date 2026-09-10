@@ -29,7 +29,7 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces/{workspaceId}/files/copy`
     ///
     /// Required scopes: `files:write`.
-    public func copyWorkspaceFile(workspaceId: String, body: CopyWorkspaceFileRequest, options: RequestOptions = .init()) async throws -> CopyWorkspaceFileResponse {
+    public func copyWorkspaceFile(workspaceId: String, body: CopyWorkspaceFileRequest, options: RequestOptions = .init()) async throws -> WorkspaceFile {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/copy",
@@ -74,9 +74,12 @@ public struct WorkspacesAPI: Sendable {
     /// `DELETE /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    public func deleteWorkspaceFile(workspaceId: String, path: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func deleteWorkspaceFile(workspaceId: String, path: String, trash: DeleteWorkspaceFileTrash? = nil, options: RequestOptions = .init()) async throws -> DeleteWorkspaceFileResponse {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "path", value: path))
+        if let trash {
+            query.append(URLQueryItem(name: "trash", value: trash.rawValue))
+        }
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files",
@@ -178,7 +181,7 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:read`.
-    public func listWorkspaceFiles(workspaceId: String, path: String? = nil, recursive: Bool? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listWorkspaceFiles(workspaceId: String, path: String? = nil, recursive: Bool? = nil, options: RequestOptions = .init()) async throws -> ListWorkspaceFilesResponse {
         var query: [URLQueryItem] = []
         if let path {
             query.append(URLQueryItem(name: "path", value: path))
@@ -216,6 +219,21 @@ public struct WorkspacesAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/move",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Restore a trashed file to its original path
+    ///
+    /// `POST /api/v1/workspaces/{workspaceId}/trash/restore`
+    ///
+    /// Required scopes: `files:write`.
+    public func restoreWorkspaceTrash(workspaceId: String, body: RestoreWorkspaceTrashRequest, options: RequestOptions = .init()) async throws -> RestoreWorkspaceTrashResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/trash/restore",
             body: try client.encode(body),
             idempotent: true,
             options: options

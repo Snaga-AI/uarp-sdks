@@ -39,6 +39,24 @@ package body UARP.API.Public is
              Options => Options));
    end Create_Public_Session_Report;
 
+   function Get_Android_Testing_Status
+     (Self : Client_Type;
+      Params : Get_Android_Testing_Status_Params := No_Get_Android_Testing_Status_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Android_Testing_Status_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "email", Params.Email);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/testing/android/status",
+             Query => Query,
+             Options => Options));
+   end Get_Android_Testing_Status;
+
    function Get_Landing_Overrides
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -52,6 +70,41 @@ package body UARP.API.Public is
              "/api/v1/public/landing/overrides",
              Options => Options));
    end Get_Landing_Overrides;
+
+   function Get_Link_Preview
+     (Self : Client_Type;
+      Params : Get_Link_Preview_Params := No_Get_Link_Preview_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Link_Preview_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "url", Params.URL);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/link-preview",
+             Query => Query,
+             Options => Options));
+   end Get_Link_Preview;
+
+   function Get_Link_Preview_Image
+     (Self : Client_Type;
+      Params : Get_Link_Preview_Image_Params := No_Get_Link_Preview_Image_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "url", Params.URL);
+      return UARP.Client.Call_Raw
+         (Self,
+          "GET",
+          "/api/v1/public/link-preview/image",
+          Query => Query,
+          Options => Options);
+   end Get_Link_Preview_Image;
 
    function Get_Maintenance_Status
      (Self : Client_Type;
@@ -94,6 +147,34 @@ package body UARP.API.Public is
           "/api/v1/public/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
           Options => Options);
    end Get_Public_Agent_Card;
+
+   function Get_Public_Blog_Post
+     (Self : Client_Type;
+      Slug : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Public_Blog_Post_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/blog/posts/" & UARP.Types.Encode_Path_Segment (Slug),
+             Options => Options));
+   end Get_Public_Blog_Post;
+
+   function Get_Public_Blog_Rss
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
+   is
+   begin
+      return UARP.Client.Call_Raw
+         (Self,
+          "GET",
+          "/api/v1/public/blog/rss",
+          Options => Options);
+   end Get_Public_Blog_Rss;
 
    function Get_Public_Featured_Agent
      (Self : Client_Type;
@@ -192,6 +273,49 @@ package body UARP.API.Public is
              "/api/v1/public/registration-status",
              Options => Options));
    end Get_Registration_Status;
+
+   function List_Public_Blog_Posts
+     (Self : Client_Type;
+      Params : List_Public_Blog_Posts_Params := No_List_Public_Blog_Posts_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Blog_Posts_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Tag then
+         UARP.Types.Add (Query, "tag", Params.Tag);
+      end if;
+      if Params.Has_Q then
+         UARP.Types.Add (Query, "q", Params.Q);
+      end if;
+      if Params.Has_Page then
+         UARP.Types.Add (Query, "page", Params.Page);
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/blog",
+             Query => Query,
+             Options => Options));
+   end List_Public_Blog_Posts;
+
+   function List_Public_Integrations
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Integrations_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/integrations",
+             Options => Options));
+   end List_Public_Integrations;
 
    function List_Public_Plans
      (Self : Client_Type;
@@ -370,6 +494,24 @@ package body UARP.API.Public is
              Idempotent => True,
              Options => Options));
    end Send_Public_Message;
+
+   function Sign_Up_For_Android_Testing
+     (Self : Client_Type;
+      Payload : UARP.Models.Sign_Up_For_Android_Testing_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Android_Tester_Signup_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/public/testing/android",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Sign_Up_For_Android_Testing;
 
    procedure Stream_Public_Session_Events
      (Self : Client_Type;

@@ -122,15 +122,21 @@ package body UARP.API.Runs is
    function Get
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Params := No_Get_Run_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Run
+      return UARP.Models.Get_Run_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Changed_Files then
+         UARP.Types.Add (Query, "changed_files", UARP.Models.Image (Params.Changed_Files));
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id),
+             Query => Query,
              Options => Options));
    end Get;
 
@@ -220,6 +226,9 @@ package body UARP.API.Runs is
       end if;
       if Params.Has_Cursor then
          UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
+      if Params.Has_Order then
+         UARP.Types.Add (Query, "order", UARP.Models.Image (Params.Order));
       end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call

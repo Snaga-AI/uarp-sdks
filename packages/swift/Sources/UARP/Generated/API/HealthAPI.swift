@@ -41,6 +41,20 @@ public struct HealthAPI: Sendable {
         ))
     }
 
+    /// Liveness (alias of /health)
+    ///
+    /// Identical body to `GET /health`. Kept for callers that assume every route lives under
+    /// `/api/v1`; new callers should use `/health`.
+    ///
+    /// `GET /api/v1/health`
+    public func healthCheckV1alias(options: RequestOptions = .init()) async throws -> HealthCheckV1aliasResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/health",
+            options: options
+        ))
+    }
+
     /// Kubernetes liveness probe
     ///
     /// `GET /health/live`

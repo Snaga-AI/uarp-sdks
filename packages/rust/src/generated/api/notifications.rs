@@ -115,6 +115,28 @@ impl NotificationsApi {
             .await
     }
 
+    /// Read the tenant's notification routing preferences
+    ///
+    /// Returns the stored preferences, or the server defaults (critical → in_app+email, everything
+    /// else → in_app) when none are stored. Note: `email` in a channel list only delivers when the
+    /// tenant also has an email target configured (see POST /notifications/targets).
+    ///
+    /// `GET /api/v1/notifications/prefs`
+    ///
+    /// Required scopes: `notifications:read`.
+    pub async fn get_notification_preferences(&self) -> Result<models::NotificationPreferences> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/notifications/prefs".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get unread notification count
     ///
     /// `GET /api/v1/notifications/unread`
@@ -201,6 +223,28 @@ impl NotificationsApi {
                 path: format!("/api/v1/notifications/{}/read", encode_path(notif_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Replace the tenant's notification routing preferences
+    ///
+    /// WRITE SEMANTICS: replaces. An omitted field is stored as omitted (the only way to clear
+    /// muted_types or drop quiet_hours). `tenant_id` and `updated_at` are ignored — the server
+    /// derives them.
+    ///
+    /// `PUT /api/v1/notifications/prefs`
+    ///
+    /// Required scopes: `notifications:write`.
+    pub async fn replace_notification_preferences(&self, body: &models::NotificationPreferencesInput) -> Result<models::NotificationPreferences> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/notifications/prefs".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
             })
