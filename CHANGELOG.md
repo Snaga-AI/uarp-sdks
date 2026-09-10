@@ -6,7 +6,53 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.5.23 — 2026-09-10
+## 0.5.24 — 2026-09-10
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`ba6417e34fcafb5a…`, build `5011669e` (uarp #453, #454), `info.version`
+0.4.0. 709 operations, 271 schemas. This is the first release since 0.5.21;
+0.5.22 and 0.5.23 were cut as commits and never tagged — everything listed
+under them ships here, including the generator fix below. From now on one
+SDK release follows one deployed batch.
+
+### Fixed — all five clients
+
+- The generator regression of 0.5.21 (see 0.5.23): fifteen 204 operations
+  were typed by the in-flight 202 body. Fixed here for every registry.
+
+### Changed — source-breaking, though nothing that works today breaks
+
+- Nineteen path parameters are named after their resource: `{id}` became
+  `{companyId}`, `{knowledgeBaseId}`, `{integrationId}`, `{proposalId}`,
+  `{ambassadorId}`, `{requestId}`, `{caseId}`, `{goalId}`. Method parameter
+  names follow; the URLs are unchanged.
+- 56 responses that decoded to a bare object now decode into models:
+  `RunOutput` (with `search_sources` — the URLs a real `web_search` returned,
+  at most 8, present only when non-empty — and `output_truncated`),
+  `UsageQuota`, `EvalDataset`, `EvalRun`, `AgentScorer`, `PublicAgentCard`,
+  `PublicSessionView`, `JsonRpcResponse` (MCP and A2A envelopes),
+  `SearchResult`, `ReplayResult`, `CreatedTask`, `MarketplaceSubscription`,
+  `DeadlockReport`, `RootAttestation`, `DataSubjectAccessReport`,
+  `DataSubjectErasureResult`, `SessionAnnotation`, `A2AAgentCard`,
+  `OpenAiChatCompletion`, `TenantUser` on `getUser`, `Tenant` on
+  `PUT`/`PATCH /tenants/me`, and the team/squad graph node and edge records.
+- `GET /agents/{agentId}/memory/{entryId}` returns a `MemoryEntry`. Until
+  build `5011669e` the server answered the agent's list on that path; no
+  client had called it.
+- Response codes corrected at the source, so a call that used to land in
+  "unexpected status" now decodes: `DELETE /agents/{agentId}/integrations/{integrationId}`
+  204; `DELETE /mcp/servers/{serverId}` 200 with `{ ok, cascade }`;
+  `POST /runs/{runId}/replay` 200; ambassador `bootstrap` and `requests` 201;
+  billing without Stripe 501 (was documented as 502).
+- Scope `analytics:read` replaces `read:analytics` in the catalogue (the
+  server accepts both); `billing:write` enters the catalogue; `api_keys:read`
+  / `api_keys:write` are declared on the key operations.
+- `Agent.metadata.ui` is typed (`AgentMetadataUi`: `avatar`, `drop_genome`,
+  `drop_genome_source`); a partial `PATCH` of `metadata.ui.avatar` keeps the
+  avatar fields it does not name.
+
+## 0.5.23 — 2026-09-10 (never tagged; shipped in 0.5.24)
 
 ### Fixed — all five clients
 
@@ -34,7 +80,7 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
   `ca08686` and `697d02d`; a parser test now pins all fifteen against the
   served document.
 
-## 0.5.22 — 2026-09-10
+## 0.5.22 — 2026-09-10 (never tagged; shipped in 0.5.24)
 
 The copy follows the served document byte for byte: `spec/openapi.json` is
 `curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256

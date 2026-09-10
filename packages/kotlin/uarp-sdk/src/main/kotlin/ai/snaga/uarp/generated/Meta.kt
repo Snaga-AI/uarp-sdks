@@ -6,7 +6,7 @@ package ai.snaga.uarp
 public const val SPEC_VERSION: String = "0.4.0"
 
 /** Version of this SDK. */
-public const val SDK_VERSION: String = "0.5.23"
+public const val SDK_VERSION: String = "0.5.24"
 
 /** Production base URL. */
 public const val DEFAULT_BASE_URL: String = "https://api.snaga.ai"
