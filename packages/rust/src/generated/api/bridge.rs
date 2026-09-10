@@ -207,7 +207,7 @@ impl BridgeApi {
     /// Push task events
     ///
     /// `POST /api/v1/bridge/tasks/{taskId}/events`
-    pub async fn push_bridge_task_events(&self, task_id: &str, body: &Vec<serde_json::Map<String, serde_json::Value>>) -> Result<models::PushBridgeTaskEventsResponse> {
+    pub async fn push_bridge_task_events(&self, task_id: &str, body: &serde_json::Value) -> Result<models::PushBridgeTaskEventsResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

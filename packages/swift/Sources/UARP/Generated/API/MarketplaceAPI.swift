@@ -139,7 +139,7 @@ public struct MarketplaceAPI: Sendable {
     /// `POST /api/v1/marketplace/listings/{listingId}/rate`
     ///
     /// Required scopes: `marketplace:write`.
-    public func rateListing(listingId: String, body: RateListingRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func rateListing(listingId: String, body: RateListingRequest, options: RequestOptions = .init()) async throws -> MarketplaceListingRating {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/marketplace/listings/\(encodePathSegment(listingId))/rate",

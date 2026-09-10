@@ -624,53 +624,6 @@ export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
 
 /**
- * How the tenant's agents split, and which of them cost the most over the window.
- */
-export interface AgentFleetSummary {
-  range: AgentFleetSummaryRange;
-  total: number;
-  by_execution_mode: AgentFleetSummaryByExecutionMode;
-  bridge: AgentFleetSummaryBridge;
-  runs_total: number;
-  cost_total_usd: number;
-  tokens_total: number;
-  /**
-   * At most ten.
-   */
-  top_by_runs: AgentAnalyticsRow[];
-  /**
-   * At most ten.
-   */
-  top_by_cost: AgentAnalyticsRow[];
-  /**
-   * Every agent, not a page.
-   */
-  agents: AgentAnalyticsRow[];
-}
-
-export interface AgentFleetSummaryBridge {
-  online: number;
-  stale: number;
-  offline: number;
-  /**
-   * Machines across all bridge agents, not agents.
-   */
-  machines_total: number;
-}
-
-export interface AgentFleetSummaryByExecutionMode {
-  /**
-   * Everything that is not a bridge agent.
-   */
-  cloud: number;
-  bridge: number;
-}
-
-export interface AgentFleetSummaryRange {
-  days: number;
-}
-
-/**
  * Agent-scoped integration (connection) instance
  */
 export interface AgentIntegration {
@@ -774,6 +727,27 @@ export interface AgentPublicConfig {
    */
   daily_message_limit?: number | null;
 }
+
+/**
+ * The stored schedule configuration (AgentScheduleConfig in @uarp/scheduler).
+ */
+export interface AgentScheduleConfig {
+  cron: string;
+  enabled: boolean;
+  /**
+   * IANA zone; `UTC` when not given.
+   */
+  timezone: string;
+  input: JsonObject;
+  max_concurrent_scheduled: number;
+  on_failure: AgentScheduleConfigOnFailure;
+  autonomous_mode?: boolean;
+  reflection_prompt?: string;
+}
+
+export type AgentScheduleConfigOnFailure = 'retry_next' | 'pause_schedule' | 'notify';
+
+export const AGENT_SCHEDULE_CONFIG_ON_FAILURE_VALUES = ['retry_next', 'pause_schedule', 'notify'] as const;
 
 export interface AgentScorer {
   scorer_id: string;
@@ -999,11 +973,6 @@ export interface AmendConstitutionRequest {
   action: string;
   rule?: JsonObject;
   rationale?: string;
-}
-
-export interface AmendConstitutionResponse {
-  rules?: ConstitutionRule[];
-  version?: number;
 }
 
 export interface AndroidTester {
@@ -1441,19 +1410,37 @@ export interface BridgeStatusResponse {
   connections: BridgeConnection[];
 }
 
+/**
+ * A progress frame from the Snaga bridge (BridgeTaskEvent in @uarp/types); `type` decides
+ * which optional fields are present.
+ */
 export interface BridgeTaskEvent {
   event_id?: string;
   type: BridgeTaskEventType;
   timestamp: string;
   approval_id?: string;
-  status?: BridgeTaskEventStatus;
+  status?: string;
+  options?: string[];
+  kind?: string;
   message?: string;
   tool_name?: string;
   tool_args_preview?: string;
   tool_call_id?: string;
   tool_result_preview?: string;
+  tool_duration_ms?: number;
   content?: string;
   metrics?: BridgeTaskEventMetrics;
+  input_tokens?: number;
+  output_tokens?: number;
+  error?: string;
+  output?: string;
+  capabilities?: string[];
+  working_directory?: string;
+  hostname?: string;
+  platform?: string;
+  reason?: string;
+  context?: string;
+  model?: string;
 }
 
 export interface BridgeTaskEventMetrics {
@@ -1462,15 +1449,7 @@ export interface BridgeTaskEventMetrics {
   commands_executed?: number;
   llm_calls?: number;
   execution_time_ms?: number;
-  /**
-   * Additional free-form properties (`JsonValue` on the wire).
-   */
-  [key: string]: unknown;
 }
-
-export type BridgeTaskEventStatus = 'working' | 'completed' | 'failed' | 'approval_denied';
-
-export const BRIDGE_TASK_EVENT_STATUS_VALUES = ['working', 'completed', 'failed', 'approval_denied'] as const;
 
 export type BridgeTaskEventType = 'status' | 'tool_call' | 'tool_result' | 'content' | 'thinking' | 'text' | 'metrics' | 'approval_request' | 'error' | 'completed' | 'capability_report' | 'escalation' | 'approval_denied';
 
@@ -1607,33 +1586,6 @@ export interface CheckGovernanceRequest {
   team_id?: string;
 }
 
-export interface CheckGovernanceResponse {
-  /**
-   * False when any matched rule carries a blocking penalty.
-   */
-  allowed: boolean;
-  checkResult: CheckGovernanceResponseCheckResult;
-  /**
-   * What the matched rules call for. Empty when nothing matched.
-   */
-  penalties: CheckGovernanceResponsePenalty[];
-}
-
-export interface CheckGovernanceResponseCheckResult {
-  allowed: boolean;
-  /**
-   * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
-   */
-  checked_rules: string[];
-  violations: ConstitutionViolation[];
-  checked_at: string;
-}
-
-export interface CheckGovernanceResponsePenalty {
-  ruleId: string;
-  penalty: ConstitutionRulePenalty;
-}
-
 export interface CheckSpawnPermissionRequest {
   parent_agent_id: string;
   child_permissions: PermissionSet;
@@ -1726,12 +1678,6 @@ export interface ConnectorConfigField {
   description?: string;
 }
 
-export interface Constitution {
-  rules: ConstitutionRule[];
-  version: number;
-  updated_at?: string;
-}
-
 export interface ConstitutionAmendment {
   amendment_id: string;
   rule_id: string;
@@ -1763,6 +1709,11 @@ export interface ConstitutionDocument {
    */
   founder_id: string;
   created_at: string;
+  /**
+   * Present and `true` only when no document is stored and these are the genesis defaults
+   * computed on read; absent on a stored document (measured 2026-09-10).
+   */
+  virtual?: boolean;
   updated_at: string;
 }
 
@@ -2833,19 +2784,31 @@ export interface EmptyWorkspaceTrashResponse {
 }
 
 export interface EnforcementResult {
+  /**
+   * False when any matched rule carries a blocking penalty.
+   */
   allowed: boolean;
-  violations: EnforcementResultViolation[];
+  checkResult: EnforcementResultCheckResult;
+  /**
+   * What the matched rules call for. Empty when nothing matched.
+   */
+  penalties: EnforcementResultPenalty[];
 }
 
-export interface EnforcementResultViolation {
-  rule_id: string;
-  severity: EnforcementResultViolationSeverity;
-  message: string;
+export interface EnforcementResultCheckResult {
+  allowed: boolean;
+  /**
+   * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+   */
+  checked_rules: string[];
+  violations: ConstitutionViolation[];
+  checked_at: string;
 }
 
-export type EnforcementResultViolationSeverity = 'info' | 'warning' | 'error' | 'blocker';
-
-export const ENFORCEMENT_RESULT_VIOLATION_SEVERITY_VALUES = ['info', 'warning', 'error', 'blocker'] as const;
+export interface EnforcementResultPenalty {
+  ruleId: string;
+  penalty: ConstitutionRulePenalty;
+}
 
 export interface EnrolMfaRequest {
   /**
@@ -3577,26 +3540,6 @@ export interface GetCompanyObjectivesResponse {
   objectives?: JsonObject[];
 }
 
-export interface GetConstitutionResponse {
-  tenant_id: string;
-  /**
-   * Monotonic. `0` on the virtual genesis view — nothing is stored yet.
-   */
-  version: number;
-  rules: ConstitutionRule[];
-  amendments: ConstitutionAmendment[];
-  founder_id: string;
-  created_at: string;
-  updated_at: string;
-  /**
-   * Present and `true` ONLY when no document is stored: these are the genesis defaults, computed
-   * on read and not persisted (routes/governance.ts:174-196). Absent on every stored
-   * constitution — do not read its absence as `false` being meaningful, and do not re-seed a
-   * document that does not carry it.
-   */
-  virtual?: boolean;
-}
-
 export interface GetDataExplorerValueResponse {
   namespace?: string;
   key?: string;
@@ -4059,8 +4002,12 @@ export interface GetUsageTimeseriesResponse {
 }
 
 export interface GetUsageTimeseriesResponseDataItem {
-  date?: string;
-  value?: number;
+  /**
+   * The bucket's label — `M/D` in UTC without padding (`8/28`), not a date or an instant
+   * (usage-tracker.ts getTimeseries; measured 2026-09-10). Do not parse it as a Date.
+   */
+  label: string;
+  value: number;
 }
 
 export interface Goal {
@@ -4753,7 +4700,7 @@ export interface ListAmbassadorRequestsResponse {
 }
 
 export interface ListAmbassadorVetoesResponse {
-  vetoes?: Veto[];
+  vetoes?: VetoRecord[];
 }
 
 export interface ListAndroidTestersResponse {
@@ -5430,23 +5377,6 @@ export interface ListWorkspacesResponse {
 
 export interface ListWorkspaceTrashResponse {
   items?: JsonObject[];
-}
-
-/**
- * Tenant-scoped LLM provider credential (masked secret).
- */
-export interface LLMCredential {
-  id: string;
-  tenant_id: string;
-  provider: string;
-  label?: string;
-  /**
-   * Last 4 chars only; full key never returned.
-   */
-  key_preview: string;
-  endpoint_url?: string;
-  created_at?: string;
-  updated_at?: string;
 }
 
 export interface LLMModel {
@@ -6546,6 +6476,35 @@ export interface PermissionSet {
   updated_at?: string;
 }
 
+/**
+ * Body of PUT /governance/permissions/{agentId}. Every field optional: a field the body omits
+ * keeps its stored value (mergePermissionSet), and only a first write falls back to the
+ * defaults. `agent_id`, `tenant_id`, `created_at`, `updated_at` are set by the server and
+ * ignored in the body.
+ */
+export interface PermissionSetUpdate {
+  /**
+   * Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+   * not merge).
+   */
+  allowed_tools?: string[];
+  /**
+   * Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+   * not merge).
+   */
+  allowed_roles?: string[];
+  /**
+   * Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+   * not merge).
+   */
+  resource_permissions?: ResourcePermission[];
+  max_budget_per_run_usd?: number;
+  max_spawn_depth?: number;
+  can_spawn?: boolean;
+  can_self_modify?: boolean;
+  parent_agent_id?: string | null;
+}
+
 export interface PlanLLMLimits {
   tier_access?: PlanLLMLimitsTierAccessItem[];
   tokens_per_month?: number;
@@ -7485,6 +7444,11 @@ export interface RejectRunRequest {
   reason?: string;
 }
 
+export interface RemoveScheduleResponse {
+  removed: boolean;
+  agent_id: string;
+}
+
 export interface ReplaceConstitutionRequest {
   rules: ConstitutionRule[];
   /**
@@ -7492,11 +7456,6 @@ export interface ReplaceConstitutionRequest {
    * amendment record; defaults to a generic string when omitted.
    */
   rationale?: string;
-}
-
-export interface ReplaceConstitutionResponse {
-  rules?: ConstitutionRule[];
-  version?: number;
 }
 
 export interface ResendInviteResponse {
@@ -7969,19 +7928,24 @@ export interface RunWorkspaceCommandResponse {
 }
 
 /**
- * Cron-driven recurring run config attached to an agent (PUT /agents/{id}/schedule).
+ * What `GET /agents/{agentId}/schedule` returns: `agent_id`, the config fields flattened, and
+ * the runtime state. Keys as served 2026-09-10; `last_fired_at`, `autonomous_mode` and
+ * `reflection_prompt` appear only when set.
  */
 export interface Schedule {
-  agent_id?: string;
+  agent_id: string;
   cron: string;
-  enabled?: boolean;
-  input?: JsonObject;
-  timezone?: string;
-  max_concurrent_scheduled?: number;
-  on_failure?: ScheduleOnFailure;
+  enabled: boolean;
+  timezone: string;
+  input: JsonObject;
+  max_concurrent_scheduled: number;
+  on_failure: AgentScheduleConfigOnFailure;
   autonomous_mode?: boolean;
   reflection_prompt?: string;
-  next_run_at?: string | null;
+  status: ScheduleEntryStatus;
+  next_fire_at?: string;
+  last_fired_at?: string;
+  consecutive_failures: number;
 }
 
 export interface ScheduleCanvasWorkflowRequest {
@@ -8020,9 +7984,23 @@ export type ScheduleCanvasWorkflowResponseStatus = 'active';
 
 export const SCHEDULE_CANVAS_WORKFLOW_RESPONSE_STATUS_VALUES = ['active'] as const;
 
-export type ScheduleOnFailure = 'continue' | 'pause' | 'alert';
+/**
+ * What `PUT /agents/{agentId}/schedule` returns: the stored entry with its `config` nested
+ * (ScheduleEntry in @uarp/scheduler). `GET` returns the flattened `Schedule` instead.
+ */
+export interface ScheduleEntry {
+  tenant_id: string;
+  agent_id: string;
+  config: AgentScheduleConfig;
+  last_fired_at?: string;
+  next_fire_at?: string;
+  consecutive_failures: number;
+  status: ScheduleEntryStatus;
+}
 
-export const SCHEDULE_ON_FAILURE_VALUES = ['continue', 'pause', 'alert'] as const;
+export type ScheduleEntryStatus = 'active' | 'paused' | 'error';
+
+export const SCHEDULE_ENTRY_STATUS_VALUES = ['active', 'paused', 'error'] as const;
 
 export interface ScheduleSummary {
   agent_id: string;
@@ -8452,7 +8430,7 @@ export interface SetScheduleRequest {
   /**
    * @default "retry_next"
    */
-  on_failure?: SetScheduleRequestOnFailure;
+  on_failure?: AgentScheduleConfigOnFailure;
   /**
    * @default 1
    */
@@ -8468,10 +8446,6 @@ export interface SetScheduleRequest {
    */
   reflection_prompt?: string;
 }
-
-export type SetScheduleRequestOnFailure = 'retry_next' | 'pause_schedule' | 'notify';
-
-export const SET_SCHEDULE_REQUEST_ON_FAILURE_VALUES = ['retry_next', 'pause_schedule', 'notify'] as const;
 
 export interface SetSpawnPolicyResponse {
   ok?: boolean;
@@ -8552,6 +8526,25 @@ export interface SpawnPolicy {
    */
   child_budget_ratio: number;
   max_depth: number;
+  allowed_roles: string[];
+  require_approval_above_depth: number;
+  max_children_per_agent: number;
+}
+
+/**
+ * Body of PUT /governance/permissions/spawn-policy. The handler requires the whole record
+ * (requireWholeRecord): all five fields, every time; `tenant_id` is the caller's and is not
+ * accepted in the body.
+ */
+export interface SpawnPolicyUpdate {
+  /**
+   * Child agent gets at most this fraction of parent's budget.
+   */
+  child_budget_ratio: number;
+  max_depth: number;
+  /**
+   * Whole-record write: the array is stored as sent, REPLACING the stored list.
+   */
   allowed_roles: string[];
   require_approval_above_depth: number;
   max_children_per_agent: number;
@@ -8810,24 +8803,6 @@ export interface SyncProviderModelsResponse {
    * Present when the run was scoped to one provider, as it is here.
    */
   provider?: string;
-}
-
-export interface TallyVotesResponse {
-  status?: string;
-  outcome?: string;
-  total_votes?: number;
-}
-
-/**
- * A teacher model to distil from. Teachers must share the student's vocabulary.
- */
-export interface TeacherRef {
-  provider_id: string;
-  model_ref: string;
-  /**
-   * Relative weight in the distillation mix.
-   */
-  weight?: number;
 }
 
 /**
@@ -10192,15 +10167,6 @@ export interface VerifyTenantDomainResponse {
   verified?: boolean;
 }
 
-export interface Veto {
-  id: string;
-  issued_by: string;
-  target_type: string;
-  target_id: string;
-  reason?: string;
-  issued_at?: string;
-}
-
 export interface VetoProposalRequest {
   founder_id?: string;
 }
@@ -10209,11 +10175,12 @@ export interface VetoProposalResponse {
   ok?: boolean;
 }
 
+/**
+ * A veto as issued and listed (VetoRecord in @uarp/governance). Shape from the store's record;
+ * no tenant in reach had a veto to measure on 2026-09-10.
+ */
 export interface VetoRecord {
   veto_id: string;
-  /**
-   * `ambassador_id` of the human who issued it.
-   */
   issued_by: string;
   target_type: VetoRecordTargetType;
   target_id: string;

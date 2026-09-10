@@ -1498,56 +1498,6 @@ package UARP.Models is
    package Agent_Bookmark_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Agent_Bookmark);
 
-   --  `AgentFleetSummaryRange` model.
-   type Agent_Fleet_Summary_Range is record
-      Days : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Agent_Fleet_Summary_Range) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Fleet_Summary_Range;
-
-   --  `AgentFleetSummaryByExecutionMode` model.
-   type Agent_Fleet_Summary_By_Execution_Mode is record
-      --  Everything that is not a bridge agent.
-      Cloud : UARP.Types.Integer_Value := 0;
-      Bridge : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Agent_Fleet_Summary_By_Execution_Mode) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Fleet_Summary_By_Execution_Mode;
-
-   --  `AgentFleetSummaryBridge` model.
-   type Agent_Fleet_Summary_Bridge is record
-      Online : UARP.Types.Integer_Value := 0;
-      Stale : UARP.Types.Integer_Value := 0;
-      Offline : UARP.Types.Integer_Value := 0;
-      --  Machines across all bridge agents, not agents.
-      Machines_Total : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Agent_Fleet_Summary_Bridge) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Fleet_Summary_Bridge;
-
-   --  How the tenant's agents split, and which of them cost the most over the window.
-   type Agent_Fleet_Summary is record
-      Range_K : UARP.Models.Agent_Fleet_Summary_Range;
-      Total : UARP.Types.Integer_Value := 0;
-      By_Execution_Mode : UARP.Models.Agent_Fleet_Summary_By_Execution_Mode;
-      Bridge : UARP.Models.Agent_Fleet_Summary_Bridge;
-      Runs_Total : UARP.Types.Integer_Value := 0;
-      Cost_Total_Usd : UARP.Types.Float_Value := 0.0;
-      Tokens_Total : UARP.Types.Integer_Value := 0;
-      --  At most ten.
-      Top_By_Runs : UARP.Models.Agent_Analytics_Row_Vectors.Vector;
-      --  At most ten.
-      Top_By_Cost : UARP.Models.Agent_Analytics_Row_Vectors.Vector;
-      --  Every agent, not a page.
-      Agents : UARP.Models.Agent_Analytics_Row_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Agent_Fleet_Summary) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Fleet_Summary;
-
    --  `active` is what the server sends for a working integration; the documented `connected` was
    --  never emitted.
    --  A value the API introduces later decodes as Integration_Status_Unrecognized
@@ -1669,6 +1619,44 @@ package UARP.Models is
 
    function To_JSON (Model : Agent_Model_Config_Input) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Model_Config_Input;
+
+   --  Values of `AgentScheduleConfigOnFailure`.
+   --  A value the API introduces later decodes as Agent_Schedule_Config_On_Failure_Unrecognized
+   --  with the original text kept in Raw.
+   type Agent_Schedule_Config_On_Failure_Kind is
+     (Agent_Schedule_Config_On_Failure_Retry_Next,
+   Agent_Schedule_Config_On_Failure_Pause_Schedule,
+   Agent_Schedule_Config_On_Failure_Notify,
+   Agent_Schedule_Config_On_Failure_Unrecognized);
+
+   type Agent_Schedule_Config_On_Failure is record
+      Kind : Agent_Schedule_Config_On_Failure_Kind := Agent_Schedule_Config_On_Failure_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Agent_Schedule_Config_On_Failure (Value : String) return Agent_Schedule_Config_On_Failure;
+   function To_Agent_Schedule_Config_On_Failure (Kind : Agent_Schedule_Config_On_Failure_Kind) return Agent_Schedule_Config_On_Failure;
+   function Image (Model : Agent_Schedule_Config_On_Failure) return String;
+   function To_JSON (Model : Agent_Schedule_Config_On_Failure) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Schedule_Config_On_Failure;
+
+   --  The stored schedule configuration (AgentScheduleConfig in @uarp/scheduler).
+   type Agent_Schedule_Config is record
+      Cron : UARP.Types.Text := UARP.Types.Empty_Text;
+      Enabled : Standard.Boolean := False;
+      --  IANA zone; `UTC` when not given.
+      Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
+      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Max_Concurrent_Scheduled : UARP.Types.Integer_Value := 0;
+      On_Failure : UARP.Models.Agent_Schedule_Config_On_Failure;
+      Has_Autonomous_Mode : Boolean := False;
+      Autonomous_Mode : Standard.Boolean := False;
+      Has_Reflection_Prompt : Boolean := False;
+      Reflection_Prompt : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Agent_Schedule_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Schedule_Config;
 
    --  Values of `AgentScorerConfigType`.
    --  A value the API introduces later decodes as Agent_Scorer_Config_Type_Unrecognized
@@ -2028,114 +2016,6 @@ package UARP.Models is
 
    function To_JSON (Model : Amend_Constitution_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Amend_Constitution_Request;
-
-   --  Values of `ConstitutionRuleRuleType`.
-   --  A value the API introduces later decodes as Constitution_Rule_Rule_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Constitution_Rule_Rule_Type_Kind is
-     (Constitution_Rule_Rule_Type_Prohibition,
-   Constitution_Rule_Rule_Type_Requirement,
-   Constitution_Rule_Rule_Type_Permission,
-   Constitution_Rule_Rule_Type_Unrecognized);
-
-   type Constitution_Rule_Rule_Type is record
-      Kind : Constitution_Rule_Rule_Type_Kind := Constitution_Rule_Rule_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Constitution_Rule_Rule_Type (Value : String) return Constitution_Rule_Rule_Type;
-   function To_Constitution_Rule_Rule_Type (Kind : Constitution_Rule_Rule_Type_Kind) return Constitution_Rule_Rule_Type;
-   function Image (Model : Constitution_Rule_Rule_Type) return String;
-   function To_JSON (Model : Constitution_Rule_Rule_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Rule_Type;
-
-   --  Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
-   --  the server has ever emitted.
-   --  A value the API introduces later decodes as Constitution_Rule_Scope_Unrecognized
-   --  with the original text kept in Raw.
-   type Constitution_Rule_Scope_Kind is
-     (Constitution_Rule_Scope_All_Agents,
-   Constitution_Rule_Scope_Team,
-   Constitution_Rule_Scope_Agent,
-   Constitution_Rule_Scope_Role,
-   Constitution_Rule_Scope_Unrecognized);
-
-   type Constitution_Rule_Scope is record
-      Kind : Constitution_Rule_Scope_Kind := Constitution_Rule_Scope_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Constitution_Rule_Scope (Value : String) return Constitution_Rule_Scope;
-   function To_Constitution_Rule_Scope (Kind : Constitution_Rule_Scope_Kind) return Constitution_Rule_Scope;
-   function Image (Model : Constitution_Rule_Scope) return String;
-   function To_JSON (Model : Constitution_Rule_Scope) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Scope;
-
-   --  Values of `ConstitutionRulePenalty`.
-   --  A value the API introduces later decodes as Constitution_Rule_Penalty_Unrecognized
-   --  with the original text kept in Raw.
-   type Constitution_Rule_Penalty_Kind is
-     (Constitution_Rule_Penalty_Block,
-   Constitution_Rule_Penalty_Warn,
-   Constitution_Rule_Penalty_Log,
-   Constitution_Rule_Penalty_Terminate_Agent,
-   Constitution_Rule_Penalty_Revoke_Permissions,
-   Constitution_Rule_Penalty_Unrecognized);
-
-   type Constitution_Rule_Penalty is record
-      Kind : Constitution_Rule_Penalty_Kind := Constitution_Rule_Penalty_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Constitution_Rule_Penalty (Value : String) return Constitution_Rule_Penalty;
-   function To_Constitution_Rule_Penalty (Kind : Constitution_Rule_Penalty_Kind) return Constitution_Rule_Penalty;
-   function Image (Model : Constitution_Rule_Penalty) return String;
-   function To_JSON (Model : Constitution_Rule_Penalty) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Penalty;
-
-   --  `ConstitutionRule` model.
-   type Constitution_Rule is record
-      --  Stable slug, e.g. `no-privilege-escalation`.
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Rule_Type : UARP.Models.Constitution_Rule_Rule_Type;
-      --  Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
-      --  the server has ever emitted.
-      Scope : UARP.Models.Constitution_Rule_Scope;
-      --  Agent ids, team ids or role names, depending on `scope`. Absent for `all_agents`.
-      Has_Scope_Targets : Boolean := False;
-      Scope_Targets : UARP.Types.Text_Vectors.Vector;
-      --  The action the rule governs, e.g. `modify_constitution`.
-      Action : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  For `requirement` rules: the action that must be performed.
-      Has_Obligated_Action : Boolean := False;
-      Obligated_Action : UARP.Types.Text := UARP.Types.Empty_Text;
-      Penalty : UARP.Models.Constitution_Rule_Penalty;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Genesis rules cannot be amended or removed.
-      Has_Immutable : Boolean := False;
-      Immutable : Standard.Boolean := False;
-      --  Conflict resolution - higher wins. Defaults to 0.
-      Has_Priority : Boolean := False;
-      Priority : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Constitution_Rule) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule;
-
-   package Constitution_Rule_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Constitution_Rule);
-
-   --  `AmendConstitutionResponse` model.
-   type Amend_Constitution_Response is record
-      Has_Rules : Boolean := False;
-      Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
-      Has_Version : Boolean := False;
-      Version : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Amend_Constitution_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Amend_Constitution_Response;
 
    --  `AndroidTester` model.
    type Android_Tester is record
@@ -2886,27 +2766,6 @@ package UARP.Models is
    function To_JSON (Model : Bridge_Task_Event_Type) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Task_Event_Type;
 
-   --  Values of `BridgeTaskEventStatus`.
-   --  A value the API introduces later decodes as Bridge_Task_Event_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Bridge_Task_Event_Status_Kind is
-     (Bridge_Task_Event_Status_Working,
-   Bridge_Task_Event_Status_Completed,
-   Bridge_Task_Event_Status_Failed,
-   Bridge_Task_Event_Status_Approval_Denied,
-   Bridge_Task_Event_Status_Unrecognized);
-
-   type Bridge_Task_Event_Status is record
-      Kind : Bridge_Task_Event_Status_Kind := Bridge_Task_Event_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Bridge_Task_Event_Status (Value : String) return Bridge_Task_Event_Status;
-   function To_Bridge_Task_Event_Status (Kind : Bridge_Task_Event_Status_Kind) return Bridge_Task_Event_Status;
-   function Image (Model : Bridge_Task_Event_Status) return String;
-   function To_JSON (Model : Bridge_Task_Event_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Task_Event_Status;
-
    --  `BridgeTaskEventMetrics` model.
    type Bridge_Task_Event_Metrics is record
       Has_Tool_Calls_Count : Boolean := False;
@@ -2919,14 +2778,13 @@ package UARP.Models is
       LLM_Calls : UARP.Types.Integer_Value := 0;
       Has_Execution_Time_Ms : Boolean := False;
       Execution_Time_Ms : UARP.Types.Integer_Value := 0;
-      --  Properties the server returned that this SDK does not model.
-      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
    function To_JSON (Model : Bridge_Task_Event_Metrics) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Task_Event_Metrics;
 
-   --  `BridgeTaskEvent` model.
+   --  A progress frame from the Snaga bridge (BridgeTaskEvent in @uarp/types); `type` decides
+   --  which optional fields are present.
    type Bridge_Task_Event is record
       Has_Event_Id : Boolean := False;
       Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -2935,7 +2793,11 @@ package UARP.Models is
       Has_Approval_Id : Boolean := False;
       Approval_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
-      Status : UARP.Models.Bridge_Task_Event_Status;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Options : Boolean := False;
+      Options : UARP.Types.Text_Vectors.Vector;
+      Has_Kind : Boolean := False;
+      Kind : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Message : Boolean := False;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tool_Name : Boolean := False;
@@ -2946,14 +2808,41 @@ package UARP.Models is
       Tool_Call_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tool_Result_Preview : Boolean := False;
       Tool_Result_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tool_Duration_Ms : Boolean := False;
+      Tool_Duration_Ms : UARP.Types.Integer_Value := 0;
       Has_Content : Boolean := False;
       Content : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Metrics : Boolean := False;
       Metrics : UARP.Models.Bridge_Task_Event_Metrics;
+      Has_Input_Tokens : Boolean := False;
+      Input_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Output_Tokens : Boolean := False;
+      Output_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Output : Boolean := False;
+      Output : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Capabilities : Boolean := False;
+      Capabilities : UARP.Types.Text_Vectors.Vector;
+      Has_Working_Directory : Boolean := False;
+      Working_Directory : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Hostname : Boolean := False;
+      Hostname : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Platform : Boolean := False;
+      Platform : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Context : Boolean := False;
+      Context : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Model : Boolean := False;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Bridge_Task_Event) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Bridge_Task_Event;
+
+   package Bridge_Task_Event_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Bridge_Task_Event);
 
    --  Values of `BulkDeleteNotificationsScope`.
    --  A value the API introduces later decodes as Bulk_Delete_Notifications_Scope_Unrecognized
@@ -3183,60 +3072,6 @@ package UARP.Models is
    function To_JSON (Model : Check_Governance_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Check_Governance_Request;
 
-   --  `ConstitutionViolation` model.
-   type Constitution_Violation is record
-      Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Rule_Type : UARP.Models.Constitution_Rule_Rule_Type;
-      Action : UARP.Types.Text := UARP.Types.Empty_Text;
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Penalty : UARP.Models.Constitution_Rule_Penalty;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Constitution_Violation) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Violation;
-
-   package Constitution_Violation_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Constitution_Violation);
-
-   --  `CheckGovernanceResponseCheckResult` model.
-   type Check_Governance_Response_Check_Result is record
-      Allowed : Standard.Boolean := False;
-      --  Rule ids actually evaluated. Empty means no rule applied - never that nothing was checked.
-      Checked_Rules : UARP.Types.Text_Vectors.Vector;
-      Violations : UARP.Models.Constitution_Violation_Vectors.Vector;
-      Checked_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Check_Governance_Response_Check_Result) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Check_Governance_Response_Check_Result;
-
-   --  `CheckGovernanceResponsePenalty` model.
-   type Check_Governance_Response_Penalty is record
-      Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Penalty : UARP.Models.Constitution_Rule_Penalty;
-   end record;
-
-   function To_JSON (Model : Check_Governance_Response_Penalty) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Check_Governance_Response_Penalty;
-
-   package Check_Governance_Response_Penalty_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Check_Governance_Response_Penalty);
-
-   --  `CheckGovernanceResponse` model.
-   type Check_Governance_Response is record
-      --  False when any matched rule carries a blocking penalty.
-      Allowed : Standard.Boolean := False;
-      Check_Result : UARP.Models.Check_Governance_Response_Check_Result;
-      --  What the matched rules call for. Empty when nothing matched.
-      Penalties : UARP.Models.Check_Governance_Response_Penalty_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Check_Governance_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Check_Governance_Response;
-
    --  Values of `ResourcePermissionAction`.
    --  A value the API introduces later decodes as Resource_Permission_Action_Unrecognized
    --  with the original text kept in Raw.
@@ -3432,17 +3267,6 @@ package UARP.Models is
    function To_JSON (Model : Connector_Config_Field) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Connector_Config_Field;
 
-   --  `Constitution` model.
-   type Constitution is record
-      Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
-      Version : UARP.Types.Integer_Value := 0;
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Constitution) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution;
-
    --  Values of `ConstitutionAmendmentAction`.
    --  A value the API introduces later decodes as Constitution_Amendment_Action_Unrecognized
    --  with the original text kept in Raw.
@@ -3462,6 +3286,103 @@ package UARP.Models is
    function Image (Model : Constitution_Amendment_Action) return String;
    function To_JSON (Model : Constitution_Amendment_Action) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Amendment_Action;
+
+   --  Values of `ConstitutionRuleRuleType`.
+   --  A value the API introduces later decodes as Constitution_Rule_Rule_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Constitution_Rule_Rule_Type_Kind is
+     (Constitution_Rule_Rule_Type_Prohibition,
+   Constitution_Rule_Rule_Type_Requirement,
+   Constitution_Rule_Rule_Type_Permission,
+   Constitution_Rule_Rule_Type_Unrecognized);
+
+   type Constitution_Rule_Rule_Type is record
+      Kind : Constitution_Rule_Rule_Type_Kind := Constitution_Rule_Rule_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Constitution_Rule_Rule_Type (Value : String) return Constitution_Rule_Rule_Type;
+   function To_Constitution_Rule_Rule_Type (Kind : Constitution_Rule_Rule_Type_Kind) return Constitution_Rule_Rule_Type;
+   function Image (Model : Constitution_Rule_Rule_Type) return String;
+   function To_JSON (Model : Constitution_Rule_Rule_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Rule_Type;
+
+   --  Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+   --  the server has ever emitted.
+   --  A value the API introduces later decodes as Constitution_Rule_Scope_Unrecognized
+   --  with the original text kept in Raw.
+   type Constitution_Rule_Scope_Kind is
+     (Constitution_Rule_Scope_All_Agents,
+   Constitution_Rule_Scope_Team,
+   Constitution_Rule_Scope_Agent,
+   Constitution_Rule_Scope_Role,
+   Constitution_Rule_Scope_Unrecognized);
+
+   type Constitution_Rule_Scope is record
+      Kind : Constitution_Rule_Scope_Kind := Constitution_Rule_Scope_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Constitution_Rule_Scope (Value : String) return Constitution_Rule_Scope;
+   function To_Constitution_Rule_Scope (Kind : Constitution_Rule_Scope_Kind) return Constitution_Rule_Scope;
+   function Image (Model : Constitution_Rule_Scope) return String;
+   function To_JSON (Model : Constitution_Rule_Scope) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Scope;
+
+   --  Values of `ConstitutionRulePenalty`.
+   --  A value the API introduces later decodes as Constitution_Rule_Penalty_Unrecognized
+   --  with the original text kept in Raw.
+   type Constitution_Rule_Penalty_Kind is
+     (Constitution_Rule_Penalty_Block,
+   Constitution_Rule_Penalty_Warn,
+   Constitution_Rule_Penalty_Log,
+   Constitution_Rule_Penalty_Terminate_Agent,
+   Constitution_Rule_Penalty_Revoke_Permissions,
+   Constitution_Rule_Penalty_Unrecognized);
+
+   type Constitution_Rule_Penalty is record
+      Kind : Constitution_Rule_Penalty_Kind := Constitution_Rule_Penalty_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Constitution_Rule_Penalty (Value : String) return Constitution_Rule_Penalty;
+   function To_Constitution_Rule_Penalty (Kind : Constitution_Rule_Penalty_Kind) return Constitution_Rule_Penalty;
+   function Image (Model : Constitution_Rule_Penalty) return String;
+   function To_JSON (Model : Constitution_Rule_Penalty) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule_Penalty;
+
+   --  `ConstitutionRule` model.
+   type Constitution_Rule is record
+      --  Stable slug, e.g. `no-privilege-escalation`.
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rule_Type : UARP.Models.Constitution_Rule_Rule_Type;
+      --  Who the rule binds. The document previously listed `global`/`tenant`/`agent`, none of which
+      --  the server has ever emitted.
+      Scope : UARP.Models.Constitution_Rule_Scope;
+      --  Agent ids, team ids or role names, depending on `scope`. Absent for `all_agents`.
+      Has_Scope_Targets : Boolean := False;
+      Scope_Targets : UARP.Types.Text_Vectors.Vector;
+      --  The action the rule governs, e.g. `modify_constitution`.
+      Action : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  For `requirement` rules: the action that must be performed.
+      Has_Obligated_Action : Boolean := False;
+      Obligated_Action : UARP.Types.Text := UARP.Types.Empty_Text;
+      Penalty : UARP.Models.Constitution_Rule_Penalty;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Genesis rules cannot be amended or removed.
+      Has_Immutable : Boolean := False;
+      Immutable : Standard.Boolean := False;
+      --  Conflict resolution - higher wins. Defaults to 0.
+      Has_Priority : Boolean := False;
+      Priority : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Constitution_Rule) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Rule;
+
+   package Constitution_Rule_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Constitution_Rule);
 
    --  `ConstitutionAmendment` model.
    type Constitution_Amendment is record
@@ -3493,11 +3414,33 @@ package UARP.Models is
       --  Who created the genesis document.
       Founder_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Present and `true` only when no document is stored and these are the genesis defaults
+      --  computed on read; absent on a stored document (measured 2026-09-10).
+      Has_Virtual : Boolean := False;
+      Virtual : Standard.Boolean := False;
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Constitution_Document) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Document;
+
+   --  `ConstitutionViolation` model.
+   type Constitution_Violation is record
+      Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rule_Type : UARP.Models.Constitution_Rule_Rule_Type;
+      Action : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Penalty : UARP.Models.Constitution_Rule_Penalty;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Constitution_Violation) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Constitution_Violation;
+
+   package Constitution_Violation_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Constitution_Violation);
 
    --  Values of `ContentReportInputTargetType`.
    --  A value the API introduces later decodes as Content_Report_Input_Target_Type_Unrecognized
@@ -5660,44 +5603,37 @@ package UARP.Models is
    function To_JSON (Model : Empty_Workspace_Trash_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Empty_Workspace_Trash_Response;
 
-   --  Values of `EnforcementResultViolationSeverity`.
-   --  A value the API introduces later decodes as Enforcement_Result_Violation_Severity_Unrecognized
-   --  with the original text kept in Raw.
-   type Enforcement_Result_Violation_Severity_Kind is
-     (Enforcement_Result_Violation_Severity_Info,
-   Enforcement_Result_Violation_Severity_Warning,
-   Enforcement_Result_Violation_Severity_Error,
-   Enforcement_Result_Violation_Severity_Blocker,
-   Enforcement_Result_Violation_Severity_Unrecognized);
-
-   type Enforcement_Result_Violation_Severity is record
-      Kind : Enforcement_Result_Violation_Severity_Kind := Enforcement_Result_Violation_Severity_Unrecognized;
-      Raw  : Text := Empty_Text;
+   --  `EnforcementResultCheckResult` model.
+   type Enforcement_Result_Check_Result is record
+      Allowed : Standard.Boolean := False;
+      --  Rule ids actually evaluated. Empty means no rule applied - never that nothing was checked.
+      Checked_Rules : UARP.Types.Text_Vectors.Vector;
+      Violations : UARP.Models.Constitution_Violation_Vectors.Vector;
+      Checked_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
-   function To_Enforcement_Result_Violation_Severity (Value : String) return Enforcement_Result_Violation_Severity;
-   function To_Enforcement_Result_Violation_Severity (Kind : Enforcement_Result_Violation_Severity_Kind) return Enforcement_Result_Violation_Severity;
-   function Image (Model : Enforcement_Result_Violation_Severity) return String;
-   function To_JSON (Model : Enforcement_Result_Violation_Severity) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result_Violation_Severity;
+   function To_JSON (Model : Enforcement_Result_Check_Result) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result_Check_Result;
 
-   --  `EnforcementResultViolation` model.
-   type Enforcement_Result_Violation is record
+   --  `EnforcementResultPenalty` model.
+   type Enforcement_Result_Penalty is record
       Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Severity : UARP.Models.Enforcement_Result_Violation_Severity;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Penalty : UARP.Models.Constitution_Rule_Penalty;
    end record;
 
-   function To_JSON (Model : Enforcement_Result_Violation) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result_Violation;
+   function To_JSON (Model : Enforcement_Result_Penalty) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result_Penalty;
 
-   package Enforcement_Result_Violation_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Enforcement_Result_Violation);
+   package Enforcement_Result_Penalty_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Enforcement_Result_Penalty);
 
    --  `EnforcementResult` model.
    type Enforcement_Result is record
+      --  False when any matched rule carries a blocking penalty.
       Allowed : Standard.Boolean := False;
-      Violations : UARP.Models.Enforcement_Result_Violation_Vectors.Vector;
+      Check_Result : UARP.Models.Enforcement_Result_Check_Result;
+      --  What the matched rules call for. Empty when nothing matched.
+      Penalties : UARP.Models.Enforcement_Result_Penalty_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Enforcement_Result) return UARP.JSON_Support.JSON_Value;
@@ -7210,27 +7146,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Company_Objectives_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Company_Objectives_Response;
 
-   --  `GetConstitutionResponse` model.
-   type Get_Constitution_Response is record
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Monotonic. `0` on the virtual genesis view - nothing is stored yet.
-      Version : UARP.Types.Integer_Value := 0;
-      Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
-      Amendments : UARP.Models.Constitution_Amendment_Vectors.Vector;
-      Founder_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Present and `true` ONLY when no document is stored: these are the genesis defaults, computed
-      --  on read and not persisted (routes/governance.ts:174-196). Absent on every stored
-      --  constitution - do not read its absence as `false` being meaningful, and do not re-seed a
-      --  document that does not carry it.
-      Has_Virtual : Boolean := False;
-      Virtual : Standard.Boolean := False;
-   end record;
-
-   function To_JSON (Model : Get_Constitution_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Constitution_Response;
-
    --  `GetDataExplorerValueResponse` model.
    type Get_Data_Explorer_Value_Response is record
       Has_Namespace : Boolean := False;
@@ -8411,9 +8326,9 @@ package UARP.Models is
 
    --  `GetUsageTimeseriesResponseDataItem` model.
    type Get_Usage_Timeseries_Response_Data_Item is record
-      Has_Date : Boolean := False;
-      Date : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Value : Boolean := False;
+      --  The bucket's label - `M/D` in UTC without padding (`8/28`), not a date or an instant
+      --  (usage-tracker.ts getTimeseries; measured 2026-09-10). Do not parse it as a Date.
+      Label : UARP.Types.Text := UARP.Types.Empty_Text;
       Value : UARP.Types.Float_Value := 0.0;
    end record;
 
@@ -9477,28 +9392,48 @@ package UARP.Models is
    function To_JSON (Model : List_Ambassador_Requests_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Ambassador_Requests_Response;
 
-   --  `Veto` model.
-   type Veto is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   --  Values of `VetoRecordTargetType`.
+   --  A value the API introduces later decodes as Veto_Record_Target_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Veto_Record_Target_Type_Kind is
+     (Veto_Record_Target_Type_Proposal,
+   Veto_Record_Target_Type_Action,
+   Veto_Record_Target_Type_Agent,
+   Veto_Record_Target_Type_Case,
+   Veto_Record_Target_Type_Unrecognized);
+
+   type Veto_Record_Target_Type is record
+      Kind : Veto_Record_Target_Type_Kind := Veto_Record_Target_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Veto_Record_Target_Type (Value : String) return Veto_Record_Target_Type;
+   function To_Veto_Record_Target_Type (Kind : Veto_Record_Target_Type_Kind) return Veto_Record_Target_Type;
+   function Image (Model : Veto_Record_Target_Type) return String;
+   function To_JSON (Model : Veto_Record_Target_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record_Target_Type;
+
+   --  A veto as issued and listed (VetoRecord in @uarp/governance). Shape from the store's record;
+   --  no tenant in reach had a veto to measure on 2026-09-10.
+   type Veto_Record is record
+      Veto_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Issued_By : UARP.Types.Text := UARP.Types.Empty_Text;
-      Target_Type : UARP.Types.Text := UARP.Types.Empty_Text;
+      Target_Type : UARP.Models.Veto_Record_Target_Type;
       Target_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Reason : Boolean := False;
       Reason : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Issued_At : Boolean := False;
       Issued_At : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
-   function To_JSON (Model : Veto) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto;
+   function To_JSON (Model : Veto_Record) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record;
 
-   package Veto_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Veto);
+   package Veto_Record_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Veto_Record);
 
    --  `ListAmbassadorVetoesResponse` model.
    type List_Ambassador_Vetoes_Response is record
       Has_Vetoes : Boolean := False;
-      Vetoes : UARP.Models.Veto_Vectors.Vector;
+      Vetoes : UARP.Models.Veto_Record_Vectors.Vector;
    end record;
 
    function To_JSON (Model : List_Ambassador_Vetoes_Response) return UARP.JSON_Support.JSON_Value;
@@ -12739,26 +12674,6 @@ package UARP.Models is
    function To_JSON (Model : List_Workspace_Trash_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Workspace_Trash_Response;
 
-   --  Tenant-scoped LLM provider credential (masked secret).
-   type LLM_Credential is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Label : Boolean := False;
-      Label : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Last 4 chars only; full key never returned.
-      Key_Preview : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Endpoint_URL : Boolean := False;
-      Endpoint_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : LLM_Credential) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return LLM_Credential;
-
    --  `LLMSynthesizeSpeechRequest` model.
    type LLM_Synthesize_Speech_Request is record
       Has_Model : Boolean := False;
@@ -13755,6 +13670,38 @@ package UARP.Models is
 
    function To_JSON (Model : Permission_Check_Result) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Permission_Check_Result;
+
+   --  Body of PUT /governance/permissions/{agentId}. Every field optional: a field the body omits
+   --  keeps its stored value (mergePermissionSet), and only a first write falls back to the
+   --  defaults. `agent_id`, `tenant_id`, `created_at`, `updated_at` are set by the server and
+   --  ignored in the body.
+   type Permission_Set_Update is record
+      --  Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+      --  not merge).
+      Has_Allowed_Tools : Boolean := False;
+      Allowed_Tools : UARP.Types.Text_Vectors.Vector;
+      --  Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+      --  not merge).
+      Has_Allowed_Roles : Boolean := False;
+      Allowed_Roles : UARP.Types.Text_Vectors.Vector;
+      --  Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+      --  not merge).
+      Has_Resource_Permissions : Boolean := False;
+      Resource_Permissions : UARP.Models.Resource_Permission_Vectors.Vector;
+      Has_Max_Budget_Per_Run_Usd : Boolean := False;
+      Max_Budget_Per_Run_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Max_Spawn_Depth : Boolean := False;
+      Max_Spawn_Depth : UARP.Types.Integer_Value := 0;
+      Has_Can_Spawn : Boolean := False;
+      Can_Spawn : Standard.Boolean := False;
+      Has_Can_Self_Modify : Boolean := False;
+      Can_Self_Modify : Standard.Boolean := False;
+      Has_Parent_Agent_Id : Boolean := False;
+      Parent_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Permission_Set_Update) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Permission_Set_Update;
 
    --  `PlatformEconomicsRevenueSubscription` model.
    type Platform_Economics_Revenue_Subscription is record
@@ -14780,6 +14727,15 @@ package UARP.Models is
    function To_JSON (Model : Reject_Run_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Reject_Run_Request;
 
+   --  `RemoveScheduleResponse` model.
+   type Remove_Schedule_Response is record
+      Removed : Standard.Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Remove_Schedule_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Remove_Schedule_Response;
+
    --  `ReplaceConstitutionRequest` model.
    type Replace_Constitution_Request is record
       Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
@@ -14791,17 +14747,6 @@ package UARP.Models is
 
    function To_JSON (Model : Replace_Constitution_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Replace_Constitution_Request;
-
-   --  `ReplaceConstitutionResponse` model.
-   type Replace_Constitution_Response is record
-      Has_Rules : Boolean := False;
-      Rules : UARP.Models.Constitution_Rule_Vectors.Vector;
-      Has_Version : Boolean := False;
-      Version : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Replace_Constitution_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Replace_Constitution_Response;
 
    --  `ResendInviteResponse` model.
    type Resend_Invite_Response is record
@@ -15218,47 +15163,47 @@ package UARP.Models is
    function To_JSON (Model : Run_Workspace_Command_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Workspace_Command_Response;
 
-   --  Values of `ScheduleOnFailure`.
-   --  A value the API introduces later decodes as Schedule_On_Failure_Unrecognized
+   --  Values of `ScheduleEntryStatus`.
+   --  A value the API introduces later decodes as Schedule_Entry_Status_Unrecognized
    --  with the original text kept in Raw.
-   type Schedule_On_Failure_Kind is
-     (Schedule_On_Failure_Continue,
-   Schedule_On_Failure_Pause,
-   Schedule_On_Failure_Alert,
-   Schedule_On_Failure_Unrecognized);
+   type Schedule_Entry_Status_Kind is
+     (Schedule_Entry_Status_Active,
+   Schedule_Entry_Status_Paused,
+   Schedule_Entry_Status_Error,
+   Schedule_Entry_Status_Unrecognized);
 
-   type Schedule_On_Failure is record
-      Kind : Schedule_On_Failure_Kind := Schedule_On_Failure_Unrecognized;
+   type Schedule_Entry_Status is record
+      Kind : Schedule_Entry_Status_Kind := Schedule_Entry_Status_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_Schedule_On_Failure (Value : String) return Schedule_On_Failure;
-   function To_Schedule_On_Failure (Kind : Schedule_On_Failure_Kind) return Schedule_On_Failure;
-   function Image (Model : Schedule_On_Failure) return String;
-   function To_JSON (Model : Schedule_On_Failure) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Schedule_On_Failure;
+   function To_Schedule_Entry_Status (Value : String) return Schedule_Entry_Status;
+   function To_Schedule_Entry_Status (Kind : Schedule_Entry_Status_Kind) return Schedule_Entry_Status;
+   function Image (Model : Schedule_Entry_Status) return String;
+   function To_JSON (Model : Schedule_Entry_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Schedule_Entry_Status;
 
-   --  Cron-driven recurring run config attached to an agent (PUT /agents/{id}/schedule).
+   --  What `GET /agents/{agentId}/schedule` returns: `agent_id`, the config fields flattened, and
+   --  the runtime state. Keys as served 2026-09-10; `last_fired_at`, `autonomous_mode` and
+   --  `reflection_prompt` appear only when set.
    type Schedule is record
-      Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Cron : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Enabled : Boolean := False;
       Enabled : Standard.Boolean := False;
-      Has_Input : Boolean := False;
-      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Timezone : Boolean := False;
       Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Max_Concurrent_Scheduled : Boolean := False;
+      Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Max_Concurrent_Scheduled : UARP.Types.Integer_Value := 0;
-      Has_On_Failure : Boolean := False;
-      On_Failure : UARP.Models.Schedule_On_Failure;
+      On_Failure : UARP.Models.Agent_Schedule_Config_On_Failure;
       Has_Autonomous_Mode : Boolean := False;
       Autonomous_Mode : Standard.Boolean := False;
       Has_Reflection_Prompt : Boolean := False;
       Reflection_Prompt : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Next_Run_At : Boolean := False;
-      Next_Run_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Schedule_Entry_Status;
+      Has_Next_Fire_At : Boolean := False;
+      Next_Fire_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Last_Fired_At : Boolean := False;
+      Last_Fired_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Consecutive_Failures : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Schedule) return UARP.JSON_Support.JSON_Value;
@@ -15316,6 +15261,23 @@ package UARP.Models is
 
    function To_JSON (Model : Schedule_Canvas_Workflow_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Schedule_Canvas_Workflow_Response;
+
+   --  What `PUT /agents/{agentId}/schedule` returns: the stored entry with its `config` nested
+   --  (ScheduleEntry in @uarp/scheduler). `GET` returns the flattened `Schedule` instead.
+   type Schedule_Entry is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Config : UARP.Models.Agent_Schedule_Config;
+      Has_Last_Fired_At : Boolean := False;
+      Last_Fired_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Next_Fire_At : Boolean := False;
+      Next_Fire_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Consecutive_Failures : UARP.Types.Integer_Value := 0;
+      Status : UARP.Models.Schedule_Entry_Status;
+   end record;
+
+   function To_JSON (Model : Schedule_Entry) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Schedule_Entry;
 
    --  `SearchKnowledgeBaseRequest` model.
    type Search_Knowledge_Base_Request is record
@@ -15921,26 +15883,6 @@ package UARP.Models is
    function To_JSON (Model : Set_Run_Feedback_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Run_Feedback_Response;
 
-   --  Values of `SetScheduleRequestOnFailure`.
-   --  A value the API introduces later decodes as Set_Schedule_Request_On_Failure_Unrecognized
-   --  with the original text kept in Raw.
-   type Set_Schedule_Request_On_Failure_Kind is
-     (Set_Schedule_Request_On_Failure_Retry_Next,
-   Set_Schedule_Request_On_Failure_Pause_Schedule,
-   Set_Schedule_Request_On_Failure_Notify,
-   Set_Schedule_Request_On_Failure_Unrecognized);
-
-   type Set_Schedule_Request_On_Failure is record
-      Kind : Set_Schedule_Request_On_Failure_Kind := Set_Schedule_Request_On_Failure_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Set_Schedule_Request_On_Failure (Value : String) return Set_Schedule_Request_On_Failure;
-   function To_Set_Schedule_Request_On_Failure (Kind : Set_Schedule_Request_On_Failure_Kind) return Set_Schedule_Request_On_Failure;
-   function Image (Model : Set_Schedule_Request_On_Failure) return String;
-   function To_JSON (Model : Set_Schedule_Request_On_Failure) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Schedule_Request_On_Failure;
-
    --  `SetScheduleRequest` model.
    type Set_Schedule_Request is record
       Cron : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -15951,7 +15893,7 @@ package UARP.Models is
       Has_Timezone : Boolean := False;
       Timezone : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_On_Failure : Boolean := False;
-      On_Failure : UARP.Models.Set_Schedule_Request_On_Failure;
+      On_Failure : UARP.Models.Agent_Schedule_Config_On_Failure;
       Has_Max_Concurrent_Scheduled : Boolean := False;
       Max_Concurrent_Scheduled : UARP.Types.Float_Value := 0.0;
       --  When true, schedule is fired by autonomous tick with reflection prompt instead of cron run
@@ -16066,6 +16008,22 @@ package UARP.Models is
 
    function To_JSON (Model : Spawn_Policy) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spawn_Policy;
+
+   --  Body of PUT /governance/permissions/spawn-policy. The handler requires the whole record
+   --  (requireWholeRecord): all five fields, every time; `tenant_id` is the caller's and is not
+   --  accepted in the body.
+   type Spawn_Policy_Update is record
+      --  Child agent gets at most this fraction of parent's budget.
+      Child_Budget_Ratio : UARP.Types.Float_Value := 0.0;
+      Max_Depth : UARP.Types.Integer_Value := 0;
+      --  Whole-record write: the array is stored as sent, REPLACING the stored list.
+      Allowed_Roles : UARP.Types.Text_Vectors.Vector;
+      Require_Approval_Above_Depth : UARP.Types.Integer_Value := 0;
+      Max_Children_Per_Agent : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Spawn_Policy_Update) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spawn_Policy_Update;
 
    --  `Value` model.
    type Value is record
@@ -16354,31 +16312,6 @@ package UARP.Models is
 
    function To_JSON (Model : Sync_Provider_Models_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Sync_Provider_Models_Response;
-
-   --  `TallyVotesResponse` model.
-   type Tally_Votes_Response is record
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Outcome : Boolean := False;
-      Outcome : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Total_Votes : Boolean := False;
-      Total_Votes : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Tally_Votes_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tally_Votes_Response;
-
-   --  A teacher model to distil from. Teachers must share the student's vocabulary.
-   type Teacher_Ref is record
-      Provider_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Model_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Relative weight in the distillation mix.
-      Has_Weight : Boolean := False;
-      Weight : UARP.Types.Float_Value := 0.0;
-   end record;
-
-   function To_JSON (Model : Teacher_Ref) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Teacher_Ref;
 
    --  `TeamCreateWorker` model.
    type Team_Create_Worker is record
@@ -17755,41 +17688,6 @@ package UARP.Models is
 
    function To_JSON (Model : Veto_Proposal_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Proposal_Response;
-
-   --  Values of `VetoRecordTargetType`.
-   --  A value the API introduces later decodes as Veto_Record_Target_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Veto_Record_Target_Type_Kind is
-     (Veto_Record_Target_Type_Proposal,
-   Veto_Record_Target_Type_Action,
-   Veto_Record_Target_Type_Agent,
-   Veto_Record_Target_Type_Case,
-   Veto_Record_Target_Type_Unrecognized);
-
-   type Veto_Record_Target_Type is record
-      Kind : Veto_Record_Target_Type_Kind := Veto_Record_Target_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Veto_Record_Target_Type (Value : String) return Veto_Record_Target_Type;
-   function To_Veto_Record_Target_Type (Kind : Veto_Record_Target_Type_Kind) return Veto_Record_Target_Type;
-   function Image (Model : Veto_Record_Target_Type) return String;
-   function To_JSON (Model : Veto_Record_Target_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record_Target_Type;
-
-   --  `VetoRecord` model.
-   type Veto_Record is record
-      Veto_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  `ambassador_id` of the human who issued it.
-      Issued_By : UARP.Types.Text := UARP.Types.Empty_Text;
-      Target_Type : UARP.Models.Veto_Record_Target_Type;
-      Target_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
-      Issued_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Veto_Record) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Veto_Record;
 
    --  `VoiceConfigStt` model.
    type Voice_Config_Stt is record

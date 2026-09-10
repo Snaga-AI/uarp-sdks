@@ -6,6 +6,31 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.19 — 2026-09-10
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`c212d1f94faa8a5c665b5bca17a5432e9ef82f53cd2e04dde2a221025e7ce34c`, build `ae8a2d2e`, `info.version` 0.4.0. 709 operations, 238 schemas.
+
+### Changed
+
+- uarp #447 settled every schema no operation reached: `Schedule` now has the
+  keys `GET /agents/{agentId}/schedule` serves (`status`, `next_fire_at`,
+  `consecutive_failures`; `next_run_at` is gone) and the response is
+  `Schedule | null`; `PUT` returns the new `ScheduleEntry` with
+  `AgentScheduleConfig`; `EnforcementResult`, `VetoRecord`,
+  `ConstitutionDocument`, `MarketplaceListingRating`, `VoteResult` and
+  `BridgeTaskEvent` are what their operations return or accept.
+- `GET /usage/timeseries` rows carry `label` (an `M/D` bucket label), not
+  `date`.
+- `PUT /governance/permissions/{agentId}` takes `PermissionSetUpdate`;
+  `PUT …/spawn-policy` takes `SpawnPolicyUpdate`.
+
+### Removed
+
+- Schemas `Constitution`, `Veto`, `AgentFleetSummary`, `LlmCredential`,
+  `TeacherRef` (no operation produced or consumed them).
+
 ## 0.5.18 — 2026-09-10
 
 Training (LLM Studio) and the Creativity canvas are gone from the API

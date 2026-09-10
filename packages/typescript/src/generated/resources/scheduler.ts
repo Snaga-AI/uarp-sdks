@@ -3,8 +3,10 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
-  JsonValue,
   ListSchedulesResponse,
+  RemoveScheduleResponse,
+  Schedule,
+  ScheduleEntry,
   SetScheduleRequest,
 } from '../models.js';
 
@@ -19,7 +21,7 @@ export class SchedulerResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getSchedule(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  getSchedule(agentId: string, options?: RequestOptions): Promise<Schedule> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/schedule`,
@@ -51,7 +53,7 @@ export class SchedulerResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  removeSchedule(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  removeSchedule(agentId: string, options?: RequestOptions): Promise<RemoveScheduleResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/schedule`,
@@ -67,7 +69,7 @@ export class SchedulerResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  setSchedule(agentId: string, body: SetScheduleRequest, options?: RequestOptions): Promise<JsonValue> {
+  setSchedule(agentId: string, body: SetScheduleRequest, options?: RequestOptions): Promise<ScheduleEntry> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/schedule`,

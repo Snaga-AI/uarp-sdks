@@ -186,8 +186,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:write`.
      */
-    public suspend fun rateListing(listingId: String, body: RateListingRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun rateListing(listingId: String, body: RateListingRequest, options: RequestOptions = RequestOptions()): MarketplaceListingRating {
+        return client.request<MarketplaceListingRating>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}/rate",

@@ -138,17 +138,18 @@ package body UARP.API.Marketplace is
       Listing_Id : String;
       Payload : UARP.Models.Rate_Listing_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Marketplace_Listing_Rating
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/rate",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id) & "/rate",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Rate_Listing;
 
    function Search

@@ -48,8 +48,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/ambassador/veto`
      */
-    public suspend fun ambassadorVeto(body: AmbassadorVetoRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun ambassadorVeto(body: AmbassadorVetoRequest, options: RequestOptions = RequestOptions()): VetoRecord {
+        return client.request<VetoRecord>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/ambassador/veto",
@@ -65,8 +65,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/constitution/amend`
      */
-    public suspend fun amendConstitution(body: AmendConstitutionRequest, options: RequestOptions = RequestOptions()): AmendConstitutionResponse {
-        return client.request<AmendConstitutionResponse>(
+    public suspend fun amendConstitution(body: AmendConstitutionRequest, options: RequestOptions = RequestOptions()): ConstitutionDocument {
+        return client.request<ConstitutionDocument>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/constitution/amend",
@@ -131,8 +131,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/check`
      */
-    public suspend fun checkGovernance(body: CheckGovernanceRequest, options: RequestOptions = RequestOptions()): CheckGovernanceResponse {
-        return client.request<CheckGovernanceResponse>(
+    public suspend fun checkGovernance(body: CheckGovernanceRequest, options: RequestOptions = RequestOptions()): EnforcementResult {
+        return client.request<EnforcementResult>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/check",
@@ -426,8 +426,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/constitution`
      */
-    public suspend fun getConstitution(options: RequestOptions = RequestOptions()): GetConstitutionResponse {
-        return client.request<GetConstitutionResponse>(
+    public suspend fun getConstitution(options: RequestOptions = RequestOptions()): ConstitutionDocument {
+        return client.request<ConstitutionDocument>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/constitution",
@@ -774,8 +774,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/constitution`
      */
-    public suspend fun replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = RequestOptions()): ReplaceConstitutionResponse {
-        return client.request<ReplaceConstitutionResponse>(
+    public suspend fun replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = RequestOptions()): ConstitutionDocument {
+        return client.request<ConstitutionDocument>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/governance/constitution",
@@ -814,7 +814,7 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/permissions/{agentId}`
      */
-    public suspend fun setAgentPermissions(agentId: String, body: PermissionSet, options: RequestOptions = RequestOptions()): SetAgentPermissionsResponse {
+    public suspend fun setAgentPermissions(agentId: String, body: PermissionSetUpdate, options: RequestOptions = RequestOptions()): SetAgentPermissionsResponse {
         return client.request<SetAgentPermissionsResponse>(
             RequestSpec(
                 method = "PUT",
@@ -886,7 +886,7 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/permissions/spawn-policy`
      */
-    public suspend fun setSpawnPolicy(body: SpawnPolicy, options: RequestOptions = RequestOptions()): SetSpawnPolicyResponse {
+    public suspend fun setSpawnPolicy(body: SpawnPolicyUpdate, options: RequestOptions = RequestOptions()): SetSpawnPolicyResponse {
         return client.request<SetSpawnPolicyResponse>(
             RequestSpec(
                 method = "PUT",
@@ -903,8 +903,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `POST /api/v1/governance/voting/proposals/{id}/tally`
      */
-    public suspend fun tallyVotes(id: String, options: RequestOptions = RequestOptions()): TallyVotesResponse {
-        return client.request<TallyVotesResponse>(
+    public suspend fun tallyVotes(id: String, options: RequestOptions = RequestOptions()): VoteResult {
+        return client.request<VoteResult>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/governance/voting/proposals/${encodePathSegment(id)}/tally",

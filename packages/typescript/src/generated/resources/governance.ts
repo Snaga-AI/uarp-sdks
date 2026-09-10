@@ -10,13 +10,12 @@ import type {
   AmbassadorRequestStatus,
   AmbassadorVetoRequest,
   AmendConstitutionRequest,
-  AmendConstitutionResponse,
   ArbiterRegistry,
   BootstrapAmbassadorResponse,
   CastBallotRequest,
   CheckGovernanceRequest,
-  CheckGovernanceResponse,
   CheckSpawnPermissionRequest,
+  ConstitutionDocument,
   CreateAmbassadorRequestRequest,
   CreateGoalRequest,
   CreateImprovementProposalRequest,
@@ -26,12 +25,12 @@ import type {
   DesignRequest,
   DesignRequestCreate,
   EmergencyState,
+  EnforcementResult,
   FileArbiterAppealRequest,
   FileArbiterAppealResponse,
   FileArbiterCaseRequest,
   GetAgentObligationsResponse,
   GetAgentViolationsResponse,
-  GetConstitutionResponse,
   GetGovernanceLedgerResponse,
   GetRootAgentResponse,
   ImprovementProposal,
@@ -48,10 +47,10 @@ import type {
   ListVotingProposalsResponse,
   PermissionCheckResult,
   PermissionSet,
+  PermissionSetUpdate,
   RegisterAmbassadorRequest,
   RegisterAmbassadorResponse,
   ReplaceConstitutionRequest,
-  ReplaceConstitutionResponse,
   ResolveAmbassadorRequestRequest,
   SetAgentPermissionsResponse,
   SetArbiterRegistryResponse,
@@ -60,12 +59,14 @@ import type {
   SetRootAttestationResponse,
   SetSpawnPolicyResponse,
   SpawnPolicy,
-  TallyVotesResponse,
+  SpawnPolicyUpdate,
   UpdateBuilderRequestStatusRequest,
   UpdateGoalStatusRequest,
   UpdateImprovementStatusRequest,
   VetoProposalRequest,
   VetoProposalResponse,
+  VetoRecord,
+  VoteResult,
 } from '../models.js';
 
 /**
@@ -143,7 +144,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/ambassador/veto`
    */
-  ambassadorVeto(body: AmbassadorVetoRequest, options?: RequestOptions): Promise<JsonObject> {
+  ambassadorVeto(body: AmbassadorVetoRequest, options?: RequestOptions): Promise<VetoRecord> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/ambassador/veto',
@@ -158,7 +159,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/constitution/amend`
    */
-  amendConstitution(body: AmendConstitutionRequest, options?: RequestOptions): Promise<AmendConstitutionResponse> {
+  amendConstitution(body: AmendConstitutionRequest, options?: RequestOptions): Promise<ConstitutionDocument> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/constitution/amend',
@@ -216,7 +217,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/check`
    */
-  checkGovernance(body: CheckGovernanceRequest, options?: RequestOptions): Promise<CheckGovernanceResponse> {
+  checkGovernance(body: CheckGovernanceRequest, options?: RequestOptions): Promise<EnforcementResult> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/governance/check',
@@ -475,7 +476,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/constitution`
    */
-  getConstitution(options?: RequestOptions): Promise<GetConstitutionResponse> {
+  getConstitution(options?: RequestOptions): Promise<ConstitutionDocument> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/constitution',
@@ -770,7 +771,7 @@ export class GovernanceResource extends APIResource {
    *
    * `PUT /api/v1/governance/constitution`
    */
-  replaceConstitution(body: ReplaceConstitutionRequest, options?: RequestOptions): Promise<ReplaceConstitutionResponse> {
+  replaceConstitution(body: ReplaceConstitutionRequest, options?: RequestOptions): Promise<ConstitutionDocument> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/governance/constitution',
@@ -806,7 +807,7 @@ export class GovernanceResource extends APIResource {
    *
    * `PUT /api/v1/governance/permissions/{agentId}`
    */
-  setAgentPermissions(agentId: string, body: PermissionSet, options?: RequestOptions): Promise<SetAgentPermissionsResponse> {
+  setAgentPermissions(agentId: string, body: PermissionSetUpdate, options?: RequestOptions): Promise<SetAgentPermissionsResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/governance/permissions/${encodeURIComponent(String(agentId))}`,
@@ -870,7 +871,7 @@ export class GovernanceResource extends APIResource {
    *
    * `PUT /api/v1/governance/permissions/spawn-policy`
    */
-  setSpawnPolicy(body: SpawnPolicy, options?: RequestOptions): Promise<SetSpawnPolicyResponse> {
+  setSpawnPolicy(body: SpawnPolicyUpdate, options?: RequestOptions): Promise<SetSpawnPolicyResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/governance/permissions/spawn-policy',
@@ -885,7 +886,7 @@ export class GovernanceResource extends APIResource {
    *
    * `POST /api/v1/governance/voting/proposals/{id}/tally`
    */
-  tallyVotes(id: string, options?: RequestOptions): Promise<TallyVotesResponse> {
+  tallyVotes(id: string, options?: RequestOptions): Promise<VoteResult> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/governance/voting/proposals/${encodeURIComponent(String(id))}/tally`,

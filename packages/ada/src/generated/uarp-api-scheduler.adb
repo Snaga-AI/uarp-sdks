@@ -8,14 +8,15 @@ package body UARP.API.Scheduler is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Schedule
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
+             Options => Options));
    end Get_Schedule;
 
    function List_Schedules
@@ -36,15 +37,16 @@ package body UARP.API.Scheduler is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Remove_Schedule_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
+             Idempotent => True,
+             Options => Options));
    end Remove_Schedule;
 
    function Set_Schedule
@@ -52,16 +54,17 @@ package body UARP.API.Scheduler is
       Agent_Id : String;
       Payload : UARP.Models.Set_Schedule_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Schedule_Entry
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/schedule",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Set_Schedule;
 end UARP.API.Scheduler;

@@ -1326,48 +1326,6 @@ impl From<&str> for AgentExecutionMode {
     }
 }
 
-/// How the tenant's agents split, and which of them cost the most over the window.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AgentFleetSummary {
-    pub range: AgentFleetSummaryRange,
-    pub total: i64,
-    pub by_execution_mode: AgentFleetSummaryByExecutionMode,
-    pub bridge: AgentFleetSummaryBridge,
-    pub runs_total: i64,
-    pub cost_total_usd: f64,
-    pub tokens_total: i64,
-    /// At most ten.
-    pub top_by_runs: Vec<AgentAnalyticsRow>,
-    /// At most ten.
-    pub top_by_cost: Vec<AgentAnalyticsRow>,
-    /// Every agent, not a page.
-    pub agents: Vec<AgentAnalyticsRow>,
-}
-
-/// `AgentFleetSummaryBridge` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AgentFleetSummaryBridge {
-    pub online: i64,
-    pub stale: i64,
-    pub offline: i64,
-    /// Machines across all bridge agents, not agents.
-    pub machines_total: i64,
-}
-
-/// `AgentFleetSummaryByExecutionMode` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AgentFleetSummaryByExecutionMode {
-    /// Everything that is not a bridge agent.
-    pub cloud: i64,
-    pub bridge: i64,
-}
-
-/// `AgentFleetSummaryRange` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AgentFleetSummaryRange {
-    pub days: i64,
-}
-
 /// Agent-scoped integration (connection) instance
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentIntegration {
@@ -1526,6 +1484,66 @@ pub struct AgentPublicConfig {
     /// default of 15.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub daily_message_limit: Option<i64>,
+}
+
+/// The stored schedule configuration (AgentScheduleConfig in @uarp/scheduler).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentScheduleConfig {
+    pub cron: String,
+    pub enabled: bool,
+    /// IANA zone; `UTC` when not given.
+    pub timezone: String,
+    pub input: serde_json::Map<String, serde_json::Value>,
+    pub max_concurrent_scheduled: i64,
+    pub on_failure: AgentScheduleConfigOnFailure,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub autonomous_mode: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reflection_prompt: Option<String>,
+}
+
+/// `AgentScheduleConfigOnFailure` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentScheduleConfigOnFailure {
+    #[default]
+    #[serde(rename = "retry_next")]
+    RetryNext,
+    #[serde(rename = "pause_schedule")]
+    PauseSchedule,
+    #[serde(rename = "notify")]
+    Notify,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentScheduleConfigOnFailure {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RetryNext => "retry_next",
+            Self::PauseSchedule => "pause_schedule",
+            Self::Notify => "notify",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentScheduleConfigOnFailure {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentScheduleConfigOnFailure {
+    fn from(value: &str) -> Self {
+        match value {
+            "retry_next" => Self::RetryNext,
+            "pause_schedule" => Self::PauseSchedule,
+            "notify" => Self::Notify,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `AgentScorer` model.
@@ -2209,15 +2227,6 @@ pub struct AmendConstitutionRequest {
     pub rule: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
-}
-
-/// `AmendConstitutionResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AmendConstitutionResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub rules: Option<Vec<ConstitutionRule>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i64>,
 }
 
 /// `AndroidTester` model.
@@ -3119,7 +3128,8 @@ pub struct BridgeStatusResponse {
     pub connections: Vec<BridgeConnection>,
 }
 
-/// `BridgeTaskEvent` model.
+/// A progress frame from the Snaga bridge (BridgeTaskEvent in @uarp/types); `type` decides
+/// which optional fields are present.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BridgeTaskEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3129,7 +3139,11 @@ pub struct BridgeTaskEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub approval_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<BridgeTaskEventStatus>,
+    pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3141,9 +3155,33 @@ pub struct BridgeTaskEvent {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_result_preview: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_duration_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<BridgeTaskEventMetrics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub working_directory: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hostname: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub platform: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub model: Option<String>,
 }
 
 /// `BridgeTaskEventMetrics` model.
@@ -3159,57 +3197,6 @@ pub struct BridgeTaskEventMetrics {
     pub llm_calls: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub execution_time_ms: Option<i64>,
-    /// Any additional properties the server returned.
-    #[serde(flatten)]
-    pub extra: HashMap<String, serde_json::Value>,
-}
-
-/// `BridgeTaskEventStatus` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum BridgeTaskEventStatus {
-    #[default]
-    #[serde(rename = "working")]
-    Working,
-    #[serde(rename = "completed")]
-    Completed,
-    #[serde(rename = "failed")]
-    Failed,
-    #[serde(rename = "approval_denied")]
-    ApprovalDenied,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl BridgeTaskEventStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Working => "working",
-            Self::Completed => "completed",
-            Self::Failed => "failed",
-            Self::ApprovalDenied => "approval_denied",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for BridgeTaskEventStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for BridgeTaskEventStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "working" => Self::Working,
-            "completed" => Self::Completed,
-            "failed" => Self::Failed,
-            "approval_denied" => Self::ApprovalDenied,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `BridgeTaskEventType` enumeration.
@@ -3558,35 +3545,6 @@ pub struct CheckGovernanceRequest {
     pub team_id: Option<String>,
 }
 
-/// `CheckGovernanceResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CheckGovernanceResponse {
-    /// False when any matched rule carries a blocking penalty.
-    pub allowed: bool,
-    #[serde(rename = "checkResult")]
-    pub check_result: CheckGovernanceResponseCheckResult,
-    /// What the matched rules call for. Empty when nothing matched.
-    pub penalties: Vec<CheckGovernanceResponsePenalty>,
-}
-
-/// `CheckGovernanceResponseCheckResult` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CheckGovernanceResponseCheckResult {
-    pub allowed: bool,
-    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
-    pub checked_rules: Vec<String>,
-    pub violations: Vec<ConstitutionViolation>,
-    pub checked_at: String,
-}
-
-/// `CheckGovernanceResponsePenalty` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CheckGovernanceResponsePenalty {
-    #[serde(rename = "ruleId")]
-    pub rule_id: String,
-    pub penalty: ConstitutionRulePenalty,
-}
-
 /// `CheckSpawnPermissionRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CheckSpawnPermissionRequest {
@@ -3697,15 +3655,6 @@ pub struct ConnectorConfigField {
     pub description: Option<String>,
 }
 
-/// `Constitution` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Constitution {
-    pub rules: Vec<ConstitutionRule>,
-    pub version: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
-}
-
 /// `ConstitutionAmendment` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConstitutionAmendment {
@@ -3776,6 +3725,10 @@ pub struct ConstitutionDocument {
     /// Who created the genesis document.
     pub founder_id: String,
     pub created_at: String,
+    /// Present and `true` only when no document is stored and these are the genesis defaults
+    /// computed on read; absent on a stored document (measured 2026-09-10).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#virtual: Option<bool>,
     pub updated_at: String,
 }
 
@@ -6122,64 +6075,30 @@ pub struct EmptyWorkspaceTrashResponse {
 /// `EnforcementResult` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResult {
+    /// False when any matched rule carries a blocking penalty.
     pub allowed: bool,
-    pub violations: Vec<EnforcementResultViolation>,
+    #[serde(rename = "checkResult")]
+    pub check_result: EnforcementResultCheckResult,
+    /// What the matched rules call for. Empty when nothing matched.
+    pub penalties: Vec<EnforcementResultPenalty>,
 }
 
-/// `EnforcementResultViolation` model.
+/// `EnforcementResultCheckResult` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct EnforcementResultViolation {
+pub struct EnforcementResultCheckResult {
+    pub allowed: bool,
+    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+    pub checked_rules: Vec<String>,
+    pub violations: Vec<ConstitutionViolation>,
+    pub checked_at: String,
+}
+
+/// `EnforcementResultPenalty` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EnforcementResultPenalty {
+    #[serde(rename = "ruleId")]
     pub rule_id: String,
-    pub severity: EnforcementResultViolationSeverity,
-    pub message: String,
-}
-
-/// `EnforcementResultViolationSeverity` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum EnforcementResultViolationSeverity {
-    #[default]
-    #[serde(rename = "info")]
-    Info,
-    #[serde(rename = "warning")]
-    Warning,
-    #[serde(rename = "error")]
-    Error,
-    #[serde(rename = "blocker")]
-    Blocker,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl EnforcementResultViolationSeverity {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Info => "info",
-            Self::Warning => "warning",
-            Self::Error => "error",
-            Self::Blocker => "blocker",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for EnforcementResultViolationSeverity {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for EnforcementResultViolationSeverity {
-    fn from(value: &str) -> Self {
-        match value {
-            "info" => Self::Info,
-            "warning" => Self::Warning,
-            "error" => Self::Error,
-            "blocker" => Self::Blocker,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub penalty: ConstitutionRulePenalty,
 }
 
 /// `EnrolMfaRequest` model.
@@ -7719,25 +7638,6 @@ pub struct GetCompanyObjectivesResponse {
     pub objectives: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
-/// `GetConstitutionResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetConstitutionResponse {
-    pub tenant_id: String,
-    /// Monotonic. `0` on the virtual genesis view — nothing is stored yet.
-    pub version: i64,
-    pub rules: Vec<ConstitutionRule>,
-    pub amendments: Vec<ConstitutionAmendment>,
-    pub founder_id: String,
-    pub created_at: String,
-    pub updated_at: String,
-    /// Present and `true` ONLY when no document is stored: these are the genesis defaults, computed
-    /// on read and not persisted (routes/governance.ts:174-196). Absent on every stored
-    /// constitution — do not read its absence as `false` being meaningful, and do not re-seed a
-    /// document that does not carry it.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub r#virtual: Option<bool>,
-}
-
 /// `GetDataExplorerValueResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetDataExplorerValueResponse {
@@ -8671,10 +8571,10 @@ pub struct GetUsageTimeseriesResponse {
 /// `GetUsageTimeseriesResponseDataItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetUsageTimeseriesResponseDataItem {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub date: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub value: Option<f64>,
+    /// The bucket's label — `M/D` in UTC without padding (`8/28`), not a date or an instant
+    /// (usage-tracker.ts getTimeseries; measured 2026-09-10). Do not parse it as a Date.
+    pub label: String,
+    pub value: f64,
 }
 
 /// `Goal` model.
@@ -10037,7 +9937,7 @@ pub struct ListAmbassadorRequestsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAmbassadorVetoesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub vetoes: Option<Vec<Veto>>,
+    pub vetoes: Option<Vec<VetoRecord>>,
 }
 
 /// `ListAndroidTestersResponse` model.
@@ -11090,24 +10990,6 @@ pub struct ListWorkspacesResponse {
 pub struct ListWorkspaceTrashResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
-}
-
-/// Tenant-scoped LLM provider credential (masked secret).
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct LLMCredential {
-    pub id: String,
-    pub tenant_id: String,
-    pub provider: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-    /// Last 4 chars only; full key never returned.
-    pub key_preview: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub endpoint_url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub created_at: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
 }
 
 /// `LLMModel` model.
@@ -13347,6 +13229,36 @@ pub struct PermissionSet {
     pub updated_at: Option<String>,
 }
 
+/// Body of PUT /governance/permissions/{agentId}. Every field optional: a field the body omits
+/// keeps its stored value (mergePermissionSet), and only a first write falls back to the
+/// defaults. `agent_id`, `tenant_id`, `created_at`, `updated_at` are set by the server and
+/// ignored in the body.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PermissionSetUpdate {
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_tools: Option<Vec<String>>,
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_roles: Option<Vec<String>>,
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resource_permissions: Option<Vec<ResourcePermission>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_budget_per_run_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_spawn_depth: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub can_spawn: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub can_self_modify: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_agent_id: Option<String>,
+}
+
 /// `PlanLLMLimits` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PlanLLMLimits {
@@ -14634,6 +14546,13 @@ pub struct RejectRunRequest {
     pub reason: Option<String>,
 }
 
+/// `RemoveScheduleResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RemoveScheduleResponse {
+    pub removed: bool,
+    pub agent_id: String,
+}
+
 /// `ReplaceConstitutionRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ReplaceConstitutionRequest {
@@ -14642,15 +14561,6 @@ pub struct ReplaceConstitutionRequest {
     /// amendment record; defaults to a generic string when omitted.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
-}
-
-/// `ReplaceConstitutionResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct ReplaceConstitutionResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub rules: Option<Vec<ConstitutionRule>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub version: Option<i64>,
 }
 
 /// `ResendInviteResponse` model.
@@ -15577,28 +15487,28 @@ pub struct RunWorkspaceCommandResponse {
     pub output: Option<String>,
 }
 
-/// Cron-driven recurring run config attached to an agent (PUT /agents/{id}/schedule).
+/// What `GET /agents/{agentId}/schedule` returns: `agent_id`, the config fields flattened, and
+/// the runtime state. Keys as served 2026-09-10; `last_fired_at`, `autonomous_mode` and
+/// `reflection_prompt` appear only when set.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Schedule {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_id: Option<String>,
+    pub agent_id: String,
     pub cron: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub enabled: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub input: Option<serde_json::Map<String, serde_json::Value>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timezone: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub max_concurrent_scheduled: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub on_failure: Option<ScheduleOnFailure>,
+    pub enabled: bool,
+    pub timezone: String,
+    pub input: serde_json::Map<String, serde_json::Value>,
+    pub max_concurrent_scheduled: i64,
+    pub on_failure: AgentScheduleConfigOnFailure,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub autonomous_mode: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reflection_prompt: Option<String>,
+    pub status: ScheduleEntryStatus,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub next_run_at: Option<String>,
+    pub next_fire_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_fired_at: Option<String>,
+    pub consecutive_failures: i64,
 }
 
 /// `ScheduleCanvasWorkflowRequest` model.
@@ -15668,45 +15578,60 @@ impl From<&str> for ScheduleCanvasWorkflowResponseStatus {
     }
 }
 
-/// `ScheduleOnFailure` enumeration.
+/// What `PUT /agents/{agentId}/schedule` returns: the stored entry with its `config` nested
+/// (ScheduleEntry in @uarp/scheduler). `GET` returns the flattened `Schedule` instead.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ScheduleEntry {
+    pub tenant_id: String,
+    pub agent_id: String,
+    pub config: AgentScheduleConfig,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_fired_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_fire_at: Option<String>,
+    pub consecutive_failures: i64,
+    pub status: ScheduleEntryStatus,
+}
+
+/// `ScheduleEntryStatus` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ScheduleOnFailure {
+pub enum ScheduleEntryStatus {
     #[default]
-    #[serde(rename = "continue")]
-    Continue,
-    #[serde(rename = "pause")]
-    Pause,
-    #[serde(rename = "alert")]
-    Alert,
+    #[serde(rename = "active")]
+    Active,
+    #[serde(rename = "paused")]
+    Paused,
+    #[serde(rename = "error")]
+    Error,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
 }
 
-impl ScheduleOnFailure {
+impl ScheduleEntryStatus {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Continue => "continue",
-            Self::Pause => "pause",
-            Self::Alert => "alert",
+            Self::Active => "active",
+            Self::Paused => "paused",
+            Self::Error => "error",
             Self::Other(value) => value.as_str(),
         }
     }
 }
 
-impl std::fmt::Display for ScheduleOnFailure {
+impl std::fmt::Display for ScheduleEntryStatus {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl From<&str> for ScheduleOnFailure {
+impl From<&str> for ScheduleEntryStatus {
     fn from(value: &str) -> Self {
         match value {
-            "continue" => Self::Continue,
-            "pause" => Self::Pause,
-            "alert" => Self::Alert,
+            "active" => Self::Active,
+            "paused" => Self::Paused,
+            "error" => Self::Error,
             other => Self::Other(other.to_string()),
         }
     }
@@ -16523,7 +16448,7 @@ pub struct SetScheduleRequest {
     pub timezone: Option<String>,
     /// Server default: `"retry_next"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub on_failure: Option<SetScheduleRequestOnFailure>,
+    pub on_failure: Option<AgentScheduleConfigOnFailure>,
     /// Server default: `1`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_concurrent_scheduled: Option<f64>,
@@ -16535,50 +16460,6 @@ pub struct SetScheduleRequest {
     /// next steps).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reflection_prompt: Option<String>,
-}
-
-/// `SetScheduleRequestOnFailure` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SetScheduleRequestOnFailure {
-    #[default]
-    #[serde(rename = "retry_next")]
-    RetryNext,
-    #[serde(rename = "pause_schedule")]
-    PauseSchedule,
-    #[serde(rename = "notify")]
-    Notify,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SetScheduleRequestOnFailure {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::RetryNext => "retry_next",
-            Self::PauseSchedule => "pause_schedule",
-            Self::Notify => "notify",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SetScheduleRequestOnFailure {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SetScheduleRequestOnFailure {
-    fn from(value: &str) -> Self {
-        match value {
-            "retry_next" => Self::RetryNext,
-            "pause_schedule" => Self::PauseSchedule,
-            "notify" => Self::Notify,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `SetSpawnPolicyResponse` model.
@@ -16698,6 +16579,20 @@ pub struct SpawnPolicy {
     /// Child agent gets at most this fraction of parent's budget.
     pub child_budget_ratio: f64,
     pub max_depth: i64,
+    pub allowed_roles: Vec<String>,
+    pub require_approval_above_depth: i64,
+    pub max_children_per_agent: i64,
+}
+
+/// Body of PUT /governance/permissions/spawn-policy. The handler requires the whole record
+/// (requireWholeRecord): all five fields, every time; `tenant_id` is the caller's and is not
+/// accepted in the body.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpawnPolicyUpdate {
+    /// Child agent gets at most this fraction of parent's budget.
+    pub child_budget_ratio: f64,
+    pub max_depth: i64,
+    /// Whole-record write: the array is stored as sent, REPLACING the stored list.
     pub allowed_roles: Vec<String>,
     pub require_approval_above_depth: i64,
     pub max_children_per_agent: i64,
@@ -17159,27 +17054,6 @@ pub struct SyncProviderModelsResponse {
     /// Present when the run was scoped to one provider, as it is here.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
-}
-
-/// `TallyVotesResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct TallyVotesResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub status: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub outcome: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total_votes: Option<i64>,
-}
-
-/// A teacher model to distil from. Teachers must share the student's vocabulary.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct TeacherRef {
-    pub provider_id: String,
-    pub model_ref: String,
-    /// Relative weight in the distillation mix.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub weight: Option<f64>,
 }
 
 /// Multi-agent collaboration unit (tenant-scoped).
@@ -19849,19 +19723,6 @@ pub struct VerifyTenantDomainResponse {
     pub verified: Option<bool>,
 }
 
-/// `Veto` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Veto {
-    pub id: String,
-    pub issued_by: String,
-    pub target_type: String,
-    pub target_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub issued_at: Option<String>,
-}
-
 /// `VetoProposalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct VetoProposalRequest {
@@ -19876,11 +19737,11 @@ pub struct VetoProposalResponse {
     pub ok: Option<bool>,
 }
 
-/// `VetoRecord` model.
+/// A veto as issued and listed (VetoRecord in @uarp/governance). Shape from the store's record;
+/// no tenant in reach had a veto to measure on 2026-09-10.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct VetoRecord {
     pub veto_id: String,
-    /// `ambassador_id` of the human who issued it.
     pub issued_by: String,
     pub target_type: VetoRecordTargetType,
     pub target_id: String,

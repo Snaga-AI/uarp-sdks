@@ -148,7 +148,7 @@ public struct BridgeAPI: Sendable {
     /// Push task events
     ///
     /// `POST /api/v1/bridge/tasks/{taskId}/events`
-    public func pushBridgeTaskEvents(taskId: String, body: [JSONObject], options: RequestOptions = .init()) async throws -> PushBridgeTaskEventsResponse {
+    public func pushBridgeTaskEvents(taskId: String, body: JSONValue, options: RequestOptions = .init()) async throws -> PushBridgeTaskEventsResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/bridge/tasks/\(encodePathSegment(taskId))/events",

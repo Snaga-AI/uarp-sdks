@@ -14,6 +14,7 @@ import type {
   MarketplaceInvocation,
   MarketplaceListing,
   MarketplaceListingCategory,
+  MarketplaceListingRating,
   PublishListingRequest,
   RateListingRequest,
   SearchMarketplaceResponse,
@@ -188,7 +189,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:write`.
    */
-  rateListing(listingId: string, body: RateListingRequest, options?: RequestOptions): Promise<JsonValue> {
+  rateListing(listingId: string, body: RateListingRequest, options?: RequestOptions): Promise<MarketplaceListingRating> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}/rate`,

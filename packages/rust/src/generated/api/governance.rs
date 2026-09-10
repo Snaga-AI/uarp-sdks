@@ -94,7 +94,7 @@ impl GovernanceApi {
     /// Veto
     ///
     /// `POST /api/v1/governance/ambassador/veto`
-    pub async fn ambassador_veto(&self, body: &models::AmbassadorVetoRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn ambassador_veto(&self, body: &models::AmbassadorVetoRequest) -> Result<models::VetoRecord> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -110,7 +110,7 @@ impl GovernanceApi {
     /// Amend constitution
     ///
     /// `POST /api/v1/governance/constitution/amend`
-    pub async fn amend_constitution(&self, body: &models::AmendConstitutionRequest) -> Result<models::AmendConstitutionResponse> {
+    pub async fn amend_constitution(&self, body: &models::AmendConstitutionRequest) -> Result<models::ConstitutionDocument> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -174,7 +174,7 @@ impl GovernanceApi {
     /// Check governance compliance
     ///
     /// `POST /api/v1/governance/check`
-    pub async fn check_governance(&self, body: &models::CheckGovernanceRequest) -> Result<models::CheckGovernanceResponse> {
+    pub async fn check_governance(&self, body: &models::CheckGovernanceRequest) -> Result<models::EnforcementResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -467,7 +467,7 @@ impl GovernanceApi {
     /// Get constitution
     ///
     /// `GET /api/v1/governance/constitution`
-    pub async fn get_constitution(&self) -> Result<models::GetConstitutionResponse> {
+    pub async fn get_constitution(&self) -> Result<models::ConstitutionDocument> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -818,7 +818,7 @@ impl GovernanceApi {
     /// Replace constitution
     ///
     /// `PUT /api/v1/governance/constitution`
-    pub async fn replace_constitution(&self, body: &models::ReplaceConstitutionRequest) -> Result<models::ReplaceConstitutionResponse> {
+    pub async fn replace_constitution(&self, body: &models::ReplaceConstitutionRequest) -> Result<models::ConstitutionDocument> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -856,7 +856,7 @@ impl GovernanceApi {
     /// `created_at` is server-owned and ignored from the body.
     ///
     /// `PUT /api/v1/governance/permissions/{agentId}`
-    pub async fn set_agent_permissions(&self, agent_id: &str, body: &models::PermissionSet) -> Result<models::SetAgentPermissionsResponse> {
+    pub async fn set_agent_permissions(&self, agent_id: &str, body: &models::PermissionSetUpdate) -> Result<models::SetAgentPermissionsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -924,7 +924,7 @@ impl GovernanceApi {
     /// Set spawn policy
     ///
     /// `PUT /api/v1/governance/permissions/spawn-policy`
-    pub async fn set_spawn_policy(&self, body: &models::SpawnPolicy) -> Result<models::SetSpawnPolicyResponse> {
+    pub async fn set_spawn_policy(&self, body: &models::SpawnPolicyUpdate) -> Result<models::SetSpawnPolicyResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -940,7 +940,7 @@ impl GovernanceApi {
     /// Tally votes
     ///
     /// `POST /api/v1/governance/voting/proposals/{id}/tally`
-    pub async fn tally_votes(&self, id: &str) -> Result<models::TallyVotesResponse> {
+    pub async fn tally_votes(&self, id: &str) -> Result<models::VoteResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,

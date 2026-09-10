@@ -598,18 +598,22 @@ class TransportTest {
 
     @Test
     fun `keeps properties the model does not declare`() {
+        // AgentScorerConfig keeps an `additionalProperties` map in the generated
+        // model (BridgeTaskEvent.metrics stopped carrying one when uarp #447
+        // typed its five fields — the transport behaviour under test is the
+        // same, only the fixture moved).
         val payload = """
-            {"tool_calls_count":3,"llm_calls":1,"unmodelled":{"nested":true},"extra_count":7}
+            {"type":"webhook","url":"https://scorer.example","timeout_ms":3,"unmodelled":{"nested":true},"extra_count":7}
         """.trimIndent()
 
-        val decoded = uarpJson.decodeFromString<ai.snaga.uarp.models.BridgeTaskEventMetrics>(payload)
-        assertEquals(3L, decoded.toolCallsCount)
+        val decoded = uarpJson.decodeFromString<ai.snaga.uarp.models.AgentScorerConfig>(payload)
+        assertEquals(3L, decoded.timeoutMs)
         assertEquals(setOf("unmodelled", "extra_count"), decoded.additionalProperties.keys)
 
         // And they survive the trip back out.
         val reencoded = uarpJson.encodeToString(decoded)
         assertTrue(reencoded.contains("\"extra_count\":7"), reencoded)
-        assertTrue(reencoded.contains("\"tool_calls_count\":3"), reencoded)
+        assertTrue(reencoded.contains("\"timeout_ms\":3"), reencoded)
     }
 
     @Test

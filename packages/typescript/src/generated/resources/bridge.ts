@@ -15,8 +15,8 @@ import type {
   BridgeRegisterRequest,
   BridgeRegisterResponse,
   BridgeStatusResponse,
+  BridgeTaskEvent,
   GetBridgeTaskApprovalResponse,
-  JsonObject,
   JsonValue,
   PushBridgeTaskEventsResponse,
   UpdateBridgeAgentCapabilityRequest,
@@ -192,7 +192,7 @@ export class BridgeResource extends APIResource {
    *
    * `POST /api/v1/bridge/tasks/{taskId}/events`
    */
-  pushBridgeTaskEvents(taskId: string, body: JsonObject[], options?: RequestOptions): Promise<PushBridgeTaskEventsResponse> {
+  pushBridgeTaskEvents(taskId: string, body: BridgeTaskEvent[] | BridgeTaskEvent, options?: RequestOptions): Promise<PushBridgeTaskEventsResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/bridge/tasks/${encodeURIComponent(String(taskId))}/events`,

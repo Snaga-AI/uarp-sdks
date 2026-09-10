@@ -195,7 +195,7 @@ public class BridgeApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/bridge/tasks/{taskId}/events`
      */
-    public suspend fun pushBridgeTaskEvents(taskId: String, body: List<JsonObject>, options: RequestOptions = RequestOptions()): PushBridgeTaskEventsResponse {
+    public suspend fun pushBridgeTaskEvents(taskId: String, body: JsonElement, options: RequestOptions = RequestOptions()): PushBridgeTaskEventsResponse {
         return client.request<PushBridgeTaskEventsResponse>(
             RequestSpec(
                 method = "POST",

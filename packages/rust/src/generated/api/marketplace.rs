@@ -222,7 +222,7 @@ impl MarketplaceApi {
     /// `POST /api/v1/marketplace/listings/{listingId}/rate`
     ///
     /// Required scopes: `marketplace:write`.
-    pub async fn rate_listing(&self, listing_id: &str, body: &models::RateListingRequest) -> Result<serde_json::Value> {
+    pub async fn rate_listing(&self, listing_id: &str, body: &models::RateListingRequest) -> Result<models::MarketplaceListingRating> {
         self.client
             .request_json(Request {
                 method: Method::POST,

@@ -1688,102 +1688,6 @@ public struct AgentExecutionMode: RawRepresentable, Codable, Hashable, Sendable,
     public static let knownValues: [AgentExecutionMode] = [.async, .worker, .bridge]
 }
 
-/// How the tenant's agents split, and which of them cost the most over the window.
-public struct AgentFleetSummary: Codable, Hashable, Sendable {
-    public var range: AgentFleetSummaryRange
-    public var total: Int
-    public var byExecutionMode: AgentFleetSummaryByExecutionMode
-    public var bridge: AgentFleetSummaryBridge
-    public var runsTotal: Int
-    public var costTotalUsd: Double
-    public var tokensTotal: Int
-    /// At most ten.
-    public var topByRuns: [AgentAnalyticsRow]
-    /// At most ten.
-    public var topByCost: [AgentAnalyticsRow]
-    /// Every agent, not a page.
-    public var agents: [AgentAnalyticsRow]
-
-    public init(range: AgentFleetSummaryRange, total: Int, byExecutionMode: AgentFleetSummaryByExecutionMode, bridge: AgentFleetSummaryBridge, runsTotal: Int, costTotalUsd: Double, tokensTotal: Int, topByRuns: [AgentAnalyticsRow], topByCost: [AgentAnalyticsRow], agents: [AgentAnalyticsRow]) {
-        self.range = range
-        self.total = total
-        self.byExecutionMode = byExecutionMode
-        self.bridge = bridge
-        self.runsTotal = runsTotal
-        self.costTotalUsd = costTotalUsd
-        self.tokensTotal = tokensTotal
-        self.topByRuns = topByRuns
-        self.topByCost = topByCost
-        self.agents = agents
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case range = "range"
-        case total = "total"
-        case byExecutionMode = "by_execution_mode"
-        case bridge = "bridge"
-        case runsTotal = "runs_total"
-        case costTotalUsd = "cost_total_usd"
-        case tokensTotal = "tokens_total"
-        case topByRuns = "top_by_runs"
-        case topByCost = "top_by_cost"
-        case agents = "agents"
-    }
-}
-
-/// `AgentFleetSummaryBridge` model.
-public struct AgentFleetSummaryBridge: Codable, Hashable, Sendable {
-    public var online: Int
-    public var stale: Int
-    public var offline: Int
-    /// Machines across all bridge agents, not agents.
-    public var machinesTotal: Int
-
-    public init(online: Int, stale: Int, offline: Int, machinesTotal: Int) {
-        self.online = online
-        self.stale = stale
-        self.offline = offline
-        self.machinesTotal = machinesTotal
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case online = "online"
-        case stale = "stale"
-        case offline = "offline"
-        case machinesTotal = "machines_total"
-    }
-}
-
-/// `AgentFleetSummaryByExecutionMode` model.
-public struct AgentFleetSummaryByExecutionMode: Codable, Hashable, Sendable {
-    /// Everything that is not a bridge agent.
-    public var cloud: Int
-    public var bridge: Int
-
-    public init(cloud: Int, bridge: Int) {
-        self.cloud = cloud
-        self.bridge = bridge
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case cloud = "cloud"
-        case bridge = "bridge"
-    }
-}
-
-/// `AgentFleetSummaryRange` model.
-public struct AgentFleetSummaryRange: Codable, Hashable, Sendable {
-    public var days: Int
-
-    public init(days: Int) {
-        self.days = days
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case days = "days"
-    }
-}
-
 /// Agent-scoped integration (connection) instance
 public struct AgentIntegration: Codable, Hashable, Sendable {
     public var id: String
@@ -2010,6 +1914,65 @@ public struct AgentPublicConfig: Codable, Hashable, Sendable {
         case rateLimitMessagesPerMin = "rate_limit_messages_per_min"
         case dailyMessageLimit = "daily_message_limit"
     }
+}
+
+/// The stored schedule configuration (AgentScheduleConfig in @uarp/scheduler).
+public struct AgentScheduleConfig: Codable, Hashable, Sendable {
+    public var cron: String
+    public var enabled: Bool
+    /// IANA zone; `UTC` when not given.
+    public var timezone: String
+    public var input: JSONObject
+    public var maxConcurrentScheduled: Int
+    public var onFailure: AgentScheduleConfigOnFailure
+    public var autonomousMode: Bool?
+    public var reflectionPrompt: String?
+
+    public init(cron: String, enabled: Bool, timezone: String, input: JSONObject, maxConcurrentScheduled: Int, onFailure: AgentScheduleConfigOnFailure, autonomousMode: Bool? = nil, reflectionPrompt: String? = nil) {
+        self.cron = cron
+        self.enabled = enabled
+        self.timezone = timezone
+        self.input = input
+        self.maxConcurrentScheduled = maxConcurrentScheduled
+        self.onFailure = onFailure
+        self.autonomousMode = autonomousMode
+        self.reflectionPrompt = reflectionPrompt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case cron = "cron"
+        case enabled = "enabled"
+        case timezone = "timezone"
+        case input = "input"
+        case maxConcurrentScheduled = "max_concurrent_scheduled"
+        case onFailure = "on_failure"
+        case autonomousMode = "autonomous_mode"
+        case reflectionPrompt = "reflection_prompt"
+    }
+}
+
+/// `AgentScheduleConfigOnFailure` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentScheduleConfigOnFailure: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let retryNext = AgentScheduleConfigOnFailure(rawValue: "retry_next")
+    public static let pauseSchedule = AgentScheduleConfigOnFailure(rawValue: "pause_schedule")
+    public static let notify = AgentScheduleConfigOnFailure(rawValue: "notify")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentScheduleConfigOnFailure] = [.retryNext, .pauseSchedule, .notify]
 }
 
 /// `AgentScorer` model.
@@ -2749,22 +2712,6 @@ public struct AmendConstitutionRequest: Codable, Hashable, Sendable {
         case action = "action"
         case rule = "rule"
         case rationale = "rationale"
-    }
-}
-
-/// `AmendConstitutionResponse` model.
-public struct AmendConstitutionResponse: Codable, Hashable, Sendable {
-    public var rules: [ConstitutionRule]?
-    public var version: Int?
-
-    public init(rules: [ConstitutionRule]? = nil, version: Int? = nil) {
-        self.rules = rules
-        self.version = version
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case rules = "rules"
-        case version = "version"
     }
 }
 
@@ -3939,34 +3886,63 @@ public struct BridgeStatusResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `BridgeTaskEvent` model.
+/// A progress frame from the Snaga bridge (BridgeTaskEvent in @uarp/types); `type` decides
+/// which optional fields are present.
 public struct BridgeTaskEvent: Codable, Hashable, Sendable {
     public var eventId: String?
     public var type: BridgeTaskEventType
     public var timestamp: String
     public var approvalId: String?
-    public var status: BridgeTaskEventStatus?
+    public var status: String?
+    public var options: [String]?
+    public var kind: String?
     public var message: String?
     public var toolName: String?
     public var toolArgsPreview: String?
     public var toolCallId: String?
     public var toolResultPreview: String?
+    public var toolDurationMs: Int?
     public var content: String?
     public var metrics: BridgeTaskEventMetrics?
+    public var inputTokens: Int?
+    public var outputTokens: Int?
+    public var error: String?
+    public var output: String?
+    public var capabilities: [String]?
+    public var workingDirectory: String?
+    public var hostname: String?
+    public var platform: String?
+    public var reason: String?
+    public var context: String?
+    public var model: String?
 
-    public init(eventId: String? = nil, type: BridgeTaskEventType, timestamp: String, approvalId: String? = nil, status: BridgeTaskEventStatus? = nil, message: String? = nil, toolName: String? = nil, toolArgsPreview: String? = nil, toolCallId: String? = nil, toolResultPreview: String? = nil, content: String? = nil, metrics: BridgeTaskEventMetrics? = nil) {
+    public init(eventId: String? = nil, type: BridgeTaskEventType, timestamp: String, approvalId: String? = nil, status: String? = nil, options: [String]? = nil, kind: String? = nil, message: String? = nil, toolName: String? = nil, toolArgsPreview: String? = nil, toolCallId: String? = nil, toolResultPreview: String? = nil, toolDurationMs: Int? = nil, content: String? = nil, metrics: BridgeTaskEventMetrics? = nil, inputTokens: Int? = nil, outputTokens: Int? = nil, error: String? = nil, output: String? = nil, capabilities: [String]? = nil, workingDirectory: String? = nil, hostname: String? = nil, platform: String? = nil, reason: String? = nil, context: String? = nil, model: String? = nil) {
         self.eventId = eventId
         self.type = type
         self.timestamp = timestamp
         self.approvalId = approvalId
         self.status = status
+        self.options = options
+        self.kind = kind
         self.message = message
         self.toolName = toolName
         self.toolArgsPreview = toolArgsPreview
         self.toolCallId = toolCallId
         self.toolResultPreview = toolResultPreview
+        self.toolDurationMs = toolDurationMs
         self.content = content
         self.metrics = metrics
+        self.inputTokens = inputTokens
+        self.outputTokens = outputTokens
+        self.error = error
+        self.output = output
+        self.capabilities = capabilities
+        self.workingDirectory = workingDirectory
+        self.hostname = hostname
+        self.platform = platform
+        self.reason = reason
+        self.context = context
+        self.model = model
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -3975,13 +3951,27 @@ public struct BridgeTaskEvent: Codable, Hashable, Sendable {
         case timestamp = "timestamp"
         case approvalId = "approval_id"
         case status = "status"
+        case options = "options"
+        case kind = "kind"
         case message = "message"
         case toolName = "tool_name"
         case toolArgsPreview = "tool_args_preview"
         case toolCallId = "tool_call_id"
         case toolResultPreview = "tool_result_preview"
+        case toolDurationMs = "tool_duration_ms"
         case content = "content"
         case metrics = "metrics"
+        case inputTokens = "input_tokens"
+        case outputTokens = "output_tokens"
+        case error = "error"
+        case output = "output"
+        case capabilities = "capabilities"
+        case workingDirectory = "working_directory"
+        case hostname = "hostname"
+        case platform = "platform"
+        case reason = "reason"
+        case context = "context"
+        case model = "model"
     }
 }
 
@@ -3992,16 +3982,13 @@ public struct BridgeTaskEventMetrics: Codable, Hashable, Sendable {
     public var commandsExecuted: Int?
     public var llmCalls: Int?
     public var executionTimeMs: Int?
-    /// Properties the server returned that this SDK does not model.
-    public var additionalProperties: [String: JSONValue]
 
-    public init(toolCallsCount: Int? = nil, filesModified: Int? = nil, commandsExecuted: Int? = nil, llmCalls: Int? = nil, executionTimeMs: Int? = nil, additionalProperties: [String: JSONValue] = [:]) {
+    public init(toolCallsCount: Int? = nil, filesModified: Int? = nil, commandsExecuted: Int? = nil, llmCalls: Int? = nil, executionTimeMs: Int? = nil) {
         self.toolCallsCount = toolCallsCount
         self.filesModified = filesModified
         self.commandsExecuted = commandsExecuted
         self.llmCalls = llmCalls
         self.executionTimeMs = executionTimeMs
-        self.additionalProperties = additionalProperties
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -4011,67 +3998,6 @@ public struct BridgeTaskEventMetrics: Codable, Hashable, Sendable {
         case llmCalls = "llm_calls"
         case executionTimeMs = "execution_time_ms"
     }
-
-    private struct DynamicKey: CodingKey {
-        let stringValue: String
-        var intValue: Int? { nil }
-        init(stringValue: String) { self.stringValue = stringValue }
-        init?(intValue: Int) { nil }
-    }
-
-    public init(from decoder: Decoder) throws {
-        let container = try decoder.container(keyedBy: CodingKeys.self)
-        self.toolCallsCount = try container.decodeIfPresent(Int.self, forKey: .toolCallsCount)
-        self.filesModified = try container.decodeIfPresent(Int.self, forKey: .filesModified)
-        self.commandsExecuted = try container.decodeIfPresent(Int.self, forKey: .commandsExecuted)
-        self.llmCalls = try container.decodeIfPresent(Int.self, forKey: .llmCalls)
-        self.executionTimeMs = try container.decodeIfPresent(Int.self, forKey: .executionTimeMs)
-        let dynamic = try decoder.container(keyedBy: DynamicKey.self)
-        let known: Set<String> = ["tool_calls_count", "files_modified", "commands_executed", "llm_calls", "execution_time_ms"]
-        var extra: [String: JSONValue] = [:]
-        for key in dynamic.allKeys where !known.contains(key.stringValue) {
-            extra[key.stringValue] = try dynamic.decode(JSONValue.self, forKey: key)
-        }
-        self.additionalProperties = extra
-    }
-
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.container(keyedBy: CodingKeys.self)
-        try container.encodeIfPresent(toolCallsCount, forKey: .toolCallsCount)
-        try container.encodeIfPresent(filesModified, forKey: .filesModified)
-        try container.encodeIfPresent(commandsExecuted, forKey: .commandsExecuted)
-        try container.encodeIfPresent(llmCalls, forKey: .llmCalls)
-        try container.encodeIfPresent(executionTimeMs, forKey: .executionTimeMs)
-        var dynamic = encoder.container(keyedBy: DynamicKey.self)
-        for (key, value) in additionalProperties {
-            try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
-        }
-    }
-}
-
-/// `BridgeTaskEventStatus` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct BridgeTaskEventStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let working = BridgeTaskEventStatus(rawValue: "working")
-    public static let completed = BridgeTaskEventStatus(rawValue: "completed")
-    public static let failed = BridgeTaskEventStatus(rawValue: "failed")
-    public static let approvalDenied = BridgeTaskEventStatus(rawValue: "approval_denied")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [BridgeTaskEventStatus] = [.working, .completed, .failed, .approvalDenied]
 }
 
 /// `BridgeTaskEventType` values.
@@ -4445,66 +4371,6 @@ public struct CheckGovernanceRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `CheckGovernanceResponse` model.
-public struct CheckGovernanceResponse: Codable, Hashable, Sendable {
-    /// False when any matched rule carries a blocking penalty.
-    public var allowed: Bool
-    public var checkResult: CheckGovernanceResponseCheckResult
-    /// What the matched rules call for. Empty when nothing matched.
-    public var penalties: [CheckGovernanceResponsePenalty]
-
-    public init(allowed: Bool, checkResult: CheckGovernanceResponseCheckResult, penalties: [CheckGovernanceResponsePenalty]) {
-        self.allowed = allowed
-        self.checkResult = checkResult
-        self.penalties = penalties
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case allowed = "allowed"
-        case checkResult = "checkResult"
-        case penalties = "penalties"
-    }
-}
-
-/// `CheckGovernanceResponseCheckResult` model.
-public struct CheckGovernanceResponseCheckResult: Codable, Hashable, Sendable {
-    public var allowed: Bool
-    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
-    public var checkedRules: [String]
-    public var violations: [ConstitutionViolation]
-    public var checkedAt: String
-
-    public init(allowed: Bool, checkedRules: [String], violations: [ConstitutionViolation], checkedAt: String) {
-        self.allowed = allowed
-        self.checkedRules = checkedRules
-        self.violations = violations
-        self.checkedAt = checkedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case allowed = "allowed"
-        case checkedRules = "checked_rules"
-        case violations = "violations"
-        case checkedAt = "checked_at"
-    }
-}
-
-/// `CheckGovernanceResponsePenalty` model.
-public struct CheckGovernanceResponsePenalty: Codable, Hashable, Sendable {
-    public var ruleId: String
-    public var penalty: ConstitutionRulePenalty
-
-    public init(ruleId: String, penalty: ConstitutionRulePenalty) {
-        self.ruleId = ruleId
-        self.penalty = penalty
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case ruleId = "ruleId"
-        case penalty = "penalty"
-    }
-}
-
 /// `CheckSpawnPermissionRequest` model.
 public struct CheckSpawnPermissionRequest: Codable, Hashable, Sendable {
     public var parentAgentId: String
@@ -4706,25 +4572,6 @@ public struct ConnectorConfigField: Codable, Hashable, Sendable {
     }
 }
 
-/// `Constitution` model.
-public struct Constitution: Codable, Hashable, Sendable {
-    public var rules: [ConstitutionRule]
-    public var version: Int
-    public var updatedAt: String?
-
-    public init(rules: [ConstitutionRule], version: Int, updatedAt: String? = nil) {
-        self.rules = rules
-        self.version = version
-        self.updatedAt = updatedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case rules = "rules"
-        case version = "version"
-        case updatedAt = "updated_at"
-    }
-}
-
 /// `ConstitutionAmendment` model.
 public struct ConstitutionAmendment: Codable, Hashable, Sendable {
     public var amendmentId: String
@@ -4794,15 +4641,19 @@ public struct ConstitutionDocument: Codable, Hashable, Sendable {
     /// Who created the genesis document.
     public var founderId: String
     public var createdAt: String
+    /// Present and `true` only when no document is stored and these are the genesis defaults
+    /// computed on read; absent on a stored document (measured 2026-09-10).
+    public var virtual: Bool?
     public var updatedAt: String
 
-    public init(tenantId: String, version: Int, rules: [ConstitutionRule], amendments: [ConstitutionAmendment], founderId: String, createdAt: String, updatedAt: String) {
+    public init(tenantId: String, version: Int, rules: [ConstitutionRule], amendments: [ConstitutionAmendment], founderId: String, createdAt: String, virtual: Bool? = nil, updatedAt: String) {
         self.tenantId = tenantId
         self.version = version
         self.rules = rules
         self.amendments = amendments
         self.founderId = founderId
         self.createdAt = createdAt
+        self.virtual = virtual
         self.updatedAt = updatedAt
     }
 
@@ -4813,6 +4664,7 @@ public struct ConstitutionDocument: Codable, Hashable, Sendable {
         case amendments = "amendments"
         case founderId = "founder_id"
         case createdAt = "created_at"
+        case virtual = "virtual"
         case updatedAt = "updated_at"
     }
 }
@@ -7776,62 +7628,62 @@ public struct EmptyWorkspaceTrashResponse: Codable, Hashable, Sendable {
 
 /// `EnforcementResult` model.
 public struct EnforcementResult: Codable, Hashable, Sendable {
+    /// False when any matched rule carries a blocking penalty.
     public var allowed: Bool
-    public var violations: [EnforcementResultViolation]
+    public var checkResult: EnforcementResultCheckResult
+    /// What the matched rules call for. Empty when nothing matched.
+    public var penalties: [EnforcementResultPenalty]
 
-    public init(allowed: Bool, violations: [EnforcementResultViolation]) {
+    public init(allowed: Bool, checkResult: EnforcementResultCheckResult, penalties: [EnforcementResultPenalty]) {
         self.allowed = allowed
-        self.violations = violations
+        self.checkResult = checkResult
+        self.penalties = penalties
     }
 
     private enum CodingKeys: String, CodingKey {
         case allowed = "allowed"
-        case violations = "violations"
+        case checkResult = "checkResult"
+        case penalties = "penalties"
     }
 }
 
-/// `EnforcementResultViolation` model.
-public struct EnforcementResultViolation: Codable, Hashable, Sendable {
-    public var ruleId: String
-    public var severity: EnforcementResultViolationSeverity
-    public var message: String
+/// `EnforcementResultCheckResult` model.
+public struct EnforcementResultCheckResult: Codable, Hashable, Sendable {
+    public var allowed: Bool
+    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+    public var checkedRules: [String]
+    public var violations: [ConstitutionViolation]
+    public var checkedAt: String
 
-    public init(ruleId: String, severity: EnforcementResultViolationSeverity, message: String) {
-        self.ruleId = ruleId
-        self.severity = severity
-        self.message = message
+    public init(allowed: Bool, checkedRules: [String], violations: [ConstitutionViolation], checkedAt: String) {
+        self.allowed = allowed
+        self.checkedRules = checkedRules
+        self.violations = violations
+        self.checkedAt = checkedAt
     }
 
     private enum CodingKeys: String, CodingKey {
-        case ruleId = "rule_id"
-        case severity = "severity"
-        case message = "message"
+        case allowed = "allowed"
+        case checkedRules = "checked_rules"
+        case violations = "violations"
+        case checkedAt = "checked_at"
     }
 }
 
-/// `EnforcementResultViolationSeverity` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct EnforcementResultViolationSeverity: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
+/// `EnforcementResultPenalty` model.
+public struct EnforcementResultPenalty: Codable, Hashable, Sendable {
+    public var ruleId: String
+    public var penalty: ConstitutionRulePenalty
+
+    public init(ruleId: String, penalty: ConstitutionRulePenalty) {
+        self.ruleId = ruleId
+        self.penalty = penalty
     }
 
-    public static let info = EnforcementResultViolationSeverity(rawValue: "info")
-    public static let warning = EnforcementResultViolationSeverity(rawValue: "warning")
-    public static let error = EnforcementResultViolationSeverity(rawValue: "error")
-    public static let blocker = EnforcementResultViolationSeverity(rawValue: "blocker")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [EnforcementResultViolationSeverity] = [.info, .warning, .error, .blocker]
+    private enum CodingKeys: String, CodingKey {
+        case ruleId = "ruleId"
+        case penalty = "penalty"
+    }
 }
 
 /// `EnrolMfaRequest` model.
@@ -9840,45 +9692,6 @@ public struct GetCompanyObjectivesResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `GetConstitutionResponse` model.
-public struct GetConstitutionResponse: Codable, Hashable, Sendable {
-    public var tenantId: String
-    /// Monotonic. `0` on the virtual genesis view — nothing is stored yet.
-    public var version: Int
-    public var rules: [ConstitutionRule]
-    public var amendments: [ConstitutionAmendment]
-    public var founderId: String
-    public var createdAt: String
-    public var updatedAt: String
-    /// Present and `true` ONLY when no document is stored: these are the genesis defaults, computed
-    /// on read and not persisted (routes/governance.ts:174-196). Absent on every stored
-    /// constitution — do not read its absence as `false` being meaningful, and do not re-seed a
-    /// document that does not carry it.
-    public var virtual: Bool?
-
-    public init(tenantId: String, version: Int, rules: [ConstitutionRule], amendments: [ConstitutionAmendment], founderId: String, createdAt: String, updatedAt: String, virtual: Bool? = nil) {
-        self.tenantId = tenantId
-        self.version = version
-        self.rules = rules
-        self.amendments = amendments
-        self.founderId = founderId
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-        self.virtual = virtual
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case tenantId = "tenant_id"
-        case version = "version"
-        case rules = "rules"
-        case amendments = "amendments"
-        case founderId = "founder_id"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-        case virtual = "virtual"
-    }
-}
-
 /// `GetDataExplorerValueResponse` model.
 public struct GetDataExplorerValueResponse: Codable, Hashable, Sendable {
     public var namespace: String?
@@ -11133,16 +10946,18 @@ public struct GetUsageTimeseriesResponse: Codable, Hashable, Sendable {
 
 /// `GetUsageTimeseriesResponseDataItem` model.
 public struct GetUsageTimeseriesResponseDataItem: Codable, Hashable, Sendable {
-    public var date: String?
-    public var value: Double?
+    /// The bucket's label — `M/D` in UTC without padding (`8/28`), not a date or an instant
+    /// (usage-tracker.ts getTimeseries; measured 2026-09-10). Do not parse it as a Date.
+    public var label: String
+    public var value: Double
 
-    public init(date: String? = nil, value: Double? = nil) {
-        self.date = date
+    public init(label: String, value: Double) {
+        self.label = label
         self.value = value
     }
 
     private enum CodingKeys: String, CodingKey {
-        case date = "date"
+        case label = "label"
         case value = "value"
     }
 }
@@ -12900,9 +12715,9 @@ public struct ListAmbassadorRequestsResponse: Codable, Hashable, Sendable {
 
 /// `ListAmbassadorVetoesResponse` model.
 public struct ListAmbassadorVetoesResponse: Codable, Hashable, Sendable {
-    public var vetoes: [Veto]?
+    public var vetoes: [VetoRecord]?
 
-    public init(vetoes: [Veto]? = nil) {
+    public init(vetoes: [VetoRecord]? = nil) {
         self.vetoes = vetoes
     }
 
@@ -14726,41 +14541,6 @@ public struct ListWorkspaceTrashResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case items = "items"
-    }
-}
-
-/// Tenant-scoped LLM provider credential (masked secret).
-public struct LLMCredential: Codable, Hashable, Sendable {
-    public var id: String
-    public var tenantId: String
-    public var provider: String
-    public var label: String?
-    /// Last 4 chars only; full key never returned.
-    public var keyPreview: String
-    public var endpointURL: String?
-    public var createdAt: String?
-    public var updatedAt: String?
-
-    public init(id: String, tenantId: String, provider: String, label: String? = nil, keyPreview: String, endpointURL: String? = nil, createdAt: String? = nil, updatedAt: String? = nil) {
-        self.id = id
-        self.tenantId = tenantId
-        self.provider = provider
-        self.label = label
-        self.keyPreview = keyPreview
-        self.endpointURL = endpointURL
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case tenantId = "tenant_id"
-        case provider = "provider"
-        case label = "label"
-        case keyPreview = "key_preview"
-        case endpointURL = "endpoint_url"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
     }
 }
 
@@ -17303,6 +17083,49 @@ public struct PermissionSet: Codable, Hashable, Sendable {
     }
 }
 
+/// Body of PUT /governance/permissions/{agentId}. Every field optional: a field the body omits
+/// keeps its stored value (mergePermissionSet), and only a first write falls back to the
+/// defaults. `agent_id`, `tenant_id`, `created_at`, `updated_at` are set by the server and
+/// ignored in the body.
+public struct PermissionSetUpdate: Codable, Hashable, Sendable {
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    public var allowedTools: [String]?
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    public var allowedRoles: [String]?
+    /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
+    /// not merge).
+    public var resourcePermissions: [ResourcePermission]?
+    public var maxBudgetPerRunUsd: Double?
+    public var maxSpawnDepth: Int?
+    public var canSpawn: Bool?
+    public var canSelfModify: Bool?
+    public var parentAgentId: String?
+
+    public init(allowedTools: [String]? = nil, allowedRoles: [String]? = nil, resourcePermissions: [ResourcePermission]? = nil, maxBudgetPerRunUsd: Double? = nil, maxSpawnDepth: Int? = nil, canSpawn: Bool? = nil, canSelfModify: Bool? = nil, parentAgentId: String? = nil) {
+        self.allowedTools = allowedTools
+        self.allowedRoles = allowedRoles
+        self.resourcePermissions = resourcePermissions
+        self.maxBudgetPerRunUsd = maxBudgetPerRunUsd
+        self.maxSpawnDepth = maxSpawnDepth
+        self.canSpawn = canSpawn
+        self.canSelfModify = canSelfModify
+        self.parentAgentId = parentAgentId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case allowedTools = "allowed_tools"
+        case allowedRoles = "allowed_roles"
+        case resourcePermissions = "resource_permissions"
+        case maxBudgetPerRunUsd = "max_budget_per_run_usd"
+        case maxSpawnDepth = "max_spawn_depth"
+        case canSpawn = "can_spawn"
+        case canSelfModify = "can_self_modify"
+        case parentAgentId = "parent_agent_id"
+    }
+}
+
 /// `PlanLLMLimits` model.
 public struct PlanLLMLimits: Codable, Hashable, Sendable {
     public var tierAccess: [PlanLLMLimitsTierAccessItem]?
@@ -19502,6 +19325,22 @@ public struct RejectRunRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `RemoveScheduleResponse` model.
+public struct RemoveScheduleResponse: Codable, Hashable, Sendable {
+    public var removed: Bool
+    public var agentId: String
+
+    public init(removed: Bool, agentId: String) {
+        self.removed = removed
+        self.agentId = agentId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case removed = "removed"
+        case agentId = "agent_id"
+    }
+}
+
 /// `ReplaceConstitutionRequest` model.
 public struct ReplaceConstitutionRequest: Codable, Hashable, Sendable {
     public var rules: [ConstitutionRule]
@@ -19517,22 +19356,6 @@ public struct ReplaceConstitutionRequest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case rules = "rules"
         case rationale = "rationale"
-    }
-}
-
-/// `ReplaceConstitutionResponse` model.
-public struct ReplaceConstitutionResponse: Codable, Hashable, Sendable {
-    public var rules: [ConstitutionRule]?
-    public var version: Int?
-
-    public init(rules: [ConstitutionRule]? = nil, version: Int? = nil) {
-        self.rules = rules
-        self.version = version
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case rules = "rules"
-        case version = "version"
     }
 }
 
@@ -20650,43 +20473,54 @@ public struct RunWorkspaceCommandResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// Cron-driven recurring run config attached to an agent (PUT /agents/{id}/schedule).
+/// What `GET /agents/{agentId}/schedule` returns: `agent_id`, the config fields flattened, and
+/// the runtime state. Keys as served 2026-09-10; `last_fired_at`, `autonomous_mode` and
+/// `reflection_prompt` appear only when set.
 public struct Schedule: Codable, Hashable, Sendable {
-    public var agentId: String?
+    public var agentId: String
     public var cron: String
-    public var enabled: Bool?
-    public var input: JSONObject?
-    public var timezone: String?
-    public var maxConcurrentScheduled: Int?
-    public var onFailure: ScheduleOnFailure?
+    public var enabled: Bool
+    public var timezone: String
+    public var input: JSONObject
+    public var maxConcurrentScheduled: Int
+    public var onFailure: AgentScheduleConfigOnFailure
     public var autonomousMode: Bool?
     public var reflectionPrompt: String?
-    public var nextRunAt: String?
+    public var status: ScheduleEntryStatus
+    public var nextFireAt: String?
+    public var lastFiredAt: String?
+    public var consecutiveFailures: Int
 
-    public init(agentId: String? = nil, cron: String, enabled: Bool? = nil, input: JSONObject? = nil, timezone: String? = nil, maxConcurrentScheduled: Int? = nil, onFailure: ScheduleOnFailure? = nil, autonomousMode: Bool? = nil, reflectionPrompt: String? = nil, nextRunAt: String? = nil) {
+    public init(agentId: String, cron: String, enabled: Bool, timezone: String, input: JSONObject, maxConcurrentScheduled: Int, onFailure: AgentScheduleConfigOnFailure, autonomousMode: Bool? = nil, reflectionPrompt: String? = nil, status: ScheduleEntryStatus, nextFireAt: String? = nil, lastFiredAt: String? = nil, consecutiveFailures: Int) {
         self.agentId = agentId
         self.cron = cron
         self.enabled = enabled
-        self.input = input
         self.timezone = timezone
+        self.input = input
         self.maxConcurrentScheduled = maxConcurrentScheduled
         self.onFailure = onFailure
         self.autonomousMode = autonomousMode
         self.reflectionPrompt = reflectionPrompt
-        self.nextRunAt = nextRunAt
+        self.status = status
+        self.nextFireAt = nextFireAt
+        self.lastFiredAt = lastFiredAt
+        self.consecutiveFailures = consecutiveFailures
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
         case cron = "cron"
         case enabled = "enabled"
-        case input = "input"
         case timezone = "timezone"
+        case input = "input"
         case maxConcurrentScheduled = "max_concurrent_scheduled"
         case onFailure = "on_failure"
         case autonomousMode = "autonomous_mode"
         case reflectionPrompt = "reflection_prompt"
-        case nextRunAt = "next_run_at"
+        case status = "status"
+        case nextFireAt = "next_fire_at"
+        case lastFiredAt = "last_fired_at"
+        case consecutiveFailures = "consecutive_failures"
     }
 }
 
@@ -20770,11 +20604,43 @@ public struct ScheduleCanvasWorkflowResponseStatus: RawRepresentable, Codable, H
     public static let knownValues: [ScheduleCanvasWorkflowResponseStatus] = [.active]
 }
 
-/// `ScheduleOnFailure` values.
+/// What `PUT /agents/{agentId}/schedule` returns: the stored entry with its `config` nested
+/// (ScheduleEntry in @uarp/scheduler). `GET` returns the flattened `Schedule` instead.
+public struct ScheduleEntry: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var agentId: String
+    public var config: AgentScheduleConfig
+    public var lastFiredAt: String?
+    public var nextFireAt: String?
+    public var consecutiveFailures: Int
+    public var status: ScheduleEntryStatus
+
+    public init(tenantId: String, agentId: String, config: AgentScheduleConfig, lastFiredAt: String? = nil, nextFireAt: String? = nil, consecutiveFailures: Int, status: ScheduleEntryStatus) {
+        self.tenantId = tenantId
+        self.agentId = agentId
+        self.config = config
+        self.lastFiredAt = lastFiredAt
+        self.nextFireAt = nextFireAt
+        self.consecutiveFailures = consecutiveFailures
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case agentId = "agent_id"
+        case config = "config"
+        case lastFiredAt = "last_fired_at"
+        case nextFireAt = "next_fire_at"
+        case consecutiveFailures = "consecutive_failures"
+        case status = "status"
+    }
+}
+
+/// `ScheduleEntryStatus` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
-public struct ScheduleOnFailure: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+public struct ScheduleEntryStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
     public let rawValue: String
     public init(rawValue: String) { self.rawValue = rawValue }
     public init(stringLiteral value: String) { self.rawValue = value }
@@ -20786,12 +20652,12 @@ public struct ScheduleOnFailure: RawRepresentable, Codable, Hashable, Sendable, 
         try container.encode(rawValue)
     }
 
-    public static let `continue` = ScheduleOnFailure(rawValue: "continue")
-    public static let pause = ScheduleOnFailure(rawValue: "pause")
-    public static let alert = ScheduleOnFailure(rawValue: "alert")
+    public static let active = ScheduleEntryStatus(rawValue: "active")
+    public static let paused = ScheduleEntryStatus(rawValue: "paused")
+    public static let error = ScheduleEntryStatus(rawValue: "error")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ScheduleOnFailure] = [.`continue`, .pause, .alert]
+    public static let knownValues: [ScheduleEntryStatus] = [.active, .paused, .error]
 }
 
 /// `ScheduleSummary` model.
@@ -21871,7 +21737,7 @@ public struct SetScheduleRequest: Codable, Hashable, Sendable {
     public var enabled: Bool?
     public var input: JSONObject?
     public var timezone: String?
-    public var onFailure: SetScheduleRequestOnFailure?
+    public var onFailure: AgentScheduleConfigOnFailure?
     public var maxConcurrentScheduled: Double?
     /// When true, schedule is fired by autonomous tick with reflection prompt instead of cron run
     /// with input.
@@ -21880,7 +21746,7 @@ public struct SetScheduleRequest: Codable, Hashable, Sendable {
     /// next steps).
     public var reflectionPrompt: String?
 
-    public init(cron: String, enabled: Bool? = nil, input: JSONObject? = nil, timezone: String? = nil, onFailure: SetScheduleRequestOnFailure? = nil, maxConcurrentScheduled: Double? = nil, autonomousMode: Bool? = nil, reflectionPrompt: String? = nil) {
+    public init(cron: String, enabled: Bool? = nil, input: JSONObject? = nil, timezone: String? = nil, onFailure: AgentScheduleConfigOnFailure? = nil, maxConcurrentScheduled: Double? = nil, autonomousMode: Bool? = nil, reflectionPrompt: String? = nil) {
         self.cron = cron
         self.enabled = enabled
         self.input = input
@@ -21901,30 +21767,6 @@ public struct SetScheduleRequest: Codable, Hashable, Sendable {
         case autonomousMode = "autonomous_mode"
         case reflectionPrompt = "reflection_prompt"
     }
-}
-
-/// `SetScheduleRequestOnFailure` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct SetScheduleRequestOnFailure: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let retryNext = SetScheduleRequestOnFailure(rawValue: "retry_next")
-    public static let pauseSchedule = SetScheduleRequestOnFailure(rawValue: "pause_schedule")
-    public static let notify = SetScheduleRequestOnFailure(rawValue: "notify")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [SetScheduleRequestOnFailure] = [.retryNext, .pauseSchedule, .notify]
 }
 
 /// `SetSpawnPolicyResponse` model.
@@ -22116,6 +21958,35 @@ public struct SpawnPolicy: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case tenantId = "tenant_id"
+        case childBudgetRatio = "child_budget_ratio"
+        case maxDepth = "max_depth"
+        case allowedRoles = "allowed_roles"
+        case requireApprovalAboveDepth = "require_approval_above_depth"
+        case maxChildrenPerAgent = "max_children_per_agent"
+    }
+}
+
+/// Body of PUT /governance/permissions/spawn-policy. The handler requires the whole record
+/// (requireWholeRecord): all five fields, every time; `tenant_id` is the caller's and is not
+/// accepted in the body.
+public struct SpawnPolicyUpdate: Codable, Hashable, Sendable {
+    /// Child agent gets at most this fraction of parent's budget.
+    public var childBudgetRatio: Double
+    public var maxDepth: Int
+    /// Whole-record write: the array is stored as sent, REPLACING the stored list.
+    public var allowedRoles: [String]
+    public var requireApprovalAboveDepth: Int
+    public var maxChildrenPerAgent: Int
+
+    public init(childBudgetRatio: Double, maxDepth: Int, allowedRoles: [String], requireApprovalAboveDepth: Int, maxChildrenPerAgent: Int) {
+        self.childBudgetRatio = childBudgetRatio
+        self.maxDepth = maxDepth
+        self.allowedRoles = allowedRoles
+        self.requireApprovalAboveDepth = requireApprovalAboveDepth
+        self.maxChildrenPerAgent = maxChildrenPerAgent
+    }
+
+    private enum CodingKeys: String, CodingKey {
         case childBudgetRatio = "child_budget_ratio"
         case maxDepth = "max_depth"
         case allowedRoles = "allowed_roles"
@@ -22697,45 +22568,6 @@ public struct SyncProviderModelsResponse: Codable, Hashable, Sendable {
         case total = "total"
         case scanned = "scanned"
         case provider = "provider"
-    }
-}
-
-/// `TallyVotesResponse` model.
-public struct TallyVotesResponse: Codable, Hashable, Sendable {
-    public var status: String?
-    public var outcome: String?
-    public var totalVotes: Int?
-
-    public init(status: String? = nil, outcome: String? = nil, totalVotes: Int? = nil) {
-        self.status = status
-        self.outcome = outcome
-        self.totalVotes = totalVotes
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case status = "status"
-        case outcome = "outcome"
-        case totalVotes = "total_votes"
-    }
-}
-
-/// A teacher model to distil from. Teachers must share the student's vocabulary.
-public struct TeacherRef: Codable, Hashable, Sendable {
-    public var providerId: String
-    public var modelRef: String
-    /// Relative weight in the distillation mix.
-    public var weight: Double?
-
-    public init(providerId: String, modelRef: String, weight: Double? = nil) {
-        self.providerId = providerId
-        self.modelRef = modelRef
-        self.weight = weight
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case providerId = "provider_id"
-        case modelRef = "model_ref"
-        case weight = "weight"
     }
 }
 
@@ -26397,34 +26229,6 @@ public struct VerifyTenantDomainResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `Veto` model.
-public struct Veto: Codable, Hashable, Sendable {
-    public var id: String
-    public var issuedBy: String
-    public var targetType: String
-    public var targetId: String
-    public var reason: String?
-    public var issuedAt: String?
-
-    public init(id: String, issuedBy: String, targetType: String, targetId: String, reason: String? = nil, issuedAt: String? = nil) {
-        self.id = id
-        self.issuedBy = issuedBy
-        self.targetType = targetType
-        self.targetId = targetId
-        self.reason = reason
-        self.issuedAt = issuedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case issuedBy = "issued_by"
-        case targetType = "target_type"
-        case targetId = "target_id"
-        case reason = "reason"
-        case issuedAt = "issued_at"
-    }
-}
-
 /// `VetoProposalRequest` model.
 public struct VetoProposalRequest: Codable, Hashable, Sendable {
     public var founderId: String?
@@ -26451,10 +26255,10 @@ public struct VetoProposalResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `VetoRecord` model.
+/// A veto as issued and listed (VetoRecord in @uarp/governance). Shape from the store's record;
+/// no tenant in reach had a veto to measure on 2026-09-10.
 public struct VetoRecord: Codable, Hashable, Sendable {
     public var vetoId: String
-    /// `ambassador_id` of the human who issued it.
     public var issuedBy: String
     public var targetType: VetoRecordTargetType
     public var targetId: String

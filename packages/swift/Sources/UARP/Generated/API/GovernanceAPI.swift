@@ -27,7 +27,7 @@ public struct GovernanceAPI: Sendable {
     /// Veto
     ///
     /// `POST /api/v1/governance/ambassador/veto`
-    public func ambassadorVeto(body: AmbassadorVetoRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func ambassadorVeto(body: AmbassadorVetoRequest, options: RequestOptions = .init()) async throws -> VetoRecord {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/ambassador/veto",
@@ -40,7 +40,7 @@ public struct GovernanceAPI: Sendable {
     /// Amend constitution
     ///
     /// `POST /api/v1/governance/constitution/amend`
-    public func amendConstitution(body: AmendConstitutionRequest, options: RequestOptions = .init()) async throws -> AmendConstitutionResponse {
+    public func amendConstitution(body: AmendConstitutionRequest, options: RequestOptions = .init()) async throws -> ConstitutionDocument {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/constitution/amend",
@@ -90,7 +90,7 @@ public struct GovernanceAPI: Sendable {
     /// Check governance compliance
     ///
     /// `POST /api/v1/governance/check`
-    public func checkGovernance(body: CheckGovernanceRequest, options: RequestOptions = .init()) async throws -> CheckGovernanceResponse {
+    public func checkGovernance(body: CheckGovernanceRequest, options: RequestOptions = .init()) async throws -> EnforcementResult {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/check",
@@ -313,7 +313,7 @@ public struct GovernanceAPI: Sendable {
     /// Get constitution
     ///
     /// `GET /api/v1/governance/constitution`
-    public func getConstitution(options: RequestOptions = .init()) async throws -> GetConstitutionResponse {
+    public func getConstitution(options: RequestOptions = .init()) async throws -> ConstitutionDocument {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/constitution",
@@ -584,7 +584,7 @@ public struct GovernanceAPI: Sendable {
     /// Replace constitution
     ///
     /// `PUT /api/v1/governance/constitution`
-    public func replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = .init()) async throws -> ReplaceConstitutionResponse {
+    public func replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = .init()) async throws -> ConstitutionDocument {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/governance/constitution",
@@ -616,7 +616,7 @@ public struct GovernanceAPI: Sendable {
     /// `created_at` is server-owned and ignored from the body.
     ///
     /// `PUT /api/v1/governance/permissions/{agentId}`
-    public func setAgentPermissions(agentId: String, body: PermissionSet, options: RequestOptions = .init()) async throws -> SetAgentPermissionsResponse {
+    public func setAgentPermissions(agentId: String, body: PermissionSetUpdate, options: RequestOptions = .init()) async throws -> SetAgentPermissionsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/governance/permissions/\(encodePathSegment(agentId))",
@@ -672,7 +672,7 @@ public struct GovernanceAPI: Sendable {
     /// Set spawn policy
     ///
     /// `PUT /api/v1/governance/permissions/spawn-policy`
-    public func setSpawnPolicy(body: SpawnPolicy, options: RequestOptions = .init()) async throws -> SetSpawnPolicyResponse {
+    public func setSpawnPolicy(body: SpawnPolicyUpdate, options: RequestOptions = .init()) async throws -> SetSpawnPolicyResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/governance/permissions/spawn-policy",
@@ -685,7 +685,7 @@ public struct GovernanceAPI: Sendable {
     /// Tally votes
     ///
     /// `POST /api/v1/governance/voting/proposals/{id}/tally`
-    public func tallyVotes(id: String, options: RequestOptions = .init()) async throws -> TallyVotesResponse {
+    public func tallyVotes(id: String, options: RequestOptions = .init()) async throws -> VoteResult {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/governance/voting/proposals/\(encodePathSegment(id))/tally",

@@ -30,8 +30,8 @@ public class SchedulerApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getSchedule(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun getSchedule(agentId: String, options: RequestOptions = RequestOptions()): Schedule {
+        return client.request<Schedule>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/schedule",
@@ -66,8 +66,8 @@ public class SchedulerApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun removeSchedule(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun removeSchedule(agentId: String, options: RequestOptions = RequestOptions()): RemoveScheduleResponse {
+        return client.request<RemoveScheduleResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/schedule",
@@ -84,8 +84,8 @@ public class SchedulerApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun setSchedule(agentId: String, body: SetScheduleRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun setSchedule(agentId: String, body: SetScheduleRequest, options: RequestOptions = RequestOptions()): ScheduleEntry {
+        return client.request<ScheduleEntry>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/schedule",

@@ -32,7 +32,7 @@ impl SchedulerApi {
     /// `GET /api/v1/agents/{agentId}/schedule`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_schedule(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn get_schedule(&self, agent_id: &str) -> Result<models::Schedule> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -70,7 +70,7 @@ impl SchedulerApi {
     /// `DELETE /api/v1/agents/{agentId}/schedule`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn remove_schedule(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn remove_schedule(&self, agent_id: &str) -> Result<models::RemoveScheduleResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -88,7 +88,7 @@ impl SchedulerApi {
     /// `PUT /api/v1/agents/{agentId}/schedule`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn set_schedule(&self, agent_id: &str, body: &models::SetScheduleRequest) -> Result<serde_json::Value> {
+    pub async fn set_schedule(&self, agent_id: &str, body: &models::SetScheduleRequest) -> Result<models::ScheduleEntry> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

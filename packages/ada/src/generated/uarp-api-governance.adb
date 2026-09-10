@@ -25,24 +25,25 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Ambassador_Veto_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Veto_Record
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/governance/ambassador/veto",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/governance/ambassador/veto",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Ambassador_Veto;
 
    function Amend_Constitution
      (Self : Client_Type;
       Payload : UARP.Models.Amend_Constitution_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Amend_Constitution_Response
+      return UARP.Models.Constitution_Document
    is
    begin
       return UARP.Models.From_JSON
@@ -107,7 +108,7 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Check_Governance_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Check_Governance_Response
+      return UARP.Models.Enforcement_Result
    is
    begin
       return UARP.Models.From_JSON
@@ -398,7 +399,7 @@ package body UARP.API.Governance is
    function Get_Constitution
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Constitution_Response
+      return UARP.Models.Constitution_Document
    is
    begin
       return UARP.Models.From_JSON
@@ -745,7 +746,7 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Payload : UARP.Models.Replace_Constitution_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Replace_Constitution_Response
+      return UARP.Models.Constitution_Document
    is
    begin
       return UARP.Models.From_JSON
@@ -780,7 +781,7 @@ package body UARP.API.Governance is
    function Set_Agent_Permissions
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.Models.Permission_Set;
+      Payload : UARP.Models.Permission_Set_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Agent_Permissions_Response
    is
@@ -852,7 +853,7 @@ package body UARP.API.Governance is
 
    function Set_Spawn_Policy
      (Self : Client_Type;
-      Payload : UARP.Models.Spawn_Policy;
+      Payload : UARP.Models.Spawn_Policy_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Spawn_Policy_Response
    is
@@ -872,7 +873,7 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Tally_Votes_Response
+      return UARP.Models.Vote_Result
    is
    begin
       return UARP.Models.From_JSON
