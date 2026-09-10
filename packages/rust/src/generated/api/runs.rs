@@ -98,7 +98,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/approve`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn approve_run(&self, run_id: &str, body: &models::RunApproveRequest) -> Result<serde_json::Value> {
+    pub async fn approve_run(&self, run_id: &str, body: &models::RunApproveRequest) -> Result<models::ApproveRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -116,7 +116,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/cancel`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn cancel(&self, run_id: &str) -> Result<serde_json::Value> {
+    pub async fn cancel(&self, run_id: &str) -> Result<models::CancelRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -136,7 +136,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/continue`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn continue_run(&self, run_id: &str, body: &models::ContinueRunRequest) -> Result<serde_json::Value> {
+    pub async fn continue_run(&self, run_id: &str, body: &models::ContinueRunRequest) -> Result<models::ContinueRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -177,7 +177,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/checkpoint`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn create_run_checkpoint(&self, run_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_run_checkpoint(&self, run_id: &str) -> Result<models::RunCheckpoint> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -256,7 +256,7 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}/audit-log`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn get_run_audit_log(&self, run_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_run_audit_log(&self, run_id: &str) -> Result<models::GetRunAuditLogResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -380,7 +380,7 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}/artifacts`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn list_run_artifacts(&self, run_id: &str) -> Result<serde_json::Value> {
+    pub async fn list_run_artifacts(&self, run_id: &str) -> Result<models::ListRunArtifactsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -416,7 +416,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/pause`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn pause_run(&self, run_id: &str) -> Result<serde_json::Value> {
+    pub async fn pause_run(&self, run_id: &str) -> Result<models::PauseRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -434,7 +434,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/reject`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn reject_run(&self, run_id: &str, body: &models::RejectRunRequest) -> Result<serde_json::Value> {
+    pub async fn reject_run(&self, run_id: &str, body: &models::RejectRunRequest) -> Result<models::RejectRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -488,7 +488,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/resume`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn resume(&self, run_id: &str) -> Result<serde_json::Value> {
+    pub async fn resume(&self, run_id: &str) -> Result<models::ResumeRunResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -513,7 +513,7 @@ impl RunsApi {
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn set_run_feedback(&self, run_id: &str, body: &models::SetRunFeedbackRequest) -> Result<models::SetRunFeedbackResponse> {
+    pub async fn set_run_feedback(&self, run_id: &str, body: &models::SetRunFeedbackRequest) -> Result<models::RunFeedbackSet> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

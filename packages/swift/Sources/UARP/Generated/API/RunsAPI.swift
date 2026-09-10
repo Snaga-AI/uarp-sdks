@@ -16,7 +16,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/approve`
     ///
     /// Required scopes: `runs:create`.
-    public func approveRun(runId: String, body: RunApproveRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func approveRun(runId: String, body: RunApproveRequest? = nil, options: RequestOptions = .init()) async throws -> ApproveRunResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
@@ -32,7 +32,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/cancel`
     ///
     /// Required scopes: `runs:create`.
-    public func cancel(runId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func cancel(runId: String, options: RequestOptions = .init()) async throws -> CancelRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/cancel",
@@ -48,7 +48,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/continue`
     ///
     /// Required scopes: `runs:create`.
-    public func continueRun(runId: String, body: ContinueRunRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func continueRun(runId: String, body: ContinueRunRequest, options: RequestOptions = .init()) async throws -> ContinueRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/continue",
@@ -83,7 +83,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/checkpoint`
     ///
     /// Required scopes: `runs:create`.
-    public func createRunCheckpoint(runId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createRunCheckpoint(runId: String, options: RequestOptions = .init()) async throws -> RunCheckpoint {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/checkpoint",
@@ -150,7 +150,7 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}/audit-log`
     ///
     /// Required scopes: `runs:read`.
-    public func getRunAuditLog(runId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getRunAuditLog(runId: String, options: RequestOptions = .init()) async throws -> GetRunAuditLogResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))/audit-log",
@@ -262,7 +262,7 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}/artifacts`
     ///
     /// Required scopes: `runs:read`.
-    public func listRunArtifacts(runId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listRunArtifacts(runId: String, options: RequestOptions = .init()) async throws -> ListRunArtifactsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))/artifacts",
@@ -288,7 +288,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/pause`
     ///
     /// Required scopes: `runs:create`.
-    public func pauseRun(runId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func pauseRun(runId: String, options: RequestOptions = .init()) async throws -> PauseRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/pause",
@@ -302,7 +302,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/reject`
     ///
     /// Required scopes: `runs:create`.
-    public func rejectRun(runId: String, body: RejectRunRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func rejectRun(runId: String, body: RejectRunRequest? = nil, options: RequestOptions = .init()) async throws -> RejectRunResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
@@ -347,7 +347,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/resume`
     ///
     /// Required scopes: `runs:create`.
-    public func resume(runId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func resume(runId: String, options: RequestOptions = .init()) async throws -> ResumeRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/resume",
@@ -368,7 +368,7 @@ public struct RunsAPI: Sendable {
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
-    public func setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = .init()) async throws -> SetRunFeedbackResponse {
+    public func setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = .init()) async throws -> RunFeedbackSet {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/runs/\(encodePathSegment(runId))/feedback",

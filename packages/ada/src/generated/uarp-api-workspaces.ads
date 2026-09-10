@@ -99,7 +99,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Assign_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Copy a file within the workspace
    --
@@ -133,7 +133,7 @@ package UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Delete_Workspace_Response;
 
    --  Delete a file
    --
@@ -179,7 +179,7 @@ package UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Bytes of a prior version
    --
@@ -228,7 +228,7 @@ package UARP.API.Workspaces is
       Agent_Id : String;
       Params : List_Agent_Workspace_Files_Params := No_List_Agent_Workspace_Files_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Agent_Workspace_Files_Response;
 
    --  Prior versions of a file
    --
@@ -279,7 +279,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Move_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace_File;
 
    --  Mint a public share link for an HTML snapshot
    --
@@ -319,7 +319,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Execute shell command in workspace
    --
@@ -355,7 +355,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Share_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Unassign agent/team/company from workspace
    --
@@ -377,7 +377,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Unassign_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Update workspace name
    --
@@ -389,7 +389,7 @@ package UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Update_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Workspace;
 
    --  Upload or update a file
    --

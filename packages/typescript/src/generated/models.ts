@@ -605,6 +605,33 @@ export interface AgentBridgeState {
 }
 
 /**
+ * What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
+ * `tools[]` and `kb_ids[]` were empty there, so their element shape is not asserted.
+ */
+export interface AgentCapabilities {
+  agent_id: string;
+  skills: AgentCapabilitiesSkill[];
+  constraints: AgentCapabilitiesConstraints;
+  tools: JsonValue[];
+  kb_ids: string[];
+  updated_at: string;
+}
+
+export interface AgentCapabilitiesConstraints {
+  max_context_tokens?: number;
+  rate_limit_rpm?: number;
+  supported_languages?: string[];
+}
+
+export interface AgentCapabilitiesSkill {
+  id: string;
+  name: string;
+  description?: string;
+  input_types?: string[];
+  output_types?: string[];
+}
+
+/**
  * Command hierarchy (MVP: opcon only).
  */
 export interface AgentCommandRelationships {
@@ -1080,6 +1107,11 @@ export interface ApplyProgramRequest {
   agent_id?: string;
 }
 
+export interface ApproveRunResponse {
+  approved: boolean;
+  run_id: string;
+}
+
 export interface ArbiterCase {
   case_id: string;
   tenant_id: string;
@@ -1123,6 +1155,22 @@ export interface AssignWorkspaceRequest {
   agent_id?: string;
   team_id?: string;
   company_id?: string;
+}
+
+/**
+ * One audit-log row as served by GET /runs/{runId}/audit-log and GET
+ * /sessions/{sessionId}/audit-log. Keys measured 2026-09-10 on the e2e-canon tenant (runs and
+ * sessions alike).
+ */
+export interface AuditLogEntry {
+  entry_id: string;
+  action: string;
+  actor_tenant_id: string;
+  target_type: string;
+  target_id: string;
+  details: JsonObject;
+  ip_address: string;
+  timestamp: string;
 }
 
 export interface AuthProvider {
@@ -1478,6 +1526,11 @@ export interface CancelPublicSessionRunResponse {
   run_id: string;
 }
 
+export interface CancelRunResponse {
+  cancelled: boolean;
+  run_id: string;
+}
+
 export interface CancelSquadRunResponse {
   cancelled: boolean;
   team_run_id: string;
@@ -1589,6 +1642,11 @@ export interface CheckGovernanceRequest {
 export interface CheckSpawnPermissionRequest {
   parent_agent_id: string;
   child_permissions: PermissionSet;
+}
+
+export interface CloseSessionResponse {
+  deleted: boolean;
+  session_id: string;
 }
 
 /**
@@ -1858,6 +1916,13 @@ export interface ContinueRunRequest {
    * Opaque base64-encoded continuation token
    */
   continuation_token: string;
+}
+
+export interface ContinueRunResponse {
+  continued: boolean;
+  run_id: string;
+  checkpoint?: string;
+  resume_step?: number;
 }
 
 export interface ConversationEntry {
@@ -2616,6 +2681,12 @@ export interface DeleteWorkspaceFileResponse {
 export type DeleteWorkspaceFileTrash = 'false';
 
 export const DELETE_WORKSPACE_FILE_TRASH_VALUES = ['false'] as const;
+
+export interface DeleteWorkspaceResponse {
+  error: RevokeSessionShareResponseError;
+  message: string;
+  retry_after_seconds: number;
+}
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -3775,32 +3846,15 @@ export interface GetRootAgentResponse {
   root_agent_id: string | null;
 }
 
+export interface GetRunAuditLogResponse {
+  run_id: string;
+  audit_log: AuditLogEntry[];
+  total: number;
+}
+
 export type GetRunChangedFiles = 'true';
 
 export const GET_RUN_CHANGED_FILES_VALUES = ['true'] as const;
-
-/**
- * No `message_id` in the query.
- */
-export interface GetRunFeedbackResponseVariant1 {
-  feedbacks: GetRunFeedbackResponseVariant1feedback[];
-}
-
-export interface GetRunFeedbackResponseVariant1feedback {
-  message_id: string;
-  reaction: GetRunFeedbackResponseVariant1feedbackReaction;
-}
-
-export type GetRunFeedbackResponseVariant1feedbackReaction = 'up' | 'down';
-
-export const GET_RUN_FEEDBACK_RESPONSE_VARIANT1FEEDBACK_REACTION_VALUES = ['up', 'down'] as const;
-
-/**
- * `message_id` given.
- */
-export interface GetRunFeedbackResponseVariant2 {
-  reaction: string | null;
-}
 
 export interface GetRunQueuePositionResponse {
   run_id?: string;
@@ -3909,6 +3963,12 @@ export interface GetRunStepsResponse {
 
 export interface GetRuntimeConfigResponse {
   runtime?: JsonObject;
+}
+
+export interface GetSessionAuditLogResponse {
+  session_id: string;
+  audit_log: AuditLogEntry[];
+  total: number;
 }
 
 export interface GetSessionMessagesResponse {
@@ -4689,6 +4749,13 @@ export interface ListAgentVersionsResponse {
   total: number;
 }
 
+export interface ListAgentWorkspaceFilesResponse {
+  workspace_id: string;
+  path: string;
+  directories: string[];
+  files: WorkspaceFile[];
+}
+
 export interface ListAllContentReportsResponse {
   items: ContentReport[];
   cursor: string | null;
@@ -4824,6 +4891,16 @@ export interface ListDataExplorerNamespacesResponse {
   namespaces?: JsonObject[];
 }
 
+export interface ListDatasetsResponse {
+  datasets: JsonObject[];
+  total: number;
+}
+
+export interface ListEvalRunsResponse {
+  eval_runs: JsonObject[];
+  total: number;
+}
+
 export interface ListFeaturedSpecsResponse {
   featured: string[];
 }
@@ -4909,6 +4986,11 @@ export interface ListLLMModelsResponse {
 
 export interface ListMCPServersResponse {
   servers: MCPServer[];
+}
+
+export interface ListMemoriesResponse {
+  memories: MemoryEntry[];
+  total: number;
 }
 
 export interface ListMeSessionsResponse {
@@ -5108,6 +5190,12 @@ export interface ListPublicTenantsResponse {
   total?: number;
 }
 
+export interface ListRunArtifactsResponse {
+  run_id: string;
+  artifacts: Artifact[];
+  total: number;
+}
+
 export interface ListRunCheckpointsResponse {
   checkpoints?: RunCheckpoint[];
 }
@@ -5160,6 +5248,7 @@ export interface ListSessionsResponse {
 }
 
 export interface ListSessionsResponseItem {
+  created_by?: string;
   session_id: string;
   tenant_id: string;
   agent_id: string;
@@ -5702,6 +5791,23 @@ export type MCPTransport = 'stdio' | 'http' | 'streamable_http';
 export const MCPTRANSPORT_VALUES = ['stdio', 'http', 'streamable_http'] as const;
 
 export interface MemoryEntry {
+  agent_id?: string;
+  tenant_id?: string;
+  access_count?: number;
+  last_accessed_at?: string;
+  metadata?: JsonObject;
+  /**
+   * Present on entries written from a run (seen on some e2e-canon entries, absent on others).
+   */
+  run_outcome?: string;
+  /**
+   * Present on entity entries only (e2e-canon).
+   */
+  entity_name?: string;
+  /**
+   * Present on entity entries only (e2e-canon).
+   */
+  entity_type?: string;
   entry_id: string;
   type?: MemoryEntryType;
   content: string;
@@ -6450,6 +6556,11 @@ export interface PauseCompanyResponse {
 export interface PauseMissionResponse {
   pausing: boolean;
   mission: Mission;
+}
+
+export interface PauseRunResponse {
+  paused: boolean;
+  run_id: string;
 }
 
 export interface PermissionCheckResult {
@@ -7444,6 +7555,12 @@ export interface RejectRunRequest {
   reason?: string;
 }
 
+export interface RejectRunResponse {
+  rejected: boolean;
+  run_id: string;
+  reason?: string;
+}
+
 export interface RemoveScheduleResponse {
   removed: boolean;
   agent_id: string;
@@ -7542,6 +7659,11 @@ export interface ResumeCompanyResponse {
 export interface ResumeMissionResponse {
   accepted: boolean;
   mission: Mission;
+}
+
+export interface ResumeRunResponse {
+  resumed: boolean;
+  run_id: string;
 }
 
 export interface RevokeMeSessionResponse {
@@ -7852,6 +7974,39 @@ export interface RunEvaluationRequest {
   agent_version?: string;
 }
 
+/**
+ * GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
+ * 2026-09-10: `{"feedbacks":[]}` on a run with none).
+ */
+export interface RunFeedbackList {
+  feedbacks: RunFeedbackListFeedback[];
+}
+
+export interface RunFeedbackListFeedback {
+  message_id: string;
+  reaction: RunFeedbackListFeedbackReaction;
+}
+
+export type RunFeedbackListFeedbackReaction = 'up' | 'down';
+
+export const RUN_FEEDBACK_LIST_FEEDBACK_REACTION_VALUES = ['up', 'down'] as const;
+
+/**
+ * GET …/feedback with `message_id`: that one reaction, `null` when the caller has not reacted.
+ */
+export interface RunFeedbackOne {
+  reaction: string | null;
+}
+
+/**
+ * PUT …/feedback: the stored reaction, echoed (runs.ts putRunFeedback, sessions.ts
+ * putSessionFeedback — the same literal).
+ */
+export interface RunFeedbackSet {
+  reaction: RunFeedbackListFeedbackReaction;
+  message_id: string;
+}
+
 export interface RunMetrics {
   duration_ms?: number;
   steps_count?: number;
@@ -7942,7 +8097,16 @@ export interface Schedule {
   on_failure: AgentScheduleConfigOnFailure;
   autonomous_mode?: boolean;
   reflection_prompt?: string;
+  /**
+   * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+   * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+   * with `enabled: false`. The human-facing on/off is `enabled`.
+   */
   status: ScheduleEntryStatus;
+  /**
+   * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+   * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+   */
   next_fire_at?: string;
   last_fired_at?: string;
   consecutive_failures: number;
@@ -7993,11 +8157,25 @@ export interface ScheduleEntry {
   agent_id: string;
   config: AgentScheduleConfig;
   last_fired_at?: string;
+  /**
+   * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+   * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+   */
   next_fire_at?: string;
   consecutive_failures: number;
+  /**
+   * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+   * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+   * with `enabled: false`. The human-facing on/off is `enabled`.
+   */
   status: ScheduleEntryStatus;
 }
 
+/**
+ * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+ * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+ * with `enabled: false`. The human-facing on/off is `enabled`.
+ */
 export type ScheduleEntryStatus = 'active' | 'paused' | 'error';
 
 export const SCHEDULE_ENTRY_STATUS_VALUES = ['active', 'paused', 'error'] as const;
@@ -8039,6 +8217,11 @@ export interface SearchMarketplaceResponse {
 export type SearchMarketplaceSort = 'rating' | 'popularity' | 'recency';
 
 export const SEARCH_MARKETPLACE_SORT_VALUES = ['rating', 'popularity', 'recency'] as const;
+
+export interface SearchMemoryResponse {
+  memories: MemoryEntry[];
+  total: number;
+}
 
 export type SearchType = 'agent' | 'session' | 'run';
 
@@ -8128,6 +8311,7 @@ export interface SensorWebhookResponse {
 }
 
 export interface Session {
+  created_by?: string;
   session_id: string;
   tenant_id: string;
   agent_id: string;
@@ -8292,6 +8476,12 @@ export interface SetAgentTrafficRequestEntry {
   weight: number;
 }
 
+export interface SetAgentTrafficResponse {
+  agent_id: string;
+  entries: JsonObject[];
+  updated_at: string | null;
+}
+
 export interface SetArbiterRegistryResponse {
   ok?: boolean;
 }
@@ -8405,12 +8595,7 @@ export interface SetRootAttestationResponse {
 
 export interface SetRunFeedbackRequest {
   message_id: string;
-  reaction: GetRunFeedbackResponseVariant1feedbackReaction;
-}
-
-export interface SetRunFeedbackResponse {
-  reaction: GetRunFeedbackResponseVariant1feedbackReaction;
-  message_id: string;
+  reaction: RunFeedbackListFeedbackReaction;
 }
 
 export interface SetScheduleRequest {
@@ -10272,6 +10457,8 @@ export type WebhookSubscriptionStatus = 'active' | 'disabled' | 'failing';
 export const WEBHOOK_SUBSCRIPTION_STATUS_VALUES = ['active', 'disabled', 'failing'] as const;
 
 export interface Workspace {
+  file_count?: number;
+  total_size_bytes?: number;
   workspace_id: string;
   tenant_id: string;
   owner_type?: WorkspaceOwnerType;

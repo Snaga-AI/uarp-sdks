@@ -13,7 +13,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/activate`
     ///
     /// Required scopes: `agents:write`.
-    public func activateAgent(agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func activateAgent(agentId: String, options: RequestOptions = .init()) async throws -> Agent {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/activate",
@@ -76,7 +76,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:write`.
-    public func createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = .init()) async throws -> AgentVersion {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/versions",
@@ -178,7 +178,7 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/capabilities`
     ///
     /// Required scopes: `agents:read`.
-    public func getAgentCapabilities(agentId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAgentCapabilities(agentId: String, options: RequestOptions = .init()) async throws -> AgentCapabilities {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/capabilities",
@@ -438,7 +438,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/rollback`
     ///
     /// Required scopes: `agents:write`.
-    public func rollbackAgent(agentId: String, body: RollbackAgentRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func rollbackAgent(agentId: String, body: RollbackAgentRequest, options: RequestOptions = .init()) async throws -> AgentVersion {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/rollback",
@@ -482,7 +482,7 @@ public struct AgentsAPI: Sendable {
     /// `PUT /api/v1/agents/{agentId}/traffic`
     ///
     /// Required scopes: `agents:write`.
-    public func setAgentTraffic(agentId: String, body: SetAgentTrafficRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func setAgentTraffic(agentId: String, body: SetAgentTrafficRequest, options: RequestOptions = .init()) async throws -> SetAgentTrafficResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/traffic",
@@ -497,7 +497,7 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/suspend`
     ///
     /// Required scopes: `agents:write`.
-    public func suspendAgent(agentId: String, body: SuspendAgentRequest? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func suspendAgent(agentId: String, body: SuspendAgentRequest? = nil, options: RequestOptions = .init()) async throws -> Agent {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

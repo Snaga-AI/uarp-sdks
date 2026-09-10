@@ -160,7 +160,7 @@ impl EvaluationsApi {
     /// `GET /api/v1/agents/{agentId}/datasets`
     ///
     /// Required scopes: `evaluations:read`.
-    pub async fn list_datasets(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn list_datasets(&self, agent_id: &str) -> Result<models::ListDatasetsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -178,7 +178,7 @@ impl EvaluationsApi {
     /// `GET /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:read`.
-    pub async fn list_eval_runs(&self, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn list_eval_runs(&self, agent_id: &str) -> Result<models::ListEvalRunsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

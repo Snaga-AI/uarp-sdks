@@ -1224,6 +1224,42 @@ pub struct AgentBridgeState {
     pub installed_specs: Vec<BridgeInstalledSpec>,
 }
 
+/// What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
+/// `tools\[\]` and `kb_ids\[\]` were empty there, so their element shape is not asserted.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentCapabilities {
+    pub agent_id: String,
+    pub skills: Vec<AgentCapabilitiesSkill>,
+    pub constraints: AgentCapabilitiesConstraints,
+    pub tools: Vec<serde_json::Value>,
+    pub kb_ids: Vec<String>,
+    pub updated_at: String,
+}
+
+/// `AgentCapabilitiesConstraints` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentCapabilitiesConstraints {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_context_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rate_limit_rpm: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supported_languages: Option<Vec<String>>,
+}
+
+/// `AgentCapabilitiesSkill` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentCapabilitiesSkill {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_types: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_types: Option<Vec<String>>,
+}
+
 /// Command hierarchy (MVP: opcon only).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentCommandRelationships {
@@ -2414,6 +2450,13 @@ pub struct ApplyProgramRequest {
     pub agent_id: Option<String>,
 }
 
+/// `ApproveRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApproveRunResponse {
+    pub approved: bool,
+    pub run_id: String,
+}
+
 /// `ArbiterCase` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ArbiterCase {
@@ -2525,6 +2568,21 @@ pub struct AssignWorkspaceRequest {
     pub team_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub company_id: Option<String>,
+}
+
+/// One audit-log row as served by GET /runs/{runId}/audit-log and GET
+/// /sessions/{sessionId}/audit-log. Keys measured 2026-09-10 on the e2e-canon tenant (runs and
+/// sessions alike).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AuditLogEntry {
+    pub entry_id: String,
+    pub action: String,
+    pub actor_tenant_id: String,
+    pub target_type: String,
+    pub target_id: String,
+    pub details: serde_json::Map<String, serde_json::Value>,
+    pub ip_address: String,
+    pub timestamp: String,
 }
 
 /// `AuthProvider` model.
@@ -3350,6 +3408,13 @@ pub struct CancelPublicSessionRunResponse {
     pub run_id: String,
 }
 
+/// `CancelRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CancelRunResponse {
+    pub cancelled: bool,
+    pub run_id: String,
+}
+
 /// `CancelSquadRunResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CancelSquadRunResponse {
@@ -3550,6 +3615,13 @@ pub struct CheckGovernanceRequest {
 pub struct CheckSpawnPermissionRequest {
     pub parent_agent_id: String,
     pub child_permissions: PermissionSet,
+}
+
+/// `CloseSessionResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CloseSessionResponse {
+    pub deleted: bool,
+    pub session_id: String,
 }
 
 /// Autonomous agent company — strategist + teams pursuing strategic goals.
@@ -4249,6 +4321,17 @@ impl From<&str> for ContentReportStatus {
 pub struct ContinueRunRequest {
     /// Opaque base64-encoded continuation token
     pub continuation_token: String,
+}
+
+/// `ContinueRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ContinueRunResponse {
+    pub continued: bool,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub checkpoint: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub resume_step: Option<i64>,
 }
 
 /// `ConversationEntry` model.
@@ -5620,6 +5703,14 @@ impl From<&str> for DeleteWorkspaceFileTrash {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `DeleteWorkspaceResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteWorkspaceResponse {
+    pub error: RevokeSessionShareResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
 }
 
 /// Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -8174,6 +8265,14 @@ pub struct GetRootAgentResponse {
     pub root_agent_id: Option<String>,
 }
 
+/// `GetRunAuditLogResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetRunAuditLogResponse {
+    pub run_id: String,
+    pub audit_log: Vec<AuditLogEntry>,
+    pub total: i64,
+}
+
 /// `GetRunChangedFiles` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GetRunChangedFiles {
@@ -8208,66 +8307,6 @@ impl From<&str> for GetRunChangedFiles {
             other => Self::Other(other.to_string()),
         }
     }
-}
-
-/// No `message_id` in the query.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetRunFeedbackResponseVariant1 {
-    pub feedbacks: Vec<GetRunFeedbackResponseVariant1feedback>,
-}
-
-/// `GetRunFeedbackResponseVariant1feedback` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetRunFeedbackResponseVariant1feedback {
-    pub message_id: String,
-    pub reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-}
-
-/// `GetRunFeedbackResponseVariant1feedbackReaction` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetRunFeedbackResponseVariant1feedbackReaction {
-    #[default]
-    #[serde(rename = "up")]
-    Up,
-    #[serde(rename = "down")]
-    Down,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetRunFeedbackResponseVariant1feedbackReaction {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Up => "up",
-            Self::Down => "down",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetRunFeedbackResponseVariant1feedbackReaction {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetRunFeedbackResponseVariant1feedbackReaction {
-    fn from(value: &str) -> Self {
-        match value {
-            "up" => Self::Up,
-            "down" => Self::Down,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `message_id` given.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetRunFeedbackResponseVariant2 {
-    #[serde(default)]
-    pub reaction: Option<String>,
 }
 
 /// `GetRunQueuePositionResponse` model.
@@ -8389,6 +8428,14 @@ pub struct GetRunStepsResponse {
 pub struct GetRuntimeConfigResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub runtime: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `GetSessionAuditLogResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetSessionAuditLogResponse {
+    pub session_id: String,
+    pub audit_log: Vec<AuditLogEntry>,
+    pub total: i64,
 }
 
 /// `GetSessionMessagesResponse` model.
@@ -9918,6 +9965,15 @@ pub struct ListAgentVersionsResponse {
     pub total: i64,
 }
 
+/// `ListAgentWorkspaceFilesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentWorkspaceFilesResponse {
+    pub workspace_id: String,
+    pub path: String,
+    pub directories: Vec<String>,
+    pub files: Vec<WorkspaceFile>,
+}
+
 /// `ListAllContentReportsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAllContentReportsResponse {
@@ -10189,6 +10245,20 @@ pub struct ListDataExplorerNamespacesResponse {
     pub namespaces: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
+/// `ListDatasetsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListDatasetsResponse {
+    pub datasets: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub total: i64,
+}
+
+/// `ListEvalRunsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListEvalRunsResponse {
+    pub eval_runs: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub total: i64,
+}
+
 /// `ListFeaturedSpecsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListFeaturedSpecsResponse {
@@ -10310,6 +10380,13 @@ pub struct ListLLMModelsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListMCPServersResponse {
     pub servers: Vec<MCPServer>,
+}
+
+/// `ListMemoriesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListMemoriesResponse {
+    pub memories: Vec<MemoryEntry>,
+    pub total: i64,
 }
 
 /// `ListMeSessionsResponse` model.
@@ -10601,6 +10678,14 @@ pub struct ListPublicTenantsResponse {
     pub total: Option<i64>,
 }
 
+/// `ListRunArtifactsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListRunArtifactsResponse {
+    pub run_id: String,
+    pub artifacts: Vec<Artifact>,
+    pub total: i64,
+}
+
 /// `ListRunCheckpointsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListRunCheckpointsResponse {
@@ -10717,6 +10802,8 @@ pub struct ListSessionsResponse {
 /// `ListSessionsResponseItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSessionsResponseItem {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
     pub session_id: String,
     pub tenant_id: String,
     pub agent_id: String,
@@ -11662,6 +11749,25 @@ impl From<&str> for MCPTransport {
 /// `MemoryEntry` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MemoryEntry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub access_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_accessed_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Present on entries written from a run (seen on some e2e-canon entries, absent on others).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_outcome: Option<String>,
+    /// Present on entity entries only (e2e-canon).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_name: Option<String>,
+    /// Present on entity entries only (e2e-canon).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub entity_type: Option<String>,
     pub entry_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#type: Option<MemoryEntryType>,
@@ -13195,6 +13301,13 @@ pub struct PauseMissionResponse {
     pub mission: Mission,
 }
 
+/// `PauseRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PauseRunResponse {
+    pub paused: bool,
+    pub run_id: String,
+}
+
 /// `PermissionCheckResult` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PermissionCheckResult {
@@ -14546,6 +14659,15 @@ pub struct RejectRunRequest {
     pub reason: Option<String>,
 }
 
+/// `RejectRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RejectRunResponse {
+    pub rejected: bool,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
 /// `RemoveScheduleResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RemoveScheduleResponse {
@@ -14713,6 +14835,13 @@ pub struct ResumeCompanyResponse {
 pub struct ResumeMissionResponse {
     pub accepted: bool,
     pub mission: Mission,
+}
+
+/// `ResumeRunResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResumeRunResponse {
+    pub resumed: bool,
+    pub run_id: String,
 }
 
 /// `RevokeMeSessionResponse` model.
@@ -15251,6 +15380,75 @@ pub struct RunEvaluationRequest {
     pub agent_version: Option<String>,
 }
 
+/// GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
+/// 2026-09-10: `{"feedbacks":\[\]}` on a run with none).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunFeedbackList {
+    pub feedbacks: Vec<RunFeedbackListFeedback>,
+}
+
+/// `RunFeedbackListFeedback` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunFeedbackListFeedback {
+    pub message_id: String,
+    pub reaction: RunFeedbackListFeedbackReaction,
+}
+
+/// `RunFeedbackListFeedbackReaction` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunFeedbackListFeedbackReaction {
+    #[default]
+    #[serde(rename = "up")]
+    Up,
+    #[serde(rename = "down")]
+    Down,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunFeedbackListFeedbackReaction {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Up => "up",
+            Self::Down => "down",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunFeedbackListFeedbackReaction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunFeedbackListFeedbackReaction {
+    fn from(value: &str) -> Self {
+        match value {
+            "up" => Self::Up,
+            "down" => Self::Down,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// GET …/feedback with `message_id`: that one reaction, `null` when the caller has not reacted.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunFeedbackOne {
+    #[serde(default)]
+    pub reaction: Option<String>,
+}
+
+/// PUT …/feedback: the stored reaction, echoed (runs.ts putRunFeedback, sessions.ts
+/// putSessionFeedback — the same literal).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunFeedbackSet {
+    pub reaction: RunFeedbackListFeedbackReaction,
+    pub message_id: String,
+}
+
 /// `RunMetrics` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunMetrics {
@@ -15503,7 +15701,12 @@ pub struct Schedule {
     pub autonomous_mode: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reflection_prompt: Option<String>,
+    /// State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+    /// schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+    /// with `enabled: false`. The human-facing on/off is `enabled`.
     pub status: ScheduleEntryStatus,
+    /// The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+    /// computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_fire_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -15587,13 +15790,20 @@ pub struct ScheduleEntry {
     pub config: AgentScheduleConfig,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_fired_at: Option<String>,
+    /// The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+    /// computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub next_fire_at: Option<String>,
     pub consecutive_failures: i64,
+    /// State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+    /// schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+    /// with `enabled: false`. The human-facing on/off is `enabled`.
     pub status: ScheduleEntryStatus,
 }
 
-/// `ScheduleEntryStatus` enumeration.
+/// State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+/// schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+/// with `enabled: false`. The human-facing on/off is `enabled`.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum ScheduleEntryStatus {
     #[default]
@@ -15714,6 +15924,13 @@ impl From<&str> for SearchMarketplaceSort {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `SearchMemoryResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SearchMemoryResponse {
+    pub memories: Vec<MemoryEntry>,
+    pub total: i64,
 }
 
 /// `SearchType` enumeration.
@@ -15894,6 +16111,8 @@ pub struct SensorWebhookResponse {
 /// `Session` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_by: Option<String>,
     pub session_id: String,
     pub tenant_id: String,
     pub agent_id: String,
@@ -16214,6 +16433,15 @@ pub struct SetAgentTrafficRequestEntry {
     pub weight: f64,
 }
 
+/// `SetAgentTrafficResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAgentTrafficResponse {
+    pub agent_id: String,
+    pub entries: Vec<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default)]
+    pub updated_at: Option<String>,
+}
+
 /// `SetArbiterRegistryResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetArbiterRegistryResponse {
@@ -16423,14 +16651,7 @@ pub struct SetRootAttestationResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetRunFeedbackRequest {
     pub message_id: String,
-    pub reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-}
-
-/// `SetRunFeedbackResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SetRunFeedbackResponse {
-    pub reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-    pub message_id: String,
+    pub reaction: RunFeedbackListFeedbackReaction,
 }
 
 /// `SetScheduleRequest` model.
@@ -20046,6 +20267,10 @@ impl From<&str> for WebhookSubscriptionStatus {
 /// `Workspace` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Workspace {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_size_bytes: Option<i64>,
     pub workspace_id: String,
     pub tenant_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]

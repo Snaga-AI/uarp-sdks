@@ -104,7 +104,7 @@ package UARP.API.Evaluations is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Datasets_Response;
 
    --  List evaluation runs for an agent
    --
@@ -115,7 +115,7 @@ package UARP.API.Evaluations is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Eval_Runs_Response;
 
    --  Run an evaluation suite against an agent
    --

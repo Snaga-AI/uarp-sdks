@@ -157,8 +157,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:read`.
      */
-    public suspend fun listDatasets(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun listDatasets(agentId: String, options: RequestOptions = RequestOptions()): ListDatasetsResponse {
+        return client.request<ListDatasetsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/datasets",
@@ -174,8 +174,8 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:read`.
      */
-    public suspend fun listEvalRuns(agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun listEvalRuns(agentId: String, options: RequestOptions = RequestOptions()): ListEvalRunsResponse {
+        return client.request<ListEvalRunsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/evaluations",

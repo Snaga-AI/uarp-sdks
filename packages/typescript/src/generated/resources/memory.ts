@@ -13,6 +13,9 @@ import type {
   IngestMemoryResponse,
   JsonObject,
   JsonValue,
+  ListMemoriesResponse,
+  MemoryEntry,
+  SearchMemoryResponse,
   UpdateCoreMemoryBlockRequest,
 } from '../models.js';
 
@@ -138,7 +141,7 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:read`.
    */
-  listMemories(agentId: string, params?: ListMemoriesParams, options?: RequestOptions): Promise<JsonValue> {
+  listMemories(agentId: string, params?: ListMemoriesParams, options?: RequestOptions): Promise<ListMemoriesResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory`,
@@ -154,7 +157,7 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  search(agentId: string, body: JsonValue, options?: RequestOptions): Promise<JsonValue> {
+  search(agentId: string, body: JsonValue, options?: RequestOptions): Promise<SearchMemoryResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/search`,
@@ -171,7 +174,7 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  updateAgentMemoryEntry(agentId: string, entryId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAgentMemoryEntry(agentId: string, entryId: string, body: JsonObject, options?: RequestOptions): Promise<MemoryEntry> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,

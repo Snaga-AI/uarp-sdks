@@ -41,15 +41,16 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Close_Session_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Idempotent => True,
+             Options => Options));
    end Close_Session;
 
    function Confirm_Session_Todo
@@ -59,17 +60,18 @@ package body UARP.API.Sessions is
       Payload : UARP.JSON_Support.JSON_Value;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Todo
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id) & "/confirm",
-          Payload => Payload,
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id) & "/confirm",
+             Payload => Payload,
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Confirm_Session_Todo;
 
    function Create
@@ -153,17 +155,18 @@ package body UARP.API.Sessions is
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Todo_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Todo
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Session_Todo;
 
    function Create_Task
@@ -242,28 +245,30 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Session
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Options => Options));
    end Get;
 
    function Get_Session_Audit_Log
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Get_Session_Audit_Log_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/audit-log",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/audit-log",
+             Options => Options));
    end Get_Session_Audit_Log;
 
    function Get_Session_Messages
@@ -509,15 +514,16 @@ package body UARP.API.Sessions is
       Session_Id : String;
       Todo_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Todo
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id) & "/run",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id) & "/run",
+             Idempotent => True,
+             Options => Options));
    end Run_Session_Todo_Now;
 
    function Send_Session_Message
@@ -545,17 +551,18 @@ package body UARP.API.Sessions is
       Run_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Run_Feedback_Set
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Set_Session_Run_Feedback;
 
    procedure Stream_Session_Events
@@ -588,17 +595,18 @@ package body UARP.API.Sessions is
       Session_Id : String;
       Payload : UARP.Models.Update_Session_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Session
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update;
 
    function Update_Session_Annotation
@@ -627,16 +635,17 @@ package body UARP.API.Sessions is
       Todo_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Todo
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Session_Todo;
 end UARP.API.Sessions;

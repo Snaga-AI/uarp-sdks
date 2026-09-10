@@ -7,8 +7,10 @@ import { autoPaginate } from '../../core/pagination.js';
 import type {
   Agent,
   AgentBookmark,
+  AgentCapabilities,
   AgentToolOverrideUpdate,
   AgentUpdate,
+  AgentVersion,
   AiSystemCard,
   CreateAgentBookmarkRequest,
   CreateAgentFriaRequest,
@@ -36,6 +38,7 @@ import type {
   RotateAgentIdentityResponse,
   SetAgentCapabilitiesResponse,
   SetAgentTrafficRequest,
+  SetAgentTrafficResponse,
   SpecToolCatalog,
   SuspendAgentRequest,
   TerminateAgentResponse,
@@ -116,7 +119,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  activateAgent(agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  activateAgent(agentId: string, options?: RequestOptions): Promise<Agent> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/activate`,
@@ -187,7 +190,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  createAgentVersion(agentId: string, body: CreateAgentVersionRequest, options?: RequestOptions): Promise<JsonValue> {
+  createAgentVersion(agentId: string, body: CreateAgentVersionRequest, options?: RequestOptions): Promise<AgentVersion> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/versions`,
@@ -299,7 +302,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getAgentCapabilities(agentId: string, options?: RequestOptions): Promise<JsonObject> {
+  getAgentCapabilities(agentId: string, options?: RequestOptions): Promise<AgentCapabilities> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/capabilities`,
@@ -558,7 +561,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  rollbackAgent(agentId: string, body: RollbackAgentRequest, options?: RequestOptions): Promise<JsonValue> {
+  rollbackAgent(agentId: string, body: RollbackAgentRequest, options?: RequestOptions): Promise<AgentVersion> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/rollback`,
@@ -608,7 +611,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  setAgentTraffic(agentId: string, body: SetAgentTrafficRequest, options?: RequestOptions): Promise<JsonObject> {
+  setAgentTraffic(agentId: string, body: SetAgentTrafficRequest, options?: RequestOptions): Promise<SetAgentTrafficResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/traffic`,
@@ -625,7 +628,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  suspendAgent(agentId: string, body?: SuspendAgentRequest, options?: RequestOptions): Promise<JsonObject> {
+  suspendAgent(agentId: string, body?: SuspendAgentRequest, options?: RequestOptions): Promise<Agent> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/suspend`,

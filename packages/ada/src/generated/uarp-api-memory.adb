@@ -109,19 +109,20 @@ package body UARP.API.Memory is
       Agent_Id : String;
       Params : List_Memories_Params := No_List_Memories_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Memories_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Limit then
          UARP.Types.Add (Query, "limit", Params.Limit);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory",
+             Query => Query,
+             Options => Options));
    end List_Memories;
 
    function Search
@@ -129,17 +130,18 @@ package body UARP.API.Memory is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Search_Memory_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/search",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/search",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Search;
 
    function Update_Agent_Memory_Entry
@@ -148,17 +150,18 @@ package body UARP.API.Memory is
       Entry_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Memory_Entry
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Agent_Memory_Entry;
 
    function Update_Core_Memory_Block

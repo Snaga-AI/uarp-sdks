@@ -91,7 +91,7 @@ package UARP.API.Runs is
       Payload : UARP.Models.Run_Approve_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Approve_Run_Response;
 
    --  Cancel a run
    --
@@ -102,7 +102,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Cancel_Run_Response;
 
    --  Continue a run from a continuation token
    --
@@ -116,7 +116,7 @@ package UARP.API.Runs is
       Run_Id : String;
       Payload : UARP.Models.Continue_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Continue_Run_Response;
 
    --  Create and schedule a run
    --
@@ -143,7 +143,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Run_Checkpoint;
 
    --  What will this run cost
    --
@@ -195,7 +195,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Get_Run_Audit_Log_Response;
 
    --  Get user feedback for a run
    --
@@ -271,7 +271,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Run_Artifacts_Response;
 
    --  List checkpoints for a run
    --
@@ -293,7 +293,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Pause_Run_Response;
 
    --  Reject a pending tool call (HITL)
    --
@@ -306,7 +306,7 @@ package UARP.API.Runs is
       Payload : UARP.Models.Reject_Run_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Reject_Run_Response;
 
    --  Replay a run for determinism check
    --
@@ -340,7 +340,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Resume_Run_Response;
 
    --  Save user feedback/reaction for a run
    --
@@ -359,7 +359,7 @@ package UARP.API.Runs is
       Run_Id : String;
       Payload : UARP.Models.Set_Run_Feedback_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Set_Run_Feedback_Response;
+      return UARP.Models.Run_Feedback_Set;
 
    --  Stream run events via SSE
    --

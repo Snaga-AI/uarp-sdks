@@ -110,7 +110,7 @@ package UARP.API.Memory is
       Agent_Id : String;
       Params : List_Memories_Params := No_List_Memories_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.List_Memories_Response;
 
    --  Search agent memories
    --
@@ -122,7 +122,7 @@ package UARP.API.Memory is
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Search_Memory_Response;
 
    --  Update memory entry
    --
@@ -135,7 +135,7 @@ package UARP.API.Memory is
       Entry_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Memory_Entry;
 
    --  Update a core memory block
    --

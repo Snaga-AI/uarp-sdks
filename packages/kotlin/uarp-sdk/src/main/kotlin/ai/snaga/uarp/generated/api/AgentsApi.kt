@@ -31,8 +31,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun activateAgent(agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun activateAgent(agentId: String, options: RequestOptions = RequestOptions()): Agent {
+        return client.request<Agent>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/activate",
@@ -110,8 +110,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = RequestOptions()): AgentVersion {
+        return client.request<AgentVersion>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/versions",
@@ -239,8 +239,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getAgentCapabilities(agentId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAgentCapabilities(agentId: String, options: RequestOptions = RequestOptions()): AgentCapabilities {
+        return client.request<AgentCapabilities>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/capabilities",
@@ -541,8 +541,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun rollbackAgent(agentId: String, body: RollbackAgentRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun rollbackAgent(agentId: String, body: RollbackAgentRequest, options: RequestOptions = RequestOptions()): AgentVersion {
+        return client.request<AgentVersion>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/rollback",
@@ -597,8 +597,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun setAgentTraffic(agentId: String, body: SetAgentTrafficRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun setAgentTraffic(agentId: String, body: SetAgentTrafficRequest, options: RequestOptions = RequestOptions()): SetAgentTrafficResponse {
+        return client.request<SetAgentTrafficResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/traffic",
@@ -616,8 +616,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun suspendAgent(agentId: String, body: SuspendAgentRequest? = null, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun suspendAgent(agentId: String, body: SuspendAgentRequest? = null, options: RequestOptions = RequestOptions()): Agent {
+        return client.request<Agent>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/suspend",

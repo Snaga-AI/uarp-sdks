@@ -124,28 +124,30 @@ package body UARP.API.Evaluations is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Datasets_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/datasets",
+             Options => Options));
    end List_Datasets;
 
    function List_Eval_Runs
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Eval_Runs_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/evaluations",
+             Options => Options));
    end List_Eval_Runs;
 
    function Run

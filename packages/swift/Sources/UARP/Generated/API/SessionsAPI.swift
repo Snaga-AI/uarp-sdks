@@ -46,7 +46,7 @@ public struct SessionsAPI: Sendable {
     /// `DELETE /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func closeSession(sessionId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func closeSession(sessionId: String, options: RequestOptions = .init()) async throws -> CloseSessionResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))",
@@ -60,7 +60,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/confirm`
     ///
     /// Required scopes: `sessions:write`.
-    public func confirmSessionTodo(sessionId: String, todoId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func confirmSessionTodo(sessionId: String, todoId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> Todo {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
@@ -137,7 +137,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/todos`
     ///
     /// Required scopes: `sessions:write`.
-    public func createSessionTodo(sessionId: String, body: CreateSessionTodoRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createSessionTodo(sessionId: String, body: CreateSessionTodoRequest, options: RequestOptions = .init()) async throws -> Todo {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/todos",
@@ -223,7 +223,7 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:read`.
-    public func get(sessionId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func get(sessionId: String, options: RequestOptions = .init()) async throws -> Session {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))",
@@ -236,7 +236,7 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}/audit-log`
     ///
     /// Required scopes: `sessions:read`.
-    public func getSessionAuditLog(sessionId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getSessionAuditLog(sessionId: String, options: RequestOptions = .init()) async throws -> GetSessionAuditLogResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/audit-log",
@@ -275,7 +275,7 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:read`.
-    public func getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         if let messageId {
             query.append(URLQueryItem(name: "message_id", value: messageId))
@@ -442,7 +442,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/run`
     ///
     /// Required scopes: `sessions:write`.
-    public func runSessionTodoNow(sessionId: String, todoId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func runSessionTodoNow(sessionId: String, todoId: String, options: RequestOptions = .init()) async throws -> Todo {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/todos/\(encodePathSegment(todoId))/run",
@@ -475,7 +475,7 @@ public struct SessionsAPI: Sendable {
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:write`.
-    public func setSessionRunFeedback(sessionId: String, runId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func setSessionRunFeedback(sessionId: String, runId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> RunFeedbackSet {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/runs/\(encodePathSegment(runId))/feedback",
@@ -515,7 +515,7 @@ public struct SessionsAPI: Sendable {
     /// `PUT /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func update(sessionId: String, body: UpdateSessionRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func update(sessionId: String, body: UpdateSessionRequest, options: RequestOptions = .init()) async throws -> Session {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))",
@@ -546,7 +546,7 @@ public struct SessionsAPI: Sendable {
     /// `PATCH /api/v1/sessions/{sessionId}/todos/{todoId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func updateSessionTodo(sessionId: String, todoId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateSessionTodo(sessionId: String, todoId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Todo {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/todos/\(encodePathSegment(todoId))",

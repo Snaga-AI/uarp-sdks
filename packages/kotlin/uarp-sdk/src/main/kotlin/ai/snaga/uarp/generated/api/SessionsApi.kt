@@ -72,8 +72,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun closeSession(sessionId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun closeSession(sessionId: String, options: RequestOptions = RequestOptions()): CloseSessionResponse {
+        return client.request<CloseSessionResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}",
@@ -90,8 +90,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun confirmSessionTodo(sessionId: String, todoId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun confirmSessionTodo(sessionId: String, todoId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): Todo {
+        return client.request<Todo>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/todos/${encodePathSegment(todoId)}/confirm",
@@ -185,8 +185,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun createSessionTodo(sessionId: String, body: CreateSessionTodoRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createSessionTodo(sessionId: String, body: CreateSessionTodoRequest, options: RequestOptions = RequestOptions()): Todo {
+        return client.request<Todo>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/todos",
@@ -290,8 +290,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun `get`(sessionId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun `get`(sessionId: String, options: RequestOptions = RequestOptions()): Session {
+        return client.request<Session>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}",
@@ -307,8 +307,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun getSessionAuditLog(sessionId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getSessionAuditLog(sessionId: String, options: RequestOptions = RequestOptions()): GetSessionAuditLogResponse {
+        return client.request<GetSessionAuditLogResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/audit-log",
@@ -354,11 +354,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = null, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (messageId != null) add("message_id" to messageId)
         }
-        return client.request<JsonObject>(
+        return client.request<JsonElement>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/runs/${encodePathSegment(runId)}/feedback",
@@ -552,8 +552,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun runSessionTodoNow(sessionId: String, todoId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun runSessionTodoNow(sessionId: String, todoId: String, options: RequestOptions = RequestOptions()): Todo {
+        return client.request<Todo>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/todos/${encodePathSegment(todoId)}/run",
@@ -593,8 +593,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun setSessionRunFeedback(sessionId: String, runId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun setSessionRunFeedback(sessionId: String, runId: String, body: JsonObject, options: RequestOptions = RequestOptions()): RunFeedbackSet {
+        return client.request<RunFeedbackSet>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/runs/${encodePathSegment(runId)}/feedback",
@@ -639,8 +639,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun update(sessionId: String, body: UpdateSessionRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun update(sessionId: String, body: UpdateSessionRequest, options: RequestOptions = RequestOptions()): Session {
+        return client.request<Session>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}",
@@ -677,8 +677,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun updateSessionTodo(sessionId: String, todoId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateSessionTodo(sessionId: String, todoId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Todo {
+        return client.request<Todo>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/todos/${encodePathSegment(todoId)}",

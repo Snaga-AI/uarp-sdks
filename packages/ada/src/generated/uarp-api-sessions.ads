@@ -102,7 +102,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Close_Session_Response;
 
    --  Confirm or cancel a todo execution
    --
@@ -116,7 +116,7 @@ package UARP.API.Sessions is
       Payload : UARP.JSON_Support.JSON_Value;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Todo;
 
    --  Create a session
    --
@@ -176,7 +176,7 @@ package UARP.API.Sessions is
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Todo_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Todo;
 
    --  Create a standalone task
    --
@@ -244,7 +244,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Session;
 
    --  Get audit log scoped to session
    --
@@ -255,7 +255,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Get_Session_Audit_Log_Response;
 
    --  The conversation transcript
    --
@@ -413,7 +413,7 @@ package UARP.API.Sessions is
       Session_Id : String;
       Todo_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Todo;
 
    --  Send message
    --
@@ -442,7 +442,7 @@ package UARP.API.Sessions is
       Run_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Run_Feedback_Set;
 
    --  Stream session events (SSE)
    --
@@ -468,7 +468,7 @@ package UARP.API.Sessions is
       Session_Id : String;
       Payload : UARP.Models.Update_Session_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Session;
 
    --  Update annotation (e.g. resolve)
    --
@@ -495,6 +495,6 @@ package UARP.API.Sessions is
       Todo_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Todo;
 
 end UARP.API.Sessions;

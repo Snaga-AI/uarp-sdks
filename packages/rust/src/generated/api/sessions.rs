@@ -124,7 +124,7 @@ impl SessionsApi {
     /// `DELETE /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn close_session(&self, session_id: &str) -> Result<serde_json::Value> {
+    pub async fn close_session(&self, session_id: &str) -> Result<models::CloseSessionResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -142,7 +142,7 @@ impl SessionsApi {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/confirm`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn confirm_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn confirm_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -232,7 +232,7 @@ impl SessionsApi {
     /// `POST /api/v1/sessions/{sessionId}/todos`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn create_session_todo(&self, session_id: &str, body: &models::CreateSessionTodoRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_session_todo(&self, session_id: &str, body: &models::CreateSessionTodoRequest) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -332,7 +332,7 @@ impl SessionsApi {
     /// `GET /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn get(&self, session_id: &str) -> Result<serde_json::Value> {
+    pub async fn get(&self, session_id: &str) -> Result<models::Session> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -350,7 +350,7 @@ impl SessionsApi {
     /// `GET /api/v1/sessions/{sessionId}/audit-log`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn get_session_audit_log(&self, session_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_session_audit_log(&self, session_id: &str) -> Result<models::GetSessionAuditLogResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -399,7 +399,7 @@ impl SessionsApi {
     /// `GET /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn get_session_run_feedback(&self, session_id: &str, run_id: &str, params: &GetSessionRunFeedbackParams) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_session_run_feedback(&self, session_id: &str, run_id: &str, params: &GetSessionRunFeedbackParams) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -603,7 +603,7 @@ impl SessionsApi {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/run`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn run_session_todo_now(&self, session_id: &str, todo_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn run_session_todo_now(&self, session_id: &str, todo_id: &str) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -643,7 +643,7 @@ impl SessionsApi {
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn set_session_run_feedback(&self, session_id: &str, run_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_session_run_feedback(&self, session_id: &str, run_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::RunFeedbackSet> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -680,7 +680,7 @@ impl SessionsApi {
     /// `PUT /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn update(&self, session_id: &str, body: &models::UpdateSessionRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update(&self, session_id: &str, body: &models::UpdateSessionRequest) -> Result<models::Session> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -716,7 +716,7 @@ impl SessionsApi {
     /// `PATCH /api/v1/sessions/{sessionId}/todos/{todoId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn update_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

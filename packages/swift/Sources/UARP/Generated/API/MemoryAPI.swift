@@ -105,7 +105,7 @@ public struct MemoryAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/memory`
     ///
     /// Required scopes: `memory:read`.
-    public func listMemories(agentId: String, limit: Int? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listMemories(agentId: String, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListMemoriesResponse {
         var query: [URLQueryItem] = []
         if let limit {
             query.append(URLQueryItem(name: "limit", value: String(limit)))
@@ -123,7 +123,7 @@ public struct MemoryAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/memory/search`
     ///
     /// Required scopes: `memory:write`.
-    public func search(agentId: String, body: JSONValue, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func search(agentId: String, body: JSONValue, options: RequestOptions = .init()) async throws -> SearchMemoryResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/search",
@@ -138,7 +138,7 @@ public struct MemoryAPI: Sendable {
     /// `PUT /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    public func updateAgentMemoryEntry(agentId: String, entryId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAgentMemoryEntry(agentId: String, entryId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> MemoryEntry {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/\(encodePathSegment(entryId))",

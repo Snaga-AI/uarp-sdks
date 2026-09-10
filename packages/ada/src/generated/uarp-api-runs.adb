@@ -8,32 +8,34 @@ package body UARP.API.Runs is
       Payload : UARP.Models.Run_Approve_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Approve_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/approve",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/approve",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Approve_Run;
 
    function Cancel
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Cancel_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/cancel",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/cancel",
+             Idempotent => True,
+             Options => Options));
    end Cancel;
 
    function Continue_Run
@@ -41,17 +43,18 @@ package body UARP.API.Runs is
       Run_Id : String;
       Payload : UARP.Models.Continue_Run_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Continue_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/continue",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/continue",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Continue_Run;
 
    function Create
@@ -76,15 +79,16 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Run_Checkpoint
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/checkpoint",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/checkpoint",
+             Idempotent => True,
+             Options => Options));
    end Create_Run_Checkpoint;
 
    function Estimate_Run_Cost
@@ -144,14 +148,15 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Get_Run_Audit_Log_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/audit-log",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/audit-log",
+             Options => Options));
    end Get_Run_Audit_Log;
 
    function Get_Run_Feedback
@@ -290,14 +295,15 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Run_Artifacts_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/artifacts",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/artifacts",
+             Options => Options));
    end List_Run_Artifacts;
 
    function List_Run_Checkpoints
@@ -319,15 +325,16 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Pause_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/pause",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/pause",
+             Idempotent => True,
+             Options => Options));
    end Pause_Run;
 
    function Reject_Run
@@ -336,17 +343,18 @@ package body UARP.API.Runs is
       Payload : UARP.Models.Reject_Run_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Reject_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/reject",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/reject",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Reject_Run;
 
    function Replay_Run
@@ -387,15 +395,16 @@ package body UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Resume_Run_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/resume",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/resume",
+             Idempotent => True,
+             Options => Options));
    end Resume;
 
    function Set_Run_Feedback
@@ -403,7 +412,7 @@ package body UARP.API.Runs is
       Run_Id : String;
       Payload : UARP.Models.Set_Run_Feedback_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Set_Run_Feedback_Response
+      return UARP.Models.Run_Feedback_Set
    is
    begin
       return UARP.Models.From_JSON

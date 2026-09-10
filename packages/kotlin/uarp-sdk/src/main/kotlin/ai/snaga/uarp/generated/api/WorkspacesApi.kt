@@ -30,8 +30,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/assign",
@@ -87,8 +87,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun delete(workspaceId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun delete(workspaceId: String, options: RequestOptions = RequestOptions()): DeleteWorkspaceResponse {
+        return client.request<DeleteWorkspaceResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}",
@@ -167,8 +167,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:read`.
      */
-    public suspend fun `get`(workspaceId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun `get`(workspaceId: String, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}",
@@ -244,11 +244,11 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun listAgentWorkspaceFiles(agentId: String, path: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun listAgentWorkspaceFiles(agentId: String, path: String? = null, options: RequestOptions = RequestOptions()): ListAgentWorkspaceFilesResponse {
         val query = buildList {
             if (path != null) add("path" to path)
         }
-        return client.request<JsonElement>(
+        return client.request<ListAgentWorkspaceFilesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/workspace/files",
@@ -329,8 +329,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun moveWorkspaceFile(workspaceId: String, body: MoveWorkspaceFileRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun moveWorkspaceFile(workspaceId: String, body: MoveWorkspaceFileRequest, options: RequestOptions = RequestOptions()): WorkspaceFile {
+        return client.request<WorkspaceFile>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/move",
@@ -390,8 +390,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun revokeWorkspaceShare(workspaceId: String, agentId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun revokeWorkspaceShare(workspaceId: String, agentId: String, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/share/${encodePathSegment(agentId)}",
@@ -450,8 +450,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun share(workspaceId: String, body: ShareWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun share(workspaceId: String, body: ShareWorkspaceRequest, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/share",
@@ -479,8 +479,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun unassignWorkspace(workspaceId: String, body: UnassignWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun unassignWorkspace(workspaceId: String, body: UnassignWorkspaceRequest, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/assign",
@@ -498,8 +498,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = RequestOptions()): Workspace {
+        return client.request<Workspace>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}",

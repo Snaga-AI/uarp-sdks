@@ -9,9 +9,11 @@ import type {
   CreateWorkspaceRequest,
   DeleteWorkspaceFileResponse,
   DeleteWorkspaceFileTrash,
+  DeleteWorkspaceResponse,
   EmptyWorkspaceTrashResponse,
   JsonObject,
   JsonValue,
+  ListAgentWorkspaceFilesResponse,
   ListWorkspaceFileHistoryResponse,
   ListWorkspaceFilesResponse,
   ListWorkspaceTrashResponse,
@@ -29,6 +31,7 @@ import type {
   UnassignWorkspaceRequest,
   UpdateWorkspaceRequest,
   UploadWorkspaceFileRequest,
+  Workspace,
   WorkspaceFile,
 } from '../models.js';
 
@@ -131,7 +134,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  assignWorkspace(workspaceId: string, body: AssignWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  assignWorkspace(workspaceId: string, body: AssignWorkspaceRequest, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/assign`,
@@ -182,7 +185,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  delete(workspaceId: string, options?: RequestOptions): Promise<JsonValue> {
+  delete(workspaceId: string, options?: RequestOptions): Promise<DeleteWorkspaceResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}`,
@@ -248,7 +251,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:read`.
    */
-  get(workspaceId: string, options?: RequestOptions): Promise<JsonValue> {
+  get(workspaceId: string, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}`,
@@ -314,7 +317,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  listAgentWorkspaceFiles(agentId: string, params?: ListAgentWorkspaceFilesParams, options?: RequestOptions): Promise<JsonValue> {
+  listAgentWorkspaceFiles(agentId: string, params?: ListAgentWorkspaceFilesParams, options?: RequestOptions): Promise<ListAgentWorkspaceFilesResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/workspace/files`,
@@ -381,7 +384,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  moveWorkspaceFile(workspaceId: string, body: MoveWorkspaceFileRequest, options?: RequestOptions): Promise<JsonValue> {
+  moveWorkspaceFile(workspaceId: string, body: MoveWorkspaceFileRequest, options?: RequestOptions): Promise<WorkspaceFile> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/move`,
@@ -436,7 +439,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  revokeWorkspaceShare(workspaceId: string, agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  revokeWorkspaceShare(workspaceId: string, agentId: string, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/share/${encodeURIComponent(String(agentId))}`,
@@ -485,7 +488,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  share(workspaceId: string, body: ShareWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  share(workspaceId: string, body: ShareWorkspaceRequest, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/share`,
@@ -512,7 +515,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  unassignWorkspace(workspaceId: string, body: UnassignWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  unassignWorkspace(workspaceId: string, body: UnassignWorkspaceRequest, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/assign`,
@@ -529,7 +532,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  update(workspaceId: string, body: UpdateWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  update(workspaceId: string, body: UpdateWorkspaceRequest, options?: RequestOptions): Promise<Workspace> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}`,

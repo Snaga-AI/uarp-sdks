@@ -13,7 +13,7 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    public func assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/assign",
@@ -58,7 +58,7 @@ public struct WorkspacesAPI: Sendable {
     /// `DELETE /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    public func delete(workspaceId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func delete(workspaceId: String, options: RequestOptions = .init()) async throws -> DeleteWorkspaceResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))",
@@ -122,7 +122,7 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:read`.
-    public func get(workspaceId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func get(workspaceId: String, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))",
@@ -182,7 +182,7 @@ public struct WorkspacesAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/workspace/files`
     ///
     /// Required scopes: `agents:read`.
-    public func listAgentWorkspaceFiles(agentId: String, path: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listAgentWorkspaceFiles(agentId: String, path: String? = nil, options: RequestOptions = .init()) async throws -> ListAgentWorkspaceFilesResponse {
         var query: [URLQueryItem] = []
         if let path {
             query.append(URLQueryItem(name: "path", value: path))
@@ -254,7 +254,7 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces/{workspaceId}/files/move`
     ///
     /// Required scopes: `files:write`.
-    public func moveWorkspaceFile(workspaceId: String, body: MoveWorkspaceFileRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func moveWorkspaceFile(workspaceId: String, body: MoveWorkspaceFileRequest, options: RequestOptions = .init()) async throws -> WorkspaceFile {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/move",
@@ -303,7 +303,7 @@ public struct WorkspacesAPI: Sendable {
     /// `DELETE /api/v1/workspaces/{workspaceId}/share/{agentId}`
     ///
     /// Required scopes: `files:write`.
-    public func revokeWorkspaceShare(workspaceId: String, agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func revokeWorkspaceShare(workspaceId: String, agentId: String, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/share/\(encodePathSegment(agentId))",
@@ -354,7 +354,7 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces/{workspaceId}/share`
     ///
     /// Required scopes: `files:write`.
-    public func share(workspaceId: String, body: ShareWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func share(workspaceId: String, body: ShareWorkspaceRequest, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/share",
@@ -379,7 +379,7 @@ public struct WorkspacesAPI: Sendable {
     /// `DELETE /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    public func unassignWorkspace(workspaceId: String, body: UnassignWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func unassignWorkspace(workspaceId: String, body: UnassignWorkspaceRequest, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/assign",
@@ -394,7 +394,7 @@ public struct WorkspacesAPI: Sendable {
     /// `PATCH /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    public func update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = .init()) async throws -> Workspace {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))",

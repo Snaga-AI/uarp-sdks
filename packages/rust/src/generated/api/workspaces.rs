@@ -102,7 +102,7 @@ impl WorkspacesApi {
     /// `POST /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    pub async fn assign_workspace(&self, workspace_id: &str, body: &models::AssignWorkspaceRequest) -> Result<serde_json::Value> {
+    pub async fn assign_workspace(&self, workspace_id: &str, body: &models::AssignWorkspaceRequest) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -156,7 +156,7 @@ impl WorkspacesApi {
     /// `DELETE /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    pub async fn delete(&self, workspace_id: &str) -> Result<serde_json::Value> {
+    pub async fn delete(&self, workspace_id: &str) -> Result<models::DeleteWorkspaceResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -228,7 +228,7 @@ impl WorkspacesApi {
     /// `GET /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:read`.
-    pub async fn get(&self, workspace_id: &str) -> Result<serde_json::Value> {
+    pub async fn get(&self, workspace_id: &str) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -304,7 +304,7 @@ impl WorkspacesApi {
     /// `GET /api/v1/agents/{agentId}/workspace/files`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn list_agent_workspace_files(&self, agent_id: &str, params: &ListAgentWorkspaceFilesParams) -> Result<serde_json::Value> {
+    pub async fn list_agent_workspace_files(&self, agent_id: &str, params: &ListAgentWorkspaceFilesParams) -> Result<models::ListAgentWorkspaceFilesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -380,7 +380,7 @@ impl WorkspacesApi {
     /// `POST /api/v1/workspaces/{workspaceId}/files/move`
     ///
     /// Required scopes: `files:write`.
-    pub async fn move_workspace_file(&self, workspace_id: &str, body: &models::MoveWorkspaceFileRequest) -> Result<serde_json::Value> {
+    pub async fn move_workspace_file(&self, workspace_id: &str, body: &models::MoveWorkspaceFileRequest) -> Result<models::WorkspaceFile> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -438,7 +438,7 @@ impl WorkspacesApi {
     /// `DELETE /api/v1/workspaces/{workspaceId}/share/{agentId}`
     ///
     /// Required scopes: `files:write`.
-    pub async fn revoke_workspace_share(&self, workspace_id: &str, agent_id: &str) -> Result<serde_json::Value> {
+    pub async fn revoke_workspace_share(&self, workspace_id: &str, agent_id: &str) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -492,7 +492,7 @@ impl WorkspacesApi {
     /// `POST /api/v1/workspaces/{workspaceId}/share`
     ///
     /// Required scopes: `files:write`.
-    pub async fn share(&self, workspace_id: &str, body: &models::ShareWorkspaceRequest) -> Result<serde_json::Value> {
+    pub async fn share(&self, workspace_id: &str, body: &models::ShareWorkspaceRequest) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -520,7 +520,7 @@ impl WorkspacesApi {
     /// `DELETE /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    pub async fn unassign_workspace(&self, workspace_id: &str, body: &models::UnassignWorkspaceRequest) -> Result<serde_json::Value> {
+    pub async fn unassign_workspace(&self, workspace_id: &str, body: &models::UnassignWorkspaceRequest) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -538,7 +538,7 @@ impl WorkspacesApi {
     /// `PATCH /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    pub async fn update(&self, workspace_id: &str, body: &models::UpdateWorkspaceRequest) -> Result<serde_json::Value> {
+    pub async fn update(&self, workspace_id: &str, body: &models::UpdateWorkspaceRequest) -> Result<models::Workspace> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

@@ -34,8 +34,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun approveRun(runId: String, body: RunApproveRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun approveRun(runId: String, body: RunApproveRequest? = null, options: RequestOptions = RequestOptions()): ApproveRunResponse {
+        return client.request<ApproveRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/approve",
@@ -53,8 +53,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun cancel(runId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun cancel(runId: String, options: RequestOptions = RequestOptions()): CancelRunResponse {
+        return client.request<CancelRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/cancel",
@@ -73,8 +73,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun continueRun(runId: String, body: ContinueRunRequest, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun continueRun(runId: String, body: ContinueRunRequest, options: RequestOptions = RequestOptions()): ContinueRunResponse {
+        return client.request<ContinueRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/continue",
@@ -116,8 +116,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun createRunCheckpoint(runId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createRunCheckpoint(runId: String, options: RequestOptions = RequestOptions()): RunCheckpoint {
+        return client.request<RunCheckpoint>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/checkpoint",
@@ -198,8 +198,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun getRunAuditLog(runId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getRunAuditLog(runId: String, options: RequestOptions = RequestOptions()): GetRunAuditLogResponse {
+        return client.request<GetRunAuditLogResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/audit-log",
@@ -318,8 +318,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun listRunArtifacts(runId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun listRunArtifacts(runId: String, options: RequestOptions = RequestOptions()): ListRunArtifactsResponse {
+        return client.request<ListRunArtifactsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/artifacts",
@@ -352,8 +352,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun pauseRun(runId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun pauseRun(runId: String, options: RequestOptions = RequestOptions()): PauseRunResponse {
+        return client.request<PauseRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/pause",
@@ -370,8 +370,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun rejectRun(runId: String, body: RejectRunRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun rejectRun(runId: String, body: RejectRunRequest? = null, options: RequestOptions = RequestOptions()): RejectRunResponse {
+        return client.request<RejectRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/reject",
@@ -426,8 +426,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun resume(runId: String, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun resume(runId: String, options: RequestOptions = RequestOptions()): ResumeRunResponse {
+        return client.request<ResumeRunResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/resume",
@@ -451,8 +451,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = RequestOptions()): SetRunFeedbackResponse {
-        return client.request<SetRunFeedbackResponse>(
+    public suspend fun setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = RequestOptions()): RunFeedbackSet {
+        return client.request<RunFeedbackSet>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/feedback",

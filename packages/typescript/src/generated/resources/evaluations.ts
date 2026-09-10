@@ -9,6 +9,8 @@ import type {
   JsonObject,
   JsonValue,
   ListAgentScorersResponse,
+  ListDatasetsResponse,
+  ListEvalRunsResponse,
   RunEvaluationRequest,
 } from '../models.js';
 
@@ -136,7 +138,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:read`.
    */
-  listDatasets(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  listDatasets(agentId: string, options?: RequestOptions): Promise<ListDatasetsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/datasets`,
@@ -151,7 +153,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:read`.
    */
-  listEvalRuns(agentId: string, options?: RequestOptions): Promise<JsonValue> {
+  listEvalRuns(agentId: string, options?: RequestOptions): Promise<ListEvalRunsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/evaluations`,

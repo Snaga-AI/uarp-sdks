@@ -1213,6 +1213,50 @@ public data class AgentBridgeState(
 )
 
 /**
+ * What GET /agents/{agentId}/capabilities serves. Measured 2026-09-10 on the e2e-canon tenant;
+ * `tools\[\]` and `kb_ids\[\]` were empty there, so their element shape is not asserted.
+ */
+@Serializable
+public data class AgentCapabilities(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val skills: List<AgentCapabilitiesSkill>,
+    public val constraints: AgentCapabilitiesConstraints,
+    public val tools: List<JsonElement>,
+    @SerialName("kb_ids")
+    public val kbIds: List<String>,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+)
+
+/**
+ * `AgentCapabilitiesConstraints` model.
+ */
+@Serializable
+public data class AgentCapabilitiesConstraints(
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long? = null,
+    @SerialName("rate_limit_rpm")
+    public val rateLimitRpm: Long? = null,
+    @SerialName("supported_languages")
+    public val supportedLanguages: List<String>? = null,
+)
+
+/**
+ * `AgentCapabilitiesSkill` model.
+ */
+@Serializable
+public data class AgentCapabilitiesSkill(
+    public val id: String,
+    public val name: String,
+    public val description: String? = null,
+    @SerialName("input_types")
+    public val inputTypes: List<String>? = null,
+    @SerialName("output_types")
+    public val outputTypes: List<String>? = null,
+)
+
+/**
  * Command hierarchy (MVP: opcon only).
  */
 @Serializable
@@ -2332,6 +2376,16 @@ public data class ApplyProgramRequest(
 )
 
 /**
+ * `ApproveRunResponse` model.
+ */
+@Serializable
+public data class ApproveRunResponse(
+    public val approved: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
+)
+
+/**
  * `ArbiterCase` model.
  */
 @Serializable
@@ -2441,6 +2495,28 @@ public data class AssignWorkspaceRequest(
     public val teamId: String? = null,
     @SerialName("company_id")
     public val companyId: String? = null,
+)
+
+/**
+ * One audit-log row as served by GET /runs/{runId}/audit-log and GET
+ * /sessions/{sessionId}/audit-log. Keys measured 2026-09-10 on the e2e-canon tenant (runs and
+ * sessions alike).
+ */
+@Serializable
+public data class AuditLogEntry(
+    @SerialName("entry_id")
+    public val entryId: String,
+    public val action: String,
+    @SerialName("actor_tenant_id")
+    public val actorTenantId: String,
+    @SerialName("target_type")
+    public val targetType: String,
+    @SerialName("target_id")
+    public val targetId: String,
+    public val details: JsonObject,
+    @SerialName("ip_address")
+    public val ipAddress: String,
+    public val timestamp: String,
 )
 
 /**
@@ -3210,6 +3286,16 @@ public data class CancelPublicSessionRunResponse(
 )
 
 /**
+ * `CancelRunResponse` model.
+ */
+@Serializable
+public data class CancelRunResponse(
+    public val cancelled: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
+)
+
+/**
  * `CancelSquadRunResponse` model.
  */
 @Serializable
@@ -3419,6 +3505,16 @@ public data class CheckSpawnPermissionRequest(
     public val parentAgentId: String,
     @SerialName("child_permissions")
     public val childPermissions: PermissionSet,
+)
+
+/**
+ * `CloseSessionResponse` model.
+ */
+@Serializable
+public data class CloseSessionResponse(
+    public val deleted: Boolean,
+    @SerialName("session_id")
+    public val sessionId: String,
 )
 
 /**
@@ -4026,6 +4122,19 @@ public data class ContinueRunRequest(
      */
     @SerialName("continuation_token")
     public val continuationToken: String,
+)
+
+/**
+ * `ContinueRunResponse` model.
+ */
+@Serializable
+public data class ContinueRunResponse(
+    public val continued: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
+    public val checkpoint: String? = null,
+    @SerialName("resume_step")
+    public val resumeStep: Long? = null,
 )
 
 /**
@@ -5452,6 +5561,17 @@ public object DeleteWorkspaceFileTrashSerializer : KSerializer<DeleteWorkspaceFi
     override fun serialize(encoder: Encoder, value: DeleteWorkspaceFileTrash): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): DeleteWorkspaceFileTrash = DeleteWorkspaceFileTrash(decoder.decodeString())
 }
+
+/**
+ * `DeleteWorkspaceResponse` model.
+ */
+@Serializable
+public data class DeleteWorkspaceResponse(
+    public val error: RevokeSessionShareResponseError,
+    public val message: String,
+    @SerialName("retry_after_seconds")
+    public val retryAfterSeconds: Long,
+)
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -7830,6 +7950,18 @@ public data class GetRootAgentResponse(
 )
 
 /**
+ * `GetRunAuditLogResponse` model.
+ */
+@Serializable
+public data class GetRunAuditLogResponse(
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("audit_log")
+    public val auditLog: List<AuditLogEntry>,
+    public val total: Long,
+)
+
+/**
  * `GetRunChangedFiles` values.
  */
 ///
@@ -7855,60 +7987,6 @@ public object GetRunChangedFilesSerializer : KSerializer<GetRunChangedFiles> {
     override fun serialize(encoder: Encoder, value: GetRunChangedFiles): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetRunChangedFiles = GetRunChangedFiles(decoder.decodeString())
 }
-
-/**
- * No `message_id` in the query.
- */
-@Serializable
-public data class GetRunFeedbackResponseVariant1(
-    public val feedbacks: List<GetRunFeedbackResponseVariant1feedback>,
-)
-
-/**
- * `GetRunFeedbackResponseVariant1feedback` model.
- */
-@Serializable
-public data class GetRunFeedbackResponseVariant1feedback(
-    @SerialName("message_id")
-    public val messageId: String,
-    public val reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-)
-
-/**
- * `GetRunFeedbackResponseVariant1feedbackReaction` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = GetRunFeedbackResponseVariant1feedbackReactionSerializer::class)
-@JvmInline
-public value class GetRunFeedbackResponseVariant1feedbackReaction(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val UP: GetRunFeedbackResponseVariant1feedbackReaction = GetRunFeedbackResponseVariant1feedbackReaction("up")
-        public val DOWN: GetRunFeedbackResponseVariant1feedbackReaction = GetRunFeedbackResponseVariant1feedbackReaction("down")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<GetRunFeedbackResponseVariant1feedbackReaction> = listOf(UP, DOWN)
-    }
-}
-
-public object GetRunFeedbackResponseVariant1feedbackReactionSerializer : KSerializer<GetRunFeedbackResponseVariant1feedbackReaction> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetRunFeedbackResponseVariant1feedbackReaction", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: GetRunFeedbackResponseVariant1feedbackReaction): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): GetRunFeedbackResponseVariant1feedbackReaction = GetRunFeedbackResponseVariant1feedbackReaction(decoder.decodeString())
-}
-
-/**
- * `message_id` given.
- */
-@Serializable
-public data class GetRunFeedbackResponseVariant2(
-    public val reaction: String? = null,
-)
 
 /**
  * `GetRunQueuePositionResponse` model.
@@ -8055,6 +8133,18 @@ public data class GetRunStepsResponse(
 @Serializable
 public data class GetRuntimeConfigResponse(
     public val runtime: JsonObject? = null,
+)
+
+/**
+ * `GetSessionAuditLogResponse` model.
+ */
+@Serializable
+public data class GetSessionAuditLogResponse(
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("audit_log")
+    public val auditLog: List<AuditLogEntry>,
+    public val total: Long,
 )
 
 /**
@@ -9555,6 +9645,18 @@ public data class ListAgentVersionsResponse(
 )
 
 /**
+ * `ListAgentWorkspaceFilesResponse` model.
+ */
+@Serializable
+public data class ListAgentWorkspaceFilesResponse(
+    @SerialName("workspace_id")
+    public val workspaceId: String,
+    public val path: String,
+    public val directories: List<String>,
+    public val files: List<WorkspaceFile>,
+)
+
+/**
  * `ListAllContentReportsResponse` model.
  */
 @Serializable
@@ -9828,6 +9930,25 @@ public data class ListDataExplorerNamespacesResponse(
 )
 
 /**
+ * `ListDatasetsResponse` model.
+ */
+@Serializable
+public data class ListDatasetsResponse(
+    public val datasets: List<JsonObject>,
+    public val total: Long,
+)
+
+/**
+ * `ListEvalRunsResponse` model.
+ */
+@Serializable
+public data class ListEvalRunsResponse(
+    @SerialName("eval_runs")
+    public val evalRuns: List<JsonObject>,
+    public val total: Long,
+)
+
+/**
  * `ListFeaturedSpecsResponse` model.
  */
 @Serializable
@@ -9968,6 +10089,15 @@ public data class ListLLMModelsResponse(
 @Serializable
 public data class ListMCPServersResponse(
     public val servers: List<MCPServer>,
+)
+
+/**
+ * `ListMemoriesResponse` model.
+ */
+@Serializable
+public data class ListMemoriesResponse(
+    public val memories: List<MemoryEntry>,
+    public val total: Long,
 )
 
 /**
@@ -10316,6 +10446,17 @@ public data class ListPublicTenantsResponse(
 )
 
 /**
+ * `ListRunArtifactsResponse` model.
+ */
+@Serializable
+public data class ListRunArtifactsResponse(
+    @SerialName("run_id")
+    public val runId: String,
+    public val artifacts: List<Artifact>,
+    public val total: Long,
+)
+
+/**
  * `ListRunCheckpointsResponse` model.
  */
 @Serializable
@@ -10433,6 +10574,8 @@ public data class ListSessionsResponse(
  */
 @Serializable
 public data class ListSessionsResponseItem(
+    @SerialName("created_by")
+    public val createdBy: String? = null,
     @SerialName("session_id")
     public val sessionId: String,
     @SerialName("tenant_id")
@@ -11401,6 +11544,30 @@ public object MCPTransportSerializer : KSerializer<MCPTransport> {
  */
 @Serializable
 public data class MemoryEntry(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("access_count")
+    public val accessCount: Long? = null,
+    @SerialName("last_accessed_at")
+    public val lastAccessedAt: String? = null,
+    public val metadata: JsonObject? = null,
+    /**
+     * Present on entries written from a run (seen on some e2e-canon entries, absent on others).
+     */
+    @SerialName("run_outcome")
+    public val runOutcome: String? = null,
+    /**
+     * Present on entity entries only (e2e-canon).
+     */
+    @SerialName("entity_name")
+    public val entityName: String? = null,
+    /**
+     * Present on entity entries only (e2e-canon).
+     */
+    @SerialName("entity_type")
+    public val entityType: String? = null,
     @SerialName("entry_id")
     public val entryId: String,
     public val type: MemoryEntryType? = null,
@@ -12805,6 +12972,16 @@ public data class PauseCompanyResponse(
 public data class PauseMissionResponse(
     public val pausing: Boolean,
     public val mission: Mission,
+)
+
+/**
+ * `PauseRunResponse` model.
+ */
+@Serializable
+public data class PauseRunResponse(
+    public val paused: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
 )
 
 /**
@@ -14411,6 +14588,17 @@ public data class RejectRunRequest(
 )
 
 /**
+ * `RejectRunResponse` model.
+ */
+@Serializable
+public data class RejectRunResponse(
+    public val rejected: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
+    public val reason: String? = null,
+)
+
+/**
  * `RemoveScheduleResponse` model.
  */
 @Serializable
@@ -14599,6 +14787,16 @@ public data class ResumeCompanyResponse(
 public data class ResumeMissionResponse(
     public val accepted: Boolean,
     public val mission: Mission,
+)
+
+/**
+ * `ResumeRunResponse` model.
+ */
+@Serializable
+public data class ResumeRunResponse(
+    public val resumed: Boolean,
+    @SerialName("run_id")
+    public val runId: String,
 )
 
 /**
@@ -15154,6 +15352,72 @@ public data class RunEvaluationRequest(
 )
 
 /**
+ * GET …/feedback without `message_id`: every reaction the caller stored on the run (measured
+ * 2026-09-10: `{"feedbacks":\[\]}` on a run with none).
+ */
+@Serializable
+public data class RunFeedbackList(
+    public val feedbacks: List<RunFeedbackListFeedback>,
+)
+
+/**
+ * `RunFeedbackListFeedback` model.
+ */
+@Serializable
+public data class RunFeedbackListFeedback(
+    @SerialName("message_id")
+    public val messageId: String,
+    public val reaction: RunFeedbackListFeedbackReaction,
+)
+
+/**
+ * `RunFeedbackListFeedbackReaction` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunFeedbackListFeedbackReactionSerializer::class)
+@JvmInline
+public value class RunFeedbackListFeedbackReaction(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UP: RunFeedbackListFeedbackReaction = RunFeedbackListFeedbackReaction("up")
+        public val DOWN: RunFeedbackListFeedbackReaction = RunFeedbackListFeedbackReaction("down")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunFeedbackListFeedbackReaction> = listOf(UP, DOWN)
+    }
+}
+
+public object RunFeedbackListFeedbackReactionSerializer : KSerializer<RunFeedbackListFeedbackReaction> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunFeedbackListFeedbackReaction", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunFeedbackListFeedbackReaction): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunFeedbackListFeedbackReaction = RunFeedbackListFeedbackReaction(decoder.decodeString())
+}
+
+/**
+ * GET …/feedback with `message_id`: that one reaction, `null` when the caller has not reacted.
+ */
+@Serializable
+public data class RunFeedbackOne(
+    public val reaction: String? = null,
+)
+
+/**
+ * PUT …/feedback: the stored reaction, echoed (runs.ts putRunFeedback, sessions.ts
+ * putSessionFeedback — the same literal).
+ */
+@Serializable
+public data class RunFeedbackSet(
+    public val reaction: RunFeedbackListFeedbackReaction,
+    @SerialName("message_id")
+    public val messageId: String,
+)
+
+/**
  * `RunMetrics` model.
  */
 @Serializable
@@ -15365,7 +15629,16 @@ public data class Schedule(
     public val autonomousMode: Boolean? = null,
     @SerialName("reflection_prompt")
     public val reflectionPrompt: String? = null,
+    /**
+     * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+     * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+     * with `enabled: false`. The human-facing on/off is `enabled`.
+     */
     public val status: ScheduleEntryStatus,
+    /**
+     * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+     * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+     */
     @SerialName("next_fire_at")
     public val nextFireAt: String? = null,
     @SerialName("last_fired_at")
@@ -15459,15 +15732,26 @@ public data class ScheduleEntry(
     public val config: AgentScheduleConfig,
     @SerialName("last_fired_at")
     public val lastFiredAt: String? = null,
+    /**
+     * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
+     * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+     */
     @SerialName("next_fire_at")
     public val nextFireAt: String? = null,
     @SerialName("consecutive_failures")
     public val consecutiveFailures: Long,
+    /**
+     * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+     * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+     * with `enabled: false`. The human-facing on/off is `enabled`.
+     */
     public val status: ScheduleEntryStatus,
 )
 
 /**
- * `ScheduleEntryStatus` values.
+ * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
+ * schedule is switched on: measured 2026-09-10, `active` on every live entry, including two
+ * with `enabled: false`. The human-facing on/off is `enabled`.
  */
 ///
 /**
@@ -15570,6 +15854,15 @@ public object SearchMarketplaceSortSerializer : KSerializer<SearchMarketplaceSor
     override fun serialize(encoder: Encoder, value: SearchMarketplaceSort): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SearchMarketplaceSort = SearchMarketplaceSort(decoder.decodeString())
 }
+
+/**
+ * `SearchMemoryResponse` model.
+ */
+@Serializable
+public data class SearchMemoryResponse(
+    public val memories: List<MemoryEntry>,
+    public val total: Long,
+)
 
 /**
  * `SearchType` values.
@@ -15752,6 +16045,8 @@ public data class SensorWebhookResponse(
  */
 @Serializable
 public data class Session(
+    @SerialName("created_by")
+    public val createdBy: String? = null,
     @SerialName("session_id")
     public val sessionId: String,
     @SerialName("tenant_id")
@@ -16080,6 +16375,18 @@ public data class SetAgentTrafficRequestEntry(
 )
 
 /**
+ * `SetAgentTrafficResponse` model.
+ */
+@Serializable
+public data class SetAgentTrafficResponse(
+    @SerialName("agent_id")
+    public val agentId: String,
+    public val entries: List<JsonObject>,
+    @SerialName("updated_at")
+    public val updatedAt: String? = null,
+)
+
+/**
  * `SetArbiterRegistryResponse` model.
  */
 @Serializable
@@ -16306,17 +16613,7 @@ public data class SetRootAttestationResponse(
 public data class SetRunFeedbackRequest(
     @SerialName("message_id")
     public val messageId: String,
-    public val reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-)
-
-/**
- * `SetRunFeedbackResponse` model.
- */
-@Serializable
-public data class SetRunFeedbackResponse(
-    public val reaction: GetRunFeedbackResponseVariant1feedbackReaction,
-    @SerialName("message_id")
-    public val messageId: String,
+    public val reaction: RunFeedbackListFeedbackReaction,
 )
 
 /**
@@ -19986,6 +20283,10 @@ public object WebhookSubscriptionStatusSerializer : KSerializer<WebhookSubscript
  */
 @Serializable
 public data class Workspace(
+    @SerialName("file_count")
+    public val fileCount: Long? = null,
+    @SerialName("total_size_bytes")
+    public val totalSizeBytes: Long? = null,
     @SerialName("workspace_id")
     public val workspaceId: String,
     @SerialName("tenant_id")

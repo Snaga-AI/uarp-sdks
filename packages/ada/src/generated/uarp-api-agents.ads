@@ -79,7 +79,7 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent;
 
    --  Create an agent
    --
@@ -130,7 +130,7 @@ package UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Version_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent_Version;
 
    --  Delete an agent
    --
@@ -209,7 +209,7 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent_Capabilities;
 
    --  Get Fundamental Rights Impact Assessment
    --
@@ -406,7 +406,7 @@ package UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Rollback_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent_Version;
 
    --  Rotate agent identity
    --
@@ -441,7 +441,7 @@ package UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Set_Agent_Traffic_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Set_Agent_Traffic_Response;
 
    --  Suspend agent
    --
@@ -454,7 +454,7 @@ package UARP.API.Agents is
       Payload : UARP.Models.Suspend_Agent_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Agent;
 
    --  Terminate/delete agent
    --

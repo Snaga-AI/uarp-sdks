@@ -6,15 +6,16 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/activate",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/activate",
+             Idempotent => True,
+             Options => Options));
    end Activate_Agent;
 
    function Create
@@ -78,17 +79,18 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Version_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent_Version
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/versions",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/versions",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Agent_Version;
 
    function Delete
@@ -195,14 +197,15 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent_Capabilities
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/capabilities",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/capabilities",
+             Options => Options));
    end Get_Agent_Capabilities;
 
    function Get_Agent_Fria
@@ -495,17 +498,18 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Rollback_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent_Version
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/rollback",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/rollback",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Rollback_Agent;
 
    function Rotate_Agent_Identity
@@ -548,17 +552,18 @@ package body UARP.API.Agents is
       Agent_Id : String;
       Payload : UARP.Models.Set_Agent_Traffic_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Set_Agent_Traffic_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/traffic",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/traffic",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Set_Agent_Traffic;
 
    function Suspend_Agent
@@ -567,17 +572,18 @@ package body UARP.API.Agents is
       Payload : UARP.Models.Suspend_Agent_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Agent
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/suspend",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/suspend",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Suspend_Agent;
 
    function Terminate_Agent

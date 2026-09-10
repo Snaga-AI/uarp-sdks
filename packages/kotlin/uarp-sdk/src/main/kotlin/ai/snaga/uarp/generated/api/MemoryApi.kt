@@ -146,11 +146,11 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:read`.
      */
-    public suspend fun listMemories(agentId: String, limit: Long? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun listMemories(agentId: String, limit: Long? = null, options: RequestOptions = RequestOptions()): ListMemoriesResponse {
         val query = buildList {
             if (limit != null) add("limit" to limit.toString())
         }
-        return client.request<JsonElement>(
+        return client.request<ListMemoriesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory",
@@ -167,8 +167,8 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun search(agentId: String, body: JsonElement, options: RequestOptions = RequestOptions()): JsonElement {
-        return client.request<JsonElement>(
+    public suspend fun search(agentId: String, body: JsonElement, options: RequestOptions = RequestOptions()): SearchMemoryResponse {
+        return client.request<SearchMemoryResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/search",
@@ -186,8 +186,8 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun updateAgentMemoryEntry(agentId: String, entryId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAgentMemoryEntry(agentId: String, entryId: String, body: JsonObject, options: RequestOptions = RequestOptions()): MemoryEntry {
+        return client.request<MemoryEntry>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/${encodePathSegment(entryId)}",

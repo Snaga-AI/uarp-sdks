@@ -6,6 +6,25 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.20 — 2026-09-10
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`8d6c371c0ade9c233c57c9048758bbbc29ab1f7412e0ed02d6aca025571d9015`, build `bccf5ef4`, `info.version` 0.4.0. 709 operations, 243 schemas.
+
+### Changed
+
+- uarp #448 (CTR-07 tranche 1): 39 responses on agents, sessions, runs and
+  workspaces now have the shape they serve — new `AuditLogEntry`,
+  `AgentCapabilities`, `RunFeedbackList`/`RunFeedbackOne`/`RunFeedbackSet`;
+  `MemoryEntry`, `Session`, `Workspace` gained served keys; run
+  approve/cancel/pause/reject/continue/resume/checkpoint, session delete/
+  todos, agent activate/suspend/versions/rollback/traffic, workspace
+  assign/share/move are typed.
+- `POST /runs/{runId}/resume` and `…/checkpoint` answer **202** (the document
+  said 200 / 201); generated clients now expect the code the wire gives.
+- `DELETE /workspaces/{workspaceId}` is 204 with no body.
+
 ## 0.5.19 — 2026-09-10
 
 The copy follows the served document byte for byte: `spec/openapi.json` is

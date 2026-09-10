@@ -11,17 +11,18 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Assign_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/assign",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/assign",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Assign_Workspace;
 
    function Copy_Workspace_File
@@ -64,15 +65,16 @@ package body UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Delete_Workspace_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
+             Idempotent => True,
+             Options => Options));
    end Delete;
 
    function Delete_Workspace_File
@@ -136,14 +138,15 @@ package body UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
+             Options => Options));
    end Get;
 
    function Get_Workspace_File_History_Content
@@ -198,19 +201,20 @@ package body UARP.API.Workspaces is
       Agent_Id : String;
       Params : List_Agent_Workspace_Files_Params := No_List_Agent_Workspace_Files_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.List_Agent_Workspace_Files_Response
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Path then
          UARP.Types.Add (Query, "path", Params.Path);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/workspace/files",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/workspace/files",
+             Query => Query,
+             Options => Options));
    end List_Agent_Workspace_Files;
 
    function List_Workspace_File_History
@@ -276,17 +280,18 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Move_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace_File
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files/move",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files/move",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Move_Workspace_File;
 
    function Publish_Workspace_Snapshot
@@ -332,15 +337,16 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/share/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/share/" & UARP.Types.Encode_Path_Segment (Agent_Id),
+             Idempotent => True,
+             Options => Options));
    end Revoke_Workspace_Share;
 
    function Run_Workspace_Command
@@ -392,17 +398,18 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Share_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/share",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/share",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Share;
 
    function Unassign_Workspace
@@ -410,17 +417,18 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Unassign_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "DELETE",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/assign",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/assign",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Unassign_Workspace;
 
    function Update
@@ -428,17 +436,18 @@ package body UARP.API.Workspaces is
       Workspace_Id : String;
       Payload : UARP.Models.Update_Workspace_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Workspace
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update;
 
    function Upload_Workspace_File

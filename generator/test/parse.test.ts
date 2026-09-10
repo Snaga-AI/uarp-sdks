@@ -400,7 +400,10 @@ test('parses the production document into the expected shape', () => {
   // 1120 -> 1109 on 2026-09-10 (0.5.19): uarp #447 settled the eleven orphan
   // schemas — five deleted, four added, and several inline response shapes
   // became $refs to schemas that already existed, so fewer anonymous types.
-  assert.equal(spec.types.length, 1109);
+  // 1109 -> 1130 on 2026-09-10 (0.5.20): uarp #448 gave 39 responses their
+  // shapes — AuditLogEntry, AgentCapabilities, RunFeedback* and the inline
+  // result objects of runs/sessions/workspaces became named types.
+  assert.equal(spec.types.length, 1130);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.

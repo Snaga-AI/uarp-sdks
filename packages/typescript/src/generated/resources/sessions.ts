@@ -9,6 +9,7 @@ import type {
   ActivateSessionBranchResponse,
   BulkDeleteSessionsRequest,
   BulkDeleteSessionsResponse,
+  CloseSessionResponse,
   CreateSessionAnnotationRequest,
   CreateSessionAnnotationResponse,
   CreateSessionBranchRequest,
@@ -19,6 +20,7 @@ import type {
   DeleteSessionAnnotationResponse,
   DeleteSessionTodoResponse,
   ExportSessionFormat,
+  GetSessionAuditLogResponse,
   GetSessionMessagesResponse,
   GetSessionShareResponse,
   JsonObject,
@@ -32,11 +34,15 @@ import type {
   ListTodosResponse,
   ResolveSharedSessionResponse,
   RevokeSessionShareResponse,
+  RunFeedbackList,
+  RunFeedbackOne,
+  RunFeedbackSet,
   SendSessionMessageRequest,
   SendSessionMessageResponse,
   Session,
   SessionBranch,
   SessionExport,
+  Todo,
   UpdateSessionAnnotationRequest,
   UpdateSessionRequest,
 } from '../models.js';
@@ -142,7 +148,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  closeSession(sessionId: string, options?: RequestOptions): Promise<JsonValue> {
+  closeSession(sessionId: string, options?: RequestOptions): Promise<CloseSessionResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}`,
@@ -158,7 +164,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  confirmSessionTodo(sessionId: string, todoId: string, body?: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  confirmSessionTodo(sessionId: string, todoId: string, body?: JsonObject, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}/confirm`,
@@ -243,7 +249,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  createSessionTodo(sessionId: string, body: CreateSessionTodoRequest, options?: RequestOptions): Promise<JsonObject> {
+  createSessionTodo(sessionId: string, body: CreateSessionTodoRequest, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos`,
@@ -335,7 +341,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  get(sessionId: string, options?: RequestOptions): Promise<JsonValue> {
+  get(sessionId: string, options?: RequestOptions): Promise<Session> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}`,
@@ -350,7 +356,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  getSessionAuditLog(sessionId: string, options?: RequestOptions): Promise<JsonObject> {
+  getSessionAuditLog(sessionId: string, options?: RequestOptions): Promise<GetSessionAuditLogResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/audit-log`,
@@ -393,7 +399,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  getSessionRunFeedback(sessionId: string, runId: string, params?: GetSessionRunFeedbackParams, options?: RequestOptions): Promise<JsonObject> {
+  getSessionRunFeedback(sessionId: string, runId: string, params?: GetSessionRunFeedbackParams, options?: RequestOptions): Promise<RunFeedbackList | RunFeedbackOne> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/runs/${encodeURIComponent(String(runId))}/feedback`,
@@ -561,7 +567,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  runSessionTodoNow(sessionId: string, todoId: string, options?: RequestOptions): Promise<JsonObject> {
+  runSessionTodoNow(sessionId: string, todoId: string, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}/run`,
@@ -598,7 +604,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  setSessionRunFeedback(sessionId: string, runId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  setSessionRunFeedback(sessionId: string, runId: string, body: JsonObject, options?: RequestOptions): Promise<RunFeedbackSet> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/runs/${encodeURIComponent(String(runId))}/feedback`,
@@ -634,7 +640,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  update(sessionId: string, body: UpdateSessionRequest, options?: RequestOptions): Promise<JsonObject> {
+  update(sessionId: string, body: UpdateSessionRequest, options?: RequestOptions): Promise<Session> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}`,
@@ -668,7 +674,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  updateSessionTodo(sessionId: string, todoId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateSessionTodo(sessionId: string, todoId: string, body: JsonObject, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}`,

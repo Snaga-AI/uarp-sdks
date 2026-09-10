@@ -88,7 +88,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/activate`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn activate_agent(&self, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn activate_agent(&self, agent_id: &str) -> Result<models::Agent> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -164,7 +164,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn create_agent_version(&self, agent_id: &str, body: &models::CreateAgentVersionRequest) -> Result<serde_json::Value> {
+    pub async fn create_agent_version(&self, agent_id: &str, body: &models::CreateAgentVersionRequest) -> Result<models::AgentVersion> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -290,7 +290,7 @@ impl AgentsApi {
     /// `GET /api/v1/agents/{agentId}/capabilities`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_agent_capabilities(&self, agent_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_agent_capabilities(&self, agent_id: &str) -> Result<models::AgentCapabilities> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -594,7 +594,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/rollback`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn rollback_agent(&self, agent_id: &str, body: &models::RollbackAgentRequest) -> Result<serde_json::Value> {
+    pub async fn rollback_agent(&self, agent_id: &str, body: &models::RollbackAgentRequest) -> Result<models::AgentVersion> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -648,7 +648,7 @@ impl AgentsApi {
     /// `PUT /api/v1/agents/{agentId}/traffic`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn set_agent_traffic(&self, agent_id: &str, body: &models::SetAgentTrafficRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_agent_traffic(&self, agent_id: &str, body: &models::SetAgentTrafficRequest) -> Result<models::SetAgentTrafficResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -666,7 +666,7 @@ impl AgentsApi {
     /// `POST /api/v1/agents/{agentId}/suspend`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn suspend_agent(&self, agent_id: &str, body: &models::SuspendAgentRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn suspend_agent(&self, agent_id: &str, body: &models::SuspendAgentRequest) -> Result<models::Agent> {
         self.client
             .request_json(Request {
                 method: Method::POST,

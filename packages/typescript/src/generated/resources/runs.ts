@@ -6,28 +6,36 @@ import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  ApproveRunResponse,
+  CancelRunResponse,
   ContinueRunRequest,
+  ContinueRunResponse,
   CreateRunRequest,
   EstimateRunCostRequest,
+  GetRunAuditLogResponse,
   GetRunChangedFiles,
-  GetRunFeedbackResponseVariant1,
-  GetRunFeedbackResponseVariant2,
   GetRunQueuePositionResponse,
   GetRunResponse,
   GetRunStepsResponse,
   JsonObject,
-  JsonValue,
+  ListRunArtifactsResponse,
   ListRunCheckpointsResponse,
   ListRunsOrder,
   ListRunsResponse,
+  PauseRunResponse,
   RejectRunRequest,
+  RejectRunResponse,
   RespondToRunRequest,
   RespondToRunResponse,
+  ResumeRunResponse,
   Run,
   RunApproveRequest,
+  RunCheckpoint,
   RunCostEstimate,
+  RunFeedbackList,
+  RunFeedbackOne,
+  RunFeedbackSet,
   SetRunFeedbackRequest,
-  SetRunFeedbackResponse,
 } from '../models.js';
 
 /**
@@ -108,7 +116,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  approveRun(runId: string, body?: RunApproveRequest, options?: RequestOptions): Promise<JsonValue> {
+  approveRun(runId: string, body?: RunApproveRequest, options?: RequestOptions): Promise<ApproveRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/approve`,
@@ -125,7 +133,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  cancel(runId: string, options?: RequestOptions): Promise<JsonValue> {
+  cancel(runId: string, options?: RequestOptions): Promise<CancelRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/cancel`,
@@ -143,7 +151,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  continueRun(runId: string, body: ContinueRunRequest, options?: RequestOptions): Promise<JsonValue> {
+  continueRun(runId: string, body: ContinueRunRequest, options?: RequestOptions): Promise<ContinueRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/continue`,
@@ -182,7 +190,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  createRunCheckpoint(runId: string, options?: RequestOptions): Promise<JsonObject> {
+  createRunCheckpoint(runId: string, options?: RequestOptions): Promise<RunCheckpoint> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/checkpoint`,
@@ -254,7 +262,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  getRunAuditLog(runId: string, options?: RequestOptions): Promise<JsonObject> {
+  getRunAuditLog(runId: string, options?: RequestOptions): Promise<GetRunAuditLogResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/audit-log`,
@@ -269,7 +277,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  getRunFeedback(runId: string, params?: GetRunFeedbackParams, options?: RequestOptions): Promise<GetRunFeedbackResponseVariant1 | GetRunFeedbackResponseVariant2> {
+  getRunFeedback(runId: string, params?: GetRunFeedbackParams, options?: RequestOptions): Promise<RunFeedbackList | RunFeedbackOne> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/feedback`,
@@ -355,7 +363,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  listRunArtifacts(runId: string, options?: RequestOptions): Promise<JsonValue> {
+  listRunArtifacts(runId: string, options?: RequestOptions): Promise<ListRunArtifactsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/artifacts`,
@@ -385,7 +393,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  pauseRun(runId: string, options?: RequestOptions): Promise<JsonValue> {
+  pauseRun(runId: string, options?: RequestOptions): Promise<PauseRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/pause`,
@@ -401,7 +409,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  rejectRun(runId: string, body?: RejectRunRequest, options?: RequestOptions): Promise<JsonValue> {
+  rejectRun(runId: string, body?: RejectRunRequest, options?: RequestOptions): Promise<RejectRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/reject`,
@@ -451,7 +459,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  resume(runId: string, options?: RequestOptions): Promise<JsonValue> {
+  resume(runId: string, options?: RequestOptions): Promise<ResumeRunResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/resume`,
@@ -474,7 +482,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  setRunFeedback(runId: string, body: SetRunFeedbackRequest, options?: RequestOptions): Promise<SetRunFeedbackResponse> {
+  setRunFeedback(runId: string, body: SetRunFeedbackRequest, options?: RequestOptions): Promise<RunFeedbackSet> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/feedback`,

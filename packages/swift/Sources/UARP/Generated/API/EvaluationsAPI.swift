@@ -112,7 +112,7 @@ public struct EvaluationsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/datasets`
     ///
     /// Required scopes: `evaluations:read`.
-    public func listDatasets(agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listDatasets(agentId: String, options: RequestOptions = .init()) async throws -> ListDatasetsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/datasets",
@@ -125,7 +125,7 @@ public struct EvaluationsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:read`.
-    public func listEvalRuns(agentId: String, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func listEvalRuns(agentId: String, options: RequestOptions = .init()) async throws -> ListEvalRunsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/evaluations",

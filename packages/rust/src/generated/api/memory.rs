@@ -156,7 +156,7 @@ impl MemoryApi {
     /// `GET /api/v1/agents/{agentId}/memory`
     ///
     /// Required scopes: `memory:read`.
-    pub async fn list_memories(&self, agent_id: &str, params: &ListMemoriesParams) -> Result<serde_json::Value> {
+    pub async fn list_memories(&self, agent_id: &str, params: &ListMemoriesParams) -> Result<models::ListMemoriesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -174,7 +174,7 @@ impl MemoryApi {
     /// `POST /api/v1/agents/{agentId}/memory/search`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn search(&self, agent_id: &str, body: &serde_json::Value) -> Result<serde_json::Value> {
+    pub async fn search(&self, agent_id: &str, body: &serde_json::Value) -> Result<models::SearchMemoryResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -192,7 +192,7 @@ impl MemoryApi {
     /// `PUT /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn update_agent_memory_entry(&self, agent_id: &str, entry_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_agent_memory_entry(&self, agent_id: &str, entry_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::MemoryEntry> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
