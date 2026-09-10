@@ -97,30 +97,6 @@ public struct WebhooksAPI: Sendable {
         ))
     }
 
-    /// Shopify webhook
-    ///
-    /// Shopify webhook receiver. Bypasses normal auth — `X-Shopify-Hmac-Sha256` header is
-    /// HMAC-verified against the per-shop secret.
-    ///
-    /// `POST /api/v1/webhooks/shopify`
-    public func shopifyWebhook(xShopifyHmacSha256: String, xShopifyTopic: String? = nil, xShopifyShopDomain: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        var headers: [String: String] = [:]
-        headers["X-Shopify-Hmac-Sha256"] = xShopifyHmacSha256
-        if let xShopifyTopic {
-            headers["X-Shopify-Topic"] = xShopifyTopic
-        }
-        if let xShopifyShopDomain {
-            headers["X-Shopify-Shop-Domain"] = xShopifyShopDomain
-        }
-        return try await client.send(RequestSpec(
-            method: "POST",
-            path: "/api/v1/webhooks/shopify",
-            headers: headers,
-            idempotent: true,
-            options: options
-        ))
-    }
-
     /// Send test delivery
     ///
     /// Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the

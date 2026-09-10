@@ -21,19 +21,6 @@ pub struct SensorWebhookParams {
     pub x_sensor_signature: String,
 }
 
-/// Query and header parameters for `shopifyWebhook`.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct ShopifyWebhookParams {
-    /// Base64-encoded HMAC-SHA256 of the request body using the shop's webhook secret.
-    #[serde(skip)]
-    pub x_shopify_hmac_sha256: String,
-    /// Event topic (e.g. `orders/create`).
-    #[serde(skip)]
-    pub x_shopify_topic: Option<String>,
-    #[serde(skip)]
-    pub x_shopify_shop_domain: Option<String>,
-}
-
 /// Webhook subscriptions
 #[derive(Debug, Clone)]
 pub struct WebhooksApi {
@@ -154,33 +141,6 @@ impl WebhooksApi {
                 path: format!("/api/v1/webhooks/sensor/{}", encode_path(webhook_id)),
                 query: NO_QUERY,
                 body: Some(body),
-                headers,
-                idempotent: true,
-            })
-            .await
-    }
-
-    /// Shopify webhook
-    ///
-    /// Shopify webhook receiver. Bypasses normal auth — `X-Shopify-Hmac-Sha256` header is
-    /// HMAC-verified against the per-shop secret.
-    ///
-    /// `POST /api/v1/webhooks/shopify`
-    pub async fn shopify_webhook(&self, params: &ShopifyWebhookParams) -> Result<serde_json::Value> {
-        let mut headers: Vec<(&'static str, String)> = Vec::new();
-        headers.push(("X-Shopify-Hmac-Sha256", params.x_shopify_hmac_sha256.clone()));
-        if let Some(value) = &params.x_shopify_topic {
-            headers.push(("X-Shopify-Topic", value.clone()));
-        }
-        if let Some(value) = &params.x_shopify_shop_domain {
-            headers.push(("X-Shopify-Shop-Domain", value.clone()));
-        }
-        self.client
-            .request_json(Request {
-                method: Method::POST,
-                path: "/api/v1/webhooks/shopify".to_string(),
-                query: NO_QUERY,
-                body: NO_BODY,
                 headers,
                 idempotent: true,
             })

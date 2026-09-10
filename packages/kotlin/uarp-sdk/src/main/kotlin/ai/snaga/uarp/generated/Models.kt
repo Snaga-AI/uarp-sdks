@@ -4478,39 +4478,6 @@ public data class CreateCheckoutSessionResponse(
 )
 
 /**
- * `CreateCommerceProductRequest` model.
- */
-@Serializable
-public data class CreateCommerceProductRequest(
-    public val name: String,
-    public val description: String? = null,
-    public val type: ProductType,
-    @SerialName("price_cents")
-    public val priceCents: Long,
-    public val currency: String,
-    @SerialName("knowledge_base_ids")
-    public val knowledgeBaseIds: List<String>? = null,
-    @SerialName("agent_id")
-    public val agentId: String? = null,
-    @SerialName("course_structure")
-    public val courseStructure: JsonObject? = null,
-    public val metadata: JsonObject? = null,
-    public val slug: String? = null,
-    public val tags: List<String>? = null,
-    public val category: String? = null,
-    public val vendor: String? = null,
-    public val images: List<String>? = null,
-    public val variants: List<JsonObject>? = null,
-    @SerialName("compare_at_price_cents")
-    public val compareAtPriceCents: Long? = null,
-    @SerialName("body_html")
-    public val bodyHtml: String? = null,
-    @SerialName("shopify_product_id")
-    public val shopifyProductId: String? = null,
-    public val options: List<JsonObject>? = null,
-)
-
-/**
  * `CreateCreativitySessionRequest` model.
  */
 @Serializable
@@ -5152,65 +5119,6 @@ public data class CreateWorkspaceRequest(
 )
 
 /**
- * Commerce customer record.
- */
-@Serializable
-public data class Customer(
-    public val id: String,
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    public val name: String? = null,
-    @SerialName("first_name")
-    public val firstName: String? = null,
-    @SerialName("last_name")
-    public val lastName: String? = null,
-    public val email: String? = null,
-    public val phone: String? = null,
-    public val status: String? = null,
-    public val tags: List<String>? = null,
-    public val note: String? = null,
-    public val addresses: List<JsonObject>? = null,
-    @SerialName("accepts_marketing")
-    public val acceptsMarketing: Boolean? = null,
-    @SerialName("verified_email")
-    public val verifiedEmail: Boolean? = null,
-    @SerialName("tax_exempt")
-    public val taxExempt: Boolean? = null,
-    public val currency: String? = null,
-    public val locale: String? = null,
-    public val metadata: JsonObject? = null,
-    @SerialName("created_at")
-    public val createdAt: String? = null,
-)
-
-/**
- * Body for `PATCH /api/v1/commerce/customers/{id}`. Only the listed fields are applied;
- * anything else in the body is ignored.
- */
-@Serializable
-public data class CustomerUpdate(
-    public val name: String? = null,
-    @SerialName("first_name")
-    public val firstName: String? = null,
-    @SerialName("last_name")
-    public val lastName: String? = null,
-    public val phone: String? = null,
-    public val status: String? = null,
-    public val tags: List<String>? = null,
-    public val note: String? = null,
-    public val addresses: List<JsonObject>? = null,
-    @SerialName("accepts_marketing")
-    public val acceptsMarketing: Boolean? = null,
-    @SerialName("verified_email")
-    public val verifiedEmail: Boolean? = null,
-    @SerialName("tax_exempt")
-    public val taxExempt: Boolean? = null,
-    public val currency: String? = null,
-    public val locale: String? = null,
-    public val metadata: JsonObject? = null,
-)
-
-/**
  * `CustomPlan` model.
  */
 @Serializable
@@ -5363,22 +5271,6 @@ public data class DeleteAdminLLMDefaultResponse(
 public data class DeleteAdminProviderResponse(
     public val deleted: Boolean,
     public val id: String,
-)
-
-/**
- * `DeleteCommerceCustomerResponse` model.
- */
-@Serializable
-public data class DeleteCommerceCustomerResponse(
-    public val deleted: Boolean? = null,
-)
-
-/**
- * `DeleteCommerceProductResponse` model.
- */
-@Serializable
-public data class DeleteCommerceProductResponse(
-    public val deleted: Boolean? = null,
 )
 
 /**
@@ -6051,55 +5943,6 @@ public object EnforcementResultViolationSeveritySerializer : KSerializer<Enforce
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.EnforcementResultViolationSeverity", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: EnforcementResultViolationSeverity): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): EnforcementResultViolationSeverity = EnforcementResultViolationSeverity(decoder.decodeString())
-}
-
-/**
- * `Enrollment` model.
- */
-@Serializable
-public data class Enrollment(
-    public val id: String,
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    @SerialName("customer_id")
-    public val customerId: String,
-    @SerialName("product_id")
-    public val productId: String,
-    public val status: EnrollmentStatus,
-    @SerialName("started_at")
-    public val startedAt: String? = null,
-    @SerialName("completed_at")
-    public val completedAt: String? = null,
-)
-
-/**
- * `EnrollmentStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = EnrollmentStatusSerializer::class)
-@JvmInline
-public value class EnrollmentStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ACTIVE: EnrollmentStatus = EnrollmentStatus("active")
-        public val PAUSED: EnrollmentStatus = EnrollmentStatus("paused")
-        public val COMPLETED: EnrollmentStatus = EnrollmentStatus("completed")
-        public val CANCELLED: EnrollmentStatus = EnrollmentStatus("cancelled")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<EnrollmentStatus> = listOf(ACTIVE, PAUSED, COMPLETED, CANCELLED)
-    }
-}
-
-public object EnrollmentStatusSerializer : KSerializer<EnrollmentStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.EnrollmentStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: EnrollmentStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): EnrollmentStatus = EnrollmentStatus(decoder.decodeString())
 }
 
 /**
@@ -6882,7 +6725,6 @@ public value class GetAdminIntegrationOAuthProviderProvider(public val value: St
         public val SLACK: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("slack")
         public val NOTION: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("notion")
         public val STRIPE: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("stripe")
-        public val SHOPIFY: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("shopify")
         public val JIRA: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("jira")
         public val ZENDESK: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("zendesk")
         public val HUBSPOT: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("hubspot")
@@ -6894,7 +6736,7 @@ public value class GetAdminIntegrationOAuthProviderProvider(public val value: St
         public val TIKTOK: GetAdminIntegrationOAuthProviderProvider = GetAdminIntegrationOAuthProviderProvider("tiktok")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<GetAdminIntegrationOAuthProviderProvider> = listOf(GITHUB, GOOGLE, SLACK, NOTION, STRIPE, SHOPIFY, JIRA, ZENDESK, HUBSPOT, LINKEDIN, YOUTUBE, INSTAGRAM, X_TWITTER, FACEBOOK, TIKTOK)
+        public val knownValues: List<GetAdminIntegrationOAuthProviderProvider> = listOf(GITHUB, GOOGLE, SLACK, NOTION, STRIPE, JIRA, ZENDESK, HUBSPOT, LINKEDIN, YOUTUBE, INSTAGRAM, X_TWITTER, FACEBOOK, TIKTOK)
     }
 }
 
@@ -7483,27 +7325,6 @@ public data class GetBridgeTaskApprovalResponse(
 public data class GetClientConfigResponse(
     public val features: JsonObject? = null,
     public val providers: JsonObject? = null,
-)
-
-/**
- * `GetCommerceAnalyticsResponse` model.
- */
-@Serializable
-public data class GetCommerceAnalyticsResponse(
-    @SerialName("total_customers")
-    public val totalCustomers: Long,
-    @SerialName("total_products")
-    public val totalProducts: Long,
-    @SerialName("total_orders")
-    public val totalOrders: Long,
-    @SerialName("paid_orders")
-    public val paidOrders: Long? = null,
-    @SerialName("total_revenue_cents")
-    public val totalRevenueCents: Long,
-    @SerialName("active_enrollments")
-    public val activeEnrollments: Long? = null,
-    @SerialName("completed_enrollments")
-    public val completedEnrollments: Long? = null,
 )
 
 /**
@@ -9967,46 +9788,6 @@ public object ListBillingSpecPackagesResponsePackageEntitlementSerializer : KSer
 @Serializable
 public data class ListBuilderRequestsResponse(
     public val requests: List<DesignRequest>,
-)
-
-/**
- * `ListCommerceCustomersResponse` model.
- */
-@Serializable
-public data class ListCommerceCustomersResponse(
-    public val items: List<Customer>,
-    /**
-     * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
-     */
-    public val customers: List<Customer>? = null,
-    public val cursor: String? = null,
-)
-
-/**
- * `ListCommerceEnrollmentsResponse` model.
- */
-@Serializable
-public data class ListCommerceEnrollmentsResponse(
-    public val enrollments: List<Enrollment>? = null,
-    public val total: Long? = null,
-)
-
-/**
- * `ListCommerceOrdersResponse` model.
- */
-@Serializable
-public data class ListCommerceOrdersResponse(
-    public val orders: List<Order>? = null,
-    public val total: Long? = null,
-)
-
-/**
- * `ListCommerceProductsResponse` model.
- */
-@Serializable
-public data class ListCommerceProductsResponse(
-    public val products: List<Product>? = null,
-    public val cursor: String? = null,
 )
 
 /**
@@ -13020,61 +12801,6 @@ public data class OpenAiErrorError(
 )
 
 /**
- * `Order` model.
- */
-@Serializable
-public data class Order(
-    public val id: String,
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    @SerialName("customer_id")
-    public val customerId: String? = null,
-    @SerialName("product_id")
-    public val productId: String? = null,
-    @SerialName("amount_cents")
-    public val amountCents: Long,
-    public val currency: String,
-    public val status: OrderStatus,
-    @SerialName("stripe_payment_intent_id")
-    public val stripePaymentIntentId: String? = null,
-    public val metadata: JsonObject? = null,
-    @SerialName("created_at")
-    public val createdAt: String? = null,
-    @SerialName("paid_at")
-    public val paidAt: String? = null,
-)
-
-/**
- * `OrderStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = OrderStatusSerializer::class)
-@JvmInline
-public value class OrderStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val PENDING: OrderStatus = OrderStatus("pending")
-        public val PAID: OrderStatus = OrderStatus("paid")
-        public val FAILED: OrderStatus = OrderStatus("failed")
-        public val REFUNDED: OrderStatus = OrderStatus("refunded")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<OrderStatus> = listOf(PENDING, PAID, FAILED, REFUNDED)
-    }
-}
-
-public object OrderStatusSerializer : KSerializer<OrderStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.OrderStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: OrderStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): OrderStatus = OrderStatus(decoder.decodeString())
-}
-
-/**
  * `PauseCompanyResponse` model.
  */
 @Serializable
@@ -13586,138 +13312,6 @@ public data class PlatformLLMDefaults(
      */
     @SerialName("fallback_model_ref")
     public val fallbackModelRef: String? = null,
-)
-
-/**
- * `Product` model.
- */
-@Serializable
-public data class Product(
-    public val id: String,
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    public val name: String,
-    public val description: String? = null,
-    public val type: ProductType,
-    public val status: ProductStatus? = null,
-    @SerialName("price_cents")
-    public val priceCents: Long,
-    public val currency: String,
-    @SerialName("knowledge_base_ids")
-    public val knowledgeBaseIds: List<String>? = null,
-    @SerialName("agent_id")
-    public val agentId: String? = null,
-    @SerialName("course_structure")
-    public val courseStructure: JsonObject? = null,
-    public val metadata: JsonObject? = null,
-    public val slug: String? = null,
-    public val tags: List<String>? = null,
-    public val category: String? = null,
-    public val vendor: String? = null,
-    public val images: List<String>? = null,
-    public val variants: List<JsonObject>? = null,
-    @SerialName("compare_at_price_cents")
-    public val compareAtPriceCents: Long? = null,
-    @SerialName("body_html")
-    public val bodyHtml: String? = null,
-    @SerialName("shopify_product_id")
-    public val shopifyProductId: String? = null,
-    @SerialName("stripe_price_id")
-    public val stripePriceId: String? = null,
-    @SerialName("created_at")
-    public val createdAt: String? = null,
-)
-
-/**
- * `ProductStatus` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = ProductStatusSerializer::class)
-@JvmInline
-public value class ProductStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ACTIVE: ProductStatus = ProductStatus("active")
-        public val ARCHIVED: ProductStatus = ProductStatus("archived")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<ProductStatus> = listOf(ACTIVE, ARCHIVED)
-    }
-}
-
-public object ProductStatusSerializer : KSerializer<ProductStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProductStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ProductStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): ProductStatus = ProductStatus(decoder.decodeString())
-}
-
-/**
- * `ProductType` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = ProductTypeSerializer::class)
-@JvmInline
-public value class ProductType(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val COURSE: ProductType = ProductType("course")
-        public val SERVICE: ProductType = ProductType("service")
-        public val DIGITAL: ProductType = ProductType("digital")
-        public val SUBSCRIPTION: ProductType = ProductType("subscription")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<ProductType> = listOf(COURSE, SERVICE, DIGITAL, SUBSCRIPTION)
-    }
-}
-
-public object ProductTypeSerializer : KSerializer<ProductType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ProductType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ProductType): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): ProductType = ProductType(decoder.decodeString())
-}
-
-/**
- * Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
- * dropped without error, so a typo answers 200 and changes nothing.
- */
-@Serializable
-public data class ProductUpdate(
-    public val name: String? = null,
-    public val description: String? = null,
-    @SerialName("price_cents")
-    public val priceCents: Long? = null,
-    public val currency: String? = null,
-    public val status: String? = null,
-    @SerialName("knowledge_base_ids")
-    public val knowledgeBaseIds: List<String>? = null,
-    @SerialName("agent_id")
-    public val agentId: String? = null,
-    @SerialName("course_structure")
-    public val courseStructure: JsonObject? = null,
-    @SerialName("stripe_price_id")
-    public val stripePriceId: String? = null,
-    public val metadata: JsonObject? = null,
-    public val slug: String? = null,
-    public val tags: List<String>? = null,
-    public val category: String? = null,
-    public val vendor: String? = null,
-    public val images: List<String>? = null,
-    public val variants: List<JsonObject>? = null,
-    @SerialName("compare_at_price_cents")
-    public val compareAtPriceCents: Long? = null,
-    @SerialName("body_html")
-    public val bodyHtml: String? = null,
-    public val options: List<JsonObject>? = null,
 )
 
 /**
@@ -17002,8 +16596,8 @@ public data class StartOAuthRequest(
     @SerialName("connector_id")
     public val connectorId: String? = null,
     /**
-     * Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
-     * "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+     * Provider-specific parameters the authorize URL needs, e.g. `{ "subdomain": "acme" }` for
+     * Zendesk. Read by the route, previously undeclared.
      */
     public val extra: JsonObject? = null,
 )

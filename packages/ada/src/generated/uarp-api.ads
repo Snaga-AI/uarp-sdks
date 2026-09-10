@@ -12,7 +12,6 @@
 --    UARP.API.Bootstrap
 --    UARP.API.Bridge
 --    UARP.API.Canvas
---    UARP.API.Commerce
 --    UARP.API.Companies
 --    UARP.API.Creativity
 --    UARP.API.Data_Explorer

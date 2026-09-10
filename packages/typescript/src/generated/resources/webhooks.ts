@@ -25,21 +25,6 @@ export interface SensorWebhookParams {
 }
 
 /**
- * Query and header parameters for `shopifyWebhook`.
- */
-export interface ShopifyWebhookParams {
-  /**
-   * Base64-encoded HMAC-SHA256 of the request body using the shop's webhook secret.
-   */
-  'X-Shopify-Hmac-Sha256': string;
-  /**
-   * Event topic (e.g. `orders/create`).
-   */
-  'X-Shopify-Topic'?: string;
-  'X-Shopify-Shop-Domain'?: string;
-}
-
-/**
  * Webhook subscriptions
  */
 export class WebhooksResource extends APIResource {
@@ -136,24 +121,6 @@ export class WebhooksResource extends APIResource {
       path: `/api/v1/webhooks/sensor/${encodeURIComponent(String(webhookId))}`,
       headers: pick(params, ['X-Sensor-Signature']),
       body,
-      idempotent: true,
-      options,
-    });
-  }
-
-  /**
-   * Shopify webhook
-   *
-   * Shopify webhook receiver. Bypasses normal auth — `X-Shopify-Hmac-Sha256` header is
-   * HMAC-verified against the per-shop secret.
-   *
-   * `POST /api/v1/webhooks/shopify`
-   */
-  shopifyWebhook(params: ShopifyWebhookParams, options?: RequestOptions): Promise<JsonValue> {
-    return this._client.request({
-      method: 'POST',
-      path: '/api/v1/webhooks/shopify',
-      headers: pick(params, ['X-Shopify-Hmac-Sha256', 'X-Shopify-Topic', 'X-Shopify-Shop-Domain']),
       idempotent: true,
       options,
     });

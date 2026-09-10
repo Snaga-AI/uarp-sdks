@@ -6,6 +6,26 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.17 — 2026-09-10
+
+The Commerce surface is gone from the API (uarp #441, deployed as build
+`4d323a8b`), and this copy follows the served document byte for byte:
+`spec/openapi.json` is `curl https://api.snaga.ai/api/v1/openapi.json`
+verbatim, sha256
+`5647eb801f794ef9d5ca2eecf15c1f122cfd6f8935d00e8537c5a76b93ecaff8`, `info.version`
+0.3.0, `X-API-Version` 2026-09-10. 710 operations and 242 schemas, down from
+725 and 251.
+
+### Removed
+
+- Every `/api/v1/commerce/*` operation (products, customers, orders,
+  enrollments, analytics) and `POST /api/v1/webhooks/shopify` — the generated
+  `commerce` resource is deleted in all five SDKs (TypeScript
+  `resources/commerce.ts`, Rust `api/commerce.rs`, Swift `CommerceAPI.swift`,
+  Kotlin `CommerceApi.kt`, Ada `uarp-api-commerce`).
+- Schemas `Customer`, `CustomerUpdate`, `Product`, `ProductUpdate`, `Order`,
+  `Enrollment`.
+
 ## 0.5.16 — 2026-09-10
 
 Cut from the bytes production serves, not from a copy of the source document.

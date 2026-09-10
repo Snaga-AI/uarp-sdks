@@ -1,0 +1,68 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Spellings",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://api.test"
+    }
+  ],
+  "paths": {
+    "/inbox/unread": {
+      "get": {
+        "operationId": "getUnread",
+        "summary": "Unread counter served under three spellings at once",
+        "description": "The platform's GET /notifications/unread returns `count`, `unread_count` and `unreadCount` in one object (routes/notifications.ts:238, measured 2026-09-10). Every emitter must keep all three as distinct fields even where its naming convention folds two of them together.",
+        "tags": [
+          "Inbox"
+        ],
+        "security": [
+          {
+            "bearerAuth": [
+              "inbox:read"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UnreadCounter"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UnreadCounter": {
+        "type": "object",
+        "required": [
+          "count",
+          "unread_count",
+          "unreadCount"
+        ],
+        "properties": {
+          "count": {
+            "type": "integer"
+          },
+          "unread_count": {
+            "type": "integer",
+            "description": "Same value, snake_case."
+          },
+          "unreadCount": {
+            "type": "integer",
+            "description": "Same value, camelCase."
+          }
+        }
+      }
+    }
+  }
+}

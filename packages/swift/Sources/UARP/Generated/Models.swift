@@ -5712,73 +5712,6 @@ public struct CreateCheckoutSessionResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `CreateCommerceProductRequest` model.
-public struct CreateCommerceProductRequest: Codable, Hashable, Sendable {
-    public var name: String
-    public var `description`: String?
-    public var type: ProductType
-    public var priceCents: Int
-    public var currency: String
-    public var knowledgeBaseIds: [String]?
-    public var agentId: String?
-    public var courseStructure: JSONObject?
-    public var metadata: JSONObject?
-    public var slug: String?
-    public var tags: [String]?
-    public var category: String?
-    public var vendor: String?
-    public var images: [String]?
-    public var variants: [JSONObject]?
-    public var compareAtPriceCents: Int?
-    public var bodyHtml: String?
-    public var shopifyProductId: String?
-    public var options: [JSONObject]?
-
-    public init(name: String, `description`: String? = nil, type: ProductType, priceCents: Int, currency: String, knowledgeBaseIds: [String]? = nil, agentId: String? = nil, courseStructure: JSONObject? = nil, metadata: JSONObject? = nil, slug: String? = nil, tags: [String]? = nil, category: String? = nil, vendor: String? = nil, images: [String]? = nil, variants: [JSONObject]? = nil, compareAtPriceCents: Int? = nil, bodyHtml: String? = nil, shopifyProductId: String? = nil, options: [JSONObject]? = nil) {
-        self.name = name
-        self.`description` = `description`
-        self.type = type
-        self.priceCents = priceCents
-        self.currency = currency
-        self.knowledgeBaseIds = knowledgeBaseIds
-        self.agentId = agentId
-        self.courseStructure = courseStructure
-        self.metadata = metadata
-        self.slug = slug
-        self.tags = tags
-        self.category = category
-        self.vendor = vendor
-        self.images = images
-        self.variants = variants
-        self.compareAtPriceCents = compareAtPriceCents
-        self.bodyHtml = bodyHtml
-        self.shopifyProductId = shopifyProductId
-        self.options = options
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case name = "name"
-        case `description` = "description"
-        case type = "type"
-        case priceCents = "price_cents"
-        case currency = "currency"
-        case knowledgeBaseIds = "knowledge_base_ids"
-        case agentId = "agent_id"
-        case courseStructure = "course_structure"
-        case metadata = "metadata"
-        case slug = "slug"
-        case tags = "tags"
-        case category = "category"
-        case vendor = "vendor"
-        case images = "images"
-        case variants = "variants"
-        case compareAtPriceCents = "compare_at_price_cents"
-        case bodyHtml = "body_html"
-        case shopifyProductId = "shopify_product_id"
-        case options = "options"
-    }
-}
-
 /// `CreateCreativitySessionRequest` model.
 public struct CreateCreativitySessionRequest: Codable, Hashable, Sendable {
     public var mode: CreateCreativitySessionRequestMode
@@ -6714,123 +6647,6 @@ public struct CreateWorkspaceRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// Commerce customer record.
-public struct Customer: Codable, Hashable, Sendable {
-    public var id: String
-    public var tenantId: String
-    public var name: String?
-    public var firstName: String?
-    public var lastName: String?
-    public var email: String?
-    public var phone: String?
-    public var status: String?
-    public var tags: [String]?
-    public var note: String?
-    public var addresses: [JSONObject]?
-    public var acceptsMarketing: Bool?
-    public var verifiedEmail: Bool?
-    public var taxExempt: Bool?
-    public var currency: String?
-    public var locale: String?
-    public var metadata: JSONObject?
-    public var createdAt: String?
-
-    public init(id: String, tenantId: String, name: String? = nil, firstName: String? = nil, lastName: String? = nil, email: String? = nil, phone: String? = nil, status: String? = nil, tags: [String]? = nil, note: String? = nil, addresses: [JSONObject]? = nil, acceptsMarketing: Bool? = nil, verifiedEmail: Bool? = nil, taxExempt: Bool? = nil, currency: String? = nil, locale: String? = nil, metadata: JSONObject? = nil, createdAt: String? = nil) {
-        self.id = id
-        self.tenantId = tenantId
-        self.name = name
-        self.firstName = firstName
-        self.lastName = lastName
-        self.email = email
-        self.phone = phone
-        self.status = status
-        self.tags = tags
-        self.note = note
-        self.addresses = addresses
-        self.acceptsMarketing = acceptsMarketing
-        self.verifiedEmail = verifiedEmail
-        self.taxExempt = taxExempt
-        self.currency = currency
-        self.locale = locale
-        self.metadata = metadata
-        self.createdAt = createdAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case tenantId = "tenant_id"
-        case name = "name"
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case email = "email"
-        case phone = "phone"
-        case status = "status"
-        case tags = "tags"
-        case note = "note"
-        case addresses = "addresses"
-        case acceptsMarketing = "accepts_marketing"
-        case verifiedEmail = "verified_email"
-        case taxExempt = "tax_exempt"
-        case currency = "currency"
-        case locale = "locale"
-        case metadata = "metadata"
-        case createdAt = "created_at"
-    }
-}
-
-/// Body for `PATCH /api/v1/commerce/customers/{id}`. Only the listed fields are applied;
-/// anything else in the body is ignored.
-public struct CustomerUpdate: Codable, Hashable, Sendable {
-    public var name: String?
-    public var firstName: String?
-    public var lastName: String?
-    public var phone: String?
-    public var status: String?
-    public var tags: [String]?
-    public var note: String?
-    public var addresses: [JSONObject]?
-    public var acceptsMarketing: Bool?
-    public var verifiedEmail: Bool?
-    public var taxExempt: Bool?
-    public var currency: String?
-    public var locale: String?
-    public var metadata: JSONObject?
-
-    public init(name: String? = nil, firstName: String? = nil, lastName: String? = nil, phone: String? = nil, status: String? = nil, tags: [String]? = nil, note: String? = nil, addresses: [JSONObject]? = nil, acceptsMarketing: Bool? = nil, verifiedEmail: Bool? = nil, taxExempt: Bool? = nil, currency: String? = nil, locale: String? = nil, metadata: JSONObject? = nil) {
-        self.name = name
-        self.firstName = firstName
-        self.lastName = lastName
-        self.phone = phone
-        self.status = status
-        self.tags = tags
-        self.note = note
-        self.addresses = addresses
-        self.acceptsMarketing = acceptsMarketing
-        self.verifiedEmail = verifiedEmail
-        self.taxExempt = taxExempt
-        self.currency = currency
-        self.locale = locale
-        self.metadata = metadata
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case name = "name"
-        case firstName = "first_name"
-        case lastName = "last_name"
-        case phone = "phone"
-        case status = "status"
-        case tags = "tags"
-        case note = "note"
-        case addresses = "addresses"
-        case acceptsMarketing = "accepts_marketing"
-        case verifiedEmail = "verified_email"
-        case taxExempt = "tax_exempt"
-        case currency = "currency"
-        case locale = "locale"
-        case metadata = "metadata"
-    }
-}
-
 /// `CustomPlan` model.
 public struct CustomPlan: Codable, Hashable, Sendable {
     /// Lower-cased. The identity — not settable through the body.
@@ -7048,32 +6864,6 @@ public struct DeleteAdminProviderResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case id = "id"
-    }
-}
-
-/// `DeleteCommerceCustomerResponse` model.
-public struct DeleteCommerceCustomerResponse: Codable, Hashable, Sendable {
-    public var deleted: Bool?
-
-    public init(deleted: Bool? = nil) {
-        self.deleted = deleted
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case deleted = "deleted"
-    }
-}
-
-/// `DeleteCommerceProductResponse` model.
-public struct DeleteCommerceProductResponse: Codable, Hashable, Sendable {
-    public var deleted: Bool?
-
-    public init(deleted: Bool? = nil) {
-        self.deleted = deleted
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case deleted = "deleted"
     }
 }
 
@@ -7919,62 +7709,6 @@ public struct EnforcementResultViolationSeverity: RawRepresentable, Codable, Has
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [EnforcementResultViolationSeverity] = [.info, .warning, .error, .blocker]
-}
-
-/// `Enrollment` model.
-public struct Enrollment: Codable, Hashable, Sendable {
-    public var id: String
-    public var tenantId: String
-    public var customerId: String
-    public var productId: String
-    public var status: EnrollmentStatus
-    public var startedAt: String?
-    public var completedAt: String?
-
-    public init(id: String, tenantId: String, customerId: String, productId: String, status: EnrollmentStatus, startedAt: String? = nil, completedAt: String? = nil) {
-        self.id = id
-        self.tenantId = tenantId
-        self.customerId = customerId
-        self.productId = productId
-        self.status = status
-        self.startedAt = startedAt
-        self.completedAt = completedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case tenantId = "tenant_id"
-        case customerId = "customer_id"
-        case productId = "product_id"
-        case status = "status"
-        case startedAt = "started_at"
-        case completedAt = "completed_at"
-    }
-}
-
-/// `EnrollmentStatus` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct EnrollmentStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let active = EnrollmentStatus(rawValue: "active")
-    public static let paused = EnrollmentStatus(rawValue: "paused")
-    public static let completed = EnrollmentStatus(rawValue: "completed")
-    public static let cancelled = EnrollmentStatus(rawValue: "cancelled")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [EnrollmentStatus] = [.active, .paused, .completed, .cancelled]
 }
 
 /// `EnrolMfaRequest` model.
@@ -9042,7 +8776,6 @@ public struct GetAdminIntegrationOAuthProviderProvider: RawRepresentable, Codabl
     public static let slack = GetAdminIntegrationOAuthProviderProvider(rawValue: "slack")
     public static let notion = GetAdminIntegrationOAuthProviderProvider(rawValue: "notion")
     public static let stripe = GetAdminIntegrationOAuthProviderProvider(rawValue: "stripe")
-    public static let shopify = GetAdminIntegrationOAuthProviderProvider(rawValue: "shopify")
     public static let jira = GetAdminIntegrationOAuthProviderProvider(rawValue: "jira")
     public static let zendesk = GetAdminIntegrationOAuthProviderProvider(rawValue: "zendesk")
     public static let hubspot = GetAdminIntegrationOAuthProviderProvider(rawValue: "hubspot")
@@ -9054,7 +8787,7 @@ public struct GetAdminIntegrationOAuthProviderProvider: RawRepresentable, Codabl
     public static let tiktok = GetAdminIntegrationOAuthProviderProvider(rawValue: "tiktok")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [GetAdminIntegrationOAuthProviderProvider] = [.github, .google, .slack, .notion, .stripe, .shopify, .jira, .zendesk, .hubspot, .linkedin, .youtube, .instagram, .xTwitter, .facebook, .tiktok]
+    public static let knownValues: [GetAdminIntegrationOAuthProviderProvider] = [.github, .google, .slack, .notion, .stripe, .jira, .zendesk, .hubspot, .linkedin, .youtube, .instagram, .xTwitter, .facebook, .tiktok]
 }
 
 /// `GetAdminIntegrationOAuthProviderResponse` model.
@@ -9904,37 +9637,6 @@ public struct GetClientConfigResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case features = "features"
         case providers = "providers"
-    }
-}
-
-/// `GetCommerceAnalyticsResponse` model.
-public struct GetCommerceAnalyticsResponse: Codable, Hashable, Sendable {
-    public var totalCustomers: Int
-    public var totalProducts: Int
-    public var totalOrders: Int
-    public var paidOrders: Int?
-    public var totalRevenueCents: Int
-    public var activeEnrollments: Int?
-    public var completedEnrollments: Int?
-
-    public init(totalCustomers: Int, totalProducts: Int, totalOrders: Int, paidOrders: Int? = nil, totalRevenueCents: Int, activeEnrollments: Int? = nil, completedEnrollments: Int? = nil) {
-        self.totalCustomers = totalCustomers
-        self.totalProducts = totalProducts
-        self.totalOrders = totalOrders
-        self.paidOrders = paidOrders
-        self.totalRevenueCents = totalRevenueCents
-        self.activeEnrollments = activeEnrollments
-        self.completedEnrollments = completedEnrollments
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case totalCustomers = "total_customers"
-        case totalProducts = "total_products"
-        case totalOrders = "total_orders"
-        case paidOrders = "paid_orders"
-        case totalRevenueCents = "total_revenue_cents"
-        case activeEnrollments = "active_enrollments"
-        case completedEnrollments = "completed_enrollments"
     }
 }
 
@@ -13261,76 +12963,6 @@ public struct ListBuilderRequestsResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case requests = "requests"
-    }
-}
-
-/// `ListCommerceCustomersResponse` model.
-public struct ListCommerceCustomersResponse: Codable, Hashable, Sendable {
-    public var items: [Customer]
-    /// Legacy alias for `items`. Will be removed in API v1.x.
-    ///
-    /// - Warning: Deprecated by the API.
-    public var customers: [Customer]?
-    public var cursor: String?
-
-    public init(items: [Customer], customers: [Customer]? = nil, cursor: String? = nil) {
-        self.items = items
-        self.customers = customers
-        self.cursor = cursor
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case items = "items"
-        case customers = "customers"
-        case cursor = "cursor"
-    }
-}
-
-/// `ListCommerceEnrollmentsResponse` model.
-public struct ListCommerceEnrollmentsResponse: Codable, Hashable, Sendable {
-    public var enrollments: [Enrollment]?
-    public var total: Int?
-
-    public init(enrollments: [Enrollment]? = nil, total: Int? = nil) {
-        self.enrollments = enrollments
-        self.total = total
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case enrollments = "enrollments"
-        case total = "total"
-    }
-}
-
-/// `ListCommerceOrdersResponse` model.
-public struct ListCommerceOrdersResponse: Codable, Hashable, Sendable {
-    public var orders: [Order]?
-    public var total: Int?
-
-    public init(orders: [Order]? = nil, total: Int? = nil) {
-        self.orders = orders
-        self.total = total
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case orders = "orders"
-        case total = "total"
-    }
-}
-
-/// `ListCommerceProductsResponse` model.
-public struct ListCommerceProductsResponse: Codable, Hashable, Sendable {
-    public var products: [Product]?
-    public var cursor: String?
-
-    public init(products: [Product]? = nil, cursor: String? = nil) {
-        self.products = products
-        self.cursor = cursor
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case products = "products"
-        case cursor = "cursor"
     }
 }
 
@@ -17315,74 +16947,6 @@ public struct OpenAiErrorError: Codable, Hashable, Sendable {
     }
 }
 
-/// `Order` model.
-public struct Order: Codable, Hashable, Sendable {
-    public var id: String
-    public var tenantId: String
-    public var customerId: String?
-    public var productId: String?
-    public var amountCents: Int
-    public var currency: String
-    public var status: OrderStatus
-    public var stripePaymentIntentId: String?
-    public var metadata: JSONObject?
-    public var createdAt: String?
-    public var paidAt: String?
-
-    public init(id: String, tenantId: String, customerId: String? = nil, productId: String? = nil, amountCents: Int, currency: String, status: OrderStatus, stripePaymentIntentId: String? = nil, metadata: JSONObject? = nil, createdAt: String? = nil, paidAt: String? = nil) {
-        self.id = id
-        self.tenantId = tenantId
-        self.customerId = customerId
-        self.productId = productId
-        self.amountCents = amountCents
-        self.currency = currency
-        self.status = status
-        self.stripePaymentIntentId = stripePaymentIntentId
-        self.metadata = metadata
-        self.createdAt = createdAt
-        self.paidAt = paidAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case tenantId = "tenant_id"
-        case customerId = "customer_id"
-        case productId = "product_id"
-        case amountCents = "amount_cents"
-        case currency = "currency"
-        case status = "status"
-        case stripePaymentIntentId = "stripe_payment_intent_id"
-        case metadata = "metadata"
-        case createdAt = "created_at"
-        case paidAt = "paid_at"
-    }
-}
-
-/// `OrderStatus` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct OrderStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let pending = OrderStatus(rawValue: "pending")
-    public static let paid = OrderStatus(rawValue: "paid")
-    public static let failed = OrderStatus(rawValue: "failed")
-    public static let refunded = OrderStatus(rawValue: "refunded")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [OrderStatus] = [.pending, .paid, .failed, .refunded]
-}
-
 /// `PauseCompanyResponse` model.
 public struct PauseCompanyResponse: Codable, Hashable, Sendable {
     public var status: String?
@@ -18020,201 +17584,6 @@ public struct PlatformLLMDefaults: Codable, Hashable, Sendable {
         case fallbackProvider = "fallback_provider"
         case defaultModelRef = "default_model_ref"
         case fallbackModelRef = "fallback_model_ref"
-    }
-}
-
-/// `Product` model.
-public struct Product: Codable, Hashable, Sendable {
-    public var id: String
-    public var tenantId: String
-    public var name: String
-    public var `description`: String?
-    public var type: ProductType
-    public var status: ProductStatus?
-    public var priceCents: Int
-    public var currency: String
-    public var knowledgeBaseIds: [String]?
-    public var agentId: String?
-    public var courseStructure: JSONObject?
-    public var metadata: JSONObject?
-    public var slug: String?
-    public var tags: [String]?
-    public var category: String?
-    public var vendor: String?
-    public var images: [String]?
-    public var variants: [JSONObject]?
-    public var compareAtPriceCents: Int?
-    public var bodyHtml: String?
-    public var shopifyProductId: String?
-    public var stripePriceId: String?
-    public var createdAt: String?
-
-    public init(id: String, tenantId: String, name: String, `description`: String? = nil, type: ProductType, status: ProductStatus? = nil, priceCents: Int, currency: String, knowledgeBaseIds: [String]? = nil, agentId: String? = nil, courseStructure: JSONObject? = nil, metadata: JSONObject? = nil, slug: String? = nil, tags: [String]? = nil, category: String? = nil, vendor: String? = nil, images: [String]? = nil, variants: [JSONObject]? = nil, compareAtPriceCents: Int? = nil, bodyHtml: String? = nil, shopifyProductId: String? = nil, stripePriceId: String? = nil, createdAt: String? = nil) {
-        self.id = id
-        self.tenantId = tenantId
-        self.name = name
-        self.`description` = `description`
-        self.type = type
-        self.status = status
-        self.priceCents = priceCents
-        self.currency = currency
-        self.knowledgeBaseIds = knowledgeBaseIds
-        self.agentId = agentId
-        self.courseStructure = courseStructure
-        self.metadata = metadata
-        self.slug = slug
-        self.tags = tags
-        self.category = category
-        self.vendor = vendor
-        self.images = images
-        self.variants = variants
-        self.compareAtPriceCents = compareAtPriceCents
-        self.bodyHtml = bodyHtml
-        self.shopifyProductId = shopifyProductId
-        self.stripePriceId = stripePriceId
-        self.createdAt = createdAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case tenantId = "tenant_id"
-        case name = "name"
-        case `description` = "description"
-        case type = "type"
-        case status = "status"
-        case priceCents = "price_cents"
-        case currency = "currency"
-        case knowledgeBaseIds = "knowledge_base_ids"
-        case agentId = "agent_id"
-        case courseStructure = "course_structure"
-        case metadata = "metadata"
-        case slug = "slug"
-        case tags = "tags"
-        case category = "category"
-        case vendor = "vendor"
-        case images = "images"
-        case variants = "variants"
-        case compareAtPriceCents = "compare_at_price_cents"
-        case bodyHtml = "body_html"
-        case shopifyProductId = "shopify_product_id"
-        case stripePriceId = "stripe_price_id"
-        case createdAt = "created_at"
-    }
-}
-
-/// `ProductStatus` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct ProductStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let active = ProductStatus(rawValue: "active")
-    public static let archived = ProductStatus(rawValue: "archived")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [ProductStatus] = [.active, .archived]
-}
-
-/// `ProductType` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct ProductType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let course = ProductType(rawValue: "course")
-    public static let service = ProductType(rawValue: "service")
-    public static let digital = ProductType(rawValue: "digital")
-    public static let subscription = ProductType(rawValue: "subscription")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [ProductType] = [.course, .service, .digital, .subscription]
-}
-
-/// Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
-/// dropped without error, so a typo answers 200 and changes nothing.
-public struct ProductUpdate: Codable, Hashable, Sendable {
-    public var name: String?
-    public var `description`: String?
-    public var priceCents: Int?
-    public var currency: String?
-    public var status: String?
-    public var knowledgeBaseIds: [String]?
-    public var agentId: String?
-    public var courseStructure: JSONObject?
-    public var stripePriceId: String?
-    public var metadata: JSONObject?
-    public var slug: String?
-    public var tags: [String]?
-    public var category: String?
-    public var vendor: String?
-    public var images: [String]?
-    public var variants: [JSONObject]?
-    public var compareAtPriceCents: Int?
-    public var bodyHtml: String?
-    public var options: [JSONObject]?
-
-    public init(name: String? = nil, `description`: String? = nil, priceCents: Int? = nil, currency: String? = nil, status: String? = nil, knowledgeBaseIds: [String]? = nil, agentId: String? = nil, courseStructure: JSONObject? = nil, stripePriceId: String? = nil, metadata: JSONObject? = nil, slug: String? = nil, tags: [String]? = nil, category: String? = nil, vendor: String? = nil, images: [String]? = nil, variants: [JSONObject]? = nil, compareAtPriceCents: Int? = nil, bodyHtml: String? = nil, options: [JSONObject]? = nil) {
-        self.name = name
-        self.`description` = `description`
-        self.priceCents = priceCents
-        self.currency = currency
-        self.status = status
-        self.knowledgeBaseIds = knowledgeBaseIds
-        self.agentId = agentId
-        self.courseStructure = courseStructure
-        self.stripePriceId = stripePriceId
-        self.metadata = metadata
-        self.slug = slug
-        self.tags = tags
-        self.category = category
-        self.vendor = vendor
-        self.images = images
-        self.variants = variants
-        self.compareAtPriceCents = compareAtPriceCents
-        self.bodyHtml = bodyHtml
-        self.options = options
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case name = "name"
-        case `description` = "description"
-        case priceCents = "price_cents"
-        case currency = "currency"
-        case status = "status"
-        case knowledgeBaseIds = "knowledge_base_ids"
-        case agentId = "agent_id"
-        case courseStructure = "course_structure"
-        case stripePriceId = "stripe_price_id"
-        case metadata = "metadata"
-        case slug = "slug"
-        case tags = "tags"
-        case category = "category"
-        case vendor = "vendor"
-        case images = "images"
-        case variants = "variants"
-        case compareAtPriceCents = "compare_at_price_cents"
-        case bodyHtml = "body_html"
-        case options = "options"
     }
 }
 
@@ -22571,8 +21940,8 @@ public struct StartOAuthRequest: Codable, Hashable, Sendable {
     /// it and multi-connector OAuth silently asked for the provider's scopes instead of the
     /// connector's. Wrong scopes, no error.
     public var connectorId: String?
-    /// Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
-    /// "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+    /// Provider-specific parameters the authorize URL needs, e.g. `{ "subdomain": "acme" }` for
+    /// Zendesk. Read by the route, previously undeclared.
     public var extra: JSONObject?
 
     public init(agentId: String? = nil, name: String? = nil, scopes: [String]? = nil, connectorId: String? = nil, extra: JSONObject? = nil) {

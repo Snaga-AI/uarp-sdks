@@ -4057,68 +4057,6 @@ package UARP.Models is
    function To_JSON (Model : Create_Checkout_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Checkout_Session_Response;
 
-   --  Values of `ProductType`.
-   --  A value the API introduces later decodes as Product_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Product_Type_Kind is
-     (Product_Type_Course,
-   Product_Type_Service,
-   Product_Type_Digital,
-   Product_Type_Subscription,
-   Product_Type_Unrecognized);
-
-   type Product_Type is record
-      Kind : Product_Type_Kind := Product_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Product_Type (Value : String) return Product_Type;
-   function To_Product_Type (Kind : Product_Type_Kind) return Product_Type;
-   function Image (Model : Product_Type) return String;
-   function To_JSON (Model : Product_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Product_Type;
-
-   --  `CreateCommerceProductRequest` model.
-   type Create_Commerce_Product_Request is record
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Models.Product_Type;
-      Price_Cents : UARP.Types.Integer_Value := 0;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Knowledge_Base_Ids : Boolean := False;
-      Knowledge_Base_Ids : UARP.Types.Text_Vectors.Vector;
-      Has_Agent_Id : Boolean := False;
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Course_Structure : Boolean := False;
-      Course_Structure : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Slug : Boolean := False;
-      Slug : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
-      Has_Category : Boolean := False;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Vendor : Boolean := False;
-      Vendor : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Images : Boolean := False;
-      Images : UARP.Types.Text_Vectors.Vector;
-      Has_Variants : Boolean := False;
-      Variants : UARP.JSON_Support.JSON_Value;
-      Has_Compare_At_Price_Cents : Boolean := False;
-      Compare_At_Price_Cents : UARP.Types.Integer_Value := 0;
-      Has_Body_Html : Boolean := False;
-      Body_Html : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Shopify_Product_Id : Boolean := False;
-      Shopify_Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Options : Boolean := False;
-      Options : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Create_Commerce_Product_Request) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Commerce_Product_Request;
-
    --  Values of `CreateCreativitySessionRequestMode`.
    --  A value the API introduces later decodes as Create_Creativity_Session_Request_Mode_Unrecognized
    --  with the original text kept in Raw.
@@ -4915,86 +4853,6 @@ package UARP.Models is
    function To_JSON (Model : Create_Workspace_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Workspace_Request;
 
-   --  Commerce customer record.
-   type Customer is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_First_Name : Boolean := False;
-      First_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Last_Name : Boolean := False;
-      Last_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Email : Boolean := False;
-      Email : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Phone : Boolean := False;
-      Phone : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
-      Has_Note : Boolean := False;
-      Note : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Addresses : Boolean := False;
-      Addresses : UARP.JSON_Support.JSON_Value;
-      Has_Accepts_Marketing : Boolean := False;
-      Accepts_Marketing : Standard.Boolean := False;
-      Has_Verified_Email : Boolean := False;
-      Verified_Email : Standard.Boolean := False;
-      Has_Tax_Exempt : Boolean := False;
-      Tax_Exempt : Standard.Boolean := False;
-      Has_Currency : Boolean := False;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Locale : Boolean := False;
-      Locale : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Customer) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Customer;
-
-   package Customer_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Customer);
-
-   --  Body for `PATCH /api/v1/commerce/customers/{id}`. Only the listed fields are applied;
-   --  anything else in the body is ignored.
-   type Customer_Update is record
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_First_Name : Boolean := False;
-      First_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Last_Name : Boolean := False;
-      Last_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Phone : Boolean := False;
-      Phone : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
-      Has_Note : Boolean := False;
-      Note : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Addresses : Boolean := False;
-      Addresses : UARP.JSON_Support.JSON_Value;
-      Has_Accepts_Marketing : Boolean := False;
-      Accepts_Marketing : Standard.Boolean := False;
-      Has_Verified_Email : Boolean := False;
-      Verified_Email : Standard.Boolean := False;
-      Has_Tax_Exempt : Boolean := False;
-      Tax_Exempt : Standard.Boolean := False;
-      Has_Currency : Boolean := False;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Locale : Boolean := False;
-      Locale : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-   end record;
-
-   function To_JSON (Model : Customer_Update) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Customer_Update;
-
    --  Values of `SpecPackageIncludedInPlan`.
    --  A value the API introduces later decodes as Spec_Package_Included_In_Plan_Unrecognized
    --  with the original text kept in Raw.
@@ -5255,24 +5113,6 @@ package UARP.Models is
 
    function To_JSON (Model : Delete_Admin_Provider_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Admin_Provider_Response;
-
-   --  `DeleteCommerceCustomerResponse` model.
-   type Delete_Commerce_Customer_Response is record
-      Has_Deleted : Boolean := False;
-      Deleted : Standard.Boolean := False;
-   end record;
-
-   function To_JSON (Model : Delete_Commerce_Customer_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Commerce_Customer_Response;
-
-   --  `DeleteCommerceProductResponse` model.
-   type Delete_Commerce_Product_Response is record
-      Has_Deleted : Boolean := False;
-      Deleted : Standard.Boolean := False;
-   end record;
-
-   function To_JSON (Model : Delete_Commerce_Product_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Commerce_Product_Response;
 
    --  Values of `DeleteCustomPlanForce`.
    --  A value the API introduces later decodes as Delete_Custom_Plan_Force_Unrecognized
@@ -5857,46 +5697,6 @@ package UARP.Models is
 
    function To_JSON (Model : Enforcement_Result) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result;
-
-   --  Values of `EnrollmentStatus`.
-   --  A value the API introduces later decodes as Enrollment_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Enrollment_Status_Kind is
-     (Enrollment_Status_Active,
-   Enrollment_Status_Paused,
-   Enrollment_Status_Completed,
-   Enrollment_Status_Cancelled,
-   Enrollment_Status_Unrecognized);
-
-   type Enrollment_Status is record
-      Kind : Enrollment_Status_Kind := Enrollment_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Enrollment_Status (Value : String) return Enrollment_Status;
-   function To_Enrollment_Status (Kind : Enrollment_Status_Kind) return Enrollment_Status;
-   function Image (Model : Enrollment_Status) return String;
-   function To_JSON (Model : Enrollment_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enrollment_Status;
-
-   --  `Enrollment` model.
-   type Enrollment is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Customer_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Status : UARP.Models.Enrollment_Status;
-      Has_Started_At : Boolean := False;
-      Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Completed_At : Boolean := False;
-      Completed_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Enrollment) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enrollment;
-
-   package Enrollment_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Enrollment);
 
    --  Values of `EnrolMfaRequestAlgorithm`.
    --  A value the API introduces later decodes as Enrol_Mfa_Request_Algorithm_Unrecognized
@@ -6599,7 +6399,6 @@ package UARP.Models is
    Get_Admin_Integration_O_Auth_Provider_Provider_Slack,
    Get_Admin_Integration_O_Auth_Provider_Provider_Notion,
    Get_Admin_Integration_O_Auth_Provider_Provider_Stripe,
-   Get_Admin_Integration_O_Auth_Provider_Provider_Shopify,
    Get_Admin_Integration_O_Auth_Provider_Provider_Jira,
    Get_Admin_Integration_O_Auth_Provider_Provider_Zendesk,
    Get_Admin_Integration_O_Auth_Provider_Provider_Hubspot,
@@ -7349,23 +7148,6 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Client_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Client_Config_Response;
-
-   --  `GetCommerceAnalyticsResponse` model.
-   type Get_Commerce_Analytics_Response is record
-      Total_Customers : UARP.Types.Integer_Value := 0;
-      Total_Products : UARP.Types.Integer_Value := 0;
-      Total_Orders : UARP.Types.Integer_Value := 0;
-      Has_Paid_Orders : Boolean := False;
-      Paid_Orders : UARP.Types.Integer_Value := 0;
-      Total_Revenue_Cents : UARP.Types.Integer_Value := 0;
-      Has_Active_Enrollments : Boolean := False;
-      Active_Enrollments : UARP.Types.Integer_Value := 0;
-      Has_Completed_Enrollments : Boolean := False;
-      Completed_Enrollments : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Get_Commerce_Analytics_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Commerce_Analytics_Response;
 
    --  `GetCompanyActivityResponse` model.
    type Get_Company_Activity_Response is record
@@ -9840,169 +9622,6 @@ package UARP.Models is
 
    function To_JSON (Model : List_Builder_Requests_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Builder_Requests_Response;
-
-   --  `ListCommerceCustomersResponse` model.
-   type List_Commerce_Customers_Response is record
-      Items : UARP.Models.Customer_Vectors.Vector;
-      --  Legacy alias for `items`. Will be removed in API v1.x.
-      Has_Customers : Boolean := False;
-      Customers : UARP.Models.Customer_Vectors.Vector;
-      Has_Cursor : Boolean := False;
-      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : List_Commerce_Customers_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Commerce_Customers_Response;
-
-   --  `ListCommerceEnrollmentsResponse` model.
-   type List_Commerce_Enrollments_Response is record
-      Has_Enrollments : Boolean := False;
-      Enrollments : UARP.Models.Enrollment_Vectors.Vector;
-      Has_Total : Boolean := False;
-      Total : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : List_Commerce_Enrollments_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Commerce_Enrollments_Response;
-
-   --  Values of `OrderStatus`.
-   --  A value the API introduces later decodes as Order_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Order_Status_Kind is
-     (Order_Status_Pending,
-   Order_Status_Paid,
-   Order_Status_Failed,
-   Order_Status_Refunded,
-   Order_Status_Unrecognized);
-
-   type Order_Status is record
-      Kind : Order_Status_Kind := Order_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Order_Status (Value : String) return Order_Status;
-   function To_Order_Status (Kind : Order_Status_Kind) return Order_Status;
-   function Image (Model : Order_Status) return String;
-   function To_JSON (Model : Order_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Order_Status;
-
-   --  `Order` model.
-   type Order is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Customer_Id : Boolean := False;
-      Customer_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Product_Id : Boolean := False;
-      Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Amount_Cents : UARP.Types.Integer_Value := 0;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Status : UARP.Models.Order_Status;
-      Has_Stripe_Payment_Intent_Id : Boolean := False;
-      Stripe_Payment_Intent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Paid_At : Boolean := False;
-      Paid_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Order) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Order;
-
-   package Order_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Order);
-
-   --  `ListCommerceOrdersResponse` model.
-   type List_Commerce_Orders_Response is record
-      Has_Orders : Boolean := False;
-      Orders : UARP.Models.Order_Vectors.Vector;
-      Has_Total : Boolean := False;
-      Total : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : List_Commerce_Orders_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Commerce_Orders_Response;
-
-   --  Values of `ProductStatus`.
-   --  A value the API introduces later decodes as Product_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Product_Status_Kind is
-     (Product_Status_Active,
-   Product_Status_Archived,
-   Product_Status_Unrecognized);
-
-   type Product_Status is record
-      Kind : Product_Status_Kind := Product_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Product_Status (Value : String) return Product_Status;
-   function To_Product_Status (Kind : Product_Status_Kind) return Product_Status;
-   function Image (Model : Product_Status) return String;
-   function To_JSON (Model : Product_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Product_Status;
-
-   --  `Product` model.
-   type Product is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Type_K : UARP.Models.Product_Type;
-      Has_Status : Boolean := False;
-      Status : UARP.Models.Product_Status;
-      Price_Cents : UARP.Types.Integer_Value := 0;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Knowledge_Base_Ids : Boolean := False;
-      Knowledge_Base_Ids : UARP.Types.Text_Vectors.Vector;
-      Has_Agent_Id : Boolean := False;
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Course_Structure : Boolean := False;
-      Course_Structure : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Slug : Boolean := False;
-      Slug : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
-      Has_Category : Boolean := False;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Vendor : Boolean := False;
-      Vendor : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Images : Boolean := False;
-      Images : UARP.Types.Text_Vectors.Vector;
-      Has_Variants : Boolean := False;
-      Variants : UARP.JSON_Support.JSON_Value;
-      Has_Compare_At_Price_Cents : Boolean := False;
-      Compare_At_Price_Cents : UARP.Types.Integer_Value := 0;
-      Has_Body_Html : Boolean := False;
-      Body_Html : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Shopify_Product_Id : Boolean := False;
-      Shopify_Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Stripe_Price_Id : Boolean := False;
-      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Created_At : Boolean := False;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Product) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Product;
-
-   package Product_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Product);
-
-   --  `ListCommerceProductsResponse` model.
-   type List_Commerce_Products_Response is record
-      Has_Products : Boolean := False;
-      Products : UARP.Models.Product_Vectors.Vector;
-      Has_Cursor : Boolean := False;
-      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : List_Commerce_Products_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Commerce_Products_Response;
 
    --  `ListCompaniesResponse` model.
    type List_Companies_Response is record
@@ -14486,52 +14105,6 @@ package UARP.Models is
    function To_JSON (Model : Platform_LLM_Defaults) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Platform_LLM_Defaults;
 
-   --  Body for `PATCH /api/v1/commerce/products/{id}`. Every field optional; unknown fields are
-   --  dropped without error, so a typo answers 200 and changes nothing.
-   type Product_Update is record
-      Has_Name : Boolean := False;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Price_Cents : Boolean := False;
-      Price_Cents : UARP.Types.Integer_Value := 0;
-      Has_Currency : Boolean := False;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Status : Boolean := False;
-      Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Knowledge_Base_Ids : Boolean := False;
-      Knowledge_Base_Ids : UARP.Types.Text_Vectors.Vector;
-      Has_Agent_Id : Boolean := False;
-      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Course_Structure : Boolean := False;
-      Course_Structure : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Stripe_Price_Id : Boolean := False;
-      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Metadata : Boolean := False;
-      Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
-      Has_Slug : Boolean := False;
-      Slug : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tags : Boolean := False;
-      Tags : UARP.Types.Text_Vectors.Vector;
-      Has_Category : Boolean := False;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Vendor : Boolean := False;
-      Vendor : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Images : Boolean := False;
-      Images : UARP.Types.Text_Vectors.Vector;
-      Has_Variants : Boolean := False;
-      Variants : UARP.JSON_Support.JSON_Value;
-      Has_Compare_At_Price_Cents : Boolean := False;
-      Compare_At_Price_Cents : UARP.Types.Integer_Value := 0;
-      Has_Body_Html : Boolean := False;
-      Body_Html : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Options : Boolean := False;
-      Options : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Product_Update) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Product_Update;
-
    --  `ProjectDetailSession` model.
    type Project_Detail_Session is record
       Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -16577,8 +16150,8 @@ package UARP.Models is
       --  connector's. Wrong scopes, no error.
       Has_Connector_Id : Boolean := False;
       Connector_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Provider-specific parameters the authorize URL needs, e.g. `{ "shop":
-      --  "mystore.myshopify.com" }`. Read by the route, previously undeclared.
+      --  Provider-specific parameters the authorize URL needs, e.g. `{ "subdomain": "acme" }` for
+      --  Zendesk. Read by the route, previously undeclared.
       Has_Extra : Boolean := False;
       Extra : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;

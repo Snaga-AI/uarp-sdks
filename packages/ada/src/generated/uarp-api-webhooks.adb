@@ -102,30 +102,6 @@ package body UARP.API.Webhooks is
              Options => Options));
    end Sensor_Webhook;
 
-   function Shopify_Webhook
-     (Self : Client_Type;
-      Params : Shopify_Webhook_Params := No_Shopify_Webhook_Params;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
-   is
-      Headers : UARP.Types.Pair_Vectors.Vector;
-   begin
-      UARP.Types.Add (Headers, "X-Shopify-Hmac-Sha256", Params.X_Shopify_Hmac_Sha256);
-      if Params.Has_X_Shopify_Topic then
-         UARP.Types.Add (Headers, "X-Shopify-Topic", Params.X_Shopify_Topic);
-      end if;
-      if Params.Has_X_Shopify_Shop_Domain then
-         UARP.Types.Add (Headers, "X-Shopify-Shop-Domain", Params.X_Shopify_Shop_Domain);
-      end if;
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/webhooks/shopify",
-          Headers => Headers,
-          Idempotent => True,
-          Options => Options);
-   end Shopify_Webhook;
-
    function Test_Webhook
      (Self : Client_Type;
       Webhook_Id : String;

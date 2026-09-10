@@ -19,19 +19,6 @@ package UARP.API.Webhooks is
 
    No_Sensor_Webhook_Params : constant Sensor_Webhook_Params := (others => <>);
 
-   --  Query and header parameters for `shopifyWebhook`.
-   type Shopify_Webhook_Params is record
-      --  Base64-encoded HMAC-SHA256 of the request body using the shop's webhook secret.
-      X_Shopify_Hmac_Sha256 : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Event topic (e.g. `orders/create`).
-      Has_X_Shopify_Topic : Boolean := False;
-      X_Shopify_Topic : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_X_Shopify_Shop_Domain : Boolean := False;
-      X_Shopify_Shop_Domain : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   No_Shopify_Webhook_Params : constant Shopify_Webhook_Params := (others => <>);
-
    --  Create a webhook subscription
    --
    --  POST /api/v1/webhooks
@@ -101,18 +88,6 @@ package UARP.API.Webhooks is
       Params : Sensor_Webhook_Params := No_Sensor_Webhook_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Sensor_Webhook_Response;
-
-   --  Shopify webhook
-   --
-   --  Shopify webhook receiver. Bypasses normal auth - `X-Shopify-Hmac-Sha256` header is
-   --  HMAC-verified against the per-shop secret.
-   --
-   --  POST /api/v1/webhooks/shopify
-   function Shopify_Webhook
-     (Self : Client_Type;
-      Params : Shopify_Webhook_Params := No_Shopify_Webhook_Params;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
 
    --  Send test delivery
    --

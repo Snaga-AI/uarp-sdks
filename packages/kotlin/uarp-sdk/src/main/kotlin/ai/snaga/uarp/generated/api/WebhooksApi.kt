@@ -137,31 +137,6 @@ public class WebhooksApi internal constructor(private val client: UarpClient) {
     }
 
     /**
-     * Shopify webhook
-     *
-     * Shopify webhook receiver. Bypasses normal auth — `X-Shopify-Hmac-Sha256` header is
-     * HMAC-verified against the per-shop secret.
-     *
-     * `POST /api/v1/webhooks/shopify`
-     */
-    public suspend fun shopifyWebhook(xShopifyHmacSha256: String, xShopifyTopic: String? = null, xShopifyShopDomain: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
-        val headers = buildList {
-            add("X-Shopify-Hmac-Sha256" to xShopifyHmacSha256)
-            if (xShopifyTopic != null) add("X-Shopify-Topic" to xShopifyTopic)
-            if (xShopifyShopDomain != null) add("X-Shopify-Shop-Domain" to xShopifyShopDomain)
-        }
-        return client.request<JsonElement>(
-            RequestSpec(
-                method = "POST",
-                path = "/api/v1/webhooks/shopify",
-                headers = headers,
-                idempotent = true,
-                options = options,
-            )
-        )
-    }
-
-    /**
      * Send test delivery
      *
      * Dispatch one synthetic event to this subscription's receiver, so an operator can confirm the

@@ -90,8 +90,15 @@ function emitStruct(w: Writer, type: ObjectType): void {
   docComment(w, type.description ?? `\`${type.name}\` model.`);
   w.line('#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]');
   w.block(`pub struct ${type.name} {`, () => {
+    // Two wire names can fold into one snake_case field (`unread_count` and
+    // `unreadCount` both do; the platform serves both in one object). The other
+    // emitters already suffix the later one; Rust must too, or the struct
+    // declares the field twice and the crate does not compile.
+    const used = new Set<string>();
     for (const prop of type.properties) {
-      const field = rustIdent(snake(prop.wire));
+      let field = rustIdent(snake(prop.wire));
+      while (used.has(field)) field += '_';
+      used.add(field);
       const optional = !prop.required || prop.nullable;
       const inner = rustType(prop.type, false);
       const ty = optional ? `Option<${inner}>` : inner;

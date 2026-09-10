@@ -12,7 +12,6 @@ import { BillingResource } from './billing.js';
 import { BootstrapResource } from './bootstrap.js';
 import { BridgeResource } from './bridge.js';
 import { CanvasResource } from './canvas.js';
-import { CommerceResource } from './commerce.js';
 import { CompaniesResource } from './companies.js';
 import { CreativityResource } from './creativity.js';
 import { DataExplorerResource } from './data-explorer.js';
@@ -64,7 +63,6 @@ export * from './billing.js';
 export * from './bootstrap.js';
 export * from './bridge.js';
 export * from './canvas.js';
-export * from './commerce.js';
 export * from './companies.js';
 export * from './creativity.js';
 export * from './data-explorer.js';
@@ -150,10 +148,6 @@ export interface Resources {
    */
   readonly bridge: BridgeResource;
   readonly canvas: CanvasResource;
-  /**
-   * E-commerce: products, customers, orders, enrollments
-   */
-  readonly commerce: CommerceResource;
   /**
    * Company management
    */
@@ -309,7 +303,6 @@ export function createResources(client: Transport): Resources {
     bootstrap: new BootstrapResource(client),
     bridge: new BridgeResource(client),
     canvas: new CanvasResource(client),
-    commerce: new CommerceResource(client),
     companies: new CompaniesResource(client),
     creativity: new CreativityResource(client),
     dataExplorer: new DataExplorerResource(client),

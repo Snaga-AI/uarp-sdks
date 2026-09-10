@@ -138,7 +138,7 @@ async fn main() -> Result<(), Error> {
         .await?;
 
     // 16. how the decoder handles a payload built to strain it
-    let probe = client.runs().get("probe").await?;
+    let probe = client.runs().get("probe", &Default::default()).await?;
     let mut keys: Vec<String> = probe
         .metadata
         .as_ref()
