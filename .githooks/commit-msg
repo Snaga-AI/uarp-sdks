@@ -1,0 +1,41 @@
+#!/bin/sh
+
+# Commit messages here are written for people, and this history is read outside
+# the team: by the state audit, by SDK consumers, by anyone running `git log`.
+# Two kinds of line must never reach it — a session URL, which points at a
+# private transcript nobody outside can open, and a tool co-author trailer,
+# which credits an assistant in place of the person who owns the change.
+#
+# Agent harnesses append both from their own configuration, so stating the rule
+# in CLAUDE.md is not enough: it was stated there, and 32 of the last 40 commits
+# on `main` still carried one (measured 2026-08-21). This hook is the mechanical
+# half. It STRIPS rather than rejects, so nobody loses a finished commit over a
+# trailer they did not type; the printed line is what teaches the next one.
+
+MSG_FILE="$1"
+[ -f "$MSG_FILE" ] || exit 0
+
+BANNED='^(claude-session:|co-authored-by: claude|🤖 generated with)|^https://claude\.ai/code/session_'
+
+BEFORE=$(grep -ciE "$BANNED" "$MSG_FILE" || true)
+
+if [ "$BEFORE" -gt 0 ]; then
+  TMP="$MSG_FILE.trailers"
+  grep -viE "$BANNED" "$MSG_FILE" > "$TMP"
+  # Collapse the blank lines the removal leaves behind at the end.
+  awk '{lines[NR]=$0} END{last=NR; while (last>0 && lines[last] ~ /^[[:space:]]*$/) last--; for(i=1;i<=last;i++) print lines[i]}' "$TMP" > "$MSG_FILE"
+  rm -f "$TMP"
+  echo "commit-msg: removed $BEFORE line(s) that must not enter public history (session URL / tool co-author)."
+fi
+
+# The authorship trailer this repository does use. Added only when there is a
+# message to attach it to, so an aborted commit stays aborted.
+#
+# Anchored to the start of a line, and that is not pedantry: the first version
+# matched anywhere, so this very commit — whose body NAMES the trailer — was
+# read as already carrying it and went out without one.
+if [ -s "$MSG_FILE" ] && ! grep -qiE '^co-authored-by: agent <agent@snaga\.ai>' "$MSG_FILE"; then
+  printf '\nCo-Authored-By: agent <agent@snaga.ai>\n' >> "$MSG_FILE"
+fi
+
+exit 0

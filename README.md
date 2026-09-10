@@ -283,3 +283,11 @@ keys are kept and sent back unchanged.
 ## Licence
 
 MIT. See [LICENSE](LICENSE).
+
+## Commit hygiene
+
+This repository's history is read by SDK consumers. A `commit-msg` hook strips
+tool/session trailers and adds `Co-Authored-By: agent <agent@snaga.ai>`; enable
+it once per clone:
+
+    git config core.hooksPath .githooks
