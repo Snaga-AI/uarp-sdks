@@ -2,6 +2,23 @@
 
 package body UARP.API.Public is
 
+   function Cancel_Public_Session_Run
+     (Self : Client_Type;
+      Session_Id : String;
+      Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Cancel_Public_Session_Run_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/cancel",
+             Idempotent => True,
+             Options => Options));
+   end Cancel_Public_Session_Run;
+
    function Create_Public_Session
      (Self : Client_Type;
       Payload : UARP.Models.Create_Public_Session_Request;
@@ -495,6 +512,22 @@ package body UARP.API.Public is
              Options => Options));
    end Send_Public_Message;
 
+   function Share_Public_Session
+     (Self : Client_Type;
+      Session_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Share_Public_Session_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
+             Idempotent => True,
+             Options => Options));
+   end Share_Public_Session;
+
    function Sign_Up_For_Android_Testing
      (Self : Client_Type;
       Payload : UARP.Models.Sign_Up_For_Android_Testing_Request;
@@ -526,4 +559,23 @@ package body UARP.API.Public is
           Sink,
           Options => Options);
    end Stream_Public_Session_Events;
+
+   function Upload_Public_Session_Image
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.JSON_Support.JSON_Value;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upload_Public_Session_Image_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/public/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/upload",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Upload_Public_Session_Image;
 end UARP.API.Public;

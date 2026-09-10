@@ -17,7 +17,7 @@ import type {
 } from '../models.js';
 
 /**
- * Operations tagged `Canvas`.
+ * Canvas documents attached to a session
  */
 export class CanvasResource extends APIResource {
   /**

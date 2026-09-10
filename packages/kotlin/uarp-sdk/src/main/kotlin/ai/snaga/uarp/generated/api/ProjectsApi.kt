@@ -20,7 +20,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Operations tagged `Projects`.
+ * Projects — a workspace grouping agents, sessions and files
  */
 public class ProjectsApi internal constructor(private val client: UarpClient) {
     /**
@@ -136,6 +136,6 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
 }
 
 /**
- * Operations tagged `Projects`.
+ * Projects — a workspace grouping agents, sessions and files
  */
 public val UarpClient.projects: ProjectsApi get() = ProjectsApi(this)

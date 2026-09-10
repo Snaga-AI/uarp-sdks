@@ -24,11 +24,12 @@ package UARP.API.Memory is
    --  DELETE /api/v1/agents/{agentId}/memory/{entryId}
    --
    --  Required scopes: memory:write.
-   procedure Delete_Memory_Entry
+   function Delete_Memory_Entry
      (Self : Client_Type;
       Agent_Id : String;
       Entry_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Memory_Entry_Response;
 
    --  Get a core memory block
    --
@@ -65,6 +66,23 @@ package UARP.API.Memory is
       Entry_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Put back what an export took out
+   --
+   --  Accepts the `memory.json` an account export writes: a flat `entries` array, or
+   --  `agents[].entries` (every agent's entries are imported into THIS agent). Each entry is
+   --  tagged `imported`. Dedup is the store's: re-importing the same file returns the existing
+   --  entries as `duplicates` instead of doubling them. A file with no entries is 400.
+   --
+   --  POST /api/v1/agents/{agentId}/memory/import
+   --
+   --  Required scopes: memory:write.
+   function Import_Agent_Memory
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Import_Agent_Memory_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Import_Agent_Memory_Response;
 
    --  Ingest a file into agent memory
    --

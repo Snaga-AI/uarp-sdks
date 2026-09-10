@@ -20,7 +20,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Operations tagged `Feedback`.
+ * Error reports from any tenant; the inbox is super-admin only
  */
 public class FeedbackApi internal constructor(private val client: UarpClient) {
     /**
@@ -46,6 +46,6 @@ public class FeedbackApi internal constructor(private val client: UarpClient) {
 }
 
 /**
- * Operations tagged `Feedback`.
+ * Error reports from any tenant; the inbox is super-admin only
  */
 public val UarpClient.feedback: FeedbackApi get() = FeedbackApi(this)

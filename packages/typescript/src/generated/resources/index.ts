@@ -13,7 +13,6 @@ import { BootstrapResource } from './bootstrap.js';
 import { BridgeResource } from './bridge.js';
 import { CanvasResource } from './canvas.js';
 import { CompaniesResource } from './companies.js';
-import { CreativityResource } from './creativity.js';
 import { DataExplorerResource } from './data-explorer.js';
 import { EvaluationsResource } from './evaluations.js';
 import { FeedResource } from './feed.js';
@@ -47,7 +46,6 @@ import { SessionsResource } from './sessions.js';
 import { SquadsResource } from './squads.js';
 import { TeamsResource } from './teams.js';
 import { TenantsResource } from './tenants.js';
-import { TrainingResource } from './training.js';
 import { UsersResource } from './users.js';
 import { WebhooksResource } from './webhooks.js';
 import { WorkspacesResource } from './workspaces.js';
@@ -64,7 +62,6 @@ export * from './bootstrap.js';
 export * from './bridge.js';
 export * from './canvas.js';
 export * from './companies.js';
-export * from './creativity.js';
 export * from './data-explorer.js';
 export * from './evaluations.js';
 export * from './feed.js';
@@ -98,7 +95,6 @@ export * from './sessions.js';
 export * from './squads.js';
 export * from './teams.js';
 export * from './tenants.js';
-export * from './training.js';
 export * from './users.js';
 export * from './webhooks.js';
 export * from './workspaces.js';
@@ -147,12 +143,14 @@ export interface Resources {
    * Local agent bridge for Snaga desktop connections
    */
   readonly bridge: BridgeResource;
+  /**
+   * Canvas documents attached to a session
+   */
   readonly canvas: CanvasResource;
   /**
    * Company management
    */
   readonly companies: CompaniesResource;
-  readonly creativity: CreativityResource;
   /**
    * KV data explorer for admin diagnostics
    */
@@ -165,6 +163,9 @@ export interface Resources {
    * Activity feed and real-time event streaming
    */
   readonly feed: FeedResource;
+  /**
+   * Error reports from any tenant; the inbox is super-admin only
+   */
   readonly feedback: FeedbackResource;
   /**
    * File upload for multimodal content
@@ -206,6 +207,9 @@ export interface Resources {
    * Model Context Protocol server endpoints
    */
   readonly mcp: MCPResource;
+  /**
+   * The calling identity: profile, tenants, head agent
+   */
   readonly me: MeResource;
   /**
    * Agent memory management
@@ -236,6 +240,9 @@ export interface Resources {
    * Program (curriculum) management
    */
   readonly programs: ProgramsResource;
+  /**
+   * Projects — a workspace grouping agents, sessions and files
+   */
   readonly projects: ProjectsResource;
   /**
    * LLM provider discovery and model listing
@@ -266,6 +273,9 @@ export interface Resources {
    * Conversation sessions
    */
   readonly sessions: SessionsResource;
+  /**
+   * Squads — multi-agent groups that run a shared brief
+   */
   readonly squads: SquadsResource;
   /**
    * Team management and team chat
@@ -275,7 +285,6 @@ export interface Resources {
    * Tenant management and API keys
    */
   readonly tenants: TenantsResource;
-  readonly training: TrainingResource;
   /**
    * User management, invites, roles
    */
@@ -304,7 +313,6 @@ export function createResources(client: Transport): Resources {
     bridge: new BridgeResource(client),
     canvas: new CanvasResource(client),
     companies: new CompaniesResource(client),
-    creativity: new CreativityResource(client),
     dataExplorer: new DataExplorerResource(client),
     evaluations: new EvaluationsResource(client),
     feed: new FeedResource(client),
@@ -338,7 +346,6 @@ export function createResources(client: Transport): Resources {
     squads: new SquadsResource(client),
     teams: new TeamsResource(client),
     tenants: new TenantsResource(client),
-    training: new TrainingResource(client),
     users: new UsersResource(client),
     webhooks: new WebhooksResource(client),
     workspaces: new WorkspacesResource(client),

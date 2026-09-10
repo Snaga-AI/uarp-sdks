@@ -274,7 +274,7 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn get_run_feedback(&self, run_id: &str, params: &GetRunFeedbackParams) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_run_feedback(&self, run_id: &str, params: &GetRunFeedbackParams) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -503,10 +503,17 @@ impl RunsApi {
 
     /// Save user feedback/reaction for a run
     ///
+    /// One reaction per (message, caller); a second PUT for the same `message_id` replaces the
+    /// first. `message_id` is whatever string the client attaches to a message — the platform
+    /// stores it verbatim (max 256 chars) and does not check it against the transcript, which today
+    /// carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
+    /// There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
+    /// 405 (measured 2026-09-10).
+    ///
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn set_run_feedback(&self, run_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_run_feedback(&self, run_id: &str, body: &models::SetRunFeedbackRequest) -> Result<models::SetRunFeedbackResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

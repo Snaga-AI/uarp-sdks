@@ -3,10 +3,10 @@
 import Foundation
 
 /// Version of the OpenAPI document this SDK was generated from.
-public let specVersion = "0.3.0"
+public let specVersion = "0.4.0"
 
 /// Version of this SDK.
-public let sdkVersion = "0.5.17"
+public let sdkVersion = "0.5.18"
 
 /// Production base URL.
 public let defaultBaseURL = "https://api.snaga.ai"

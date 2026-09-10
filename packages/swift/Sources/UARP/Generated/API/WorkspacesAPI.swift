@@ -13,12 +13,11 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces/{workspaceId}/assign`
     ///
     /// Required scopes: `files:write`.
-    public func assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/assign",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -44,12 +43,11 @@ public struct WorkspacesAPI: Sendable {
     /// `POST /api/v1/workspaces`
     ///
     /// Required scopes: `files:write`.
-    public func create(body: CreateWorkspaceRequest? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func create(body: CreateWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONObject {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -132,6 +130,27 @@ public struct WorkspacesAPI: Sendable {
         ))
     }
 
+    /// Bytes of a prior version
+    ///
+    /// `version` is a `file_id` from `listWorkspaceFileHistory` and must belong to `path`'s history
+    /// — any other id is 404. Served with the version's own `Content-Type`, its `Content-Length`,
+    /// and `Cache-Control: private, max-age=3600`.
+    ///
+    /// `GET /api/v1/workspaces/{workspaceId}/files/history/content`
+    ///
+    /// Required scopes: `files:read`.
+    public func getWorkspaceFileHistoryContent(workspaceId: String, path: String, version: String, options: RequestOptions = .init()) async throws -> Data {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "path", value: path))
+        query.append(URLQueryItem(name: "version", value: version))
+        return try await client.sendData(RequestSpec(
+            method: "GET",
+            path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/history/content",
+            query: query,
+            options: options
+        ))
+    }
+
     /// WebSocket terminal session for workspace
     ///
     /// `GET /api/v1/workspaces/{workspaceId}/terminal`
@@ -171,6 +190,26 @@ public struct WorkspacesAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/workspace/files",
+            query: query,
+            options: options
+        ))
+    }
+
+    /// Prior versions of a file
+    ///
+    /// Every earlier version kept for `path`, newest first; the current content is not in the list.
+    /// `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
+    /// version's bytes with `getWorkspaceFileHistoryContent`.
+    ///
+    /// `GET /api/v1/workspaces/{workspaceId}/files/history`
+    ///
+    /// Required scopes: `files:read`.
+    public func listWorkspaceFileHistory(workspaceId: String, path: String, options: RequestOptions = .init()) async throws -> ListWorkspaceFileHistoryResponse {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "path", value: path))
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/history",
             query: query,
             options: options
         ))
@@ -219,6 +258,25 @@ public struct WorkspacesAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files/move",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Mint a public share link for an HTML snapshot
+    ///
+    /// Stores a self-contained HTML page (assets already inlined by the client, ≤3 MB) under an
+    /// opaque token for seven days; `GET /public/share/{token}` serves it back as JSON data for the
+    /// sandboxed viewer, never as executable HTML. The workspace id is not consulted beyond scope.
+    ///
+    /// `POST /api/v1/workspaces/{workspaceId}/publish`
+    ///
+    /// Required scopes: `files:write`.
+    public func publishWorkspaceSnapshot(workspaceId: String, body: PublishWorkspaceSnapshotRequest, options: RequestOptions = .init()) async throws -> PublishWorkspaceSnapshotResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/publish",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -336,12 +394,11 @@ public struct WorkspacesAPI: Sendable {
     /// `PATCH /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    public func update(workspaceId: String, body: UpdateWorkspaceRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))

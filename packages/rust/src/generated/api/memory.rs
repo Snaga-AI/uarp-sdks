@@ -39,9 +39,9 @@ impl MemoryApi {
     /// `DELETE /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<()> {
+    pub async fn delete_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<models::DeleteMemoryEntryResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/agents/{}/memory/{}", encode_path(agent_id), encode_path(entry_id)),
                 query: NO_QUERY,
@@ -102,6 +102,29 @@ impl MemoryApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
+            })
+            .await
+    }
+
+    /// Put back what an export took out
+    ///
+    /// Accepts the `memory.json` an account export writes: a flat `entries` array, or
+    /// `agents\[\].entries` (every agent's entries are imported into THIS agent). Each entry is
+    /// tagged `imported`. Dedup is the store's: re-importing the same file returns the existing
+    /// entries as `duplicates` instead of doubling them. A file with no entries is 400.
+    ///
+    /// `POST /api/v1/agents/{agentId}/memory/import`
+    ///
+    /// Required scopes: `memory:write`.
+    pub async fn import_agent_memory(&self, agent_id: &str, body: &models::ImportAgentMemoryRequest) -> Result<models::ImportAgentMemoryResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/agents/{}/memory/import", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
             })
             .await
     }

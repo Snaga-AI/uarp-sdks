@@ -88,6 +88,24 @@ public struct MCPAPI: Sendable {
         ))
     }
 
+    /// Probe an MCP server's live connection
+    ///
+    /// Opens a real connection and lists the server's tools. **A failed probe is still 200** — `ok`
+    /// is the verdict, not the status code, because a server that refuses to connect is an answer
+    /// about the server rather than about the request. Read `ok` first: on false, `error` carries
+    /// the reason (including an SSRF refusal when the URL resolves to a private address) and
+    /// `tool_count`/`tools` are absent.
+    ///
+    /// `POST /api/v1/mcp/servers/{serverId}/test`
+    public func testMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> MCPServerTestResult {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))/test",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Update MCP server
     ///
     /// `PATCH /api/v1/mcp/servers/{serverId}`

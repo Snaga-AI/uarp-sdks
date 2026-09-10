@@ -6,6 +6,37 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.18 — 2026-09-10
+
+Training (LLM Studio) and the Creativity canvas are gone from the API
+(uarp #445, deployed as build `e0da8c83`), and the copy follows the served
+document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`4a1a5f9c0a11d827c9cb6fe682c4b06da7e0c2bb7fe838809330b5162b0c0267`, `info.version` 0.4.0,
+`X-API-Version` 2026-09-10. 709 operations and 239 schemas, down from 710
+and 242 — the sixteen operations uarp #444 described from their bytes arrived
+in the same document.
+
+### Removed
+
+- Every `/api/v1/training-jobs/*` and `/api/v1/creativity/sessions/*`
+  operation — the generated `training` and `creativity` resources are deleted
+  in all five SDKs.
+- Schemas `TrainingDroplet`, `TrainingGate`, `TrainingHyperparams`,
+  `TrainingJob`, `TrainingJobMetrics`, `TrainingJobRequest`,
+  `TrainingPersona`, `TrainingQuote`, `TrainingSettings`.
+
+### Added
+
+- The sixteen operations described in uarp #444: run feedback (`PUT`/`GET`
+  `/runs/{runId}/feedback`), `PATCH /me`, workspace file history and version
+  content, the three public-session operations (`share`, `upload`,
+  `runs/{runId}/cancel`), agent bookmarks, `POST /sessions/bulk-delete`,
+  `POST /workspaces/{id}/publish`, `POST /agents/{id}/memory/import` — with
+  their real bodies and responses; every authenticated mutating operation now
+  declares the `202` in-flight response and the `X-Idempotency-Replayed`
+  header.
+
 ## 0.5.17 — 2026-09-10
 
 The Commerce surface is gone from the API (uarp #441, deployed as build

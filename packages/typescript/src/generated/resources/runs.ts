@@ -10,6 +10,8 @@ import type {
   CreateRunRequest,
   EstimateRunCostRequest,
   GetRunChangedFiles,
+  GetRunFeedbackResponseVariant1,
+  GetRunFeedbackResponseVariant2,
   GetRunQueuePositionResponse,
   GetRunResponse,
   GetRunStepsResponse,
@@ -24,6 +26,8 @@ import type {
   Run,
   RunApproveRequest,
   RunCostEstimate,
+  SetRunFeedbackRequest,
+  SetRunFeedbackResponse,
 } from '../models.js';
 
 /**
@@ -265,7 +269,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  getRunFeedback(runId: string, params?: GetRunFeedbackParams, options?: RequestOptions): Promise<JsonObject> {
+  getRunFeedback(runId: string, params?: GetRunFeedbackParams, options?: RequestOptions): Promise<GetRunFeedbackResponseVariant1 | GetRunFeedbackResponseVariant2> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/feedback`,
@@ -459,11 +463,18 @@ export class RunsResource extends APIResource {
   /**
    * Save user feedback/reaction for a run
    *
+   * One reaction per (message, caller); a second PUT for the same `message_id` replaces the
+   * first. `message_id` is whatever string the client attaches to a message — the platform
+   * stores it verbatim (max 256 chars) and does not check it against the transcript, which today
+   * carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
+   * There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
+   * 405 (measured 2026-09-10).
+   *
    * `PUT /api/v1/runs/{runId}/feedback`
    *
    * Required scopes: `runs:create`.
    */
-  setRunFeedback(runId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  setRunFeedback(runId: string, body: SetRunFeedbackRequest, options?: RequestOptions): Promise<SetRunFeedbackResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/feedback`,

@@ -30,12 +30,12 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun assignWorkspace(workspaceId: String, body: AssignWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/assign",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -68,12 +68,12 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun create(body: CreateWorkspaceRequest? = null, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun create(body: CreateWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonObject {
         return client.request<JsonObject>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -178,6 +178,32 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
     }
 
     /**
+     * Bytes of a prior version
+     *
+     * `version` is a `file_id` from `listWorkspaceFileHistory` and must belong to `path`'s history
+     * — any other id is 404. Served with the version's own `Content-Type`, its `Content-Length`,
+     * and `Cache-Control: private, max-age=3600`.
+     *
+     * `GET /api/v1/workspaces/{workspaceId}/files/history/content`
+     *
+     * Required scopes: `files:read`.
+     */
+    public suspend fun getWorkspaceFileHistoryContent(workspaceId: String, path: String, version: String, options: RequestOptions = RequestOptions()): ByteArray {
+        val query = buildList {
+            add("path" to path)
+            add("version" to version)
+        }
+        return client.requestBytes(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/history/content",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * WebSocket terminal session for workspace
      *
      * `GET /api/v1/workspaces/{workspaceId}/terminal`
@@ -226,6 +252,31 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/workspace/files",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Prior versions of a file
+     *
+     * Every earlier version kept for `path`, newest first; the current content is not in the list.
+     * `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
+     * version's bytes with `getWorkspaceFileHistoryContent`.
+     *
+     * `GET /api/v1/workspaces/{workspaceId}/files/history`
+     *
+     * Required scopes: `files:read`.
+     */
+    public suspend fun listWorkspaceFileHistory(workspaceId: String, path: String, options: RequestOptions = RequestOptions()): ListWorkspaceFileHistoryResponse {
+        val query = buildList {
+            add("path" to path)
+        }
+        return client.request<ListWorkspaceFileHistoryResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/history",
                 query = query,
                 options = options,
             )
@@ -283,6 +334,29 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files/move",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Mint a public share link for an HTML snapshot
+     *
+     * Stores a self-contained HTML page (assets already inlined by the client, ≤3 MB) under an
+     * opaque token for seven days; `GET /public/share/{token}` serves it back as JSON data for the
+     * sandboxed viewer, never as executable HTML. The workspace id is not consulted beyond scope.
+     *
+     * `POST /api/v1/workspaces/{workspaceId}/publish`
+     *
+     * Required scopes: `files:write`.
+     */
+    public suspend fun publishWorkspaceSnapshot(workspaceId: String, body: PublishWorkspaceSnapshotRequest, options: RequestOptions = RequestOptions()): PublishWorkspaceSnapshotResponse {
+        return client.request<PublishWorkspaceSnapshotResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/publish",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -424,12 +498,12 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun update(workspaceId: String, body: UpdateWorkspaceRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun update(workspaceId: String, body: UpdateWorkspaceRequest, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )

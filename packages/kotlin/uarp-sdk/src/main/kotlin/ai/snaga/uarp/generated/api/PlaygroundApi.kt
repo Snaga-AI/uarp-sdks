@@ -60,12 +60,12 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun run(agentId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun run(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/playground/agents/${encodePathSegment(agentId)}/run",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -77,12 +77,12 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/playground/agents/{agentId}`
      */
-    public suspend fun savePlaygroundCanvas(agentId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun savePlaygroundCanvas(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/playground/agents/${encodePathSegment(agentId)}",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )

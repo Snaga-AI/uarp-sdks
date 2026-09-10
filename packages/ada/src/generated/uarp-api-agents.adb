@@ -35,6 +35,25 @@ package body UARP.API.Agents is
              Options => Options));
    end Create;
 
+   function Create_Agent_Bookmark
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Create_Agent_Bookmark_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Agent_Bookmark
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/bookmarks",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Create_Agent_Bookmark;
+
    function Create_Agent_Fria
      (Self : Client_Type;
       Agent_Id : String;
@@ -58,7 +77,6 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Version_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value
    is
@@ -68,7 +86,7 @@ package body UARP.API.Agents is
           "POST",
           "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/versions",
           Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
+          Has_Payload => True,
           Idempotent => True,
           Options => Options);
    end Create_Agent_Version;
@@ -88,19 +106,54 @@ package body UARP.API.Agents is
           Options => Options);
    end Delete;
 
-   procedure Delete_Agent_Identity
+   function Delete_Agent_Bookmark
+     (Self : Client_Type;
+      Agent_Id : String;
+      Message_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Agent_Bookmark_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/bookmarks/" & UARP.Types.Encode_Path_Segment (Message_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Agent_Bookmark;
+
+   function Delete_Agent_Identity
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Agent_Identity_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/identity",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/identity",
+             Idempotent => True,
+             Options => Options));
    end Delete_Agent_Identity;
+
+   function Delete_All_Agent_Bookmarks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_All_Agent_Bookmarks_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/bookmarks",
+             Idempotent => True,
+             Options => Options));
+   end Delete_All_Agent_Bookmarks;
 
    function Get
      (Self : Client_Type;
@@ -346,6 +399,21 @@ package body UARP.API.Agents is
       return Collected;
    end List_All;
 
+   function List_Agent_Bookmarks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Bookmarks_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/bookmarks",
+             Options => Options));
+   end List_Agent_Bookmarks;
+
    function List_Agent_Mail
      (Self : Client_Type;
       Params : List_Agent_Mail_Params := No_List_Agent_Mail_Params;
@@ -532,7 +600,6 @@ package body UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.Models.Agent_Update;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent
    is
@@ -543,7 +610,7 @@ package body UARP.API.Agents is
              "PUT",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
              Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
+             Has_Payload => True,
              Idempotent => True,
              Options => Options));
    end Update;
@@ -566,4 +633,23 @@ package body UARP.API.Agents is
              Idempotent => True,
              Options => Options));
    end Update_Agent_Risk_Classification;
+
+   function Upsert_Agent_Tool_Override
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Agent_Tool_Override_Update;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upsert_Agent_Tool_Override_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/autonomy/tool-override",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Upsert_Agent_Tool_Override;
 end UARP.API.Agents;

@@ -7,6 +7,8 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   AndroidTesterSignupResult,
+  BinaryInput,
+  CancelPublicSessionRunResponse,
   ContentReportAccepted,
   ContentReportInput,
   CreatePublicSessionRequest,
@@ -31,7 +33,9 @@ import type {
   RespondToPublicHitlRequest,
   SendPublicMessageRequest,
   SendPublicMessageResponse,
+  SharePublicSessionResponse,
   SignUpForAndroidTestingRequest,
+  UploadPublicSessionImageResponse,
 } from '../models.js';
 
 /**
@@ -93,6 +97,24 @@ export interface PublicDomainLookupParams {
  * Unauthenticated public-facing endpoints
  */
 export class PublicResource extends APIResource {
+  /**
+   * Cancel a run of this chat
+   *
+   * Cancels a run that belongs to this public session. No body. A run id from outside the
+   * session is 404; a run of this session that was not started publicly is 409. Forms measured
+   * through the router with a seeded session (public-served-forms_test.ts, 2026-09-10).
+   *
+   * `POST /api/v1/public/sessions/{sessionId}/runs/{runId}/cancel`
+   */
+  cancelPublicSessionRun(sessionId: string, runId: string, options?: RequestOptions): Promise<CancelPublicSessionRunResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/runs/${encodeURIComponent(String(runId))}/cancel`,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Create public session
    *
@@ -550,6 +572,25 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * Publish a read-only copy of this chat
+   *
+   * Snapshots the last 60 user/assistant turns of the session into a share record that
+   * `getPublicSharedChat` serves for a limited time, and returns its token. No body. A session
+   * with no turns yet is 400 `Nothing to share yet`. Forms measured through the router with a
+   * seeded session (public-served-forms_test.ts, 2026-09-10).
+   *
+   * `POST /api/v1/public/sessions/{sessionId}/share`
+   */
+  sharePublicSession(sessionId: string, options?: RequestOptions): Promise<SharePublicSessionResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/share`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Sign up for Android closed testing
    *
    * Records the address and, when a testing URL is configured, mails the join link. A repeat
@@ -579,6 +620,28 @@ export class PublicResource extends APIResource {
     return this._client.stream({
       method: 'GET',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/events`,
+      options,
+    });
+  }
+
+  /**
+   * Attach an image to this chat
+   *
+   * The body is the raw image bytes — not multipart, not JSON — with its media type in
+   * `Content-Type` (`image/*` only; anything else is 415). Empty is 400; over 8 MB is 413; more
+   * uploads than the session allows is 429; a tenant whose storage quota is full gets 403. The
+   * image is stored as one of the agent tenant's files and the returned `file_id` is what
+   * `sendPublicMessage` attaches. Forms measured through the router with a seeded session
+   * (public-served-forms_test.ts, 2026-09-10).
+   *
+   * `POST /api/v1/public/sessions/{sessionId}/upload`
+   */
+  uploadPublicSessionImage(sessionId: string, body: BinaryInput, options?: RequestOptions): Promise<UploadPublicSessionImageResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/upload`,
+      body,
+      idempotent: true,
       options,
     });
   }

@@ -22,33 +22,37 @@ package body UARP.API.Knowledge is
              Options => Options));
    end Create_Knowledge_Base;
 
-   procedure Delete_Kb_Document
+   function Delete_Kb_Document
      (Self : Client_Type;
       Id : String;
       Doc_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Kb_Document_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id) & "/documents/" & UARP.Types.Encode_Path_Segment (Doc_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id) & "/documents/" & UARP.Types.Encode_Path_Segment (Doc_Id),
+             Idempotent => True,
+             Options => Options));
    end Delete_Kb_Document;
 
-   procedure Delete_Knowledge_Base
+   function Delete_Knowledge_Base
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Knowledge_Base_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/knowledge-bases/" & UARP.Types.Encode_Path_Segment (Id),
+             Idempotent => True,
+             Options => Options));
    end Delete_Knowledge_Base;
 
    function Get_Knowledge_Base

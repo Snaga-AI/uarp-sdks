@@ -62,6 +62,29 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Pin a message
+     *
+     * Idempotent on `message_id`: pinning a message already pinned returns the existing record
+     * with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
+     * Unknown fields are dropped.
+     *
+     * `POST /api/v1/agents/{agentId}/bookmarks`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun createAgentBookmark(agentId: String, body: CreateAgentBookmarkRequest, options: RequestOptions = RequestOptions()): AgentBookmark {
+        return client.request<AgentBookmark>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/bookmarks",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Create or update FRIA report
      *
      * `POST /api/v1/agents/{agentId}/fria`
@@ -87,12 +110,12 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun createAgentVersion(agentId: String, body: CreateAgentVersionRequest? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = RequestOptions()): JsonElement {
         return client.request<JsonElement>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/versions",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -118,17 +141,53 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Unpin one message
+     *
+     * `DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun deleteAgentBookmark(agentId: String, messageId: String, options: RequestOptions = RequestOptions()): DeleteAgentBookmarkResponse {
+        return client.request<DeleteAgentBookmarkResponse>(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/bookmarks/${encodePathSegment(messageId)}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Delete agent identity
      *
      * `DELETE /api/v1/agents/{agentId}/identity`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun deleteAgentIdentity(agentId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteAgentIdentity(agentId: String, options: RequestOptions = RequestOptions()): DeleteAgentIdentityResponse {
+        return client.request<DeleteAgentIdentityResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/identity",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Unpin every message of an agent
+     *
+     * `DELETE /api/v1/agents/{agentId}/bookmarks`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun deleteAllAgentBookmarks(agentId: String, options: RequestOptions = RequestOptions()): DeleteAllAgentBookmarksResponse {
+        return client.request<DeleteAllAgentBookmarksResponse>(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/bookmarks",
                 idempotent = true,
                 options = options,
             )
@@ -360,6 +419,25 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     )
 
     /**
+     * Pinned messages of an agent
+     *
+     * Up to 1000, unordered. `{"items":\[\]}` on an agent with none (measured 2026-09-10).
+     *
+     * `GET /api/v1/agents/{agentId}/bookmarks`
+     *
+     * Required scopes: `agents:read`.
+     */
+    public suspend fun listAgentBookmarks(agentId: String, options: RequestOptions = RequestOptions()): ListAgentBookmarksResponse {
+        return client.request<ListAgentBookmarksResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/bookmarks",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Messages between agents
      *
      * Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
@@ -575,12 +653,12 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun update(agentId: String, body: AgentUpdate? = null, options: RequestOptions = RequestOptions()): Agent {
+    public suspend fun update(agentId: String, body: AgentUpdate, options: RequestOptions = RequestOptions()): Agent {
         return client.request<Agent>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -599,6 +677,37 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "PATCH",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/risk-classification",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Set one per-tool trust override
+     *
+     * Upserts a single entry: sending the same `tool_name` twice replaces its `trust_level` rather
+     * than adding a second row. The response is the agent's FULL override list after the write, so
+     * a client can render the table without a second call.
+     *
+     * WRITE SEMANTICS: merges. Read from the handler, not from the body shape: it loads the agent,
+     * drops any existing entry with this `tool_name`, appends the new one and leaves every other
+     * override untouched. So this call cannot clear the list, and cannot set two entries at once.
+     *
+     * The write is a compare-and-set against the agent record, so a concurrent `PUT
+     * /agents/{agentId}` cannot clobber the override with a stale snapshot — a lost race answers
+     * 409 and the caller reloads.
+     *
+     * `PATCH /api/v1/agents/{agentId}/autonomy/tool-override`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun upsertAgentToolOverride(agentId: String, body: AgentToolOverrideUpdate, options: RequestOptions = RequestOptions()): UpsertAgentToolOverrideResponse {
+        return client.request<UpsertAgentToolOverrideResponse>(
+            RequestSpec(
+                method = "PATCH",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/autonomy/tool-override",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

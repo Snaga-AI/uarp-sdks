@@ -130,6 +130,28 @@ public class MCPApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Probe an MCP server's live connection
+     *
+     * Opens a real connection and lists the server's tools. **A failed probe is still 200** — `ok`
+     * is the verdict, not the status code, because a server that refuses to connect is an answer
+     * about the server rather than about the request. Read `ok` first: on false, `error` carries
+     * the reason (including an SSRF refusal when the URL resolves to a private address) and
+     * `tool_count`/`tools` are absent.
+     *
+     * `POST /api/v1/mcp/servers/{serverId}/test`
+     */
+    public suspend fun testMCPServer(serverId: String, options: RequestOptions = RequestOptions()): MCPServerTestResult {
+        return client.request<MCPServerTestResult>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}/test",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Update MCP server
      *
      * `PATCH /api/v1/mcp/servers/{serverId}`

@@ -21,7 +21,7 @@ import kotlinx.serialization.json.JsonObject
 import kotlinx.coroutines.flow.Flow
 
 /**
- * Operations tagged `Squads`.
+ * Squads — multi-agent groups that run a shared brief
  */
 public class SquadsApi internal constructor(private val client: UarpClient) {
     /**
@@ -486,6 +486,6 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
 }
 
 /**
- * Operations tagged `Squads`.
+ * Squads — multi-agent groups that run a shared brief
  */
 public val UarpClient.squads: SquadsApi get() = SquadsApi(this)

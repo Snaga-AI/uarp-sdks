@@ -81,7 +81,7 @@ impl AuthApi {
     /// (Guideline-style separation: super-admin must use OTP).
     ///
     /// `GET /api/v1/auth/oauth/{provider}/callback`
-    pub async fn complete_o_auth_login(&self, provider: &models::OAuthLoginProviderItemId, params: &CompleteOAuthLoginParams) -> Result<models::CompleteOAuthLoginResponse> {
+    pub async fn complete_o_auth_login(&self, provider: &models::OAuthLoginProviderConfigStatusProvider, params: &CompleteOAuthLoginParams) -> Result<models::CompleteOAuthLoginResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -272,7 +272,7 @@ impl AuthApi {
     /// client_id+client_secret.
     ///
     /// `GET /api/v1/auth/oauth/providers`
-    pub async fn list_o_auth_login_providers(&self) -> Result<models::ListOAuthLoginProvidersResponse> {
+    pub async fn list_o_auth_login_providers(&self) -> Result<models::OAuthLoginProvidersList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -385,7 +385,7 @@ impl AuthApi {
     /// `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.
     ///
     /// `GET /api/v1/auth/oauth/{provider}/start`
-    pub async fn start_o_auth_login(&self, provider: &models::OAuthLoginProviderItemId, params: &StartOAuthLoginParams) -> Result<serde_json::Value> {
+    pub async fn start_o_auth_login(&self, provider: &models::OAuthLoginProviderConfigStatusProvider, params: &StartOAuthLoginParams) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -405,7 +405,7 @@ impl AuthApi {
     /// `already_unlinked: true`.
     ///
     /// `DELETE /api/v1/me/auth-providers/{provider}`
-    pub async fn unlink_auth_provider(&self, provider: &models::ListOAuthLoginProvidersResponseProviderId) -> Result<models::UnlinkAuthProviderResponse> {
+    pub async fn unlink_auth_provider(&self, provider: &models::OAuthLoginProviderItemId) -> Result<models::UnlinkAuthProviderResponse> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,

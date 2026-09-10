@@ -119,6 +119,28 @@ impl AgentsApi {
             .await
     }
 
+    /// Pin a message
+    ///
+    /// Idempotent on `message_id`: pinning a message already pinned returns the existing record
+    /// with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
+    /// Unknown fields are dropped.
+    ///
+    /// `POST /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn create_agent_bookmark(&self, agent_id: &str, body: &models::CreateAgentBookmarkRequest) -> Result<models::AgentBookmark> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/agents/{}/bookmarks", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create or update FRIA report
     ///
     /// `POST /api/v1/agents/{agentId}/fria`
@@ -173,16 +195,52 @@ impl AgentsApi {
             .await
     }
 
+    /// Unpin one message
+    ///
+    /// `DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn delete_agent_bookmark(&self, agent_id: &str, message_id: &str) -> Result<models::DeleteAgentBookmarkResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/agents/{}/bookmarks/{}", encode_path(agent_id), encode_path(message_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Delete agent identity
     ///
     /// `DELETE /api/v1/agents/{agentId}/identity`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete_agent_identity(&self, agent_id: &str) -> Result<()> {
+    pub async fn delete_agent_identity(&self, agent_id: &str) -> Result<models::DeleteAgentIdentityResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/agents/{}/identity", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Unpin every message of an agent
+    ///
+    /// `DELETE /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn delete_all_agent_bookmarks(&self, agent_id: &str) -> Result<models::DeleteAllAgentBookmarksResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/agents/{}/bookmarks", encode_path(agent_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -419,6 +477,26 @@ impl AgentsApi {
         }
     }
 
+    /// Pinned messages of an agent
+    ///
+    /// Up to 1000, unordered. `{"items":\[\]}` on an agent with none (measured 2026-09-10).
+    ///
+    /// `GET /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_agent_bookmarks(&self, agent_id: &str) -> Result<models::ListAgentBookmarksResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/agents/{}/bookmarks", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Messages between agents
     ///
     /// Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
@@ -647,6 +725,36 @@ impl AgentsApi {
             .request_json(Request {
                 method: Method::PATCH,
                 path: format!("/api/v1/agents/{}/risk-classification", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Set one per-tool trust override
+    ///
+    /// Upserts a single entry: sending the same `tool_name` twice replaces its `trust_level` rather
+    /// than adding a second row. The response is the agent's FULL override list after the write, so
+    /// a client can render the table without a second call.
+    ///
+    /// WRITE SEMANTICS: merges. Read from the handler, not from the body shape: it loads the agent,
+    /// drops any existing entry with this `tool_name`, appends the new one and leaves every other
+    /// override untouched. So this call cannot clear the list, and cannot set two entries at once.
+    ///
+    /// The write is a compare-and-set against the agent record, so a concurrent `PUT
+    /// /agents/{agentId}` cannot clobber the override with a stale snapshot — a lost race answers
+    /// 409 and the caller reloads.
+    ///
+    /// `PATCH /api/v1/agents/{agentId}/autonomy/tool-override`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn upsert_agent_tool_override(&self, agent_id: &str, body: &models::AgentToolOverrideUpdate) -> Result<models::UpsertAgentToolOverrideResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: format!("/api/v1/agents/{}/autonomy/tool-override", encode_path(agent_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

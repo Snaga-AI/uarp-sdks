@@ -20,13 +20,13 @@ import type {
   JsonValue,
   ListAuthProvidersResponse,
   ListMeSessionsResponse,
-  ListOAuthLoginProvidersResponse,
-  ListOAuthLoginProvidersResponseProviderId,
   LogoutResponse,
   MintSSETokenResponse,
   OAuthAppExchangeRequest,
   OAuthAppExchangeResponse,
+  OAuthLoginProviderConfigStatusProvider,
   OAuthLoginProviderItemId,
+  OAuthLoginProvidersList,
   RevokeMeSessionResponse,
   UnlinkAuthProviderResponse,
   VerifyMfaRecoveryRequest,
@@ -99,7 +99,7 @@ export class AuthResource extends APIResource {
    *
    * `GET /api/v1/auth/oauth/{provider}/callback`
    */
-  completeOAuthLogin(provider: OAuthLoginProviderItemId, params: CompleteOAuthLoginParams, options?: RequestOptions): Promise<CompleteOAuthLoginResponse> {
+  completeOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, params: CompleteOAuthLoginParams, options?: RequestOptions): Promise<CompleteOAuthLoginResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/auth/oauth/${encodeURIComponent(String(provider))}/callback`,
@@ -271,7 +271,7 @@ export class AuthResource extends APIResource {
    *
    * `GET /api/v1/auth/oauth/providers`
    */
-  listOAuthLoginProviders(options?: RequestOptions): Promise<ListOAuthLoginProvidersResponse> {
+  listOAuthLoginProviders(options?: RequestOptions): Promise<OAuthLoginProvidersList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/auth/oauth/providers',
@@ -373,7 +373,7 @@ export class AuthResource extends APIResource {
    *
    * `GET /api/v1/auth/oauth/{provider}/start`
    */
-  startOAuthLogin(provider: OAuthLoginProviderItemId, params?: StartOAuthLoginParams, options?: RequestOptions): Promise<JsonValue> {
+  startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, params?: StartOAuthLoginParams, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/auth/oauth/${encodeURIComponent(String(provider))}/start`,
@@ -391,7 +391,7 @@ export class AuthResource extends APIResource {
    *
    * `DELETE /api/v1/me/auth-providers/{provider}`
    */
-  unlinkAuthProvider(provider: ListOAuthLoginProvidersResponseProviderId, options?: RequestOptions): Promise<UnlinkAuthProviderResponse> {
+  unlinkAuthProvider(provider: OAuthLoginProviderItemId, options?: RequestOptions): Promise<UnlinkAuthProviderResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/me/auth-providers/${encodeURIComponent(String(provider))}`,

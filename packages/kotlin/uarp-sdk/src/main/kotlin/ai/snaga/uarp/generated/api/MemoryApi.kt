@@ -30,8 +30,8 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()): DeleteMemoryEntryResponse {
+        return client.request<DeleteMemoryEntryResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/${encodePathSegment(entryId)}",
@@ -87,6 +87,30 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/${encodePathSegment(entryId)}",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Put back what an export took out
+     *
+     * Accepts the `memory.json` an account export writes: a flat `entries` array, or
+     * `agents\[\].entries` (every agent's entries are imported into THIS agent). Each entry is
+     * tagged `imported`. Dedup is the store's: re-importing the same file returns the existing
+     * entries as `duplicates` instead of doubling them. A file with no entries is 400.
+     *
+     * `POST /api/v1/agents/{agentId}/memory/import`
+     *
+     * Required scopes: `memory:write`.
+     */
+    public suspend fun importAgentMemory(agentId: String, body: ImportAgentMemoryRequest, options: RequestOptions = RequestOptions()): ImportAgentMemoryResponse {
+        return client.request<ImportAgentMemoryResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/import",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
                 options = options,
             )
         )

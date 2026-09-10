@@ -7,6 +7,8 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   ActivateSessionBranchResponse,
+  BulkDeleteSessionsRequest,
+  BulkDeleteSessionsResponse,
   CreateSessionAnnotationRequest,
   CreateSessionAnnotationResponse,
   CreateSessionBranchRequest,
@@ -14,7 +16,10 @@ import type {
   CreateSessionShareRequest,
   CreateSessionShareResponse,
   CreateSessionTodoRequest,
+  DeleteSessionAnnotationResponse,
   DeleteSessionTodoResponse,
+  ExportSessionFormat,
+  GetSessionMessagesResponse,
   GetSessionShareResponse,
   JsonObject,
   JsonValue,
@@ -26,13 +31,22 @@ import type {
   ListSessionsResponseItem,
   ListTodosResponse,
   ResolveSharedSessionResponse,
+  RevokeSessionShareResponse,
   SendSessionMessageRequest,
   SendSessionMessageResponse,
   Session,
   SessionBranch,
+  SessionExport,
   UpdateSessionAnnotationRequest,
   UpdateSessionRequest,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `exportSession`.
+ */
+export interface ExportSessionParams {
+  format?: ExportSessionFormat;
+}
 
 /**
  * Query and header parameters for `getSessionRunFeedback`.
@@ -101,6 +115,27 @@ export class SessionsResource extends APIResource {
   }
 
   /**
+   * Delete many sessions in one request
+   *
+   * Cascades each session in turn and writes one audit entry for the batch. Ids that no longer
+   * exist come back in `failed`, not as an error — the caller's intent for them is already met.
+   * Not JSON → 400; an empty list, or one over 200 ids → 400.
+   *
+   * `POST /api/v1/sessions/bulk-delete`
+   *
+   * Required scopes: `sessions:write`.
+   */
+  bulkDeleteSessions(body: BulkDeleteSessionsRequest, options?: RequestOptions): Promise<BulkDeleteSessionsResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/sessions/bulk-delete',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Close a session
    *
    * `DELETE /api/v1/sessions/{sessionId}`
@@ -157,7 +192,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  createSessionAnnotation(sessionId: string, body?: CreateSessionAnnotationRequest, options?: RequestOptions): Promise<CreateSessionAnnotationResponse> {
+  createSessionAnnotation(sessionId: string, body: CreateSessionAnnotationRequest, options?: RequestOptions): Promise<CreateSessionAnnotationResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/annotations`,
@@ -191,7 +226,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  createSessionShare(sessionId: string, body?: CreateSessionShareRequest, options?: RequestOptions): Promise<CreateSessionShareResponse> {
+  createSessionShare(sessionId: string, body: CreateSessionShareRequest, options?: RequestOptions): Promise<CreateSessionShareResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/share`,
@@ -244,12 +279,11 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  deleteSessionAnnotation(sessionId: string, annotationId: string, options?: RequestOptions): Promise<void> {
+  deleteSessionAnnotation(sessionId: string, annotationId: string, options?: RequestOptions): Promise<DeleteSessionAnnotationResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/annotations/${encodeURIComponent(String(annotationId))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }
@@ -269,6 +303,27 @@ export class SessionsResource extends APIResource {
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}`,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Export a conversation
+   *
+   * Two formats and no others: `md` (the default, `text/markdown`) and `json`
+   * (`application/json`, the `snaga.chat.v1` envelope). Any other value is 400 with the two
+   * names in the sentence — it is not silently coerced to the default, because a client asking
+   * for `html` and receiving markdown would render it as text.
+   *
+   * `GET /api/v1/sessions/{sessionId}/export`
+   *
+   * Required scopes: `sessions:read`.
+   */
+  export(sessionId: string, params?: ExportSessionParams, options?: RequestOptions): Promise<SessionExport> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/export`,
+      query: pick(params, ['format']),
       options,
     });
   }
@@ -299,6 +354,34 @@ export class SessionsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/audit-log`,
+      options,
+    });
+  }
+
+  /**
+   * The conversation transcript
+   *
+   * The transcript this session's clients render. Undescribed until 2026-09-10 and, until the
+   * same day, not a route at all: a GET here fell through to the bare-session branch and was
+   * answered with the SESSION record, whose `conversation_history` carries the same list.
+   * Closing that fall-through took the Android chat screen down with it, which is how the gap
+   * was found.
+   *
+   * `messages` and `items` carry the SAME list — a client reads whichever it already reads. The
+   * `active_run_*` fields describe a run still in flight, so a cold launch into a chat the agent
+   * is still working in can attach to it rather than render an idle screen.
+   *
+   * A session that does not exist is 404, not an empty list: "no messages yet" and "no such
+   * session" must not render the same.
+   *
+   * `GET /api/v1/sessions/{sessionId}/messages`
+   *
+   * Required scopes: `sessions:read`.
+   */
+  getSessionMessages(sessionId: string, options?: RequestOptions): Promise<GetSessionMessagesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/messages`,
       options,
     });
   }
@@ -457,12 +540,11 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  revokeSessionShare(sessionId: string, options?: RequestOptions): Promise<void> {
+  revokeSessionShare(sessionId: string, options?: RequestOptions): Promise<RevokeSessionShareResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/share`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }

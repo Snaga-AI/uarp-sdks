@@ -198,24 +198,26 @@ package UARP.API.Registry is
    --  Reverse a yank on a published spec version
    --
    --  POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank
-   procedure Registry_Unyank_Version
+   function Registry_Unyank_Version
      (Self : Client_Type;
       Scope : String;
       Name : String;
       Version : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Registry_Unyank_Version_Response;
 
    --  Yank (mark unsafe) a published spec version
    --
    --  POST /api/v1/registry/spec/{scope}/{name}/{version}/yank
-   procedure Registry_Yank_Version
+   function Registry_Yank_Version
      (Self : Client_Type;
       Scope : String;
       Name : String;
       Version : String;
       Payload : UARP.Models.Registry_Yank_Version_Request;
       Include_Payload : Boolean := True;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Registry_Yank_Version_Response;
 
    --  Bulk-publish the bundled starter SPECs (super-admin)
    --

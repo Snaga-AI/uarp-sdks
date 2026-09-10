@@ -37,7 +37,7 @@ public struct AuthAPI: Sendable {
     /// (Guideline-style separation: super-admin must use OTP).
     ///
     /// `GET /api/v1/auth/oauth/{provider}/callback`
-    public func completeOAuthLogin(provider: OAuthLoginProviderItemId, code: String, state: String, error: String? = nil, options: RequestOptions = .init()) async throws -> CompleteOAuthLoginResponse {
+    public func completeOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, code: String, state: String, error: String? = nil, options: RequestOptions = .init()) async throws -> CompleteOAuthLoginResponse {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "code", value: code))
         query.append(URLQueryItem(name: "state", value: state))
@@ -198,7 +198,7 @@ public struct AuthAPI: Sendable {
     /// client_id+client_secret.
     ///
     /// `GET /api/v1/auth/oauth/providers`
-    public func listOAuthLoginProviders(options: RequestOptions = .init()) async throws -> ListOAuthLoginProvidersResponse {
+    public func listOAuthLoginProviders(options: RequestOptions = .init()) async throws -> OAuthLoginProvidersList {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/auth/oauth/providers",
@@ -288,7 +288,7 @@ public struct AuthAPI: Sendable {
     /// `device_label` is captured here and surfaces on the minted `api_key` for `/me/sessions`.
     ///
     /// `GET /api/v1/auth/oauth/{provider}/start`
-    public func startOAuthLogin(provider: OAuthLoginProviderItemId, returnTo: String? = nil, deviceLabel: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = nil, deviceLabel: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         if let returnTo {
             query.append(URLQueryItem(name: "return_to", value: returnTo))
@@ -311,7 +311,7 @@ public struct AuthAPI: Sendable {
     /// `already_unlinked: true`.
     ///
     /// `DELETE /api/v1/me/auth-providers/{provider}`
-    public func unlinkAuthProvider(provider: ListOAuthLoginProvidersResponseProviderId, options: RequestOptions = .init()) async throws -> UnlinkAuthProviderResponse {
+    public func unlinkAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = .init()) async throws -> UnlinkAuthProviderResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/me/auth-providers/\(encodePathSegment(String(describing: provider)))",

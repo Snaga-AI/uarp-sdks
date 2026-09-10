@@ -31,7 +31,6 @@ package UARP.API.Users is
      (Self : Client_Type;
       Invite_Id : String;
       Payload : UARP.Models.Accept_Invite_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Accept_Invite_Response;
 
@@ -51,10 +50,11 @@ package UARP.API.Users is
    --  DELETE /api/v1/users/invites/{inviteId}
    --
    --  Required scopes: users:write.
-   procedure Delete_Invite
+   function Delete_Invite
      (Self : Client_Type;
       Invite_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Invite_Response;
 
    --  Get user
    --

@@ -12,10 +12,13 @@ import type {
   EmptyWorkspaceTrashResponse,
   JsonObject,
   JsonValue,
+  ListWorkspaceFileHistoryResponse,
   ListWorkspaceFilesResponse,
   ListWorkspaceTrashResponse,
   ListWorkspacesResponse,
   MoveWorkspaceFileRequest,
+  PublishWorkspaceSnapshotRequest,
+  PublishWorkspaceSnapshotResponse,
   RestoreWorkspaceTrashRequest,
   RestoreWorkspaceTrashResponse,
   RunWorkspaceCommandRequest,
@@ -49,10 +52,28 @@ export interface DownloadWorkspaceFileParams {
 }
 
 /**
+ * Query and header parameters for `getWorkspaceFileHistoryContent`.
+ */
+export interface GetWorkspaceFileHistoryContentParams {
+  path: string;
+  /**
+   * `file_id` of the version.
+   */
+  version: string;
+}
+
+/**
  * Query and header parameters for `listAgentWorkspaceFiles`.
  */
 export interface ListAgentWorkspaceFilesParams {
   path?: string;
+}
+
+/**
+ * Query and header parameters for `listWorkspaceFileHistory`.
+ */
+export interface ListWorkspaceFileHistoryParams {
+  path: string;
 }
 
 /**
@@ -110,7 +131,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  assignWorkspace(workspaceId: string, body?: AssignWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  assignWorkspace(workspaceId: string, body: AssignWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/assign`,
@@ -144,7 +165,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  create(body?: CreateWorkspaceRequest, options?: RequestOptions): Promise<JsonObject> {
+  create(body: CreateWorkspaceRequest, options?: RequestOptions): Promise<JsonObject> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/workspaces',
@@ -236,6 +257,27 @@ export class WorkspacesResource extends APIResource {
   }
 
   /**
+   * Bytes of a prior version
+   *
+   * `version` is a `file_id` from `listWorkspaceFileHistory` and must belong to `path`'s history
+   * — any other id is 404. Served with the version's own `Content-Type`, its `Content-Length`,
+   * and `Cache-Control: private, max-age=3600`.
+   *
+   * `GET /api/v1/workspaces/{workspaceId}/files/history/content`
+   *
+   * Required scopes: `files:read`.
+   */
+  getWorkspaceFileHistoryContent(workspaceId: string, params: GetWorkspaceFileHistoryContentParams, options?: RequestOptions): Promise<Blob> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/history/content`,
+      query: pick(params, ['path', 'version']),
+      responseType: 'binary',
+      options,
+    });
+  }
+
+  /**
    * WebSocket terminal session for workspace
    *
    * `GET /api/v1/workspaces/{workspaceId}/terminal`
@@ -276,6 +318,26 @@ export class WorkspacesResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/workspace/files`,
+      query: pick(params, ['path']),
+      options,
+    });
+  }
+
+  /**
+   * Prior versions of a file
+   *
+   * Every earlier version kept for `path`, newest first; the current content is not in the list.
+   * `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
+   * version's bytes with `getWorkspaceFileHistoryContent`.
+   *
+   * `GET /api/v1/workspaces/{workspaceId}/files/history`
+   *
+   * Required scopes: `files:read`.
+   */
+  listWorkspaceFileHistory(workspaceId: string, params: ListWorkspaceFileHistoryParams, options?: RequestOptions): Promise<ListWorkspaceFileHistoryResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/history`,
       query: pick(params, ['path']),
       options,
     });
@@ -323,6 +385,27 @@ export class WorkspacesResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files/move`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Mint a public share link for an HTML snapshot
+   *
+   * Stores a self-contained HTML page (assets already inlined by the client, ≤3 MB) under an
+   * opaque token for seven days; `GET /public/share/{token}` serves it back as JSON data for the
+   * sandboxed viewer, never as executable HTML. The workspace id is not consulted beyond scope.
+   *
+   * `POST /api/v1/workspaces/{workspaceId}/publish`
+   *
+   * Required scopes: `files:write`.
+   */
+  publishWorkspaceSnapshot(workspaceId: string, body: PublishWorkspaceSnapshotRequest, options?: RequestOptions): Promise<PublishWorkspaceSnapshotResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/publish`,
       body,
       idempotent: true,
       options,
@@ -446,7 +529,7 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  update(workspaceId: string, body?: UpdateWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
+  update(workspaceId: string, body: UpdateWorkspaceRequest, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}`,

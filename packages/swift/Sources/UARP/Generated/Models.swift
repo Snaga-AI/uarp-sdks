@@ -1008,51 +1008,6 @@ public struct AdminDataExplorerRawKeysResponseKeyType: RawRepresentable, Codable
     public static let knownValues: [AdminDataExplorerRawKeysResponseKeyType] = [.null, .array, .string, .number, .boolean, .object, .undefined]
 }
 
-/// `AdminDeleteOAuthProviderResponse` model.
-public struct AdminDeleteOAuthProviderResponse: Codable, Hashable, Sendable {
-    public var provider: String?
-    public var configured: Bool?
-
-    public init(provider: String? = nil, configured: Bool? = nil) {
-        self.provider = provider
-        self.configured = configured
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case provider = "provider"
-        case configured = "configured"
-    }
-}
-
-/// `AdminGetOAuthProviderResponse` model.
-public struct AdminGetOAuthProviderResponse: Codable, Hashable, Sendable {
-    public var provider: String
-    public var enabled: Bool
-    public var configured: Bool
-    public var clientId: String?
-    /// `••••XXXX` form — last 4 chars only.
-    public var clientSecretHint: String?
-    public var scopes: [String]?
-
-    public init(provider: String, enabled: Bool, configured: Bool, clientId: String? = nil, clientSecretHint: String? = nil, scopes: [String]? = nil) {
-        self.provider = provider
-        self.enabled = enabled
-        self.configured = configured
-        self.clientId = clientId
-        self.clientSecretHint = clientSecretHint
-        self.scopes = scopes
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case provider = "provider"
-        case enabled = "enabled"
-        case configured = "configured"
-        case clientId = "client_id"
-        case clientSecretHint = "client_secret_hint"
-        case scopes = "scopes"
-    }
-}
-
 /// `AdminGetReconciliationResponse` model.
 public struct AdminGetReconciliationResponse: Codable, Hashable, Sendable {
     public var tenantId: String
@@ -1190,47 +1145,6 @@ public struct AdminListWebhookDLQResponseEntry: Codable, Hashable, Sendable {
         case errorMessage = "errorMessage"
         case timestamp = "timestamp"
         case tenantId = "tenantId"
-    }
-}
-
-/// `AdminPutOAuthProviderRequest` model.
-public struct AdminPutOAuthProviderRequest: Codable, Hashable, Sendable {
-    public var clientId: String?
-    public var clientSecret: String?
-    public var enabled: Bool?
-    public var scopes: [String]?
-
-    public init(clientId: String? = nil, clientSecret: String? = nil, enabled: Bool? = nil, scopes: [String]? = nil) {
-        self.clientId = clientId
-        self.clientSecret = clientSecret
-        self.enabled = enabled
-        self.scopes = scopes
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case clientId = "client_id"
-        case clientSecret = "client_secret"
-        case enabled = "enabled"
-        case scopes = "scopes"
-    }
-}
-
-/// `AdminPutOAuthProviderResponse` model.
-public struct AdminPutOAuthProviderResponse: Codable, Hashable, Sendable {
-    public var provider: String?
-    public var enabled: Bool?
-    public var configured: Bool?
-
-    public init(provider: String? = nil, enabled: Bool? = nil, configured: Bool? = nil) {
-        self.provider = provider
-        self.enabled = enabled
-        self.configured = configured
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case provider = "provider"
-        case enabled = "enabled"
-        case configured = "configured"
     }
 }
 
@@ -1620,6 +1534,61 @@ public struct AgentAutonomyLevel: RawRepresentable, Codable, Hashable, Sendable,
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AgentAutonomyLevel] = [.manual, .approveRisky, .fullAuto]
+}
+
+/// A message pinned under an agent. Keyed by `message_id`; the platform keeps the text the
+/// client sent, it does not look the message up.
+public struct AgentBookmark: Codable, Hashable, Sendable {
+    public var messageId: String
+    public var agentId: String
+    public var tenantId: String
+    public var kind: AgentBookmarkKind
+    public var content: String
+    public var sessionId: String?
+    public var createdAt: String
+
+    public init(messageId: String, agentId: String, tenantId: String, kind: AgentBookmarkKind, content: String, sessionId: String? = nil, createdAt: String) {
+        self.messageId = messageId
+        self.agentId = agentId
+        self.tenantId = tenantId
+        self.kind = kind
+        self.content = content
+        self.sessionId = sessionId
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messageId = "message_id"
+        case agentId = "agent_id"
+        case tenantId = "tenant_id"
+        case kind = "kind"
+        case content = "content"
+        case sessionId = "session_id"
+        case createdAt = "created_at"
+    }
+}
+
+/// `AgentBookmarkKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentBookmarkKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let user = AgentBookmarkKind(rawValue: "user")
+    public static let assistant = AgentBookmarkKind(rawValue: "assistant")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentBookmarkKind] = [.user, .assistant]
 }
 
 /// `AgentBridgeState` model.
@@ -2374,6 +2343,22 @@ public struct AgentToolOverrideTrustLevel: RawRepresentable, Codable, Hashable, 
     public static let knownValues: [AgentToolOverrideTrustLevel] = [.alwaysAllow, .askFirst, .neverAllow]
 }
 
+/// `AgentToolOverrideUpdate` model.
+public struct AgentToolOverrideUpdate: Codable, Hashable, Sendable {
+    public var toolName: String
+    public var trustLevel: AgentToolOverrideTrustLevel
+
+    public init(toolName: String, trustLevel: AgentToolOverrideTrustLevel) {
+        self.toolName = toolName
+        self.trustLevel = trustLevel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolName = "tool_name"
+        case trustLevel = "trust_level"
+    }
+}
+
 /// Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO
 /// CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model
 /// lockdown).
@@ -2566,25 +2551,31 @@ public struct AiSystemCardTechnicalSpecifications: Codable, Hashable, Sendable {
     }
 }
 
-/// `Ambassador` model.
+/// Keys as served by GET /governance/ambassador/ambassadors and …/{id} (measured 2026-09-10).
 public struct Ambassador: Codable, Hashable, Sendable {
     public var ambassadorId: String
-    public var name: String?
-    public var role: HumanAmbassadorRole
-    public var permissions: AmbassadorPermissions2?
+    public var tenantId: String
+    public var name: String
+    public var role: AmbassadorRole
+    public var permissions: AmbassadorPermissions
+    public var createdAt: String
 
-    public init(ambassadorId: String, name: String? = nil, role: HumanAmbassadorRole, permissions: AmbassadorPermissions2? = nil) {
+    public init(ambassadorId: String, tenantId: String, name: String, role: AmbassadorRole, permissions: AmbassadorPermissions, createdAt: String) {
         self.ambassadorId = ambassadorId
+        self.tenantId = tenantId
         self.name = name
         self.role = role
         self.permissions = permissions
+        self.createdAt = createdAt
     }
 
     private enum CodingKeys: String, CodingKey {
         case ambassadorId = "ambassador_id"
+        case tenantId = "tenant_id"
         case name = "name"
         case role = "role"
         case permissions = "permissions"
+        case createdAt = "created_at"
     }
 }
 
@@ -2595,25 +2586,6 @@ public struct AmbassadorPermissions: Codable, Hashable, Sendable {
     public var canPropose: Bool
 
     public init(canVeto: Bool, canAudit: Bool, canPropose: Bool) {
-        self.canVeto = canVeto
-        self.canAudit = canAudit
-        self.canPropose = canPropose
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case canVeto = "can_veto"
-        case canAudit = "can_audit"
-        case canPropose = "can_propose"
-    }
-}
-
-/// `AmbassadorPermissions2` model.
-public struct AmbassadorPermissions2: Codable, Hashable, Sendable {
-    public var canVeto: Bool?
-    public var canAudit: Bool?
-    public var canPropose: Bool?
-
-    public init(canVeto: Bool? = nil, canAudit: Bool? = nil, canPropose: Bool? = nil) {
         self.canVeto = canVeto
         self.canAudit = canAudit
         self.canPropose = canPropose
@@ -2713,6 +2685,30 @@ public struct AmbassadorRequestType: RawRepresentable, Codable, Hashable, Sendab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AmbassadorRequestType] = [.clarification, .approval, .escalation, .report]
+}
+
+/// `AmbassadorRole` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AmbassadorRole: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let founder = AmbassadorRole(rawValue: "founder")
+    public static let ambassador = AmbassadorRole(rawValue: "ambassador")
+    public static let observer = AmbassadorRole(rawValue: "observer")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AmbassadorRole] = [.founder, .ambassador, .observer]
 }
 
 /// `AmbassadorVetoRequest` model.
@@ -2946,38 +2942,6 @@ public struct APIKeySummaryStatus: RawRepresentable, Codable, Hashable, Sendable
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [APIKeySummaryStatus] = [.active, .revoked]
-}
-
-/// `AppendCreativityEventRequest` model.
-public struct AppendCreativityEventRequest: Codable, Hashable, Sendable {
-    public var toolName: String
-    public var payload: JSONObject
-
-    public init(toolName: String, payload: JSONObject) {
-        self.toolName = toolName
-        self.payload = payload
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case toolName = "tool_name"
-        case payload = "payload"
-    }
-}
-
-/// `AppendCreativityEventResponse` model.
-public struct AppendCreativityEventResponse: Codable, Hashable, Sendable {
-    public var event: JSONObject?
-    public var totalEvents: Int?
-
-    public init(event: JSONObject? = nil, totalEvents: Int? = nil) {
-        self.event = event
-        self.totalEvents = totalEvents
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case event = "event"
-        case totalEvents = "total_events"
-    }
 }
 
 /// `AppleNativeAuthRequest` model.
@@ -4183,6 +4147,51 @@ public struct BulkDeleteNotificationsScope: RawRepresentable, Codable, Hashable,
     public static let knownValues: [BulkDeleteNotificationsScope] = [.read, .all]
 }
 
+/// `BulkDeleteSessionsRequest` model.
+public struct BulkDeleteSessionsRequest: Codable, Hashable, Sendable {
+    public var sessionIds: [String]
+
+    public init(sessionIds: [String]) {
+        self.sessionIds = sessionIds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sessionIds = "session_ids"
+    }
+}
+
+/// `BulkDeleteSessionsResponse` model.
+public struct BulkDeleteSessionsResponse: Codable, Hashable, Sendable {
+    public var deleted: Int
+    public var failed: [String]
+
+    public init(deleted: Int, failed: [String]) {
+        self.deleted = deleted
+        self.failed = failed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case deleted = "deleted"
+        case failed = "failed"
+    }
+}
+
+/// `CancelPublicSessionRunResponse` model.
+public struct CancelPublicSessionRunResponse: Codable, Hashable, Sendable {
+    public var cancelled: Bool
+    public var runId: String
+
+    public init(cancelled: Bool, runId: String) {
+        self.cancelled = cancelled
+        self.runId = runId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case cancelled = "cancelled"
+        case runId = "run_id"
+    }
+}
+
 /// `CancelSquadRunResponse` model.
 public struct CancelSquadRunResponse: Codable, Hashable, Sendable {
     public var cancelled: Bool
@@ -4230,40 +4239,6 @@ public struct CancelTeamRunResponse: Codable, Hashable, Sendable {
         case teamRunId = "team_run_id"
         case cancelledCount = "cancelledCount"
         case orchestratorStopped = "orchestrator_stopped"
-    }
-}
-
-/// `CancelTrainingJobResponseVariant1` model.
-public struct CancelTrainingJobResponseVariant1: Codable, Hashable, Sendable {
-    public var cancelled: Bool
-    public var jobId: String
-
-    public init(cancelled: Bool, jobId: String) {
-        self.cancelled = cancelled
-        self.jobId = jobId
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case cancelled = "cancelled"
-        case jobId = "job_id"
-    }
-}
-
-/// `CancelTrainingJobResponseVariant2` model.
-public struct CancelTrainingJobResponseVariant2: Codable, Hashable, Sendable {
-    public var cancelled: Bool
-    /// Either the job was already terminal, or it was modified concurrently and the caller should
-    /// retry.
-    public var message: String
-
-    public init(cancelled: Bool, message: String) {
-        self.cancelled = cancelled
-        self.message = message
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case cancelled = "cancelled"
-        case message = "message"
     }
 }
 
@@ -5491,6 +5466,28 @@ public struct CreateAdminBlogPostResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `CreateAgentBookmarkRequest` model.
+public struct CreateAgentBookmarkRequest: Codable, Hashable, Sendable {
+    public var messageId: String
+    public var kind: AgentBookmarkKind
+    public var content: String
+    public var sessionId: String?
+
+    public init(messageId: String, kind: AgentBookmarkKind, content: String, sessionId: String? = nil) {
+        self.messageId = messageId
+        self.kind = kind
+        self.content = content
+        self.sessionId = sessionId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messageId = "message_id"
+        case kind = "kind"
+        case content = "content"
+        case sessionId = "session_id"
+    }
+}
+
 /// `CreateAgentFriaRequest` model.
 public struct CreateAgentFriaRequest: Codable, Hashable, Sendable {
     /// One entry per fundamental right considered.
@@ -5709,76 +5706,6 @@ public struct CreateCheckoutSessionResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case url = "url"
-    }
-}
-
-/// `CreateCreativitySessionRequest` model.
-public struct CreateCreativitySessionRequest: Codable, Hashable, Sendable {
-    public var mode: CreateCreativitySessionRequestMode
-
-    public init(mode: CreateCreativitySessionRequestMode) {
-        self.mode = mode
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case mode = "mode"
-    }
-}
-
-/// `CreateCreativitySessionRequestMode` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct CreateCreativitySessionRequestMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let v2dEngineering = CreateCreativitySessionRequestMode(rawValue: "2d_engineering")
-    public static let v2dSketch = CreateCreativitySessionRequestMode(rawValue: "2d_sketch")
-    public static let v2dArtist = CreateCreativitySessionRequestMode(rawValue: "2d_artist")
-    public static let v3dComposer = CreateCreativitySessionRequestMode(rawValue: "3d_composer")
-    public static let v3dGenerative = CreateCreativitySessionRequestMode(rawValue: "3d_generative")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [CreateCreativitySessionRequestMode] = [.v2dEngineering, .v2dSketch, .v2dArtist, .v3dComposer, .v3dGenerative]
-}
-
-/// `CreateCreativitySessionResponse` model.
-public struct CreateCreativitySessionResponse: Codable, Hashable, Sendable {
-    public var sessionId: String?
-    public var agentId: String?
-    public var mode: String?
-    public var wsURL: String?
-    public var wasAgentCreated: Bool?
-    public var wasAgentUpdated: Bool?
-    public var wasSessionCreated: Bool?
-
-    public init(sessionId: String? = nil, agentId: String? = nil, mode: String? = nil, wsURL: String? = nil, wasAgentCreated: Bool? = nil, wasAgentUpdated: Bool? = nil, wasSessionCreated: Bool? = nil) {
-        self.sessionId = sessionId
-        self.agentId = agentId
-        self.mode = mode
-        self.wsURL = wsURL
-        self.wasAgentCreated = wasAgentCreated
-        self.wasAgentUpdated = wasAgentUpdated
-        self.wasSessionCreated = wasSessionCreated
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case sessionId = "session_id"
-        case agentId = "agent_id"
-        case mode = "mode"
-        case wsURL = "ws_url"
-        case wasAgentCreated = "was_agent_created"
-        case wasAgentUpdated = "was_agent_updated"
-        case wasSessionCreated = "was_session_created"
     }
 }
 
@@ -6506,61 +6433,6 @@ public struct CreateSpecPackageCheckoutSessionResponse: Codable, Hashable, Senda
     }
 }
 
-/// `CreateTrainingDepositResponseVariant1` model.
-public struct CreateTrainingDepositResponseVariant1: Codable, Hashable, Sendable {
-    public var checkoutURL: String
-    public var sessionId: String
-
-    public init(checkoutURL: String, sessionId: String) {
-        self.checkoutURL = checkoutURL
-        self.sessionId = sessionId
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case checkoutURL = "checkout_url"
-        case sessionId = "session_id"
-    }
-}
-
-/// `CreateTrainingDepositResponseVariant2` model.
-public struct CreateTrainingDepositResponseVariant2: Codable, Hashable, Sendable {
-    public var alreadyPaid: Bool
-    public var jobId: String
-    public var status: TrainingJobStatus
-
-    public init(alreadyPaid: Bool, jobId: String, status: TrainingJobStatus) {
-        self.alreadyPaid = alreadyPaid
-        self.jobId = jobId
-        self.status = status
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case alreadyPaid = "already_paid"
-        case jobId = "job_id"
-        case status = "status"
-    }
-}
-
-/// `CreateTrainingJobResponse` model.
-public struct CreateTrainingJobResponse: Codable, Hashable, Sendable {
-    public var jobId: String
-    public var quote: TrainingQuote
-    /// Shown once. Hand it to the worker that runs the job.
-    public var callbackSecret: String
-
-    public init(jobId: String, quote: TrainingQuote, callbackSecret: String) {
-        self.jobId = jobId
-        self.quote = quote
-        self.callbackSecret = callbackSecret
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case jobId = "job_id"
-        case quote = "quote"
-        case callbackSecret = "callback_secret"
-    }
-}
-
 /// `CreateVotingProposalRequest` model.
 public struct CreateVotingProposalRequest: Codable, Hashable, Sendable {
     public var title: String
@@ -6867,6 +6739,92 @@ public struct DeleteAdminProviderResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `DeleteAgentBookmarkResponse` model.
+public struct DeleteAgentBookmarkResponse: Codable, Hashable, Sendable {
+    public var removed: Bool
+    public var messageId: String
+
+    public init(removed: Bool, messageId: String) {
+        self.removed = removed
+        self.messageId = messageId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case removed = "removed"
+        case messageId = "message_id"
+    }
+}
+
+/// `DeleteAgentIdentityResponse` model.
+public struct DeleteAgentIdentityResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteAllAgentBookmarksResponse` model.
+public struct DeleteAllAgentBookmarksResponse: Codable, Hashable, Sendable {
+    public var removed: Int
+
+    public init(removed: Int) {
+        self.removed = removed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case removed = "removed"
+    }
+}
+
+/// `DeleteAndroidTesterResponse` model.
+public struct DeleteAndroidTesterResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteCompanyResponse` model.
+public struct DeleteCompanyResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
 /// `DeleteCustomPlanForce` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -6922,6 +6880,25 @@ public struct DeleteDataExplorerValueResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `DeleteFileResponse` model.
+public struct DeleteFileResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
 /// `DeleteGuardrailResponse` model.
 public struct DeleteGuardrailResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -6938,6 +6915,82 @@ public struct DeleteGuardrailResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `DeleteIntegrationResponse` model.
+public struct DeleteIntegrationResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteInviteResponse` model.
+public struct DeleteInviteResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteKbDocumentResponse` model.
+public struct DeleteKbDocumentResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteKnowledgeBaseResponse` model.
+public struct DeleteKnowledgeBaseResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
 /// `DeleteLLMProviderKeyResponse` model.
 public struct DeleteLLMProviderKeyResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -6951,6 +7004,57 @@ public struct DeleteLLMProviderKeyResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case providerId = "provider_id"
+    }
+}
+
+/// `DeleteMemoryEntryResponse` model.
+public struct DeleteMemoryEntryResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `DeleteMeResponse` model.
+public struct DeleteMeResponse: Codable, Hashable, Sendable {
+    public var deleted: Bool
+    public var tenants: [DeleteMeResponseTenant]
+    public var sessionsRevoked: Int
+
+    public init(deleted: Bool, tenants: [DeleteMeResponseTenant], sessionsRevoked: Int) {
+        self.deleted = deleted
+        self.tenants = tenants
+        self.sessionsRevoked = sessionsRevoked
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case deleted = "deleted"
+        case tenants = "tenants"
+        case sessionsRevoked = "sessions_revoked"
+    }
+}
+
+/// `DeleteMeResponseTenant` model.
+public struct DeleteMeResponseTenant: Codable, Hashable, Sendable {
+    public var tenantId: String
+
+    public init(tenantId: String) {
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
     }
 }
 
@@ -7029,6 +7133,25 @@ public struct DeletePromoCodeResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case code = "code"
+    }
+}
+
+/// `DeleteSessionAnnotationResponse` model.
+public struct DeleteSessionAnnotationResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -8061,6 +8184,29 @@ public struct ExportMyAccountFormat: RawRepresentable, Codable, Hashable, Sendab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [ExportMyAccountFormat] = [.zip, .json]
+}
+
+/// `ExportSessionFormat` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ExportSessionFormat: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let md = ExportSessionFormat(rawValue: "md")
+    public static let json = ExportSessionFormat(rawValue: "json")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ExportSessionFormat] = [.md, .json]
 }
 
 /// `FeedEntry` model.
@@ -9806,11 +9952,12 @@ public struct GetHealthResponse: Codable, Hashable, Sendable {
     public var timestamp: String?
     public var kvConnected: Bool?
     public var uptimeSeconds: Double?
-    /// The API contract version, a DATE STAMP — `2025-03-01` — bumped only on a breaking change,
-    /// and the same value the `X-API-Version` header carries. Not a release number and not semver:
-    /// it cannot be ordered against a semver string, so a client that compares it to one is wrong
-    /// in a way that appears to work for as long as both happen to sort the same. Compare it for
-    /// equality, or read it as a date. It says nothing about which BUILD is running — for that,
+    /// The API contract version, a DATE STAMP — `2026-09-10` — bumped only on a breaking change,
+    /// and the same value the `X-API-Version` RESPONSE header carries. The server does not read a
+    /// request header of that name: pinning a date negotiates nothing. Not a release number and not
+    /// semver: it cannot be ordered against a semver string, so a client that compares it to one is
+    /// wrong in a way that appears to work for as long as both happen to sort the same. Compare it
+    /// for equality, or read it as a date. It says nothing about which BUILD is running — for that,
     /// read `build_sha`.
     public var version: String?
     /// The commit this running build was made from, baked in at image build time. This is the only
@@ -10450,6 +10597,71 @@ public struct GetRunChangedFiles: RawRepresentable, Codable, Hashable, Sendable,
     public static let knownValues: [GetRunChangedFiles] = [.`true`]
 }
 
+/// No `message_id` in the query.
+public struct GetRunFeedbackResponseVariant1: Codable, Hashable, Sendable {
+    public var feedbacks: [GetRunFeedbackResponseVariant1feedback]
+
+    public init(feedbacks: [GetRunFeedbackResponseVariant1feedback]) {
+        self.feedbacks = feedbacks
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case feedbacks = "feedbacks"
+    }
+}
+
+/// `GetRunFeedbackResponseVariant1feedback` model.
+public struct GetRunFeedbackResponseVariant1feedback: Codable, Hashable, Sendable {
+    public var messageId: String
+    public var reaction: GetRunFeedbackResponseVariant1feedbackReaction
+
+    public init(messageId: String, reaction: GetRunFeedbackResponseVariant1feedbackReaction) {
+        self.messageId = messageId
+        self.reaction = reaction
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messageId = "message_id"
+        case reaction = "reaction"
+    }
+}
+
+/// `GetRunFeedbackResponseVariant1feedbackReaction` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GetRunFeedbackResponseVariant1feedbackReaction: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let up = GetRunFeedbackResponseVariant1feedbackReaction(rawValue: "up")
+    public static let down = GetRunFeedbackResponseVariant1feedbackReaction(rawValue: "down")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GetRunFeedbackResponseVariant1feedbackReaction] = [.up, .down]
+}
+
+/// `message_id` given.
+public struct GetRunFeedbackResponseVariant2: Codable, Hashable, Sendable {
+    public var reaction: String?
+
+    public init(reaction: String? = nil) {
+        self.reaction = reaction
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reaction = "reaction"
+    }
+}
+
 /// `GetRunQueuePositionResponse` model.
 public struct GetRunQueuePositionResponse: Codable, Hashable, Sendable {
     public var runId: String?
@@ -10641,6 +10853,35 @@ public struct GetRuntimeConfigResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `GetSessionMessagesResponse` model.
+public struct GetSessionMessagesResponse: Codable, Hashable, Sendable {
+    public var messages: [JSONObject]
+    /// The same list as `messages`.
+    public var items: [JSONObject]
+    public var total: Int
+    public var activeRunId: String?
+    public var activeRunStatus: String?
+    public var activeRunPartialContent: String?
+
+    public init(messages: [JSONObject], items: [JSONObject], total: Int, activeRunId: String? = nil, activeRunStatus: String? = nil, activeRunPartialContent: String? = nil) {
+        self.messages = messages
+        self.items = items
+        self.total = total
+        self.activeRunId = activeRunId
+        self.activeRunStatus = activeRunStatus
+        self.activeRunPartialContent = activeRunPartialContent
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messages = "messages"
+        case items = "items"
+        case total = "total"
+        case activeRunId = "active_run_id"
+        case activeRunStatus = "active_run_status"
+        case activeRunPartialContent = "active_run_partial_content"
+    }
+}
+
 /// `GetSessionShareResponse` model.
 public struct GetSessionShareResponse: Codable, Hashable, Sendable {
     public var shareURL: String?
@@ -10828,52 +11069,6 @@ public struct GetTenantUsageResponse: Codable, Hashable, Sendable {
         case tenantId = "tenant_id"
         case period = "period"
         case usage = "usage"
-    }
-}
-
-/// `GetTrainingJobMetricsResponse` model.
-public struct GetTrainingJobMetricsResponse: Codable, Hashable, Sendable {
-    public var series: [GetTrainingJobMetricsResponseSery]
-    /// The durable gauge snapshot for first paint; null before the worker reports.
-    public var latest: TrainingJobMetrics?
-    public var totalPoints: Int
-
-    public init(series: [GetTrainingJobMetricsResponseSery], latest: TrainingJobMetrics? = nil, totalPoints: Int) {
-        self.series = series
-        self.latest = latest
-        self.totalPoints = totalPoints
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case series = "series"
-        case latest = "latest"
-        case totalPoints = "total_points"
-    }
-}
-
-/// `GetTrainingJobMetricsResponseSery` model.
-public struct GetTrainingJobMetricsResponseSery: Codable, Hashable, Sendable {
-    public var step: Int
-    public var loss: Double
-    public var evalLoss: Double?
-    public var tokensPerSec: Double?
-    /// Event-log sequence number the point came from.
-    public var seq: Int
-
-    public init(step: Int, loss: Double, evalLoss: Double? = nil, tokensPerSec: Double? = nil, seq: Int) {
-        self.step = step
-        self.loss = loss
-        self.evalLoss = evalLoss
-        self.tokensPerSec = tokensPerSec
-        self.seq = seq
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case step = "step"
-        case loss = "loss"
-        case evalLoss = "eval_loss"
-        case tokensPerSec = "tokens_per_sec"
-        case seq = "seq"
     }
 }
 
@@ -11335,58 +11530,6 @@ public struct HostDroplet: Codable, Hashable, Sendable {
     }
 }
 
-/// `HumanAmbassador` model.
-public struct HumanAmbassador: Codable, Hashable, Sendable {
-    public var ambassadorId: String
-    public var tenantId: String
-    public var name: String
-    public var role: HumanAmbassadorRole
-    public var permissions: AmbassadorPermissions
-    public var createdAt: String
-
-    public init(ambassadorId: String, tenantId: String, name: String, role: HumanAmbassadorRole, permissions: AmbassadorPermissions, createdAt: String) {
-        self.ambassadorId = ambassadorId
-        self.tenantId = tenantId
-        self.name = name
-        self.role = role
-        self.permissions = permissions
-        self.createdAt = createdAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case ambassadorId = "ambassador_id"
-        case tenantId = "tenant_id"
-        case name = "name"
-        case role = "role"
-        case permissions = "permissions"
-        case createdAt = "created_at"
-    }
-}
-
-/// `HumanAmbassadorRole` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct HumanAmbassadorRole: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let founder = HumanAmbassadorRole(rawValue: "founder")
-    public static let ambassador = HumanAmbassadorRole(rawValue: "ambassador")
-    public static let observer = HumanAmbassadorRole(rawValue: "observer")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [HumanAmbassadorRole] = [.founder, .ambassador, .observer]
-}
-
 /// `ImageProviderList` model.
 public struct ImageProviderList: Codable, Hashable, Sendable {
     public var providers: [JSONObject]?
@@ -11413,6 +11556,69 @@ public struct ImportAdminConfigRequest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case source = "source"
         case sections = "sections"
+    }
+}
+
+/// `ImportAgentMemoryRequest` model.
+public struct ImportAgentMemoryRequest: Codable, Hashable, Sendable {
+    public var entries: [MemoryImportEntry]?
+    public var agents: [ImportAgentMemoryRequestAgent]?
+
+    public init(entries: [MemoryImportEntry]? = nil, agents: [ImportAgentMemoryRequestAgent]? = nil) {
+        self.entries = entries
+        self.agents = agents
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case entries = "entries"
+        case agents = "agents"
+    }
+}
+
+/// `ImportAgentMemoryRequestAgent` model.
+public struct ImportAgentMemoryRequestAgent: Codable, Hashable, Sendable {
+    public var agentId: String?
+    public var agentName: String?
+    public var entries: [MemoryImportEntry]
+
+    public init(agentId: String? = nil, agentName: String? = nil, entries: [MemoryImportEntry]) {
+        self.agentId = agentId
+        self.agentName = agentName
+        self.entries = entries
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case agentName = "agent_name"
+        case entries = "entries"
+    }
+}
+
+/// `ImportAgentMemoryResponse` model.
+public struct ImportAgentMemoryResponse: Codable, Hashable, Sendable {
+    public var imported: Bool
+    public var agentId: String
+    /// Entries in the file.
+    public var offered: Int
+    /// New entries stored.
+    public var added: Int
+    /// Entries the store already had.
+    public var duplicates: Int
+
+    public init(imported: Bool, agentId: String, offered: Int, added: Int, duplicates: Int) {
+        self.imported = imported
+        self.agentId = agentId
+        self.offered = offered
+        self.added = added
+        self.duplicates = duplicates
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case imported = "imported"
+        case agentId = "agent_id"
+        case offered = "offered"
+        case added = "added"
+        case duplicates = "duplicates"
     }
 }
 
@@ -12556,6 +12762,19 @@ public struct ListAdminProvidersResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListAgentBookmarksResponse` model.
+public struct ListAgentBookmarksResponse: Codable, Hashable, Sendable {
+    public var items: [AgentBookmark]
+
+    public init(items: [AgentBookmark]) {
+        self.items = items
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+    }
+}
+
 /// `ListAgentIntegrationsResponse` model.
 public struct ListAgentIntegrationsResponse: Codable, Hashable, Sendable {
     public var integrations: [AgentIntegration]?
@@ -13004,43 +13223,6 @@ public struct ListContentReportsResponse: Codable, Hashable, Sendable {
         case items = "items"
         case cursor = "cursor"
         case hasMore = "has_more"
-    }
-}
-
-/// `ListCreativityEventsResponse` model.
-public struct ListCreativityEventsResponse: Codable, Hashable, Sendable {
-    public var events: [JSONObject]?
-    /// High-water mark of the log. NOT events.length — the log is spliced by the eraser, so a
-    /// length-derived cursor would resume past real events or re-deliver old ones.
-    public var latestSeq: Int?
-    public var sceneState: JSONObject?
-
-    public init(events: [JSONObject]? = nil, latestSeq: Int? = nil, sceneState: JSONObject? = nil) {
-        self.events = events
-        self.latestSeq = latestSeq
-        self.sceneState = sceneState
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case events = "events"
-        case latestSeq = "latest_seq"
-        case sceneState = "scene_state"
-    }
-}
-
-/// `ListCreativitySessionsResponse` model.
-public struct ListCreativitySessionsResponse: Codable, Hashable, Sendable {
-    public var sessions: [JSONObject]?
-    public var total: Int?
-
-    public init(sessions: [JSONObject]? = nil, total: Int? = nil) {
-        self.sessions = sessions
-        self.total = total
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case sessions = "sessions"
-        case total = "total"
     }
 }
 
@@ -13549,62 +13731,6 @@ public struct ListNotificationTargetsResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case targets = "targets"
     }
-}
-
-/// `ListOAuthLoginProvidersResponse` model.
-public struct ListOAuthLoginProvidersResponse: Codable, Hashable, Sendable {
-    public var providers: [ListOAuthLoginProvidersResponseProvider]
-
-    public init(providers: [ListOAuthLoginProvidersResponseProvider]) {
-        self.providers = providers
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case providers = "providers"
-    }
-}
-
-/// `ListOAuthLoginProvidersResponseProvider` model.
-public struct ListOAuthLoginProvidersResponseProvider: Codable, Hashable, Sendable {
-    public var id: ListOAuthLoginProvidersResponseProviderId
-    public var name: String
-    public var enabled: Bool
-
-    public init(id: ListOAuthLoginProvidersResponseProviderId, name: String, enabled: Bool) {
-        self.id = id
-        self.name = name
-        self.enabled = enabled
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case name = "name"
-        case enabled = "enabled"
-    }
-}
-
-/// `ListOAuthLoginProvidersResponseProviderId` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct ListOAuthLoginProvidersResponseProviderId: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let github = ListOAuthLoginProvidersResponseProviderId(rawValue: "github")
-    public static let google = ListOAuthLoginProvidersResponseProviderId(rawValue: "google")
-    public static let apple = ListOAuthLoginProvidersResponseProviderId(rawValue: "apple")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [ListOAuthLoginProvidersResponseProviderId] = [.github, .google, .apple]
 }
 
 /// `ListProgramsResponse` model.
@@ -14405,30 +14531,6 @@ public struct ListTodosResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `ListTrainingJobsResponse` model.
-public struct ListTrainingJobsResponse: Codable, Hashable, Sendable {
-    public var items: [TrainingJob]
-    /// Length of `items` on this page, not a tenant-wide count.
-    public var total: Int
-    /// Pass as `cursor` for the next page; null on the last page.
-    public var cursor: String?
-    public var hasMore: Bool
-
-    public init(items: [TrainingJob], total: Int, cursor: String? = nil, hasMore: Bool) {
-        self.items = items
-        self.total = total
-        self.cursor = cursor
-        self.hasMore = hasMore
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case items = "items"
-        case total = "total"
-        case cursor = "cursor"
-        case hasMore = "has_more"
-    }
-}
-
 /// `ListUsersResponse` model.
 public struct ListUsersResponse: Codable, Hashable, Sendable {
     public var items: [TenantUser]?
@@ -14508,6 +14610,26 @@ public struct ListWebhooksResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case webhooks = "webhooks"
+        case total = "total"
+    }
+}
+
+/// `ListWorkspaceFileHistoryResponse` model.
+public struct ListWorkspaceFileHistoryResponse: Codable, Hashable, Sendable {
+    /// The `path` as sent, not normalised.
+    public var path: String
+    public var versions: [WorkspaceFileVersion]
+    public var total: Int
+
+    public init(path: String, versions: [WorkspaceFileVersion], total: Int) {
+        self.path = path
+        self.versions = versions
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case path = "path"
+        case versions = "versions"
         case total = "total"
     }
 }
@@ -15378,6 +15500,38 @@ public struct MCPServerStatus: RawRepresentable, Codable, Hashable, Sendable, Ex
     public static let knownValues: [MCPServerStatus] = [.active, .error, .disabled]
 }
 
+/// `MCPServerTestResult` model.
+public struct MCPServerTestResult: Codable, Hashable, Sendable {
+    public var ok: Bool
+    /// The MCP session status on success; the literal `error` when the probe failed.
+    public var status: String
+    /// Present only when `ok` is true.
+    public var toolCount: Int?
+    /// Present only when `ok` is true.
+    public var tools: [JSONObject]?
+    /// Present only when `ok` is false.
+    public var error: String?
+    public var latencyMs: Int
+
+    public init(ok: Bool, status: String, toolCount: Int? = nil, tools: [JSONObject]? = nil, error: String? = nil, latencyMs: Int) {
+        self.ok = ok
+        self.status = status
+        self.toolCount = toolCount
+        self.tools = tools
+        self.error = error
+        self.latencyMs = latencyMs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ok = "ok"
+        case status = "status"
+        case toolCount = "tool_count"
+        case tools = "tools"
+        case error = "error"
+        case latencyMs = "latency_ms"
+    }
+}
+
 /// `MCPServerWithConnectResult` model.
 public struct MCPServerWithConnectResult: Codable, Hashable, Sendable {
     public var id: String
@@ -15517,6 +15671,28 @@ public struct MemoryEntryType: RawRepresentable, Codable, Hashable, Sendable, Ex
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [MemoryEntryType] = [.episodic, .semantic, .procedural, .note]
+}
+
+/// `MemoryImportEntry` model.
+public struct MemoryImportEntry: Codable, Hashable, Sendable {
+    public var content: String
+    public var type: String?
+    public var tags: [String]?
+    public var createdAt: String?
+
+    public init(content: String, type: String? = nil, tags: [String]? = nil, createdAt: String? = nil) {
+        self.content = content
+        self.type = type
+        self.tags = tags
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case content = "content"
+        case type = "type"
+        case tags = "tags"
+        case createdAt = "created_at"
+    }
 }
 
 /// `MintSSETokenResponse` model.
@@ -16515,11 +16691,11 @@ public struct OAuthIdentityConfig: Codable, Hashable, Sendable {
 
 /// Result after DELETE — record removed from admin KV
 public struct OAuthLoginProviderConfigDeleted: Codable, Hashable, Sendable {
-    public var provider: OAuthLoginProviderItemId
+    public var provider: OAuthLoginProviderConfigStatusProvider
     /// Always false after a successful DELETE
     public var configured: Bool
 
-    public init(provider: OAuthLoginProviderItemId, configured: Bool) {
+    public init(provider: OAuthLoginProviderConfigStatusProvider, configured: Bool) {
         self.provider = provider
         self.configured = configured
     }
@@ -16533,7 +16709,7 @@ public struct OAuthLoginProviderConfigDeleted: Codable, Hashable, Sendable {
 /// Admin view of one provider's current config. client_secret is never echoed;
 /// client_secret_hint shows the last 4 chars so the operator can confirm storage.
 public struct OAuthLoginProviderConfigStatus: Codable, Hashable, Sendable {
-    public var provider: OAuthLoginProviderItemId
+    public var provider: OAuthLoginProviderConfigStatusProvider
     public var enabled: Bool
     /// false when no record exists yet; remaining fields are absent in that case
     public var configured: Bool
@@ -16543,7 +16719,7 @@ public struct OAuthLoginProviderConfigStatus: Codable, Hashable, Sendable {
     /// null when no override; provider defaults apply
     public var scopes: [String]?
 
-    public init(provider: OAuthLoginProviderItemId, enabled: Bool, configured: Bool, clientId: String? = nil, clientSecretHint: String? = nil, scopes: [String]? = nil) {
+    public init(provider: OAuthLoginProviderConfigStatusProvider, enabled: Bool, configured: Bool, clientId: String? = nil, clientSecretHint: String? = nil, scopes: [String]? = nil) {
         self.provider = provider
         self.enabled = enabled
         self.configured = configured
@@ -16560,6 +16736,29 @@ public struct OAuthLoginProviderConfigStatus: Codable, Hashable, Sendable {
         case clientSecretHint = "client_secret_hint"
         case scopes = "scopes"
     }
+}
+
+/// `OAuthLoginProviderConfigStatusProvider` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct OAuthLoginProviderConfigStatusProvider: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let github = OAuthLoginProviderConfigStatusProvider(rawValue: "github")
+    public static let google = OAuthLoginProviderConfigStatusProvider(rawValue: "google")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [OAuthLoginProviderConfigStatusProvider] = [.github, .google]
 }
 
 /// Body for PUT /api/v1/admin/oauth-login-providers/{provider}. Merges with existing record: an
@@ -16592,11 +16791,11 @@ public struct OAuthLoginProviderConfigUpdate: Codable, Hashable, Sendable {
 
 /// Result after PUT — confirms the persisted state
 public struct OAuthLoginProviderConfigUpdateResponse: Codable, Hashable, Sendable {
-    public var provider: OAuthLoginProviderItemId
+    public var provider: OAuthLoginProviderConfigStatusProvider
     public var enabled: Bool
     public var configured: Bool
 
-    public init(provider: OAuthLoginProviderItemId, enabled: Bool, configured: Bool) {
+    public init(provider: OAuthLoginProviderConfigStatusProvider, enabled: Bool, configured: Bool) {
         self.provider = provider
         self.enabled = enabled
         self.configured = configured
@@ -16651,21 +16850,25 @@ public struct OAuthLoginProviderItemId: RawRepresentable, Codable, Hashable, Sen
 
     public static let github = OAuthLoginProviderItemId(rawValue: "github")
     public static let google = OAuthLoginProviderItemId(rawValue: "google")
+    public static let apple = OAuthLoginProviderItemId(rawValue: "apple")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [OAuthLoginProviderItemId] = [.github, .google]
+    public static let knownValues: [OAuthLoginProviderItemId] = [.github, .google, .apple]
 }
 
 /// Response from GET /api/v1/auth/oauth/providers
 public struct OAuthLoginProvidersList: Codable, Hashable, Sendable {
     public var providers: [OAuthLoginProviderItem]
+    public var googleOneTapClientId: String?
 
-    public init(providers: [OAuthLoginProviderItem]) {
+    public init(providers: [OAuthLoginProviderItem], googleOneTapClientId: String? = nil) {
         self.providers = providers
+        self.googleOneTapClientId = googleOneTapClientId
     }
 
     private enum CodingKeys: String, CodingKey {
         case providers = "providers"
+        case googleOneTapClientId = "google_one_tap_client_id"
     }
 }
 
@@ -16944,6 +17147,65 @@ public struct OpenAiErrorError: Codable, Hashable, Sendable {
         case message = "message"
         case type = "type"
         case code = "code"
+    }
+}
+
+/// `PatchMeRequest` model.
+public struct PatchMeRequest: Codable, Hashable, Sendable {
+    /// `/api/v1/files/<file_id>/content` of an image uploaded with `POST /files`, or `null` to
+    /// clear.
+    public var avatarURL: String?
+
+    public init(avatarURL: String? = nil) {
+        self.avatarURL = avatarURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case avatarURL = "avatar_url"
+    }
+}
+
+/// `PatchMeResponse` model.
+public struct PatchMeResponse: Codable, Hashable, Sendable {
+    public var user: PatchMeResponseUser
+    public var updatedRows: Int
+
+    public init(user: PatchMeResponseUser, updatedRows: Int) {
+        self.user = user
+        self.updatedRows = updatedRows
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case user = "user"
+        case updatedRows = "updated_rows"
+    }
+}
+
+/// `PatchMeResponseUser` model.
+public struct PatchMeResponseUser: Codable, Hashable, Sendable {
+    public var userId: String
+    public var email: String
+    public var name: String?
+    public var role: String
+    public var status: String
+    public var avatarURL: String?
+
+    public init(userId: String, email: String, name: String? = nil, role: String, status: String, avatarURL: String? = nil) {
+        self.userId = userId
+        self.email = email
+        self.name = name
+        self.role = role
+        self.status = status
+        self.avatarURL = avatarURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case userId = "user_id"
+        case email = "email"
+        case name = "name"
+        case role = "role"
+        case status = "status"
+        case avatarURL = "avatar_url"
     }
 }
 
@@ -18484,6 +18746,40 @@ public struct PublishListingRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `PublishWorkspaceSnapshotRequest` model.
+public struct PublishWorkspaceSnapshotRequest: Codable, Hashable, Sendable {
+    /// Self-contained HTML, ≤3 MB.
+    public var html: String
+    /// Defaults to `Shared page`.
+    public var title: String?
+
+    public init(html: String, title: String? = nil) {
+        self.html = html
+        self.title = title
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case html = "html"
+        case title = "title"
+    }
+}
+
+/// `PublishWorkspaceSnapshotResponse` model.
+public struct PublishWorkspaceSnapshotResponse: Codable, Hashable, Sendable {
+    public var token: String
+    public var expiresAt: String
+
+    public init(token: String, expiresAt: String) {
+        self.token = token
+        self.expiresAt = expiresAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case token = "token"
+        case expiresAt = "expires_at"
+    }
+}
+
 /// `PurgeAdminTenantResponse` model.
 public struct PurgeAdminTenantResponse: Codable, Hashable, Sendable {
     public var purged: Bool?
@@ -19081,6 +19377,25 @@ public struct RegistrySpecFeatureState: Codable, Hashable, Sendable {
     }
 }
 
+/// `RegistryUnyankVersionResponse` model.
+public struct RegistryUnyankVersionResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
 /// `RegistryVersionEntry` model.
 public struct RegistryVersionEntry: Codable, Hashable, Sendable {
     public var version: String
@@ -19122,6 +19437,25 @@ public struct RegistryYankVersionRequest: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case reason = "reason"
+    }
+}
+
+/// `RegistryYankVersionResponse` model.
+public struct RegistryYankVersionResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -19199,19 +19533,6 @@ public struct ReplaceConstitutionResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case rules = "rules"
         case version = "version"
-    }
-}
-
-/// `ReplaceCreativityEventPayloadRequest` model.
-public struct ReplaceCreativityEventPayloadRequest: Codable, Hashable, Sendable {
-    public var payload: JSONObject
-
-    public init(payload: JSONObject) {
-        self.payload = payload
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case payload = "payload"
     }
 }
 
@@ -19454,24 +19775,6 @@ public struct ResumeMissionResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `RetryTrainingJobResponse` model.
-public struct RetryTrainingJobResponse: Codable, Hashable, Sendable {
-    /// The NEW job's id.
-    public var jobId: String
-    /// Shown once, for the new job.
-    public var callbackSecret: String
-
-    public init(jobId: String, callbackSecret: String) {
-        self.jobId = jobId
-        self.callbackSecret = callbackSecret
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case jobId = "job_id"
-        case callbackSecret = "callback_secret"
-    }
-}
-
 /// `RevokeMeSessionResponse` model.
 public struct RevokeMeSessionResponse: Codable, Hashable, Sendable {
     public var ok: Bool
@@ -19489,6 +19792,47 @@ public struct RevokeMeSessionResponse: Codable, Hashable, Sendable {
         case keyId = "key_id"
         case alreadyRevoked = "already_revoked"
     }
+}
+
+/// `RevokeSessionShareResponse` model.
+public struct RevokeSessionShareResponse: Codable, Hashable, Sendable {
+    public var error: RevokeSessionShareResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `RevokeSessionShareResponseError` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RevokeSessionShareResponseError: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let accepted = RevokeSessionShareResponseError(rawValue: "Accepted")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RevokeSessionShareResponseError] = [.accepted]
 }
 
 /// EU AI Act (Article 9) classification for an agent.
@@ -20878,6 +21222,87 @@ public struct SessionBranchStatus: RawRepresentable, Codable, Hashable, Sendable
     public static let knownValues: [SessionBranchStatus] = [.active, .abandoned, .merged]
 }
 
+/// `SessionExport` model.
+public struct SessionExport: Codable, Hashable, Sendable {
+    public var exportedAt: String
+    public var format: String
+    public var sessionId: String
+    public var agentId: String
+    public var agentName: String?
+    public var title: String
+    public var createdAt: String?
+    public var updatedAt: String?
+    public var messages: [SessionExportMessage]
+
+    public init(exportedAt: String, format: String, sessionId: String, agentId: String, agentName: String? = nil, title: String, createdAt: String? = nil, updatedAt: String? = nil, messages: [SessionExportMessage]) {
+        self.exportedAt = exportedAt
+        self.format = format
+        self.sessionId = sessionId
+        self.agentId = agentId
+        self.agentName = agentName
+        self.title = title
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+        self.messages = messages
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case exportedAt = "exported_at"
+        case format = "format"
+        case sessionId = "session_id"
+        case agentId = "agent_id"
+        case agentName = "agent_name"
+        case title = "title"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+        case messages = "messages"
+    }
+}
+
+/// `SessionExportMessage` model.
+public struct SessionExportMessage: Codable, Hashable, Sendable {
+    public var role: String
+    public var content: String
+    public var timestamp: String?
+    public var runId: String?
+    public var toolCalls: [SessionExportMessageToolCall]?
+
+    public init(role: String, content: String, timestamp: String? = nil, runId: String? = nil, toolCalls: [SessionExportMessageToolCall]? = nil) {
+        self.role = role
+        self.content = content
+        self.timestamp = timestamp
+        self.runId = runId
+        self.toolCalls = toolCalls
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case role = "role"
+        case content = "content"
+        case timestamp = "timestamp"
+        case runId = "run_id"
+        case toolCalls = "tool_calls"
+    }
+}
+
+/// `SessionExportMessageToolCall` model.
+public struct SessionExportMessageToolCall: Codable, Hashable, Sendable {
+    public var name: String?
+    public var status: String?
+    public var input: JSONObject?
+
+    public init(name: String? = nil, status: String? = nil, input: JSONObject? = nil) {
+        self.name = name
+        self.status = status
+        self.input = input
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case status = "status"
+        case input = "input"
+    }
+}
+
 /// Per-conversation model override (in-chat model switcher). When set, runs in this session
 /// resolve their LLM from this config instead of the agent's default. Absent → agent default.
 public struct SessionModelOverride: Codable, Hashable, Sendable {
@@ -21408,6 +21833,38 @@ public struct SetRootAttestationResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `SetRunFeedbackRequest` model.
+public struct SetRunFeedbackRequest: Codable, Hashable, Sendable {
+    public var messageId: String
+    public var reaction: GetRunFeedbackResponseVariant1feedbackReaction
+
+    public init(messageId: String, reaction: GetRunFeedbackResponseVariant1feedbackReaction) {
+        self.messageId = messageId
+        self.reaction = reaction
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messageId = "message_id"
+        case reaction = "reaction"
+    }
+}
+
+/// `SetRunFeedbackResponse` model.
+public struct SetRunFeedbackResponse: Codable, Hashable, Sendable {
+    public var reaction: GetRunFeedbackResponseVariant1feedbackReaction
+    public var messageId: String
+
+    public init(reaction: GetRunFeedbackResponseVariant1feedbackReaction, messageId: String) {
+        self.reaction = reaction
+        self.messageId = messageId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reaction = "reaction"
+        case messageId = "message_id"
+    }
+}
+
 /// `SetScheduleRequest` model.
 public struct SetScheduleRequest: Codable, Hashable, Sendable {
     public var cron: String
@@ -21592,6 +22049,19 @@ public struct SetUserRoleResponse: Codable, Hashable, Sendable {
         case updated = "updated"
         case userId = "user_id"
         case role = "role"
+    }
+}
+
+/// `SharePublicSessionResponse` model.
+public struct SharePublicSessionResponse: Codable, Hashable, Sendable {
+    public var token: String
+
+    public init(token: String) {
+        self.token = token
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case token = "token"
     }
 }
 
@@ -24306,562 +24776,6 @@ public struct ToolOverride: Codable, Hashable, Sendable {
     }
 }
 
-/// A provisioned GPU droplet.
-public struct TrainingDroplet: Codable, Hashable, Sendable {
-    public var id: String
-    public var region: String?
-    public var gpuType: String?
-    public var status: String?
-    public var ip: String?
-    public var provider: String?
-
-    public init(id: String, region: String? = nil, gpuType: String? = nil, status: String? = nil, ip: String? = nil, provider: String? = nil) {
-        self.id = id
-        self.region = region
-        self.gpuType = gpuType
-        self.status = status
-        self.ip = ip
-        self.provider = provider
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case region = "region"
-        case gpuType = "gpu_type"
-        case status = "status"
-        case ip = "ip"
-        case provider = "provider"
-    }
-}
-
-/// Quality-gate verdict; present from the `quality_gate` phase onward.
-public struct TrainingGate: Codable, Hashable, Sendable {
-    public var teacherPass: Double
-    public var studentPass: Double
-    /// Whether the student cleared the bar the teachers set.
-    public var beats: Bool
-    public var reason: String?
-
-    public init(teacherPass: Double, studentPass: Double, beats: Bool, reason: String? = nil) {
-        self.teacherPass = teacherPass
-        self.studentPass = studentPass
-        self.beats = beats
-        self.reason = reason
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case teacherPass = "teacher_pass"
-        case studentPass = "student_pass"
-        case beats = "beats"
-        case reason = "reason"
-    }
-}
-
-/// What the server resolved and persisted: the caller's settings plus the student architecture
-/// filled in from the tier.
-public struct TrainingHyperparams: Codable, Hashable, Sendable {
-    public var hoursPerDroplet: Int?
-    public var learningRate: Double?
-    public var steps: Int?
-    public var batchSize: Int?
-    public var quant: String?
-    public var seed: Int?
-    public var vocab: Int?
-    public var dim: Int?
-    public var ff: Int?
-    public var seq: Int?
-    public var layers: Int?
-    public var heads: Int?
-
-    public init(hoursPerDroplet: Int? = nil, learningRate: Double? = nil, steps: Int? = nil, batchSize: Int? = nil, quant: String? = nil, seed: Int? = nil, vocab: Int? = nil, dim: Int? = nil, ff: Int? = nil, seq: Int? = nil, layers: Int? = nil, heads: Int? = nil) {
-        self.hoursPerDroplet = hoursPerDroplet
-        self.learningRate = learningRate
-        self.steps = steps
-        self.batchSize = batchSize
-        self.quant = quant
-        self.seed = seed
-        self.vocab = vocab
-        self.dim = dim
-        self.ff = ff
-        self.seq = seq
-        self.layers = layers
-        self.heads = heads
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case hoursPerDroplet = "hours_per_droplet"
-        case learningRate = "learning_rate"
-        case steps = "steps"
-        case batchSize = "batch_size"
-        case quant = "quant"
-        case seed = "seed"
-        case vocab = "vocab"
-        case dim = "dim"
-        case ff = "ff"
-        case seq = "seq"
-        case layers = "layers"
-        case heads = "heads"
-    }
-}
-
-/// A distillation job: a student model trained from teacher models on rented GPUs, under a
-/// prepaid deposit. Creating one is restricted to super-admins.
-public struct TrainingJob: Codable, Hashable, Sendable {
-    public var jobId: String
-    public var tenantId: String
-    /// `complete`, `failed` and `cancelled` are terminal; only a terminal job can be retried.
-    public var status: TrainingJobStatus
-    /// Verifier-backed domain. The server admits only this subset.
-    public var domain: TrainingJobDomain
-    public var persona: TrainingPersona
-    /// At least one.
-    public var teacherRefs: [TeacherRef]
-    /// Student size. `Large` is accepted by the request schema but refused by the guardrail, so the
-    /// rejection names the tier instead of being a generic 422.
-    public var tier: TrainingJobTier
-    /// Droplet size id from the GPU catalog; drives both cost and provisioning.
-    public var gpuSku: String
-    public var dropletCount: Int
-    public var hyperparams: TrainingHyperparams
-    /// Escrow taken at admission; equals `quote.deposit`.
-    public var depositUsd: Double
-    public var doDropletIds: [String]
-    /// Exported model reference, filled at `exporting`.
-    public var ggufRef: String?
-    public var servedProviderId: String?
-    public var servedModelRef: String?
-    public var servedEndpoint: String?
-    public var quote: TrainingQuote
-    public var gate: TrainingGate?
-    public var metrics: TrainingJobMetrics?
-    public var droplets: [TrainingDroplet]?
-    public var stripePaymentIntent: String?
-    /// Set on failure or cancellation, e.g. `cancelled_by_user`.
-    public var error: String?
-    public var createdAt: String
-    public var updatedAt: String
-
-    public init(jobId: String, tenantId: String, status: TrainingJobStatus, domain: TrainingJobDomain, persona: TrainingPersona, teacherRefs: [TeacherRef], tier: TrainingJobTier, gpuSku: String, dropletCount: Int, hyperparams: TrainingHyperparams, depositUsd: Double, doDropletIds: [String], ggufRef: String? = nil, servedProviderId: String? = nil, servedModelRef: String? = nil, servedEndpoint: String? = nil, quote: TrainingQuote, gate: TrainingGate? = nil, metrics: TrainingJobMetrics? = nil, droplets: [TrainingDroplet]? = nil, stripePaymentIntent: String? = nil, error: String? = nil, createdAt: String, updatedAt: String) {
-        self.jobId = jobId
-        self.tenantId = tenantId
-        self.status = status
-        self.domain = domain
-        self.persona = persona
-        self.teacherRefs = teacherRefs
-        self.tier = tier
-        self.gpuSku = gpuSku
-        self.dropletCount = dropletCount
-        self.hyperparams = hyperparams
-        self.depositUsd = depositUsd
-        self.doDropletIds = doDropletIds
-        self.ggufRef = ggufRef
-        self.servedProviderId = servedProviderId
-        self.servedModelRef = servedModelRef
-        self.servedEndpoint = servedEndpoint
-        self.quote = quote
-        self.gate = gate
-        self.metrics = metrics
-        self.droplets = droplets
-        self.stripePaymentIntent = stripePaymentIntent
-        self.error = error
-        self.createdAt = createdAt
-        self.updatedAt = updatedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case jobId = "job_id"
-        case tenantId = "tenant_id"
-        case status = "status"
-        case domain = "domain"
-        case persona = "persona"
-        case teacherRefs = "teacher_refs"
-        case tier = "tier"
-        case gpuSku = "gpu_sku"
-        case dropletCount = "droplet_count"
-        case hyperparams = "hyperparams"
-        case depositUsd = "deposit_usd"
-        case doDropletIds = "do_droplet_ids"
-        case ggufRef = "gguf_ref"
-        case servedProviderId = "served_provider_id"
-        case servedModelRef = "served_model_ref"
-        case servedEndpoint = "served_endpoint"
-        case quote = "quote"
-        case gate = "gate"
-        case metrics = "metrics"
-        case droplets = "droplets"
-        case stripePaymentIntent = "stripe_payment_intent"
-        case error = "error"
-        case createdAt = "created_at"
-        case updatedAt = "updated_at"
-    }
-}
-
-/// `TrainingJobCallbackRequest` model.
-public struct TrainingJobCallbackRequest: Codable, Hashable, Sendable {
-    /// A `training.*` event type from the allowed set.
-    public var type: String
-    /// Optional lifecycle transition to persist.
-    public var status: TrainingJobStatus?
-    /// Free-form progress payload.
-    public var payload: JSONObject?
-    public var metrics: TrainingJobMetrics?
-    public var droplets: [TrainingDroplet]?
-
-    public init(type: String, status: TrainingJobStatus? = nil, payload: JSONObject? = nil, metrics: TrainingJobMetrics? = nil, droplets: [TrainingDroplet]? = nil) {
-        self.type = type
-        self.status = status
-        self.payload = payload
-        self.metrics = metrics
-        self.droplets = droplets
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case type = "type"
-        case status = "status"
-        case payload = "payload"
-        case metrics = "metrics"
-        case droplets = "droplets"
-    }
-}
-
-/// `TrainingJobCallbackResponse` model.
-public struct TrainingJobCallbackResponse: Codable, Hashable, Sendable {
-    public var accepted: Bool
-    public var jobId: String
-
-    public init(accepted: Bool, jobId: String) {
-        self.accepted = accepted
-        self.jobId = jobId
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case accepted = "accepted"
-        case jobId = "job_id"
-    }
-}
-
-/// Verifier-backed domain. The server admits only this subset.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TrainingJobDomain: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let code = TrainingJobDomain(rawValue: "Code")
-    public static let svg = TrainingJobDomain(rawValue: "SVG")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TrainingJobDomain] = [.code, .svg]
-}
-
-/// Live snapshot merged from worker callbacks. Cost and GPU-hour fields are computed by the
-/// server from elapsed wall-clock — a worker cannot report them, and a spoofed value is
-/// dropped.
-public struct TrainingJobMetrics: Codable, Hashable, Sendable {
-    public var phase: String?
-    public var percent: Double?
-    public var currentStep: Double?
-    public var totalSteps: Double?
-    public var currentEpoch: Double?
-    public var totalEpochs: Double?
-    public var loss: Double?
-    public var evalLoss: Double?
-    public var learningRate: Double?
-    public var gradNorm: Double?
-    public var tokensPerSec: Double?
-    public var samplesPerSec: Double?
-    /// One entry per GPU.
-    public var gpuUtilPct: [Double]?
-    public var gpuMemUsedGb: [Double]?
-    public var gpuMemTotalGb: [Double]?
-    public var gpuHoursUsed: Double?
-    public var costAccruedUsd: Double?
-    public var etaSeconds: Double?
-    public var startedTrainingAt: String?
-    public var updatedAt: String
-
-    public init(phase: String? = nil, percent: Double? = nil, currentStep: Double? = nil, totalSteps: Double? = nil, currentEpoch: Double? = nil, totalEpochs: Double? = nil, loss: Double? = nil, evalLoss: Double? = nil, learningRate: Double? = nil, gradNorm: Double? = nil, tokensPerSec: Double? = nil, samplesPerSec: Double? = nil, gpuUtilPct: [Double]? = nil, gpuMemUsedGb: [Double]? = nil, gpuMemTotalGb: [Double]? = nil, gpuHoursUsed: Double? = nil, costAccruedUsd: Double? = nil, etaSeconds: Double? = nil, startedTrainingAt: String? = nil, updatedAt: String) {
-        self.phase = phase
-        self.percent = percent
-        self.currentStep = currentStep
-        self.totalSteps = totalSteps
-        self.currentEpoch = currentEpoch
-        self.totalEpochs = totalEpochs
-        self.loss = loss
-        self.evalLoss = evalLoss
-        self.learningRate = learningRate
-        self.gradNorm = gradNorm
-        self.tokensPerSec = tokensPerSec
-        self.samplesPerSec = samplesPerSec
-        self.gpuUtilPct = gpuUtilPct
-        self.gpuMemUsedGb = gpuMemUsedGb
-        self.gpuMemTotalGb = gpuMemTotalGb
-        self.gpuHoursUsed = gpuHoursUsed
-        self.costAccruedUsd = costAccruedUsd
-        self.etaSeconds = etaSeconds
-        self.startedTrainingAt = startedTrainingAt
-        self.updatedAt = updatedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case phase = "phase"
-        case percent = "percent"
-        case currentStep = "current_step"
-        case totalSteps = "total_steps"
-        case currentEpoch = "current_epoch"
-        case totalEpochs = "total_epochs"
-        case loss = "loss"
-        case evalLoss = "eval_loss"
-        case learningRate = "learning_rate"
-        case gradNorm = "grad_norm"
-        case tokensPerSec = "tokens_per_sec"
-        case samplesPerSec = "samples_per_sec"
-        case gpuUtilPct = "gpu_util_pct"
-        case gpuMemUsedGb = "gpu_mem_used_gb"
-        case gpuMemTotalGb = "gpu_mem_total_gb"
-        case gpuHoursUsed = "gpu_hours_used"
-        case costAccruedUsd = "cost_accrued_usd"
-        case etaSeconds = "eta_seconds"
-        case startedTrainingAt = "started_training_at"
-        case updatedAt = "updated_at"
-    }
-}
-
-/// A job specification. The same body prices a job (`/quote`) and creates one.
-public struct TrainingJobRequest: Codable, Hashable, Sendable {
-    /// `Web_Layout` and `Multi_Lang` are accepted here and refused by the guardrail, so the caller
-    /// gets the specific reason.
-    public var domain: TrainingJobRequestDomain
-    public var tier: TrainingJobRequestTier
-    /// Defaults to the catalog's default SKU.
-    public var gpuSku: String?
-    public var dropletCount: Int
-    public var settings: TrainingSettings
-    /// Spend cap the quote is checked against.
-    public var maxSpend: Double
-    /// At least one teacher.
-    public var teacherRefs: [TeacherRef]
-    public var persona: TrainingPersona
-    /// The caller attests it may distil from these teachers.
-    public var teacherAttested: Bool
-
-    public init(domain: TrainingJobRequestDomain, tier: TrainingJobRequestTier, gpuSku: String? = nil, dropletCount: Int, settings: TrainingSettings, maxSpend: Double, teacherRefs: [TeacherRef], persona: TrainingPersona, teacherAttested: Bool) {
-        self.domain = domain
-        self.tier = tier
-        self.gpuSku = gpuSku
-        self.dropletCount = dropletCount
-        self.settings = settings
-        self.maxSpend = maxSpend
-        self.teacherRefs = teacherRefs
-        self.persona = persona
-        self.teacherAttested = teacherAttested
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case domain = "domain"
-        case tier = "tier"
-        case gpuSku = "gpu_sku"
-        case dropletCount = "droplet_count"
-        case settings = "settings"
-        case maxSpend = "max_spend"
-        case teacherRefs = "teacher_refs"
-        case persona = "persona"
-        case teacherAttested = "teacher_attested"
-    }
-}
-
-/// `Web_Layout` and `Multi_Lang` are accepted here and refused by the guardrail, so the caller
-/// gets the specific reason.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TrainingJobRequestDomain: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let code = TrainingJobRequestDomain(rawValue: "Code")
-    public static let svg = TrainingJobRequestDomain(rawValue: "SVG")
-    public static let webLayout = TrainingJobRequestDomain(rawValue: "Web_Layout")
-    public static let multiLang = TrainingJobRequestDomain(rawValue: "Multi_Lang")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TrainingJobRequestDomain] = [.code, .svg, .webLayout, .multiLang]
-}
-
-/// `TrainingJobRequestTier` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TrainingJobRequestTier: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let small = TrainingJobRequestTier(rawValue: "Small")
-    public static let medium = TrainingJobRequestTier(rawValue: "Medium")
-    public static let large = TrainingJobRequestTier(rawValue: "Large")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TrainingJobRequestTier] = [.small, .medium, .large]
-}
-
-/// `complete`, `failed` and `cancelled` are terminal; only a terminal job can be retried.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TrainingJobStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let queued = TrainingJobStatus(rawValue: "queued")
-    public static let depositPaid = TrainingJobStatus(rawValue: "deposit_paid")
-    public static let provisioning = TrainingJobStatus(rawValue: "provisioning")
-    public static let training = TrainingJobStatus(rawValue: "training")
-    public static let qualityGate = TrainingJobStatus(rawValue: "quality_gate")
-    public static let exporting = TrainingJobStatus(rawValue: "exporting")
-    public static let serving = TrainingJobStatus(rawValue: "serving")
-    public static let complete = TrainingJobStatus(rawValue: "complete")
-    public static let failed = TrainingJobStatus(rawValue: "failed")
-    public static let cancelled = TrainingJobStatus(rawValue: "cancelled")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TrainingJobStatus] = [.queued, .depositPaid, .provisioning, .training, .qualityGate, .exporting, .serving, .complete, .failed, .cancelled]
-}
-
-/// Student size. `Large` is accepted by the request schema but refused by the guardrail, so the
-/// rejection names the tier instead of being a generic 422.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct TrainingJobTier: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let small = TrainingJobTier(rawValue: "Small")
-    public static let medium = TrainingJobTier(rawValue: "Medium")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [TrainingJobTier] = [.small, .medium]
-}
-
-/// Student identity and the system prompt it is served with.
-public struct TrainingPersona: Codable, Hashable, Sendable {
-    public var name: String
-    public var system: String
-
-    public init(name: String, system: String) {
-        self.name = name
-        self.system = system
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case name = "name"
-        case system = "system"
-    }
-}
-
-/// Price for a training job. Money is USD as a float on this surface; the training platform
-/// computes the exact fixed-point value.
-public struct TrainingQuote: Codable, Hashable, Sendable {
-    /// droplet_count × hours_per_droplet.
-    public var gpuHours: Double
-    /// What the GPU provider is paid.
-    public var providerCost: Double
-    /// What the tenant is charged.
-    public var platformPrice: Double
-    /// Prepaid escrow taken at admission — min(platform_price, cap).
-    public var deposit: Double
-    /// False when platform_price exceeds the job's `max_spend`; the job is then refused by the
-    /// guardrail.
-    public var withinBudget: Bool
-
-    public init(gpuHours: Double, providerCost: Double, platformPrice: Double, deposit: Double, withinBudget: Bool) {
-        self.gpuHours = gpuHours
-        self.providerCost = providerCost
-        self.platformPrice = platformPrice
-        self.deposit = deposit
-        self.withinBudget = withinBudget
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case gpuHours = "gpu_hours"
-        case providerCost = "provider_cost"
-        case platformPrice = "platform_price"
-        case deposit = "deposit"
-        case withinBudget = "within_budget"
-    }
-}
-
-/// Tunables a caller may set. Everything except the GPU-hour budget is optional.
-public struct TrainingSettings: Codable, Hashable, Sendable {
-    /// GPU-hours per droplet. Bounded server-side so one job cannot outlive the orphan reaper.
-    public var hoursPerDroplet: Int
-    public var learningRate: Double?
-    public var steps: Int?
-    public var batchSize: Int?
-    /// Quantized export format, e.g. `Q8_0` or `Q4_K`.
-    public var quant: String?
-    public var seed: Int?
-
-    public init(hoursPerDroplet: Int, learningRate: Double? = nil, steps: Int? = nil, batchSize: Int? = nil, quant: String? = nil, seed: Int? = nil) {
-        self.hoursPerDroplet = hoursPerDroplet
-        self.learningRate = learningRate
-        self.steps = steps
-        self.batchSize = batchSize
-        self.quant = quant
-        self.seed = seed
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case hoursPerDroplet = "hours_per_droplet"
-        case learningRate = "learning_rate"
-        case steps = "steps"
-        case batchSize = "batch_size"
-        case quant = "quant"
-        case seed = "seed"
-    }
-}
-
 /// `TransferTenantOwnershipResponse` model.
 public struct TransferTenantOwnershipResponse: Codable, Hashable, Sendable {
     public var transferred: Bool
@@ -25484,38 +25398,6 @@ public struct UpdateCoreMemoryBlockRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `UpdateCreativitySceneRequest` model.
-public struct UpdateCreativitySceneRequest: Codable, Hashable, Sendable {
-    public var width: Int?
-    public var height: Int?
-    public var snapGrid: Int?
-
-    public init(width: Int? = nil, height: Int? = nil, snapGrid: Int? = nil) {
-        self.width = width
-        self.height = height
-        self.snapGrid = snapGrid
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case width = "width"
-        case height = "height"
-        case snapGrid = "snap_grid"
-    }
-}
-
-/// `UpdateCreativitySceneResponse` model.
-public struct UpdateCreativitySceneResponse: Codable, Hashable, Sendable {
-    public var sceneState: JSONObject?
-
-    public init(sceneState: JSONObject? = nil) {
-        self.sceneState = sceneState
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case sceneState = "scene_state"
-    }
-}
-
 /// `UpdateFeedbackReportStatusRequest` model.
 public struct UpdateFeedbackReportStatusRequest: Codable, Hashable, Sendable {
     /// Anything other than the exact string `resolved` — including an absent body — results in
@@ -26015,6 +25897,26 @@ public struct UploadFileRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UploadPublicSessionImageResponse` model.
+public struct UploadPublicSessionImageResponse: Codable, Hashable, Sendable {
+    public var fileId: String
+    public var mimeType: String
+    /// Bytes stored.
+    public var size: Int
+
+    public init(fileId: String, mimeType: String, size: Int) {
+        self.fileId = fileId
+        self.mimeType = mimeType
+        self.size = size
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fileId = "file_id"
+        case mimeType = "mime_type"
+        case size = "size"
+    }
+}
+
 /// `UploadWorkspaceFileRequest` model.
 public struct UploadWorkspaceFileRequest: Codable, Hashable, Sendable {
     public var file: FilePart
@@ -26025,6 +25927,19 @@ public struct UploadWorkspaceFileRequest: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case file = "file"
+    }
+}
+
+/// `UpsertAgentToolOverrideResponse` model.
+public struct UpsertAgentToolOverrideResponse: Codable, Hashable, Sendable {
+    public var toolOverrides: [AgentToolOverride]
+
+    public init(toolOverrides: [AgentToolOverride]) {
+        self.toolOverrides = toolOverrides
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolOverrides = "tool_overrides"
     }
 }
 
@@ -26954,6 +26869,43 @@ public struct WorkspaceFile: Codable, Hashable, Sendable {
         case sizeBytes = "size_bytes"
         case createdAt = "created_at"
         case updatedAt = "updated_at"
+    }
+}
+
+/// One kept version of a workspace file. Keys as served 2026-09-10.
+public struct WorkspaceFileVersion: Codable, Hashable, Sendable {
+    public var fileId: String
+    public var tenantId: String
+    public var workspaceId: String
+    public var path: String
+    public var parentPath: String
+    public var filename: String
+    public var mimeType: String
+    public var sizeBytes: Int
+    public var createdAt: String
+
+    public init(fileId: String, tenantId: String, workspaceId: String, path: String, parentPath: String, filename: String, mimeType: String, sizeBytes: Int, createdAt: String) {
+        self.fileId = fileId
+        self.tenantId = tenantId
+        self.workspaceId = workspaceId
+        self.path = path
+        self.parentPath = parentPath
+        self.filename = filename
+        self.mimeType = mimeType
+        self.sizeBytes = sizeBytes
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fileId = "file_id"
+        case tenantId = "tenant_id"
+        case workspaceId = "workspace_id"
+        case path = "path"
+        case parentPath = "parent_path"
+        case filename = "filename"
+        case mimeType = "mime_type"
+        case sizeBytes = "size_bytes"
+        case createdAt = "created_at"
     }
 }
 

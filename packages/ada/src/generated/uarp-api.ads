@@ -13,7 +13,6 @@
 --    UARP.API.Bridge
 --    UARP.API.Canvas
 --    UARP.API.Companies
---    UARP.API.Creativity
 --    UARP.API.Data_Explorer
 --    UARP.API.Evaluations
 --    UARP.API.Feed
@@ -47,7 +46,6 @@
 --    UARP.API.Squads
 --    UARP.API.Teams
 --    UARP.API.Tenants
---    UARP.API.Training
 --    UARP.API.Users
 --    UARP.API.Webhooks
 --    UARP.API.Workspaces

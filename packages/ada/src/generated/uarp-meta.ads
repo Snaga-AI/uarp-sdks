@@ -3,10 +3,10 @@
 package UARP.Meta is
 
    --  Version of the OpenAPI document this SDK was generated from.
-   Spec_Version : constant String := "0.3.0";
+   Spec_Version : constant String := "0.4.0";
 
    --  Version of this SDK.
-   SDK_Version : constant String := "0.5.17";
+   SDK_Version : constant String := "0.5.18";
 
    --  Production base URL.
    Default_Base_URL : constant String := "https://api.snaga.ai";

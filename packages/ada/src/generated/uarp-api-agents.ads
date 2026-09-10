@@ -92,6 +92,22 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent;
 
+   --  Pin a message
+   --
+   --  Idempotent on `message_id`: pinning a message already pinned returns the existing record
+   --  with 200 and changes nothing; a new pin is 201. `content` is stored as sent (?10 000 chars).
+   --  Unknown fields are dropped.
+   --
+   --  POST /api/v1/agents/{agentId}/bookmarks
+   --
+   --  Required scopes: agents:write.
+   function Create_Agent_Bookmark
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Create_Agent_Bookmark_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Agent_Bookmark;
+
    --  Create or update FRIA report
    --
    --  POST /api/v1/agents/{agentId}/fria
@@ -113,7 +129,6 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.Models.Create_Agent_Version_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -128,15 +143,39 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Unpin one message
+   --
+   --  DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}
+   --
+   --  Required scopes: agents:write.
+   function Delete_Agent_Bookmark
+     (Self : Client_Type;
+      Agent_Id : String;
+      Message_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Agent_Bookmark_Response;
+
    --  Delete agent identity
    --
    --  DELETE /api/v1/agents/{agentId}/identity
    --
    --  Required scopes: agents:write.
-   procedure Delete_Agent_Identity
+   function Delete_Agent_Identity
      (Self : Client_Type;
       Agent_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Agent_Identity_Response;
+
+   --  Unpin every message of an agent
+   --
+   --  DELETE /api/v1/agents/{agentId}/bookmarks
+   --
+   --  Required scopes: agents:write.
+   function Delete_All_Agent_Bookmarks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_All_Agent_Bookmarks_Response;
 
    --  Get an agent
    --
@@ -278,6 +317,19 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options;
       Max_Items : Natural := 0)
       return UARP.Models.Agent_Vectors.Vector;
+
+   --  Pinned messages of an agent
+   --
+   --  Up to 1000, unordered. `{"items":[]}` on an agent with none (measured 2026-09-10).
+   --
+   --  GET /api/v1/agents/{agentId}/bookmarks
+   --
+   --  Required scopes: agents:read.
+   function List_Agent_Bookmarks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_Bookmarks_Response;
 
    --  Messages between agents
    --
@@ -424,7 +476,6 @@ package UARP.API.Agents is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.Models.Agent_Update;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent;
 
@@ -439,5 +490,29 @@ package UARP.API.Agents is
       Payload : UARP.Models.Risk_Classification_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent;
+
+   --  Set one per-tool trust override
+   --
+   --  Upserts a single entry: sending the same `tool_name` twice replaces its `trust_level` rather
+   --  than adding a second row. The response is the agent's FULL override list after the write, so
+   --  a client can render the table without a second call.
+   --
+   --  WRITE SEMANTICS: merges. Read from the handler, not from the body shape: it loads the agent,
+   --  drops any existing entry with this `tool_name`, appends the new one and leaves every other
+   --  override untouched. So this call cannot clear the list, and cannot set two entries at once.
+   --
+   --  The write is a compare-and-set against the agent record, so a concurrent `PUT
+   --  /agents/{agentId}` cannot clobber the override with a stale snapshot - a lost race answers
+   --  409 and the caller reloads.
+   --
+   --  PATCH /api/v1/agents/{agentId}/autonomy/tool-override
+   --
+   --  Required scopes: agents:write.
+   function Upsert_Agent_Tool_Override
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Agent_Tool_Override_Update;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upsert_Agent_Tool_Override_Response;
 
 end UARP.API.Agents;

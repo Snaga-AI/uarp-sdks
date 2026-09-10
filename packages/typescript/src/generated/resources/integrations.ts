@@ -6,6 +6,7 @@ import { pick } from '../../core/util.js';
 import type {
   AgentIntegration,
   CreateIntegrationRequest,
+  DeleteIntegrationResponse,
   Integration,
   JsonValue,
   ListAgentIntegrationsResponse,
@@ -76,12 +77,11 @@ export class IntegrationsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  delete(id: string, options?: RequestOptions): Promise<void> {
+  delete(id: string, options?: RequestOptions): Promise<DeleteIntegrationResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/integrations/${encodeURIComponent(String(id))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }

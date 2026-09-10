@@ -403,7 +403,7 @@ impl GovernanceApi {
     /// Get ambassador
     ///
     /// `GET /api/v1/governance/ambassador/ambassadors/{id}`
-    pub async fn get_ambassador(&self, id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_ambassador(&self, id: &str) -> Result<models::Ambassador> {
         self.client
             .request_json(Request {
                 method: Method::GET,

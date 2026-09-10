@@ -165,7 +165,7 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Provider : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Delete_O_Auth_Provider_Response
+      return UARP.Models.O_Auth_Login_Provider_Config_Deleted
    is
    begin
       return UARP.Models.From_JSON
@@ -233,7 +233,7 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Provider : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Get_O_Auth_Provider_Response
+      return UARP.Models.O_Auth_Login_Provider_Config_Status
    is
    begin
       return UARP.Models.From_JSON
@@ -350,9 +350,9 @@ package body UARP.API.Admin is
    function Admin_Put_O_Auth_Provider
      (Self : Client_Type;
       Provider : String;
-      Payload : UARP.Models.Admin_Put_O_Auth_Provider_Request;
+      Payload : UARP.Models.O_Auth_Login_Provider_Config_Update;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Put_O_Auth_Provider_Response
+      return UARP.Models.O_Auth_Login_Provider_Config_Update_Response
    is
    begin
       return UARP.Models.From_JSON
@@ -533,18 +533,20 @@ package body UARP.API.Admin is
              Options => Options));
    end Delete_Admin_Provider;
 
-   procedure Delete_Android_Tester
+   function Delete_Android_Tester
      (Self : Client_Type;
       Email : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Android_Tester_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/admin/testers/android/" & UARP.Types.Encode_Path_Segment (Email),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/admin/testers/android/" & UARP.Types.Encode_Path_Segment (Email),
+             Idempotent => True,
+             Options => Options));
    end Delete_Android_Tester;
 
    function Generate_Admin_Blog_Post
@@ -1282,6 +1284,7 @@ package body UARP.API.Admin is
 
    function Update_Tenant_Plan
      (Self : Client_Type;
+      Tenant_Id : String;
       Payload : UARP.Models.Update_Tenant_Plan_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Tenant_Plan_Response
@@ -1291,7 +1294,7 @@ package body UARP.API.Admin is
          (UARP.Client.Call
             (Self,
              "PUT",
-             "/api/v1/admin/tenants/{tenantId}",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id),
              Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,

@@ -344,15 +344,22 @@ package UARP.API.Runs is
 
    --  Save user feedback/reaction for a run
    --
+   --  One reaction per (message, caller); a second PUT for the same `message_id` replaces the
+   --  first. `message_id` is whatever string the client attaches to a message - the platform
+   --  stores it verbatim (max 256 chars) and does not check it against the transcript, which today
+   --  carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
+   --  There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
+   --  405 (measured 2026-09-10).
+   --
    --  PUT /api/v1/runs/{runId}/feedback
    --
    --  Required scopes: runs:create.
    function Set_Run_Feedback
      (Self : Client_Type;
       Run_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Run_Feedback_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Set_Run_Feedback_Response;
 
    --  Stream run events via SSE
    --

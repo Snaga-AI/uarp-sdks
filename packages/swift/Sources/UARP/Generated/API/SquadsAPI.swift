@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Operations tagged `Squads`.
+/// Squads — multi-agent groups that run a shared brief
 public struct SquadsAPI: Sendable {
     let client: UARPClient
 
@@ -386,6 +386,6 @@ public struct SquadsAPI: Sendable {
 }
 
 extension UARPClient {
-    /// Operations tagged `Squads`.
+    /// Squads — multi-agent groups that run a shared brief
     public var squads: SquadsAPI { SquadsAPI(client: self) }
 }

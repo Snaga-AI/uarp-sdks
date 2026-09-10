@@ -28,8 +28,8 @@ public struct CompaniesAPI: Sendable {
     /// `DELETE /api/v1/companies/{id}`
     ///
     /// Required scopes: `agents:write`.
-    public func delete(id: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func delete(id: String, options: RequestOptions = .init()) async throws -> DeleteCompanyResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/companies/\(encodePathSegment(id))",
             idempotent: true,

@@ -6,11 +6,17 @@ import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   Agent,
+  AgentBookmark,
+  AgentToolOverrideUpdate,
   AgentUpdate,
   AiSystemCard,
+  CreateAgentBookmarkRequest,
   CreateAgentFriaRequest,
   CreateAgentRequest,
   CreateAgentVersionRequest,
+  DeleteAgentBookmarkResponse,
+  DeleteAgentIdentityResponse,
+  DeleteAllAgentBookmarksResponse,
   FriaReport,
   GetAgentActivityStatsResponse,
   GetAgentIdentityResponse,
@@ -19,6 +25,7 @@ import type {
   GetAgentVersionDiffResponse,
   JsonObject,
   JsonValue,
+  ListAgentBookmarksResponse,
   ListAgentMailResponse,
   ListAgentVersionsResponse,
   ListAgentsResponse,
@@ -32,6 +39,7 @@ import type {
   SpecToolCatalog,
   SuspendAgentRequest,
   TerminateAgentResponse,
+  UpsertAgentToolOverrideResponse,
 } from '../models.js';
 
 /**
@@ -135,6 +143,27 @@ export class AgentsResource extends APIResource {
   }
 
   /**
+   * Pin a message
+   *
+   * Idempotent on `message_id`: pinning a message already pinned returns the existing record
+   * with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
+   * Unknown fields are dropped.
+   *
+   * `POST /api/v1/agents/{agentId}/bookmarks`
+   *
+   * Required scopes: `agents:write`.
+   */
+  createAgentBookmark(agentId: string, body: CreateAgentBookmarkRequest, options?: RequestOptions): Promise<AgentBookmark> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/bookmarks`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Create or update FRIA report
    *
    * `POST /api/v1/agents/{agentId}/fria`
@@ -158,7 +187,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  createAgentVersion(agentId: string, body?: CreateAgentVersionRequest, options?: RequestOptions): Promise<JsonValue> {
+  createAgentVersion(agentId: string, body: CreateAgentVersionRequest, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/versions`,
@@ -185,18 +214,49 @@ export class AgentsResource extends APIResource {
   }
 
   /**
+   * Unpin one message
+   *
+   * `DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}`
+   *
+   * Required scopes: `agents:write`.
+   */
+  deleteAgentBookmark(agentId: string, messageId: string, options?: RequestOptions): Promise<DeleteAgentBookmarkResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/bookmarks/${encodeURIComponent(String(messageId))}`,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Delete agent identity
    *
    * `DELETE /api/v1/agents/{agentId}/identity`
    *
    * Required scopes: `agents:write`.
    */
-  deleteAgentIdentity(agentId: string, options?: RequestOptions): Promise<void> {
+  deleteAgentIdentity(agentId: string, options?: RequestOptions): Promise<DeleteAgentIdentityResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/identity`,
       idempotent: true,
-      responseType: 'void',
+      options,
+    });
+  }
+
+  /**
+   * Unpin every message of an agent
+   *
+   * `DELETE /api/v1/agents/{agentId}/bookmarks`
+   *
+   * Required scopes: `agents:write`.
+   */
+  deleteAllAgentBookmarks(agentId: string, options?: RequestOptions): Promise<DeleteAllAgentBookmarksResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/bookmarks`,
+      idempotent: true,
       options,
     });
   }
@@ -391,6 +451,23 @@ export class AgentsResource extends APIResource {
   }
 
   /**
+   * Pinned messages of an agent
+   *
+   * Up to 1000, unordered. `{"items":[]}` on an agent with none (measured 2026-09-10).
+   *
+   * `GET /api/v1/agents/{agentId}/bookmarks`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listAgentBookmarks(agentId: string, options?: RequestOptions): Promise<ListAgentBookmarksResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/bookmarks`,
+      options,
+    });
+  }
+
+  /**
    * Messages between agents
    *
    * Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
@@ -581,7 +658,7 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  update(agentId: string, body?: AgentUpdate, options?: RequestOptions): Promise<Agent> {
+  update(agentId: string, body: AgentUpdate, options?: RequestOptions): Promise<Agent> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}`,
@@ -602,6 +679,35 @@ export class AgentsResource extends APIResource {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/risk-classification`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Set one per-tool trust override
+   *
+   * Upserts a single entry: sending the same `tool_name` twice replaces its `trust_level` rather
+   * than adding a second row. The response is the agent's FULL override list after the write, so
+   * a client can render the table without a second call.
+   *
+   * WRITE SEMANTICS: merges. Read from the handler, not from the body shape: it loads the agent,
+   * drops any existing entry with this `tool_name`, appends the new one and leaves every other
+   * override untouched. So this call cannot clear the list, and cannot set two entries at once.
+   *
+   * The write is a compare-and-set against the agent record, so a concurrent `PUT
+   * /agents/{agentId}` cannot clobber the override with a stale snapshot — a lost race answers
+   * 409 and the caller reloads.
+   *
+   * `PATCH /api/v1/agents/{agentId}/autonomy/tool-override`
+   *
+   * Required scopes: `agents:write`.
+   */
+  upsertAgentToolOverride(agentId: string, body: AgentToolOverrideUpdate, options?: RequestOptions): Promise<UpsertAgentToolOverrideResponse> {
+    return this._client.request({
+      method: 'PATCH',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/autonomy/tool-override`,
       body,
       idempotent: true,
       options,

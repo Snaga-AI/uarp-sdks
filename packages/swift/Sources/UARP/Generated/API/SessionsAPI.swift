@@ -22,6 +22,25 @@ public struct SessionsAPI: Sendable {
         ))
     }
 
+    /// Delete many sessions in one request
+    ///
+    /// Cascades each session in turn and writes one audit entry for the batch. Ids that no longer
+    /// exist come back in `failed`, not as an error — the caller's intent for them is already met.
+    /// Not JSON → 400; an empty list, or one over 200 ids → 400.
+    ///
+    /// `POST /api/v1/sessions/bulk-delete`
+    ///
+    /// Required scopes: `sessions:write`.
+    public func bulkDeleteSessions(body: BulkDeleteSessionsRequest, options: RequestOptions = .init()) async throws -> BulkDeleteSessionsResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/sessions/bulk-delete",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Close a session
     ///
     /// `DELETE /api/v1/sessions/{sessionId}`
@@ -72,12 +91,11 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/annotations`
     ///
     /// Required scopes: `sessions:write`.
-    public func createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest? = nil, options: RequestOptions = .init()) async throws -> CreateSessionAnnotationResponse {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest, options: RequestOptions = .init()) async throws -> CreateSessionAnnotationResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/annotations",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -104,12 +122,11 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
-    public func createSessionShare(sessionId: String, body: CreateSessionShareRequest? = nil, options: RequestOptions = .init()) async throws -> CreateSessionShareResponse {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func createSessionShare(sessionId: String, body: CreateSessionShareRequest, options: RequestOptions = .init()) async throws -> CreateSessionShareResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/share",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -152,8 +169,8 @@ public struct SessionsAPI: Sendable {
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = .init()) async throws -> DeleteSessionAnnotationResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/annotations/\(encodePathSegment(annotationId))",
             idempotent: true,
@@ -174,6 +191,29 @@ public struct SessionsAPI: Sendable {
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/todos/\(encodePathSegment(todoId))",
             idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Export a conversation
+    ///
+    /// Two formats and no others: `md` (the default, `text/markdown`) and `json`
+    /// (`application/json`, the `snaga.chat.v1` envelope). Any other value is 400 with the two
+    /// names in the sentence — it is not silently coerced to the default, because a client asking
+    /// for `html` and receiving markdown would render it as text.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/export`
+    ///
+    /// Required scopes: `sessions:read`.
+    public func export(sessionId: String, format: ExportSessionFormat? = nil, options: RequestOptions = .init()) async throws -> SessionExport {
+        var query: [URLQueryItem] = []
+        if let format {
+            query.append(URLQueryItem(name: "format", value: format.rawValue))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/sessions/\(encodePathSegment(sessionId))/export",
+            query: query,
             options: options
         ))
     }
@@ -200,6 +240,32 @@ public struct SessionsAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/audit-log",
+            options: options
+        ))
+    }
+
+    /// The conversation transcript
+    ///
+    /// The transcript this session's clients render. Undescribed until 2026-09-10 and, until the
+    /// same day, not a route at all: a GET here fell through to the bare-session branch and was
+    /// answered with the SESSION record, whose `conversation_history` carries the same list.
+    /// Closing that fall-through took the Android chat screen down with it, which is how the gap
+    /// was found.
+    ///
+    /// `messages` and `items` carry the SAME list — a client reads whichever it already reads. The
+    /// `active_run_*` fields describe a run still in flight, so a cold launch into a chat the agent
+    /// is still working in can attach to it rather than render an idle screen.
+    ///
+    /// A session that does not exist is 404, not an empty list: "no messages yet" and "no such
+    /// session" must not render the same.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/messages`
+    ///
+    /// Required scopes: `sessions:read`.
+    public func getSessionMessages(sessionId: String, options: RequestOptions = .init()) async throws -> GetSessionMessagesResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/sessions/\(encodePathSegment(sessionId))/messages",
             options: options
         ))
     }
@@ -357,8 +423,8 @@ public struct SessionsAPI: Sendable {
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
-    public func revokeSessionShare(sessionId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func revokeSessionShare(sessionId: String, options: RequestOptions = .init()) async throws -> RevokeSessionShareResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/share",
             idempotent: true,

@@ -157,8 +157,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminDeleteOAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = RequestOptions()): AdminDeleteOAuthProviderResponse {
-        return client.request<AdminDeleteOAuthProviderResponse>(
+    public suspend fun adminDeleteOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options: RequestOptions = RequestOptions()): OAuthLoginProviderConfigDeleted {
+        return client.request<OAuthLoginProviderConfigDeleted>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/admin/oauth-login-providers/${encodePathSegment(provider.toString())}",
@@ -246,8 +246,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminGetOAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = RequestOptions()): AdminGetOAuthProviderResponse {
-        return client.request<AdminGetOAuthProviderResponse>(
+    public suspend fun adminGetOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options: RequestOptions = RequestOptions()): OAuthLoginProviderConfigStatus {
+        return client.request<OAuthLoginProviderConfigStatus>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/oauth-login-providers/${encodePathSegment(provider.toString())}",
@@ -390,8 +390,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminPutOAuthProvider(provider: OAuthLoginProviderItemId, body: AdminPutOAuthProviderRequest, options: RequestOptions = RequestOptions()): AdminPutOAuthProviderResponse {
-        return client.request<AdminPutOAuthProviderResponse>(
+    public suspend fun adminPutOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, body: OAuthLoginProviderConfigUpdate, options: RequestOptions = RequestOptions()): OAuthLoginProviderConfigUpdateResponse {
+        return client.request<OAuthLoginProviderConfigUpdateResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/oauth-login-providers/${encodePathSegment(provider.toString())}",
@@ -621,8 +621,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun deleteAndroidTester(email: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteAndroidTester(email: String, options: RequestOptions = RequestOptions()): DeleteAndroidTesterResponse {
+        return client.request<DeleteAndroidTesterResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/admin/testers/android/${encodePathSegment(email)}",
@@ -1565,11 +1565,11 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateTenantPlan(body: UpdateTenantPlanRequest, options: RequestOptions = RequestOptions()): UpdateTenantPlanResponse {
+    public suspend fun updateTenantPlan(tenantId: String, body: UpdateTenantPlanRequest, options: RequestOptions = RequestOptions()): UpdateTenantPlanResponse {
         return client.request<UpdateTenantPlanResponse>(
             RequestSpec(
                 method = "PUT",
-                path = "/api/v1/admin/tenants/{tenantId}",
+                path = "/api/v1/admin/tenants/${encodePathSegment(tenantId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

@@ -213,8 +213,8 @@ public struct RegistryAPI: Sendable {
     /// Reverse a yank on a published spec version
     ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank`
-    public func registryUnyankVersion(scope: String, name: String, version: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func registryUnyankVersion(scope: String, name: String, version: String, options: RequestOptions = .init()) async throws -> RegistryUnyankVersionResponse {
+        return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/registry/spec/\(encodePathSegment(scope))/\(encodePathSegment(name))/\(encodePathSegment(version))/unyank",
             idempotent: true,
@@ -225,9 +225,9 @@ public struct RegistryAPI: Sendable {
     /// Yank (mark unsafe) a published spec version
     ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/yank`
-    public func registryYankVersion(scope: String, name: String, version: String, body: RegistryYankVersionRequest? = nil, options: RequestOptions = .init()) async throws {
+    public func registryYankVersion(scope: String, name: String, version: String, body: RegistryYankVersionRequest? = nil, options: RequestOptions = .init()) async throws -> RegistryYankVersionResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
-        try await client.sendVoid(RequestSpec(
+        return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/registry/spec/\(encodePathSegment(scope))/\(encodePathSegment(name))/\(encodePathSegment(version))/yank",
             body: encodedBody,

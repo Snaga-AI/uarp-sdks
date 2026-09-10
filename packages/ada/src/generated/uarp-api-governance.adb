@@ -341,14 +341,15 @@ package body UARP.API.Governance is
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Ambassador
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/governance/ambassador/ambassadors/" & UARP.Types.Encode_Path_Segment (Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/governance/ambassador/ambassadors/" & UARP.Types.Encode_Path_Segment (Id),
+             Options => Options));
    end Get_Ambassador;
 
    function Get_Arbiter_Case

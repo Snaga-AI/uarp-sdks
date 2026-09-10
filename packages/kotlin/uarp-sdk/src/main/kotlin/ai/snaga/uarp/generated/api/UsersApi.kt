@@ -42,12 +42,12 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:write`.
      */
-    public suspend fun acceptInvite(inviteId: String, body: AcceptInviteRequest? = null, options: RequestOptions = RequestOptions()): AcceptInviteResponse {
+    public suspend fun acceptInvite(inviteId: String, body: AcceptInviteRequest, options: RequestOptions = RequestOptions()): AcceptInviteResponse {
         return client.request<AcceptInviteResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/users/invites/${encodePathSegment(inviteId)}/accept",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -79,8 +79,8 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:write`.
      */
-    public suspend fun deleteInvite(inviteId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteInvite(inviteId: String, options: RequestOptions = RequestOptions()): DeleteInviteResponse {
+        return client.request<DeleteInviteResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/users/invites/${encodePathSegment(inviteId)}",

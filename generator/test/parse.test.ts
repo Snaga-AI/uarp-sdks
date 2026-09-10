@@ -253,11 +253,15 @@ test('parses the production document into the expected shape', () => {
   // 725 -> 710 on 2026-09-10 (0.5.17): the Commerce surface was removed from
   // the API (uarp #441) — fourteen `/commerce/*` operations and the Shopify
   // webhook. The first shrink this count has recorded.
-  assert.equal(ops.length, 710);
+  // 710 -> 709 on 2026-09-10 (0.5.18): +16 operations described from their
+  // bytes (uarp #444) and -19 with Training and Creativity removed (#445);
+  // two more paths gained operations along the way, hence the net of one.
+  assert.equal(ops.length, 709);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
-  assert.equal(spec.groups.length, 50);
+  // 50 -> 48 on 2026-09-10 (0.5.18): Training and Creativity gone too.
+  assert.equal(spec.groups.length, 48);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -389,10 +393,15 @@ test('parses the production document into the expected shape', () => {
   // The `CreateTaskRequest*` trio is the removal, alongside that.
   // 967 -> 1111 with the 0.5.16 refresh (measured at 0.5.17, after the six
   // commerce schemas left).
-  assert.equal(spec.types.length, 1111);
+  // 1111 -> 1120 on 2026-09-10 (0.5.18): the described operations brought
+  // their bodies and responses (AgentBookmark, WorkspaceFileVersion,
+  // MemoryImportEntry, the feedback and public-session shapes …) and the nine
+  // Training schemas left — net nine more.
+  assert.equal(spec.types.length, 1120);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
-  assert.equal(ops.filter((o) => o.sse).length, 15);
+  // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.
+  assert.equal(ops.filter((o) => o.sse).length, 14);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was
@@ -401,7 +410,8 @@ test('parses the production document into the expected shape', () => {
   // the declaration took: paging is detected from the parameters, so the
   // operation could not have been counted here before they existed.
   // 16 -> 15 on 2026-09-10: `listCommerceProducts` was one of them.
-  assert.equal(ops.filter((o) => o.pagination).length, 15);
+  // 15 -> 14 on 2026-09-10 (0.5.18): `listTrainingJobs` was another.
+  assert.equal(ops.filter((o) => o.pagination).length, 14);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.

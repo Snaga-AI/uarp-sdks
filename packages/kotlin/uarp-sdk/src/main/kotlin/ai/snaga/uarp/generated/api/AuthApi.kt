@@ -58,7 +58,7 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/auth/oauth/{provider}/callback`
      */
-    public suspend fun completeOAuthLogin(provider: OAuthLoginProviderItemId, code: String, state: String, error: String? = null, options: RequestOptions = RequestOptions()): CompleteOAuthLoginResponse {
+    public suspend fun completeOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, code: String, state: String, error: String? = null, options: RequestOptions = RequestOptions()): CompleteOAuthLoginResponse {
         val query = buildList {
             add("code" to code)
             add("state" to state)
@@ -253,8 +253,8 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/auth/oauth/providers`
      */
-    public suspend fun listOAuthLoginProviders(options: RequestOptions = RequestOptions()): ListOAuthLoginProvidersResponse {
-        return client.request<ListOAuthLoginProvidersResponse>(
+    public suspend fun listOAuthLoginProviders(options: RequestOptions = RequestOptions()): OAuthLoginProvidersList {
+        return client.request<OAuthLoginProvidersList>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/auth/oauth/providers",
@@ -367,7 +367,7 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/auth/oauth/{provider}/start`
      */
-    public suspend fun startOAuthLogin(provider: OAuthLoginProviderItemId, returnTo: String? = null, deviceLabel: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun startOAuthLogin(provider: OAuthLoginProviderConfigStatusProvider, returnTo: String? = null, deviceLabel: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (returnTo != null) add("return_to" to returnTo)
             if (deviceLabel != null) add("device_label" to deviceLabel)
@@ -391,7 +391,7 @@ public class AuthApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/me/auth-providers/{provider}`
      */
-    public suspend fun unlinkAuthProvider(provider: ListOAuthLoginProvidersResponseProviderId, options: RequestOptions = RequestOptions()): UnlinkAuthProviderResponse {
+    public suspend fun unlinkAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = RequestOptions()): UnlinkAuthProviderResponse {
         return client.request<UnlinkAuthProviderResponse>(
             RequestSpec(
                 method = "DELETE",

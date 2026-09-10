@@ -43,6 +43,29 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Delete many sessions in one request
+     *
+     * Cascades each session in turn and writes one audit entry for the batch. Ids that no longer
+     * exist come back in `failed`, not as an error — the caller's intent for them is already met.
+     * Not JSON → 400; an empty list, or one over 200 ids → 400.
+     *
+     * `POST /api/v1/sessions/bulk-delete`
+     *
+     * Required scopes: `sessions:write`.
+     */
+    public suspend fun bulkDeleteSessions(body: BulkDeleteSessionsRequest, options: RequestOptions = RequestOptions()): BulkDeleteSessionsResponse {
+        return client.request<BulkDeleteSessionsResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/sessions/bulk-delete",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Close a session
      *
      * `DELETE /api/v1/sessions/{sessionId}`
@@ -105,12 +128,12 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest? = null, options: RequestOptions = RequestOptions()): CreateSessionAnnotationResponse {
+    public suspend fun createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest, options: RequestOptions = RequestOptions()): CreateSessionAnnotationResponse {
         return client.request<CreateSessionAnnotationResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/annotations",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -143,12 +166,12 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun createSessionShare(sessionId: String, body: CreateSessionShareRequest? = null, options: RequestOptions = RequestOptions()): CreateSessionShareResponse {
+    public suspend fun createSessionShare(sessionId: String, body: CreateSessionShareRequest, options: RequestOptions = RequestOptions()): CreateSessionShareResponse {
         return client.request<CreateSessionShareResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/share",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -202,8 +225,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = RequestOptions()): DeleteSessionAnnotationResponse {
+        return client.request<DeleteSessionAnnotationResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/annotations/${encodePathSegment(annotationId)}",
@@ -229,6 +252,32 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/todos/${encodePathSegment(todoId)}",
                 idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Export a conversation
+     *
+     * Two formats and no others: `md` (the default, `text/markdown`) and `json`
+     * (`application/json`, the `snaga.chat.v1` envelope). Any other value is 400 with the two
+     * names in the sentence — it is not silently coerced to the default, because a client asking
+     * for `html` and receiving markdown would render it as text.
+     *
+     * `GET /api/v1/sessions/{sessionId}/export`
+     *
+     * Required scopes: `sessions:read`.
+     */
+    public suspend fun export(sessionId: String, format: ExportSessionFormat? = null, options: RequestOptions = RequestOptions()): SessionExport {
+        val query = buildList {
+            if (format != null) add("format" to format.value)
+        }
+        return client.request<SessionExport>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/sessions/${encodePathSegment(sessionId)}/export",
+                query = query,
                 options = options,
             )
         )
@@ -263,6 +312,36 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/audit-log",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * The conversation transcript
+     *
+     * The transcript this session's clients render. Undescribed until 2026-09-10 and, until the
+     * same day, not a route at all: a GET here fell through to the bare-session branch and was
+     * answered with the SESSION record, whose `conversation_history` carries the same list.
+     * Closing that fall-through took the Android chat screen down with it, which is how the gap
+     * was found.
+     *
+     * `messages` and `items` carry the SAME list — a client reads whichever it already reads. The
+     * `active_run_*` fields describe a run still in flight, so a cold launch into a chat the agent
+     * is still working in can attach to it rather than render an idle screen.
+     *
+     * A session that does not exist is 404, not an empty list: "no messages yet" and "no such
+     * session" must not render the same.
+     *
+     * `GET /api/v1/sessions/{sessionId}/messages`
+     *
+     * Required scopes: `sessions:read`.
+     */
+    public suspend fun getSessionMessages(sessionId: String, options: RequestOptions = RequestOptions()): GetSessionMessagesResponse {
+        return client.request<GetSessionMessagesResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/sessions/${encodePathSegment(sessionId)}/messages",
                 options = options,
             )
         )
@@ -450,8 +529,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun revokeSessionShare(sessionId: String, options: RequestOptions = RequestOptions()) {
-        client.requestUnit(
+    public suspend fun revokeSessionShare(sessionId: String, options: RequestOptions = RequestOptions()): RevokeSessionShareResponse {
+        return client.request<RevokeSessionShareResponse>(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/share",

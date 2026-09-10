@@ -43,8 +43,8 @@ public struct IntegrationsAPI: Sendable {
     /// `DELETE /api/v1/integrations/{id}`
     ///
     /// Required scopes: `agents:write`.
-    public func delete(id: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func delete(id: String, options: RequestOptions = .init()) async throws -> DeleteIntegrationResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/integrations/\(encodePathSegment(id))",
             idempotent: true,

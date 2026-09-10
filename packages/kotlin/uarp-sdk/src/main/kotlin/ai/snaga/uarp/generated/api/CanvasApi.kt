@@ -20,7 +20,7 @@ import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 
 /**
- * Operations tagged `Canvas`.
+ * Canvas documents attached to a session
  */
 public class CanvasApi internal constructor(private val client: UarpClient) {
     /**
@@ -182,6 +182,6 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
 }
 
 /**
- * Operations tagged `Canvas`.
+ * Canvas documents attached to a session
  */
 public val UarpClient.canvas: CanvasApi get() = CanvasApi(this)

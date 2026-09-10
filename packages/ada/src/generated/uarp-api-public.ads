@@ -72,6 +72,20 @@ package UARP.API.Public is
 
    No_Public_Domain_Lookup_Params : constant Public_Domain_Lookup_Params := (others => <>);
 
+   --  Cancel a run of this chat
+   --
+   --  Cancels a run that belongs to this public session. No body. A run id from outside the
+   --  session is 404; a run of this session that was not started publicly is 409. Forms measured
+   --  through the router with a seeded session (public-served-forms_test.ts, 2026-09-10).
+   --
+   --  POST /api/v1/public/sessions/{sessionId}/runs/{runId}/cancel
+   function Cancel_Public_Session_Run
+     (Self : Client_Type;
+      Session_Id : String;
+      Run_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Cancel_Public_Session_Run_Response;
+
    --  Create public session
    --
    --  POST /api/v1/public/sessions
@@ -388,6 +402,20 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Send_Public_Message_Response;
 
+   --  Publish a read-only copy of this chat
+   --
+   --  Snapshots the last 60 user/assistant turns of the session into a share record that
+   --  `getPublicSharedChat` serves for a limited time, and returns its token. No body. A session
+   --  with no turns yet is 400 `Nothing to share yet`. Forms measured through the router with a
+   --  seeded session (public-served-forms_test.ts, 2026-09-10).
+   --
+   --  POST /api/v1/public/sessions/{sessionId}/share
+   function Share_Public_Session
+     (Self : Client_Type;
+      Session_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Share_Public_Session_Response;
+
    --  Sign up for Android closed testing
    --
    --  Records the address and, when a testing URL is configured, mails the join link. A repeat
@@ -411,5 +439,22 @@ package UARP.API.Public is
       Session_Id : String;
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
+
+   --  Attach an image to this chat
+   --
+   --  The body is the raw image bytes - not multipart, not JSON - with its media type in
+   --  `Content-Type` (`image/*` only; anything else is 415). Empty is 400; over 8 MB is 413; more
+   --  uploads than the session allows is 429; a tenant whose storage quota is full gets 403. The
+   --  image is stored as one of the agent tenant's files and the returned `file_id` is what
+   --  `sendPublicMessage` attaches. Forms measured through the router with a seeded session
+   --  (public-served-forms_test.ts, 2026-09-10).
+   --
+   --  POST /api/v1/public/sessions/{sessionId}/upload
+   function Upload_Public_Session_Image
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.JSON_Support.JSON_Value;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Upload_Public_Session_Image_Response;
 
 end UARP.API.Public;

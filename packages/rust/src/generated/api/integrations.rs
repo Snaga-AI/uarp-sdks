@@ -75,9 +75,9 @@ impl IntegrationsApi {
     /// `DELETE /api/v1/integrations/{id}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete(&self, id: &str) -> Result<()> {
+    pub async fn delete(&self, id: &str) -> Result<models::DeleteIntegrationResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/integrations/{}", encode_path(id)),
                 query: NO_QUERY,

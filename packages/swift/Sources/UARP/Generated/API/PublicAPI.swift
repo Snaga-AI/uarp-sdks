@@ -8,6 +8,22 @@ public struct PublicAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Cancel a run of this chat
+    ///
+    /// Cancels a run that belongs to this public session. No body. A run id from outside the
+    /// session is 404; a run of this session that was not started publicly is 409. Forms measured
+    /// through the router with a seeded session (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/runs/{runId}/cancel`
+    public func cancelPublicSessionRun(sessionId: String, runId: String, options: RequestOptions = .init()) async throws -> CancelPublicSessionRunResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/runs/\(encodePathSegment(runId))/cancel",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Create public session
     ///
     /// `POST /api/v1/public/sessions`
@@ -440,6 +456,23 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Publish a read-only copy of this chat
+    ///
+    /// Snapshots the last 60 user/assistant turns of the session into a share record that
+    /// `getPublicSharedChat` serves for a limited time, and returns its token. No body. A session
+    /// with no turns yet is 400 `Nothing to share yet`. Forms measured through the router with a
+    /// seeded session (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/share`
+    public func sharePublicSession(sessionId: String, options: RequestOptions = .init()) async throws -> SharePublicSessionResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/share",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Sign up for Android closed testing
     ///
     /// Records the address and, when a testing URL is configured, mails the join link. A repeat
@@ -466,6 +499,26 @@ public struct PublicAPI: Sendable {
         return client.sendStream(RequestSpec(
             method: "GET",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/events",
+            options: options
+        ))
+    }
+
+    /// Attach an image to this chat
+    ///
+    /// The body is the raw image bytes — not multipart, not JSON — with its media type in
+    /// `Content-Type` (`image/*` only; anything else is 415). Empty is 400; over 8 MB is 413; more
+    /// uploads than the session allows is 429; a tenant whose storage quota is full gets 403. The
+    /// image is stored as one of the agent tenant's files and the returned `file_id` is what
+    /// `sendPublicMessage` attaches. Forms measured through the router with a seeded session
+    /// (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/upload`
+    public func uploadPublicSessionImage(sessionId: String, body: FilePart, options: RequestOptions = .init()) async throws -> UploadPublicSessionImageResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/upload",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

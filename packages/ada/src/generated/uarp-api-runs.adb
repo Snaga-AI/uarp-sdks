@@ -401,19 +401,20 @@ package body UARP.API.Runs is
    function Set_Run_Feedback
      (Self : Client_Type;
       Run_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Run_Feedback_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Set_Run_Feedback_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Set_Run_Feedback;
 
    procedure Stream_Run_Events

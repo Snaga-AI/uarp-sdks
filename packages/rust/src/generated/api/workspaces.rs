@@ -29,11 +29,25 @@ pub struct DownloadWorkspaceFileParams {
     pub path: String,
 }
 
+/// Query and header parameters for `getWorkspaceFileHistoryContent`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetWorkspaceFileHistoryContentParams {
+    pub path: String,
+    /// `file_id` of the version.
+    pub version: String,
+}
+
 /// Query and header parameters for `listAgentWorkspaceFiles`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentWorkspaceFilesParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+}
+
+/// Query and header parameters for `listWorkspaceFileHistory`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListWorkspaceFileHistoryParams {
+    pub path: String,
 }
 
 /// Query and header parameters for `listWorkspaceFiles`.
@@ -227,6 +241,28 @@ impl WorkspacesApi {
             .await
     }
 
+    /// Bytes of a prior version
+    ///
+    /// `version` is a `file_id` from `listWorkspaceFileHistory` and must belong to `path`'s history
+    /// — any other id is 404. Served with the version's own `Content-Type`, its `Content-Length`,
+    /// and `Cache-Control: private, max-age=3600`.
+    ///
+    /// `GET /api/v1/workspaces/{workspaceId}/files/history/content`
+    ///
+    /// Required scopes: `files:read`.
+    pub async fn get_workspace_file_history_content(&self, workspace_id: &str, params: &GetWorkspaceFileHistoryContentParams) -> Result<bytes::Bytes> {
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: format!("/api/v1/workspaces/{}/files/history/content", encode_path(workspace_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// WebSocket terminal session for workspace
     ///
     /// `GET /api/v1/workspaces/{workspaceId}/terminal`
@@ -281,6 +317,28 @@ impl WorkspacesApi {
             .await
     }
 
+    /// Prior versions of a file
+    ///
+    /// Every earlier version kept for `path`, newest first; the current content is not in the list.
+    /// `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
+    /// version's bytes with `getWorkspaceFileHistoryContent`.
+    ///
+    /// `GET /api/v1/workspaces/{workspaceId}/files/history`
+    ///
+    /// Required scopes: `files:read`.
+    pub async fn list_workspace_file_history(&self, workspace_id: &str, params: &ListWorkspaceFileHistoryParams) -> Result<models::ListWorkspaceFileHistoryResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/workspaces/{}/files/history", encode_path(workspace_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List files in workspace directory
     ///
     /// `GET /api/v1/workspaces/{workspaceId}/files`
@@ -327,6 +385,28 @@ impl WorkspacesApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/workspaces/{}/files/move", encode_path(workspace_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Mint a public share link for an HTML snapshot
+    ///
+    /// Stores a self-contained HTML page (assets already inlined by the client, ≤3 MB) under an
+    /// opaque token for seven days; `GET /public/share/{token}` serves it back as JSON data for the
+    /// sandboxed viewer, never as executable HTML. The workspace id is not consulted beyond scope.
+    ///
+    /// `POST /api/v1/workspaces/{workspaceId}/publish`
+    ///
+    /// Required scopes: `files:write`.
+    pub async fn publish_workspace_snapshot(&self, workspace_id: &str, body: &models::PublishWorkspaceSnapshotRequest) -> Result<models::PublishWorkspaceSnapshotResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/workspaces/{}/publish", encode_path(workspace_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Operations tagged `Projects`.
+/// Projects — a workspace grouping agents, sessions and files
 public struct ProjectsAPI: Sendable {
     let client: UARPClient
 
@@ -102,6 +102,6 @@ public struct ProjectsAPI: Sendable {
 }
 
 extension UARPClient {
-    /// Operations tagged `Projects`.
+    /// Projects — a workspace grouping agents, sessions and files
     public var projects: ProjectsAPI { ProjectsAPI(client: self) }
 }

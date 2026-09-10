@@ -366,8 +366,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/ambassador/ambassadors/{id}`
      */
-    public suspend fun getAmbassador(id: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAmbassador(id: String, options: RequestOptions = RequestOptions()): Ambassador {
+        return client.request<Ambassador>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/ambassador/ambassadors/${encodePathSegment(id)}",

@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Operations tagged `Canvas`.
+/// Canvas documents attached to a session
 public struct CanvasAPI: Sendable {
     let client: UARPClient
 
@@ -139,6 +139,6 @@ public struct CanvasAPI: Sendable {
 }
 
 extension UARPClient {
-    /// Operations tagged `Canvas`.
+    /// Canvas documents attached to a session
     public var canvas: CanvasAPI { CanvasAPI(client: self) }
 }

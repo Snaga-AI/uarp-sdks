@@ -45,9 +45,9 @@ impl FilesApi {
     /// `DELETE /api/v1/files/{fileId}`
     ///
     /// Required scopes: `files:write`.
-    pub async fn delete(&self, file_id: &str) -> Result<()> {
+    pub async fn delete(&self, file_id: &str) -> Result<models::DeleteFileResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/files/{}", encode_path(file_id)),
                 query: NO_QUERY,

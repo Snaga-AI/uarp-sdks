@@ -37,6 +37,25 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Pin a message
+    ///
+    /// Idempotent on `message_id`: pinning a message already pinned returns the existing record
+    /// with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
+    /// Unknown fields are dropped.
+    ///
+    /// `POST /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:write`.
+    public func createAgentBookmark(agentId: String, body: CreateAgentBookmarkRequest, options: RequestOptions = .init()) async throws -> AgentBookmark {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/bookmarks",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Create or update FRIA report
     ///
     /// `POST /api/v1/agents/{agentId}/fria`
@@ -57,12 +76,11 @@ public struct AgentsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:write`.
-    public func createAgentVersion(agentId: String, body: CreateAgentVersionRequest? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func createAgentVersion(agentId: String, body: CreateAgentVersionRequest, options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/versions",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -82,15 +100,43 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Unpin one message
+    ///
+    /// `DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}`
+    ///
+    /// Required scopes: `agents:write`.
+    public func deleteAgentBookmark(agentId: String, messageId: String, options: RequestOptions = .init()) async throws -> DeleteAgentBookmarkResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/bookmarks/\(encodePathSegment(messageId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Delete agent identity
     ///
     /// `DELETE /api/v1/agents/{agentId}/identity`
     ///
     /// Required scopes: `agents:write`.
-    public func deleteAgentIdentity(agentId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteAgentIdentity(agentId: String, options: RequestOptions = .init()) async throws -> DeleteAgentIdentityResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/identity",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Unpin every message of an agent
+    ///
+    /// `DELETE /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:write`.
+    public func deleteAllAgentBookmarks(agentId: String, options: RequestOptions = .init()) async throws -> DeleteAllAgentBookmarksResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/bookmarks",
             idempotent: true,
             options: options
         ))
@@ -286,6 +332,21 @@ public struct AgentsAPI: Sendable {
         )
     }
 
+    /// Pinned messages of an agent
+    ///
+    /// Up to 1000, unordered. `{"items":[]}` on an agent with none (measured 2026-09-10).
+    ///
+    /// `GET /api/v1/agents/{agentId}/bookmarks`
+    ///
+    /// Required scopes: `agents:read`.
+    public func listAgentBookmarks(agentId: String, options: RequestOptions = .init()) async throws -> ListAgentBookmarksResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/bookmarks",
+            options: options
+        ))
+    }
+
     /// Messages between agents
     ///
     /// Newest first. `agent_id` matches a message in EITHER direction — sent or received — which is
@@ -466,12 +527,11 @@ public struct AgentsAPI: Sendable {
     /// `PUT /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func update(agentId: String, body: AgentUpdate? = nil, options: RequestOptions = .init()) async throws -> Agent {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func update(agentId: String, body: AgentUpdate, options: RequestOptions = .init()) async throws -> Agent {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/agents/\(encodePathSegment(agentId))",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -486,6 +546,33 @@ public struct AgentsAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/risk-classification",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Set one per-tool trust override
+    ///
+    /// Upserts a single entry: sending the same `tool_name` twice replaces its `trust_level` rather
+    /// than adding a second row. The response is the agent's FULL override list after the write, so
+    /// a client can render the table without a second call.
+    ///
+    /// WRITE SEMANTICS: merges. Read from the handler, not from the body shape: it loads the agent,
+    /// drops any existing entry with this `tool_name`, appends the new one and leaves every other
+    /// override untouched. So this call cannot clear the list, and cannot set two entries at once.
+    ///
+    /// The write is a compare-and-set against the agent record, so a concurrent `PUT
+    /// /agents/{agentId}` cannot clobber the override with a stale snapshot — a lost race answers
+    /// 409 and the caller reloads.
+    ///
+    /// `PATCH /api/v1/agents/{agentId}/autonomy/tool-override`
+    ///
+    /// Required scopes: `agents:write`.
+    public func upsertAgentToolOverride(agentId: String, body: AgentToolOverrideUpdate, options: RequestOptions = .init()) async throws -> UpsertAgentToolOverrideResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/autonomy/tool-override",
             body: try client.encode(body),
             idempotent: true,
             options: options

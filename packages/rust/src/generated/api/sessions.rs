@@ -16,6 +16,13 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `exportSession`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ExportSessionParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub format: Option<models::ExportSessionFormat>,
+}
+
 /// Query and header parameters for `getSessionRunFeedback`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetSessionRunFeedbackParams {
@@ -84,6 +91,28 @@ impl SessionsApi {
                 path: format!("/api/v1/sessions/{}/branches/{}/activate", encode_path(session_id), encode_path(branch_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Delete many sessions in one request
+    ///
+    /// Cascades each session in turn and writes one audit entry for the batch. Ids that no longer
+    /// exist come back in `failed`, not as an error — the caller's intent for them is already met.
+    /// Not JSON → 400; an empty list, or one over 200 ids → 400.
+    ///
+    /// `POST /api/v1/sessions/bulk-delete`
+    ///
+    /// Required scopes: `sessions:write`.
+    pub async fn bulk_delete_sessions(&self, body: &models::BulkDeleteSessionsRequest) -> Result<models::BulkDeleteSessionsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/sessions/bulk-delete".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
             })
@@ -241,9 +270,9 @@ impl SessionsApi {
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn delete_session_annotation(&self, session_id: &str, annotation_id: &str) -> Result<()> {
+    pub async fn delete_session_annotation(&self, session_id: &str, annotation_id: &str) -> Result<models::DeleteSessionAnnotationResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/sessions/{}/annotations/{}", encode_path(session_id), encode_path(annotation_id)),
                 query: NO_QUERY,
@@ -271,6 +300,29 @@ impl SessionsApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// Export a conversation
+    ///
+    /// Two formats and no others: `md` (the default, `text/markdown`) and `json`
+    /// (`application/json`, the `snaga.chat.v1` envelope). Any other value is 400 with the two
+    /// names in the sentence — it is not silently coerced to the default, because a client asking
+    /// for `html` and receiving markdown would render it as text.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/export`
+    ///
+    /// Required scopes: `sessions:read`.
+    pub async fn export(&self, session_id: &str, params: &ExportSessionParams) -> Result<models::SessionExport> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/sessions/{}/export", encode_path(session_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }
@@ -303,6 +355,37 @@ impl SessionsApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/sessions/{}/audit-log", encode_path(session_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// The conversation transcript
+    ///
+    /// The transcript this session's clients render. Undescribed until 2026-09-10 and, until the
+    /// same day, not a route at all: a GET here fell through to the bare-session branch and was
+    /// answered with the SESSION record, whose `conversation_history` carries the same list.
+    /// Closing that fall-through took the Android chat screen down with it, which is how the gap
+    /// was found.
+    ///
+    /// `messages` and `items` carry the SAME list — a client reads whichever it already reads. The
+    /// `active_run_*` fields describe a run still in flight, so a cold launch into a chat the agent
+    /// is still working in can attach to it rather than render an idle screen.
+    ///
+    /// A session that does not exist is 404, not an empty list: "no messages yet" and "no such
+    /// session" must not render the same.
+    ///
+    /// `GET /api/v1/sessions/{sessionId}/messages`
+    ///
+    /// Required scopes: `sessions:read`.
+    pub async fn get_session_messages(&self, session_id: &str) -> Result<models::GetSessionMessagesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/sessions/{}/messages", encode_path(session_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -497,9 +580,9 @@ impl SessionsApi {
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn revoke_session_share(&self, session_id: &str) -> Result<()> {
+    pub async fn revoke_session_share(&self, session_id: &str) -> Result<models::RevokeSessionShareResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/sessions/{}/share", encode_path(session_id)),
                 query: NO_QUERY,

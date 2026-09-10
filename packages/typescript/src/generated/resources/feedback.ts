@@ -8,7 +8,7 @@ import type {
 } from '../models.js';
 
 /**
- * Operations tagged `Feedback`.
+ * Error reports from any tenant; the inbox is super-admin only
  */
 export class FeedbackResource extends APIResource {
   /**

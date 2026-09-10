@@ -11,13 +11,9 @@ import type {
   AdminAnalyticsOverviewResponse,
   AdminDataExplorerRawKeysResponse,
   AdminDataExplorerRawKeysResponseKey,
-  AdminDeleteOAuthProviderResponse,
-  AdminGetOAuthProviderResponse,
   AdminGetReconciliationResponse,
   AdminListToolsResponse,
   AdminListWebhookDLQResponse,
-  AdminPutOAuthProviderRequest,
-  AdminPutOAuthProviderResponse,
   AdminReplayWebhookDLQResponse,
   AgentAnalyticsSummary,
   AndroidTester,
@@ -27,6 +23,7 @@ import type {
   DeleteAdminIntegrationOAuthProviderResponse,
   DeleteAdminLLMDefaultResponse,
   DeleteAdminProviderResponse,
+  DeleteAndroidTesterResponse,
   DeleteCustomPlanForce,
   ErrorReportStatus,
   GenerateAdminBlogPostResponse,
@@ -48,7 +45,11 @@ import type {
   ListFeedbackResponse,
   ListTenantsResponse,
   MaintenanceState,
-  OAuthLoginProviderItemId,
+  OAuthLoginProviderConfigDeleted,
+  OAuthLoginProviderConfigStatus,
+  OAuthLoginProviderConfigStatusProvider,
+  OAuthLoginProviderConfigUpdate,
+  OAuthLoginProviderConfigUpdateResponse,
   PlatformEconomics,
   PurgeAdminTenantResponse,
   SetAdminIntegrationOAuthProviderRequest,
@@ -285,7 +286,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminDeleteOAuthProvider(provider: OAuthLoginProviderItemId, options?: RequestOptions): Promise<AdminDeleteOAuthProviderResponse> {
+  adminDeleteOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options?: RequestOptions): Promise<OAuthLoginProviderConfigDeleted> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/admin/oauth-login-providers/${encodeURIComponent(String(provider))}`,
@@ -364,7 +365,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetOAuthProvider(provider: OAuthLoginProviderItemId, options?: RequestOptions): Promise<AdminGetOAuthProviderResponse> {
+  adminGetOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options?: RequestOptions): Promise<OAuthLoginProviderConfigStatus> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/admin/oauth-login-providers/${encodeURIComponent(String(provider))}`,
@@ -492,7 +493,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminPutOAuthProvider(provider: OAuthLoginProviderItemId, body: AdminPutOAuthProviderRequest, options?: RequestOptions): Promise<AdminPutOAuthProviderResponse> {
+  adminPutOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, body: OAuthLoginProviderConfigUpdate, options?: RequestOptions): Promise<OAuthLoginProviderConfigUpdateResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/oauth-login-providers/${encodeURIComponent(String(provider))}`,
@@ -701,12 +702,11 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  deleteAndroidTester(email: string, options?: RequestOptions): Promise<void> {
+  deleteAndroidTester(email: string, options?: RequestOptions): Promise<DeleteAndroidTesterResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/admin/testers/android/${encodeURIComponent(String(email))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }
@@ -1537,10 +1537,10 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateTenantPlan(body: UpdateTenantPlanRequest, options?: RequestOptions): Promise<UpdateTenantPlanResponse> {
+  updateTenantPlan(tenantId: string, body: UpdateTenantPlanRequest, options?: RequestOptions): Promise<UpdateTenantPlanResponse> {
     return this._client.request({
       method: 'PUT',
-      path: '/api/v1/admin/tenants/{tenantId}',
+      path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}`,
       body,
       idempotent: true,
       options,

@@ -42,7 +42,7 @@ export interface StreamSquadChatEventsParams {
 }
 
 /**
- * Operations tagged `Squads`.
+ * Squads — multi-agent groups that run a shared brief
  */
 export class SquadsResource extends APIResource {
   /**

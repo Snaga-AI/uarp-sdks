@@ -84,6 +84,26 @@ impl Client {
 }
 
 impl PublicApi {
+    /// Cancel a run of this chat
+    ///
+    /// Cancels a run that belongs to this public session. No body. A run id from outside the
+    /// session is 404; a run of this session that was not started publicly is 409. Forms measured
+    /// through the router with a seeded session (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/runs/{runId}/cancel`
+    pub async fn cancel_public_session_run(&self, session_id: &str, run_id: &str) -> Result<models::CancelPublicSessionRunResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/sessions/{}/runs/{}/cancel", encode_path(session_id), encode_path(run_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create public session
     ///
     /// `POST /api/v1/public/sessions`
@@ -610,6 +630,27 @@ impl PublicApi {
             .await
     }
 
+    /// Publish a read-only copy of this chat
+    ///
+    /// Snapshots the last 60 user/assistant turns of the session into a share record that
+    /// `getPublicSharedChat` serves for a limited time, and returns its token. No body. A session
+    /// with no turns yet is 400 `Nothing to share yet`. Forms measured through the router with a
+    /// seeded session (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/share`
+    pub async fn share_public_session(&self, session_id: &str) -> Result<models::SharePublicSessionResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/sessions/{}/share", encode_path(session_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Sign up for Android closed testing
     ///
     /// Records the address and, when a testing URL is configured, mails the join link. A repeat
@@ -641,5 +682,28 @@ impl PublicApi {
             NO_QUERY,
             Vec::new(),
         )
+    }
+
+    /// Attach an image to this chat
+    ///
+    /// The body is the raw image bytes — not multipart, not JSON — with its media type in
+    /// `Content-Type` (`image/*` only; anything else is 415). Empty is 400; over 8 MB is 413; more
+    /// uploads than the session allows is 429; a tenant whose storage quota is full gets 403. The
+    /// image is stored as one of the agent tenant's files and the returned `file_id` is what
+    /// `sendPublicMessage` attaches. Forms measured through the router with a seeded session
+    /// (public-served-forms_test.ts, 2026-09-10).
+    ///
+    /// `POST /api/v1/public/sessions/{sessionId}/upload`
+    pub async fn upload_public_session_image(&self, session_id: &str, body: &FilePart) -> Result<models::UploadPublicSessionImageResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/sessions/{}/upload", encode_path(session_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
     }
 }

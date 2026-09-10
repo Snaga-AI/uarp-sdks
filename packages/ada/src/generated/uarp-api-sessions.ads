@@ -12,6 +12,14 @@ package UARP.API.Sessions is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `exportSession`.
+   type Export_Session_Params is record
+      Has_Format : Boolean := False;
+      Format : UARP.Models.Export_Session_Format;
+   end record;
+
+   No_Export_Session_Params : constant Export_Session_Params := (others => <>);
+
    --  Query and header parameters for `getSessionRunFeedback`.
    type Get_Session_Run_Feedback_Params is record
       Has_Message_Id : Boolean := False;
@@ -70,6 +78,21 @@ package UARP.API.Sessions is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Activate_Session_Branch_Response;
 
+   --  Delete many sessions in one request
+   --
+   --  Cascades each session in turn and writes one audit entry for the batch. Ids that no longer
+   --  exist come back in `failed`, not as an error - the caller's intent for them is already met.
+   --  Not JSON ? 400; an empty list, or one over 200 ids ? 400.
+   --
+   --  POST /api/v1/sessions/bulk-delete
+   --
+   --  Required scopes: sessions:write.
+   function Bulk_Delete_Sessions
+     (Self : Client_Type;
+      Payload : UARP.Models.Bulk_Delete_Sessions_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Bulk_Delete_Sessions_Response;
+
    --  Close a session
    --
    --  DELETE /api/v1/sessions/{sessionId}
@@ -115,7 +138,6 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Annotation_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Session_Annotation_Response;
 
@@ -141,7 +163,6 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Share_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Session_Share_Response;
 
@@ -175,11 +196,12 @@ package UARP.API.Sessions is
    --  DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}
    --
    --  Required scopes: sessions:write.
-   procedure Delete_Session_Annotation
+   function Delete_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
       Annotation_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Session_Annotation_Response;
 
    --  Delete a single todo
    --
@@ -195,6 +217,23 @@ package UARP.API.Sessions is
       Todo_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Delete_Session_Todo_Response;
+
+   --  Export a conversation
+   --
+   --  Two formats and no others: `md` (the default, `text/markdown`) and `json`
+   --  (`application/json`, the `snaga.chat.v1` envelope). Any other value is 400 with the two
+   --  names in the sentence - it is not silently coerced to the default, because a client asking
+   --  for `html` and receiving markdown would render it as text.
+   --
+   --  GET /api/v1/sessions/{sessionId}/export
+   --
+   --  Required scopes: sessions:read.
+   function Export
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Export_Session_Params := No_Export_Session_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session_Export;
 
    --  Get a session
    --
@@ -217,6 +256,30 @@ package UARP.API.Sessions is
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  The conversation transcript
+   --
+   --  The transcript this session's clients render. Undescribed until 2026-09-10 and, until the
+   --  same day, not a route at all: a GET here fell through to the bare-session branch and was
+   --  answered with the SESSION record, whose `conversation_history` carries the same list.
+   --  Closing that fall-through took the Android chat screen down with it, which is how the gap
+   --  was found.
+   --
+   --  `messages` and `items` carry the SAME list - a client reads whichever it already reads. The
+   --  `active_run_*` fields describe a run still in flight, so a cold launch into a chat the agent
+   --  is still working in can attach to it rather than render an idle screen.
+   --
+   --  A session that does not exist is 404, not an empty list: "no messages yet" and "no such
+   --  session" must not render the same.
+   --
+   --  GET /api/v1/sessions/{sessionId}/messages
+   --
+   --  Required scopes: sessions:read.
+   function Get_Session_Messages
+     (Self : Client_Type;
+      Session_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Session_Messages_Response;
 
    --  Get feedback for a run in session
    --
@@ -329,10 +392,11 @@ package UARP.API.Sessions is
    --  DELETE /api/v1/sessions/{sessionId}/share
    --
    --  Required scopes: sessions:write.
-   procedure Revoke_Session_Share
+   function Revoke_Session_Share
      (Self : Client_Type;
       Session_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Revoke_Session_Share_Response;
 
    --  Run a pending todo immediately
    --

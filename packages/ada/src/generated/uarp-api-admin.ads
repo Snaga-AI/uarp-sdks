@@ -209,7 +209,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Provider : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Delete_O_Auth_Provider_Response;
+      return UARP.Models.O_Auth_Login_Provider_Config_Deleted;
 
    --  Admin: get landing-page featured-agent config
    --
@@ -263,7 +263,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Provider : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Get_O_Auth_Provider_Response;
+      return UARP.Models.O_Auth_Login_Provider_Config_Status;
 
    --  Get last stored cost-reconciliation result for a tenant
    --
@@ -350,9 +350,9 @@ package UARP.API.Admin is
    function Admin_Put_O_Auth_Provider
      (Self : Client_Type;
       Provider : String;
-      Payload : UARP.Models.Admin_Put_O_Auth_Provider_Request;
+      Payload : UARP.Models.O_Auth_Login_Provider_Config_Update;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Put_O_Auth_Provider_Response;
+      return UARP.Models.O_Auth_Login_Provider_Config_Update_Response;
 
    --  Admin: set default voice config
    --
@@ -496,10 +496,11 @@ package UARP.API.Admin is
    --  DELETE /api/v1/admin/testers/android/{email}
    --
    --  Required scopes: admin.
-   procedure Delete_Android_Tester
+   function Delete_Android_Tester
      (Self : Client_Type;
       Email : String;
-      Options : Request_Options := UARP.Client.Default_Options);
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Android_Tester_Response;
 
    --  Run the authoring agent now and create a post
    --
@@ -1128,6 +1129,7 @@ package UARP.API.Admin is
    --  Required scopes: admin.
    function Update_Tenant_Plan
      (Self : Client_Type;
+      Tenant_Id : String;
       Payload : UARP.Models.Update_Tenant_Plan_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Tenant_Plan_Response;

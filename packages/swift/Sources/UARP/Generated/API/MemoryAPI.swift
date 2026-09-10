@@ -13,8 +13,8 @@ public struct MemoryAPI: Sendable {
     /// `DELETE /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws -> DeleteMemoryEntryResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/\(encodePathSegment(entryId))",
             idempotent: true,
@@ -57,6 +57,26 @@ public struct MemoryAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/\(encodePathSegment(entryId))",
+            options: options
+        ))
+    }
+
+    /// Put back what an export took out
+    ///
+    /// Accepts the `memory.json` an account export writes: a flat `entries` array, or
+    /// `agents[].entries` (every agent's entries are imported into THIS agent). Each entry is
+    /// tagged `imported`. Dedup is the store's: re-importing the same file returns the existing
+    /// entries as `duplicates` instead of doubling them. A file with no entries is 400.
+    ///
+    /// `POST /api/v1/agents/{agentId}/memory/import`
+    ///
+    /// Required scopes: `memory:write`.
+    public func importAgentMemory(agentId: String, body: ImportAgentMemoryRequest, options: RequestOptions = .init()) async throws -> ImportAgentMemoryResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/import",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

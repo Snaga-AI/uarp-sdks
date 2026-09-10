@@ -5,7 +5,10 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
   CoreMemoryBlock,
+  DeleteMemoryEntryResponse,
   GetMemoriesByEntityResponse,
+  ImportAgentMemoryRequest,
+  ImportAgentMemoryResponse,
   IngestMemoryRequest,
   IngestMemoryResponse,
   JsonObject,
@@ -31,12 +34,11 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  deleteMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<void> {
+  deleteMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<DeleteMemoryEntryResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }
@@ -82,6 +84,28 @@ export class MemoryResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,
+      options,
+    });
+  }
+
+  /**
+   * Put back what an export took out
+   *
+   * Accepts the `memory.json` an account export writes: a flat `entries` array, or
+   * `agents[].entries` (every agent's entries are imported into THIS agent). Each entry is
+   * tagged `imported`. Dedup is the store's: re-importing the same file returns the existing
+   * entries as `duplicates` instead of doubling them. A file with no entries is 400.
+   *
+   * `POST /api/v1/agents/{agentId}/memory/import`
+   *
+   * Required scopes: `memory:write`.
+   */
+  importAgentMemory(agentId: string, body: ImportAgentMemoryRequest, options?: RequestOptions): Promise<ImportAgentMemoryResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/import`,
+      body,
+      idempotent: true,
       options,
     });
   }

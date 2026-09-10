@@ -133,7 +133,7 @@ public struct AdminAPI: Sendable {
     /// `DELETE /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    public func adminDeleteOAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = .init()) async throws -> AdminDeleteOAuthProviderResponse {
+    public func adminDeleteOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options: RequestOptions = .init()) async throws -> OAuthLoginProviderConfigDeleted {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/admin/oauth-login-providers/\(encodePathSegment(String(describing: provider)))",
@@ -202,7 +202,7 @@ public struct AdminAPI: Sendable {
     /// `GET /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    public func adminGetOAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = .init()) async throws -> AdminGetOAuthProviderResponse {
+    public func adminGetOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, options: RequestOptions = .init()) async throws -> OAuthLoginProviderConfigStatus {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/oauth-login-providers/\(encodePathSegment(String(describing: provider)))",
@@ -314,7 +314,7 @@ public struct AdminAPI: Sendable {
     /// `PUT /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    public func adminPutOAuthProvider(provider: OAuthLoginProviderItemId, body: AdminPutOAuthProviderRequest, options: RequestOptions = .init()) async throws -> AdminPutOAuthProviderResponse {
+    public func adminPutOAuthProvider(provider: OAuthLoginProviderConfigStatusProvider, body: OAuthLoginProviderConfigUpdate, options: RequestOptions = .init()) async throws -> OAuthLoginProviderConfigUpdateResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/oauth-login-providers/\(encodePathSegment(String(describing: provider)))",
@@ -501,8 +501,8 @@ public struct AdminAPI: Sendable {
     /// `DELETE /api/v1/admin/testers/android/{email}`
     ///
     /// Required scopes: `admin`.
-    public func deleteAndroidTester(email: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteAndroidTester(email: String, options: RequestOptions = .init()) async throws -> DeleteAndroidTesterResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/admin/testers/android/\(encodePathSegment(email))",
             idempotent: true,
@@ -1307,10 +1307,10 @@ public struct AdminAPI: Sendable {
     /// `PUT /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
-    public func updateTenantPlan(body: UpdateTenantPlanRequest, options: RequestOptions = .init()) async throws -> UpdateTenantPlanResponse {
+    public func updateTenantPlan(tenantId: String, body: UpdateTenantPlanRequest, options: RequestOptions = .init()) async throws -> UpdateTenantPlanResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/admin/tenants/{tenantId}",
+            path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))",
             body: try client.encode(body),
             idempotent: true,
             options: options

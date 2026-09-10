@@ -35,7 +35,6 @@ package UARP.API.Playground is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -46,7 +45,6 @@ package UARP.API.Playground is
      (Self : Client_Type;
       Agent_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

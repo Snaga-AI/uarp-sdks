@@ -172,7 +172,7 @@ package body UARP.API.Auth is
    function List_O_Auth_Login_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.List_O_Auth_Login_Providers_Response
+      return UARP.Models.O_Auth_Login_Providers_List
    is
    begin
       return UARP.Models.From_JSON

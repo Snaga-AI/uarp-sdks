@@ -79,6 +79,21 @@ package UARP.API.MCP is
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
 
+   --  Probe an MCP server's live connection
+   --
+   --  Opens a real connection and lists the server's tools. **A failed probe is still 200** - `ok`
+   --  is the verdict, not the status code, because a server that refuses to connect is an answer
+   --  about the server rather than about the request. Read `ok` first: on false, `error` carries
+   --  the reason (including an SSRF refusal when the URL resolves to a private address) and
+   --  `tool_count`/`tools` are absent.
+   --
+   --  POST /api/v1/mcp/servers/{serverId}/test
+   function Test_MCP_Server
+     (Self : Client_Type;
+      Server_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Server_Test_Result;
+
    --  Update MCP server
    --
    --  PATCH /api/v1/mcp/servers/{serverId}

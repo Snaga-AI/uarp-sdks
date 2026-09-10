@@ -299,9 +299,9 @@ impl RegistryApi {
     /// Reverse a yank on a published spec version
     ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank`
-    pub async fn registry_unyank_version(&self, scope: &str, name: &str, version: &str) -> Result<()> {
+    pub async fn registry_unyank_version(&self, scope: &str, name: &str, version: &str) -> Result<models::RegistryUnyankVersionResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/registry/spec/{}/{}/{}/unyank", encode_path(scope), encode_path(name), encode_path(version)),
                 query: NO_QUERY,
@@ -315,9 +315,9 @@ impl RegistryApi {
     /// Yank (mark unsafe) a published spec version
     ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/yank`
-    pub async fn registry_yank_version(&self, scope: &str, name: &str, version: &str, body: &models::RegistryYankVersionRequest) -> Result<()> {
+    pub async fn registry_yank_version(&self, scope: &str, name: &str, version: &str, body: &models::RegistryYankVersionRequest) -> Result<models::RegistryYankVersionResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/registry/spec/{}/{}/{}/yank", encode_path(scope), encode_path(name), encode_path(version)),
                 query: NO_QUERY,

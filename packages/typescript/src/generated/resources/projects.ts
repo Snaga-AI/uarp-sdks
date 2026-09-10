@@ -24,7 +24,7 @@ export interface ListProjectsParams {
 }
 
 /**
- * Operations tagged `Projects`.
+ * Projects — a workspace grouping agents, sessions and files
  */
 export class ProjectsResource extends APIResource {
   /**

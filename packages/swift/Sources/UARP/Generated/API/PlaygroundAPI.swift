@@ -35,12 +35,11 @@ public struct PlaygroundAPI: Sendable {
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
     /// Required scopes: `runs:create`.
-    public func run(agentId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func run(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))/run",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -49,12 +48,11 @@ public struct PlaygroundAPI: Sendable {
     /// Save agent canvas state
     ///
     /// `PUT /api/v1/playground/agents/{agentId}`
-    public func savePlaygroundCanvas(agentId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func savePlaygroundCanvas(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))

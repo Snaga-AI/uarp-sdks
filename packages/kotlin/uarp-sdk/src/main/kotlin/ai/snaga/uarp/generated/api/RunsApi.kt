@@ -215,11 +215,11 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun getRunFeedback(runId: String, messageId: String? = null, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun getRunFeedback(runId: String, messageId: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
             if (messageId != null) add("message_id" to messageId)
         }
-        return client.request<JsonObject>(
+        return client.request<JsonElement>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/feedback",
@@ -440,12 +440,19 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     /**
      * Save user feedback/reaction for a run
      *
+     * One reaction per (message, caller); a second PUT for the same `message_id` replaces the
+     * first. `message_id` is whatever string the client attaches to a message — the platform
+     * stores it verbatim (max 256 chars) and does not check it against the transcript, which today
+     * carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
+     * There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
+     * 405 (measured 2026-09-10).
+     *
      * `PUT /api/v1/runs/{runId}/feedback`
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun setRunFeedback(runId: String, body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = RequestOptions()): SetRunFeedbackResponse {
+        return client.request<SetRunFeedbackResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/feedback",

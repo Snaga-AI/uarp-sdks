@@ -25,12 +25,11 @@ public struct UsersAPI: Sendable {
     /// `POST /api/v1/users/invites/{inviteId}/accept`
     ///
     /// Required scopes: `users:write`.
-    public func acceptInvite(inviteId: String, body: AcceptInviteRequest? = nil, options: RequestOptions = .init()) async throws -> AcceptInviteResponse {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    public func acceptInvite(inviteId: String, body: AcceptInviteRequest, options: RequestOptions = .init()) async throws -> AcceptInviteResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/users/invites/\(encodePathSegment(inviteId))/accept",
-            body: encodedBody,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -55,8 +54,8 @@ public struct UsersAPI: Sendable {
     /// `DELETE /api/v1/users/invites/{inviteId}`
     ///
     /// Required scopes: `users:write`.
-    public func deleteInvite(inviteId: String, options: RequestOptions = .init()) async throws {
-        try await client.sendVoid(RequestSpec(
+    public func deleteInvite(inviteId: String, options: RequestOptions = .init()) async throws -> DeleteInviteResponse {
+        return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/users/invites/\(encodePathSegment(inviteId))",
             idempotent: true,

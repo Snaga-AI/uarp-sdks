@@ -19,6 +19,24 @@ package body UARP.API.Sessions is
              Options => Options));
    end Activate_Session_Branch;
 
+   function Bulk_Delete_Sessions
+     (Self : Client_Type;
+      Payload : UARP.Models.Bulk_Delete_Sessions_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Bulk_Delete_Sessions_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/bulk-delete",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Bulk_Delete_Sessions;
+
    function Close_Session
      (Self : Client_Type;
       Session_Id : String;
@@ -76,7 +94,6 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Annotation_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Session_Annotation_Response
    is
@@ -87,7 +104,7 @@ package body UARP.API.Sessions is
              "POST",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations",
              Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
+             Has_Payload => True,
              Idempotent => True,
              Options => Options));
    end Create_Session_Annotation;
@@ -116,7 +133,6 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Payload : UARP.Models.Create_Session_Share_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Session_Share_Response
    is
@@ -127,7 +143,7 @@ package body UARP.API.Sessions is
              "POST",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
              Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
+             Has_Payload => True,
              Idempotent => True,
              Options => Options));
    end Create_Session_Share;
@@ -167,19 +183,21 @@ package body UARP.API.Sessions is
           Options => Options);
    end Create_Task;
 
-   procedure Delete_Session_Annotation
+   function Delete_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
       Annotation_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Session_Annotation_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations/" & UARP.Types.Encode_Path_Segment (Annotation_Id),
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations/" & UARP.Types.Encode_Path_Segment (Annotation_Id),
+             Idempotent => True,
+             Options => Options));
    end Delete_Session_Annotation;
 
    function Delete_Session_Todo
@@ -198,6 +216,27 @@ package body UARP.API.Sessions is
              Idempotent => True,
              Options => Options));
    end Delete_Session_Todo;
+
+   function Export
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Export_Session_Params := No_Export_Session_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session_Export
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Format then
+         UARP.Types.Add (Query, "format", UARP.Models.Image (Params.Format));
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/export",
+             Query => Query,
+             Options => Options));
+   end Export;
 
    function Get
      (Self : Client_Type;
@@ -226,6 +265,21 @@ package body UARP.API.Sessions is
           "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/audit-log",
           Options => Options);
    end Get_Session_Audit_Log;
+
+   function Get_Session_Messages
+     (Self : Client_Type;
+      Session_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Session_Messages_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/messages",
+             Options => Options));
+   end Get_Session_Messages;
 
    function Get_Session_Run_Feedback
      (Self : Client_Type;
@@ -434,18 +488,20 @@ package body UARP.API.Sessions is
              Options => Options));
    end Resolve_Shared_Session;
 
-   procedure Revoke_Session_Share
+   function Revoke_Session_Share
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Revoke_Session_Share_Response
    is
    begin
-      UARP.Client.Call_And_Discard
-         (Self,
-          "DELETE",
-          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
+             Idempotent => True,
+             Options => Options));
    end Revoke_Session_Share;
 
    function Run_Session_Todo_Now

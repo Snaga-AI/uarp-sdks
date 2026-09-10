@@ -44,7 +44,7 @@ export class PlaygroundResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  run(agentId: string, body?: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  run(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}/run`,
@@ -59,7 +59,7 @@ export class PlaygroundResource extends APIResource {
    *
    * `PUT /api/v1/playground/agents/{agentId}`
    */
-  savePlaygroundCanvas(agentId: string, body?: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  savePlaygroundCanvas(agentId: string, body: JsonObject, options?: RequestOptions): Promise<JsonValue> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}`,

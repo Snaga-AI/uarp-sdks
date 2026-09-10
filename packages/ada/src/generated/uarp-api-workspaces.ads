@@ -29,6 +29,15 @@ package UARP.API.Workspaces is
 
    No_Download_Workspace_File_Params : constant Download_Workspace_File_Params := (others => <>);
 
+   --  Query and header parameters for `getWorkspaceFileHistoryContent`.
+   type Get_Workspace_File_History_Content_Params is record
+      Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `file_id` of the version.
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Workspace_File_History_Content_Params : constant Get_Workspace_File_History_Content_Params := (others => <>);
+
    --  Query and header parameters for `listAgentWorkspaceFiles`.
    type List_Agent_Workspace_Files_Params is record
       Has_Path : Boolean := False;
@@ -36,6 +45,13 @@ package UARP.API.Workspaces is
    end record;
 
    No_List_Agent_Workspace_Files_Params : constant List_Agent_Workspace_Files_Params := (others => <>);
+
+   --  Query and header parameters for `listWorkspaceFileHistory`.
+   type List_Workspace_File_History_Params is record
+      Path : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Workspace_File_History_Params : constant List_Workspace_File_History_Params := (others => <>);
 
    --  Query and header parameters for `listWorkspaceFiles`.
    type List_Workspace_Files_Params is record
@@ -82,7 +98,6 @@ package UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Payload : UARP.Models.Assign_Workspace_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -106,7 +121,6 @@ package UARP.API.Workspaces is
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Create_Workspace_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
@@ -167,6 +181,22 @@ package UARP.API.Workspaces is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Bytes of a prior version
+   --
+   --  `version` is a `file_id` from `listWorkspaceFileHistory` and must belong to `path`'s history
+   --  - any other id is 404. Served with the version's own `Content-Type`, its `Content-Length`,
+   --  and `Cache-Control: private, max-age=3600`.
+   --
+   --  GET /api/v1/workspaces/{workspaceId}/files/history/content
+   --
+   --  Required scopes: files:read.
+   function Get_Workspace_File_History_Content
+     (Self : Client_Type;
+      Workspace_Id : String;
+      Params : Get_Workspace_File_History_Content_Params := No_Get_Workspace_File_History_Content_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
+
    --  WebSocket terminal session for workspace
    --
    --  GET /api/v1/workspaces/{workspaceId}/terminal
@@ -199,6 +229,22 @@ package UARP.API.Workspaces is
       Params : List_Agent_Workspace_Files_Params := No_List_Agent_Workspace_Files_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Prior versions of a file
+   --
+   --  Every earlier version kept for `path`, newest first; the current content is not in the list.
+   --  `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
+   --  version's bytes with `getWorkspaceFileHistoryContent`.
+   --
+   --  GET /api/v1/workspaces/{workspaceId}/files/history
+   --
+   --  Required scopes: files:read.
+   function List_Workspace_File_History
+     (Self : Client_Type;
+      Workspace_Id : String;
+      Params : List_Workspace_File_History_Params := No_List_Workspace_File_History_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Workspace_File_History_Response;
 
    --  List files in workspace directory
    --
@@ -234,6 +280,22 @@ package UARP.API.Workspaces is
       Payload : UARP.Models.Move_Workspace_File_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
+
+   --  Mint a public share link for an HTML snapshot
+   --
+   --  Stores a self-contained HTML page (assets already inlined by the client, ?3 MB) under an
+   --  opaque token for seven days; `GET /public/share/{token}` serves it back as JSON data for the
+   --  sandboxed viewer, never as executable HTML. The workspace id is not consulted beyond scope.
+   --
+   --  POST /api/v1/workspaces/{workspaceId}/publish
+   --
+   --  Required scopes: files:write.
+   function Publish_Workspace_Snapshot
+     (Self : Client_Type;
+      Workspace_Id : String;
+      Payload : UARP.Models.Publish_Workspace_Snapshot_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Publish_Workspace_Snapshot_Response;
 
    --  Restore a trashed file to its original path
    --
@@ -326,7 +388,6 @@ package UARP.API.Workspaces is
      (Self : Client_Type;
       Workspace_Id : String;
       Payload : UARP.Models.Update_Workspace_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 

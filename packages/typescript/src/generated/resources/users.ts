@@ -5,6 +5,7 @@ import type { RequestOptions } from '../../core/transport.js';
 import type {
   AcceptInviteRequest,
   AcceptInviteResponse,
+  DeleteInviteResponse,
   DeleteUserResponse,
   InviteUserRequest,
   JsonObject,
@@ -41,7 +42,7 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:write`.
    */
-  acceptInvite(inviteId: string, body?: AcceptInviteRequest, options?: RequestOptions): Promise<AcceptInviteResponse> {
+  acceptInvite(inviteId: string, body: AcceptInviteRequest, options?: RequestOptions): Promise<AcceptInviteResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/users/invites/${encodeURIComponent(String(inviteId))}/accept`,
@@ -74,12 +75,11 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:write`.
    */
-  deleteInvite(inviteId: string, options?: RequestOptions): Promise<void> {
+  deleteInvite(inviteId: string, options?: RequestOptions): Promise<DeleteInviteResponse> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/users/invites/${encodeURIComponent(String(inviteId))}`,
       idempotent: true,
-      responseType: 'void',
       options,
     });
   }

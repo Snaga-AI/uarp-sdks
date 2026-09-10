@@ -4,6 +4,21 @@ with UARP.Types;
 
 package body UARP.API.Me is
 
+   function Delete
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Me_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/me",
+             Idempotent => True,
+             Options => Options));
+   end Delete;
+
    function Export_My_Account
      (Self : Client_Type;
       Params : Export_My_Account_Params := No_Export_My_Account_Params;
@@ -37,6 +52,24 @@ package body UARP.API.Me is
              "/api/v1/me/preferences",
              Options => Options));
    end Get_My_Preferences;
+
+   function Patch
+     (Self : Client_Type;
+      Payload : UARP.Models.Patch_Me_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Patch_Me_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/me",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Patch;
 
    function Switch_Tenant
      (Self : Client_Type;

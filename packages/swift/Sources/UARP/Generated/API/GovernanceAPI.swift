@@ -269,7 +269,7 @@ public struct GovernanceAPI: Sendable {
     /// Get ambassador
     ///
     /// `GET /api/v1/governance/ambassador/ambassadors/{id}`
-    public func getAmbassador(id: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAmbassador(id: String, options: RequestOptions = .init()) async throws -> Ambassador {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/governance/ambassador/ambassadors/\(encodePathSegment(id))",

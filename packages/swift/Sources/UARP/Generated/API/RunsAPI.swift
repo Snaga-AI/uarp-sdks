@@ -163,7 +163,7 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:read`.
-    public func getRunFeedback(runId: String, messageId: String? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getRunFeedback(runId: String, messageId: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
         if let messageId {
             query.append(URLQueryItem(name: "message_id", value: messageId))
@@ -358,10 +358,17 @@ public struct RunsAPI: Sendable {
 
     /// Save user feedback/reaction for a run
     ///
+    /// One reaction per (message, caller); a second PUT for the same `message_id` replaces the
+    /// first. `message_id` is whatever string the client attaches to a message — the platform
+    /// stores it verbatim (max 256 chars) and does not check it against the transcript, which today
+    /// carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
+    /// There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
+    /// 405 (measured 2026-09-10).
+    ///
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
-    public func setRunFeedback(runId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func setRunFeedback(runId: String, body: SetRunFeedbackRequest, options: RequestOptions = .init()) async throws -> SetRunFeedbackResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/runs/\(encodePathSegment(runId))/feedback",

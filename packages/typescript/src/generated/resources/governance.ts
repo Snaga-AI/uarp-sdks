@@ -423,7 +423,7 @@ export class GovernanceResource extends APIResource {
    *
    * `GET /api/v1/governance/ambassador/ambassadors/{id}`
    */
-  getAmbassador(id: string, options?: RequestOptions): Promise<JsonObject> {
+  getAmbassador(id: string, options?: RequestOptions): Promise<Ambassador> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/governance/ambassador/ambassadors/${encodeURIComponent(String(id))}`,

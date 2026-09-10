@@ -261,7 +261,7 @@ impl AdminApi {
     /// `DELETE /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_delete_o_auth_provider(&self, provider: &models::OAuthLoginProviderItemId) -> Result<models::AdminDeleteOAuthProviderResponse> {
+    pub async fn admin_delete_o_auth_provider(&self, provider: &models::OAuthLoginProviderConfigStatusProvider) -> Result<models::OAuthLoginProviderConfigDeleted> {
         self.client
             .request_json(Request {
                 method: Method::DELETE,
@@ -354,7 +354,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_o_auth_provider(&self, provider: &models::OAuthLoginProviderItemId) -> Result<models::AdminGetOAuthProviderResponse> {
+    pub async fn admin_get_o_auth_provider(&self, provider: &models::OAuthLoginProviderConfigStatusProvider) -> Result<models::OAuthLoginProviderConfigStatus> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -502,7 +502,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_o_auth_provider(&self, provider: &models::OAuthLoginProviderItemId, body: &models::AdminPutOAuthProviderRequest) -> Result<models::AdminPutOAuthProviderResponse> {
+    pub async fn admin_put_o_auth_provider(&self, provider: &models::OAuthLoginProviderConfigStatusProvider, body: &models::OAuthLoginProviderConfigUpdate) -> Result<models::OAuthLoginProviderConfigUpdateResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -727,9 +727,9 @@ impl AdminApi {
     /// `DELETE /api/v1/admin/testers/android/{email}`
     ///
     /// Required scopes: `admin`.
-    pub async fn delete_android_tester(&self, email: &str) -> Result<()> {
+    pub async fn delete_android_tester(&self, email: &str) -> Result<models::DeleteAndroidTesterResponse> {
         self.client
-            .request_empty(Request {
+            .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/admin/testers/android/{}", encode_path(email)),
                 query: NO_QUERY,
@@ -1659,11 +1659,11 @@ impl AdminApi {
     /// `PUT /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_tenant_plan(&self, body: &models::UpdateTenantPlanRequest) -> Result<models::UpdateTenantPlanResponse> {
+    pub async fn update_tenant_plan(&self, tenant_id: &str, body: &models::UpdateTenantPlanRequest) -> Result<models::UpdateTenantPlanResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
-                path: "/api/v1/admin/tenants/{tenantId}".to_string(),
+                path: format!("/api/v1/admin/tenants/{}", encode_path(tenant_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

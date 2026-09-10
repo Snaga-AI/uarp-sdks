@@ -98,6 +98,22 @@ package body UARP.API.MCP is
           Options => Options);
    end MCP_SSE;
 
+   function Test_MCP_Server
+     (Self : Client_Type;
+      Server_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Server_Test_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id) & "/test",
+             Idempotent => True,
+             Options => Options));
+   end Test_MCP_Server;
+
    function Update_MCP_Server
      (Self : Client_Type;
       Server_Id : String;

@@ -2,11 +2,36 @@
 
 import Foundation
 
-/// Operations tagged `Me`.
+/// The calling identity: profile, tenants, head agent
 public struct MeAPI: Sendable {
     let client: UARPClient
 
     init(client: UARPClient) { self.client = client }
+
+    /// Delete your own account
+    ///
+    /// Self-serve account deletion — the App Store 5.1.1(v) requirement, and the only path to it in
+    /// the mobile clients. Any authenticated member deletes their OWN account: the user record and
+    /// the email-membership index in every tenant the address belongs to, their api keys (the
+    /// per-tenant row AND the global hash, so live sessions die at once), and data tagged with them
+    /// as data subject, erased through the same sweep as `/data-subject/erasure`.
+    ///
+    /// Every refusal is checked across ALL memberships BEFORE anything is deleted, so a half-delete
+    /// cannot happen.
+    ///
+    /// WRITE SEMANTICS: replaces nothing — it removes. A second call answers 404: after a
+    /// successful delete there is no record to delete, which is the honest answer rather than a
+    /// silent success.
+    ///
+    /// `DELETE /api/v1/me`
+    public func delete(options: RequestOptions = .init()) async throws -> DeleteMeResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/me",
+            idempotent: true,
+            options: options
+        ))
+    }
 
     /// Export everything in this account
     ///
@@ -42,6 +67,26 @@ public struct MeAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/me/preferences",
+            options: options
+        ))
+    }
+
+    /// Set or clear your avatar
+    ///
+    /// The one field a person may change about themselves here: `avatar_url`. It must name a file
+    /// this tenant owns — `/api/v1/files/<file_id>/content`, absolute or relative — whose
+    /// `mime_type` is `image/*`; `null` clears it. The change is written to the caller's user row
+    /// in every tenant they belong to (`updated_rows` says how many). Anything else in the body is
+    /// ignored; a body without `avatar_url` is 400. WRITE SEMANTICS: replaces — `avatar_url` is the
+    /// whole writable surface and must be present; there is nothing to merge.
+    ///
+    /// `PATCH /api/v1/me`
+    public func patch(body: PatchMeRequest, options: RequestOptions = .init()) async throws -> PatchMeResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/me",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }
@@ -85,6 +130,6 @@ public struct MeAPI: Sendable {
 }
 
 extension UARPClient {
-    /// Operations tagged `Me`.
+    /// The calling identity: profile, tenants, head agent
     public var me: MeAPI { MeAPI(client: self) }
 }

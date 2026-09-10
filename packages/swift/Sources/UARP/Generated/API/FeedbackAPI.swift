@@ -2,7 +2,7 @@
 
 import Foundation
 
-/// Operations tagged `Feedback`.
+/// Error reports from any tenant; the inbox is super-admin only
 public struct FeedbackAPI: Sendable {
     let client: UARPClient
 
@@ -27,6 +27,6 @@ public struct FeedbackAPI: Sendable {
 }
 
 extension UARPClient {
-    /// Operations tagged `Feedback`.
+    /// Error reports from any tenant; the inbox is super-admin only
     public var feedback: FeedbackAPI { FeedbackAPI(client: self) }
 }
