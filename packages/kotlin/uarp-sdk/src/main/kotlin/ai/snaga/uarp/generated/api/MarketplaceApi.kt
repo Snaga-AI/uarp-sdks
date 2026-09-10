@@ -248,8 +248,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:write`.
      */
-    public suspend fun unpublishListing(listingId: String, options: RequestOptions = RequestOptions()): UnpublishListingResponse {
-        return client.request<UnpublishListingResponse>(
+    public suspend fun unpublishListing(listingId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}",

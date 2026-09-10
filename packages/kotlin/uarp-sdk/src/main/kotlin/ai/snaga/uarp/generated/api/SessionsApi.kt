@@ -225,8 +225,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = RequestOptions()): DeleteSessionAnnotationResponse {
-        return client.request<DeleteSessionAnnotationResponse>(
+    public suspend fun deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/annotations/${encodePathSegment(annotationId)}",
@@ -529,8 +529,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun revokeSessionShare(sessionId: String, options: RequestOptions = RequestOptions()): RevokeSessionShareResponse {
-        return client.request<RevokeSessionShareResponse>(
+    public suspend fun revokeSessionShare(sessionId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/share",

@@ -25,11 +25,10 @@ package UARP.API.Companies is
    --  DELETE /api/v1/companies/{id}
    --
    --  Required scopes: agents:write.
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Company_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Get company
    --

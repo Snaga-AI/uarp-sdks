@@ -144,6 +144,22 @@ impl UploadsApi {
             .await
     }
 
+    /// Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204
+    ///
+    /// `DELETE /uploads/{uploadId}/lock`
+    pub async fn unlock_upload(&self, upload_id: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/uploads/{}/lock", encode_path(upload_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// `POST /uploads`
     pub async fn upload_bundle(&self, body: &models::UploadBundleRequest) -> Result<models::UploadBundleResponse> {
         self.client

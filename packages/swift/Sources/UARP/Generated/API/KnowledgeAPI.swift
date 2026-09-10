@@ -28,8 +28,8 @@ public struct KnowledgeAPI: Sendable {
     /// `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteKbDocument(id: String, docId: String, options: RequestOptions = .init()) async throws -> DeleteKbDocumentResponse {
-        return try await client.send(RequestSpec(
+    public func deleteKbDocument(id: String, docId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/knowledge-bases/\(encodePathSegment(id))/documents/\(encodePathSegment(docId))",
             idempotent: true,
@@ -42,8 +42,8 @@ public struct KnowledgeAPI: Sendable {
     /// `DELETE /api/v1/knowledge-bases/{id}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteKnowledgeBase(id: String, options: RequestOptions = .init()) async throws -> DeleteKnowledgeBaseResponse {
-        return try await client.send(RequestSpec(
+    public func deleteKnowledgeBase(id: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/knowledge-bases/\(encodePathSegment(id))",
             idempotent: true,

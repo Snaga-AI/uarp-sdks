@@ -501,8 +501,8 @@ public struct AdminAPI: Sendable {
     /// `DELETE /api/v1/admin/testers/android/{email}`
     ///
     /// Required scopes: `admin`.
-    public func deleteAndroidTester(email: String, options: RequestOptions = .init()) async throws -> DeleteAndroidTesterResponse {
-        return try await client.send(RequestSpec(
+    public func deleteAndroidTester(email: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/admin/testers/android/\(encodePathSegment(email))",
             idempotent: true,

@@ -58,8 +58,8 @@ public struct WorkspacesAPI: Sendable {
     /// `DELETE /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    public func delete(workspaceId: String, options: RequestOptions = .init()) async throws -> DeleteWorkspaceResponse {
-        return try await client.send(RequestSpec(
+    public func delete(workspaceId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))",
             idempotent: true,

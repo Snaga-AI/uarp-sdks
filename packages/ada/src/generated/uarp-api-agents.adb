@@ -125,20 +125,18 @@ package body UARP.API.Agents is
              Options => Options));
    end Delete_Agent_Bookmark;
 
-   function Delete_Agent_Identity
+   procedure Delete_Agent_Identity
      (Self : Client_Type;
       Agent_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Agent_Identity_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/identity",
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/identity",
+          Idempotent => True,
+          Options => Options);
    end Delete_Agent_Identity;
 
    function Delete_All_Agent_Bookmarks

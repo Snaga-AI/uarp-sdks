@@ -24,12 +24,11 @@ package UARP.API.Memory is
    --  DELETE /api/v1/agents/{agentId}/memory/{entryId}
    --
    --  Required scopes: memory:write.
-   function Delete_Memory_Entry
+   procedure Delete_Memory_Entry
      (Self : Client_Type;
       Agent_Id : String;
       Entry_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Memory_Entry_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Get a core memory block
    --

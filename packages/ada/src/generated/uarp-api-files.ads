@@ -27,11 +27,10 @@ package UARP.API.Files is
    --  DELETE /api/v1/files/{fileId}
    --
    --  Required scopes: files:write.
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       File_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_File_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Download file content
    --

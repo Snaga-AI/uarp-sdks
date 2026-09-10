@@ -197,8 +197,8 @@ public struct MarketplaceAPI: Sendable {
     /// `DELETE /api/v1/marketplace/listings/{listingId}`
     ///
     /// Required scopes: `marketplace:write`.
-    public func unpublishListing(listingId: String, options: RequestOptions = .init()) async throws -> UnpublishListingResponse {
-        return try await client.send(RequestSpec(
+    public func unpublishListing(listingId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/marketplace/listings/\(encodePathSegment(listingId))",
             idempotent: true,

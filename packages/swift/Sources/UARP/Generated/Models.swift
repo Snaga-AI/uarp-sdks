@@ -6821,25 +6821,6 @@ public struct DeleteAgentBookmarkResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `DeleteAgentIdentityResponse` model.
-public struct DeleteAgentIdentityResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
 /// `DeleteAllAgentBookmarksResponse` model.
 public struct DeleteAllAgentBookmarksResponse: Codable, Hashable, Sendable {
     public var removed: Int
@@ -6850,44 +6831,6 @@ public struct DeleteAllAgentBookmarksResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case removed = "removed"
-    }
-}
-
-/// `DeleteAndroidTesterResponse` model.
-public struct DeleteAndroidTesterResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
-/// `DeleteCompanyResponse` model.
-public struct DeleteCompanyResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -6946,25 +6889,6 @@ public struct DeleteDataExplorerValueResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `DeleteFileResponse` model.
-public struct DeleteFileResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
 /// `DeleteGuardrailResponse` model.
 public struct DeleteGuardrailResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -6981,82 +6905,6 @@ public struct DeleteGuardrailResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `DeleteIntegrationResponse` model.
-public struct DeleteIntegrationResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
-/// `DeleteInviteResponse` model.
-public struct DeleteInviteResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
-/// `DeleteKbDocumentResponse` model.
-public struct DeleteKbDocumentResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
-/// `DeleteKnowledgeBaseResponse` model.
-public struct DeleteKnowledgeBaseResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
 /// `DeleteLLMProviderKeyResponse` model.
 public struct DeleteLLMProviderKeyResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -7070,25 +6918,6 @@ public struct DeleteLLMProviderKeyResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case providerId = "provider_id"
-    }
-}
-
-/// `DeleteMemoryEntryResponse` model.
-public struct DeleteMemoryEntryResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -7199,25 +7028,6 @@ public struct DeletePromoCodeResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case code = "code"
-    }
-}
-
-/// `DeleteSessionAnnotationResponse` model.
-public struct DeleteSessionAnnotationResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -7414,25 +7224,6 @@ public struct DeleteWorkspaceFileTrash: RawRepresentable, Codable, Hashable, Sen
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [DeleteWorkspaceFileTrash] = [.`false`]
-}
-
-/// `DeleteWorkspaceResponse` model.
-public struct DeleteWorkspaceResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
 }
 
 /// Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -19790,25 +19581,6 @@ public struct RegistrySpecFeatureState: Codable, Hashable, Sendable {
     }
 }
 
-/// `RegistryUnyankVersionResponse` model.
-public struct RegistryUnyankVersionResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
 /// `RegistryVersionEntry` model.
 public struct RegistryVersionEntry: Codable, Hashable, Sendable {
     public var version: String
@@ -19850,25 +19622,6 @@ public struct RegistryYankVersionRequest: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case reason = "reason"
-    }
-}
-
-/// `RegistryYankVersionResponse` model.
-public struct RegistryYankVersionResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -20256,47 +20009,6 @@ public struct RevokeMeSessionResponse: Codable, Hashable, Sendable {
         case keyId = "key_id"
         case alreadyRevoked = "already_revoked"
     }
-}
-
-/// `RevokeSessionShareResponse` model.
-public struct RevokeSessionShareResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
-    }
-}
-
-/// `RevokeSessionShareResponseError` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct RevokeSessionShareResponseError: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let accepted = RevokeSessionShareResponseError(rawValue: "Accepted")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [RevokeSessionShareResponseError] = [.accepted]
 }
 
 /// EU AI Act (Article 9) classification for an agent.
@@ -25502,25 +25214,6 @@ public struct UnlinkAuthProviderResponse: Codable, Hashable, Sendable {
         case provider = "provider"
         case remainingFactors = "remaining_factors"
         case alreadyUnlinked = "already_unlinked"
-    }
-}
-
-/// `UnpublishListingResponse` model.
-public struct UnpublishListingResponse: Codable, Hashable, Sendable {
-    public var error: RevokeSessionShareResponseError
-    public var message: String
-    public var retryAfterSeconds: Int
-
-    public init(error: RevokeSessionShareResponseError, message: String, retryAfterSeconds: Int) {
-        self.error = error
-        self.message = message
-        self.retryAfterSeconds = retryAfterSeconds
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case error = "error"
-        case message = "message"
-        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 

@@ -30,8 +30,8 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()): DeleteMemoryEntryResponse {
-        return client.request<DeleteMemoryEntryResponse>(
+    public suspend fun deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/memory/${encodePathSegment(entryId)}",

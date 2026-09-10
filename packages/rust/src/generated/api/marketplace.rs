@@ -276,9 +276,9 @@ impl MarketplaceApi {
     /// `DELETE /api/v1/marketplace/listings/{listingId}`
     ///
     /// Required scopes: `marketplace:write`.
-    pub async fn unpublish_listing(&self, listing_id: &str) -> Result<models::UnpublishListingResponse> {
+    pub async fn unpublish_listing(&self, listing_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/marketplace/listings/{}", encode_path(listing_id)),
                 query: NO_QUERY,

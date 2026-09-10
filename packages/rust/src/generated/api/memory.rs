@@ -39,9 +39,9 @@ impl MemoryApi {
     /// `DELETE /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<models::DeleteMemoryEntryResponse> {
+    pub async fn delete_memory_entry(&self, agent_id: &str, entry_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/agents/{}/memory/{}", encode_path(agent_id), encode_path(entry_id)),
                 query: NO_QUERY,

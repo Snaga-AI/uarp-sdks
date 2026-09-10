@@ -9,7 +9,6 @@ import type {
   CreateWorkspaceRequest,
   DeleteWorkspaceFileResponse,
   DeleteWorkspaceFileTrash,
-  DeleteWorkspaceResponse,
   EmptyWorkspaceTrashResponse,
   JsonValue,
   ListAgentWorkspaceFilesResponse,
@@ -184,11 +183,12 @@ export class WorkspacesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  delete(workspaceId: string, options?: RequestOptions): Promise<DeleteWorkspaceResponse> {
+  delete(workspaceId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

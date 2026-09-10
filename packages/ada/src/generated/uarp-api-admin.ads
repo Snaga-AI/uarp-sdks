@@ -496,11 +496,10 @@ package UARP.API.Admin is
    --  DELETE /api/v1/admin/testers/android/{email}
    --
    --  Required scopes: admin.
-   function Delete_Android_Tester
+   procedure Delete_Android_Tester
      (Self : Client_Type;
       Email : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Android_Tester_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Run the authoring agent now and create a post
    --

@@ -31,8 +31,8 @@ public class FilesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun delete(fileId: String, options: RequestOptions = RequestOptions()): DeleteFileResponse {
-        return client.request<DeleteFileResponse>(
+    public suspend fun delete(fileId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/files/${encodePathSegment(fileId)}",

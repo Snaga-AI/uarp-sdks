@@ -165,8 +165,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun deleteAgentIdentity(agentId: String, options: RequestOptions = RequestOptions()): DeleteAgentIdentityResponse {
-        return client.request<DeleteAgentIdentityResponse>(
+    public suspend fun deleteAgentIdentity(agentId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/identity",

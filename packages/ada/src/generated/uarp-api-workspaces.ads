@@ -129,11 +129,10 @@ package UARP.API.Workspaces is
    --  DELETE /api/v1/workspaces/{workspaceId}
    --
    --  Required scopes: files:write.
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       Workspace_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Workspace_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Delete a file
    --

@@ -169,8 +169,8 @@ public struct SessionsAPI: Sendable {
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = .init()) async throws -> DeleteSessionAnnotationResponse {
-        return try await client.send(RequestSpec(
+    public func deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/annotations/\(encodePathSegment(annotationId))",
             idempotent: true,
@@ -423,8 +423,8 @@ public struct SessionsAPI: Sendable {
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
-    public func revokeSessionShare(sessionId: String, options: RequestOptions = .init()) async throws -> RevokeSessionShareResponse {
-        return try await client.send(RequestSpec(
+    public func revokeSessionShare(sessionId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/share",
             idempotent: true,

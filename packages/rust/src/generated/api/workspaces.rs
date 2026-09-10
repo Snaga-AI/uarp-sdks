@@ -156,9 +156,9 @@ impl WorkspacesApi {
     /// `DELETE /api/v1/workspaces/{workspaceId}`
     ///
     /// Required scopes: `files:write`.
-    pub async fn delete(&self, workspace_id: &str) -> Result<models::DeleteWorkspaceResponse> {
+    pub async fn delete(&self, workspace_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/workspaces/{}", encode_path(workspace_id)),
                 query: NO_QUERY,

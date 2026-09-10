@@ -5,7 +5,6 @@ import type { RequestOptions } from '../../core/transport.js';
 import type {
   AcceptInviteRequest,
   AcceptInviteResponse,
-  DeleteInviteResponse,
   DeleteUserResponse,
   InviteUserRequest,
   InviteUserResponse,
@@ -76,11 +75,12 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:write`.
    */
-  deleteInvite(inviteId: string, options?: RequestOptions): Promise<DeleteInviteResponse> {
+  deleteInvite(inviteId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/users/invites/${encodeURIComponent(String(inviteId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

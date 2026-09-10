@@ -533,20 +533,18 @@ package body UARP.API.Admin is
              Options => Options));
    end Delete_Admin_Provider;
 
-   function Delete_Android_Tester
+   procedure Delete_Android_Tester
      (Self : Client_Type;
       Email : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Android_Tester_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/admin/testers/android/" & UARP.Types.Encode_Path_Segment (Email),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/admin/testers/android/" & UARP.Types.Encode_Path_Segment (Email),
+          Idempotent => True,
+          Options => Options);
    end Delete_Android_Tester;
 
    function Generate_Admin_Blog_Post

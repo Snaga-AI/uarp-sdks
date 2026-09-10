@@ -186,21 +186,19 @@ package body UARP.API.Sessions is
           Options => Options);
    end Create_Task;
 
-   function Delete_Session_Annotation
+   procedure Delete_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
       Annotation_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Session_Annotation_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations/" & UARP.Types.Encode_Path_Segment (Annotation_Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations/" & UARP.Types.Encode_Path_Segment (Annotation_Id),
+          Idempotent => True,
+          Options => Options);
    end Delete_Session_Annotation;
 
    function Delete_Session_Todo
@@ -493,20 +491,18 @@ package body UARP.API.Sessions is
              Options => Options));
    end Resolve_Shared_Session;
 
-   function Revoke_Session_Share
+   procedure Revoke_Session_Share
      (Self : Client_Type;
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Revoke_Session_Share_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
+          Idempotent => True,
+          Options => Options);
    end Revoke_Session_Share;
 
    function Run_Session_Todo_Now

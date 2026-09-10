@@ -20,7 +20,6 @@ import type {
   SearchMarketplaceResponse,
   SearchMarketplaceSort,
   SubscribeToListingRequest,
-  UnpublishListingResponse,
   UnsubscribeFromListingResponse,
 } from '../models.js';
 
@@ -240,11 +239,12 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:write`.
    */
-  unpublishListing(listingId: string, options?: RequestOptions): Promise<UnpublishListingResponse> {
+  unpublishListing(listingId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

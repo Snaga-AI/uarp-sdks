@@ -47,11 +47,10 @@ package UARP.API.Integrations is
    --  DELETE /api/v1/integrations/{id}
    --
    --  Required scopes: agents:write.
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Integration_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Remove an integration from an agent
    --

@@ -17,7 +17,6 @@ import type {
   CreateAgentRequest,
   CreateAgentVersionRequest,
   DeleteAgentBookmarkResponse,
-  DeleteAgentIdentityResponse,
   DeleteAllAgentBookmarksResponse,
   FriaReport,
   GetAgentActivityStatsResponse,
@@ -239,11 +238,12 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  deleteAgentIdentity(agentId: string, options?: RequestOptions): Promise<DeleteAgentIdentityResponse> {
+  deleteAgentIdentity(agentId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/identity`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

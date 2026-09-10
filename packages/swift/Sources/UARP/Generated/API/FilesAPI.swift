@@ -13,8 +13,8 @@ public struct FilesAPI: Sendable {
     /// `DELETE /api/v1/files/{fileId}`
     ///
     /// Required scopes: `files:write`.
-    public func delete(fileId: String, options: RequestOptions = .init()) async throws -> DeleteFileResponse {
-        return try await client.send(RequestSpec(
+    public func delete(fileId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/files/\(encodePathSegment(fileId))",
             idempotent: true,

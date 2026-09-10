@@ -2,21 +2,19 @@
 
 package body UARP.API.Memory is
 
-   function Delete_Memory_Entry
+   procedure Delete_Memory_Entry
      (Self : Client_Type;
       Agent_Id : String;
       Entry_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Memory_Entry_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
+          Idempotent => True,
+          Options => Options);
    end Delete_Memory_Entry;
 
    function Get_Core_Memory_Block

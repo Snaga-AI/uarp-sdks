@@ -18,9 +18,7 @@ import type {
   RegistrySetShareRequest,
   RegistrySetShareResponse,
   RegistrySpecFeatureState,
-  RegistryUnyankVersionResponse,
   RegistryYankVersionRequest,
-  RegistryYankVersionResponse,
   SeedStarterSpecsResponse,
   SetRegistrySpecVisibilityRequest,
   SetRegistrySpecVisibilityResponse,
@@ -257,11 +255,12 @@ export class RegistryResource extends APIResource {
    *
    * `POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank`
    */
-  registryUnyankVersion(scope: string, name: string, version: string, options?: RequestOptions): Promise<RegistryUnyankVersionResponse> {
+  registryUnyankVersion(scope: string, name: string, version: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/registry/spec/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/${encodeURIComponent(String(version))}/unyank`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }
@@ -271,12 +270,13 @@ export class RegistryResource extends APIResource {
    *
    * `POST /api/v1/registry/spec/{scope}/{name}/{version}/yank`
    */
-  registryYankVersion(scope: string, name: string, version: string, body?: RegistryYankVersionRequest, options?: RequestOptions): Promise<RegistryYankVersionResponse> {
+  registryYankVersion(scope: string, name: string, version: string, body?: RegistryYankVersionRequest, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/registry/spec/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/${encodeURIComponent(String(version))}/yank`,
       body,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

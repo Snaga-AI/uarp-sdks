@@ -60,6 +60,33 @@
         "responses": { "200": { "description": "ok" } }
       }
     },
+    "/uploads/{uploadId}/lock": {
+      "delete": {
+        "operationId": "unlockUpload",
+        "summary": "Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204",
+        "tags": ["Uploads"],
+        "parameters": [{ "name": "uploadId", "in": "path", "required": true, "schema": { "type": "string" } }],
+        "responses": {
+          "202": {
+            "description": "An identical request is in flight; retry after `Retry-After` seconds.",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": { "type": "string", "enum": ["Accepted"] },
+                    "message": { "type": "string" },
+                    "retry_after_seconds": { "type": "integer" }
+                  },
+                  "required": ["error", "message", "retry_after_seconds"]
+                }
+              }
+            }
+          },
+          "204": { "description": "unlocked" }
+        }
+      }
+    },
     "/metrics": {
       "get": {
         "operationId": "getMetrics",

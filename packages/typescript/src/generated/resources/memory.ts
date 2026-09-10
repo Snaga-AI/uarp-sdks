@@ -5,7 +5,6 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
   CoreMemoryBlock,
-  DeleteMemoryEntryResponse,
   GetMemoriesByEntityResponse,
   ImportAgentMemoryRequest,
   ImportAgentMemoryResponse,
@@ -37,11 +36,12 @@ export class MemoryResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  deleteMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<DeleteMemoryEntryResponse> {
+  deleteMemoryEntry(agentId: string, entryId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

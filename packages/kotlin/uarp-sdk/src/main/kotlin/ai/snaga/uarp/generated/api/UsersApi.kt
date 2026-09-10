@@ -79,8 +79,8 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:write`.
      */
-    public suspend fun deleteInvite(inviteId: String, options: RequestOptions = RequestOptions()): DeleteInviteResponse {
-        return client.request<DeleteInviteResponse>(
+    public suspend fun deleteInvite(inviteId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/users/invites/${encodePathSegment(inviteId)}",

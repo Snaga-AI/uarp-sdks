@@ -270,9 +270,9 @@ impl SessionsApi {
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn delete_session_annotation(&self, session_id: &str, annotation_id: &str) -> Result<models::DeleteSessionAnnotationResponse> {
+    pub async fn delete_session_annotation(&self, session_id: &str, annotation_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/sessions/{}/annotations/{}", encode_path(session_id), encode_path(annotation_id)),
                 query: NO_QUERY,
@@ -580,9 +580,9 @@ impl SessionsApi {
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn revoke_session_share(&self, session_id: &str) -> Result<models::RevokeSessionShareResponse> {
+    pub async fn revoke_session_share(&self, session_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/sessions/{}/share", encode_path(session_id)),
                 query: NO_QUERY,

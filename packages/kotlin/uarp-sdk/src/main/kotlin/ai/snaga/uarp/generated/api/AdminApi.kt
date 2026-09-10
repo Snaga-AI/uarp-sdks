@@ -621,8 +621,8 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun deleteAndroidTester(email: String, options: RequestOptions = RequestOptions()): DeleteAndroidTesterResponse {
-        return client.request<DeleteAndroidTesterResponse>(
+    public suspend fun deleteAndroidTester(email: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/admin/testers/android/${encodePathSegment(email)}",

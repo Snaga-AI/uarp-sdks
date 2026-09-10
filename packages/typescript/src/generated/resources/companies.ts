@@ -6,7 +6,6 @@ import type {
   Company,
   CompanyCreate,
   CompanyUpdate,
-  DeleteCompanyResponse,
   GetCompanyActivityResponse,
   GetCompanyBudgetResponse,
   GetCompanyObjectivesResponse,
@@ -43,11 +42,12 @@ export class CompaniesResource extends APIResource {
    *
    * Required scopes: `agents:write`.
    */
-  delete(id: string, options?: RequestOptions): Promise<DeleteCompanyResponse> {
+  delete(id: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/companies/${encodeURIComponent(String(id))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

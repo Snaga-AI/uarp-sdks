@@ -3,8 +3,6 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
-  DeleteKbDocumentResponse,
-  DeleteKnowledgeBaseResponse,
   IngestKbDocumentRequest,
   IngestKbDocumentResponse,
   KnowledgeBase,
@@ -45,11 +43,12 @@ export class KnowledgeResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  deleteKbDocument(id: string, docId: string, options?: RequestOptions): Promise<DeleteKbDocumentResponse> {
+  deleteKbDocument(id: string, docId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}/documents/${encodeURIComponent(String(docId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }
@@ -61,11 +60,12 @@ export class KnowledgeResource extends APIResource {
    *
    * Required scopes: `memory:write`.
    */
-  deleteKnowledgeBase(id: string, options?: RequestOptions): Promise<DeleteKnowledgeBaseResponse> {
+  deleteKnowledgeBase(id: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/knowledge-bases/${encodeURIComponent(String(id))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

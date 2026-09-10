@@ -87,8 +87,8 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun delete(workspaceId: String, options: RequestOptions = RequestOptions()): DeleteWorkspaceResponse {
-        return client.request<DeleteWorkspaceResponse>(
+    public suspend fun delete(workspaceId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}",

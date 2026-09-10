@@ -274,25 +274,23 @@ package body UARP.API.Registry is
              Options => Options));
    end Registry_Set_Share;
 
-   function Registry_Unyank_Version
+   procedure Registry_Unyank_Version
      (Self : Client_Type;
       Scope : String;
       Name : String;
       Version : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Registry_Unyank_Version_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "POST",
-             "/api/v1/registry/spec/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/" & UARP.Types.Encode_Path_Segment (Version) & "/unyank",
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "POST",
+          "/api/v1/registry/spec/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/" & UARP.Types.Encode_Path_Segment (Version) & "/unyank",
+          Idempotent => True,
+          Options => Options);
    end Registry_Unyank_Version;
 
-   function Registry_Yank_Version
+   procedure Registry_Yank_Version
      (Self : Client_Type;
       Scope : String;
       Name : String;
@@ -300,18 +298,16 @@ package body UARP.API.Registry is
       Payload : UARP.Models.Registry_Yank_Version_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Registry_Yank_Version_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "POST",
-             "/api/v1/registry/spec/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/" & UARP.Types.Encode_Path_Segment (Version) & "/yank",
-             Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "POST",
+          "/api/v1/registry/spec/" & UARP.Types.Encode_Path_Segment (Scope) & "/" & UARP.Types.Encode_Path_Segment (Name) & "/" & UARP.Types.Encode_Path_Segment (Version) & "/yank",
+          Payload => UARP.Models.To_JSON (Payload),
+          Has_Payload => Include_Payload,
+          Idempotent => True,
+          Options => Options);
    end Registry_Yank_Version;
 
    function Seed_Starter_Specs

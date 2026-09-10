@@ -80,9 +80,9 @@ impl UsersApi {
     /// `DELETE /api/v1/users/invites/{inviteId}`
     ///
     /// Required scopes: `users:write`.
-    pub async fn delete_invite(&self, invite_id: &str) -> Result<models::DeleteInviteResponse> {
+    pub async fn delete_invite(&self, invite_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/users/invites/{}", encode_path(invite_id)),
                 query: NO_QUERY,

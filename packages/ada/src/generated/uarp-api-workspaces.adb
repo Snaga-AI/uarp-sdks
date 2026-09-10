@@ -62,20 +62,18 @@ package body UARP.API.Workspaces is
              Options => Options));
    end Create;
 
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       Workspace_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Workspace_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id),
+          Idempotent => True,
+          Options => Options);
    end Delete;
 
    function Delete_Workspace_File

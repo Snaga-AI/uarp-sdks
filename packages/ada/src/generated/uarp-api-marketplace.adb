@@ -202,20 +202,18 @@ package body UARP.API.Marketplace is
           Options => Options);
    end Subscribe_To_Listing;
 
-   function Unpublish_Listing
+   procedure Unpublish_Listing
      (Self : Client_Type;
       Listing_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Unpublish_Listing_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/marketplace/listings/" & UARP.Types.Encode_Path_Segment (Listing_Id),
+          Idempotent => True,
+          Options => Options);
    end Unpublish_Listing;
 
    function Unsubscribe_From_Listing

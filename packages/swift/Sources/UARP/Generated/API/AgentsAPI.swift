@@ -119,8 +119,8 @@ public struct AgentsAPI: Sendable {
     /// `DELETE /api/v1/agents/{agentId}/identity`
     ///
     /// Required scopes: `agents:write`.
-    public func deleteAgentIdentity(agentId: String, options: RequestOptions = .init()) async throws -> DeleteAgentIdentityResponse {
-        return try await client.send(RequestSpec(
+    public func deleteAgentIdentity(agentId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/identity",
             idempotent: true,

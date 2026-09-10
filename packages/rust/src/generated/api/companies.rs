@@ -50,9 +50,9 @@ impl CompaniesApi {
     /// `DELETE /api/v1/companies/{id}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete(&self, id: &str) -> Result<models::DeleteCompanyResponse> {
+    pub async fn delete(&self, id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/companies/{}", encode_path(id)),
                 query: NO_QUERY,

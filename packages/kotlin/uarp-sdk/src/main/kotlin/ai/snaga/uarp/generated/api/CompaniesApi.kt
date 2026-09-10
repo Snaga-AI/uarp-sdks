@@ -49,8 +49,8 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()): DeleteCompanyResponse {
-        return client.request<DeleteCompanyResponse>(
+    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/companies/${encodePathSegment(id)}",

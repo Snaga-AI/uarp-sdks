@@ -6,6 +6,34 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.5.23 — 2026-09-10
+
+### Fixed — all five clients
+
+- Fifteen operations whose answer is a `204` — `files.delete`,
+  `workspaces.delete`, `companies.delete`, `integrations.delete`,
+  `knowledge.deleteKnowledgeBase`, `knowledge.deleteKbDocument`,
+  `users.deleteInvite`, `agents.deleteAgentIdentity`,
+  `memory.deleteMemoryEntry`, `sessions.deleteSessionAnnotation`,
+  `sessions.revokeSessionShare`, `marketplace.unpublishListing`,
+  `registry.registryYankVersion`, `registry.registryUnyankVersion`,
+  `admin.deleteAndroidTester` (TypeScript spelling) — were typed in 0.5.21 and
+  0.5.22 by the body of the `202 IdempotencyInFlight` reply that uarp #444
+  attached to every idempotent operation (`{ error: "Accepted", message,
+  retry_after_seconds }`). The generator took the lowest 2xx as the answer.
+  Rust failed to decode the empty 204 it actually received (`invalid type:
+  null, expected struct DeleteFileResponse`); Ada did not compile; TypeScript,
+  Swift and Kotlin returned a model no response ever carries. The generator
+  now types an operation by its settled status: a 202 next to another 2xx is
+  the idempotency layer saying "still in flight", not the result. The sixteen
+  models that existed only for this (`Delete*Response`,
+  `RevokeSessionShareResponse`, `UnpublishListingResponse`,
+  `RegistryYankVersionResponse`, `RegistryUnyankVersionResponse` and their
+  shared `error` enum) are gone; the fifteen methods return nothing again, as
+  they did in 0.5.20. The cross-SDK contract check caught it in CI on
+  `ca08686` and `697d02d`; a parser test now pins all fifteen against the
+  served document.
+
 ## 0.5.22 — 2026-09-10
 
 The copy follows the served document byte for byte: `spec/openapi.json` is

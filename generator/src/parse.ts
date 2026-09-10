@@ -519,7 +519,14 @@ class Parser {
       .filter((n) => Number.isFinite(n));
     const success = codes.filter((c) => c >= 200 && c < 400).sort((a, b) => a - b);
     const errorStatuses = codes.filter((c) => c >= 400).sort((a, b) => a - b);
-    const status = success[0] ?? 200;
+    // A 202 that shares the operation with another 2xx is not its answer. It is
+    // the idempotency layer replying "still in flight" to a replayed key (uarp
+    // #444 attached that `IdempotencyInFlight` response, an error-shaped body
+    // with `retry_after_seconds`, to every idempotent operation). The settled
+    // status is the one the operation is typed by. Picking the lowest code
+    // made fifteen 204 operations decode a body they never receive in 0.5.21.
+    const settled = success.length > 1 ? success.filter((c) => c !== 202) : success;
+    const status = settled[0] ?? 200;
     const node = this.#deref(responses[String(status)] ?? {});
     const content: Json | undefined = node.content;
 

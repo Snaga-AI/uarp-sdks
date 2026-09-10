@@ -25,23 +25,21 @@ package UARP.API.Knowledge is
    --  DELETE /api/v1/knowledge-bases/{id}/documents/{docId}
    --
    --  Required scopes: memory:write.
-   function Delete_Kb_Document
+   procedure Delete_Kb_Document
      (Self : Client_Type;
       Id : String;
       Doc_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Kb_Document_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Delete knowledge base
    --
    --  DELETE /api/v1/knowledge-bases/{id}
    --
    --  Required scopes: memory:write.
-   function Delete_Knowledge_Base
+   procedure Delete_Knowledge_Base
      (Self : Client_Type;
       Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Knowledge_Base_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Get knowledge base
    --

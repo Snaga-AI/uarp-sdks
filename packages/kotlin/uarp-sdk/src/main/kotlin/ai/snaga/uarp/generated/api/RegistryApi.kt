@@ -266,8 +266,8 @@ public class RegistryApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank`
      */
-    public suspend fun registryUnyankVersion(scope: String, name: String, version: String, options: RequestOptions = RequestOptions()): RegistryUnyankVersionResponse {
-        return client.request<RegistryUnyankVersionResponse>(
+    public suspend fun registryUnyankVersion(scope: String, name: String, version: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/registry/spec/${encodePathSegment(scope)}/${encodePathSegment(name)}/${encodePathSegment(version)}/unyank",
@@ -282,8 +282,8 @@ public class RegistryApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/registry/spec/{scope}/{name}/{version}/yank`
      */
-    public suspend fun registryYankVersion(scope: String, name: String, version: String, body: RegistryYankVersionRequest? = null, options: RequestOptions = RequestOptions()): RegistryYankVersionResponse {
-        return client.request<RegistryYankVersionResponse>(
+    public suspend fun registryYankVersion(scope: String, name: String, version: String, body: RegistryYankVersionRequest? = null, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/registry/spec/${encodePathSegment(scope)}/${encodePathSegment(name)}/${encodePathSegment(version)}/yank",

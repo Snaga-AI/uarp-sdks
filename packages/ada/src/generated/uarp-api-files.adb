@@ -2,20 +2,18 @@
 
 package body UARP.API.Files is
 
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       File_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_File_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/files/" & UARP.Types.Encode_Path_Segment (File_Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/files/" & UARP.Types.Encode_Path_Segment (File_Id),
+          Idempotent => True,
+          Options => Options);
    end Delete;
 
    function Download_File_Content

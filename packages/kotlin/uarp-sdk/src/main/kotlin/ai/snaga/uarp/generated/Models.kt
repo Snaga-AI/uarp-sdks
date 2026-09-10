@@ -5204,44 +5204,11 @@ public data class DeleteAgentBookmarkResponse(
 )
 
 /**
- * `DeleteAgentIdentityResponse` model.
- */
-@Serializable
-public data class DeleteAgentIdentityResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
  * `DeleteAllAgentBookmarksResponse` model.
  */
 @Serializable
 public data class DeleteAllAgentBookmarksResponse(
     public val removed: Long,
-)
-
-/**
- * `DeleteAndroidTesterResponse` model.
- */
-@Serializable
-public data class DeleteAndroidTesterResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
- * `DeleteCompanyResponse` model.
- */
-@Serializable
-public data class DeleteCompanyResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -5293,17 +5260,6 @@ public data class DeleteDataExplorerValueResponse(
 )
 
 /**
- * `DeleteFileResponse` model.
- */
-@Serializable
-public data class DeleteFileResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
  * `DeleteGuardrailResponse` model.
  */
 @Serializable
@@ -5314,50 +5270,6 @@ public data class DeleteGuardrailResponse(
 )
 
 /**
- * `DeleteIntegrationResponse` model.
- */
-@Serializable
-public data class DeleteIntegrationResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
- * `DeleteInviteResponse` model.
- */
-@Serializable
-public data class DeleteInviteResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
- * `DeleteKbDocumentResponse` model.
- */
-@Serializable
-public data class DeleteKbDocumentResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
- * `DeleteKnowledgeBaseResponse` model.
- */
-@Serializable
-public data class DeleteKnowledgeBaseResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
  * `DeleteLLMProviderKeyResponse` model.
  */
 @Serializable
@@ -5365,17 +5277,6 @@ public data class DeleteLLMProviderKeyResponse(
     public val deleted: Boolean? = null,
     @SerialName("provider_id")
     public val providerId: String? = null,
-)
-
-/**
- * `DeleteMemoryEntryResponse` model.
- */
-@Serializable
-public data class DeleteMemoryEntryResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -5445,17 +5346,6 @@ public data class DeletePromoCodeResponse(
      * Upper-cased, which may differ from what was sent.
      */
     public val code: String,
-)
-
-/**
- * `DeleteSessionAnnotationResponse` model.
- */
-@Serializable
-public data class DeleteSessionAnnotationResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -5592,17 +5482,6 @@ public object DeleteWorkspaceFileTrashSerializer : KSerializer<DeleteWorkspaceFi
     override fun serialize(encoder: Encoder, value: DeleteWorkspaceFileTrash): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): DeleteWorkspaceFileTrash = DeleteWorkspaceFileTrash(decoder.decodeString())
 }
-
-/**
- * `DeleteWorkspaceResponse` model.
- */
-@Serializable
-public data class DeleteWorkspaceResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -14675,17 +14554,6 @@ public data class RegistrySpecFeatureState(
 )
 
 /**
- * `RegistryUnyankVersionResponse` model.
- */
-@Serializable
-public data class RegistryUnyankVersionResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
  * `RegistryVersionEntry` model.
  */
 @Serializable
@@ -14707,17 +14575,6 @@ public data class RegistryVersionEntry(
 @Serializable
 public data class RegistryYankVersionRequest(
     public val reason: String? = null,
-)
-
-/**
- * `RegistryYankVersionResponse` model.
- */
-@Serializable
-public data class RegistryYankVersionResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -14983,44 +14840,6 @@ public data class RevokeMeSessionResponse(
     @SerialName("already_revoked")
     public val alreadyRevoked: Boolean? = null,
 )
-
-/**
- * `RevokeSessionShareResponse` model.
- */
-@Serializable
-public data class RevokeSessionShareResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
-)
-
-/**
- * `RevokeSessionShareResponseError` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = RevokeSessionShareResponseErrorSerializer::class)
-@JvmInline
-public value class RevokeSessionShareResponseError(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val ACCEPTED: RevokeSessionShareResponseError = RevokeSessionShareResponseError("Accepted")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<RevokeSessionShareResponseError> = listOf(ACCEPTED)
-    }
-}
-
-public object RevokeSessionShareResponseErrorSerializer : KSerializer<RevokeSessionShareResponseError> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RevokeSessionShareResponseError", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: RevokeSessionShareResponseError): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): RevokeSessionShareResponseError = RevokeSessionShareResponseError(decoder.decodeString())
-}
 
 /**
  * EU AI Act (Article 9) classification for an agent.
@@ -19131,17 +18950,6 @@ public data class UnlinkAuthProviderResponse(
     public val remainingFactors: Long? = null,
     @SerialName("already_unlinked")
     public val alreadyUnlinked: Boolean? = null,
-)
-
-/**
- * `UnpublishListingResponse` model.
- */
-@Serializable
-public data class UnpublishListingResponse(
-    public val error: RevokeSessionShareResponseError,
-    public val message: String,
-    @SerialName("retry_after_seconds")
-    public val retryAfterSeconds: Long,
 )
 
 /**

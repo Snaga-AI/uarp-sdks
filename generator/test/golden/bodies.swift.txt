@@ -103,6 +103,17 @@ public struct UploadsAPI: Sendable {
         ))
     }
 
+    /// Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204
+    ///
+    /// `DELETE /uploads/{uploadId}/lock`
+    public func unlockUpload(uploadId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
+            method: "DELETE",
+            path: "/uploads/\(encodePathSegment(uploadId))/lock",
+            options: options
+        ))
+    }
+
     /// `POST /uploads`
     public func uploadBundle(body: UploadBundleRequest, options: RequestOptions = .init()) async throws -> UploadBundleResponse {
         var parts: [MultipartPart] = []

@@ -139,6 +139,21 @@ public class UploadsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204
+     *
+     * `DELETE /uploads/{uploadId}/lock`
+     */
+    public suspend fun unlockUpload(uploadId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
+            RequestSpec(
+                method = "DELETE",
+                path = "/uploads/${encodePathSegment(uploadId)}/lock",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * `POST /uploads`
      */
     public suspend fun uploadBundle(body: UploadBundleRequest, options: RequestOptions = RequestOptions()): UploadBundleResponse {

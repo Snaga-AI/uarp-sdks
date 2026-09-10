@@ -86,6 +86,20 @@ export class UploadsResource extends APIResource {
   }
 
   /**
+   * Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204
+   *
+   * `DELETE /uploads/{uploadId}/lock`
+   */
+  unlockUpload(uploadId: string, options?: RequestOptions): Promise<void> {
+    return this._client.request({
+      method: 'DELETE',
+      path: `/uploads/${encodeURIComponent(String(uploadId))}/lock`,
+      responseType: 'void',
+      options,
+    });
+  }
+
+  /**
    * `POST /uploads`
    */
   uploadBundle(body: UploadBundleRequest, options?: RequestOptions): Promise<UploadBundleResponse> {

@@ -49,8 +49,8 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteKbDocument(id: String, docId: String, options: RequestOptions = RequestOptions()): DeleteKbDocumentResponse {
-        return client.request<DeleteKbDocumentResponse>(
+    public suspend fun deleteKbDocument(id: String, docId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/knowledge-bases/${encodePathSegment(id)}/documents/${encodePathSegment(docId)}",
@@ -67,8 +67,8 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun deleteKnowledgeBase(id: String, options: RequestOptions = RequestOptions()): DeleteKnowledgeBaseResponse {
-        return client.request<DeleteKnowledgeBaseResponse>(
+    public suspend fun deleteKnowledgeBase(id: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/knowledge-bases/${encodePathSegment(id)}",

@@ -5393,34 +5393,10 @@ pub struct DeleteAgentBookmarkResponse {
     pub message_id: String,
 }
 
-/// `DeleteAgentIdentityResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteAgentIdentityResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
 /// `DeleteAllAgentBookmarksResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteAllAgentBookmarksResponse {
     pub removed: i64,
-}
-
-/// `DeleteAndroidTesterResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteAndroidTesterResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
-/// `DeleteCompanyResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteCompanyResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// `DeleteCustomPlanForce` enumeration.
@@ -5476,14 +5452,6 @@ pub struct DeleteDataExplorerValueResponse {
     pub success: Option<bool>,
 }
 
-/// `DeleteFileResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteFileResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
 /// `DeleteGuardrailResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteGuardrailResponse {
@@ -5493,38 +5461,6 @@ pub struct DeleteGuardrailResponse {
     pub guardrail_id: Option<String>,
 }
 
-/// `DeleteIntegrationResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteIntegrationResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
-/// `DeleteInviteResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteInviteResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
-/// `DeleteKbDocumentResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteKbDocumentResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
-/// `DeleteKnowledgeBaseResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteKnowledgeBaseResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
 /// `DeleteLLMProviderKeyResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteLLMProviderKeyResponse {
@@ -5532,14 +5468,6 @@ pub struct DeleteLLMProviderKeyResponse {
     pub deleted: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider_id: Option<String>,
-}
-
-/// `DeleteMemoryEntryResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteMemoryEntryResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// `DeleteMeResponse` model.
@@ -5591,14 +5519,6 @@ pub struct DeletePromoCodeResponse {
     pub deleted: bool,
     /// Upper-cased, which may differ from what was sent.
     pub code: String,
-}
-
-/// `DeleteSessionAnnotationResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteSessionAnnotationResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// `DeleteSessionTodoResponse` model.
@@ -5725,14 +5645,6 @@ impl From<&str> for DeleteWorkspaceFileTrash {
             other => Self::Other(other.to_string()),
         }
     }
-}
-
-/// `DeleteWorkspaceResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct DeleteWorkspaceResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -14738,14 +14650,6 @@ pub struct RegistrySpecFeatureState {
     pub featured: bool,
 }
 
-/// `RegistryUnyankVersionResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct RegistryUnyankVersionResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
 /// `RegistryVersionEntry` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RegistryVersionEntry {
@@ -14765,14 +14669,6 @@ pub struct RegistryVersionEntry {
 pub struct RegistryYankVersionRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
-}
-
-/// `RegistryYankVersionResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct RegistryYankVersionResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// `ReindexKnowledgeBaseResponse` model.
@@ -14994,50 +14890,6 @@ pub struct RevokeMeSessionResponse {
     pub key_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub already_revoked: Option<bool>,
-}
-
-/// `RevokeSessionShareResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct RevokeSessionShareResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
-}
-
-/// `RevokeSessionShareResponseError` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum RevokeSessionShareResponseError {
-    #[default]
-    #[serde(rename = "Accepted")]
-    Accepted,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl RevokeSessionShareResponseError {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Accepted => "Accepted",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for RevokeSessionShareResponseError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for RevokeSessionShareResponseError {
-    fn from(value: &str) -> Self {
-        match value {
-            "Accepted" => Self::Accepted,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// EU AI Act (Article 9) classification for an agent.
@@ -19160,14 +19012,6 @@ pub struct UnlinkAuthProviderResponse {
     pub remaining_factors: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub already_unlinked: Option<bool>,
-}
-
-/// `UnpublishListingResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UnpublishListingResponse {
-    pub error: RevokeSessionShareResponseError,
-    pub message: String,
-    pub retry_after_seconds: i64,
 }
 
 /// `UnscheduleCanvasWorkflowResponse` model.

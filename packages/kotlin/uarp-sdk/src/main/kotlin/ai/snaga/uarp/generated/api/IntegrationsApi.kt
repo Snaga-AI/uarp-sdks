@@ -68,8 +68,8 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()): DeleteIntegrationResponse {
-        return client.request<DeleteIntegrationResponse>(
+    public suspend fun delete(id: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/integrations/${encodePathSegment(id)}",

@@ -162,11 +162,10 @@ package UARP.API.Marketplace is
    --  DELETE /api/v1/marketplace/listings/{listingId}
    --
    --  Required scopes: marketplace:write.
-   function Unpublish_Listing
+   procedure Unpublish_Listing
      (Self : Client_Type;
       Listing_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Unpublish_Listing_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Unsubscribe from a listing
    --

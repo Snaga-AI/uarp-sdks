@@ -13,8 +13,8 @@ public struct MemoryAPI: Sendable {
     /// `DELETE /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    public func deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws -> DeleteMemoryEntryResponse {
-        return try await client.send(RequestSpec(
+    public func deleteMemoryEntry(agentId: String, entryId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/memory/\(encodePathSegment(entryId))",
             idempotent: true,

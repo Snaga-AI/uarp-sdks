@@ -167,6 +167,14 @@ package UARP.API.Uploads is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Idempotent: the 202 is the in-flight reply of a replayed key, the answer is the 204
+   --
+   --  DELETE /uploads/{uploadId}/lock
+   procedure Unlock_Upload
+     (Self : Client_Type;
+      Upload_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options);
+
    --  POST /uploads
    function Upload_Bundle
      (Self : Client_Type;
@@ -238,6 +246,19 @@ package body UARP.API.Uploads is
           "/uploads/" & UARP.Types.Encode_Path_Segment (Upload_Id),
           Options => Options);
    end Get_Upload_Metadata;
+
+   procedure Unlock_Upload
+     (Self : Client_Type;
+      Upload_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/uploads/" & UARP.Types.Encode_Path_Segment (Upload_Id) & "/lock",
+          Options => Options);
+   end Unlock_Upload;
 
    function Upload_Bundle
      (Self : Client_Type;

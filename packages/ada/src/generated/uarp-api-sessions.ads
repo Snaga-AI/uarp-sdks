@@ -196,12 +196,11 @@ package UARP.API.Sessions is
    --  DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}
    --
    --  Required scopes: sessions:write.
-   function Delete_Session_Annotation
+   procedure Delete_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
       Annotation_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Session_Annotation_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Delete a single todo
    --
@@ -392,11 +391,10 @@ package UARP.API.Sessions is
    --  DELETE /api/v1/sessions/{sessionId}/share
    --
    --  Required scopes: sessions:write.
-   function Revoke_Session_Share
+   procedure Revoke_Session_Share
      (Self : Client_Type;
       Session_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Revoke_Session_Share_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Run a pending todo immediately
    --

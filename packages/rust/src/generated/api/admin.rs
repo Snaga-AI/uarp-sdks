@@ -727,9 +727,9 @@ impl AdminApi {
     /// `DELETE /api/v1/admin/testers/android/{email}`
     ///
     /// Required scopes: `admin`.
-    pub async fn delete_android_tester(&self, email: &str) -> Result<models::DeleteAndroidTesterResponse> {
+    pub async fn delete_android_tester(&self, email: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/admin/testers/android/{}", encode_path(email)),
                 query: NO_QUERY,

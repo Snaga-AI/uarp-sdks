@@ -2512,26 +2512,8 @@ export interface DeleteAgentBookmarkResponse {
   message_id: string;
 }
 
-export interface DeleteAgentIdentityResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
 export interface DeleteAllAgentBookmarksResponse {
   removed: number;
-}
-
-export interface DeleteAndroidTesterResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
-export interface DeleteCompanyResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
 }
 
 export type DeleteCustomPlanForce = '1';
@@ -2551,50 +2533,14 @@ export interface DeleteDataExplorerValueResponse {
   success?: boolean;
 }
 
-export interface DeleteFileResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
 export interface DeleteGuardrailResponse {
   deleted?: boolean;
   guardrail_id?: string;
 }
 
-export interface DeleteIntegrationResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
-export interface DeleteInviteResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
-export interface DeleteKbDocumentResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
-export interface DeleteKnowledgeBaseResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
 export interface DeleteLLMProviderKeyResponse {
   deleted?: boolean;
   provider_id?: string;
-}
-
-export interface DeleteMemoryEntryResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
 }
 
 export interface DeleteMeResponse {
@@ -2632,12 +2578,6 @@ export interface DeletePromoCodeResponse {
    * Upper-cased, which may differ from what was sent.
    */
   code: string;
-}
-
-export interface DeleteSessionAnnotationResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
 }
 
 export interface DeleteSessionTodoResponse {
@@ -2697,12 +2637,6 @@ export interface DeleteWorkspaceFileResponse {
 export type DeleteWorkspaceFileTrash = 'false';
 
 export const DELETE_WORKSPACE_FILE_TRASH_VALUES = ['false'] as const;
-
-export interface DeleteWorkspaceResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -7623,12 +7557,6 @@ export interface RegistrySpecFeatureState {
   featured: boolean;
 }
 
-export interface RegistryUnyankVersionResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
 export interface RegistryVersionEntry {
   version: string;
   sha256: string;
@@ -7641,12 +7569,6 @@ export interface RegistryVersionEntry {
 
 export interface RegistryYankVersionRequest {
   reason?: string;
-}
-
-export interface RegistryYankVersionResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
 }
 
 export interface ReindexKnowledgeBaseResponse {
@@ -7789,16 +7711,6 @@ export interface RevokeMeSessionResponse {
   key_id: string;
   already_revoked?: boolean;
 }
-
-export interface RevokeSessionShareResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
-}
-
-export type RevokeSessionShareResponseError = 'Accepted';
-
-export const REVOKE_SESSION_SHARE_RESPONSE_ERROR_VALUES = ['Accepted'] as const;
 
 /**
  * EU AI Act (Article 9) classification for an agent.
@@ -9884,12 +9796,6 @@ export interface UnlinkAuthProviderResponse {
   provider: string;
   remaining_factors?: number;
   already_unlinked?: boolean;
-}
-
-export interface UnpublishListingResponse {
-  error: RevokeSessionShareResponseError;
-  message: string;
-  retry_after_seconds: number;
 }
 
 export interface UnscheduleCanvasWorkflowResponse {

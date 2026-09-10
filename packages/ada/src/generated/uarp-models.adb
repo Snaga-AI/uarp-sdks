@@ -12921,60 +12921,6 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_Revoke_Session_Share_Response_Error (Value : String) return Revoke_Session_Share_Response_Error is
-   begin
-      if Value = "Accepted" then
-         return (Kind => Revoke_Session_Share_Response_Error_Accepted, Raw => UARP.Types."+" (Value));
-      else
-         return (Kind => Revoke_Session_Share_Response_Error_Unrecognized, Raw => UARP.Types."+" (Value));
-      end if;
-   end To_Revoke_Session_Share_Response_Error;
-
-   function To_Revoke_Session_Share_Response_Error (Kind : Revoke_Session_Share_Response_Error_Kind) return Revoke_Session_Share_Response_Error is
-   begin
-      case Kind is
-         when Revoke_Session_Share_Response_Error_Accepted =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("Accepted"));
-         when Revoke_Session_Share_Response_Error_Unrecognized =>
-            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
-      end case;
-   end To_Revoke_Session_Share_Response_Error;
-
-   function Image (Model : Revoke_Session_Share_Response_Error) return String is
-      (if UARP.Types.SU.Length (Model.Raw) > 0
-         then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_Revoke_Session_Share_Response_Error (Model.Kind).Raw));
-
-   function To_JSON (Model : Revoke_Session_Share_Response_Error) return UARP.JSON_Support.JSON_Value is
-      (JS.JSON.Create (Image (Model)));
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Session_Share_Response_Error is
-      (To_Revoke_Session_Share_Response_Error (UARP.Types."+" (JS.As_Text (Node))));
-
-   function To_JSON (Model : Delete_Agent_Identity_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Agent_Identity_Response is
-      Result : Delete_Agent_Identity_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
    function To_JSON (Model : Delete_All_Agent_Bookmarks_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -12987,54 +12933,6 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "removed") then
          Result.Removed := JS.As_Integer (JS.Get_Value (Node, "removed"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Android_Tester_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Android_Tester_Response is
-      Result : Delete_Android_Tester_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Company_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Company_Response is
-      Result : Delete_Company_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;
@@ -13115,30 +13013,6 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Delete_File_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_File_Response is
-      Result : Delete_File_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
    function To_JSON (Model : Delete_Guardrail_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -13165,102 +13039,6 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Delete_Integration_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Integration_Response is
-      Result : Delete_Integration_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Invite_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Invite_Response is
-      Result : Delete_Invite_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Kb_Document_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Kb_Document_Response is
-      Result : Delete_Kb_Document_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Knowledge_Base_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Knowledge_Base_Response is
-      Result : Delete_Knowledge_Base_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
    function To_JSON (Model : Delete_LLM_Provider_Key_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -13283,30 +13061,6 @@ package body UARP.Models is
       if JS.Present (Node, "provider_id") then
          Result.Has_Provider_Id := True;
          Result.Provider_Id := JS.As_Text (JS.Get_Value (Node, "provider_id"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Memory_Entry_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Memory_Entry_Response is
-      Result : Delete_Memory_Entry_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;
@@ -13459,30 +13213,6 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "code") then
          Result.Code := JS.As_Text (JS.Get_Value (Node, "code"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Delete_Session_Annotation_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Session_Annotation_Response is
-      Result : Delete_Session_Annotation_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;
@@ -13774,30 +13504,6 @@ package body UARP.Models is
 
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Workspace_File_Trash is
       (To_Delete_Workspace_File_Trash (UARP.Types."+" (JS.As_Text (Node))));
-
-   function To_JSON (Model : Delete_Workspace_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Workspace_Response is
-      Result : Delete_Workspace_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
 
    function To_Design_Request_Status (Value : String) return Design_Request_Status is
    begin
@@ -39182,30 +38888,6 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Registry_Unyank_Version_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Unyank_Version_Response is
-      Result : Registry_Unyank_Version_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
-      end if;
-      return Result;
-   end From_JSON;
-
    function To_JSON (Model : Registry_Yank_Version_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -39221,30 +38903,6 @@ package body UARP.Models is
       if JS.Present (Node, "reason") then
          Result.Has_Reason := True;
          Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Registry_Yank_Version_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Yank_Version_Response is
-      Result : Registry_Yank_Version_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;
@@ -39677,30 +39335,6 @@ package body UARP.Models is
       if JS.Present (Node, "already_revoked") then
          Result.Has_Already_Revoked := True;
          Result.Already_Revoked := JS.As_Boolean (JS.Get_Value (Node, "already_revoked"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Revoke_Session_Share_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Session_Share_Response is
-      Result : Revoke_Session_Share_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;
@@ -44412,30 +44046,6 @@ package body UARP.Models is
       if JS.Present (Node, "already_unlinked") then
          Result.Has_Already_Unlinked := True;
          Result.Already_Unlinked := JS.As_Boolean (JS.Get_Value (Node, "already_unlinked"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Unpublish_Listing_Response) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "error", To_JSON (Model.Error));
-      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
-      JS.Set (Result, "retry_after_seconds", JS.JSON.Create (Model.Retry_After_Seconds));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Unpublish_Listing_Response is
-      Result : Unpublish_Listing_Response;
-   begin
-      if JS.Present (Node, "error") then
-         Result.Error := From_JSON (JS.Get_Value (Node, "error"));
-      end if;
-      if JS.Present (Node, "message") then
-         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
-      end if;
-      if JS.Present (Node, "retry_after_seconds") then
-         Result.Retry_After_Seconds := JS.As_Integer (JS.Get_Value (Node, "retry_after_seconds"));
       end if;
       return Result;
    end From_JSON;

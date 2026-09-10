@@ -5,7 +5,6 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
-  DeleteFileResponse,
   FileEntry,
   FileRecord,
   ListFilesResponse,
@@ -33,11 +32,12 @@ export class FilesResource extends APIResource {
    *
    * Required scopes: `files:write`.
    */
-  delete(fileId: string, options?: RequestOptions): Promise<DeleteFileResponse> {
+  delete(fileId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/files/${encodeURIComponent(String(fileId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

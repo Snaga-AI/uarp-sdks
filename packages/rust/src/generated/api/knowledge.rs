@@ -50,9 +50,9 @@ impl KnowledgeApi {
     /// `DELETE /api/v1/knowledge-bases/{id}/documents/{docId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_kb_document(&self, id: &str, doc_id: &str) -> Result<models::DeleteKbDocumentResponse> {
+    pub async fn delete_kb_document(&self, id: &str, doc_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/knowledge-bases/{}/documents/{}", encode_path(id), encode_path(doc_id)),
                 query: NO_QUERY,
@@ -68,9 +68,9 @@ impl KnowledgeApi {
     /// `DELETE /api/v1/knowledge-bases/{id}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn delete_knowledge_base(&self, id: &str) -> Result<models::DeleteKnowledgeBaseResponse> {
+    pub async fn delete_knowledge_base(&self, id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/knowledge-bases/{}", encode_path(id)),
                 query: NO_QUERY,

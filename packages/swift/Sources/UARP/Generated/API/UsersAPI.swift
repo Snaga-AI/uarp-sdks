@@ -54,8 +54,8 @@ public struct UsersAPI: Sendable {
     /// `DELETE /api/v1/users/invites/{inviteId}`
     ///
     /// Required scopes: `users:write`.
-    public func deleteInvite(inviteId: String, options: RequestOptions = .init()) async throws -> DeleteInviteResponse {
-        return try await client.send(RequestSpec(
+    public func deleteInvite(inviteId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/users/invites/\(encodePathSegment(inviteId))",
             idempotent: true,

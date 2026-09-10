@@ -197,6 +197,42 @@ test('distinguishes no content from undocumented content', () => {
   assert.deepEqual(operation(spec, 'getUploadMetadata').response.type, { kind: 'prim', prim: 'json' });
   assert.deepEqual(operation(spec, 'downloadBundle').response.type, { kind: 'prim', prim: 'binary' });
   assert.deepEqual(operation(spec, 'getMetrics').response.type, { kind: 'prim', prim: 'string' });
+  // A 202 next to a 204 is the idempotency layer saying "still in flight" for
+  // a replayed key — a body shaped like an error, with `retry_after_seconds`.
+  // The operation's answer is the 204; the 202 must not become its type.
+  assert.equal(operation(spec, 'unlockUpload').response.status, 204);
+  assert.equal(operation(spec, 'unlockUpload').response.type, undefined);
+});
+
+test('the in-flight 202 of an idempotent operation is never its response type', () => {
+  // uarp #444 attached `202 IdempotencyInFlight` to every idempotent operation.
+  // Where the real answer is a 204, the lowest 2xx became the 202 and 0.5.21
+  // shipped fifteen methods typed as `{ error, message, retry_after_seconds }`
+  // — the Rust `files.delete` then failed to decode the empty 204 it actually
+  // got. These fifteen are the operations whose only 2xx besides the 202 is a
+  // 204 in the served document.
+  const spec = productionSpec();
+  for (const id of [
+    'deleteFile',
+    'deleteWorkspace',
+    'deleteCompany',
+    'deleteKnowledgeBase',
+    'deleteKbDocument',
+    'deleteIntegration',
+    'deleteInvite',
+    'deleteAgentIdentity',
+    'deleteMemoryEntry',
+    'deleteSessionAnnotation',
+    'revokeSessionShare',
+    'unpublishListing',
+    'registryYankVersion',
+    'registryUnyankVersion',
+    'deleteAndroidTester',
+  ]) {
+    const op = operation(spec, id);
+    assert.equal(op.response.status, 204, `${id} answers with a 204`);
+    assert.equal(op.response.type, undefined, `${id} has no response body`);
+  }
 });
 
 test('marks mutating /api/v1 requests idempotent', () => {
@@ -406,7 +442,12 @@ test('parses the production document into the expected shape', () => {
   // 1130 -> 1148 on 2026-09-10 (0.5.21): uarp #450 typed 48 more responses
   // (ReadinessReport, FileRecord, TeamRunDetail, PlaygroundAgentState,
   // PlaygroundTemplate, MfaEnrolment and the governance/a2a/team result shapes).
-  assert.equal(spec.types.length, 1148);
+  // 1148 -> 1132 on 2026-09-10 (0.5.23): the fifteen `Delete*Response`-style
+  // models and their shared `error: "Accepted"` enum were the idempotency
+  // layer's in-flight 202 body mistaken for the answer of a 204 operation
+  // (see the in-flight test below); they were never a wire shape those
+  // operations return.
+  assert.equal(spec.types.length, 1132);
   assert.equal(spec.scopes.length, 31);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.

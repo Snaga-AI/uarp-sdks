@@ -23,7 +23,6 @@ import type {
   DeleteAdminIntegrationOAuthProviderResponse,
   DeleteAdminLLMDefaultResponse,
   DeleteAdminProviderResponse,
-  DeleteAndroidTesterResponse,
   DeleteCustomPlanForce,
   ErrorReportStatus,
   GenerateAdminBlogPostResponse,
@@ -702,11 +701,12 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  deleteAndroidTester(email: string, options?: RequestOptions): Promise<DeleteAndroidTesterResponse> {
+  deleteAndroidTester(email: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/admin/testers/android/${encodeURIComponent(String(email))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

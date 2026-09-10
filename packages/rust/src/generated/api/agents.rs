@@ -218,9 +218,9 @@ impl AgentsApi {
     /// `DELETE /api/v1/agents/{agentId}/identity`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn delete_agent_identity(&self, agent_id: &str) -> Result<models::DeleteAgentIdentityResponse> {
+    pub async fn delete_agent_identity(&self, agent_id: &str) -> Result<()> {
         self.client
-            .request_json(Request {
+            .request_empty(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/agents/{}/identity", encode_path(agent_id)),
                 query: NO_QUERY,

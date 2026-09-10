@@ -17,7 +17,6 @@ import type {
   CreateSessionShareRequest,
   CreateSessionShareResponse,
   CreateSessionTodoRequest,
-  DeleteSessionAnnotationResponse,
   DeleteSessionTodoResponse,
   ExportSessionFormat,
   GetSessionAuditLogResponse,
@@ -33,7 +32,6 @@ import type {
   ListSessionsResponseItem,
   ListTodosResponse,
   ResolveSharedSessionResponse,
-  RevokeSessionShareResponse,
   RunFeedbackList,
   RunFeedbackOne,
   RunFeedbackSet,
@@ -285,11 +283,12 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  deleteSessionAnnotation(sessionId: string, annotationId: string, options?: RequestOptions): Promise<DeleteSessionAnnotationResponse> {
+  deleteSessionAnnotation(sessionId: string, annotationId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/annotations/${encodeURIComponent(String(annotationId))}`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }
@@ -546,11 +545,12 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  revokeSessionShare(sessionId: string, options?: RequestOptions): Promise<RevokeSessionShareResponse> {
+  revokeSessionShare(sessionId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
       method: 'DELETE',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/share`,
       idempotent: true,
+      responseType: 'void',
       options,
     });
   }

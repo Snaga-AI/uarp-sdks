@@ -5152,34 +5152,6 @@ package UARP.Models is
    function To_JSON (Model : Delete_Agent_Bookmark_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Agent_Bookmark_Response;
 
-   --  Values of `RevokeSessionShareResponseError`.
-   --  A value the API introduces later decodes as Revoke_Session_Share_Response_Error_Unrecognized
-   --  with the original text kept in Raw.
-   type Revoke_Session_Share_Response_Error_Kind is
-     (Revoke_Session_Share_Response_Error_Accepted,
-   Revoke_Session_Share_Response_Error_Unrecognized);
-
-   type Revoke_Session_Share_Response_Error is record
-      Kind : Revoke_Session_Share_Response_Error_Kind := Revoke_Session_Share_Response_Error_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Revoke_Session_Share_Response_Error (Value : String) return Revoke_Session_Share_Response_Error;
-   function To_Revoke_Session_Share_Response_Error (Kind : Revoke_Session_Share_Response_Error_Kind) return Revoke_Session_Share_Response_Error;
-   function Image (Model : Revoke_Session_Share_Response_Error) return String;
-   function To_JSON (Model : Revoke_Session_Share_Response_Error) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Session_Share_Response_Error;
-
-   --  `DeleteAgentIdentityResponse` model.
-   type Delete_Agent_Identity_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Agent_Identity_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Agent_Identity_Response;
-
    --  `DeleteAllAgentBookmarksResponse` model.
    type Delete_All_Agent_Bookmarks_Response is record
       Removed : UARP.Types.Integer_Value := 0;
@@ -5187,26 +5159,6 @@ package UARP.Models is
 
    function To_JSON (Model : Delete_All_Agent_Bookmarks_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_All_Agent_Bookmarks_Response;
-
-   --  `DeleteAndroidTesterResponse` model.
-   type Delete_Android_Tester_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Android_Tester_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Android_Tester_Response;
-
-   --  `DeleteCompanyResponse` model.
-   type Delete_Company_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Company_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Company_Response;
 
    --  Values of `DeleteCustomPlanForce`.
    --  A value the API introduces later decodes as Delete_Custom_Plan_Force_Unrecognized
@@ -5247,16 +5199,6 @@ package UARP.Models is
    function To_JSON (Model : Delete_Data_Explorer_Value_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Data_Explorer_Value_Response;
 
-   --  `DeleteFileResponse` model.
-   type Delete_File_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_File_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_File_Response;
-
    --  `DeleteGuardrailResponse` model.
    type Delete_Guardrail_Response is record
       Has_Deleted : Boolean := False;
@@ -5268,46 +5210,6 @@ package UARP.Models is
    function To_JSON (Model : Delete_Guardrail_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Guardrail_Response;
 
-   --  `DeleteIntegrationResponse` model.
-   type Delete_Integration_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Integration_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Integration_Response;
-
-   --  `DeleteInviteResponse` model.
-   type Delete_Invite_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Invite_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Invite_Response;
-
-   --  `DeleteKbDocumentResponse` model.
-   type Delete_Kb_Document_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Kb_Document_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Kb_Document_Response;
-
-   --  `DeleteKnowledgeBaseResponse` model.
-   type Delete_Knowledge_Base_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Knowledge_Base_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Knowledge_Base_Response;
-
    --  `DeleteLLMProviderKeyResponse` model.
    type Delete_LLM_Provider_Key_Response is record
       Has_Deleted : Boolean := False;
@@ -5318,16 +5220,6 @@ package UARP.Models is
 
    function To_JSON (Model : Delete_LLM_Provider_Key_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_LLM_Provider_Key_Response;
-
-   --  `DeleteMemoryEntryResponse` model.
-   type Delete_Memory_Entry_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Memory_Entry_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Memory_Entry_Response;
 
    --  `DeleteMeResponseTenant` model.
    type Delete_Me_Response_Tenant is record
@@ -5395,16 +5287,6 @@ package UARP.Models is
 
    function To_JSON (Model : Delete_Promo_Code_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Promo_Code_Response;
-
-   --  `DeleteSessionAnnotationResponse` model.
-   type Delete_Session_Annotation_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Session_Annotation_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Session_Annotation_Response;
 
    --  `DeleteSessionTodoResponse` model.
    type Delete_Session_Todo_Response is record
@@ -5535,16 +5417,6 @@ package UARP.Models is
    function Image (Model : Delete_Workspace_File_Trash) return String;
    function To_JSON (Model : Delete_Workspace_File_Trash) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Workspace_File_Trash;
-
-   --  `DeleteWorkspaceResponse` model.
-   type Delete_Workspace_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Delete_Workspace_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Workspace_Response;
 
    --  Values of `DesignRequestStatus`.
    --  A value the API introduces later decodes as Design_Request_Status_Unrecognized
@@ -15059,16 +14931,6 @@ package UARP.Models is
    function To_JSON (Model : Registry_Spec_Feature_State) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Spec_Feature_State;
 
-   --  `RegistryUnyankVersionResponse` model.
-   type Registry_Unyank_Version_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Registry_Unyank_Version_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Unyank_Version_Response;
-
    --  `RegistryYankVersionRequest` model.
    type Registry_Yank_Version_Request is record
       Has_Reason : Boolean := False;
@@ -15077,16 +14939,6 @@ package UARP.Models is
 
    function To_JSON (Model : Registry_Yank_Version_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Yank_Version_Request;
-
-   --  `RegistryYankVersionResponse` model.
-   type Registry_Yank_Version_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Registry_Yank_Version_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Yank_Version_Response;
 
    --  `ReindexKnowledgeBaseResponse` model.
    type Reindex_Knowledge_Base_Response is record
@@ -15277,16 +15129,6 @@ package UARP.Models is
 
    function To_JSON (Model : Revoke_Me_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Me_Session_Response;
-
-   --  `RevokeSessionShareResponse` model.
-   type Revoke_Session_Share_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Revoke_Session_Share_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Revoke_Session_Share_Response;
 
    --  Body for `PATCH /api/v1/agents/{agentId}/risk-classification`.
    type Risk_Classification_Update is record
@@ -17248,16 +17090,6 @@ package UARP.Models is
 
    function To_JSON (Model : Unlink_Auth_Provider_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Unlink_Auth_Provider_Response;
-
-   --  `UnpublishListingResponse` model.
-   type Unpublish_Listing_Response is record
-      Error : UARP.Models.Revoke_Session_Share_Response_Error;
-      Message : UARP.Types.Text := UARP.Types.Empty_Text;
-      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
-   end record;
-
-   function To_JSON (Model : Unpublish_Listing_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Unpublish_Listing_Response;
 
    --  Values of `UnscheduleCanvasWorkflowResponseStatus`.
    --  A value the API introduces later decodes as Unschedule_Canvas_Workflow_Response_Status_Unrecognized

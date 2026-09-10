@@ -160,11 +160,10 @@ package UARP.API.Agents is
    --  DELETE /api/v1/agents/{agentId}/identity
    --
    --  Required scopes: agents:write.
-   function Delete_Agent_Identity
+   procedure Delete_Agent_Identity
      (Self : Client_Type;
       Agent_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Agent_Identity_Response;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  Unpin every message of an agent
    --

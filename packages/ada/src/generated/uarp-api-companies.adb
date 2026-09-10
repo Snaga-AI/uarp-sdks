@@ -22,20 +22,18 @@ package body UARP.API.Companies is
              Options => Options));
    end Create;
 
-   function Delete
+   procedure Delete
      (Self : Client_Type;
       Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Delete_Company_Response
    is
    begin
-      return UARP.Models.From_JSON
-         (UARP.Client.Call
-            (Self,
-             "DELETE",
-             "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Id),
-             Idempotent => True,
-             Options => Options));
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Id),
+          Idempotent => True,
+          Options => Options);
    end Delete;
 
    function Get
