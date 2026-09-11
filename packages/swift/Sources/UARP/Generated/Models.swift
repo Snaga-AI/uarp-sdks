@@ -8262,14 +8262,20 @@ public struct ContinueRunResponse: Codable, Hashable, Sendable {
 public struct ConversationEntry: Codable, Hashable, Sendable {
     /// The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
     /// transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
-    /// `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
-    /// system entries `{run_id}-system-N`. Counted per run over the whole history before
-    /// compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
-    /// /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
-    /// (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+    /// `{run_id}-reply`, further replies `{run_id}-reply-2`…, a second human turn of the same run
+    /// `{run_id}-user-2`… (lib/message-ids.ts:16-19), tool results `{run_id}-tool-N` and system
+    /// entries `{run_id}-system-N` numbered from 1 (the first is `-tool-1`, never bare `-tool`).
+    /// Counted per run over the whole history before compaction, so it does not move. This is the
+    /// canonical `message_id` for reactions (PUT /runs/{runId}/feedback), bookmarks
+    /// (/agents/{agentId}/bookmarks/{messageId}) and annotations (POST
+    /// /sessions/{sessionId}/annotations); it is a safe path segment.
     public var messageId: String
     public var role: PublicSessionViewMessageRole
-    /// The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+    /// The text, or content parts for a multimodal turn (types/llm.ts MessageContent). v1 emits the
+    /// string arm: every writer (renderUserTurn, SessionMessageSchema.content,
+    /// ImportSessionMessageSchema) stores a string, and every stored entry on production is one (8
+    /// 427 of 8 427, measured 2026-09-11). The array arm is the LLM wire type (types/llm.ts
+    /// MessageContent) the schema inherits; a v2 server accepts only the string.
     public var content: JSONValue
     public var runId: String
     public var timestamp: String
@@ -29911,12 +29917,18 @@ public struct TenantOverview: Codable, Hashable, Sendable {
     public var fleet: TenantOverviewFleet
     public var runs: TenantOverviewRuns
     public var approvals: TenantOverviewApprovals
-    public var usage: TenantOverviewUsage
-    public var cost: TenantOverviewCost
-    public var system: TenantOverviewSystem
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    public var usage: TenantOverviewUsage?
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    public var cost: TenantOverviewCost?
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    public var system: TenantOverviewSystem?
     public var schedules: TenantOverviewSchedules
 
-    public init(generatedAt: String, fleet: TenantOverviewFleet, runs: TenantOverviewRuns, approvals: TenantOverviewApprovals, usage: TenantOverviewUsage, cost: TenantOverviewCost, system: TenantOverviewSystem, schedules: TenantOverviewSchedules) {
+    public init(generatedAt: String, fleet: TenantOverviewFleet, runs: TenantOverviewRuns, approvals: TenantOverviewApprovals, usage: TenantOverviewUsage? = nil, cost: TenantOverviewCost? = nil, system: TenantOverviewSystem? = nil, schedules: TenantOverviewSchedules) {
         self.generatedAt = generatedAt
         self.fleet = fleet
         self.runs = runs
@@ -29952,7 +29964,8 @@ public struct TenantOverviewApprovals: Codable, Hashable, Sendable {
     }
 }
 
-/// `TenantOverviewCost` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 public struct TenantOverviewCost: Codable, Hashable, Sendable {
     public var totalUsd: Double
     public var rangeDays: Int
@@ -29974,15 +29987,23 @@ public struct TenantOverviewFleet: Codable, Hashable, Sendable {
     public var activeAgents: Int
     public var suspended: Int
     public var terminated: Int
-    public var byExecutionMode: TenantOverviewFleetByExecutionMode
-    public var bridge: TenantOverviewFleetBridge
+    /// Optional: absent when the server does not track it (no such field on v2's record); clients
+    /// must tolerate absence. v1 serves it.
+    public var byExecutionMode: TenantOverviewFleetByExecutionMode?
+    /// Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+    /// absence. v1 serves it.
+    public var bridge: TenantOverviewFleetBridge?
+    /// Optional: absent when the server does not track it (no such field on v2's record); clients
+    /// must tolerate absence. v1 serves it.
     public var headAgentId: String?
     public var topByRuns: [AgentAnalyticsRow]
-    public var topByCost: [AgentAnalyticsRow]
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    public var topByCost: [AgentAnalyticsRow]?
     /// Agent id → the timestamp of its most recent run in the scanned window.
     public var lastRunAt: JSONObject
 
-    public init(total: Int, activeAgents: Int, suspended: Int, terminated: Int, byExecutionMode: TenantOverviewFleetByExecutionMode, bridge: TenantOverviewFleetBridge, headAgentId: String? = nil, topByRuns: [AgentAnalyticsRow], topByCost: [AgentAnalyticsRow], lastRunAt: JSONObject) {
+    public init(total: Int, activeAgents: Int, suspended: Int, terminated: Int, byExecutionMode: TenantOverviewFleetByExecutionMode? = nil, bridge: TenantOverviewFleetBridge? = nil, headAgentId: String? = nil, topByRuns: [AgentAnalyticsRow], topByCost: [AgentAnalyticsRow]? = nil, lastRunAt: JSONObject) {
         self.total = total
         self.activeAgents = activeAgents
         self.suspended = suspended
@@ -30009,7 +30030,8 @@ public struct TenantOverviewFleet: Codable, Hashable, Sendable {
     }
 }
 
-/// `TenantOverviewFleetBridge` model.
+/// Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+/// absence. v1 serves it.
 public struct TenantOverviewFleetBridge: Codable, Hashable, Sendable {
     public var online: Int
     public var stale: Int
@@ -30031,7 +30053,8 @@ public struct TenantOverviewFleetBridge: Codable, Hashable, Sendable {
     }
 }
 
-/// `TenantOverviewFleetByExecutionMode` model.
+/// Optional: absent when the server does not track it (no such field on v2's record); clients
+/// must tolerate absence. v1 serves it.
 public struct TenantOverviewFleetByExecutionMode: Codable, Hashable, Sendable {
     public var cloud: Int
     public var bridge: Int
@@ -30053,13 +30076,15 @@ public struct TenantOverviewRuns: Codable, Hashable, Sendable {
     /// Queued, running, paused, awaiting approval or awaiting input.
     public var activeCount: Int
     public var failed24h: Int
-    public var cost24hUsd: Double
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    public var cost24hUsd: Double?
     public var recent: [TenantOverviewRunsRecentItem]
     /// How many run records the aggregate actually looked at. The scan is capped, so a busy
     /// tenant's numbers describe the scanned window, not all history.
     public var scanned: Int
 
-    public init(byStatus: JSONObject, activeCount: Int, failed24h: Int, cost24hUsd: Double, recent: [TenantOverviewRunsRecentItem], scanned: Int) {
+    public init(byStatus: JSONObject, activeCount: Int, failed24h: Int, cost24hUsd: Double? = nil, recent: [TenantOverviewRunsRecentItem], scanned: Int) {
         self.byStatus = byStatus
         self.activeCount = activeCount
         self.failed24h = failed24h
@@ -30119,11 +30144,13 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
 /// `TenantOverviewSchedules` model.
 public struct TenantOverviewSchedules: Codable, Hashable, Sendable {
     public var total: Int
-    /// Paused, errored, or carrying consecutive failures — a silently dead cron.
-    public var atRisk: Int
+    /// Paused, errored, or carrying consecutive failures — a silently dead cron. Optional: absent
+    /// when the server does not track it (no such field on v2's record); clients must tolerate
+    /// absence. v1 serves it.
+    public var atRisk: Int?
     public var paused: Int
 
-    public init(total: Int, atRisk: Int, paused: Int) {
+    public init(total: Int, atRisk: Int? = nil, paused: Int) {
         self.total = total
         self.atRisk = atRisk
         self.paused = paused
@@ -30136,7 +30163,8 @@ public struct TenantOverviewSchedules: Codable, Hashable, Sendable {
     }
 }
 
-/// `TenantOverviewSystem` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 public struct TenantOverviewSystem: Codable, Hashable, Sendable {
     /// False when no cron job is registered — the signal that scheduled work has stopped.
     public var healthy: Bool
@@ -30162,7 +30190,8 @@ public struct TenantOverviewSystem: Codable, Hashable, Sendable {
     }
 }
 
-/// `TenantOverviewUsage` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 public struct TenantOverviewUsage: Codable, Hashable, Sendable {
     public var tokensUsed: Int
     public var runsUsed: Int

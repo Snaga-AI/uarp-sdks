@@ -6279,17 +6279,23 @@ public data class ConversationEntry(
     /**
      * The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
      * transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
-     * `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
-     * system entries `{run_id}-system-N`. Counted per run over the whole history before
-     * compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
-     * /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
-     * (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+     * `{run_id}-reply`, further replies `{run_id}-reply-2`…, a second human turn of the same run
+     * `{run_id}-user-2`… (lib/message-ids.ts:16-19), tool results `{run_id}-tool-N` and system
+     * entries `{run_id}-system-N` numbered from 1 (the first is `-tool-1`, never bare `-tool`).
+     * Counted per run over the whole history before compaction, so it does not move. This is the
+     * canonical `message_id` for reactions (PUT /runs/{runId}/feedback), bookmarks
+     * (/agents/{agentId}/bookmarks/{messageId}) and annotations (POST
+     * /sessions/{sessionId}/annotations); it is a safe path segment.
      */
     @SerialName("message_id")
     public val messageId: String,
     public val role: PublicSessionViewMessageRole,
     /**
-     * The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+     * The text, or content parts for a multimodal turn (types/llm.ts MessageContent). v1 emits the
+     * string arm: every writer (renderUserTurn, SessionMessageSchema.content,
+     * ImportSessionMessageSchema) stores a string, and every stored entry on production is one (8
+     * 427 of 8 427, measured 2026-09-11). The array arm is the LLM wire type (types/llm.ts
+     * MessageContent) the schema inherits; a v2 server accepts only the string.
      */
     public val content: JsonElement,
     @SerialName("run_id")
@@ -22504,9 +22510,21 @@ public data class TenantOverview(
     public val fleet: TenantOverviewFleet,
     public val runs: TenantOverviewRuns,
     public val approvals: TenantOverviewApprovals,
-    public val usage: TenantOverviewUsage,
-    public val cost: TenantOverviewCost,
-    public val system: TenantOverviewSystem,
+    /**
+     * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+     * health); clients must tolerate absence. v1 serves it.
+     */
+    public val usage: TenantOverviewUsage? = null,
+    /**
+     * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+     * health); clients must tolerate absence. v1 serves it.
+     */
+    public val cost: TenantOverviewCost? = null,
+    /**
+     * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+     * health); clients must tolerate absence. v1 serves it.
+     */
+    public val system: TenantOverviewSystem? = null,
     public val schedules: TenantOverviewSchedules,
 )
 
@@ -22520,7 +22538,8 @@ public data class TenantOverviewApprovals(
 )
 
 /**
- * `TenantOverviewCost` model.
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
  */
 @Serializable
 public data class TenantOverviewCost(
@@ -22540,15 +22559,31 @@ public data class TenantOverviewFleet(
     public val activeAgents: Long,
     public val suspended: Long,
     public val terminated: Long,
+    /**
+     * Optional: absent when the server does not track it (no such field on v2's record); clients
+     * must tolerate absence. v1 serves it.
+     */
     @SerialName("by_execution_mode")
-    public val byExecutionMode: TenantOverviewFleetByExecutionMode,
-    public val bridge: TenantOverviewFleetBridge,
+    public val byExecutionMode: TenantOverviewFleetByExecutionMode? = null,
+    /**
+     * Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+     * absence. v1 serves it.
+     */
+    public val bridge: TenantOverviewFleetBridge? = null,
+    /**
+     * Optional: absent when the server does not track it (no such field on v2's record); clients
+     * must tolerate absence. v1 serves it.
+     */
     @SerialName("head_agent_id")
     public val headAgentId: String? = null,
     @SerialName("top_by_runs")
     public val topByRuns: List<AgentAnalyticsRow>,
+    /**
+     * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+     * health); clients must tolerate absence. v1 serves it.
+     */
     @SerialName("top_by_cost")
-    public val topByCost: List<AgentAnalyticsRow>,
+    public val topByCost: List<AgentAnalyticsRow>? = null,
     /**
      * Agent id → the timestamp of its most recent run in the scanned window.
      */
@@ -22557,7 +22592,8 @@ public data class TenantOverviewFleet(
 )
 
 /**
- * `TenantOverviewFleetBridge` model.
+ * Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+ * absence. v1 serves it.
  */
 @Serializable
 public data class TenantOverviewFleetBridge(
@@ -22569,7 +22605,8 @@ public data class TenantOverviewFleetBridge(
 )
 
 /**
- * `TenantOverviewFleetByExecutionMode` model.
+ * Optional: absent when the server does not track it (no such field on v2's record); clients
+ * must tolerate absence. v1 serves it.
  */
 @Serializable
 public data class TenantOverviewFleetByExecutionMode(
@@ -22591,8 +22628,12 @@ public data class TenantOverviewRuns(
     public val activeCount: Long,
     @SerialName("failed_24h")
     public val failed24h: Long,
+    /**
+     * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+     * health); clients must tolerate absence. v1 serves it.
+     */
     @SerialName("cost_24h_usd")
-    public val cost24hUsd: Double,
+    public val cost24hUsd: Double? = null,
     public val recent: List<TenantOverviewRunsRecentItem>,
     /**
      * How many run records the aggregate actually looked at. The scan is capped, so a busy
@@ -22635,15 +22676,18 @@ public data class TenantOverviewRunsRecentItem(
 public data class TenantOverviewSchedules(
     public val total: Long,
     /**
-     * Paused, errored, or carrying consecutive failures — a silently dead cron.
+     * Paused, errored, or carrying consecutive failures — a silently dead cron. Optional: absent
+     * when the server does not track it (no such field on v2's record); clients must tolerate
+     * absence. v1 serves it.
      */
     @SerialName("at_risk")
-    public val atRisk: Long,
+    public val atRisk: Long? = null,
     public val paused: Long,
 )
 
 /**
- * `TenantOverviewSystem` model.
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
  */
 @Serializable
 public data class TenantOverviewSystem(
@@ -22661,7 +22705,8 @@ public data class TenantOverviewSystem(
 )
 
 /**
- * `TenantOverviewUsage` model.
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
  */
 @Serializable
 public data class TenantOverviewUsage(

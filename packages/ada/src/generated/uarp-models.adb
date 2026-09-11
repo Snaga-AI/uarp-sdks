@@ -52556,8 +52556,12 @@ package body UARP.Models is
       JS.Set (Result, "active_agents", JS.JSON.Create (Model.Active_Agents));
       JS.Set (Result, "suspended", JS.JSON.Create (Model.Suspended));
       JS.Set (Result, "terminated", JS.JSON.Create (Model.Terminated));
-      JS.Set (Result, "by_execution_mode", To_JSON (Model.By_Execution_Mode));
-      JS.Set (Result, "bridge", To_JSON (Model.Bridge));
+      if Model.Has_By_Execution_Mode then
+         JS.Set (Result, "by_execution_mode", To_JSON (Model.By_Execution_Mode));
+      end if;
+      if Model.Has_Bridge then
+         JS.Set (Result, "bridge", To_JSON (Model.Bridge));
+      end if;
       if Model.Has_Head_Agent_Id then
          JS.Set (Result, "head_agent_id", JS.JSON.Create (Model.Head_Agent_Id));
       end if;
@@ -52569,14 +52573,16 @@ package body UARP.Models is
          end loop;
          JS.Set (Result, "top_by_runs", Items);
       end;
-      declare
-         Items : JS.JSON_Array := JS.JSON.Empty_Array;
-      begin
-         for Element of Model.Top_By_Cost loop
-            JS.JSON.Append (Items, To_JSON (Element));
-         end loop;
-         JS.Set (Result, "top_by_cost", Items);
-      end;
+      if Model.Has_Top_By_Cost then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Top_By_Cost loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "top_by_cost", Items);
+         end;
+      end if;
       JS.Set (Result, "last_run_at", Model.Last_Run_At);
       return Result;
    end To_JSON;
@@ -52597,9 +52603,11 @@ package body UARP.Models is
          Result.Terminated := JS.As_Integer (JS.Get_Value (Node, "terminated"));
       end if;
       if JS.Present (Node, "by_execution_mode") then
+         Result.Has_By_Execution_Mode := True;
          Result.By_Execution_Mode := From_JSON (JS.Get_Value (Node, "by_execution_mode"));
       end if;
       if JS.Present (Node, "bridge") then
+         Result.Has_Bridge := True;
          Result.Bridge := From_JSON (JS.Get_Value (Node, "bridge"));
       end if;
       if JS.Present (Node, "head_agent_id") then
@@ -52616,6 +52624,7 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "top_by_cost") then
+         Result.Has_Top_By_Cost := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "top_by_cost");
          begin
@@ -52695,7 +52704,9 @@ package body UARP.Models is
       JS.Set (Result, "by_status", Model.By_Status);
       JS.Set (Result, "active_count", JS.JSON.Create (Model.Active_Count));
       JS.Set (Result, "failed_24h", JS.JSON.Create (Model.Failed_24h));
-      JS.Set (Result, "cost_24h_usd", JS.JSON.Create (Model.Cost_24h_Usd));
+      if Model.Has_Cost_24h_Usd then
+         JS.Set (Result, "cost_24h_usd", JS.JSON.Create (Model.Cost_24h_Usd));
+      end if;
       declare
          Items : JS.JSON_Array := JS.JSON.Empty_Array;
       begin
@@ -52721,6 +52732,7 @@ package body UARP.Models is
          Result.Failed_24h := JS.As_Integer (JS.Get_Value (Node, "failed_24h"));
       end if;
       if JS.Present (Node, "cost_24h_usd") then
+         Result.Has_Cost_24h_Usd := True;
          Result.Cost_24h_Usd := JS.As_Float (JS.Get_Value (Node, "cost_24h_usd"));
       end if;
       if JS.Present (Node, "recent") then
@@ -52834,7 +52846,9 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "total", JS.JSON.Create (Model.Total));
-      JS.Set (Result, "at_risk", JS.JSON.Create (Model.At_Risk));
+      if Model.Has_At_Risk then
+         JS.Set (Result, "at_risk", JS.JSON.Create (Model.At_Risk));
+      end if;
       JS.Set (Result, "paused", JS.JSON.Create (Model.Paused));
       return Result;
    end To_JSON;
@@ -52846,6 +52860,7 @@ package body UARP.Models is
          Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
       end if;
       if JS.Present (Node, "at_risk") then
+         Result.Has_At_Risk := True;
          Result.At_Risk := JS.As_Integer (JS.Get_Value (Node, "at_risk"));
       end if;
       if JS.Present (Node, "paused") then
@@ -52861,9 +52876,15 @@ package body UARP.Models is
       JS.Set (Result, "fleet", To_JSON (Model.Fleet));
       JS.Set (Result, "runs", To_JSON (Model.Runs));
       JS.Set (Result, "approvals", To_JSON (Model.Approvals));
-      JS.Set (Result, "usage", To_JSON (Model.Usage));
-      JS.Set (Result, "cost", To_JSON (Model.Cost));
-      JS.Set (Result, "system", To_JSON (Model.System));
+      if Model.Has_Usage then
+         JS.Set (Result, "usage", To_JSON (Model.Usage));
+      end if;
+      if Model.Has_Cost then
+         JS.Set (Result, "cost", To_JSON (Model.Cost));
+      end if;
+      if Model.Has_System then
+         JS.Set (Result, "system", To_JSON (Model.System));
+      end if;
       JS.Set (Result, "schedules", To_JSON (Model.Schedules));
       return Result;
    end To_JSON;
@@ -52884,12 +52905,15 @@ package body UARP.Models is
          Result.Approvals := From_JSON (JS.Get_Value (Node, "approvals"));
       end if;
       if JS.Present (Node, "usage") then
+         Result.Has_Usage := True;
          Result.Usage := From_JSON (JS.Get_Value (Node, "usage"));
       end if;
       if JS.Present (Node, "cost") then
+         Result.Has_Cost := True;
          Result.Cost := From_JSON (JS.Get_Value (Node, "cost"));
       end if;
       if JS.Present (Node, "system") then
+         Result.Has_System := True;
          Result.System := From_JSON (JS.Get_Value (Node, "system"));
       end if;
       if JS.Present (Node, "schedules") then

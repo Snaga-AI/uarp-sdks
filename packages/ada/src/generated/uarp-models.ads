@@ -6260,14 +6260,20 @@ package UARP.Models is
    type Conversation_Entry is record
       --  The stable id of this entry - derived on read (lib/message-ids.ts), never stored, so every
       --  transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
-      --  `{run_id}-reply`, further replies `{run_id}-reply-2`..., tool results `{run_id}-tool-N`,
-      --  system entries `{run_id}-system-N`. Counted per run over the whole history before
-      --  compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
-      --  /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
-      --  (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+      --  `{run_id}-reply`, further replies `{run_id}-reply-2`..., a second human turn of the same run
+      --  `{run_id}-user-2`... (lib/message-ids.ts:16-19), tool results `{run_id}-tool-N` and system
+      --  entries `{run_id}-system-N` numbered from 1 (the first is `-tool-1`, never bare `-tool`).
+      --  Counted per run over the whole history before compaction, so it does not move. This is the
+      --  canonical `message_id` for reactions (PUT /runs/{runId}/feedback), bookmarks
+      --  (/agents/{agentId}/bookmarks/{messageId}) and annotations (POST
+      --  /sessions/{sessionId}/annotations); it is a safe path segment.
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Role : UARP.Models.Public_Session_View_Message_Role;
-      --  The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+      --  The text, or content parts for a multimodal turn (types/llm.ts MessageContent). v1 emits the
+      --  string arm: every writer (renderUserTurn, SessionMessageSchema.content,
+      --  ImportSessionMessageSchema) stores a string, and every stored entry on production is one (8
+      --  427 of 8 427, measured 2026-09-11). The array arm is the LLM wire type (types/llm.ts
+      --  MessageContent) the schema inherits; a v2 server accepts only the string.
       Content : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -20332,7 +20338,8 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Mef_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Mef_Config_Response;
 
-   --  `TenantOverviewFleetByExecutionMode` model.
+   --  Optional: absent when the server does not track it (no such field on v2's record); clients
+   --  must tolerate absence. v1 serves it.
    type Tenant_Overview_Fleet_By_Execution_Mode is record
       Cloud : UARP.Types.Integer_Value := 0;
       Bridge : UARP.Types.Integer_Value := 0;
@@ -20341,7 +20348,8 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Overview_Fleet_By_Execution_Mode) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Fleet_By_Execution_Mode;
 
-   --  `TenantOverviewFleetBridge` model.
+   --  Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+   --  absence. v1 serves it.
    type Tenant_Overview_Fleet_Bridge is record
       Online : UARP.Types.Integer_Value := 0;
       Stale : UARP.Types.Integer_Value := 0;
@@ -20358,11 +20366,22 @@ package UARP.Models is
       Active_Agents : UARP.Types.Integer_Value := 0;
       Suspended : UARP.Types.Integer_Value := 0;
       Terminated : UARP.Types.Integer_Value := 0;
+      --  Optional: absent when the server does not track it (no such field on v2's record); clients
+      --  must tolerate absence. v1 serves it.
+      Has_By_Execution_Mode : Boolean := False;
       By_Execution_Mode : UARP.Models.Tenant_Overview_Fleet_By_Execution_Mode;
+      --  Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+      --  absence. v1 serves it.
+      Has_Bridge : Boolean := False;
       Bridge : UARP.Models.Tenant_Overview_Fleet_Bridge;
+      --  Optional: absent when the server does not track it (no such field on v2's record); clients
+      --  must tolerate absence. v1 serves it.
       Has_Head_Agent_Id : Boolean := False;
       Head_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Top_By_Runs : UARP.Models.Agent_Analytics_Row_Vectors.Vector;
+      --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+      --  health); clients must tolerate absence. v1 serves it.
+      Has_Top_By_Cost : Boolean := False;
       Top_By_Cost : UARP.Models.Agent_Analytics_Row_Vectors.Vector;
       --  Agent id ? the timestamp of its most recent run in the scanned window.
       Last_Run_At : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
@@ -20404,6 +20423,9 @@ package UARP.Models is
       --  Queued, running, paused, awaiting approval or awaiting input.
       Active_Count : UARP.Types.Integer_Value := 0;
       Failed_24h : UARP.Types.Integer_Value := 0;
+      --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+      --  health); clients must tolerate absence. v1 serves it.
+      Has_Cost_24h_Usd : Boolean := False;
       Cost_24h_Usd : UARP.Types.Float_Value := 0.0;
       Recent : UARP.Models.Tenant_Overview_Runs_Recent_Item_Vectors.Vector;
       --  How many run records the aggregate actually looked at. The scan is capped, so a busy
@@ -20422,7 +20444,8 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Overview_Approvals) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Approvals;
 
-   --  `TenantOverviewUsage` model.
+   --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   --  health); clients must tolerate absence. v1 serves it.
    type Tenant_Overview_Usage is record
       Tokens_Used : UARP.Types.Integer_Value := 0;
       Runs_Used : UARP.Types.Integer_Value := 0;
@@ -20432,7 +20455,8 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Overview_Usage) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Usage;
 
-   --  `TenantOverviewCost` model.
+   --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   --  health); clients must tolerate absence. v1 serves it.
    type Tenant_Overview_Cost is record
       Total_Usd : UARP.Types.Float_Value := 0.0;
       Range_Days : UARP.Types.Integer_Value := 0;
@@ -20441,7 +20465,8 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Overview_Cost) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Overview_Cost;
 
-   --  `TenantOverviewSystem` model.
+   --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   --  health); clients must tolerate absence. v1 serves it.
    type Tenant_Overview_System is record
       --  False when no cron job is registered - the signal that scheduled work has stopped.
       Healthy : Standard.Boolean := False;
@@ -20457,7 +20482,10 @@ package UARP.Models is
    --  `TenantOverviewSchedules` model.
    type Tenant_Overview_Schedules is record
       Total : UARP.Types.Integer_Value := 0;
-      --  Paused, errored, or carrying consecutive failures - a silently dead cron.
+      --  Paused, errored, or carrying consecutive failures - a silently dead cron. Optional: absent
+      --  when the server does not track it (no such field on v2's record); clients must tolerate
+      --  absence. v1 serves it.
+      Has_At_Risk : Boolean := False;
       At_Risk : UARP.Types.Integer_Value := 0;
       Paused : UARP.Types.Integer_Value := 0;
    end record;
@@ -20472,8 +20500,17 @@ package UARP.Models is
       Fleet : UARP.Models.Tenant_Overview_Fleet;
       Runs : UARP.Models.Tenant_Overview_Runs;
       Approvals : UARP.Models.Tenant_Overview_Approvals;
+      --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+      --  health); clients must tolerate absence. v1 serves it.
+      Has_Usage : Boolean := False;
       Usage : UARP.Models.Tenant_Overview_Usage;
+      --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+      --  health); clients must tolerate absence. v1 serves it.
+      Has_Cost : Boolean := False;
       Cost : UARP.Models.Tenant_Overview_Cost;
+      --  Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+      --  health); clients must tolerate absence. v1 serves it.
+      Has_System : Boolean := False;
       System : UARP.Models.Tenant_Overview_System;
       Schedules : UARP.Models.Tenant_Overview_Schedules;
    end record;

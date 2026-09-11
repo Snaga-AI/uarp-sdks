@@ -6226,14 +6226,20 @@ pub struct ContinueRunResponse {
 pub struct ConversationEntry {
     /// The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
     /// transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
-    /// `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
-    /// system entries `{run_id}-system-N`. Counted per run over the whole history before
-    /// compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
-    /// /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
-    /// (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+    /// `{run_id}-reply`, further replies `{run_id}-reply-2`…, a second human turn of the same run
+    /// `{run_id}-user-2`… (lib/message-ids.ts:16-19), tool results `{run_id}-tool-N` and system
+    /// entries `{run_id}-system-N` numbered from 1 (the first is `-tool-1`, never bare `-tool`).
+    /// Counted per run over the whole history before compaction, so it does not move. This is the
+    /// canonical `message_id` for reactions (PUT /runs/{runId}/feedback), bookmarks
+    /// (/agents/{agentId}/bookmarks/{messageId}) and annotations (POST
+    /// /sessions/{sessionId}/annotations); it is a safe path segment.
     pub message_id: String,
     pub role: PublicSessionViewMessageRole,
-    /// The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+    /// The text, or content parts for a multimodal turn (types/llm.ts MessageContent). v1 emits the
+    /// string arm: every writer (renderUserTurn, SessionMessageSchema.content,
+    /// ImportSessionMessageSchema) stores a string, and every stored entry on production is one (8
+    /// 427 of 8 427, measured 2026-09-11). The array arm is the LLM wire type (types/llm.ts
+    /// MessageContent) the schema inherits; a v2 server accepts only the string.
     pub content: serde_json::Value,
     pub run_id: String,
     pub timestamp: String,
@@ -22046,9 +22052,18 @@ pub struct TenantOverview {
     pub fleet: TenantOverviewFleet,
     pub runs: TenantOverviewRuns,
     pub approvals: TenantOverviewApprovals,
-    pub usage: TenantOverviewUsage,
-    pub cost: TenantOverviewCost,
-    pub system: TenantOverviewSystem,
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub usage: Option<TenantOverviewUsage>,
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost: Option<TenantOverviewCost>,
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system: Option<TenantOverviewSystem>,
     pub schedules: TenantOverviewSchedules,
 }
 
@@ -22058,7 +22073,8 @@ pub struct TenantOverviewApprovals {
     pub pending_count: i64,
 }
 
-/// `TenantOverviewCost` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewCost {
     pub total_usd: f64,
@@ -22072,17 +22088,29 @@ pub struct TenantOverviewFleet {
     pub active_agents: i64,
     pub suspended: i64,
     pub terminated: i64,
-    pub by_execution_mode: TenantOverviewFleetByExecutionMode,
-    pub bridge: TenantOverviewFleetBridge,
-    #[serde(default)]
+    /// Optional: absent when the server does not track it (no such field on v2's record); clients
+    /// must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub by_execution_mode: Option<TenantOverviewFleetByExecutionMode>,
+    /// Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+    /// absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub bridge: Option<TenantOverviewFleetBridge>,
+    /// Optional: absent when the server does not track it (no such field on v2's record); clients
+    /// must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub head_agent_id: Option<String>,
     pub top_by_runs: Vec<AgentAnalyticsRow>,
-    pub top_by_cost: Vec<AgentAnalyticsRow>,
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_by_cost: Option<Vec<AgentAnalyticsRow>>,
     /// Agent id → the timestamp of its most recent run in the scanned window.
     pub last_run_at: serde_json::Map<String, serde_json::Value>,
 }
 
-/// `TenantOverviewFleetBridge` model.
+/// Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+/// absence. v1 serves it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewFleetBridge {
     pub online: i64,
@@ -22091,7 +22119,8 @@ pub struct TenantOverviewFleetBridge {
     pub machines_total: i64,
 }
 
-/// `TenantOverviewFleetByExecutionMode` model.
+/// Optional: absent when the server does not track it (no such field on v2's record); clients
+/// must tolerate absence. v1 serves it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewFleetByExecutionMode {
     pub cloud: i64,
@@ -22105,7 +22134,10 @@ pub struct TenantOverviewRuns {
     /// Queued, running, paused, awaiting approval or awaiting input.
     pub active_count: i64,
     pub failed_24h: i64,
-    pub cost_24h_usd: f64,
+    /// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+    /// health); clients must tolerate absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_24h_usd: Option<f64>,
     pub recent: Vec<TenantOverviewRunsRecentItem>,
     /// How many run records the aggregate actually looked at. The scan is capped, so a busy
     /// tenant's numbers describe the scanned window, not all history.
@@ -22138,12 +22170,16 @@ pub struct TenantOverviewRunsRecentItem {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewSchedules {
     pub total: i64,
-    /// Paused, errored, or carrying consecutive failures — a silently dead cron.
-    pub at_risk: i64,
+    /// Paused, errored, or carrying consecutive failures — a silently dead cron. Optional: absent
+    /// when the server does not track it (no such field on v2's record); clients must tolerate
+    /// absence. v1 serves it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub at_risk: Option<i64>,
     pub paused: i64,
 }
 
-/// `TenantOverviewSystem` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewSystem {
     /// False when no cron job is registered — the signal that scheduled work has stopped.
@@ -22154,7 +22190,8 @@ pub struct TenantOverviewSystem {
     pub cron_registered: i64,
 }
 
-/// `TenantOverviewUsage` model.
+/// Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+/// health); clients must tolerate absence. v1 serves it.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TenantOverviewUsage {
     pub tokens_used: i64,

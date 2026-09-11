@@ -3137,16 +3137,22 @@ export interface ConversationEntry {
   /**
    * The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
    * transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
-   * `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
-   * system entries `{run_id}-system-N`. Counted per run over the whole history before
-   * compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
-   * /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
-   * (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+   * `{run_id}-reply`, further replies `{run_id}-reply-2`…, a second human turn of the same run
+   * `{run_id}-user-2`… (lib/message-ids.ts:16-19), tool results `{run_id}-tool-N` and system
+   * entries `{run_id}-system-N` numbered from 1 (the first is `-tool-1`, never bare `-tool`).
+   * Counted per run over the whole history before compaction, so it does not move. This is the
+   * canonical `message_id` for reactions (PUT /runs/{runId}/feedback), bookmarks
+   * (/agents/{agentId}/bookmarks/{messageId}) and annotations (POST
+   * /sessions/{sessionId}/annotations); it is a safe path segment.
    */
   message_id: string;
   role: PublicSessionViewMessageRole;
   /**
-   * The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+   * The text, or content parts for a multimodal turn (types/llm.ts MessageContent). v1 emits the
+   * string arm: every writer (renderUserTurn, SessionMessageSchema.content,
+   * ImportSessionMessageSchema) stores a string, and every stored entry on production is one (8
+   * 427 of 8 427, measured 2026-09-11). The array arm is the LLM wire type (types/llm.ts
+   * MessageContent) the schema inherits; a v2 server accepts only the string.
    */
   content: string | ConversationEntryContentVariant2item[];
   run_id: string;
@@ -11639,9 +11645,21 @@ export interface TenantOverview {
   fleet: TenantOverviewFleet;
   runs: TenantOverviewRuns;
   approvals: TenantOverviewApprovals;
-  usage: TenantOverviewUsage;
-  cost: TenantOverviewCost;
-  system: TenantOverviewSystem;
+  /**
+   * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   * health); clients must tolerate absence. v1 serves it.
+   */
+  usage?: TenantOverviewUsage;
+  /**
+   * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   * health); clients must tolerate absence. v1 serves it.
+   */
+  cost?: TenantOverviewCost;
+  /**
+   * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   * health); clients must tolerate absence. v1 serves it.
+   */
+  system?: TenantOverviewSystem;
   schedules: TenantOverviewSchedules;
 }
 
@@ -11649,6 +11667,10 @@ export interface TenantOverviewApprovals {
   pending_count: number;
 }
 
+/**
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
+ */
 export interface TenantOverviewCost {
   total_usd: number;
   range_days: number;
@@ -11659,17 +11681,37 @@ export interface TenantOverviewFleet {
   active_agents: number;
   suspended: number;
   terminated: number;
-  by_execution_mode: TenantOverviewFleetByExecutionMode;
-  bridge: TenantOverviewFleetBridge;
-  head_agent_id: string | null;
+  /**
+   * Optional: absent when the server does not track it (no such field on v2's record); clients
+   * must tolerate absence. v1 serves it.
+   */
+  by_execution_mode?: TenantOverviewFleetByExecutionMode;
+  /**
+   * Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+   * absence. v1 serves it.
+   */
+  bridge?: TenantOverviewFleetBridge;
+  /**
+   * Optional: absent when the server does not track it (no such field on v2's record); clients
+   * must tolerate absence. v1 serves it.
+   */
+  head_agent_id?: string | null;
   top_by_runs: AgentAnalyticsRow[];
-  top_by_cost: AgentAnalyticsRow[];
+  /**
+   * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   * health); clients must tolerate absence. v1 serves it.
+   */
+  top_by_cost?: AgentAnalyticsRow[];
   /**
    * Agent id → the timestamp of its most recent run in the scanned window.
    */
   last_run_at: JsonObject;
 }
 
+/**
+ * Optional: absent on a server without the bridge concept (v2 has none); clients must tolerate
+ * absence. v1 serves it.
+ */
 export interface TenantOverviewFleetBridge {
   online: number;
   stale: number;
@@ -11677,6 +11719,10 @@ export interface TenantOverviewFleetBridge {
   machines_total: number;
 }
 
+/**
+ * Optional: absent when the server does not track it (no such field on v2's record); clients
+ * must tolerate absence. v1 serves it.
+ */
 export interface TenantOverviewFleetByExecutionMode {
   cloud: number;
   bridge: number;
@@ -11689,7 +11735,11 @@ export interface TenantOverviewRuns {
    */
   active_count: number;
   failed_24h: number;
-  cost_24h_usd: number;
+  /**
+   * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+   * health); clients must tolerate absence. v1 serves it.
+   */
+  cost_24h_usd?: number;
   recent: TenantOverviewRunsRecentItem[];
   /**
    * How many run records the aggregate actually looked at. The scan is capped, so a busy
@@ -11718,12 +11768,18 @@ export interface TenantOverviewRunsRecentItem {
 export interface TenantOverviewSchedules {
   total: number;
   /**
-   * Paused, errored, or carrying consecutive failures — a silently dead cron.
+   * Paused, errored, or carrying consecutive failures — a silently dead cron. Optional: absent
+   * when the server does not track it (no such field on v2's record); clients must tolerate
+   * absence. v1 serves it.
    */
-  at_risk: number;
+  at_risk?: number;
   paused: number;
 }
 
+/**
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
+ */
 export interface TenantOverviewSystem {
   /**
    * False when no cron job is registered — the signal that scheduled work has stopped.
@@ -11735,6 +11791,10 @@ export interface TenantOverviewSystem {
   cron_registered: number;
 }
 
+/**
+ * Optional: absent when the server does not track it (v2 measures no cost, tokens or system
+ * health); clients must tolerate absence. v1 serves it.
+ */
 export interface TenantOverviewUsage {
   tokens_used: number;
   runs_used: number;
