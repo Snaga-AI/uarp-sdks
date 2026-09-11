@@ -5088,14 +5088,16 @@ public struct AgentVersion: Codable, Hashable, Sendable {
     public var tenantId: String?
     public var version: Int
     /// Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes
-    /// five fixed phrases of its own, and a sixth with a number, on the versions it mints — known
-    /// values a client may match on, and therefore part of the contract (a change here is a
-    /// contract change): `Initial version`, `Initial version (auto-created)` (the lazy first record
-    /// of an agent that predates versioning), `Auto-versioned before update` and `Auto-versioned
-    /// after update` (the two snapshots every PATCH writes), `Auto-versioned after update (retry)`,
-    /// `Rollback to version N`. On production 280 of 312 versions across six tenants carry one of
-    /// these (Desktop, 2026-09-11). A reason code beside the prose is the owner's decision (DEC
-    /// 11).
+    /// these fixed values of its own on the versions it mints — known values a client may match on,
+    /// and therefore part of the contract (a test keeps this list equal to the literals in the
+    /// code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by
+    /// agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`,
+    /// `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration
+    /// kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
+    /// (agent-factory + discovery)`, `Rollback to version N` (N = the version rolled back to),
+    /// `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is
+    /// a count, the second is one of errors, ratings or feedback — words, not a number). A reason
+    /// code beside the prose is the owner's decision (DEC 11).
     public var changelog: String?
     public var createdAt: String
     public var createdBy: String?
