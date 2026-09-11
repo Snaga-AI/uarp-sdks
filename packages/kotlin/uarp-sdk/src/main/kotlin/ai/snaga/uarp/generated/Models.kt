@@ -868,6 +868,682 @@ public data class AdminAnalyticsOverviewResponseTotals(
 )
 
 /**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; types/security.ts
+ * AdminAuditEntry — actor_* and ip_address conditional.
+ */
+@Serializable
+public data class AdminAuditList(
+    public val entries: List<AdminAuditListEntry>,
+    public val total: Long,
+)
+
+/**
+ * `AdminAuditListEntry` model.
+ */
+@Serializable
+public data class AdminAuditListEntry(
+    @SerialName("entry_id")
+    public val entryId: String,
+    @SerialName("actor_tenant_id")
+    public val actorTenantId: String? = null,
+    public val action: String,
+    @SerialName("target_type")
+    public val targetType: String,
+    @SerialName("target_id")
+    public val targetId: String,
+    public val details: JsonObject,
+    @SerialName("ip_address")
+    public val ipAddress: String? = null,
+    public val timestamp: String,
+    @SerialName("actor_key_id")
+    public val actorKeyId: String? = null,
+    @SerialName("actor_user_id")
+    public val actorUserId: String? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `agent_memory` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigAgentMemoryConfig(
+    @SerialName("agent_memory")
+    public val agentMemory: AdminConfigAgentMemoryConfigAgentMemory,
+)
+
+/**
+ * `AdminConfigAgentMemoryConfigAgentMemory` model.
+ */
+@Serializable
+public data class AdminConfigAgentMemoryConfigAgentMemory(
+    public val enabled: Boolean,
+    @SerialName("use_shared_store")
+    public val useSharedStore: Boolean,
+    @SerialName("default_max_entries")
+    public val defaultMaxEntries: Long,
+    @SerialName("default_retrieval_limit")
+    public val defaultRetrievalLimit: Long,
+    @SerialName("default_retrieval_strategy")
+    public val defaultRetrievalStrategy: String,
+    @SerialName("decay_enabled")
+    public val decayEnabled: Boolean,
+    @SerialName("decay_half_life_days")
+    public val decayHalfLifeDays: Long,
+    @SerialName("decay_job_interval_ms")
+    public val decayJobIntervalMs: Long,
+    @SerialName("extraction_max_tokens")
+    public val extractionMaxTokens: Long,
+    @SerialName("extraction_model")
+    public val extractionModel: String,
+    @SerialName("eviction_threshold")
+    public val evictionThreshold: Long,
+    @SerialName("embedding_dimensions")
+    public val embeddingDimensions: Long,
+    @SerialName("embedding_provider")
+    public val embeddingProvider: String,
+    @SerialName("embedding_model")
+    public val embeddingModel: String,
+    @SerialName("compression_model")
+    public val compressionModel: String,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `auth` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigAuthConfig(
+    public val auth: AdminConfigAuthConfigAuth,
+)
+
+/**
+ * `AdminConfigAuthConfigAuth` model.
+ */
+@Serializable
+public data class AdminConfigAuthConfigAuth(
+    @SerialName("super_admin_email")
+    public val superAdminEmail: String,
+    @SerialName("otp_ttl_ms")
+    public val otpTtlMs: Long,
+    @SerialName("verification_ttl_ms")
+    public val verificationTtlMs: Long,
+    @SerialName("jwks_cache_ttl_ms")
+    public val jwksCacheTtlMs: Long,
+    @SerialName("jwks_grace_ttl_ms")
+    public val jwksGraceTtlMs: Long,
+    @SerialName("api_key_cache_ttl_s")
+    public val apiKeyCacheTtlS: Long,
+    @SerialName("api_key_rotation_grace_period_h")
+    public val apiKeyRotationGracePeriodH: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `backpressure` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigBackpressureConfig(
+    public val backpressure: AdminConfigBackpressureConfigBackpressure,
+)
+
+/**
+ * `AdminConfigBackpressureConfigBackpressure` model.
+ */
+@Serializable
+public data class AdminConfigBackpressureConfigBackpressure(
+    @SerialName("sse_buffer_max")
+    public val sseBufferMax: Long,
+    @SerialName("sse_high_watermark")
+    public val sseHighWatermark: Long,
+    @SerialName("sse_low_watermark")
+    public val sseLowWatermark: Long,
+    @SerialName("tool_queue_max_depth")
+    public val toolQueueMaxDepth: Long,
+    @SerialName("tool_queue_high_watermark")
+    public val toolQueueHighWatermark: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `code_interpreter` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigCodeInterpreterConfig(
+    @SerialName("code_interpreter")
+    public val codeInterpreter: AdminConfigCodeInterpreterConfigCodeInterpreter,
+)
+
+/**
+ * `AdminConfigCodeInterpreterConfigCodeInterpreter` model.
+ */
+@Serializable
+public data class AdminConfigCodeInterpreterConfigCodeInterpreter(
+    public val isolation: String,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long? = null,
+    @SerialName("max_memory_mb")
+    public val maxMemoryMb: Long? = null,
+    @SerialName("container_image")
+    public val containerImage: String? = null,
+    @SerialName("python_container_image")
+    public val pythonContainerImage: String? = null,
+    @SerialName("python_sandbox_host_dir")
+    public val pythonSandboxHostDir: String? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `evaluation` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigEvaluationConfig(
+    public val evaluation: AdminConfigEvaluationConfigEvaluation,
+)
+
+/**
+ * `AdminConfigEvaluationConfigEvaluation` model.
+ */
+@Serializable
+public data class AdminConfigEvaluationConfigEvaluation(
+    public val enabled: Boolean,
+    @SerialName("max_concurrent_eval_cases")
+    public val maxConcurrentEvalCases: Long,
+    @SerialName("regression_threshold")
+    public val regressionThreshold: Double,
+    @SerialName("default_scorers")
+    public val defaultScorers: List<String>,
+    @SerialName("max_cases_per_dataset")
+    public val maxCasesPerDataset: Long,
+    @SerialName("eval_run_timeout_ms")
+    public val evalRunTimeoutMs: Long,
+    @SerialName("auto_rollback_enabled")
+    public val autoRollbackEnabled: Boolean,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `idempotency` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigIdempotencyConfig(
+    public val idempotency: AdminConfigIdempotencyConfigIdempotency,
+)
+
+/**
+ * `AdminConfigIdempotencyConfigIdempotency` model.
+ */
+@Serializable
+public data class AdminConfigIdempotencyConfigIdempotency(
+    public val enabled: Boolean,
+    @SerialName("ttl_hours")
+    public val ttlHours: Long,
+    @SerialName("max_response_cache_bytes")
+    public val maxResponseCacheBytes: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `llm_adapters` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigLLMAdaptersConfig(
+    @SerialName("llm_adapters")
+    public val llmAdapters: AdminConfigLLMAdaptersConfigLLMAdapters,
+)
+
+/**
+ * `AdminConfigLLMAdaptersConfigLLMAdapters` model.
+ */
+@Serializable
+public data class AdminConfigLLMAdaptersConfigLLMAdapters(
+    @SerialName("max_retries")
+    public val maxRetries: Long? = null,
+    @SerialName("retry_base_delay_ms")
+    public val retryBaseDelayMs: Long? = null,
+    @SerialName("retry_max_delay_ms")
+    public val retryMaxDelayMs: Long? = null,
+    @SerialName("stream_empty_timeout_ms")
+    public val streamEmptyTimeoutMs: Long? = null,
+    @SerialName("circuit_breaker")
+    public val circuitBreaker: AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker? = null,
+    @SerialName("provider_rate_limits")
+    public val providerRateLimits: JsonObject? = null,
+)
+
+/**
+ * `AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker` model.
+ */
+@Serializable
+public data class AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker(
+    @SerialName("failure_threshold")
+    public val failureThreshold: Long? = null,
+    @SerialName("reset_timeout_ms")
+    public val resetTimeoutMs: Long? = null,
+    @SerialName("half_open_max_requests")
+    public val halfOpenMaxRequests: Long? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `logging` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigLoggingConfig(
+    public val logging: AdminConfigLoggingConfigLogging,
+)
+
+/**
+ * `AdminConfigLoggingConfigLogging` model.
+ */
+@Serializable
+public data class AdminConfigLoggingConfigLogging(
+    @SerialName("pii_mode")
+    public val piiMode: String,
+    @SerialName("log_agent_responses")
+    public val logAgentResponses: Boolean,
+    @SerialName("file_enabled")
+    public val fileEnabled: Boolean,
+    @SerialName("file_max_size_mb")
+    public val fileMaxSizeMb: Long,
+    @SerialName("file_retention_days")
+    public val fileRetentionDays: Long,
+    @SerialName("file_level")
+    public val fileLevel: String,
+    @SerialName("file_separate_error")
+    public val fileSeparateError: Boolean,
+    @SerialName("activity_log_verbosity")
+    public val activityLogVerbosity: String,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `long_running` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigLongRunningConfig(
+    @SerialName("long_running")
+    public val longRunning: AdminConfigLongRunningConfigLongRunning,
+)
+
+/**
+ * `AdminConfigLongRunningConfigLongRunning` model.
+ */
+@Serializable
+public data class AdminConfigLongRunningConfigLongRunning(
+    public val enabled: Boolean,
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: Long,
+    @SerialName("checkpoint_interval_ms")
+    public val checkpointIntervalMs: Long,
+    @SerialName("idle_timeout_ms")
+    public val idleTimeoutMs: Long,
+    @SerialName("continuation_token_ttl_days")
+    public val continuationTokenTtlDays: Long,
+    @SerialName("max_background_runs_per_tenant")
+    public val maxBackgroundRunsPerTenant: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `mcp` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigMCPConfig(
+    public val mcp: AdminConfigMCPConfigMCP,
+)
+
+/**
+ * `AdminConfigMCPConfigMCP` model.
+ */
+@Serializable
+public data class AdminConfigMCPConfigMCP(
+    @SerialName("max_sessions_per_server")
+    public val maxSessionsPerServer: Long,
+    @SerialName("max_total_stdio_sessions")
+    public val maxTotalStdioSessions: Long,
+    @SerialName("session_idle_timeout_ms")
+    public val sessionIdleTimeoutMs: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `multimodal` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigMultimodalConfig(
+    public val multimodal: AdminConfigMultimodalConfigMultimodal,
+)
+
+/**
+ * `AdminConfigMultimodalConfigMultimodal` model.
+ */
+@Serializable
+public data class AdminConfigMultimodalConfigMultimodal(
+    public val enabled: Boolean,
+    @SerialName("max_image_size_bytes")
+    public val maxImageSizeBytes: Long,
+    @SerialName("max_audio_duration_s")
+    public val maxAudioDurationS: Long,
+    @SerialName("max_video_duration_s")
+    public val maxVideoDurationS: Long,
+    @SerialName("auto_resize_images")
+    public val autoResizeImages: Boolean,
+    @SerialName("supported_image_formats")
+    public val supportedImageFormats: List<String>,
+    @SerialName("supported_audio_formats")
+    public val supportedAudioFormats: List<String>,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `persistence` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigPersistenceConfig(
+    public val persistence: AdminConfigPersistenceConfigPersistence,
+)
+
+/**
+ * `AdminConfigPersistenceConfigPersistence` model.
+ */
+@Serializable
+public data class AdminConfigPersistenceConfigPersistence(
+    @SerialName("snapshot_every_n_events")
+    public val snapshotEveryNEvents: Long,
+    @SerialName("checkpoint_after_tool_calls")
+    public val checkpointAfterToolCalls: Boolean,
+    @SerialName("usage_shards")
+    public val usageShards: Long,
+    @SerialName("auto_cap_kv_values")
+    public val autoCapKvValues: Boolean,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `retention` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigRetentionConfig(
+    public val retention: AdminConfigRetentionConfigRetention,
+)
+
+/**
+ * `AdminConfigRetentionConfigRetention` model.
+ */
+@Serializable
+public data class AdminConfigRetentionConfigRetention(
+    @SerialName("completed_run_ttl_days")
+    public val completedRunTtlDays: Long,
+    @SerialName("event_ttl_days")
+    public val eventTtlDays: Long,
+    @SerialName("archive_to_sqlite")
+    public val archiveToSqlite: Boolean,
+    @SerialName("audit_log_ttl_days")
+    public val auditLogTtlDays: Long,
+    @SerialName("archive_job_interval_ms")
+    public val archiveJobIntervalMs: Long,
+    @SerialName("archive_batch_size")
+    public val archiveBatchSize: Long,
+    @SerialName("feed_ttl_days")
+    public val feedTtlDays: Long,
+    @SerialName("artifact_ttl_days")
+    public val artifactTtlDays: Long,
+    @SerialName("checkpoint_ttl_hours")
+    public val checkpointTtlHours: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `run_command` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigRunCommandConfig(
+    @SerialName("run_command")
+    public val runCommand: AdminConfigRunCommandConfigRunCommand,
+)
+
+/**
+ * `AdminConfigRunCommandConfigRunCommand` model.
+ */
+@Serializable
+public data class AdminConfigRunCommandConfigRunCommand(
+    public val enabled: Boolean,
+    public val isolation: String,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long,
+    @SerialName("max_output_bytes")
+    public val maxOutputBytes: Long,
+    @SerialName("allowed_commands")
+    public val allowedCommands: List<String>,
+    @SerialName("deno_allow")
+    public val denoAllow: List<String>,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policies` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigSecurityPoliciesConfig(
+    public val policies: AdminConfigSecurityPoliciesConfigPolicies,
+)
+
+/**
+ * `AdminConfigSecurityPoliciesConfigPolicies` model.
+ */
+@Serializable
+public data class AdminConfigSecurityPoliciesConfigPolicies(
+    @SerialName("cors_allowed_origins")
+    public val corsAllowedOrigins: List<JsonElement>,
+    @SerialName("webhook_url_denylist")
+    public val webhookURLDenylist: List<String>,
+    @SerialName("file_upload_max_size_bytes")
+    public val fileUploadMaxSizeBytes: Long,
+    @SerialName("file_upload_allowed_mime_types")
+    public val fileUploadAllowedMimeTypes: List<JsonElement>,
+    @SerialName("admin_provider_settings_require_super_admin")
+    public val adminProviderSettingsRequireSuperAdmin: Boolean,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `server` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigServerConfig(
+    public val server: AdminConfigServerConfigServer,
+)
+
+/**
+ * `AdminConfigServerConfigServer` model.
+ */
+@Serializable
+public data class AdminConfigServerConfigServer(
+    @SerialName("trust_proxy")
+    public val trustProxy: Boolean,
+    @SerialName("max_body_bytes")
+    public val maxBodyBytes: Long,
+    @SerialName("graceful_shutdown_timeout_ms")
+    public val gracefulShutdownTimeoutMs: Long? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `sse` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigSSEConfig(
+    public val sse: AdminConfigSSEConfigSSE,
+)
+
+/**
+ * `AdminConfigSSEConfigSSE` model.
+ */
+@Serializable
+public data class AdminConfigSSEConfigSSE(
+    @SerialName("heartbeat_interval_ms")
+    public val heartbeatIntervalMs: Long,
+    @SerialName("watch_timeout_ms")
+    public val watchTimeoutMs: Long,
+    @SerialName("poll_interval_ms")
+    public val pollIntervalMs: Long,
+    @SerialName("max_poll_interval_ms")
+    public val maxPollIntervalMs: Long,
+    @SerialName("reconnect_hint_ms")
+    public val reconnectHintMs: Long,
+    @SerialName("run_wait_timeout_sec")
+    public val runWaitTimeoutSec: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `tool_security` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigToolSecurityConfig(
+    @SerialName("tool_security")
+    public val toolSecurity: AdminConfigToolSecurityConfigToolSecurity,
+)
+
+/**
+ * `AdminConfigToolSecurityConfigToolSecurity` model.
+ */
+@Serializable
+public data class AdminConfigToolSecurityConfigToolSecurity(
+    @SerialName("default_egress_policy")
+    public val defaultEgressPolicy: String,
+    @SerialName("egress_allowlist_per_tenant")
+    public val egressAllowlistPerTenant: List<JsonElement>? = null,
+    @SerialName("ssrf_deny_private_ranges")
+    public val ssrfDenyPrivateRanges: Boolean,
+    @SerialName("default_tool_timeout_ms")
+    public val defaultToolTimeoutMs: Long,
+    @SerialName("default_tool_max_payload_bytes")
+    public val defaultToolMaxPayloadBytes: Long,
+    @SerialName("default_tool_max_concurrency")
+    public val defaultToolMaxConcurrency: Long,
+    @SerialName("stdio_inherit_env")
+    public val stdioInheritEnv: Boolean,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `webhooks` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigWebhooksConfig(
+    public val webhooks: AdminConfigWebhooksConfigWebhooks,
+)
+
+/**
+ * `AdminConfigWebhooksConfigWebhooks` model.
+ */
+@Serializable
+public data class AdminConfigWebhooksConfigWebhooks(
+    public val enabled: Boolean,
+    @SerialName("max_subscriptions_per_tenant")
+    public val maxSubscriptionsPerTenant: Long,
+    @SerialName("delivery_timeout_ms")
+    public val deliveryTimeoutMs: Long,
+    @SerialName("max_retry_attempts")
+    public val maxRetryAttempts: Long,
+    @SerialName("require_https")
+    public val requireHTTPS: Boolean,
+    @SerialName("max_payload_bytes")
+    public val maxPayloadBytes: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policy` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+@Serializable
+public data class AdminConfigWebhooksPolicyConfig(
+    public val policy: AdminConfigWebhooksPolicyConfigPolicy,
+)
+
+/**
+ * `AdminConfigWebhooksPolicyConfigPolicy` model.
+ */
+@Serializable
+public data class AdminConfigWebhooksPolicyConfigPolicy(
+    @SerialName("ssrf_check_at_subscription")
+    public val ssrfCheckAtSubscription: Boolean,
+    @SerialName("stripe_signature_tolerance_sec")
+    public val stripeSignatureToleranceSec: Long,
+    @SerialName("delivery_max_retries")
+    public val deliveryMaxRetries: Long,
+    @SerialName("delivery_backoff_base_ms")
+    public val deliveryBackoffBaseMs: Long,
+    @SerialName("delivery_max_window_hours")
+    public val deliveryMaxWindowHours: Long,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `worker_pool` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+@Serializable
+public data class AdminConfigWorkerPoolConfig(
+    @SerialName("worker_pool")
+    public val workerPool: AdminConfigWorkerPoolConfigWorkerPool,
+)
+
+/**
+ * `AdminConfigWorkerPoolConfigWorkerPool` model.
+ */
+@Serializable
+public data class AdminConfigWorkerPoolConfigWorkerPool(
+    @SerialName("max_workers")
+    public val maxWorkers: Long,
+    @SerialName("default_mode")
+    public val defaultMode: String,
+    @SerialName("max_run_duration_ms")
+    public val maxRunDurationMs: Long,
+    @SerialName("reconciliation_interval_ms")
+    public val reconciliationIntervalMs: Long,
+    @SerialName("schedule_max_retries")
+    public val scheduleMaxRetries: Long,
+    @SerialName("schedule_base_delay_ms")
+    public val scheduleBaseDelayMs: Long,
+    @SerialName("max_queue_size")
+    public val maxQueueSize: Long? = null,
+)
+
+/**
  * `AdminDataExplorerRawKeysResponse` model.
  */
 @Serializable
@@ -922,6 +1598,65 @@ public object AdminDataExplorerRawKeysResponseKeyTypeSerializer : KSerializer<Ad
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminDataExplorerRawKeysResponseKeyType", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: AdminDataExplorerRawKeysResponseKeyType): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AdminDataExplorerRawKeysResponseKeyType = AdminDataExplorerRawKeysResponseKeyType(decoder.decodeString())
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminFeatureFlagsConfig(
+    public val flags: List<JsonObject>? = null,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminFounderConfig(
+    public val kv: FounderIdentity,
+    public val env: FounderIdentity,
+    public val effective: FounderIdentity,
+)
+
+/**
+ * `AdminGetLandingConfigResponse` model.
+ */
+@Serializable
+public data class AdminGetLandingConfigResponse(
+    public val landing: LandingConfigSection,
+    public val source: AdminGetLandingConfigResponseSource,
+    /**
+     * KV versionstamp; echo it as `expected_version` on PUT.
+     */
+    public val version: String? = null,
+)
+
+/**
+ * `AdminGetLandingConfigResponseSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminGetLandingConfigResponseSourceSerializer::class)
+@JvmInline
+public value class AdminGetLandingConfigResponseSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KV: AdminGetLandingConfigResponseSource = AdminGetLandingConfigResponseSource("kv")
+        public val NONE: AdminGetLandingConfigResponseSource = AdminGetLandingConfigResponseSource("none")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminGetLandingConfigResponseSource> = listOf(KV, NONE)
+    }
+}
+
+public object AdminGetLandingConfigResponseSourceSerializer : KSerializer<AdminGetLandingConfigResponseSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminGetLandingConfigResponseSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminGetLandingConfigResponseSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminGetLandingConfigResponseSource = AdminGetLandingConfigResponseSource(decoder.decodeString())
 }
 
 /**
@@ -984,6 +1719,107 @@ public object AdminGetReconciliationResponseReconciliationSerializer : KSerializ
 }
 
 /**
+ * `AdminGetVoiceConfigResponse` model.
+ */
+@Serializable
+public data class AdminGetVoiceConfigResponse(
+    public val voice: AdminGetVoiceConfigResponseVoiceVariant1? = null,
+    public val source: AdminGetLandingConfigResponseSource,
+)
+
+/**
+ * `AdminGetVoiceConfigResponseVoiceVariant1` model.
+ */
+@Serializable
+public data class AdminGetVoiceConfigResponseVoiceVariant1(
+    public val stt: AdminGetVoiceConfigResponseVoiceVariant1stt,
+    public val tts: AdminGetVoiceConfigResponseVoiceVariant1tts,
+)
+
+/**
+ * `AdminGetVoiceConfigResponseVoiceVariant1stt` model.
+ */
+@Serializable
+public data class AdminGetVoiceConfigResponseVoiceVariant1stt(
+    public val provider: String,
+    public val model: String,
+)
+
+/**
+ * `AdminGetVoiceConfigResponseVoiceVariant1tts` model.
+ */
+@Serializable
+public data class AdminGetVoiceConfigResponseVoiceVariant1tts(
+    public val provider: String,
+    public val model: String,
+    public val voice: String,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminGuardrailsConfig(
+    public val guardrails: List<JsonObject>? = null,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminIntegrationsConfig(
+    public val integrations: List<AdminIntegrationsConfigIntegration>,
+)
+
+/**
+ * `AdminIntegrationsConfigIntegration` model.
+ */
+@Serializable
+public data class AdminIntegrationsConfigIntegration(
+    public val id: String,
+    public val name: String,
+    public val icon: String? = null,
+    @SerialName("auth_type")
+    public val authType: AdminIntegrationsConfigIntegrationAuthType? = null,
+    public val category: String? = null,
+    public val enabled: Boolean,
+    public val beta: Boolean? = null,
+    /**
+     * `kv` when an operator overrode the shipped default, `default` otherwise.
+     */
+    public val source: String? = null,
+)
+
+/**
+ * `AdminIntegrationsConfigIntegrationAuthType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminIntegrationsConfigIntegrationAuthTypeSerializer::class)
+@JvmInline
+public value class AdminIntegrationsConfigIntegrationAuthType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OAUTH2: AdminIntegrationsConfigIntegrationAuthType = AdminIntegrationsConfigIntegrationAuthType("oauth2")
+        public val API_KEY: AdminIntegrationsConfigIntegrationAuthType = AdminIntegrationsConfigIntegrationAuthType("api_key")
+        public val NONE: AdminIntegrationsConfigIntegrationAuthType = AdminIntegrationsConfigIntegrationAuthType("none")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminIntegrationsConfigIntegrationAuthType> = listOf(OAUTH2, API_KEY, NONE)
+    }
+}
+
+public object AdminIntegrationsConfigIntegrationAuthTypeSerializer : KSerializer<AdminIntegrationsConfigIntegrationAuthType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminIntegrationsConfigIntegrationAuthType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminIntegrationsConfigIntegrationAuthType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminIntegrationsConfigIntegrationAuthType = AdminIntegrationsConfigIntegrationAuthType(decoder.decodeString())
+}
+
+/**
  * `AdminListToolsResponse` model.
  */
 @Serializable
@@ -1028,6 +1864,488 @@ public data class AdminListWebhookDLQResponseEntry(
 )
 
 /**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The stored catalogue or,
+ * with `source: seed`, the built-in registry; rows carry computed
+ * `effective_pricing`/`effective_tier`.
+ */
+@Serializable
+public data class AdminModelCatalog(
+    public val models: List<AdminModelCatalogModel>,
+    public val source: AdminModelCatalogSource,
+    public val count: Long,
+    public val version: String? = null,
+)
+
+/**
+ * `AdminModelCatalogModel` model.
+ */
+@Serializable
+public data class AdminModelCatalogModel(
+    public val id: String,
+    public val provider: String,
+    @SerialName("display_name")
+    public val displayName: String,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long,
+    @SerialName("max_output_tokens")
+    public val maxOutputTokens: Long,
+    @SerialName("supports_streaming")
+    public val supportsStreaming: Boolean,
+    @SerialName("supports_tool_calls")
+    public val supportsToolCalls: Boolean,
+    @SerialName("supports_json_mode")
+    public val supportsJSONMode: Boolean,
+    @SerialName("supports_vision")
+    public val supportsVision: Boolean? = null,
+    public val tier: String? = null,
+    /**
+     * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+     * seed answers.
+     */
+    @SerialName("effective_pricing")
+    public val effectivePricing: AdminModelCatalogModelEffectivePricing? = null,
+    /**
+     * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+     * seed answers.
+     */
+    @SerialName("effective_tier")
+    public val effectiveTier: String? = null,
+)
+
+/**
+ * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+ * seed answers.
+ */
+@Serializable
+public data class AdminModelCatalogModelEffectivePricing(
+    @SerialName("input_per_million")
+    public val inputPerMillion: Double,
+    @SerialName("output_per_million")
+    public val outputPerMillion: Double,
+    @SerialName("cached_input_per_million")
+    public val cachedInputPerMillion: Double,
+    public val source: String,
+    public val layer: String,
+    public val key: String,
+    public val match: String,
+    public val confidence: String,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; the built-in registry merged
+ * with every configured provider's live model list — no `source`, no `version`, no computed
+ * economics.
+ */
+@Serializable
+public data class AdminModelCatalogSeed(
+    public val models: List<AdminModelCatalogSeedModel>,
+    public val count: Long,
+)
+
+/**
+ * `AdminModelCatalogSeedModel` model.
+ */
+@Serializable
+public data class AdminModelCatalogSeedModel(
+    public val id: String,
+    public val provider: String,
+    @SerialName("display_name")
+    public val displayName: String,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long,
+    @SerialName("max_output_tokens")
+    public val maxOutputTokens: Long,
+    @SerialName("supports_streaming")
+    public val supportsStreaming: Boolean,
+    @SerialName("supports_tool_calls")
+    public val supportsToolCalls: Boolean,
+    @SerialName("supports_json_mode")
+    public val supportsJSONMode: Boolean,
+    @SerialName("supports_vision")
+    public val supportsVision: Boolean? = null,
+    public val tier: String? = null,
+)
+
+/**
+ * `AdminModelCatalogSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminModelCatalogSourceSerializer::class)
+@JvmInline
+public value class AdminModelCatalogSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KV: AdminModelCatalogSource = AdminModelCatalogSource("kv")
+        public val SEED: AdminModelCatalogSource = AdminModelCatalogSource("seed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminModelCatalogSource> = listOf(KV, SEED)
+    }
+}
+
+public object AdminModelCatalogSourceSerializer : KSerializer<AdminModelCatalogSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminModelCatalogSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminModelCatalogSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminModelCatalogSource = AdminModelCatalogSource(decoder.decodeString())
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; billing/cost-estimator.ts
+ * listAllPricing — a live in-memory view, `layer` says where each price comes from.
+ */
+@Serializable
+public data class AdminModelPricingList(
+    public val models: List<AdminModelPricingListModel>,
+    public val count: Long,
+    public val source: String,
+)
+
+/**
+ * `AdminModelPricingListModel` model.
+ */
+@Serializable
+public data class AdminModelPricingListModel(
+    public val model: String,
+    public val layer: String,
+    @SerialName("input_per_million")
+    public val inputPerMillion: Double,
+    @SerialName("output_per_million")
+    public val outputPerMillion: Double,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminOAuthIdentityConfig(
+    public val kv: OAuthIdentityConfig,
+    public val env: OAuthIdentityConfig,
+    public val effective: OAuthIdentityConfig,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminPlatformURLSConfig(
+    public val urls: AdminPlatformURLSConfigURLS? = null,
+)
+
+/**
+ * `AdminPlatformURLSConfigURLS` model.
+ */
+@Serializable
+public data class AdminPlatformURLSConfigURLS(
+    @SerialName("public_base_url")
+    public val publicBaseURL: String? = null,
+    @SerialName("webhook_base_url")
+    public val webhookBaseURL: String? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The whole stored override
+ * when one exists, else the config defaults; `source` says which (admin-config.ts
+ * getEffectivePricing).
+ */
+@Serializable
+public data class AdminPricingConfig(
+    public val pricing: AdminPricingConfigPricing,
+    public val source: AdminPricingConfigSource,
+)
+
+/**
+ * `AdminPricingConfigPricing` model.
+ */
+@Serializable
+public data class AdminPricingConfigPricing(
+    @SerialName("openai_compat_input")
+    public val openaiCompatInput: Double,
+    @SerialName("openai_compat_output")
+    public val openaiCompatOutput: Double,
+    @SerialName("anthropic_input")
+    public val anthropicInput: Long,
+    @SerialName("anthropic_output")
+    public val anthropicOutput: Double,
+    @SerialName("anthropic_thinking")
+    public val anthropicThinking: Double,
+)
+
+/**
+ * `AdminPricingConfigSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminPricingConfigSourceSerializer::class)
+@JvmInline
+public value class AdminPricingConfigSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KV: AdminPricingConfigSource = AdminPricingConfigSource("kv")
+        public val CONFIG: AdminPricingConfigSource = AdminPricingConfigSource("config")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminPricingConfigSource> = listOf(KV, CONFIG)
+    }
+}
+
+public object AdminPricingConfigSourceSerializer : KSerializer<AdminPricingConfigSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminPricingConfigSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminPricingConfigSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminPricingConfigSource = AdminPricingConfigSource(decoder.decodeString())
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin.ts — a projection over
+ * the custom provider, its settings and catalogue status; never the API key.
+ */
+@Serializable
+public data class AdminProvider(
+    public val id: String,
+    public val name: String,
+    public val canonical: String,
+    @SerialName("default_endpoint")
+    public val defaultEndpoint: String,
+    public val local: Boolean,
+    public val enabled: Boolean,
+    @SerialName("model_allowlist")
+    public val modelAllowlist: List<String>,
+    @SerialName("is_custom")
+    public val isCustom: Boolean,
+    @SerialName("requires_api_key")
+    public val requiresAPIKey: Boolean,
+    @SerialName("models_in_catalog")
+    public val modelsInCatalog: Long,
+    @SerialName("catalog_model_ids")
+    public val catalogModelIds: List<String>,
+    @SerialName("last_models_sync")
+    public val lastModelsSync: AdminProviderLastModelsSync? = null,
+)
+
+/**
+ * `AdminProviderLastModelsSync` model.
+ */
+@Serializable
+public data class AdminProviderLastModelsSync(
+    public val at: String,
+    public val added: Long,
+    public val live: Long,
+)
+
+/**
+ * `AdminPutLandingConfigResponse` model.
+ */
+@Serializable
+public data class AdminPutLandingConfigResponse(
+    public val landing: LandingConfigSection,
+    public val source: AdminPutLandingConfigResponseSource,
+    public val updated: Boolean,
+    public val version: String? = null,
+)
+
+/**
+ * `AdminPutLandingConfigResponseSource` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminPutLandingConfigResponseSourceSerializer::class)
+@JvmInline
+public value class AdminPutLandingConfigResponseSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KV: AdminPutLandingConfigResponseSource = AdminPutLandingConfigResponseSource("kv")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminPutLandingConfigResponseSource> = listOf(KV)
+    }
+}
+
+public object AdminPutLandingConfigResponseSourceSerializer : KSerializer<AdminPutLandingConfigResponseSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminPutLandingConfigResponseSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminPutLandingConfigResponseSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminPutLandingConfigResponseSource = AdminPutLandingConfigResponseSource(decoder.decodeString())
+}
+
+/**
+ * `AdminPutModelCatalogResponse` model.
+ */
+@Serializable
+public data class AdminPutModelCatalogResponse(
+    public val models: List<AdminPutModelCatalogResponseModel>,
+    public val source: AdminPutLandingConfigResponseSource,
+    public val count: Long,
+    public val version: String? = null,
+)
+
+/**
+ * `AdminPutModelCatalogResponseModel` model.
+ */
+@Serializable
+public data class AdminPutModelCatalogResponseModel(
+    public val id: String,
+    public val provider: String,
+    @SerialName("display_name")
+    public val displayName: String,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long,
+    @SerialName("max_output_tokens")
+    public val maxOutputTokens: Long,
+    @SerialName("supports_streaming")
+    public val supportsStreaming: Boolean,
+    @SerialName("supports_tool_calls")
+    public val supportsToolCalls: Boolean,
+    @SerialName("supports_json_mode")
+    public val supportsJSONMode: Boolean,
+    @SerialName("supports_vision")
+    public val supportsVision: Boolean? = null,
+    public val tier: String? = null,
+)
+
+/**
+ * `AdminPutVoiceConfigResponse` model.
+ */
+@Serializable
+public data class AdminPutVoiceConfigResponse(
+    public val voice: AdminPutVoiceConfigResponseVoice,
+    public val updated: Boolean,
+)
+
+/**
+ * `AdminPutVoiceConfigResponseVoice` model.
+ */
+@Serializable
+public data class AdminPutVoiceConfigResponseVoice(
+    public val stt: AdminPutVoiceConfigResponseVoiceStt,
+    public val tts: AdminPutVoiceConfigResponseVoiceTts,
+)
+
+/**
+ * `AdminPutVoiceConfigResponseVoiceStt` model.
+ */
+@Serializable
+public data class AdminPutVoiceConfigResponseVoiceStt(
+    public val provider: String,
+    public val model: String,
+)
+
+/**
+ * `AdminPutVoiceConfigResponseVoiceTts` model.
+ */
+@Serializable
+public data class AdminPutVoiceConfigResponseVoiceTts(
+    public val provider: String,
+    public val model: String,
+    public val voice: String,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminRateLimitsConfig(
+    public val endpoints: List<JsonObject>? = null,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminRegistrationConfig(
+    @SerialName("registration_open")
+    public val registrationOpen: Boolean,
+    /**
+     * `free` when nothing is stored.
+     */
+    @SerialName("default_signup_plan")
+    public val defaultSignupPlan: String,
+    /**
+     * Empty means no domain restriction.
+     */
+    @SerialName("allowed_email_domains")
+    public val allowedEmailDomains: List<String>,
+    @SerialName("setup_status")
+    public val setupStatus: AdminRegistrationConfigSetupStatus,
+    /**
+     * Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+     * and this is the list it will name.
+     */
+    @SerialName("missing_required")
+    public val missingRequired: List<String>,
+    /**
+     * How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
+     * be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+     * froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+     * admin uses to decide when to open registration, so it is the one that must be complete
+     * rather than the roster.
+     */
+    @SerialName("waitlist_count")
+    public val waitlistCount: Long,
+    /**
+     * True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+     * and stays bounded at 1000; the count is not.
+     */
+    @SerialName("waitlist_truncated")
+    public val waitlistTruncated: Boolean? = null,
+    /**
+     * Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
+     * `waitlist.length` as the total.
+     */
+    public val waitlist: List<AdminRegistrationConfigWaitlistItem>,
+)
+
+/**
+ * `AdminRegistrationConfigSetupStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminRegistrationConfigSetupStatusSerializer::class)
+@JvmInline
+public value class AdminRegistrationConfigSetupStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val IN_PROGRESS: AdminRegistrationConfigSetupStatus = AdminRegistrationConfigSetupStatus("in_progress")
+        public val LIVE: AdminRegistrationConfigSetupStatus = AdminRegistrationConfigSetupStatus("live")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminRegistrationConfigSetupStatus> = listOf(IN_PROGRESS, LIVE)
+    }
+}
+
+public object AdminRegistrationConfigSetupStatusSerializer : KSerializer<AdminRegistrationConfigSetupStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminRegistrationConfigSetupStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminRegistrationConfigSetupStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminRegistrationConfigSetupStatus = AdminRegistrationConfigSetupStatus(decoder.decodeString())
+}
+
+/**
+ * `AdminRegistrationConfigWaitlistItem` model.
+ */
+@Serializable
+public data class AdminRegistrationConfigWaitlistItem(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val email: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+)
+
+/**
  * `AdminReplayWebhookDLQResponse` model.
  */
 @Serializable
@@ -1036,6 +2354,150 @@ public data class AdminReplayWebhookDLQResponse(
     public val eventId: String,
     public val action: String,
     public val message: String,
+)
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminSmtpConfig(
+    /**
+     * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+     */
+    public val kv: AdminSmtpConfigKv,
+    /**
+     * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+     */
+    public val env: AdminSmtpConfigEnv,
+    /**
+     * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+     * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+     * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+     * inert.
+     */
+    public val source: AdminSmtpConfigSource,
+)
+
+/**
+ * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+ */
+@Serializable
+public data class AdminSmtpConfigEnv(
+    public val host: String? = null,
+    public val port: Long? = null,
+    public val user: String? = null,
+    public val from: String? = null,
+    @SerialName("from_name")
+    public val fromName: String? = null,
+    /**
+     * Whether a credential is stored. The password itself is never returned by any read.
+     */
+    @SerialName("has_password")
+    public val hasPassword: Boolean? = null,
+)
+
+/**
+ * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+ */
+@Serializable
+public data class AdminSmtpConfigKv(
+    public val host: String? = null,
+    public val port: Long? = null,
+    public val user: String? = null,
+    public val from: String? = null,
+    @SerialName("from_name")
+    public val fromName: String? = null,
+    /**
+     * Whether a credential is stored. The password itself is never returned by any read.
+     */
+    @SerialName("has_password")
+    public val hasPassword: Boolean? = null,
+)
+
+/**
+ * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+ * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+ * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+ * inert.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AdminSmtpConfigSourceSerializer::class)
+@JvmInline
+public value class AdminSmtpConfigSource(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val KV: AdminSmtpConfigSource = AdminSmtpConfigSource("kv")
+        public val ENV: AdminSmtpConfigSource = AdminSmtpConfigSource("env")
+        public val NONE: AdminSmtpConfigSource = AdminSmtpConfigSource("none")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AdminSmtpConfigSource> = listOf(KV, ENV, NONE)
+    }
+}
+
+public object AdminSmtpConfigSourceSerializer : KSerializer<AdminSmtpConfigSource> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AdminSmtpConfigSource", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AdminSmtpConfigSource): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AdminSmtpConfigSource = AdminSmtpConfigSource(decoder.decodeString())
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+@Serializable
+public data class AdminSpecPackagesList(
+    public val packages: List<SpecPackage>,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
+ * their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
+ */
+@Serializable
+public data class AdminStripeConfig(
+    public val stripe: AdminStripeConfigStripe,
+    @SerialName("has_secret_key")
+    public val hasSecretKey: Boolean,
+    @SerialName("has_webhook_secret")
+    public val hasWebhookSecret: Boolean,
+)
+
+/**
+ * `AdminStripeConfigStripe` model.
+ */
+@Serializable
+public data class AdminStripeConfigStripe(
+    public val enabled: Boolean,
+    public val mode: String,
+    @SerialName("secret_key")
+    public val secretKey: String,
+    @SerialName("webhook_secret")
+    public val webhookSecret: String,
+    @SerialName("publishable_key")
+    public val publishableKey: String,
+    @SerialName("price_id_starter")
+    public val priceIdStarter: String,
+    @SerialName("price_id_pro")
+    public val priceIdPro: String,
+    @SerialName("price_id_enterprise")
+    public val priceIdEnterprise: String,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; provider/model → voice ids;
+ * `defaults` is always empty, `effective` equals `override` (admin-config.ts
+ * handleGetVoicePresets).
+ */
+@Serializable
+public data class AdminVoicePresets(
+    public val defaults: JsonObject,
+    public val override: Map<String, List<String>>,
+    public val effective: Map<String, List<String>>,
 )
 
 /**
@@ -1113,7 +2575,13 @@ public data class Agent(
     @SerialName("knowledge_base_ids")
     public val knowledgeBaseIds: List<String>? = null,
     /**
-     * Who can reach the agent. The publication screen is built on this field.
+     * Who can reach the agent. The publication screen is built on this field — but `public` alone
+     * does not open the agent to the world: the anonymous routes (`GET /public/agents/{agentId}`,
+     * public sessions) answer only when `visibility` is `public` AND `public_config.enabled` is
+     * true AND `status` is `active` (public.ts loadPublicAgent). A client that shows "anyone with
+     * the link can reach this agent" on `visibility` alone shows it a step too early. Measured
+     * 2026-09-10 on a real tenant: the one agent with both switches answered 200 without a key,
+     * every other `public` one 404.
      */
     public val visibility: AgentUpdateVisibility? = null,
     /**
@@ -1757,6 +3225,11 @@ public data class AgentPrompts(
  */
 @Serializable
 public data class AgentPublicConfig(
+    /**
+     * One of the three switches that make the agent reachable without a key (public.ts
+     * loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+     * `active` (or absent). Any one of them alone does nothing visible.
+     */
     public val enabled: Boolean,
     @SerialName("system_prompt")
     public val systemPrompt: String? = null,
@@ -2202,6 +3675,52 @@ public data class AgentUpdate(
     @SerialName("workspace_id")
     public val workspaceId: String? = null,
     public val visibility: AgentUpdateVisibility? = null,
+    /**
+     * Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+     * ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+     * }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+     * alone does not make the agent reachable — see `Agent.visibility`.
+     */
+    @SerialName("public_config")
+    public val publicConfig: AgentUpdatePublicConfig? = null,
+)
+
+/**
+ * Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+ * ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+ * }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+ * alone does not make the agent reachable — see `Agent.visibility`.
+ */
+@Serializable
+public data class AgentUpdatePublicConfig(
+    /**
+     * One of the three switches that make the agent reachable without a key (public.ts
+     * loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+     * `active` (or absent). Any one of them alone does nothing visible.
+     */
+    public val enabled: Boolean,
+    @SerialName("system_prompt")
+    public val systemPrompt: String? = null,
+    public val greeting: String? = null,
+    @SerialName("allowed_tools")
+    public val allowedTools: List<String>? = null,
+    @SerialName("max_messages_per_session")
+    public val maxMessagesPerSession: Long? = null,
+    @SerialName("max_concurrent_sessions")
+    public val maxConcurrentSessions: Long? = null,
+    @SerialName("rate_limit_sessions_per_ip")
+    public val rateLimitSessionsPerIp: Long? = null,
+    @SerialName("rate_limit_messages_per_min")
+    public val rateLimitMessagesPerMin: Long? = null,
+    /**
+     * Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+     * ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+     * `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+     * Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+     * default of 15.
+     */
+    @SerialName("daily_message_limit")
+    public val dailyMessageLimit: Long? = null,
 )
 
 /**
@@ -3961,6 +5480,28 @@ public data class CompleteOAuthLoginResponse(
 )
 
 /**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; api/lib/conformity-report.ts
+ * — three sections, plus the same content as markdown. `?format=markdown` answers
+ * text/markdown instead.
+ */
+@Serializable
+public data class ConformityReport(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val sections: List<ConformityReportSection>,
+    public val markdown: String,
+)
+
+/**
+ * `ConformityReportSection` model.
+ */
+@Serializable
+public data class ConformityReportSection(
+    public val title: String,
+    public val content: String,
+)
+
+/**
  * `ConnectorConfigField` model.
  */
 @Serializable
@@ -4574,6 +6115,32 @@ public data class CoreMemoryBlock(
 )
 
 /**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z;
+ * billing/cost-reconciliation.ts ReconciliationResult — `truncated` and `details` conditional.
+ */
+@Serializable
+public data class CostReconciliationResult(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val period: String,
+    @SerialName("runs_total_cost_usd")
+    public val runsTotalCostUsd: Double,
+    @SerialName("usage_tracker_cost_usd")
+    public val usageTrackerCostUsd: Double,
+    @SerialName("drift_usd")
+    public val driftUsd: Double,
+    @SerialName("drift_pct")
+    public val driftPct: Double,
+    @SerialName("runs_scanned")
+    public val runsScanned: Long,
+    @SerialName("runs_missing_cost")
+    public val runsMissingCost: Long,
+    public val status: String,
+    public val details: String? = null,
+    public val truncated: Boolean? = null,
+)
+
+/**
  * `CreateA2ATaskRequest` model.
  */
 @Serializable
@@ -4610,6 +6177,63 @@ public data class CreateAdminBlogPostRequest(
 @Serializable
 public data class CreateAdminBlogPostResponse(
     public val post: BlogPost,
+)
+
+/**
+ * `CreateAdminProviderResponse` model.
+ */
+@Serializable
+public data class CreateAdminProviderResponse(
+    public val id: String,
+    public val name: String,
+    @SerialName("default_endpoint")
+    public val defaultEndpoint: String,
+    @SerialName("is_custom")
+    public val isCustom: Boolean,
+    @SerialName("requires_api_key")
+    public val requiresAPIKey: Boolean,
+    public val canonical: String,
+    /**
+     * Only when the body sent it.
+     */
+    @SerialName("default_capabilities")
+    public val defaultCapabilities: CreateAdminProviderResponseDefaultCapabilities? = null,
+)
+
+/**
+ * Only when the body sent it.
+ */
+@Serializable
+public data class CreateAdminProviderResponseDefaultCapabilities(
+    @SerialName("supports_tool_calls")
+    public val supportsToolCalls: Boolean? = null,
+    @SerialName("supports_streaming")
+    public val supportsStreaming: Boolean? = null,
+    @SerialName("supports_json_mode")
+    public val supportsJSONMode: Boolean? = null,
+    @SerialName("supports_vision")
+    public val supportsVision: Boolean? = null,
+    @SerialName("max_context_tokens")
+    public val maxContextTokens: Long? = null,
+    @SerialName("max_output_tokens")
+    public val maxOutputTokens: Long? = null,
+)
+
+/**
+ * `CreateAdminSpecPackageStripePriceResponse` model.
+ */
+@Serializable
+public data class CreateAdminSpecPackageStripePriceResponse(
+    @SerialName("package_id")
+    public val packageId: String,
+    @SerialName("stripe_price_id")
+    public val stripePriceId: String,
+    @SerialName("stripe_product_id")
+    public val stripeProductId: String,
+    @SerialName("amount_cents")
+    public val amountCents: Long,
+    public val currency: String,
+    public val interval: SpecPackagePricingBillingInterval,
 )
 
 /**
@@ -6462,7 +8086,7 @@ public data class ErrorModel(
     public val type: String,
     public val title: String,
     public val status: Long,
-    public val detail: String? = null,
+    public val detail: String,
     /**
      * Request ID for tracing
      */
@@ -7044,7 +8668,7 @@ public data class FleetLayout(
     /**
      * Agent id → its place on the canvas.
      */
-    public val positions: Map<String, Value3>,
+    public val positions: Map<String, Value4>,
     public val edges: List<FleetLayoutEdge>,
     public val notes: List<FleetLayoutNote>? = null,
     public val drafts: List<FleetLayoutDraft>? = null,
@@ -7134,7 +8758,7 @@ public data class FleetLayoutUpdate(
     /**
      * Agent id → its place on the canvas.
      */
-    public val positions: Map<String, Value2>,
+    public val positions: Map<String, Value3>,
     public val edges: List<FleetLayoutUpdateEdge>,
     public val notes: List<FleetLayoutUpdateNote>? = null,
     public val drafts: List<FleetLayoutUpdateDraft>? = null,
@@ -7292,24 +8916,6 @@ public data class GetAdminDisabledToolsResponse(
 )
 
 /**
- * `GetAdminFounderConfigResponse` model.
- */
-@Serializable
-public data class GetAdminFounderConfigResponse(
-    public val kv: FounderIdentity,
-    public val env: FounderIdentity,
-    public val effective: FounderIdentity,
-)
-
-/**
- * `GetAdminGuardrailsResponse` model.
- */
-@Serializable
-public data class GetAdminGuardrailsResponse(
-    public val guardrails: List<JsonObject>? = null,
-)
-
-/**
  * `GetAdminIntegrationOAuthProviderProvider` values.
  */
 ///
@@ -7376,62 +8982,6 @@ public data class GetAdminIntegrationOAuthProviderResponse(
 )
 
 /**
- * `GetAdminIntegrationsResponse` model.
- */
-@Serializable
-public data class GetAdminIntegrationsResponse(
-    public val integrations: List<GetAdminIntegrationsResponseIntegration>,
-)
-
-/**
- * `GetAdminIntegrationsResponseIntegration` model.
- */
-@Serializable
-public data class GetAdminIntegrationsResponseIntegration(
-    public val id: String,
-    public val name: String,
-    public val icon: String? = null,
-    @SerialName("auth_type")
-    public val authType: GetAdminIntegrationsResponseIntegrationAuthType? = null,
-    public val category: String? = null,
-    public val enabled: Boolean,
-    public val beta: Boolean? = null,
-    /**
-     * `kv` when an operator overrode the shipped default, `default` otherwise.
-     */
-    public val source: String? = null,
-)
-
-/**
- * `GetAdminIntegrationsResponseIntegrationAuthType` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = GetAdminIntegrationsResponseIntegrationAuthTypeSerializer::class)
-@JvmInline
-public value class GetAdminIntegrationsResponseIntegrationAuthType(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val OAUTH2: GetAdminIntegrationsResponseIntegrationAuthType = GetAdminIntegrationsResponseIntegrationAuthType("oauth2")
-        public val API_KEY: GetAdminIntegrationsResponseIntegrationAuthType = GetAdminIntegrationsResponseIntegrationAuthType("api_key")
-        public val NONE: GetAdminIntegrationsResponseIntegrationAuthType = GetAdminIntegrationsResponseIntegrationAuthType("none")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<GetAdminIntegrationsResponseIntegrationAuthType> = listOf(OAUTH2, API_KEY, NONE)
-    }
-}
-
-public object GetAdminIntegrationsResponseIntegrationAuthTypeSerializer : KSerializer<GetAdminIntegrationsResponseIntegrationAuthType> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetAdminIntegrationsResponseIntegrationAuthType", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: GetAdminIntegrationsResponseIntegrationAuthType): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): GetAdminIntegrationsResponseIntegrationAuthType = GetAdminIntegrationsResponseIntegrationAuthType(decoder.decodeString())
-}
-
-/**
  * `GetAdminLLMDefaultsResponse` model.
  */
 @Serializable
@@ -7470,16 +9020,6 @@ public data class GetAdminLLMDefaultsResponseProvider(
 )
 
 /**
- * `GetAdminOAuthIdentityConfigResponse` model.
- */
-@Serializable
-public data class GetAdminOAuthIdentityConfigResponse(
-    public val kv: OAuthIdentityConfig,
-    public val env: OAuthIdentityConfig,
-    public val effective: OAuthIdentityConfig,
-)
-
-/**
  * `GetAdminPlansResponse` model.
  */
 @Serializable
@@ -7498,163 +9038,6 @@ public data class GetAdminPlansResponsePlan(
      * Per-plan limits (`max_agents`, `max_monthly_tokens`, …).
      */
     public val quotas: JsonObject,
-)
-
-/**
- * `GetAdminRegistrationConfigResponse` model.
- */
-@Serializable
-public data class GetAdminRegistrationConfigResponse(
-    @SerialName("registration_open")
-    public val registrationOpen: Boolean,
-    /**
-     * `free` when nothing is stored.
-     */
-    @SerialName("default_signup_plan")
-    public val defaultSignupPlan: String,
-    /**
-     * Empty means no domain restriction.
-     */
-    @SerialName("allowed_email_domains")
-    public val allowedEmailDomains: List<String>,
-    @SerialName("setup_status")
-    public val setupStatus: SetupStateResponseStateStatus,
-    /**
-     * Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
-     * and this is the list it will name.
-     */
-    @SerialName("missing_required")
-    public val missingRequired: List<String>,
-    /**
-     * How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
-     * be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
-     * froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
-     * admin uses to decide when to open registration, so it is the one that must be complete
-     * rather than the roster.
-     */
-    @SerialName("waitlist_count")
-    public val waitlistCount: Long,
-    /**
-     * True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
-     * and stays bounded at 1000; the count is not.
-     */
-    @SerialName("waitlist_truncated")
-    public val waitlistTruncated: Boolean? = null,
-    /**
-     * Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
-     * `waitlist.length` as the total.
-     */
-    public val waitlist: List<GetAdminRegistrationConfigResponseWaitlistItem>,
-)
-
-/**
- * `GetAdminRegistrationConfigResponseWaitlistItem` model.
- */
-@Serializable
-public data class GetAdminRegistrationConfigResponseWaitlistItem(
-    @SerialName("tenant_id")
-    public val tenantId: String,
-    public val email: String,
-    @SerialName("created_at")
-    public val createdAt: String,
-)
-
-/**
- * `GetAdminSmtpConfigResponse` model.
- */
-@Serializable
-public data class GetAdminSmtpConfigResponse(
-    /**
-     * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-     */
-    public val kv: GetAdminSmtpConfigResponseKv,
-    /**
-     * What the environment supplies. `port` defaults to 465 when unset or unparseable.
-     */
-    public val env: GetAdminSmtpConfigResponseEnv,
-    /**
-     * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-     * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-     * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-     * inert.
-     */
-    public val source: GetAdminSmtpConfigResponseSource,
-)
-
-/**
- * What the environment supplies. `port` defaults to 465 when unset or unparseable.
- */
-@Serializable
-public data class GetAdminSmtpConfigResponseEnv(
-    public val host: String? = null,
-    public val port: Long? = null,
-    public val user: String? = null,
-    public val from: String? = null,
-    @SerialName("from_name")
-    public val fromName: String? = null,
-    /**
-     * Whether a credential is stored. The password itself is never returned by any read.
-     */
-    @SerialName("has_password")
-    public val hasPassword: Boolean? = null,
-)
-
-/**
- * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
- */
-@Serializable
-public data class GetAdminSmtpConfigResponseKv(
-    public val host: String? = null,
-    public val port: Long? = null,
-    public val user: String? = null,
-    public val from: String? = null,
-    @SerialName("from_name")
-    public val fromName: String? = null,
-    /**
-     * Whether a credential is stored. The password itself is never returned by any read.
-     */
-    @SerialName("has_password")
-    public val hasPassword: Boolean? = null,
-)
-
-/**
- * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
- * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
- * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
- * inert.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = GetAdminSmtpConfigResponseSourceSerializer::class)
-@JvmInline
-public value class GetAdminSmtpConfigResponseSource(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val KV: GetAdminSmtpConfigResponseSource = GetAdminSmtpConfigResponseSource("kv")
-        public val ENV: GetAdminSmtpConfigResponseSource = GetAdminSmtpConfigResponseSource("env")
-        public val NONE: GetAdminSmtpConfigResponseSource = GetAdminSmtpConfigResponseSource("none")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<GetAdminSmtpConfigResponseSource> = listOf(KV, ENV, NONE)
-    }
-}
-
-public object GetAdminSmtpConfigResponseSourceSerializer : KSerializer<GetAdminSmtpConfigResponseSource> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetAdminSmtpConfigResponseSource", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: GetAdminSmtpConfigResponseSource): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): GetAdminSmtpConfigResponseSource = GetAdminSmtpConfigResponseSource(decoder.decodeString())
-}
-
-/**
- * `GetAdminSpecPackagesResponse` model.
- */
-@Serializable
-public data class GetAdminSpecPackagesResponse(
-    public val packages: List<SpecPackage>,
 )
 
 /**
@@ -7837,7 +9220,7 @@ public data class GetAgentVersionDiffResponse(
     public val versionFrom: Long? = null,
     @SerialName("version_to")
     public val versionTo: Long? = null,
-    public val diff: Map<String, Value4>? = null,
+    public val diff: Map<String, Value5>? = null,
     @SerialName("changed_fields")
     public val changedFields: List<String>? = null,
 )
@@ -7975,14 +9358,6 @@ public data class GetDataExplorerValueResponse(
     @SerialName("size_bytes")
     public val sizeBytes: Long? = null,
     public val type: String? = null,
-)
-
-/**
- * `GetFeatureFlagsResponse` model.
- */
-@Serializable
-public data class GetFeatureFlagsResponse(
-    public val flags: List<JsonObject>? = null,
 )
 
 /**
@@ -8374,25 +9749,6 @@ public object GetMyHeadAgentTemplateResponseTierTierRequiredPlanSerializer : KSe
 }
 
 /**
- * `GetPlatformURLSResponse` model.
- */
-@Serializable
-public data class GetPlatformURLSResponse(
-    public val urls: GetPlatformURLSResponseURLS? = null,
-)
-
-/**
- * `GetPlatformURLSResponseURLS` model.
- */
-@Serializable
-public data class GetPlatformURLSResponseURLS(
-    @SerialName("public_base_url")
-    public val publicBaseURL: String? = null,
-    @SerialName("webhook_base_url")
-    public val webhookBaseURL: String? = null,
-)
-
-/**
  * `GetPublicBlogPostResponse` model.
  */
 @Serializable
@@ -8406,14 +9762,6 @@ public data class GetPublicBlogPostResponse(
 @Serializable
 public data class GetPublicFeaturedAgentResponse(
     public val agent: JsonObject? = null,
-)
-
-/**
- * `GetRateLimitsResponse` model.
- */
-@Serializable
-public data class GetRateLimitsResponse(
-    public val endpoints: List<JsonObject>? = null,
 )
 
 /**
@@ -8461,6 +9809,19 @@ public object GetReadyResponseStatusSerializer : KSerializer<GetReadyResponseSta
     override fun serialize(encoder: Encoder, value: GetReadyResponseStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetReadyResponseStatus = GetReadyResponseStatus(decoder.decodeString())
 }
+
+/**
+ * `GetReconciliationResponse` model.
+ */
+@Serializable
+public data class GetReconciliationResponse(
+    public val reconciliation: CostReconciliationResult? = null,
+    public val period: String,
+    /**
+     * Only when there is no result for the period.
+     */
+    public val message: String? = null,
+)
 
 /**
  * `GetRegistrationStatusResponse` model.
@@ -9346,6 +10707,20 @@ public data class ImportAdminConfigRequest(
 )
 
 /**
+ * `ImportAdminConfigResponse` model.
+ */
+@Serializable
+public data class ImportAdminConfigResponse(
+    public val imported: Boolean,
+    public val applied: List<String>,
+    public val skipped: List<String>,
+    @SerialName("applied_count")
+    public val appliedCount: Long,
+    @SerialName("skipped_count")
+    public val skippedCount: Long,
+)
+
+/**
  * `ImportAgentMemoryRequest` model.
  */
 @Serializable
@@ -10164,6 +11539,47 @@ public object KnowledgeBaseSearchResultStatusSerializer : KSerializer<KnowledgeB
 public data class KnowledgeBaseUpdate(
     public val name: String? = null,
     public val description: String? = null,
+)
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin-config.ts
+ * LandingConfig, defaults-projected so every key is present.
+ */
+@Serializable
+public data class LandingConfigSection(
+    @SerialName("public_agent_id")
+    public val publicAgentId: String? = null,
+    public val texts: Map<String, Value>,
+    @SerialName("multilang_enabled")
+    public val multilangEnabled: Boolean,
+    @SerialName("default_locale")
+    public val defaultLocale: String,
+    @SerialName("partners_enabled")
+    public val partnersEnabled: Boolean,
+    public val partners: List<LandingConfigSectionPartner>? = null,
+)
+
+/**
+ * `LandingConfigSectionPartner` model.
+ */
+@Serializable
+public data class LandingConfigSectionPartner(
+    public val id: String,
+    public val name: String,
+    public val tagline: String,
+    @SerialName("tagline_uk")
+    public val taglineUk: String? = null,
+    public val href: String,
+    public val logo: LandingConfigSectionPartnerLogo,
+)
+
+/**
+ * `LandingConfigSectionPartnerLogo` model.
+ */
+@Serializable
+public data class LandingConfigSectionPartnerLogo(
+    public val slug: String? = null,
+    public val url: String? = null,
 )
 
 /**
@@ -15093,6 +16509,19 @@ public data class PublicAgentCard(
     public val uiAvatar: JsonObject? = null,
     @SerialName("ui_drop_genome")
     public val uiDropGenome: JsonObject? = null,
+    /**
+     * The tenant that owns the agent — the same value as `PublicTenant.slug`. The
+     * `/c/{slug}/{agentId}` path segment is NOT authoritative (nothing checks it against the
+     * agent); compare it with this and build the way back from here. Present when the owner record
+     * has a slug.
+     */
+    @SerialName("tenant_slug")
+    public val tenantSlug: String? = null,
+    /**
+     * The owning tenant's display name. Present when the owner record has one.
+     */
+    @SerialName("tenant_name")
+    public val tenantName: String? = null,
 )
 
 /**
@@ -15571,6 +17000,16 @@ public data class PushBridgeTaskEventsResponse(
 public data class RateListingRequest(
     public val rating: Long,
     public val comment: String? = null,
+)
+
+/**
+ * `ReactivateTenantResponse` model.
+ */
+@Serializable
+public data class ReactivateTenantResponse(
+    public val reactivated: Boolean,
+    @SerialName("tenant_id")
+    public val tenantId: String,
 )
 
 /**
@@ -17130,6 +18569,14 @@ public object RunOutputSerializer : KSerializer<RunOutput> {
 }
 
 /**
+ * `RunReconciliationResponse` model.
+ */
+@Serializable
+public data class RunReconciliationResponse(
+    public val reconciliation: CostReconciliationResult,
+)
+
+/**
  * Resource limits for the run
  */
 @Serializable
@@ -18015,6 +19462,25 @@ public data class SetAdminLLMDefaultResponse(
 )
 
 /**
+ * `SetAdminModelConfigResponse` model.
+ */
+@Serializable
+public data class SetAdminModelConfigResponse(
+    @SerialName("default_provider")
+    public val defaultProvider: String? = null,
+    @SerialName("default_model")
+    public val defaultModel: String? = null,
+    @SerialName("default_endpoint")
+    public val defaultEndpoint: String? = null,
+    @SerialName("fallback_provider")
+    public val fallbackProvider: String? = null,
+    @SerialName("fallback_model")
+    public val fallbackModel: String? = null,
+    @SerialName("fallback_endpoint")
+    public val fallbackEndpoint: String? = null,
+)
+
+/**
  * `SetAgentCapabilitiesResponse` model.
  */
 @Serializable
@@ -18120,6 +19586,15 @@ public data class SetDataExplorerValueResponse(
     public val success: Boolean,
     @SerialName("size_bytes")
     public val sizeBytes: Long,
+)
+
+/**
+ * `SetFeatureFlagsResponse` model.
+ */
+@Serializable
+public data class SetFeatureFlagsResponse(
+    public val flags: List<JsonObject>? = null,
+    public val updated: Boolean,
 )
 
 /**
@@ -18239,6 +19714,15 @@ public data class SetModelPricingOverrideResponse(
      */
     @SerialName("cached_input_per_million")
     public val cachedInputPerMillion: Double? = null,
+)
+
+/**
+ * `SetRateLimitsResponse` model.
+ */
+@Serializable
+public data class SetRateLimitsResponse(
+    public val endpoints: List<JsonObject>? = null,
+    public val updated: Boolean,
 )
 
 /**
@@ -18391,7 +19875,7 @@ public data class SetupStateResponseState(
     /**
      * `live` is a one-way latch; closing registration afterwards does not undo it.
      */
-    public val status: SetupStateResponseStateStatus,
+    public val status: AdminRegistrationConfigSetupStatus,
     @SerialName("completed_steps")
     public val completedSteps: List<String>,
     @SerialName("registration_open")
@@ -18405,34 +19889,6 @@ public data class SetupStateResponseState(
     public val completedAt: String? = null,
     public val version: Long,
 )
-
-/**
- * `live` is a one-way latch; closing registration afterwards does not undo it.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = SetupStateResponseStateStatusSerializer::class)
-@JvmInline
-public value class SetupStateResponseStateStatus(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val IN_PROGRESS: SetupStateResponseStateStatus = SetupStateResponseStateStatus("in_progress")
-        public val LIVE: SetupStateResponseStateStatus = SetupStateResponseStateStatus("live")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<SetupStateResponseStateStatus> = listOf(IN_PROGRESS, LIVE)
-    }
-}
-
-public object SetupStateResponseStateStatusSerializer : KSerializer<SetupStateResponseStateStatus> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SetupStateResponseStateStatus", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: SetupStateResponseStateStatus): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): SetupStateResponseStateStatus = SetupStateResponseStateStatus(decoder.decodeString())
-}
 
 /**
  * `SetUserRoleRequest` model.
@@ -18681,7 +20137,7 @@ public data class SpecToolCatalog(
      * Tool name → the SPEC that owns it and the view to render its output with. Integration
      * aliases map onto their base tool's view.
      */
-    public val tools: Map<String, Value>,
+    public val tools: Map<String, Value2>,
 )
 
 /**
@@ -18942,6 +20398,17 @@ public data class SuspendAgentRequest(
 @Serializable
 public data class SuspendTenantRequest(
     public val reason: String? = null,
+)
+
+/**
+ * `SuspendTenantResponse` model.
+ */
+@Serializable
+public data class SuspendTenantResponse(
+    public val suspended: Boolean,
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    public val reason: String,
 )
 
 /**
@@ -20389,6 +21856,35 @@ public data class TestAdminSmtpConfigResponse(
 )
 
 /**
+ * `TestAdminStripeConfigResponseVariant1` model.
+ */
+@Serializable
+public data class TestAdminStripeConfigResponseVariant1(
+    public val ok: Boolean,
+    @SerialName("account_id")
+    public val accountId: String,
+    public val livemode: Boolean,
+    @SerialName("business_name")
+    public val businessName: String? = null,
+    public val country: String,
+    @SerialName("default_currency")
+    public val defaultCurrency: String,
+)
+
+/**
+ * `TestAdminStripeConfigResponseVariant2` model.
+ */
+@Serializable
+public data class TestAdminStripeConfigResponseVariant2(
+    public val ok: Boolean,
+    public val error: String,
+    /**
+     * Stripe's HTTP status, when it answered.
+     */
+    public val status: Long? = null,
+)
+
+/**
  * `TestAgentIntegrationResponse` model.
  */
 @Serializable
@@ -20700,6 +22196,108 @@ public data class UpdateACPSessionResponse(
 )
 
 /**
+ * `UpdateAdminAgentMemoryConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminAgentMemoryConfigResponse(
+    @SerialName("agent_memory")
+    public val agentMemory: UpdateAdminAgentMemoryConfigResponseAgentMemory,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminAgentMemoryConfigResponseAgentMemory` model.
+ */
+@Serializable
+public data class UpdateAdminAgentMemoryConfigResponseAgentMemory(
+    public val enabled: Boolean,
+    @SerialName("use_shared_store")
+    public val useSharedStore: Boolean,
+    @SerialName("default_max_entries")
+    public val defaultMaxEntries: Long,
+    @SerialName("default_retrieval_limit")
+    public val defaultRetrievalLimit: Long,
+    @SerialName("default_retrieval_strategy")
+    public val defaultRetrievalStrategy: String,
+    @SerialName("decay_enabled")
+    public val decayEnabled: Boolean,
+    @SerialName("decay_half_life_days")
+    public val decayHalfLifeDays: Long,
+    @SerialName("decay_job_interval_ms")
+    public val decayJobIntervalMs: Long,
+    @SerialName("extraction_max_tokens")
+    public val extractionMaxTokens: Long,
+    @SerialName("extraction_model")
+    public val extractionModel: String,
+    @SerialName("eviction_threshold")
+    public val evictionThreshold: Long,
+    @SerialName("embedding_dimensions")
+    public val embeddingDimensions: Long,
+    @SerialName("embedding_provider")
+    public val embeddingProvider: String,
+    @SerialName("embedding_model")
+    public val embeddingModel: String,
+    @SerialName("compression_model")
+    public val compressionModel: String,
+)
+
+/**
+ * `UpdateAdminAuthConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminAuthConfigResponse(
+    public val auth: UpdateAdminAuthConfigResponseAuth,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminAuthConfigResponseAuth` model.
+ */
+@Serializable
+public data class UpdateAdminAuthConfigResponseAuth(
+    @SerialName("super_admin_email")
+    public val superAdminEmail: String,
+    @SerialName("otp_ttl_ms")
+    public val otpTtlMs: Long,
+    @SerialName("verification_ttl_ms")
+    public val verificationTtlMs: Long,
+    @SerialName("jwks_cache_ttl_ms")
+    public val jwksCacheTtlMs: Long,
+    @SerialName("jwks_grace_ttl_ms")
+    public val jwksGraceTtlMs: Long,
+    @SerialName("api_key_cache_ttl_s")
+    public val apiKeyCacheTtlS: Long,
+    @SerialName("api_key_rotation_grace_period_h")
+    public val apiKeyRotationGracePeriodH: Long,
+)
+
+/**
+ * `UpdateAdminBackpressureConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminBackpressureConfigResponse(
+    public val backpressure: UpdateAdminBackpressureConfigResponseBackpressure,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminBackpressureConfigResponseBackpressure` model.
+ */
+@Serializable
+public data class UpdateAdminBackpressureConfigResponseBackpressure(
+    @SerialName("sse_buffer_max")
+    public val sseBufferMax: Long,
+    @SerialName("sse_high_watermark")
+    public val sseHighWatermark: Long,
+    @SerialName("sse_low_watermark")
+    public val sseLowWatermark: Long,
+    @SerialName("tool_queue_max_depth")
+    public val toolQueueMaxDepth: Long,
+    @SerialName("tool_queue_high_watermark")
+    public val toolQueueHighWatermark: Long,
+)
+
+/**
  * `UpdateAdminBlogConfigRequest` model.
  */
 @Serializable
@@ -20758,6 +22356,34 @@ public data class UpdateAdminBlogPostResponse(
 )
 
 /**
+ * `UpdateAdminCodeInterpreterConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminCodeInterpreterConfigResponse(
+    @SerialName("code_interpreter")
+    public val codeInterpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminCodeInterpreterConfigResponseCodeInterpreter` model.
+ */
+@Serializable
+public data class UpdateAdminCodeInterpreterConfigResponseCodeInterpreter(
+    public val isolation: String,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long? = null,
+    @SerialName("max_memory_mb")
+    public val maxMemoryMb: Long? = null,
+    @SerialName("container_image")
+    public val containerImage: String? = null,
+    @SerialName("python_container_image")
+    public val pythonContainerImage: String? = null,
+    @SerialName("python_sandbox_host_dir")
+    public val pythonSandboxHostDir: String? = null,
+)
+
+/**
  * `UpdateAdminDisabledToolsResponse` model.
  */
 @Serializable
@@ -20765,6 +22391,35 @@ public data class UpdateAdminDisabledToolsResponse(
     public val ok: Boolean,
     @SerialName("disabled_tools")
     public val disabledTools: List<String>,
+)
+
+/**
+ * `UpdateAdminEvaluationConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminEvaluationConfigResponse(
+    public val evaluation: UpdateAdminEvaluationConfigResponseEvaluation,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminEvaluationConfigResponseEvaluation` model.
+ */
+@Serializable
+public data class UpdateAdminEvaluationConfigResponseEvaluation(
+    public val enabled: Boolean,
+    @SerialName("max_concurrent_eval_cases")
+    public val maxConcurrentEvalCases: Long,
+    @SerialName("regression_threshold")
+    public val regressionThreshold: Double,
+    @SerialName("default_scorers")
+    public val defaultScorers: List<String>,
+    @SerialName("max_cases_per_dataset")
+    public val maxCasesPerDataset: Long,
+    @SerialName("eval_run_timeout_ms")
+    public val evalRunTimeoutMs: Long,
+    @SerialName("auto_rollback_enabled")
+    public val autoRollbackEnabled: Boolean,
 )
 
 /**
@@ -20781,6 +22436,217 @@ public data class UpdateAdminFounderConfigRequest(
 )
 
 /**
+ * `UpdateAdminGuardrailsResponse` model.
+ */
+@Serializable
+public data class UpdateAdminGuardrailsResponse(
+    public val guardrails: List<JsonObject>? = null,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminIdempotencyConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminIdempotencyConfigResponse(
+    public val idempotency: UpdateAdminIdempotencyConfigResponseIdempotency,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminIdempotencyConfigResponseIdempotency` model.
+ */
+@Serializable
+public data class UpdateAdminIdempotencyConfigResponseIdempotency(
+    public val enabled: Boolean,
+    @SerialName("ttl_hours")
+    public val ttlHours: Long,
+    @SerialName("max_response_cache_bytes")
+    public val maxResponseCacheBytes: Long,
+)
+
+/**
+ * `UpdateAdminIntegrationsResponse` model.
+ */
+@Serializable
+public data class UpdateAdminIntegrationsResponse(
+    public val integrations: List<UpdateAdminIntegrationsResponseIntegration>,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminIntegrationsResponseIntegration` model.
+ */
+@Serializable
+public data class UpdateAdminIntegrationsResponseIntegration(
+    public val id: String,
+    public val name: String,
+    public val icon: String? = null,
+    @SerialName("auth_type")
+    public val authType: AdminIntegrationsConfigIntegrationAuthType? = null,
+    public val category: String? = null,
+    public val enabled: Boolean,
+    public val beta: Boolean? = null,
+    /**
+     * `kv` when an operator overrode the shipped default, `default` otherwise.
+     */
+    public val source: String? = null,
+)
+
+/**
+ * `UpdateAdminLLMAdaptersConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminLLMAdaptersConfigResponse(
+    @SerialName("llm_adapters")
+    public val llmAdapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminLLMAdaptersConfigResponseLLMAdapters` model.
+ */
+@Serializable
+public data class UpdateAdminLLMAdaptersConfigResponseLLMAdapters(
+    @SerialName("max_retries")
+    public val maxRetries: Long? = null,
+    @SerialName("retry_base_delay_ms")
+    public val retryBaseDelayMs: Long? = null,
+    @SerialName("retry_max_delay_ms")
+    public val retryMaxDelayMs: Long? = null,
+    @SerialName("stream_empty_timeout_ms")
+    public val streamEmptyTimeoutMs: Long? = null,
+    @SerialName("circuit_breaker")
+    public val circuitBreaker: UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker? = null,
+    @SerialName("provider_rate_limits")
+    public val providerRateLimits: JsonObject? = null,
+)
+
+/**
+ * `UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker` model.
+ */
+@Serializable
+public data class UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker(
+    @SerialName("failure_threshold")
+    public val failureThreshold: Long? = null,
+    @SerialName("reset_timeout_ms")
+    public val resetTimeoutMs: Long? = null,
+    @SerialName("half_open_max_requests")
+    public val halfOpenMaxRequests: Long? = null,
+)
+
+/**
+ * `UpdateAdminLoggingConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminLoggingConfigResponse(
+    public val logging: UpdateAdminLoggingConfigResponseLogging,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminLoggingConfigResponseLogging` model.
+ */
+@Serializable
+public data class UpdateAdminLoggingConfigResponseLogging(
+    @SerialName("pii_mode")
+    public val piiMode: String,
+    @SerialName("log_agent_responses")
+    public val logAgentResponses: Boolean,
+    @SerialName("file_enabled")
+    public val fileEnabled: Boolean,
+    @SerialName("file_max_size_mb")
+    public val fileMaxSizeMb: Long,
+    @SerialName("file_retention_days")
+    public val fileRetentionDays: Long,
+    @SerialName("file_level")
+    public val fileLevel: String,
+    @SerialName("file_separate_error")
+    public val fileSeparateError: Boolean,
+    @SerialName("activity_log_verbosity")
+    public val activityLogVerbosity: String,
+)
+
+/**
+ * `UpdateAdminLongRunningConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminLongRunningConfigResponse(
+    @SerialName("long_running")
+    public val longRunning: UpdateAdminLongRunningConfigResponseLongRunning,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminLongRunningConfigResponseLongRunning` model.
+ */
+@Serializable
+public data class UpdateAdminLongRunningConfigResponseLongRunning(
+    public val enabled: Boolean,
+    @SerialName("max_duration_ms")
+    public val maxDurationMs: Long,
+    @SerialName("checkpoint_interval_ms")
+    public val checkpointIntervalMs: Long,
+    @SerialName("idle_timeout_ms")
+    public val idleTimeoutMs: Long,
+    @SerialName("continuation_token_ttl_days")
+    public val continuationTokenTtlDays: Long,
+    @SerialName("max_background_runs_per_tenant")
+    public val maxBackgroundRunsPerTenant: Long,
+)
+
+/**
+ * `UpdateAdminMCPConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminMCPConfigResponse(
+    public val mcp: UpdateAdminMCPConfigResponseMCP,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminMCPConfigResponseMCP` model.
+ */
+@Serializable
+public data class UpdateAdminMCPConfigResponseMCP(
+    @SerialName("max_sessions_per_server")
+    public val maxSessionsPerServer: Long,
+    @SerialName("max_total_stdio_sessions")
+    public val maxTotalStdioSessions: Long,
+    @SerialName("session_idle_timeout_ms")
+    public val sessionIdleTimeoutMs: Long,
+)
+
+/**
+ * `UpdateAdminMultimodalConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminMultimodalConfigResponse(
+    public val multimodal: UpdateAdminMultimodalConfigResponseMultimodal,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminMultimodalConfigResponseMultimodal` model.
+ */
+@Serializable
+public data class UpdateAdminMultimodalConfigResponseMultimodal(
+    public val enabled: Boolean,
+    @SerialName("max_image_size_bytes")
+    public val maxImageSizeBytes: Long,
+    @SerialName("max_audio_duration_s")
+    public val maxAudioDurationS: Long,
+    @SerialName("max_video_duration_s")
+    public val maxVideoDurationS: Long,
+    @SerialName("auto_resize_images")
+    public val autoResizeImages: Boolean,
+    @SerialName("supported_image_formats")
+    public val supportedImageFormats: List<String>,
+    @SerialName("supported_audio_formats")
+    public val supportedAudioFormats: List<String>,
+)
+
+/**
  * `UpdateAdminOAuthIdentityConfigRequest` model.
  */
 @Serializable
@@ -20793,6 +22659,30 @@ public data class UpdateAdminOAuthIdentityConfigRequest(
     public val appleBundleId: String? = null,
     @SerialName("oauth_return_to_hosts")
     public val oauthReturnToHosts: List<String>? = null,
+)
+
+/**
+ * `UpdateAdminPersistenceConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminPersistenceConfigResponse(
+    public val persistence: UpdateAdminPersistenceConfigResponsePersistence,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminPersistenceConfigResponsePersistence` model.
+ */
+@Serializable
+public data class UpdateAdminPersistenceConfigResponsePersistence(
+    @SerialName("snapshot_every_n_events")
+    public val snapshotEveryNEvents: Long,
+    @SerialName("checkpoint_after_tool_calls")
+    public val checkpointAfterToolCalls: Boolean,
+    @SerialName("usage_shards")
+    public val usageShards: Long,
+    @SerialName("auto_cap_kv_values")
+    public val autoCapKvValues: Boolean,
 )
 
 /**
@@ -20813,6 +22703,43 @@ public data class UpdateAdminPlansResponse(
 )
 
 /**
+ * `UpdateAdminPricingResponse` model.
+ */
+@Serializable
+public data class UpdateAdminPricingResponse(
+    public val pricing: UpdateAdminPricingResponsePricing,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminPricingResponsePricing` model.
+ */
+@Serializable
+public data class UpdateAdminPricingResponsePricing(
+    @SerialName("openai_compat_input")
+    public val openaiCompatInput: Double,
+    @SerialName("openai_compat_output")
+    public val openaiCompatOutput: Double,
+    @SerialName("anthropic_input")
+    public val anthropicInput: Long,
+    @SerialName("anthropic_output")
+    public val anthropicOutput: Double,
+    @SerialName("anthropic_thinking")
+    public val anthropicThinking: Double,
+)
+
+/**
+ * `UpdateAdminProviderResponse` model.
+ */
+@Serializable
+public data class UpdateAdminProviderResponse(
+    public val id: String,
+    public val enabled: Boolean,
+    @SerialName("model_allowlist")
+    public val modelAllowlist: List<String>,
+)
+
+/**
  * `UpdateAdminRegistrationConfigRequest` model.
  */
 @Serializable
@@ -20829,6 +22756,89 @@ public data class UpdateAdminRegistrationConfigRequest(
     public val defaultSignupPlan: String? = null,
     @SerialName("allowed_email_domains")
     public val allowedEmailDomains: List<String>? = null,
+)
+
+/**
+ * `UpdateAdminRetentionConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminRetentionConfigResponse(
+    public val retention: UpdateAdminRetentionConfigResponseRetention,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminRetentionConfigResponseRetention` model.
+ */
+@Serializable
+public data class UpdateAdminRetentionConfigResponseRetention(
+    @SerialName("completed_run_ttl_days")
+    public val completedRunTtlDays: Long,
+    @SerialName("event_ttl_days")
+    public val eventTtlDays: Long,
+    @SerialName("archive_to_sqlite")
+    public val archiveToSqlite: Boolean,
+    @SerialName("audit_log_ttl_days")
+    public val auditLogTtlDays: Long,
+    @SerialName("archive_job_interval_ms")
+    public val archiveJobIntervalMs: Long,
+    @SerialName("archive_batch_size")
+    public val archiveBatchSize: Long,
+    @SerialName("feed_ttl_days")
+    public val feedTtlDays: Long,
+    @SerialName("artifact_ttl_days")
+    public val artifactTtlDays: Long,
+    @SerialName("checkpoint_ttl_hours")
+    public val checkpointTtlHours: Long,
+)
+
+/**
+ * `UpdateAdminRunCommandConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminRunCommandConfigResponse(
+    @SerialName("run_command")
+    public val runCommand: UpdateAdminRunCommandConfigResponseRunCommand,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminRunCommandConfigResponseRunCommand` model.
+ */
+@Serializable
+public data class UpdateAdminRunCommandConfigResponseRunCommand(
+    public val enabled: Boolean,
+    public val isolation: String,
+    @SerialName("timeout_ms")
+    public val timeoutMs: Long,
+    @SerialName("max_output_bytes")
+    public val maxOutputBytes: Long,
+    @SerialName("allowed_commands")
+    public val allowedCommands: List<String>,
+    @SerialName("deno_allow")
+    public val denoAllow: List<String>,
+)
+
+/**
+ * `UpdateAdminServerConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminServerConfigResponse(
+    public val server: UpdateAdminServerConfigResponseServer,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminServerConfigResponseServer` model.
+ */
+@Serializable
+public data class UpdateAdminServerConfigResponseServer(
+    @SerialName("trust_proxy")
+    public val trustProxy: Boolean,
+    @SerialName("max_body_bytes")
+    public val maxBodyBytes: Long,
+    @SerialName("graceful_shutdown_timeout_ms")
+    public val gracefulShutdownTimeoutMs: Long? = null,
 )
 
 /**
@@ -20916,6 +22926,34 @@ public data class UpdateAdminSpecPackagesRequest(
 )
 
 /**
+ * `UpdateAdminSSEConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminSSEConfigResponse(
+    public val sse: UpdateAdminSSEConfigResponseSSE,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminSSEConfigResponseSSE` model.
+ */
+@Serializable
+public data class UpdateAdminSSEConfigResponseSSE(
+    @SerialName("heartbeat_interval_ms")
+    public val heartbeatIntervalMs: Long,
+    @SerialName("watch_timeout_ms")
+    public val watchTimeoutMs: Long,
+    @SerialName("poll_interval_ms")
+    public val pollIntervalMs: Long,
+    @SerialName("max_poll_interval_ms")
+    public val maxPollIntervalMs: Long,
+    @SerialName("reconnect_hint_ms")
+    public val reconnectHintMs: Long,
+    @SerialName("run_wait_timeout_sec")
+    public val runWaitTimeoutSec: Long,
+)
+
+/**
  * `UpdateAdminStripeConfigRequest` model.
  */
 @Serializable
@@ -20965,6 +23003,54 @@ public object UpdateAdminStripeConfigRequestModeSerializer : KSerializer<UpdateA
 }
 
 /**
+ * `UpdateAdminStripeConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminStripeConfigResponse(
+    public val stripe: UpdateAdminStripeConfigResponseStripe,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminStripeConfigResponseStripe` model.
+ */
+@Serializable
+public data class UpdateAdminStripeConfigResponseStripe(
+    public val enabled: Boolean,
+    public val mode: String,
+    @SerialName("secret_key")
+    public val secretKey: String,
+    @SerialName("webhook_secret")
+    public val webhookSecret: String,
+    @SerialName("publishable_key")
+    public val publishableKey: String,
+    @SerialName("price_id_starter")
+    public val priceIdStarter: String,
+    @SerialName("price_id_pro")
+    public val priceIdPro: String,
+    @SerialName("price_id_enterprise")
+    public val priceIdEnterprise: String,
+)
+
+/**
+ * `UpdateAdminTenantSettingsResponse` model.
+ */
+@Serializable
+public data class UpdateAdminTenantSettingsResponse(
+    @SerialName("tenant_id")
+    public val tenantId: String,
+    /**
+     * types/tenant.ts TenantSettings as stored — legacy records may lack fields.
+     */
+    public val settings: JsonObject,
+    /**
+     * Only when ever set.
+     */
+    @SerialName("legal_hold")
+    public val legalHold: Boolean? = null,
+)
+
+/**
  * `UpdateAdminToolOverridesRequest` model.
  */
 @Serializable
@@ -20979,6 +23065,95 @@ public data class UpdateAdminToolOverridesRequest(
 public data class UpdateAdminToolOverridesResponse(
     public val ok: Boolean,
     public val overrides: Map<String, ToolOverride>,
+)
+
+/**
+ * `UpdateAdminToolSecurityConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminToolSecurityConfigResponse(
+    @SerialName("tool_security")
+    public val toolSecurity: UpdateAdminToolSecurityConfigResponseToolSecurity,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
+ */
+@Serializable
+public data class UpdateAdminToolSecurityConfigResponseToolSecurity(
+    @SerialName("default_egress_policy")
+    public val defaultEgressPolicy: String,
+    @SerialName("egress_allowlist_per_tenant")
+    public val egressAllowlistPerTenant: List<JsonElement>? = null,
+    @SerialName("ssrf_deny_private_ranges")
+    public val ssrfDenyPrivateRanges: Boolean,
+    @SerialName("default_tool_timeout_ms")
+    public val defaultToolTimeoutMs: Long,
+    @SerialName("default_tool_max_payload_bytes")
+    public val defaultToolMaxPayloadBytes: Long,
+    @SerialName("default_tool_max_concurrency")
+    public val defaultToolMaxConcurrency: Long,
+    @SerialName("stdio_inherit_env")
+    public val stdioInheritEnv: Boolean,
+)
+
+/**
+ * `UpdateAdminWebhooksConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminWebhooksConfigResponse(
+    public val webhooks: UpdateAdminWebhooksConfigResponseWebhooks,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminWebhooksConfigResponseWebhooks` model.
+ */
+@Serializable
+public data class UpdateAdminWebhooksConfigResponseWebhooks(
+    public val enabled: Boolean,
+    @SerialName("max_subscriptions_per_tenant")
+    public val maxSubscriptionsPerTenant: Long,
+    @SerialName("delivery_timeout_ms")
+    public val deliveryTimeoutMs: Long,
+    @SerialName("max_retry_attempts")
+    public val maxRetryAttempts: Long,
+    @SerialName("require_https")
+    public val requireHTTPS: Boolean,
+    @SerialName("max_payload_bytes")
+    public val maxPayloadBytes: Long,
+)
+
+/**
+ * `UpdateAdminWorkerPoolConfigResponse` model.
+ */
+@Serializable
+public data class UpdateAdminWorkerPoolConfigResponse(
+    @SerialName("worker_pool")
+    public val workerPool: UpdateAdminWorkerPoolConfigResponseWorkerPool,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateAdminWorkerPoolConfigResponseWorkerPool` model.
+ */
+@Serializable
+public data class UpdateAdminWorkerPoolConfigResponseWorkerPool(
+    @SerialName("max_workers")
+    public val maxWorkers: Long,
+    @SerialName("default_mode")
+    public val defaultMode: String,
+    @SerialName("max_run_duration_ms")
+    public val maxRunDurationMs: Long,
+    @SerialName("reconciliation_interval_ms")
+    public val reconciliationIntervalMs: Long,
+    @SerialName("schedule_max_retries")
+    public val scheduleMaxRetries: Long,
+    @SerialName("schedule_base_delay_ms")
+    public val scheduleBaseDelayMs: Long,
+    @SerialName("max_queue_size")
+    public val maxQueueSize: Long? = null,
 )
 
 /**
@@ -21121,6 +23296,26 @@ public data class UpdateIntegrationRequest(
 )
 
 /**
+ * `UpdateMarkupConfigResponse` model.
+ */
+@Serializable
+public data class UpdateMarkupConfigResponse(
+    public val markup: UpdateMarkupConfigResponseMarkup,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateMarkupConfigResponseMarkup` model.
+ */
+@Serializable
+public data class UpdateMarkupConfigResponseMarkup(
+    @SerialName("platform_markup_percent")
+    public val platformMarkupPercent: Double,
+    @SerialName("model_markup_overrides")
+    public val modelMarkupOverrides: JsonObject,
+)
+
+/**
  * At least one editable field.
  */
 @Serializable
@@ -21187,6 +23382,26 @@ public data class UpdatePlatformURLSRequest(
 )
 
 /**
+ * `UpdatePlatformURLSResponse` model.
+ */
+@Serializable
+public data class UpdatePlatformURLSResponse(
+    public val urls: UpdatePlatformURLSResponseURLS? = null,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdatePlatformURLSResponseURLS` model.
+ */
+@Serializable
+public data class UpdatePlatformURLSResponseURLS(
+    @SerialName("public_base_url")
+    public val publicBaseURL: String? = null,
+    @SerialName("webhook_base_url")
+    public val webhookBaseURL: String? = null,
+)
+
+/**
  * `UpdateProjectRequest` model.
  */
 @Serializable
@@ -21209,6 +23424,24 @@ public data class UpdateProjectRequest(
 )
 
 /**
+ * `UpdateRuntimeConfigResponse` model.
+ */
+@Serializable
+public data class UpdateRuntimeConfigResponse(
+    /**
+     * The effective runtime config — sparse: only keys present in the platform config or the
+     * stored override (RuntimeConfig, every field optional).
+     */
+    public val runtime: JsonObject,
+    public val updated: Boolean,
+    /**
+     * Only when the body carried keys the schema does not declare.
+     */
+    @SerialName("ignored_keys")
+    public val ignoredKeys: List<String>? = null,
+)
+
+/**
  * `UpdateSecurityPoliciesRequest` model.
  */
 @Serializable
@@ -21223,6 +23456,32 @@ public data class UpdateSecurityPoliciesRequest(
     public val fileUploadAllowedMimeTypes: List<String>? = null,
     @SerialName("admin_provider_settings_require_super_admin")
     public val adminProviderSettingsRequireSuperAdmin: Boolean? = null,
+)
+
+/**
+ * `UpdateSecurityPoliciesResponse` model.
+ */
+@Serializable
+public data class UpdateSecurityPoliciesResponse(
+    public val policies: UpdateSecurityPoliciesResponsePolicies,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateSecurityPoliciesResponsePolicies` model.
+ */
+@Serializable
+public data class UpdateSecurityPoliciesResponsePolicies(
+    @SerialName("cors_allowed_origins")
+    public val corsAllowedOrigins: List<JsonElement>,
+    @SerialName("webhook_url_denylist")
+    public val webhookURLDenylist: List<String>,
+    @SerialName("file_upload_max_size_bytes")
+    public val fileUploadMaxSizeBytes: Long,
+    @SerialName("file_upload_allowed_mime_types")
+    public val fileUploadAllowedMimeTypes: List<JsonElement>,
+    @SerialName("admin_provider_settings_require_super_admin")
+    public val adminProviderSettingsRequireSuperAdmin: Boolean,
 )
 
 /**
@@ -21365,6 +23624,32 @@ public data class UpdateWebhooksPolicyRequest(
     public val deliveryBackoffBaseMs: Long? = null,
     @SerialName("delivery_max_window_hours")
     public val deliveryMaxWindowHours: Long? = null,
+)
+
+/**
+ * `UpdateWebhooksPolicyResponse` model.
+ */
+@Serializable
+public data class UpdateWebhooksPolicyResponse(
+    public val policy: UpdateWebhooksPolicyResponsePolicy,
+    public val updated: Boolean,
+)
+
+/**
+ * `UpdateWebhooksPolicyResponsePolicy` model.
+ */
+@Serializable
+public data class UpdateWebhooksPolicyResponsePolicy(
+    @SerialName("ssrf_check_at_subscription")
+    public val ssrfCheckAtSubscription: Boolean,
+    @SerialName("stripe_signature_tolerance_sec")
+    public val stripeSignatureToleranceSec: Long,
+    @SerialName("delivery_max_retries")
+    public val deliveryMaxRetries: Long,
+    @SerialName("delivery_backoff_base_ms")
+    public val deliveryBackoffBaseMs: Long,
+    @SerialName("delivery_max_window_hours")
+    public val deliveryMaxWindowHours: Long,
 )
 
 /**
@@ -21780,13 +24065,8 @@ public data class ValidationPolicy(
  */
 @Serializable
 public data class Value(
-    @SerialName("spec_id")
-    public val specId: String,
-    /**
-     * The parsed view document, or null when the stored view was unparseable.
-     */
-    @SerialName("output_view")
-    public val outputView: JsonElement,
+    public val en: String? = null,
+    public val uk: String? = null,
 )
 
 /**
@@ -21794,8 +24074,13 @@ public data class Value(
  */
 @Serializable
 public data class Value2(
-    public val x: Double,
-    public val y: Double,
+    @SerialName("spec_id")
+    public val specId: String,
+    /**
+     * The parsed view document, or null when the stored view was unparseable.
+     */
+    @SerialName("output_view")
+    public val outputView: JsonElement,
 )
 
 /**
@@ -21812,6 +24097,15 @@ public data class Value3(
  */
 @Serializable
 public data class Value4(
+    public val x: Double,
+    public val y: Double,
+)
+
+/**
+ * `Value5` model.
+ */
+@Serializable
+public data class Value5(
     public val from: JsonElement? = null,
     public val to: JsonElement? = null,
 )

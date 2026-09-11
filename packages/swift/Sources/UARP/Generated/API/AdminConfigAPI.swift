@@ -17,7 +17,7 @@ public struct AdminConfigAPI: Sendable {
     /// `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
     ///
     /// Required scopes: `admin`.
-    public func createAdminSpecPackageStripePrice(packageId: String, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func createAdminSpecPackageStripePrice(packageId: String, options: RequestOptions = .init()) async throws -> CreateAdminSpecPackageStripePriceResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/admin/config/spec-packages/\(encodePathSegment(packageId))/stripe-price",
@@ -122,7 +122,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    public func getAdminAgentMemoryConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminAgentMemoryConfig(options: RequestOptions = .init()) async throws -> AdminConfigAgentMemoryConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/agent-memory",
@@ -135,7 +135,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    public func getAdminAuthConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminAuthConfig(options: RequestOptions = .init()) async throws -> AdminConfigAuthConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/auth",
@@ -148,7 +148,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    public func getAdminBackpressureConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminBackpressureConfig(options: RequestOptions = .init()) async throws -> AdminConfigBackpressureConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/backpressure",
@@ -161,7 +161,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    public func getAdminCodeInterpreterConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminCodeInterpreterConfig(options: RequestOptions = .init()) async throws -> AdminConfigCodeInterpreterConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/code-interpreter",
@@ -187,7 +187,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    public func getAdminEvaluationConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminEvaluationConfig(options: RequestOptions = .init()) async throws -> AdminConfigEvaluationConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/evaluation",
@@ -204,7 +204,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/founder`
     ///
     /// Required scopes: `admin`.
-    public func getAdminFounderConfig(options: RequestOptions = .init()) async throws -> GetAdminFounderConfigResponse {
+    public func getAdminFounderConfig(options: RequestOptions = .init()) async throws -> AdminFounderConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/founder",
@@ -217,7 +217,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
-    public func getAdminGuardrails(options: RequestOptions = .init()) async throws -> GetAdminGuardrailsResponse {
+    public func getAdminGuardrails(options: RequestOptions = .init()) async throws -> AdminGuardrailsConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/guardrails",
@@ -230,7 +230,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    public func getAdminIdempotencyConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminIdempotencyConfig(options: RequestOptions = .init()) async throws -> AdminConfigIdempotencyConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/idempotency",
@@ -243,7 +243,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/integrations`
     ///
     /// Required scopes: `admin`.
-    public func getAdminIntegrations(options: RequestOptions = .init()) async throws -> GetAdminIntegrationsResponse {
+    public func getAdminIntegrations(options: RequestOptions = .init()) async throws -> AdminIntegrationsConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/integrations",
@@ -256,7 +256,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    public func getAdminLLMAdaptersConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminLLMAdaptersConfig(options: RequestOptions = .init()) async throws -> AdminConfigLLMAdaptersConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/llm-adapters",
@@ -269,7 +269,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    public func getAdminLoggingConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminLoggingConfig(options: RequestOptions = .init()) async throws -> AdminConfigLoggingConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/logging",
@@ -282,7 +282,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    public func getAdminLongRunningConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminLongRunningConfig(options: RequestOptions = .init()) async throws -> AdminConfigLongRunningConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/long-running",
@@ -295,7 +295,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    public func getAdminMCPConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminMCPConfig(options: RequestOptions = .init()) async throws -> AdminConfigMCPConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/mcp",
@@ -308,7 +308,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    public func getAdminMultimodalConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminMultimodalConfig(options: RequestOptions = .init()) async throws -> AdminConfigMultimodalConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/multimodal",
@@ -325,7 +325,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/oauth-identity`
     ///
     /// Required scopes: `admin`.
-    public func getAdminOAuthIdentityConfig(options: RequestOptions = .init()) async throws -> GetAdminOAuthIdentityConfigResponse {
+    public func getAdminOAuthIdentityConfig(options: RequestOptions = .init()) async throws -> AdminOAuthIdentityConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/oauth-identity",
@@ -338,7 +338,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    public func getAdminPersistenceConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminPersistenceConfig(options: RequestOptions = .init()) async throws -> AdminConfigPersistenceConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/persistence",
@@ -371,7 +371,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/registration`
     ///
     /// Required scopes: `admin`.
-    public func getAdminRegistrationConfig(options: RequestOptions = .init()) async throws -> GetAdminRegistrationConfigResponse {
+    public func getAdminRegistrationConfig(options: RequestOptions = .init()) async throws -> AdminRegistrationConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/registration",
@@ -384,7 +384,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    public func getAdminRetentionConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminRetentionConfig(options: RequestOptions = .init()) async throws -> AdminConfigRetentionConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/retention",
@@ -397,7 +397,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    public func getAdminRunCommandConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminRunCommandConfig(options: RequestOptions = .init()) async throws -> AdminConfigRunCommandConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/run-command",
@@ -410,7 +410,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    public func getAdminServerConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminServerConfig(options: RequestOptions = .init()) async throws -> AdminConfigServerConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/server",
@@ -444,7 +444,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/smtp`
     ///
     /// Required scopes: `admin`.
-    public func getAdminSmtpConfig(options: RequestOptions = .init()) async throws -> GetAdminSmtpConfigResponse {
+    public func getAdminSmtpConfig(options: RequestOptions = .init()) async throws -> AdminSmtpConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/smtp",
@@ -461,7 +461,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/spec-packages`
     ///
     /// Required scopes: `admin`.
-    public func getAdminSpecPackages(options: RequestOptions = .init()) async throws -> GetAdminSpecPackagesResponse {
+    public func getAdminSpecPackages(options: RequestOptions = .init()) async throws -> AdminSpecPackagesList {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/spec-packages",
@@ -474,7 +474,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    public func getAdminSSEConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminSSEConfig(options: RequestOptions = .init()) async throws -> AdminConfigSSEConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/sse",
@@ -487,7 +487,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/stripe`
     ///
     /// Required scopes: `admin`.
-    public func getAdminStripeConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminStripeConfig(options: RequestOptions = .init()) async throws -> AdminStripeConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/stripe",
@@ -515,7 +515,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    public func getAdminToolSecurityConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminToolSecurityConfig(options: RequestOptions = .init()) async throws -> AdminConfigToolSecurityConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/tool-security",
@@ -528,7 +528,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    public func getAdminWebhooksConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminWebhooksConfig(options: RequestOptions = .init()) async throws -> AdminConfigWebhooksConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/webhooks",
@@ -541,7 +541,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    public func getAdminWorkerPoolConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getAdminWorkerPoolConfig(options: RequestOptions = .init()) async throws -> AdminConfigWorkerPoolConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/worker-pool",
@@ -554,7 +554,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
-    public func getFeatureFlags(options: RequestOptions = .init()) async throws -> GetFeatureFlagsResponse {
+    public func getFeatureFlags(options: RequestOptions = .init()) async throws -> AdminFeatureFlagsConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/feature-flags",
@@ -580,7 +580,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/platform-urls`
     ///
     /// Required scopes: `admin`.
-    public func getPlatformURLS(options: RequestOptions = .init()) async throws -> GetPlatformURLSResponse {
+    public func getPlatformURLS(options: RequestOptions = .init()) async throws -> AdminPlatformURLSConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/platform-urls",
@@ -593,7 +593,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    public func getRateLimits(options: RequestOptions = .init()) async throws -> GetRateLimitsResponse {
+    public func getRateLimits(options: RequestOptions = .init()) async throws -> AdminRateLimitsConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/rate-limits",
@@ -606,7 +606,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/reconciliation`
     ///
     /// Required scopes: `admin`.
-    public func getReconciliation(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getReconciliation(options: RequestOptions = .init()) async throws -> GetReconciliationResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/reconciliation",
@@ -632,7 +632,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/security-policies`
     ///
     /// Required scopes: `admin`.
-    public func getSecurityPolicies(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getSecurityPolicies(options: RequestOptions = .init()) async throws -> AdminConfigSecurityPoliciesConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/security-policies",
@@ -645,7 +645,7 @@ public struct AdminConfigAPI: Sendable {
     /// `GET /api/v1/admin/config/webhooks-policy`
     ///
     /// Required scopes: `admin`.
-    public func getWebhooksPolicy(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func getWebhooksPolicy(options: RequestOptions = .init()) async throws -> AdminConfigWebhooksPolicyConfig {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/config/webhooks-policy",
@@ -658,7 +658,7 @@ public struct AdminConfigAPI: Sendable {
     /// `POST /api/v1/admin/config/import`
     ///
     /// Required scopes: `admin`.
-    public func `import`(body: ImportAdminConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func `import`(body: ImportAdminConfigRequest, options: RequestOptions = .init()) async throws -> ImportAdminConfigResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/admin/config/import",
@@ -727,7 +727,7 @@ public struct AdminConfigAPI: Sendable {
     /// `POST /api/v1/admin/config/reconciliation`
     ///
     /// Required scopes: `admin`.
-    public func runReconciliation(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func runReconciliation(options: RequestOptions = .init()) async throws -> RunReconciliationResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/admin/config/reconciliation",
@@ -741,7 +741,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
-    public func setFeatureFlags(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func setFeatureFlags(body: JSONObject, options: RequestOptions = .init()) async throws -> SetFeatureFlagsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/feature-flags",
@@ -784,7 +784,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    public func setRateLimits(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func setRateLimits(body: JSONObject, options: RequestOptions = .init()) async throws -> SetRateLimitsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/rate-limits",
@@ -818,7 +818,7 @@ public struct AdminConfigAPI: Sendable {
     /// `POST /api/v1/admin/config/stripe/test`
     ///
     /// Required scopes: `admin`.
-    public func testAdminStripeConfig(options: RequestOptions = .init()) async throws -> JSONObject {
+    public func testAdminStripeConfig(options: RequestOptions = .init()) async throws -> JSONValue {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/admin/config/stripe/test",
@@ -832,7 +832,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminAgentMemoryConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminAgentMemoryConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminAgentMemoryConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/agent-memory",
@@ -847,7 +847,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminAuthConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminAuthConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminAuthConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/auth",
@@ -862,7 +862,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminBackpressureConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminBackpressureConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminBackpressureConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/backpressure",
@@ -877,7 +877,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminCodeInterpreterConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminCodeInterpreterConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminCodeInterpreterConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/code-interpreter",
@@ -916,7 +916,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminEvaluationConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminEvaluationConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminEvaluationConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/evaluation",
@@ -937,7 +937,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/founder`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options: RequestOptions = .init()) async throws -> AdminFounderConfig {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/founder",
@@ -952,7 +952,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminGuardrails(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminGuardrails(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminGuardrailsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/guardrails",
@@ -967,7 +967,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminIdempotencyConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminIdempotencyConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminIdempotencyConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/idempotency",
@@ -982,7 +982,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/integrations`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminIntegrations(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminIntegrations(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminIntegrationsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/integrations",
@@ -997,7 +997,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLLMAdaptersConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminLLMAdaptersConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLLMAdaptersConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/llm-adapters",
@@ -1012,7 +1012,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLoggingConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminLoggingConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLoggingConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/logging",
@@ -1027,7 +1027,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLongRunningConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminLongRunningConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLongRunningConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/long-running",
@@ -1042,7 +1042,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminMCPConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminMCPConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminMCPConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/mcp",
@@ -1057,7 +1057,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminMultimodalConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminMultimodalConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminMultimodalConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/multimodal",
@@ -1077,7 +1077,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/oauth-identity`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options: RequestOptions = .init()) async throws -> AdminOAuthIdentityConfig {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/oauth-identity",
@@ -1092,7 +1092,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminPersistenceConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminPersistenceConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminPersistenceConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/persistence",
@@ -1137,7 +1137,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/registration`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options: RequestOptions = .init()) async throws -> AdminRegistrationConfig {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/registration",
@@ -1152,7 +1152,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminRetentionConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminRetentionConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminRetentionConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/retention",
@@ -1167,7 +1167,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminRunCommandConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminRunCommandConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminRunCommandConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/run-command",
@@ -1182,7 +1182,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminServerConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminServerConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminServerConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/server",
@@ -1246,7 +1246,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/smtp`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options: RequestOptions = .init()) async throws -> AdminSmtpConfig {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/smtp",
@@ -1276,7 +1276,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/spec-packages`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, confirmDrop: String? = nil, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, confirmDrop: String? = nil, options: RequestOptions = .init()) async throws -> AdminSpecPackagesList {
         var query: [URLQueryItem] = []
         if let confirmDrop {
             query.append(URLQueryItem(name: "confirm_drop", value: confirmDrop))
@@ -1296,7 +1296,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminSSEConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminSSEConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminSSEConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/sse",
@@ -1311,7 +1311,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/stripe`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminStripeConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/stripe",
@@ -1358,7 +1358,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminToolSecurityConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminToolSecurityConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminToolSecurityConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/tool-security",
@@ -1373,7 +1373,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminWebhooksConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminWebhooksConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminWebhooksConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/webhooks",
@@ -1388,7 +1388,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminWorkerPoolConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateAdminWorkerPoolConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminWorkerPoolConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/worker-pool",
@@ -1403,7 +1403,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/markup`
     ///
     /// Required scopes: `admin`.
-    public func updateMarkupConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateMarkupConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateMarkupConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/markup",
@@ -1418,7 +1418,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/platform-urls`
     ///
     /// Required scopes: `admin`.
-    public func updatePlatformURLS(body: UpdatePlatformURLSRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updatePlatformURLS(body: UpdatePlatformURLSRequest, options: RequestOptions = .init()) async throws -> UpdatePlatformURLSResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/platform-urls",
@@ -1433,7 +1433,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/runtime`
     ///
     /// Required scopes: `admin`.
-    public func updateRuntimeConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateRuntimeConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateRuntimeConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/runtime",
@@ -1448,7 +1448,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/security-policies`
     ///
     /// Required scopes: `admin`.
-    public func updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options: RequestOptions = .init()) async throws -> UpdateSecurityPoliciesResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/security-policies",
@@ -1463,7 +1463,7 @@ public struct AdminConfigAPI: Sendable {
     /// `PUT /api/v1/admin/config/webhooks-policy`
     ///
     /// Required scopes: `admin`.
-    public func updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options: RequestOptions = .init()) async throws -> JSONObject {
+    public func updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options: RequestOptions = .init()) async throws -> UpdateWebhooksPolicyResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/webhooks-policy",

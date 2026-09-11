@@ -219,7 +219,7 @@ package UARP.API.Admin is
    function Admin_Get_Landing_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Get_Landing_Config_Response;
 
    --  Admin: get curated model catalog
    --
@@ -229,7 +229,7 @@ package UARP.API.Admin is
    function Admin_Get_Model_Catalog
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Model_Catalog;
 
    --  Admin: model catalog default seed
    --
@@ -239,7 +239,7 @@ package UARP.API.Admin is
    function Admin_Get_Model_Catalog_Seed
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Model_Catalog_Seed;
 
    --  Admin: live per-model pricing (synced from the configured provider)
    --
@@ -249,7 +249,7 @@ package UARP.API.Admin is
    function Admin_Get_Model_Pricing
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Model_Pricing_List;
 
    --  Get configured OAuth login provider (super-admin)
    --
@@ -284,7 +284,7 @@ package UARP.API.Admin is
    function Admin_Get_Voice_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Get_Voice_Config_Response;
 
    --  Admin: get per-model voice presets
    --
@@ -294,7 +294,7 @@ package UARP.API.Admin is
    function Admin_Get_Voice_Presets
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Voice_Presets;
 
    --  Admin: enumerate available built-in tools
    --
@@ -325,7 +325,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Put_Landing_Config_Response;
 
    --  Admin: replace curated model catalog
    --
@@ -336,7 +336,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Put_Model_Catalog_Response;
 
    --  Set/update OAuth login provider (super-admin)
    --
@@ -363,7 +363,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Put_Voice_Config_Response;
 
    --  Admin: set per-model voice presets
    --
@@ -374,7 +374,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Voice_Presets;
 
    --  Replay a dead-lettered webhook event
    --
@@ -410,7 +410,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Create_Admin_Provider_Response;
 
    --  Create new tenant
    --
@@ -569,7 +569,7 @@ package UARP.API.Admin is
    function Get_Admin_Pricing
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Pricing_Config;
 
    --  Get single provider
    --
@@ -580,7 +580,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Provider_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Provider;
 
    --  Aggregate usage stats
    --
@@ -613,7 +613,7 @@ package UARP.API.Admin is
       Target_Id : String;
       Params : Get_Audit_For_Target_Params := No_Get_Audit_For_Target_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Audit_List;
 
    --  EU AI Act conformity report
    --
@@ -623,7 +623,7 @@ package UARP.API.Admin is
    function Get_Conformity_Report
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Conformity_Report;
 
    --  Immutable audit log
    --
@@ -855,7 +855,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Params : Query_Audit_Log_Params := No_Query_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Audit_List;
 
    --  Reactivate a suspended tenant
    --
@@ -866,7 +866,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Tenant_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Reactivate_Tenant_Response;
 
    --  Store or update one provider's OAuth credentials
    --
@@ -916,7 +916,7 @@ package UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Set_Admin_Model_Config_Response;
 
    --  Turn maintenance mode on or off (super-admin)
    --
@@ -953,7 +953,7 @@ package UARP.API.Admin is
       Payload : UARP.Models.Suspend_Tenant_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Suspend_Tenant_Response;
 
    --  Pull one provider's model list into the catalogue
    --
@@ -1028,7 +1028,7 @@ package UARP.API.Admin is
       Payload : UARP.JSON_Support.JSON_Value;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Pricing_Response;
 
    --  Update provider
    --
@@ -1040,7 +1040,7 @@ package UARP.API.Admin is
       Provider_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Provider_Response;
 
    --  Update tenant settings
    --
@@ -1052,7 +1052,7 @@ package UARP.API.Admin is
       Tenant_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Tenant_Settings_Response;
 
    --  Mark one feedback report resolved, or reopen it
    --

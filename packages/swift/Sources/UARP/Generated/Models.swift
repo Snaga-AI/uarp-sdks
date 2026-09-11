@@ -1134,6 +1134,1012 @@ public struct AdminAnalyticsOverviewResponseTotals: Codable, Hashable, Sendable 
     }
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; types/security.ts
+/// AdminAuditEntry — actor_* and ip_address conditional.
+public struct AdminAuditList: Codable, Hashable, Sendable {
+    public var entries: [AdminAuditListEntry]
+    public var total: Int
+
+    public init(entries: [AdminAuditListEntry], total: Int) {
+        self.entries = entries
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case entries = "entries"
+        case total = "total"
+    }
+}
+
+/// `AdminAuditListEntry` model.
+public struct AdminAuditListEntry: Codable, Hashable, Sendable {
+    public var entryId: String
+    public var actorTenantId: String?
+    public var action: String
+    public var targetType: String
+    public var targetId: String
+    public var details: JSONObject
+    public var ipAddress: String?
+    public var timestamp: String
+    public var actorKeyId: String?
+    public var actorUserId: String?
+
+    public init(entryId: String, actorTenantId: String? = nil, action: String, targetType: String, targetId: String, details: JSONObject, ipAddress: String? = nil, timestamp: String, actorKeyId: String? = nil, actorUserId: String? = nil) {
+        self.entryId = entryId
+        self.actorTenantId = actorTenantId
+        self.action = action
+        self.targetType = targetType
+        self.targetId = targetId
+        self.details = details
+        self.ipAddress = ipAddress
+        self.timestamp = timestamp
+        self.actorKeyId = actorKeyId
+        self.actorUserId = actorUserId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case entryId = "entry_id"
+        case actorTenantId = "actor_tenant_id"
+        case action = "action"
+        case targetType = "target_type"
+        case targetId = "target_id"
+        case details = "details"
+        case ipAddress = "ip_address"
+        case timestamp = "timestamp"
+        case actorKeyId = "actor_key_id"
+        case actorUserId = "actor_user_id"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `agent_memory` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigAgentMemoryConfig: Codable, Hashable, Sendable {
+    public var agentMemory: AdminConfigAgentMemoryConfigAgentMemory
+
+    public init(agentMemory: AdminConfigAgentMemoryConfigAgentMemory) {
+        self.agentMemory = agentMemory
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentMemory = "agent_memory"
+    }
+}
+
+/// `AdminConfigAgentMemoryConfigAgentMemory` model.
+public struct AdminConfigAgentMemoryConfigAgentMemory: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var useSharedStore: Bool
+    public var defaultMaxEntries: Int
+    public var defaultRetrievalLimit: Int
+    public var defaultRetrievalStrategy: String
+    public var decayEnabled: Bool
+    public var decayHalfLifeDays: Int
+    public var decayJobIntervalMs: Int
+    public var extractionMaxTokens: Int
+    public var extractionModel: String
+    public var evictionThreshold: Int
+    public var embeddingDimensions: Int
+    public var embeddingProvider: String
+    public var embeddingModel: String
+    public var compressionModel: String
+
+    public init(enabled: Bool, useSharedStore: Bool, defaultMaxEntries: Int, defaultRetrievalLimit: Int, defaultRetrievalStrategy: String, decayEnabled: Bool, decayHalfLifeDays: Int, decayJobIntervalMs: Int, extractionMaxTokens: Int, extractionModel: String, evictionThreshold: Int, embeddingDimensions: Int, embeddingProvider: String, embeddingModel: String, compressionModel: String) {
+        self.enabled = enabled
+        self.useSharedStore = useSharedStore
+        self.defaultMaxEntries = defaultMaxEntries
+        self.defaultRetrievalLimit = defaultRetrievalLimit
+        self.defaultRetrievalStrategy = defaultRetrievalStrategy
+        self.decayEnabled = decayEnabled
+        self.decayHalfLifeDays = decayHalfLifeDays
+        self.decayJobIntervalMs = decayJobIntervalMs
+        self.extractionMaxTokens = extractionMaxTokens
+        self.extractionModel = extractionModel
+        self.evictionThreshold = evictionThreshold
+        self.embeddingDimensions = embeddingDimensions
+        self.embeddingProvider = embeddingProvider
+        self.embeddingModel = embeddingModel
+        self.compressionModel = compressionModel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case useSharedStore = "use_shared_store"
+        case defaultMaxEntries = "default_max_entries"
+        case defaultRetrievalLimit = "default_retrieval_limit"
+        case defaultRetrievalStrategy = "default_retrieval_strategy"
+        case decayEnabled = "decay_enabled"
+        case decayHalfLifeDays = "decay_half_life_days"
+        case decayJobIntervalMs = "decay_job_interval_ms"
+        case extractionMaxTokens = "extraction_max_tokens"
+        case extractionModel = "extraction_model"
+        case evictionThreshold = "eviction_threshold"
+        case embeddingDimensions = "embedding_dimensions"
+        case embeddingProvider = "embedding_provider"
+        case embeddingModel = "embedding_model"
+        case compressionModel = "compression_model"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `auth` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigAuthConfig: Codable, Hashable, Sendable {
+    public var auth: AdminConfigAuthConfigAuth
+
+    public init(auth: AdminConfigAuthConfigAuth) {
+        self.auth = auth
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case auth = "auth"
+    }
+}
+
+/// `AdminConfigAuthConfigAuth` model.
+public struct AdminConfigAuthConfigAuth: Codable, Hashable, Sendable {
+    public var superAdminEmail: String
+    public var otpTtlMs: Int
+    public var verificationTtlMs: Int
+    public var jwksCacheTtlMs: Int
+    public var jwksGraceTtlMs: Int
+    public var apiKeyCacheTtlS: Int
+    public var apiKeyRotationGracePeriodH: Int
+
+    public init(superAdminEmail: String, otpTtlMs: Int, verificationTtlMs: Int, jwksCacheTtlMs: Int, jwksGraceTtlMs: Int, apiKeyCacheTtlS: Int, apiKeyRotationGracePeriodH: Int) {
+        self.superAdminEmail = superAdminEmail
+        self.otpTtlMs = otpTtlMs
+        self.verificationTtlMs = verificationTtlMs
+        self.jwksCacheTtlMs = jwksCacheTtlMs
+        self.jwksGraceTtlMs = jwksGraceTtlMs
+        self.apiKeyCacheTtlS = apiKeyCacheTtlS
+        self.apiKeyRotationGracePeriodH = apiKeyRotationGracePeriodH
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case superAdminEmail = "super_admin_email"
+        case otpTtlMs = "otp_ttl_ms"
+        case verificationTtlMs = "verification_ttl_ms"
+        case jwksCacheTtlMs = "jwks_cache_ttl_ms"
+        case jwksGraceTtlMs = "jwks_grace_ttl_ms"
+        case apiKeyCacheTtlS = "api_key_cache_ttl_s"
+        case apiKeyRotationGracePeriodH = "api_key_rotation_grace_period_h"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `backpressure` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigBackpressureConfig: Codable, Hashable, Sendable {
+    public var backpressure: AdminConfigBackpressureConfigBackpressure
+
+    public init(backpressure: AdminConfigBackpressureConfigBackpressure) {
+        self.backpressure = backpressure
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case backpressure = "backpressure"
+    }
+}
+
+/// `AdminConfigBackpressureConfigBackpressure` model.
+public struct AdminConfigBackpressureConfigBackpressure: Codable, Hashable, Sendable {
+    public var sseBufferMax: Int
+    public var sseHighWatermark: Int
+    public var sseLowWatermark: Int
+    public var toolQueueMaxDepth: Int
+    public var toolQueueHighWatermark: Int
+
+    public init(sseBufferMax: Int, sseHighWatermark: Int, sseLowWatermark: Int, toolQueueMaxDepth: Int, toolQueueHighWatermark: Int) {
+        self.sseBufferMax = sseBufferMax
+        self.sseHighWatermark = sseHighWatermark
+        self.sseLowWatermark = sseLowWatermark
+        self.toolQueueMaxDepth = toolQueueMaxDepth
+        self.toolQueueHighWatermark = toolQueueHighWatermark
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sseBufferMax = "sse_buffer_max"
+        case sseHighWatermark = "sse_high_watermark"
+        case sseLowWatermark = "sse_low_watermark"
+        case toolQueueMaxDepth = "tool_queue_max_depth"
+        case toolQueueHighWatermark = "tool_queue_high_watermark"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `code_interpreter` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigCodeInterpreterConfig: Codable, Hashable, Sendable {
+    public var codeInterpreter: AdminConfigCodeInterpreterConfigCodeInterpreter
+
+    public init(codeInterpreter: AdminConfigCodeInterpreterConfigCodeInterpreter) {
+        self.codeInterpreter = codeInterpreter
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case codeInterpreter = "code_interpreter"
+    }
+}
+
+/// `AdminConfigCodeInterpreterConfigCodeInterpreter` model.
+public struct AdminConfigCodeInterpreterConfigCodeInterpreter: Codable, Hashable, Sendable {
+    public var isolation: String
+    public var timeoutMs: Int?
+    public var maxMemoryMb: Int?
+    public var containerImage: String?
+    public var pythonContainerImage: String?
+    public var pythonSandboxHostDir: String?
+
+    public init(isolation: String, timeoutMs: Int? = nil, maxMemoryMb: Int? = nil, containerImage: String? = nil, pythonContainerImage: String? = nil, pythonSandboxHostDir: String? = nil) {
+        self.isolation = isolation
+        self.timeoutMs = timeoutMs
+        self.maxMemoryMb = maxMemoryMb
+        self.containerImage = containerImage
+        self.pythonContainerImage = pythonContainerImage
+        self.pythonSandboxHostDir = pythonSandboxHostDir
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case isolation = "isolation"
+        case timeoutMs = "timeout_ms"
+        case maxMemoryMb = "max_memory_mb"
+        case containerImage = "container_image"
+        case pythonContainerImage = "python_container_image"
+        case pythonSandboxHostDir = "python_sandbox_host_dir"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `evaluation` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigEvaluationConfig: Codable, Hashable, Sendable {
+    public var evaluation: AdminConfigEvaluationConfigEvaluation
+
+    public init(evaluation: AdminConfigEvaluationConfigEvaluation) {
+        self.evaluation = evaluation
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case evaluation = "evaluation"
+    }
+}
+
+/// `AdminConfigEvaluationConfigEvaluation` model.
+public struct AdminConfigEvaluationConfigEvaluation: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxConcurrentEvalCases: Int
+    public var regressionThreshold: Double
+    public var defaultScorers: [String]
+    public var maxCasesPerDataset: Int
+    public var evalRunTimeoutMs: Int
+    public var autoRollbackEnabled: Bool
+
+    public init(enabled: Bool, maxConcurrentEvalCases: Int, regressionThreshold: Double, defaultScorers: [String], maxCasesPerDataset: Int, evalRunTimeoutMs: Int, autoRollbackEnabled: Bool) {
+        self.enabled = enabled
+        self.maxConcurrentEvalCases = maxConcurrentEvalCases
+        self.regressionThreshold = regressionThreshold
+        self.defaultScorers = defaultScorers
+        self.maxCasesPerDataset = maxCasesPerDataset
+        self.evalRunTimeoutMs = evalRunTimeoutMs
+        self.autoRollbackEnabled = autoRollbackEnabled
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxConcurrentEvalCases = "max_concurrent_eval_cases"
+        case regressionThreshold = "regression_threshold"
+        case defaultScorers = "default_scorers"
+        case maxCasesPerDataset = "max_cases_per_dataset"
+        case evalRunTimeoutMs = "eval_run_timeout_ms"
+        case autoRollbackEnabled = "auto_rollback_enabled"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `idempotency` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigIdempotencyConfig: Codable, Hashable, Sendable {
+    public var idempotency: AdminConfigIdempotencyConfigIdempotency
+
+    public init(idempotency: AdminConfigIdempotencyConfigIdempotency) {
+        self.idempotency = idempotency
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case idempotency = "idempotency"
+    }
+}
+
+/// `AdminConfigIdempotencyConfigIdempotency` model.
+public struct AdminConfigIdempotencyConfigIdempotency: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var ttlHours: Int
+    public var maxResponseCacheBytes: Int
+
+    public init(enabled: Bool, ttlHours: Int, maxResponseCacheBytes: Int) {
+        self.enabled = enabled
+        self.ttlHours = ttlHours
+        self.maxResponseCacheBytes = maxResponseCacheBytes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case ttlHours = "ttl_hours"
+        case maxResponseCacheBytes = "max_response_cache_bytes"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `llm_adapters` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigLLMAdaptersConfig: Codable, Hashable, Sendable {
+    public var llmAdapters: AdminConfigLLMAdaptersConfigLLMAdapters
+
+    public init(llmAdapters: AdminConfigLLMAdaptersConfigLLMAdapters) {
+        self.llmAdapters = llmAdapters
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case llmAdapters = "llm_adapters"
+    }
+}
+
+/// `AdminConfigLLMAdaptersConfigLLMAdapters` model.
+public struct AdminConfigLLMAdaptersConfigLLMAdapters: Codable, Hashable, Sendable {
+    public var maxRetries: Int?
+    public var retryBaseDelayMs: Int?
+    public var retryMaxDelayMs: Int?
+    public var streamEmptyTimeoutMs: Int?
+    public var circuitBreaker: AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker?
+    public var providerRateLimits: JSONObject?
+
+    public init(maxRetries: Int? = nil, retryBaseDelayMs: Int? = nil, retryMaxDelayMs: Int? = nil, streamEmptyTimeoutMs: Int? = nil, circuitBreaker: AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker? = nil, providerRateLimits: JSONObject? = nil) {
+        self.maxRetries = maxRetries
+        self.retryBaseDelayMs = retryBaseDelayMs
+        self.retryMaxDelayMs = retryMaxDelayMs
+        self.streamEmptyTimeoutMs = streamEmptyTimeoutMs
+        self.circuitBreaker = circuitBreaker
+        self.providerRateLimits = providerRateLimits
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxRetries = "max_retries"
+        case retryBaseDelayMs = "retry_base_delay_ms"
+        case retryMaxDelayMs = "retry_max_delay_ms"
+        case streamEmptyTimeoutMs = "stream_empty_timeout_ms"
+        case circuitBreaker = "circuit_breaker"
+        case providerRateLimits = "provider_rate_limits"
+    }
+}
+
+/// `AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker` model.
+public struct AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker: Codable, Hashable, Sendable {
+    public var failureThreshold: Int?
+    public var resetTimeoutMs: Int?
+    public var halfOpenMaxRequests: Int?
+
+    public init(failureThreshold: Int? = nil, resetTimeoutMs: Int? = nil, halfOpenMaxRequests: Int? = nil) {
+        self.failureThreshold = failureThreshold
+        self.resetTimeoutMs = resetTimeoutMs
+        self.halfOpenMaxRequests = halfOpenMaxRequests
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case failureThreshold = "failure_threshold"
+        case resetTimeoutMs = "reset_timeout_ms"
+        case halfOpenMaxRequests = "half_open_max_requests"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `logging` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigLoggingConfig: Codable, Hashable, Sendable {
+    public var logging: AdminConfigLoggingConfigLogging
+
+    public init(logging: AdminConfigLoggingConfigLogging) {
+        self.logging = logging
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case logging = "logging"
+    }
+}
+
+/// `AdminConfigLoggingConfigLogging` model.
+public struct AdminConfigLoggingConfigLogging: Codable, Hashable, Sendable {
+    public var piiMode: String
+    public var logAgentResponses: Bool
+    public var fileEnabled: Bool
+    public var fileMaxSizeMb: Int
+    public var fileRetentionDays: Int
+    public var fileLevel: String
+    public var fileSeparateError: Bool
+    public var activityLogVerbosity: String
+
+    public init(piiMode: String, logAgentResponses: Bool, fileEnabled: Bool, fileMaxSizeMb: Int, fileRetentionDays: Int, fileLevel: String, fileSeparateError: Bool, activityLogVerbosity: String) {
+        self.piiMode = piiMode
+        self.logAgentResponses = logAgentResponses
+        self.fileEnabled = fileEnabled
+        self.fileMaxSizeMb = fileMaxSizeMb
+        self.fileRetentionDays = fileRetentionDays
+        self.fileLevel = fileLevel
+        self.fileSeparateError = fileSeparateError
+        self.activityLogVerbosity = activityLogVerbosity
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case piiMode = "pii_mode"
+        case logAgentResponses = "log_agent_responses"
+        case fileEnabled = "file_enabled"
+        case fileMaxSizeMb = "file_max_size_mb"
+        case fileRetentionDays = "file_retention_days"
+        case fileLevel = "file_level"
+        case fileSeparateError = "file_separate_error"
+        case activityLogVerbosity = "activity_log_verbosity"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `long_running` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigLongRunningConfig: Codable, Hashable, Sendable {
+    public var longRunning: AdminConfigLongRunningConfigLongRunning
+
+    public init(longRunning: AdminConfigLongRunningConfigLongRunning) {
+        self.longRunning = longRunning
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case longRunning = "long_running"
+    }
+}
+
+/// `AdminConfigLongRunningConfigLongRunning` model.
+public struct AdminConfigLongRunningConfigLongRunning: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxDurationMs: Int
+    public var checkpointIntervalMs: Int
+    public var idleTimeoutMs: Int
+    public var continuationTokenTtlDays: Int
+    public var maxBackgroundRunsPerTenant: Int
+
+    public init(enabled: Bool, maxDurationMs: Int, checkpointIntervalMs: Int, idleTimeoutMs: Int, continuationTokenTtlDays: Int, maxBackgroundRunsPerTenant: Int) {
+        self.enabled = enabled
+        self.maxDurationMs = maxDurationMs
+        self.checkpointIntervalMs = checkpointIntervalMs
+        self.idleTimeoutMs = idleTimeoutMs
+        self.continuationTokenTtlDays = continuationTokenTtlDays
+        self.maxBackgroundRunsPerTenant = maxBackgroundRunsPerTenant
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxDurationMs = "max_duration_ms"
+        case checkpointIntervalMs = "checkpoint_interval_ms"
+        case idleTimeoutMs = "idle_timeout_ms"
+        case continuationTokenTtlDays = "continuation_token_ttl_days"
+        case maxBackgroundRunsPerTenant = "max_background_runs_per_tenant"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `mcp` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigMCPConfig: Codable, Hashable, Sendable {
+    public var mcp: AdminConfigMCPConfigMCP
+
+    public init(mcp: AdminConfigMCPConfigMCP) {
+        self.mcp = mcp
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mcp = "mcp"
+    }
+}
+
+/// `AdminConfigMCPConfigMCP` model.
+public struct AdminConfigMCPConfigMCP: Codable, Hashable, Sendable {
+    public var maxSessionsPerServer: Int
+    public var maxTotalStdioSessions: Int
+    public var sessionIdleTimeoutMs: Int
+
+    public init(maxSessionsPerServer: Int, maxTotalStdioSessions: Int, sessionIdleTimeoutMs: Int) {
+        self.maxSessionsPerServer = maxSessionsPerServer
+        self.maxTotalStdioSessions = maxTotalStdioSessions
+        self.sessionIdleTimeoutMs = sessionIdleTimeoutMs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxSessionsPerServer = "max_sessions_per_server"
+        case maxTotalStdioSessions = "max_total_stdio_sessions"
+        case sessionIdleTimeoutMs = "session_idle_timeout_ms"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `multimodal` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigMultimodalConfig: Codable, Hashable, Sendable {
+    public var multimodal: AdminConfigMultimodalConfigMultimodal
+
+    public init(multimodal: AdminConfigMultimodalConfigMultimodal) {
+        self.multimodal = multimodal
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case multimodal = "multimodal"
+    }
+}
+
+/// `AdminConfigMultimodalConfigMultimodal` model.
+public struct AdminConfigMultimodalConfigMultimodal: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxImageSizeBytes: Int
+    public var maxAudioDurationS: Int
+    public var maxVideoDurationS: Int
+    public var autoResizeImages: Bool
+    public var supportedImageFormats: [String]
+    public var supportedAudioFormats: [String]
+
+    public init(enabled: Bool, maxImageSizeBytes: Int, maxAudioDurationS: Int, maxVideoDurationS: Int, autoResizeImages: Bool, supportedImageFormats: [String], supportedAudioFormats: [String]) {
+        self.enabled = enabled
+        self.maxImageSizeBytes = maxImageSizeBytes
+        self.maxAudioDurationS = maxAudioDurationS
+        self.maxVideoDurationS = maxVideoDurationS
+        self.autoResizeImages = autoResizeImages
+        self.supportedImageFormats = supportedImageFormats
+        self.supportedAudioFormats = supportedAudioFormats
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxImageSizeBytes = "max_image_size_bytes"
+        case maxAudioDurationS = "max_audio_duration_s"
+        case maxVideoDurationS = "max_video_duration_s"
+        case autoResizeImages = "auto_resize_images"
+        case supportedImageFormats = "supported_image_formats"
+        case supportedAudioFormats = "supported_audio_formats"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `persistence` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigPersistenceConfig: Codable, Hashable, Sendable {
+    public var persistence: AdminConfigPersistenceConfigPersistence
+
+    public init(persistence: AdminConfigPersistenceConfigPersistence) {
+        self.persistence = persistence
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case persistence = "persistence"
+    }
+}
+
+/// `AdminConfigPersistenceConfigPersistence` model.
+public struct AdminConfigPersistenceConfigPersistence: Codable, Hashable, Sendable {
+    public var snapshotEveryNEvents: Int
+    public var checkpointAfterToolCalls: Bool
+    public var usageShards: Int
+    public var autoCapKvValues: Bool
+
+    public init(snapshotEveryNEvents: Int, checkpointAfterToolCalls: Bool, usageShards: Int, autoCapKvValues: Bool) {
+        self.snapshotEveryNEvents = snapshotEveryNEvents
+        self.checkpointAfterToolCalls = checkpointAfterToolCalls
+        self.usageShards = usageShards
+        self.autoCapKvValues = autoCapKvValues
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case snapshotEveryNEvents = "snapshot_every_n_events"
+        case checkpointAfterToolCalls = "checkpoint_after_tool_calls"
+        case usageShards = "usage_shards"
+        case autoCapKvValues = "auto_cap_kv_values"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `retention` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigRetentionConfig: Codable, Hashable, Sendable {
+    public var retention: AdminConfigRetentionConfigRetention
+
+    public init(retention: AdminConfigRetentionConfigRetention) {
+        self.retention = retention
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case retention = "retention"
+    }
+}
+
+/// `AdminConfigRetentionConfigRetention` model.
+public struct AdminConfigRetentionConfigRetention: Codable, Hashable, Sendable {
+    public var completedRunTtlDays: Int
+    public var eventTtlDays: Int
+    public var archiveToSqlite: Bool
+    public var auditLogTtlDays: Int
+    public var archiveJobIntervalMs: Int
+    public var archiveBatchSize: Int
+    public var feedTtlDays: Int
+    public var artifactTtlDays: Int
+    public var checkpointTtlHours: Int
+
+    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, checkpointTtlHours: Int) {
+        self.completedRunTtlDays = completedRunTtlDays
+        self.eventTtlDays = eventTtlDays
+        self.archiveToSqlite = archiveToSqlite
+        self.auditLogTtlDays = auditLogTtlDays
+        self.archiveJobIntervalMs = archiveJobIntervalMs
+        self.archiveBatchSize = archiveBatchSize
+        self.feedTtlDays = feedTtlDays
+        self.artifactTtlDays = artifactTtlDays
+        self.checkpointTtlHours = checkpointTtlHours
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case completedRunTtlDays = "completed_run_ttl_days"
+        case eventTtlDays = "event_ttl_days"
+        case archiveToSqlite = "archive_to_sqlite"
+        case auditLogTtlDays = "audit_log_ttl_days"
+        case archiveJobIntervalMs = "archive_job_interval_ms"
+        case archiveBatchSize = "archive_batch_size"
+        case feedTtlDays = "feed_ttl_days"
+        case artifactTtlDays = "artifact_ttl_days"
+        case checkpointTtlHours = "checkpoint_ttl_hours"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `run_command` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigRunCommandConfig: Codable, Hashable, Sendable {
+    public var runCommand: AdminConfigRunCommandConfigRunCommand
+
+    public init(runCommand: AdminConfigRunCommandConfigRunCommand) {
+        self.runCommand = runCommand
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runCommand = "run_command"
+    }
+}
+
+/// `AdminConfigRunCommandConfigRunCommand` model.
+public struct AdminConfigRunCommandConfigRunCommand: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var isolation: String
+    public var timeoutMs: Int
+    public var maxOutputBytes: Int
+    public var allowedCommands: [String]
+    public var denoAllow: [String]
+
+    public init(enabled: Bool, isolation: String, timeoutMs: Int, maxOutputBytes: Int, allowedCommands: [String], denoAllow: [String]) {
+        self.enabled = enabled
+        self.isolation = isolation
+        self.timeoutMs = timeoutMs
+        self.maxOutputBytes = maxOutputBytes
+        self.allowedCommands = allowedCommands
+        self.denoAllow = denoAllow
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case isolation = "isolation"
+        case timeoutMs = "timeout_ms"
+        case maxOutputBytes = "max_output_bytes"
+        case allowedCommands = "allowed_commands"
+        case denoAllow = "deno_allow"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policies` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigSecurityPoliciesConfig: Codable, Hashable, Sendable {
+    public var policies: AdminConfigSecurityPoliciesConfigPolicies
+
+    public init(policies: AdminConfigSecurityPoliciesConfigPolicies) {
+        self.policies = policies
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case policies = "policies"
+    }
+}
+
+/// `AdminConfigSecurityPoliciesConfigPolicies` model.
+public struct AdminConfigSecurityPoliciesConfigPolicies: Codable, Hashable, Sendable {
+    public var corsAllowedOrigins: [JSONValue]
+    public var webhookURLDenylist: [String]
+    public var fileUploadMaxSizeBytes: Int
+    public var fileUploadAllowedMimeTypes: [JSONValue]
+    public var adminProviderSettingsRequireSuperAdmin: Bool
+
+    public init(corsAllowedOrigins: [JSONValue], webhookURLDenylist: [String], fileUploadMaxSizeBytes: Int, fileUploadAllowedMimeTypes: [JSONValue], adminProviderSettingsRequireSuperAdmin: Bool) {
+        self.corsAllowedOrigins = corsAllowedOrigins
+        self.webhookURLDenylist = webhookURLDenylist
+        self.fileUploadMaxSizeBytes = fileUploadMaxSizeBytes
+        self.fileUploadAllowedMimeTypes = fileUploadAllowedMimeTypes
+        self.adminProviderSettingsRequireSuperAdmin = adminProviderSettingsRequireSuperAdmin
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case corsAllowedOrigins = "cors_allowed_origins"
+        case webhookURLDenylist = "webhook_url_denylist"
+        case fileUploadMaxSizeBytes = "file_upload_max_size_bytes"
+        case fileUploadAllowedMimeTypes = "file_upload_allowed_mime_types"
+        case adminProviderSettingsRequireSuperAdmin = "admin_provider_settings_require_super_admin"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `server` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigServerConfig: Codable, Hashable, Sendable {
+    public var server: AdminConfigServerConfigServer
+
+    public init(server: AdminConfigServerConfigServer) {
+        self.server = server
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case server = "server"
+    }
+}
+
+/// `AdminConfigServerConfigServer` model.
+public struct AdminConfigServerConfigServer: Codable, Hashable, Sendable {
+    public var trustProxy: Bool
+    public var maxBodyBytes: Int
+    public var gracefulShutdownTimeoutMs: Int?
+
+    public init(trustProxy: Bool, maxBodyBytes: Int, gracefulShutdownTimeoutMs: Int? = nil) {
+        self.trustProxy = trustProxy
+        self.maxBodyBytes = maxBodyBytes
+        self.gracefulShutdownTimeoutMs = gracefulShutdownTimeoutMs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case trustProxy = "trust_proxy"
+        case maxBodyBytes = "max_body_bytes"
+        case gracefulShutdownTimeoutMs = "graceful_shutdown_timeout_ms"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `sse` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigSSEConfig: Codable, Hashable, Sendable {
+    public var sse: AdminConfigSSEConfigSSE
+
+    public init(sse: AdminConfigSSEConfigSSE) {
+        self.sse = sse
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sse = "sse"
+    }
+}
+
+/// `AdminConfigSSEConfigSSE` model.
+public struct AdminConfigSSEConfigSSE: Codable, Hashable, Sendable {
+    public var heartbeatIntervalMs: Int
+    public var watchTimeoutMs: Int
+    public var pollIntervalMs: Int
+    public var maxPollIntervalMs: Int
+    public var reconnectHintMs: Int
+    public var runWaitTimeoutSec: Int
+
+    public init(heartbeatIntervalMs: Int, watchTimeoutMs: Int, pollIntervalMs: Int, maxPollIntervalMs: Int, reconnectHintMs: Int, runWaitTimeoutSec: Int) {
+        self.heartbeatIntervalMs = heartbeatIntervalMs
+        self.watchTimeoutMs = watchTimeoutMs
+        self.pollIntervalMs = pollIntervalMs
+        self.maxPollIntervalMs = maxPollIntervalMs
+        self.reconnectHintMs = reconnectHintMs
+        self.runWaitTimeoutSec = runWaitTimeoutSec
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case heartbeatIntervalMs = "heartbeat_interval_ms"
+        case watchTimeoutMs = "watch_timeout_ms"
+        case pollIntervalMs = "poll_interval_ms"
+        case maxPollIntervalMs = "max_poll_interval_ms"
+        case reconnectHintMs = "reconnect_hint_ms"
+        case runWaitTimeoutSec = "run_wait_timeout_sec"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `tool_security` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigToolSecurityConfig: Codable, Hashable, Sendable {
+    public var toolSecurity: AdminConfigToolSecurityConfigToolSecurity
+
+    public init(toolSecurity: AdminConfigToolSecurityConfigToolSecurity) {
+        self.toolSecurity = toolSecurity
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolSecurity = "tool_security"
+    }
+}
+
+/// `AdminConfigToolSecurityConfigToolSecurity` model.
+public struct AdminConfigToolSecurityConfigToolSecurity: Codable, Hashable, Sendable {
+    public var defaultEgressPolicy: String
+    public var egressAllowlistPerTenant: [JSONValue]?
+    public var ssrfDenyPrivateRanges: Bool
+    public var defaultToolTimeoutMs: Int
+    public var defaultToolMaxPayloadBytes: Int
+    public var defaultToolMaxConcurrency: Int
+    public var stdioInheritEnv: Bool
+
+    public init(defaultEgressPolicy: String, egressAllowlistPerTenant: [JSONValue]? = nil, ssrfDenyPrivateRanges: Bool, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
+        self.defaultEgressPolicy = defaultEgressPolicy
+        self.egressAllowlistPerTenant = egressAllowlistPerTenant
+        self.ssrfDenyPrivateRanges = ssrfDenyPrivateRanges
+        self.defaultToolTimeoutMs = defaultToolTimeoutMs
+        self.defaultToolMaxPayloadBytes = defaultToolMaxPayloadBytes
+        self.defaultToolMaxConcurrency = defaultToolMaxConcurrency
+        self.stdioInheritEnv = stdioInheritEnv
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case defaultEgressPolicy = "default_egress_policy"
+        case egressAllowlistPerTenant = "egress_allowlist_per_tenant"
+        case ssrfDenyPrivateRanges = "ssrf_deny_private_ranges"
+        case defaultToolTimeoutMs = "default_tool_timeout_ms"
+        case defaultToolMaxPayloadBytes = "default_tool_max_payload_bytes"
+        case defaultToolMaxConcurrency = "default_tool_max_concurrency"
+        case stdioInheritEnv = "stdio_inherit_env"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `webhooks` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigWebhooksConfig: Codable, Hashable, Sendable {
+    public var webhooks: AdminConfigWebhooksConfigWebhooks
+
+    public init(webhooks: AdminConfigWebhooksConfigWebhooks) {
+        self.webhooks = webhooks
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case webhooks = "webhooks"
+    }
+}
+
+/// `AdminConfigWebhooksConfigWebhooks` model.
+public struct AdminConfigWebhooksConfigWebhooks: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxSubscriptionsPerTenant: Int
+    public var deliveryTimeoutMs: Int
+    public var maxRetryAttempts: Int
+    public var requireHTTPS: Bool
+    public var maxPayloadBytes: Int
+
+    public init(enabled: Bool, maxSubscriptionsPerTenant: Int, deliveryTimeoutMs: Int, maxRetryAttempts: Int, requireHTTPS: Bool, maxPayloadBytes: Int) {
+        self.enabled = enabled
+        self.maxSubscriptionsPerTenant = maxSubscriptionsPerTenant
+        self.deliveryTimeoutMs = deliveryTimeoutMs
+        self.maxRetryAttempts = maxRetryAttempts
+        self.requireHTTPS = requireHTTPS
+        self.maxPayloadBytes = maxPayloadBytes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxSubscriptionsPerTenant = "max_subscriptions_per_tenant"
+        case deliveryTimeoutMs = "delivery_timeout_ms"
+        case maxRetryAttempts = "max_retry_attempts"
+        case requireHTTPS = "require_https"
+        case maxPayloadBytes = "max_payload_bytes"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policy` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+public struct AdminConfigWebhooksPolicyConfig: Codable, Hashable, Sendable {
+    public var policy: AdminConfigWebhooksPolicyConfigPolicy
+
+    public init(policy: AdminConfigWebhooksPolicyConfigPolicy) {
+        self.policy = policy
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case policy = "policy"
+    }
+}
+
+/// `AdminConfigWebhooksPolicyConfigPolicy` model.
+public struct AdminConfigWebhooksPolicyConfigPolicy: Codable, Hashable, Sendable {
+    public var ssrfCheckAtSubscription: Bool
+    public var stripeSignatureToleranceSec: Int
+    public var deliveryMaxRetries: Int
+    public var deliveryBackoffBaseMs: Int
+    public var deliveryMaxWindowHours: Int
+
+    public init(ssrfCheckAtSubscription: Bool, stripeSignatureToleranceSec: Int, deliveryMaxRetries: Int, deliveryBackoffBaseMs: Int, deliveryMaxWindowHours: Int) {
+        self.ssrfCheckAtSubscription = ssrfCheckAtSubscription
+        self.stripeSignatureToleranceSec = stripeSignatureToleranceSec
+        self.deliveryMaxRetries = deliveryMaxRetries
+        self.deliveryBackoffBaseMs = deliveryBackoffBaseMs
+        self.deliveryMaxWindowHours = deliveryMaxWindowHours
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ssrfCheckAtSubscription = "ssrf_check_at_subscription"
+        case stripeSignatureToleranceSec = "stripe_signature_tolerance_sec"
+        case deliveryMaxRetries = "delivery_max_retries"
+        case deliveryBackoffBaseMs = "delivery_backoff_base_ms"
+        case deliveryMaxWindowHours = "delivery_max_window_hours"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `worker_pool` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+public struct AdminConfigWorkerPoolConfig: Codable, Hashable, Sendable {
+    public var workerPool: AdminConfigWorkerPoolConfigWorkerPool
+
+    public init(workerPool: AdminConfigWorkerPoolConfigWorkerPool) {
+        self.workerPool = workerPool
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case workerPool = "worker_pool"
+    }
+}
+
+/// `AdminConfigWorkerPoolConfigWorkerPool` model.
+public struct AdminConfigWorkerPoolConfigWorkerPool: Codable, Hashable, Sendable {
+    public var maxWorkers: Int
+    public var defaultMode: String
+    public var maxRunDurationMs: Int
+    public var reconciliationIntervalMs: Int
+    public var scheduleMaxRetries: Int
+    public var scheduleBaseDelayMs: Int
+    public var maxQueueSize: Int?
+
+    public init(maxWorkers: Int, defaultMode: String, maxRunDurationMs: Int, reconciliationIntervalMs: Int, scheduleMaxRetries: Int, scheduleBaseDelayMs: Int, maxQueueSize: Int? = nil) {
+        self.maxWorkers = maxWorkers
+        self.defaultMode = defaultMode
+        self.maxRunDurationMs = maxRunDurationMs
+        self.reconciliationIntervalMs = reconciliationIntervalMs
+        self.scheduleMaxRetries = scheduleMaxRetries
+        self.scheduleBaseDelayMs = scheduleBaseDelayMs
+        self.maxQueueSize = maxQueueSize
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxWorkers = "max_workers"
+        case defaultMode = "default_mode"
+        case maxRunDurationMs = "max_run_duration_ms"
+        case reconciliationIntervalMs = "reconciliation_interval_ms"
+        case scheduleMaxRetries = "schedule_max_retries"
+        case scheduleBaseDelayMs = "schedule_base_delay_ms"
+        case maxQueueSize = "max_queue_size"
+    }
+}
+
 /// `AdminDataExplorerRawKeysResponse` model.
 public struct AdminDataExplorerRawKeysResponse: Codable, Hashable, Sendable {
     public var keys: [AdminDataExplorerRawKeysResponseKey]
@@ -1209,6 +2215,81 @@ public struct AdminDataExplorerRawKeysResponseKeyType: RawRepresentable, Codable
     public static let knownValues: [AdminDataExplorerRawKeysResponseKeyType] = [.null, .array, .string, .number, .boolean, .object, .undefined]
 }
 
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminFeatureFlagsConfig: Codable, Hashable, Sendable {
+    public var flags: [JSONObject]?
+
+    public init(flags: [JSONObject]? = nil) {
+        self.flags = flags
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case flags = "flags"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminFounderConfig: Codable, Hashable, Sendable {
+    public var kv: FounderIdentity
+    public var env: FounderIdentity
+    public var effective: FounderIdentity
+
+    public init(kv: FounderIdentity, env: FounderIdentity, effective: FounderIdentity) {
+        self.kv = kv
+        self.env = env
+        self.effective = effective
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kv = "kv"
+        case env = "env"
+        case effective = "effective"
+    }
+}
+
+/// `AdminGetLandingConfigResponse` model.
+public struct AdminGetLandingConfigResponse: Codable, Hashable, Sendable {
+    public var landing: LandingConfigSection
+    public var source: AdminGetLandingConfigResponseSource
+    /// KV versionstamp; echo it as `expected_version` on PUT.
+    public var version: String?
+
+    public init(landing: LandingConfigSection, source: AdminGetLandingConfigResponseSource, version: String? = nil) {
+        self.landing = landing
+        self.source = source
+        self.version = version
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case landing = "landing"
+        case source = "source"
+        case version = "version"
+    }
+}
+
+/// `AdminGetLandingConfigResponseSource` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminGetLandingConfigResponseSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let kv = AdminGetLandingConfigResponseSource(rawValue: "kv")
+    public static let none = AdminGetLandingConfigResponseSource(rawValue: "none")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminGetLandingConfigResponseSource] = [.kv, .none]
+}
+
 /// `AdminGetReconciliationResponse` model.
 public struct AdminGetReconciliationResponse: Codable, Hashable, Sendable {
     public var tenantId: String
@@ -1267,6 +2348,158 @@ public struct AdminGetReconciliationResponseReconciliation: Codable, Hashable, S
             try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
         }
     }
+}
+
+/// `AdminGetVoiceConfigResponse` model.
+public struct AdminGetVoiceConfigResponse: Codable, Hashable, Sendable {
+    public var voice: AdminGetVoiceConfigResponseVoiceVariant1?
+    public var source: AdminGetLandingConfigResponseSource
+
+    public init(voice: AdminGetVoiceConfigResponseVoiceVariant1? = nil, source: AdminGetLandingConfigResponseSource) {
+        self.voice = voice
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case voice = "voice"
+        case source = "source"
+    }
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1` model.
+public struct AdminGetVoiceConfigResponseVoiceVariant1: Codable, Hashable, Sendable {
+    public var stt: AdminGetVoiceConfigResponseVoiceVariant1stt
+    public var tts: AdminGetVoiceConfigResponseVoiceVariant1tts
+
+    public init(stt: AdminGetVoiceConfigResponseVoiceVariant1stt, tts: AdminGetVoiceConfigResponseVoiceVariant1tts) {
+        self.stt = stt
+        self.tts = tts
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stt = "stt"
+        case tts = "tts"
+    }
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1stt` model.
+public struct AdminGetVoiceConfigResponseVoiceVariant1stt: Codable, Hashable, Sendable {
+    public var provider: String
+    public var model: String
+
+    public init(provider: String, model: String) {
+        self.provider = provider
+        self.model = model
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case model = "model"
+    }
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1tts` model.
+public struct AdminGetVoiceConfigResponseVoiceVariant1tts: Codable, Hashable, Sendable {
+    public var provider: String
+    public var model: String
+    public var voice: String
+
+    public init(provider: String, model: String, voice: String) {
+        self.provider = provider
+        self.model = model
+        self.voice = voice
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case model = "model"
+        case voice = "voice"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminGuardrailsConfig: Codable, Hashable, Sendable {
+    public var guardrails: [JSONObject]?
+
+    public init(guardrails: [JSONObject]? = nil) {
+        self.guardrails = guardrails
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case guardrails = "guardrails"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminIntegrationsConfig: Codable, Hashable, Sendable {
+    public var integrations: [AdminIntegrationsConfigIntegration]
+
+    public init(integrations: [AdminIntegrationsConfigIntegration]) {
+        self.integrations = integrations
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case integrations = "integrations"
+    }
+}
+
+/// `AdminIntegrationsConfigIntegration` model.
+public struct AdminIntegrationsConfigIntegration: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var icon: String?
+    public var authType: AdminIntegrationsConfigIntegrationAuthType?
+    public var category: String?
+    public var enabled: Bool
+    public var beta: Bool?
+    /// `kv` when an operator overrode the shipped default, `default` otherwise.
+    public var source: String?
+
+    public init(id: String, name: String, icon: String? = nil, authType: AdminIntegrationsConfigIntegrationAuthType? = nil, category: String? = nil, enabled: Bool, beta: Bool? = nil, source: String? = nil) {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.authType = authType
+        self.category = category
+        self.enabled = enabled
+        self.beta = beta
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case icon = "icon"
+        case authType = "auth_type"
+        case category = "category"
+        case enabled = "enabled"
+        case beta = "beta"
+        case source = "source"
+    }
+}
+
+/// `AdminIntegrationsConfigIntegrationAuthType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminIntegrationsConfigIntegrationAuthType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let oauth2 = AdminIntegrationsConfigIntegrationAuthType(rawValue: "oauth2")
+    public static let apiKey = AdminIntegrationsConfigIntegrationAuthType(rawValue: "api_key")
+    public static let none = AdminIntegrationsConfigIntegrationAuthType(rawValue: "none")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminIntegrationsConfigIntegrationAuthType] = [.oauth2, .apiKey, .none]
 }
 
 /// `AdminListToolsResponse` model.
@@ -1349,6 +2582,693 @@ public struct AdminListWebhookDLQResponseEntry: Codable, Hashable, Sendable {
     }
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The stored catalogue or,
+/// with `source: seed`, the built-in registry; rows carry computed
+/// `effective_pricing`/`effective_tier`.
+public struct AdminModelCatalog: Codable, Hashable, Sendable {
+    public var models: [AdminModelCatalogModel]
+    public var source: AdminModelCatalogSource
+    public var count: Int
+    public var version: String?
+
+    public init(models: [AdminModelCatalogModel], source: AdminModelCatalogSource, count: Int, version: String? = nil) {
+        self.models = models
+        self.source = source
+        self.count = count
+        self.version = version
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case models = "models"
+        case source = "source"
+        case count = "count"
+        case version = "version"
+    }
+}
+
+/// `AdminModelCatalogModel` model.
+public struct AdminModelCatalogModel: Codable, Hashable, Sendable {
+    public var id: String
+    public var provider: String
+    public var displayName: String
+    public var maxContextTokens: Int
+    public var maxOutputTokens: Int
+    public var supportsStreaming: Bool
+    public var supportsToolCalls: Bool
+    public var supportsJSONMode: Bool
+    public var supportsVision: Bool?
+    public var tier: String?
+    /// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+    /// seed answers.
+    public var effectivePricing: AdminModelCatalogModelEffectivePricing?
+    /// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+    /// seed answers.
+    public var effectiveTier: String?
+
+    public init(id: String, provider: String, displayName: String, maxContextTokens: Int, maxOutputTokens: Int, supportsStreaming: Bool, supportsToolCalls: Bool, supportsJSONMode: Bool, supportsVision: Bool? = nil, tier: String? = nil, effectivePricing: AdminModelCatalogModelEffectivePricing? = nil, effectiveTier: String? = nil) {
+        self.id = id
+        self.provider = provider
+        self.displayName = displayName
+        self.maxContextTokens = maxContextTokens
+        self.maxOutputTokens = maxOutputTokens
+        self.supportsStreaming = supportsStreaming
+        self.supportsToolCalls = supportsToolCalls
+        self.supportsJSONMode = supportsJSONMode
+        self.supportsVision = supportsVision
+        self.tier = tier
+        self.effectivePricing = effectivePricing
+        self.effectiveTier = effectiveTier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case provider = "provider"
+        case displayName = "display_name"
+        case maxContextTokens = "max_context_tokens"
+        case maxOutputTokens = "max_output_tokens"
+        case supportsStreaming = "supports_streaming"
+        case supportsToolCalls = "supports_tool_calls"
+        case supportsJSONMode = "supports_json_mode"
+        case supportsVision = "supports_vision"
+        case tier = "tier"
+        case effectivePricing = "effective_pricing"
+        case effectiveTier = "effective_tier"
+    }
+}
+
+/// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+/// seed answers.
+public struct AdminModelCatalogModelEffectivePricing: Codable, Hashable, Sendable {
+    public var inputPerMillion: Double
+    public var outputPerMillion: Double
+    public var cachedInputPerMillion: Double
+    public var source: String
+    public var layer: String
+    public var key: String
+    public var match: String
+    public var confidence: String
+
+    public init(inputPerMillion: Double, outputPerMillion: Double, cachedInputPerMillion: Double, source: String, layer: String, key: String, match: String, confidence: String) {
+        self.inputPerMillion = inputPerMillion
+        self.outputPerMillion = outputPerMillion
+        self.cachedInputPerMillion = cachedInputPerMillion
+        self.source = source
+        self.layer = layer
+        self.key = key
+        self.match = match
+        self.confidence = confidence
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case inputPerMillion = "input_per_million"
+        case outputPerMillion = "output_per_million"
+        case cachedInputPerMillion = "cached_input_per_million"
+        case source = "source"
+        case layer = "layer"
+        case key = "key"
+        case match = "match"
+        case confidence = "confidence"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; the built-in registry merged
+/// with every configured provider's live model list — no `source`, no `version`, no computed
+/// economics.
+public struct AdminModelCatalogSeed: Codable, Hashable, Sendable {
+    public var models: [AdminModelCatalogSeedModel]
+    public var count: Int
+
+    public init(models: [AdminModelCatalogSeedModel], count: Int) {
+        self.models = models
+        self.count = count
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case models = "models"
+        case count = "count"
+    }
+}
+
+/// `AdminModelCatalogSeedModel` model.
+public struct AdminModelCatalogSeedModel: Codable, Hashable, Sendable {
+    public var id: String
+    public var provider: String
+    public var displayName: String
+    public var maxContextTokens: Int
+    public var maxOutputTokens: Int
+    public var supportsStreaming: Bool
+    public var supportsToolCalls: Bool
+    public var supportsJSONMode: Bool
+    public var supportsVision: Bool?
+    public var tier: String?
+
+    public init(id: String, provider: String, displayName: String, maxContextTokens: Int, maxOutputTokens: Int, supportsStreaming: Bool, supportsToolCalls: Bool, supportsJSONMode: Bool, supportsVision: Bool? = nil, tier: String? = nil) {
+        self.id = id
+        self.provider = provider
+        self.displayName = displayName
+        self.maxContextTokens = maxContextTokens
+        self.maxOutputTokens = maxOutputTokens
+        self.supportsStreaming = supportsStreaming
+        self.supportsToolCalls = supportsToolCalls
+        self.supportsJSONMode = supportsJSONMode
+        self.supportsVision = supportsVision
+        self.tier = tier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case provider = "provider"
+        case displayName = "display_name"
+        case maxContextTokens = "max_context_tokens"
+        case maxOutputTokens = "max_output_tokens"
+        case supportsStreaming = "supports_streaming"
+        case supportsToolCalls = "supports_tool_calls"
+        case supportsJSONMode = "supports_json_mode"
+        case supportsVision = "supports_vision"
+        case tier = "tier"
+    }
+}
+
+/// `AdminModelCatalogSource` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminModelCatalogSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let kv = AdminModelCatalogSource(rawValue: "kv")
+    public static let seed = AdminModelCatalogSource(rawValue: "seed")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminModelCatalogSource] = [.kv, .seed]
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; billing/cost-estimator.ts
+/// listAllPricing — a live in-memory view, `layer` says where each price comes from.
+public struct AdminModelPricingList: Codable, Hashable, Sendable {
+    public var models: [AdminModelPricingListModel]
+    public var count: Int
+    public var source: String
+
+    public init(models: [AdminModelPricingListModel], count: Int, source: String) {
+        self.models = models
+        self.count = count
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case models = "models"
+        case count = "count"
+        case source = "source"
+    }
+}
+
+/// `AdminModelPricingListModel` model.
+public struct AdminModelPricingListModel: Codable, Hashable, Sendable {
+    public var model: String
+    public var layer: String
+    public var inputPerMillion: Double
+    public var outputPerMillion: Double
+
+    public init(model: String, layer: String, inputPerMillion: Double, outputPerMillion: Double) {
+        self.model = model
+        self.layer = layer
+        self.inputPerMillion = inputPerMillion
+        self.outputPerMillion = outputPerMillion
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case model = "model"
+        case layer = "layer"
+        case inputPerMillion = "input_per_million"
+        case outputPerMillion = "output_per_million"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminOAuthIdentityConfig: Codable, Hashable, Sendable {
+    public var kv: OAuthIdentityConfig
+    public var env: OAuthIdentityConfig
+    public var effective: OAuthIdentityConfig
+
+    public init(kv: OAuthIdentityConfig, env: OAuthIdentityConfig, effective: OAuthIdentityConfig) {
+        self.kv = kv
+        self.env = env
+        self.effective = effective
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kv = "kv"
+        case env = "env"
+        case effective = "effective"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminPlatformURLSConfig: Codable, Hashable, Sendable {
+    public var urls: AdminPlatformURLSConfigURLS?
+
+    public init(urls: AdminPlatformURLSConfigURLS? = nil) {
+        self.urls = urls
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case urls = "urls"
+    }
+}
+
+/// `AdminPlatformURLSConfigURLS` model.
+public struct AdminPlatformURLSConfigURLS: Codable, Hashable, Sendable {
+    public var publicBaseURL: String?
+    public var webhookBaseURL: String?
+
+    public init(publicBaseURL: String? = nil, webhookBaseURL: String? = nil) {
+        self.publicBaseURL = publicBaseURL
+        self.webhookBaseURL = webhookBaseURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case publicBaseURL = "public_base_url"
+        case webhookBaseURL = "webhook_base_url"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The whole stored override
+/// when one exists, else the config defaults; `source` says which (admin-config.ts
+/// getEffectivePricing).
+public struct AdminPricingConfig: Codable, Hashable, Sendable {
+    public var pricing: AdminPricingConfigPricing
+    public var source: AdminPricingConfigSource
+
+    public init(pricing: AdminPricingConfigPricing, source: AdminPricingConfigSource) {
+        self.pricing = pricing
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case pricing = "pricing"
+        case source = "source"
+    }
+}
+
+/// `AdminPricingConfigPricing` model.
+public struct AdminPricingConfigPricing: Codable, Hashable, Sendable {
+    public var openaiCompatInput: Double
+    public var openaiCompatOutput: Double
+    public var anthropicInput: Int
+    public var anthropicOutput: Double
+    public var anthropicThinking: Double
+
+    public init(openaiCompatInput: Double, openaiCompatOutput: Double, anthropicInput: Int, anthropicOutput: Double, anthropicThinking: Double) {
+        self.openaiCompatInput = openaiCompatInput
+        self.openaiCompatOutput = openaiCompatOutput
+        self.anthropicInput = anthropicInput
+        self.anthropicOutput = anthropicOutput
+        self.anthropicThinking = anthropicThinking
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case openaiCompatInput = "openai_compat_input"
+        case openaiCompatOutput = "openai_compat_output"
+        case anthropicInput = "anthropic_input"
+        case anthropicOutput = "anthropic_output"
+        case anthropicThinking = "anthropic_thinking"
+    }
+}
+
+/// `AdminPricingConfigSource` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminPricingConfigSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let kv = AdminPricingConfigSource(rawValue: "kv")
+    public static let config = AdminPricingConfigSource(rawValue: "config")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminPricingConfigSource] = [.kv, .config]
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin.ts — a projection over
+/// the custom provider, its settings and catalogue status; never the API key.
+public struct AdminProvider: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var canonical: String
+    public var defaultEndpoint: String
+    public var local: Bool
+    public var enabled: Bool
+    public var modelAllowlist: [String]
+    public var isCustom: Bool
+    public var requiresAPIKey: Bool
+    public var modelsInCatalog: Int
+    public var catalogModelIds: [String]
+    public var lastModelsSync: AdminProviderLastModelsSync?
+
+    public init(id: String, name: String, canonical: String, defaultEndpoint: String, local: Bool, enabled: Bool, modelAllowlist: [String], isCustom: Bool, requiresAPIKey: Bool, modelsInCatalog: Int, catalogModelIds: [String], lastModelsSync: AdminProviderLastModelsSync? = nil) {
+        self.id = id
+        self.name = name
+        self.canonical = canonical
+        self.defaultEndpoint = defaultEndpoint
+        self.local = local
+        self.enabled = enabled
+        self.modelAllowlist = modelAllowlist
+        self.isCustom = isCustom
+        self.requiresAPIKey = requiresAPIKey
+        self.modelsInCatalog = modelsInCatalog
+        self.catalogModelIds = catalogModelIds
+        self.lastModelsSync = lastModelsSync
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case canonical = "canonical"
+        case defaultEndpoint = "default_endpoint"
+        case local = "local"
+        case enabled = "enabled"
+        case modelAllowlist = "model_allowlist"
+        case isCustom = "is_custom"
+        case requiresAPIKey = "requires_api_key"
+        case modelsInCatalog = "models_in_catalog"
+        case catalogModelIds = "catalog_model_ids"
+        case lastModelsSync = "last_models_sync"
+    }
+}
+
+/// `AdminProviderLastModelsSync` model.
+public struct AdminProviderLastModelsSync: Codable, Hashable, Sendable {
+    public var at: String
+    public var added: Int
+    public var live: Int
+
+    public init(at: String, added: Int, live: Int) {
+        self.at = at
+        self.added = added
+        self.live = live
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case at = "at"
+        case added = "added"
+        case live = "live"
+    }
+}
+
+/// `AdminPutLandingConfigResponse` model.
+public struct AdminPutLandingConfigResponse: Codable, Hashable, Sendable {
+    public var landing: LandingConfigSection
+    public var source: AdminPutLandingConfigResponseSource
+    public var updated: Bool
+    public var version: String?
+
+    public init(landing: LandingConfigSection, source: AdminPutLandingConfigResponseSource, updated: Bool, version: String? = nil) {
+        self.landing = landing
+        self.source = source
+        self.updated = updated
+        self.version = version
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case landing = "landing"
+        case source = "source"
+        case updated = "updated"
+        case version = "version"
+    }
+}
+
+/// `AdminPutLandingConfigResponseSource` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminPutLandingConfigResponseSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let kv = AdminPutLandingConfigResponseSource(rawValue: "kv")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminPutLandingConfigResponseSource] = [.kv]
+}
+
+/// `AdminPutModelCatalogResponse` model.
+public struct AdminPutModelCatalogResponse: Codable, Hashable, Sendable {
+    public var models: [AdminPutModelCatalogResponseModel]
+    public var source: AdminPutLandingConfigResponseSource
+    public var count: Int
+    public var version: String?
+
+    public init(models: [AdminPutModelCatalogResponseModel], source: AdminPutLandingConfigResponseSource, count: Int, version: String? = nil) {
+        self.models = models
+        self.source = source
+        self.count = count
+        self.version = version
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case models = "models"
+        case source = "source"
+        case count = "count"
+        case version = "version"
+    }
+}
+
+/// `AdminPutModelCatalogResponseModel` model.
+public struct AdminPutModelCatalogResponseModel: Codable, Hashable, Sendable {
+    public var id: String
+    public var provider: String
+    public var displayName: String
+    public var maxContextTokens: Int
+    public var maxOutputTokens: Int
+    public var supportsStreaming: Bool
+    public var supportsToolCalls: Bool
+    public var supportsJSONMode: Bool
+    public var supportsVision: Bool?
+    public var tier: String?
+
+    public init(id: String, provider: String, displayName: String, maxContextTokens: Int, maxOutputTokens: Int, supportsStreaming: Bool, supportsToolCalls: Bool, supportsJSONMode: Bool, supportsVision: Bool? = nil, tier: String? = nil) {
+        self.id = id
+        self.provider = provider
+        self.displayName = displayName
+        self.maxContextTokens = maxContextTokens
+        self.maxOutputTokens = maxOutputTokens
+        self.supportsStreaming = supportsStreaming
+        self.supportsToolCalls = supportsToolCalls
+        self.supportsJSONMode = supportsJSONMode
+        self.supportsVision = supportsVision
+        self.tier = tier
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case provider = "provider"
+        case displayName = "display_name"
+        case maxContextTokens = "max_context_tokens"
+        case maxOutputTokens = "max_output_tokens"
+        case supportsStreaming = "supports_streaming"
+        case supportsToolCalls = "supports_tool_calls"
+        case supportsJSONMode = "supports_json_mode"
+        case supportsVision = "supports_vision"
+        case tier = "tier"
+    }
+}
+
+/// `AdminPutVoiceConfigResponse` model.
+public struct AdminPutVoiceConfigResponse: Codable, Hashable, Sendable {
+    public var voice: AdminPutVoiceConfigResponseVoice
+    public var updated: Bool
+
+    public init(voice: AdminPutVoiceConfigResponseVoice, updated: Bool) {
+        self.voice = voice
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case voice = "voice"
+        case updated = "updated"
+    }
+}
+
+/// `AdminPutVoiceConfigResponseVoice` model.
+public struct AdminPutVoiceConfigResponseVoice: Codable, Hashable, Sendable {
+    public var stt: AdminPutVoiceConfigResponseVoiceStt
+    public var tts: AdminPutVoiceConfigResponseVoiceTts
+
+    public init(stt: AdminPutVoiceConfigResponseVoiceStt, tts: AdminPutVoiceConfigResponseVoiceTts) {
+        self.stt = stt
+        self.tts = tts
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stt = "stt"
+        case tts = "tts"
+    }
+}
+
+/// `AdminPutVoiceConfigResponseVoiceStt` model.
+public struct AdminPutVoiceConfigResponseVoiceStt: Codable, Hashable, Sendable {
+    public var provider: String
+    public var model: String
+
+    public init(provider: String, model: String) {
+        self.provider = provider
+        self.model = model
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case model = "model"
+    }
+}
+
+/// `AdminPutVoiceConfigResponseVoiceTts` model.
+public struct AdminPutVoiceConfigResponseVoiceTts: Codable, Hashable, Sendable {
+    public var provider: String
+    public var model: String
+    public var voice: String
+
+    public init(provider: String, model: String, voice: String) {
+        self.provider = provider
+        self.model = model
+        self.voice = voice
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case provider = "provider"
+        case model = "model"
+        case voice = "voice"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminRateLimitsConfig: Codable, Hashable, Sendable {
+    public var endpoints: [JSONObject]?
+
+    public init(endpoints: [JSONObject]? = nil) {
+        self.endpoints = endpoints
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case endpoints = "endpoints"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminRegistrationConfig: Codable, Hashable, Sendable {
+    public var registrationOpen: Bool
+    /// `free` when nothing is stored.
+    public var defaultSignupPlan: String
+    /// Empty means no domain restriction.
+    public var allowedEmailDomains: [String]
+    public var setupStatus: AdminRegistrationConfigSetupStatus
+    /// Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+    /// and this is the list it will name.
+    public var missingRequired: [String]
+    /// How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
+    /// be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+    /// froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+    /// admin uses to decide when to open registration, so it is the one that must be complete
+    /// rather than the roster.
+    public var waitlistCount: Int
+    /// True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+    /// and stays bounded at 1000; the count is not.
+    public var waitlistTruncated: Bool?
+    /// Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
+    /// `waitlist.length` as the total.
+    public var waitlist: [AdminRegistrationConfigWaitlistItem]
+
+    public init(registrationOpen: Bool, defaultSignupPlan: String, allowedEmailDomains: [String], setupStatus: AdminRegistrationConfigSetupStatus, missingRequired: [String], waitlistCount: Int, waitlistTruncated: Bool? = nil, waitlist: [AdminRegistrationConfigWaitlistItem]) {
+        self.registrationOpen = registrationOpen
+        self.defaultSignupPlan = defaultSignupPlan
+        self.allowedEmailDomains = allowedEmailDomains
+        self.setupStatus = setupStatus
+        self.missingRequired = missingRequired
+        self.waitlistCount = waitlistCount
+        self.waitlistTruncated = waitlistTruncated
+        self.waitlist = waitlist
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case registrationOpen = "registration_open"
+        case defaultSignupPlan = "default_signup_plan"
+        case allowedEmailDomains = "allowed_email_domains"
+        case setupStatus = "setup_status"
+        case missingRequired = "missing_required"
+        case waitlistCount = "waitlist_count"
+        case waitlistTruncated = "waitlist_truncated"
+        case waitlist = "waitlist"
+    }
+}
+
+/// `AdminRegistrationConfigSetupStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminRegistrationConfigSetupStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let inProgress = AdminRegistrationConfigSetupStatus(rawValue: "in_progress")
+    public static let live = AdminRegistrationConfigSetupStatus(rawValue: "live")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminRegistrationConfigSetupStatus] = [.inProgress, .live]
+}
+
+/// `AdminRegistrationConfigWaitlistItem` model.
+public struct AdminRegistrationConfigWaitlistItem: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var email: String
+    public var createdAt: String
+
+    public init(tenantId: String, email: String, createdAt: String) {
+        self.tenantId = tenantId
+        self.email = email
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case email = "email"
+        case createdAt = "created_at"
+    }
+}
+
 /// `AdminReplayWebhookDLQResponse` model.
 public struct AdminReplayWebhookDLQResponse: Codable, Hashable, Sendable {
     public var success: Bool
@@ -1368,6 +3288,204 @@ public struct AdminReplayWebhookDLQResponse: Codable, Hashable, Sendable {
         case eventId = "eventId"
         case action = "action"
         case message = "message"
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminSmtpConfig: Codable, Hashable, Sendable {
+    /// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+    public var kv: AdminSmtpConfigKv
+    /// What the environment supplies. `port` defaults to 465 when unset or unparseable.
+    public var env: AdminSmtpConfigEnv
+    /// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+    /// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+    /// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+    /// inert.
+    public var source: AdminSmtpConfigSource
+
+    public init(kv: AdminSmtpConfigKv, env: AdminSmtpConfigEnv, source: AdminSmtpConfigSource) {
+        self.kv = kv
+        self.env = env
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kv = "kv"
+        case env = "env"
+        case source = "source"
+    }
+}
+
+/// What the environment supplies. `port` defaults to 465 when unset or unparseable.
+public struct AdminSmtpConfigEnv: Codable, Hashable, Sendable {
+    public var host: String?
+    public var port: Int?
+    public var user: String?
+    public var from: String?
+    public var fromName: String?
+    /// Whether a credential is stored. The password itself is never returned by any read.
+    public var hasPassword: Bool?
+
+    public init(host: String? = nil, port: Int? = nil, user: String? = nil, from: String? = nil, fromName: String? = nil, hasPassword: Bool? = nil) {
+        self.host = host
+        self.port = port
+        self.user = user
+        self.from = from
+        self.fromName = fromName
+        self.hasPassword = hasPassword
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case host = "host"
+        case port = "port"
+        case user = "user"
+        case from = "from"
+        case fromName = "from_name"
+        case hasPassword = "has_password"
+    }
+}
+
+/// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+public struct AdminSmtpConfigKv: Codable, Hashable, Sendable {
+    public var host: String?
+    public var port: Int?
+    public var user: String?
+    public var from: String?
+    public var fromName: String?
+    /// Whether a credential is stored. The password itself is never returned by any read.
+    public var hasPassword: Bool?
+
+    public init(host: String? = nil, port: Int? = nil, user: String? = nil, from: String? = nil, fromName: String? = nil, hasPassword: Bool? = nil) {
+        self.host = host
+        self.port = port
+        self.user = user
+        self.from = from
+        self.fromName = fromName
+        self.hasPassword = hasPassword
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case host = "host"
+        case port = "port"
+        case user = "user"
+        case from = "from"
+        case fromName = "from_name"
+        case hasPassword = "has_password"
+    }
+}
+
+/// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+/// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+/// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+/// inert.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AdminSmtpConfigSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let kv = AdminSmtpConfigSource(rawValue: "kv")
+    public static let env = AdminSmtpConfigSource(rawValue: "env")
+    public static let none = AdminSmtpConfigSource(rawValue: "none")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AdminSmtpConfigSource] = [.kv, .env, .none]
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+public struct AdminSpecPackagesList: Codable, Hashable, Sendable {
+    public var packages: [SpecPackage]
+
+    public init(packages: [SpecPackage]) {
+        self.packages = packages
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case packages = "packages"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
+/// their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
+public struct AdminStripeConfig: Codable, Hashable, Sendable {
+    public var stripe: AdminStripeConfigStripe
+    public var hasSecretKey: Bool
+    public var hasWebhookSecret: Bool
+
+    public init(stripe: AdminStripeConfigStripe, hasSecretKey: Bool, hasWebhookSecret: Bool) {
+        self.stripe = stripe
+        self.hasSecretKey = hasSecretKey
+        self.hasWebhookSecret = hasWebhookSecret
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stripe = "stripe"
+        case hasSecretKey = "has_secret_key"
+        case hasWebhookSecret = "has_webhook_secret"
+    }
+}
+
+/// `AdminStripeConfigStripe` model.
+public struct AdminStripeConfigStripe: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var mode: String
+    public var secretKey: String
+    public var webhookSecret: String
+    public var publishableKey: String
+    public var priceIdStarter: String
+    public var priceIdPro: String
+    public var priceIdEnterprise: String
+
+    public init(enabled: Bool, mode: String, secretKey: String, webhookSecret: String, publishableKey: String, priceIdStarter: String, priceIdPro: String, priceIdEnterprise: String) {
+        self.enabled = enabled
+        self.mode = mode
+        self.secretKey = secretKey
+        self.webhookSecret = webhookSecret
+        self.publishableKey = publishableKey
+        self.priceIdStarter = priceIdStarter
+        self.priceIdPro = priceIdPro
+        self.priceIdEnterprise = priceIdEnterprise
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case mode = "mode"
+        case secretKey = "secret_key"
+        case webhookSecret = "webhook_secret"
+        case publishableKey = "publishable_key"
+        case priceIdStarter = "price_id_starter"
+        case priceIdPro = "price_id_pro"
+        case priceIdEnterprise = "price_id_enterprise"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; provider/model → voice ids;
+/// `defaults` is always empty, `effective` equals `override` (admin-config.ts
+/// handleGetVoicePresets).
+public struct AdminVoicePresets: Codable, Hashable, Sendable {
+    public var defaults: JSONObject
+    public var override: [String: [String]]
+    public var effective: [String: [String]]
+
+    public init(defaults: JSONObject, override: [String: [String]], effective: [String: [String]]) {
+        self.defaults = defaults
+        self.override = override
+        self.effective = effective
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case defaults = "defaults"
+        case override = "override"
+        case effective = "effective"
     }
 }
 
@@ -1412,7 +3530,13 @@ public struct Agent: Codable, Hashable, Sendable {
     public var knowledgeBaseId: String?
     /// Every knowledge base linked to the agent. `search_kb` searches all of them by default.
     public var knowledgeBaseIds: [String]?
-    /// Who can reach the agent. The publication screen is built on this field.
+    /// Who can reach the agent. The publication screen is built on this field — but `public` alone
+    /// does not open the agent to the world: the anonymous routes (`GET /public/agents/{agentId}`,
+    /// public sessions) answer only when `visibility` is `public` AND `public_config.enabled` is
+    /// true AND `status` is `active` (public.ts loadPublicAgent). A client that shows "anyone with
+    /// the link can reach this agent" on `visibility` alone shows it a step too early. Measured
+    /// 2026-09-10 on a real tenant: the one agent with both switches answered 200 without a key,
+    /// every other `public` one 404.
     public var visibility: AgentUpdateVisibility?
     /// Governance state, distinct from a run's status.
     public var status: AgentStatus?
@@ -2266,6 +4390,9 @@ public struct AgentPrompts: Codable, Hashable, Sendable {
 
 /// `AgentPublicConfig` model.
 public struct AgentPublicConfig: Codable, Hashable, Sendable {
+    /// One of the three switches that make the agent reachable without a key (public.ts
+    /// loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+    /// `active` (or absent). Any one of them alone does nothing visible.
     public var enabled: Bool
     public var systemPrompt: String?
     public var greeting: String?
@@ -2740,8 +4867,13 @@ public struct AgentUpdate: Codable, Hashable, Sendable {
     public var knowledgeBaseIds: [String]?
     public var workspaceId: String?
     public var visibility: AgentUpdateVisibility?
+    /// Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+    /// ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+    /// }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+    /// alone does not make the agent reachable — see `Agent.visibility`.
+    public var publicConfig: AgentUpdatePublicConfig?
 
-    public init(name: String? = nil, `description`: String? = nil, prompts: JSONObject? = nil, model: AgentModelConfigInput? = nil, specs: [JSONObject]? = nil, approvalRequiredTools: [String]? = nil, autoApproveTools: [String]? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, workspaceId: String? = nil, visibility: AgentUpdateVisibility? = nil) {
+    public init(name: String? = nil, `description`: String? = nil, prompts: JSONObject? = nil, model: AgentModelConfigInput? = nil, specs: [JSONObject]? = nil, approvalRequiredTools: [String]? = nil, autoApproveTools: [String]? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, workspaceId: String? = nil, visibility: AgentUpdateVisibility? = nil, publicConfig: AgentUpdatePublicConfig? = nil) {
         self.name = name
         self.`description` = `description`
         self.prompts = prompts
@@ -2753,6 +4885,7 @@ public struct AgentUpdate: Codable, Hashable, Sendable {
         self.knowledgeBaseIds = knowledgeBaseIds
         self.workspaceId = workspaceId
         self.visibility = visibility
+        self.publicConfig = publicConfig
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -2767,6 +4900,55 @@ public struct AgentUpdate: Codable, Hashable, Sendable {
         case knowledgeBaseIds = "knowledge_base_ids"
         case workspaceId = "workspace_id"
         case visibility = "visibility"
+        case publicConfig = "public_config"
+    }
+}
+
+/// Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+/// ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+/// }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+/// alone does not make the agent reachable — see `Agent.visibility`.
+public struct AgentUpdatePublicConfig: Codable, Hashable, Sendable {
+    /// One of the three switches that make the agent reachable without a key (public.ts
+    /// loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+    /// `active` (or absent). Any one of them alone does nothing visible.
+    public var enabled: Bool
+    public var systemPrompt: String?
+    public var greeting: String?
+    public var allowedTools: [String]?
+    public var maxMessagesPerSession: Int?
+    public var maxConcurrentSessions: Int?
+    public var rateLimitSessionsPerIp: Int?
+    public var rateLimitMessagesPerMin: Int?
+    /// Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+    /// ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+    /// `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+    /// Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+    /// default of 15.
+    public var dailyMessageLimit: Int?
+
+    public init(enabled: Bool, systemPrompt: String? = nil, greeting: String? = nil, allowedTools: [String]? = nil, maxMessagesPerSession: Int? = nil, maxConcurrentSessions: Int? = nil, rateLimitSessionsPerIp: Int? = nil, rateLimitMessagesPerMin: Int? = nil, dailyMessageLimit: Int? = nil) {
+        self.enabled = enabled
+        self.systemPrompt = systemPrompt
+        self.greeting = greeting
+        self.allowedTools = allowedTools
+        self.maxMessagesPerSession = maxMessagesPerSession
+        self.maxConcurrentSessions = maxConcurrentSessions
+        self.rateLimitSessionsPerIp = rateLimitSessionsPerIp
+        self.rateLimitMessagesPerMin = rateLimitMessagesPerMin
+        self.dailyMessageLimit = dailyMessageLimit
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case systemPrompt = "system_prompt"
+        case greeting = "greeting"
+        case allowedTools = "allowed_tools"
+        case maxMessagesPerSession = "max_messages_per_session"
+        case maxConcurrentSessions = "max_concurrent_sessions"
+        case rateLimitSessionsPerIp = "rate_limit_sessions_per_ip"
+        case rateLimitMessagesPerMin = "rate_limit_messages_per_min"
+        case dailyMessageLimit = "daily_message_limit"
     }
 }
 
@@ -5115,6 +7297,43 @@ public struct CompleteOAuthLoginResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; api/lib/conformity-report.ts
+/// — three sections, plus the same content as markdown. `?format=markdown` answers
+/// text/markdown instead.
+public struct ConformityReport: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var sections: [ConformityReportSection]
+    public var markdown: String
+
+    public init(tenantId: String, sections: [ConformityReportSection], markdown: String) {
+        self.tenantId = tenantId
+        self.sections = sections
+        self.markdown = markdown
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case sections = "sections"
+        case markdown = "markdown"
+    }
+}
+
+/// `ConformityReportSection` model.
+public struct ConformityReportSection: Codable, Hashable, Sendable {
+    public var title: String
+    public var content: String
+
+    public init(title: String, content: String) {
+        self.title = title
+        self.content = content
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case title = "title"
+        case content = "content"
+    }
+}
+
 /// `ConnectorConfigField` model.
 public struct ConnectorConfigField: Codable, Hashable, Sendable {
     public var type: String
@@ -5807,6 +8026,50 @@ public struct CoreMemoryBlock: Codable, Hashable, Sendable {
     }
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z;
+/// billing/cost-reconciliation.ts ReconciliationResult — `truncated` and `details` conditional.
+public struct CostReconciliationResult: Codable, Hashable, Sendable {
+    public var tenantId: String
+    public var period: String
+    public var runsTotalCostUsd: Double
+    public var usageTrackerCostUsd: Double
+    public var driftUsd: Double
+    public var driftPct: Double
+    public var runsScanned: Int
+    public var runsMissingCost: Int
+    public var status: String
+    public var details: String?
+    public var truncated: Bool?
+
+    public init(tenantId: String, period: String, runsTotalCostUsd: Double, usageTrackerCostUsd: Double, driftUsd: Double, driftPct: Double, runsScanned: Int, runsMissingCost: Int, status: String, details: String? = nil, truncated: Bool? = nil) {
+        self.tenantId = tenantId
+        self.period = period
+        self.runsTotalCostUsd = runsTotalCostUsd
+        self.usageTrackerCostUsd = usageTrackerCostUsd
+        self.driftUsd = driftUsd
+        self.driftPct = driftPct
+        self.runsScanned = runsScanned
+        self.runsMissingCost = runsMissingCost
+        self.status = status
+        self.details = details
+        self.truncated = truncated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case period = "period"
+        case runsTotalCostUsd = "runs_total_cost_usd"
+        case usageTrackerCostUsd = "usage_tracker_cost_usd"
+        case driftUsd = "drift_usd"
+        case driftPct = "drift_pct"
+        case runsScanned = "runs_scanned"
+        case runsMissingCost = "runs_missing_cost"
+        case status = "status"
+        case details = "details"
+        case truncated = "truncated"
+    }
+}
+
 /// `CreateA2ATaskRequest` model.
 public struct CreateA2ATaskRequest: Codable, Hashable, Sendable {
     public var agentId: String
@@ -5874,6 +8137,94 @@ public struct CreateAdminBlogPostResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case post = "post"
+    }
+}
+
+/// `CreateAdminProviderResponse` model.
+public struct CreateAdminProviderResponse: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var defaultEndpoint: String
+    public var isCustom: Bool
+    public var requiresAPIKey: Bool
+    public var canonical: String
+    /// Only when the body sent it.
+    public var defaultCapabilities: CreateAdminProviderResponseDefaultCapabilities?
+
+    public init(id: String, name: String, defaultEndpoint: String, isCustom: Bool, requiresAPIKey: Bool, canonical: String, defaultCapabilities: CreateAdminProviderResponseDefaultCapabilities? = nil) {
+        self.id = id
+        self.name = name
+        self.defaultEndpoint = defaultEndpoint
+        self.isCustom = isCustom
+        self.requiresAPIKey = requiresAPIKey
+        self.canonical = canonical
+        self.defaultCapabilities = defaultCapabilities
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case defaultEndpoint = "default_endpoint"
+        case isCustom = "is_custom"
+        case requiresAPIKey = "requires_api_key"
+        case canonical = "canonical"
+        case defaultCapabilities = "default_capabilities"
+    }
+}
+
+/// Only when the body sent it.
+public struct CreateAdminProviderResponseDefaultCapabilities: Codable, Hashable, Sendable {
+    public var supportsToolCalls: Bool?
+    public var supportsStreaming: Bool?
+    public var supportsJSONMode: Bool?
+    public var supportsVision: Bool?
+    public var maxContextTokens: Int?
+    public var maxOutputTokens: Int?
+
+    public init(supportsToolCalls: Bool? = nil, supportsStreaming: Bool? = nil, supportsJSONMode: Bool? = nil, supportsVision: Bool? = nil, maxContextTokens: Int? = nil, maxOutputTokens: Int? = nil) {
+        self.supportsToolCalls = supportsToolCalls
+        self.supportsStreaming = supportsStreaming
+        self.supportsJSONMode = supportsJSONMode
+        self.supportsVision = supportsVision
+        self.maxContextTokens = maxContextTokens
+        self.maxOutputTokens = maxOutputTokens
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case supportsToolCalls = "supports_tool_calls"
+        case supportsStreaming = "supports_streaming"
+        case supportsJSONMode = "supports_json_mode"
+        case supportsVision = "supports_vision"
+        case maxContextTokens = "max_context_tokens"
+        case maxOutputTokens = "max_output_tokens"
+    }
+}
+
+/// `CreateAdminSpecPackageStripePriceResponse` model.
+public struct CreateAdminSpecPackageStripePriceResponse: Codable, Hashable, Sendable {
+    public var packageId: String
+    public var stripePriceId: String
+    public var stripeProductId: String
+    public var amountCents: Int
+    public var currency: String
+    public var interval: SpecPackagePricingBillingInterval
+
+    public init(packageId: String, stripePriceId: String, stripeProductId: String, amountCents: Int, currency: String, interval: SpecPackagePricingBillingInterval) {
+        self.packageId = packageId
+        self.stripePriceId = stripePriceId
+        self.stripeProductId = stripeProductId
+        self.amountCents = amountCents
+        self.currency = currency
+        self.interval = interval
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case packageId = "package_id"
+        case stripePriceId = "stripe_price_id"
+        case stripeProductId = "stripe_product_id"
+        case amountCents = "amount_cents"
+        case currency = "currency"
+        case interval = "interval"
     }
 }
 
@@ -8467,13 +10818,13 @@ public struct ErrorModel: Codable, Hashable, Sendable {
     public var type: String
     public var title: String
     public var status: Int
-    public var detail: String?
+    public var detail: String
     /// Request ID for tracing
     public var correlationId: String?
     /// Field-level validation errors (present on 422 responses)
     public var errors: [ErrorError]?
 
-    public init(type: String, title: String, status: Int, detail: String? = nil, correlationId: String? = nil, errors: [ErrorError]? = nil) {
+    public init(type: String, title: String, status: Int, detail: String, correlationId: String? = nil, errors: [ErrorError]? = nil) {
         self.type = type
         self.title = title
         self.status = status
@@ -9230,7 +11581,7 @@ public struct FileRecord: Codable, Hashable, Sendable {
 /// not-yet-real nodes drawn around them. Persisted as one record per tenant.
 public struct FleetLayout: Codable, Hashable, Sendable {
     /// Agent id → its place on the canvas.
-    public var positions: [String: Value3]
+    public var positions: [String: Value4]
     public var edges: [FleetLayoutEdge]
     public var notes: [FleetLayoutNote]?
     public var drafts: [FleetLayoutDraft]?
@@ -9239,7 +11590,7 @@ public struct FleetLayout: Codable, Hashable, Sendable {
     /// not survive the caps or validation. A 200 without this field saved everything.
     public var dropped: FleetLayoutDropped?
 
-    public init(positions: [String: Value3], edges: [FleetLayoutEdge], notes: [FleetLayoutNote]? = nil, drafts: [FleetLayoutDraft]? = nil, updatedAt: String? = nil, dropped: FleetLayoutDropped? = nil) {
+    public init(positions: [String: Value4], edges: [FleetLayoutEdge], notes: [FleetLayoutNote]? = nil, drafts: [FleetLayoutDraft]? = nil, updatedAt: String? = nil, dropped: FleetLayoutDropped? = nil) {
         self.positions = positions
         self.edges = edges
         self.notes = notes
@@ -9376,12 +11727,12 @@ public struct FleetLayoutNote: Codable, Hashable, Sendable {
 /// neither belongs in a request.
 public struct FleetLayoutUpdate: Codable, Hashable, Sendable {
     /// Agent id → its place on the canvas.
-    public var positions: [String: Value2]
+    public var positions: [String: Value3]
     public var edges: [FleetLayoutUpdateEdge]
     public var notes: [FleetLayoutUpdateNote]?
     public var drafts: [FleetLayoutUpdateDraft]?
 
-    public init(positions: [String: Value2], edges: [FleetLayoutUpdateEdge], notes: [FleetLayoutUpdateNote]? = nil, drafts: [FleetLayoutUpdateDraft]? = nil) {
+    public init(positions: [String: Value3], edges: [FleetLayoutUpdateEdge], notes: [FleetLayoutUpdateNote]? = nil, drafts: [FleetLayoutUpdateDraft]? = nil) {
         self.positions = positions
         self.edges = edges
         self.notes = notes
@@ -9639,38 +11990,6 @@ public struct GetAdminDisabledToolsResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `GetAdminFounderConfigResponse` model.
-public struct GetAdminFounderConfigResponse: Codable, Hashable, Sendable {
-    public var kv: FounderIdentity
-    public var env: FounderIdentity
-    public var effective: FounderIdentity
-
-    public init(kv: FounderIdentity, env: FounderIdentity, effective: FounderIdentity) {
-        self.kv = kv
-        self.env = env
-        self.effective = effective
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case kv = "kv"
-        case env = "env"
-        case effective = "effective"
-    }
-}
-
-/// `GetAdminGuardrailsResponse` model.
-public struct GetAdminGuardrailsResponse: Codable, Hashable, Sendable {
-    public var guardrails: [JSONObject]?
-
-    public init(guardrails: [JSONObject]? = nil) {
-        self.guardrails = guardrails
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case guardrails = "guardrails"
-    }
-}
-
 /// `GetAdminIntegrationOAuthProviderProvider` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -9739,78 +12058,6 @@ public struct GetAdminIntegrationOAuthProviderResponse: Codable, Hashable, Senda
     }
 }
 
-/// `GetAdminIntegrationsResponse` model.
-public struct GetAdminIntegrationsResponse: Codable, Hashable, Sendable {
-    public var integrations: [GetAdminIntegrationsResponseIntegration]
-
-    public init(integrations: [GetAdminIntegrationsResponseIntegration]) {
-        self.integrations = integrations
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case integrations = "integrations"
-    }
-}
-
-/// `GetAdminIntegrationsResponseIntegration` model.
-public struct GetAdminIntegrationsResponseIntegration: Codable, Hashable, Sendable {
-    public var id: String
-    public var name: String
-    public var icon: String?
-    public var authType: GetAdminIntegrationsResponseIntegrationAuthType?
-    public var category: String?
-    public var enabled: Bool
-    public var beta: Bool?
-    /// `kv` when an operator overrode the shipped default, `default` otherwise.
-    public var source: String?
-
-    public init(id: String, name: String, icon: String? = nil, authType: GetAdminIntegrationsResponseIntegrationAuthType? = nil, category: String? = nil, enabled: Bool, beta: Bool? = nil, source: String? = nil) {
-        self.id = id
-        self.name = name
-        self.icon = icon
-        self.authType = authType
-        self.category = category
-        self.enabled = enabled
-        self.beta = beta
-        self.source = source
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case name = "name"
-        case icon = "icon"
-        case authType = "auth_type"
-        case category = "category"
-        case enabled = "enabled"
-        case beta = "beta"
-        case source = "source"
-    }
-}
-
-/// `GetAdminIntegrationsResponseIntegrationAuthType` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct GetAdminIntegrationsResponseIntegrationAuthType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let oauth2 = GetAdminIntegrationsResponseIntegrationAuthType(rawValue: "oauth2")
-    public static let apiKey = GetAdminIntegrationsResponseIntegrationAuthType(rawValue: "api_key")
-    public static let none = GetAdminIntegrationsResponseIntegrationAuthType(rawValue: "none")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [GetAdminIntegrationsResponseIntegrationAuthType] = [.oauth2, .apiKey, .none]
-}
-
 /// `GetAdminLLMDefaultsResponse` model.
 public struct GetAdminLLMDefaultsResponse: Codable, Hashable, Sendable {
     public var providers: [GetAdminLLMDefaultsResponseProvider]
@@ -9863,25 +12110,6 @@ public struct GetAdminLLMDefaultsResponseProvider: Codable, Hashable, Sendable {
     }
 }
 
-/// `GetAdminOAuthIdentityConfigResponse` model.
-public struct GetAdminOAuthIdentityConfigResponse: Codable, Hashable, Sendable {
-    public var kv: OAuthIdentityConfig
-    public var env: OAuthIdentityConfig
-    public var effective: OAuthIdentityConfig
-
-    public init(kv: OAuthIdentityConfig, env: OAuthIdentityConfig, effective: OAuthIdentityConfig) {
-        self.kv = kv
-        self.env = env
-        self.effective = effective
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case kv = "kv"
-        case env = "env"
-        case effective = "effective"
-    }
-}
-
 /// `GetAdminPlansResponse` model.
 public struct GetAdminPlansResponse: Codable, Hashable, Sendable {
     public var plans: [GetAdminPlansResponsePlan]
@@ -9912,195 +12140,6 @@ public struct GetAdminPlansResponsePlan: Codable, Hashable, Sendable {
         case id = "id"
         case name = "name"
         case quotas = "quotas"
-    }
-}
-
-/// `GetAdminRegistrationConfigResponse` model.
-public struct GetAdminRegistrationConfigResponse: Codable, Hashable, Sendable {
-    public var registrationOpen: Bool
-    /// `free` when nothing is stored.
-    public var defaultSignupPlan: String
-    /// Empty means no domain restriction.
-    public var allowedEmailDomains: [String]
-    public var setupStatus: SetupStateResponseStateStatus
-    /// Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
-    /// and this is the list it will name.
-    public var missingRequired: [String]
-    /// How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
-    /// be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
-    /// froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
-    /// admin uses to decide when to open registration, so it is the one that must be complete
-    /// rather than the roster.
-    public var waitlistCount: Int
-    /// True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
-    /// and stays bounded at 1000; the count is not.
-    public var waitlistTruncated: Bool?
-    /// Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
-    /// `waitlist.length` as the total.
-    public var waitlist: [GetAdminRegistrationConfigResponseWaitlistItem]
-
-    public init(registrationOpen: Bool, defaultSignupPlan: String, allowedEmailDomains: [String], setupStatus: SetupStateResponseStateStatus, missingRequired: [String], waitlistCount: Int, waitlistTruncated: Bool? = nil, waitlist: [GetAdminRegistrationConfigResponseWaitlistItem]) {
-        self.registrationOpen = registrationOpen
-        self.defaultSignupPlan = defaultSignupPlan
-        self.allowedEmailDomains = allowedEmailDomains
-        self.setupStatus = setupStatus
-        self.missingRequired = missingRequired
-        self.waitlistCount = waitlistCount
-        self.waitlistTruncated = waitlistTruncated
-        self.waitlist = waitlist
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case registrationOpen = "registration_open"
-        case defaultSignupPlan = "default_signup_plan"
-        case allowedEmailDomains = "allowed_email_domains"
-        case setupStatus = "setup_status"
-        case missingRequired = "missing_required"
-        case waitlistCount = "waitlist_count"
-        case waitlistTruncated = "waitlist_truncated"
-        case waitlist = "waitlist"
-    }
-}
-
-/// `GetAdminRegistrationConfigResponseWaitlistItem` model.
-public struct GetAdminRegistrationConfigResponseWaitlistItem: Codable, Hashable, Sendable {
-    public var tenantId: String
-    public var email: String
-    public var createdAt: String
-
-    public init(tenantId: String, email: String, createdAt: String) {
-        self.tenantId = tenantId
-        self.email = email
-        self.createdAt = createdAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case tenantId = "tenant_id"
-        case email = "email"
-        case createdAt = "created_at"
-    }
-}
-
-/// `GetAdminSmtpConfigResponse` model.
-public struct GetAdminSmtpConfigResponse: Codable, Hashable, Sendable {
-    /// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-    public var kv: GetAdminSmtpConfigResponseKv
-    /// What the environment supplies. `port` defaults to 465 when unset or unparseable.
-    public var env: GetAdminSmtpConfigResponseEnv
-    /// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-    /// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-    /// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-    /// inert.
-    public var source: GetAdminSmtpConfigResponseSource
-
-    public init(kv: GetAdminSmtpConfigResponseKv, env: GetAdminSmtpConfigResponseEnv, source: GetAdminSmtpConfigResponseSource) {
-        self.kv = kv
-        self.env = env
-        self.source = source
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case kv = "kv"
-        case env = "env"
-        case source = "source"
-    }
-}
-
-/// What the environment supplies. `port` defaults to 465 when unset or unparseable.
-public struct GetAdminSmtpConfigResponseEnv: Codable, Hashable, Sendable {
-    public var host: String?
-    public var port: Int?
-    public var user: String?
-    public var from: String?
-    public var fromName: String?
-    /// Whether a credential is stored. The password itself is never returned by any read.
-    public var hasPassword: Bool?
-
-    public init(host: String? = nil, port: Int? = nil, user: String? = nil, from: String? = nil, fromName: String? = nil, hasPassword: Bool? = nil) {
-        self.host = host
-        self.port = port
-        self.user = user
-        self.from = from
-        self.fromName = fromName
-        self.hasPassword = hasPassword
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case host = "host"
-        case port = "port"
-        case user = "user"
-        case from = "from"
-        case fromName = "from_name"
-        case hasPassword = "has_password"
-    }
-}
-
-/// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-public struct GetAdminSmtpConfigResponseKv: Codable, Hashable, Sendable {
-    public var host: String?
-    public var port: Int?
-    public var user: String?
-    public var from: String?
-    public var fromName: String?
-    /// Whether a credential is stored. The password itself is never returned by any read.
-    public var hasPassword: Bool?
-
-    public init(host: String? = nil, port: Int? = nil, user: String? = nil, from: String? = nil, fromName: String? = nil, hasPassword: Bool? = nil) {
-        self.host = host
-        self.port = port
-        self.user = user
-        self.from = from
-        self.fromName = fromName
-        self.hasPassword = hasPassword
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case host = "host"
-        case port = "port"
-        case user = "user"
-        case from = "from"
-        case fromName = "from_name"
-        case hasPassword = "has_password"
-    }
-}
-
-/// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-/// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-/// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-/// inert.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct GetAdminSmtpConfigResponseSource: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let kv = GetAdminSmtpConfigResponseSource(rawValue: "kv")
-    public static let env = GetAdminSmtpConfigResponseSource(rawValue: "env")
-    public static let none = GetAdminSmtpConfigResponseSource(rawValue: "none")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [GetAdminSmtpConfigResponseSource] = [.kv, .env, .none]
-}
-
-/// `GetAdminSpecPackagesResponse` model.
-public struct GetAdminSpecPackagesResponse: Codable, Hashable, Sendable {
-    public var packages: [SpecPackage]
-
-    public init(packages: [SpecPackage]) {
-        self.packages = packages
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packages = "packages"
     }
 }
 
@@ -10386,10 +12425,10 @@ public struct GetAgentVersionDiffResponse: Codable, Hashable, Sendable {
     public var agentId: String?
     public var versionFrom: Int?
     public var versionTo: Int?
-    public var diff: [String: Value4]?
+    public var diff: [String: Value5]?
     public var changedFields: [String]?
 
-    public init(agentId: String? = nil, versionFrom: Int? = nil, versionTo: Int? = nil, diff: [String: Value4]? = nil, changedFields: [String]? = nil) {
+    public init(agentId: String? = nil, versionFrom: Int? = nil, versionTo: Int? = nil, diff: [String: Value5]? = nil, changedFields: [String]? = nil) {
         self.agentId = agentId
         self.versionFrom = versionFrom
         self.versionTo = versionTo
@@ -10632,19 +12671,6 @@ public struct GetDataExplorerValueResponse: Codable, Hashable, Sendable {
         case value = "value"
         case sizeBytes = "size_bytes"
         case type = "type"
-    }
-}
-
-/// `GetFeatureFlagsResponse` model.
-public struct GetFeatureFlagsResponse: Codable, Hashable, Sendable {
-    public var flags: [JSONObject]?
-
-    public init(flags: [JSONObject]? = nil) {
-        self.flags = flags
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case flags = "flags"
     }
 }
 
@@ -11169,35 +13195,6 @@ public struct GetMyHeadAgentTemplateResponseTierTierRequiredPlan: RawRepresentab
     public static let knownValues: [GetMyHeadAgentTemplateResponseTierTierRequiredPlan] = [.free, .starter, .pro]
 }
 
-/// `GetPlatformURLSResponse` model.
-public struct GetPlatformURLSResponse: Codable, Hashable, Sendable {
-    public var urls: GetPlatformURLSResponseURLS?
-
-    public init(urls: GetPlatformURLSResponseURLS? = nil) {
-        self.urls = urls
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case urls = "urls"
-    }
-}
-
-/// `GetPlatformURLSResponseURLS` model.
-public struct GetPlatformURLSResponseURLS: Codable, Hashable, Sendable {
-    public var publicBaseURL: String?
-    public var webhookBaseURL: String?
-
-    public init(publicBaseURL: String? = nil, webhookBaseURL: String? = nil) {
-        self.publicBaseURL = publicBaseURL
-        self.webhookBaseURL = webhookBaseURL
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case publicBaseURL = "public_base_url"
-        case webhookBaseURL = "webhook_base_url"
-    }
-}
-
 /// `GetPublicBlogPostResponse` model.
 public struct GetPublicBlogPostResponse: Codable, Hashable, Sendable {
     public var post: PublicBlogPost
@@ -11221,19 +13218,6 @@ public struct GetPublicFeaturedAgentResponse: Codable, Hashable, Sendable {
 
     private enum CodingKeys: String, CodingKey {
         case agent = "agent"
-    }
-}
-
-/// `GetRateLimitsResponse` model.
-public struct GetRateLimitsResponse: Codable, Hashable, Sendable {
-    public var endpoints: [JSONObject]?
-
-    public init(endpoints: [JSONObject]? = nil) {
-        self.endpoints = endpoints
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case endpoints = "endpoints"
     }
 }
 
@@ -11290,6 +13274,26 @@ public struct GetReadyResponseStatus: RawRepresentable, Codable, Hashable, Senda
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [GetReadyResponseStatus] = [.ready, .notReady]
+}
+
+/// `GetReconciliationResponse` model.
+public struct GetReconciliationResponse: Codable, Hashable, Sendable {
+    public var reconciliation: CostReconciliationResult?
+    public var period: String
+    /// Only when there is no result for the period.
+    public var message: String?
+
+    public init(reconciliation: CostReconciliationResult? = nil, period: String, message: String? = nil) {
+        self.reconciliation = reconciliation
+        self.period = period
+        self.message = message
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reconciliation = "reconciliation"
+        case period = "period"
+        case message = "message"
+    }
 }
 
 /// `GetRegistrationStatusResponse` model.
@@ -12458,6 +14462,31 @@ public struct ImportAdminConfigRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `ImportAdminConfigResponse` model.
+public struct ImportAdminConfigResponse: Codable, Hashable, Sendable {
+    public var imported: Bool
+    public var applied: [String]
+    public var skipped: [String]
+    public var appliedCount: Int
+    public var skippedCount: Int
+
+    public init(imported: Bool, applied: [String], skipped: [String], appliedCount: Int, skippedCount: Int) {
+        self.imported = imported
+        self.applied = applied
+        self.skipped = skipped
+        self.appliedCount = appliedCount
+        self.skippedCount = skippedCount
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case imported = "imported"
+        case applied = "applied"
+        case skipped = "skipped"
+        case appliedCount = "applied_count"
+        case skippedCount = "skipped_count"
+    }
+}
+
 /// `ImportAgentMemoryRequest` model.
 public struct ImportAgentMemoryRequest: Codable, Hashable, Sendable {
     public var entries: [MemoryImportEntry]?
@@ -13498,6 +15527,79 @@ public struct KnowledgeBaseUpdate: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case name = "name"
         case `description` = "description"
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin-config.ts
+/// LandingConfig, defaults-projected so every key is present.
+public struct LandingConfigSection: Codable, Hashable, Sendable {
+    public var publicAgentId: String?
+    public var texts: [String: Value]
+    public var multilangEnabled: Bool
+    public var defaultLocale: String
+    public var partnersEnabled: Bool
+    public var partners: [LandingConfigSectionPartner]?
+
+    public init(publicAgentId: String? = nil, texts: [String: Value], multilangEnabled: Bool, defaultLocale: String, partnersEnabled: Bool, partners: [LandingConfigSectionPartner]? = nil) {
+        self.publicAgentId = publicAgentId
+        self.texts = texts
+        self.multilangEnabled = multilangEnabled
+        self.defaultLocale = defaultLocale
+        self.partnersEnabled = partnersEnabled
+        self.partners = partners
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case publicAgentId = "public_agent_id"
+        case texts = "texts"
+        case multilangEnabled = "multilang_enabled"
+        case defaultLocale = "default_locale"
+        case partnersEnabled = "partners_enabled"
+        case partners = "partners"
+    }
+}
+
+/// `LandingConfigSectionPartner` model.
+public struct LandingConfigSectionPartner: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var tagline: String
+    public var taglineUk: String?
+    public var href: String
+    public var logo: LandingConfigSectionPartnerLogo
+
+    public init(id: String, name: String, tagline: String, taglineUk: String? = nil, href: String, logo: LandingConfigSectionPartnerLogo) {
+        self.id = id
+        self.name = name
+        self.tagline = tagline
+        self.taglineUk = taglineUk
+        self.href = href
+        self.logo = logo
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case tagline = "tagline"
+        case taglineUk = "tagline_uk"
+        case href = "href"
+        case logo = "logo"
+    }
+}
+
+/// `LandingConfigSectionPartnerLogo` model.
+public struct LandingConfigSectionPartnerLogo: Codable, Hashable, Sendable {
+    public var slug: String?
+    public var url: String?
+
+    public init(slug: String? = nil, url: String? = nil) {
+        self.slug = slug
+        self.url = url
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case slug = "slug"
+        case url = "url"
     }
 }
 
@@ -19865,8 +21967,15 @@ public struct PublicAgentCard: Codable, Hashable, Sendable {
     public var specs: [PublicAgentCardSpec]?
     public var uiAvatar: JSONObject?
     public var uiDropGenome: JSONObject?
+    /// The tenant that owns the agent — the same value as `PublicTenant.slug`. The
+    /// `/c/{slug}/{agentId}` path segment is NOT authoritative (nothing checks it against the
+    /// agent); compare it with this and build the way back from here. Present when the owner record
+    /// has a slug.
+    public var tenantSlug: String?
+    /// The owning tenant's display name. Present when the owner record has one.
+    public var tenantName: String?
 
-    public init(agentId: String, name: String, `description`: String? = nil, icon: JSONValue, greeting: String? = nil, capabilities: String? = nil, specs: [PublicAgentCardSpec]? = nil, uiAvatar: JSONObject? = nil, uiDropGenome: JSONObject? = nil) {
+    public init(agentId: String, name: String, `description`: String? = nil, icon: JSONValue, greeting: String? = nil, capabilities: String? = nil, specs: [PublicAgentCardSpec]? = nil, uiAvatar: JSONObject? = nil, uiDropGenome: JSONObject? = nil, tenantSlug: String? = nil, tenantName: String? = nil) {
         self.agentId = agentId
         self.name = name
         self.`description` = `description`
@@ -19876,6 +21985,8 @@ public struct PublicAgentCard: Codable, Hashable, Sendable {
         self.specs = specs
         self.uiAvatar = uiAvatar
         self.uiDropGenome = uiDropGenome
+        self.tenantSlug = tenantSlug
+        self.tenantName = tenantName
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -19888,6 +21999,8 @@ public struct PublicAgentCard: Codable, Hashable, Sendable {
         case specs = "specs"
         case uiAvatar = "ui_avatar"
         case uiDropGenome = "ui_drop_genome"
+        case tenantSlug = "tenant_slug"
+        case tenantName = "tenant_name"
     }
 }
 
@@ -20647,6 +22760,22 @@ public struct RateListingRequest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case rating = "rating"
         case comment = "comment"
+    }
+}
+
+/// `ReactivateTenantResponse` model.
+public struct ReactivateTenantResponse: Codable, Hashable, Sendable {
+    public var reactivated: Bool
+    public var tenantId: String
+
+    public init(reactivated: Bool, tenantId: String) {
+        self.reactivated = reactivated
+        self.tenantId = tenantId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reactivated = "reactivated"
+        case tenantId = "tenant_id"
     }
 }
 
@@ -22698,6 +24827,19 @@ public struct RunOutput: Codable, Hashable, Sendable {
     }
 }
 
+/// `RunReconciliationResponse` model.
+public struct RunReconciliationResponse: Codable, Hashable, Sendable {
+    public var reconciliation: CostReconciliationResult
+
+    public init(reconciliation: CostReconciliationResult) {
+        self.reconciliation = reconciliation
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case reconciliation = "reconciliation"
+    }
+}
+
 /// Resource limits for the run
 public struct RunResourceLimits: Codable, Hashable, Sendable {
     public var maxDurationMs: Int?
@@ -23819,6 +25961,34 @@ public struct SetAdminLLMDefaultResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `SetAdminModelConfigResponse` model.
+public struct SetAdminModelConfigResponse: Codable, Hashable, Sendable {
+    public var defaultProvider: String?
+    public var defaultModel: String?
+    public var defaultEndpoint: String?
+    public var fallbackProvider: String?
+    public var fallbackModel: String?
+    public var fallbackEndpoint: String?
+
+    public init(defaultProvider: String? = nil, defaultModel: String? = nil, defaultEndpoint: String? = nil, fallbackProvider: String? = nil, fallbackModel: String? = nil, fallbackEndpoint: String? = nil) {
+        self.defaultProvider = defaultProvider
+        self.defaultModel = defaultModel
+        self.defaultEndpoint = defaultEndpoint
+        self.fallbackProvider = fallbackProvider
+        self.fallbackModel = fallbackModel
+        self.fallbackEndpoint = fallbackEndpoint
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case defaultProvider = "default_provider"
+        case defaultModel = "default_model"
+        case defaultEndpoint = "default_endpoint"
+        case fallbackProvider = "fallback_provider"
+        case fallbackModel = "fallback_model"
+        case fallbackEndpoint = "fallback_endpoint"
+    }
+}
+
 /// `SetAgentCapabilitiesResponse` model.
 public struct SetAgentCapabilitiesResponse: Codable, Hashable, Sendable {
     public var status: String?
@@ -23997,6 +26167,22 @@ public struct SetDataExplorerValueResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `SetFeatureFlagsResponse` model.
+public struct SetFeatureFlagsResponse: Codable, Hashable, Sendable {
+    public var flags: [JSONObject]?
+    public var updated: Bool
+
+    public init(flags: [JSONObject]? = nil, updated: Bool) {
+        self.flags = flags
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case flags = "flags"
+        case updated = "updated"
+    }
+}
+
 /// `SetLLMProviderKeyProvider` values.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
@@ -24130,6 +26316,22 @@ public struct SetModelPricingOverrideResponse: Codable, Hashable, Sendable {
         case inputPerMillion = "input_per_million"
         case outputPerMillion = "output_per_million"
         case cachedInputPerMillion = "cached_input_per_million"
+    }
+}
+
+/// `SetRateLimitsResponse` model.
+public struct SetRateLimitsResponse: Codable, Hashable, Sendable {
+    public var endpoints: [JSONObject]?
+    public var updated: Bool
+
+    public init(endpoints: [JSONObject]? = nil, updated: Bool) {
+        self.endpoints = endpoints
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case endpoints = "endpoints"
+        case updated = "updated"
     }
 }
 
@@ -24326,7 +26528,7 @@ public struct SetupStateResponse: Codable, Hashable, Sendable {
 /// `SetupStateResponseState` model.
 public struct SetupStateResponseState: Codable, Hashable, Sendable {
     /// `live` is a one-way latch; closing registration afterwards does not undo it.
-    public var status: SetupStateResponseStateStatus
+    public var status: AdminRegistrationConfigSetupStatus
     public var completedSteps: [String]
     public var registrationOpen: Bool
     public var startedAt: String
@@ -24334,7 +26536,7 @@ public struct SetupStateResponseState: Codable, Hashable, Sendable {
     public var completedAt: String?
     public var version: Int
 
-    public init(status: SetupStateResponseStateStatus, completedSteps: [String], registrationOpen: Bool, startedAt: String, completedAt: String? = nil, version: Int) {
+    public init(status: AdminRegistrationConfigSetupStatus, completedSteps: [String], registrationOpen: Bool, startedAt: String, completedAt: String? = nil, version: Int) {
         self.status = status
         self.completedSteps = completedSteps
         self.registrationOpen = registrationOpen
@@ -24351,29 +26553,6 @@ public struct SetupStateResponseState: Codable, Hashable, Sendable {
         case completedAt = "completed_at"
         case version = "version"
     }
-}
-
-/// `live` is a one-way latch; closing registration afterwards does not undo it.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct SetupStateResponseStateStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let inProgress = SetupStateResponseStateStatus(rawValue: "in_progress")
-    public static let live = SetupStateResponseStateStatus(rawValue: "live")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [SetupStateResponseStateStatus] = [.inProgress, .live]
 }
 
 /// `SetUserRoleRequest` model.
@@ -24687,9 +26866,9 @@ public struct SpecToolCatalog: Codable, Hashable, Sendable {
     public var agentId: String
     /// Tool name → the SPEC that owns it and the view to render its output with. Integration
     /// aliases map onto their base tool's view.
-    public var tools: [String: Value]
+    public var tools: [String: Value2]
 
-    public init(agentId: String, tools: [String: Value]) {
+    public init(agentId: String, tools: [String: Value2]) {
         self.agentId = agentId
         self.tools = tools
     }
@@ -25013,6 +27192,25 @@ public struct SuspendTenantRequest: Codable, Hashable, Sendable {
     }
 
     private enum CodingKeys: String, CodingKey {
+        case reason = "reason"
+    }
+}
+
+/// `SuspendTenantResponse` model.
+public struct SuspendTenantResponse: Codable, Hashable, Sendable {
+    public var suspended: Bool
+    public var tenantId: String
+    public var reason: String
+
+    public init(suspended: Bool, tenantId: String, reason: String) {
+        self.suspended = suspended
+        self.tenantId = tenantId
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case suspended = "suspended"
+        case tenantId = "tenant_id"
         case reason = "reason"
     }
 }
@@ -26905,6 +29103,54 @@ public struct TestAdminSmtpConfigResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `TestAdminStripeConfigResponseVariant1` model.
+public struct TestAdminStripeConfigResponseVariant1: Codable, Hashable, Sendable {
+    public var ok: Bool
+    public var accountId: String
+    public var livemode: Bool
+    public var businessName: String?
+    public var country: String
+    public var defaultCurrency: String
+
+    public init(ok: Bool, accountId: String, livemode: Bool, businessName: String? = nil, country: String, defaultCurrency: String) {
+        self.ok = ok
+        self.accountId = accountId
+        self.livemode = livemode
+        self.businessName = businessName
+        self.country = country
+        self.defaultCurrency = defaultCurrency
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ok = "ok"
+        case accountId = "account_id"
+        case livemode = "livemode"
+        case businessName = "business_name"
+        case country = "country"
+        case defaultCurrency = "default_currency"
+    }
+}
+
+/// `TestAdminStripeConfigResponseVariant2` model.
+public struct TestAdminStripeConfigResponseVariant2: Codable, Hashable, Sendable {
+    public var ok: Bool
+    public var error: String
+    /// Stripe's HTTP status, when it answered.
+    public var status: Int?
+
+    public init(ok: Bool, error: String, status: Int? = nil) {
+        self.ok = ok
+        self.error = error
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ok = "ok"
+        case error = "error"
+        case status = "status"
+    }
+}
+
 /// `TestAgentIntegrationResponse` model.
 public struct TestAgentIntegrationResponse: Codable, Hashable, Sendable {
     /// False when the connector could not reach the remote or the credentials were refused. This is
@@ -27321,6 +29567,165 @@ public struct UpdateACPSessionResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateAdminAgentMemoryConfigResponse` model.
+public struct UpdateAdminAgentMemoryConfigResponse: Codable, Hashable, Sendable {
+    public var agentMemory: UpdateAdminAgentMemoryConfigResponseAgentMemory
+    public var updated: Bool
+
+    public init(agentMemory: UpdateAdminAgentMemoryConfigResponseAgentMemory, updated: Bool) {
+        self.agentMemory = agentMemory
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentMemory = "agent_memory"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminAgentMemoryConfigResponseAgentMemory` model.
+public struct UpdateAdminAgentMemoryConfigResponseAgentMemory: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var useSharedStore: Bool
+    public var defaultMaxEntries: Int
+    public var defaultRetrievalLimit: Int
+    public var defaultRetrievalStrategy: String
+    public var decayEnabled: Bool
+    public var decayHalfLifeDays: Int
+    public var decayJobIntervalMs: Int
+    public var extractionMaxTokens: Int
+    public var extractionModel: String
+    public var evictionThreshold: Int
+    public var embeddingDimensions: Int
+    public var embeddingProvider: String
+    public var embeddingModel: String
+    public var compressionModel: String
+
+    public init(enabled: Bool, useSharedStore: Bool, defaultMaxEntries: Int, defaultRetrievalLimit: Int, defaultRetrievalStrategy: String, decayEnabled: Bool, decayHalfLifeDays: Int, decayJobIntervalMs: Int, extractionMaxTokens: Int, extractionModel: String, evictionThreshold: Int, embeddingDimensions: Int, embeddingProvider: String, embeddingModel: String, compressionModel: String) {
+        self.enabled = enabled
+        self.useSharedStore = useSharedStore
+        self.defaultMaxEntries = defaultMaxEntries
+        self.defaultRetrievalLimit = defaultRetrievalLimit
+        self.defaultRetrievalStrategy = defaultRetrievalStrategy
+        self.decayEnabled = decayEnabled
+        self.decayHalfLifeDays = decayHalfLifeDays
+        self.decayJobIntervalMs = decayJobIntervalMs
+        self.extractionMaxTokens = extractionMaxTokens
+        self.extractionModel = extractionModel
+        self.evictionThreshold = evictionThreshold
+        self.embeddingDimensions = embeddingDimensions
+        self.embeddingProvider = embeddingProvider
+        self.embeddingModel = embeddingModel
+        self.compressionModel = compressionModel
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case useSharedStore = "use_shared_store"
+        case defaultMaxEntries = "default_max_entries"
+        case defaultRetrievalLimit = "default_retrieval_limit"
+        case defaultRetrievalStrategy = "default_retrieval_strategy"
+        case decayEnabled = "decay_enabled"
+        case decayHalfLifeDays = "decay_half_life_days"
+        case decayJobIntervalMs = "decay_job_interval_ms"
+        case extractionMaxTokens = "extraction_max_tokens"
+        case extractionModel = "extraction_model"
+        case evictionThreshold = "eviction_threshold"
+        case embeddingDimensions = "embedding_dimensions"
+        case embeddingProvider = "embedding_provider"
+        case embeddingModel = "embedding_model"
+        case compressionModel = "compression_model"
+    }
+}
+
+/// `UpdateAdminAuthConfigResponse` model.
+public struct UpdateAdminAuthConfigResponse: Codable, Hashable, Sendable {
+    public var auth: UpdateAdminAuthConfigResponseAuth
+    public var updated: Bool
+
+    public init(auth: UpdateAdminAuthConfigResponseAuth, updated: Bool) {
+        self.auth = auth
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case auth = "auth"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminAuthConfigResponseAuth` model.
+public struct UpdateAdminAuthConfigResponseAuth: Codable, Hashable, Sendable {
+    public var superAdminEmail: String
+    public var otpTtlMs: Int
+    public var verificationTtlMs: Int
+    public var jwksCacheTtlMs: Int
+    public var jwksGraceTtlMs: Int
+    public var apiKeyCacheTtlS: Int
+    public var apiKeyRotationGracePeriodH: Int
+
+    public init(superAdminEmail: String, otpTtlMs: Int, verificationTtlMs: Int, jwksCacheTtlMs: Int, jwksGraceTtlMs: Int, apiKeyCacheTtlS: Int, apiKeyRotationGracePeriodH: Int) {
+        self.superAdminEmail = superAdminEmail
+        self.otpTtlMs = otpTtlMs
+        self.verificationTtlMs = verificationTtlMs
+        self.jwksCacheTtlMs = jwksCacheTtlMs
+        self.jwksGraceTtlMs = jwksGraceTtlMs
+        self.apiKeyCacheTtlS = apiKeyCacheTtlS
+        self.apiKeyRotationGracePeriodH = apiKeyRotationGracePeriodH
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case superAdminEmail = "super_admin_email"
+        case otpTtlMs = "otp_ttl_ms"
+        case verificationTtlMs = "verification_ttl_ms"
+        case jwksCacheTtlMs = "jwks_cache_ttl_ms"
+        case jwksGraceTtlMs = "jwks_grace_ttl_ms"
+        case apiKeyCacheTtlS = "api_key_cache_ttl_s"
+        case apiKeyRotationGracePeriodH = "api_key_rotation_grace_period_h"
+    }
+}
+
+/// `UpdateAdminBackpressureConfigResponse` model.
+public struct UpdateAdminBackpressureConfigResponse: Codable, Hashable, Sendable {
+    public var backpressure: UpdateAdminBackpressureConfigResponseBackpressure
+    public var updated: Bool
+
+    public init(backpressure: UpdateAdminBackpressureConfigResponseBackpressure, updated: Bool) {
+        self.backpressure = backpressure
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case backpressure = "backpressure"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminBackpressureConfigResponseBackpressure` model.
+public struct UpdateAdminBackpressureConfigResponseBackpressure: Codable, Hashable, Sendable {
+    public var sseBufferMax: Int
+    public var sseHighWatermark: Int
+    public var sseLowWatermark: Int
+    public var toolQueueMaxDepth: Int
+    public var toolQueueHighWatermark: Int
+
+    public init(sseBufferMax: Int, sseHighWatermark: Int, sseLowWatermark: Int, toolQueueMaxDepth: Int, toolQueueHighWatermark: Int) {
+        self.sseBufferMax = sseBufferMax
+        self.sseHighWatermark = sseHighWatermark
+        self.sseLowWatermark = sseLowWatermark
+        self.toolQueueMaxDepth = toolQueueMaxDepth
+        self.toolQueueHighWatermark = toolQueueHighWatermark
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sseBufferMax = "sse_buffer_max"
+        case sseHighWatermark = "sse_high_watermark"
+        case sseLowWatermark = "sse_low_watermark"
+        case toolQueueMaxDepth = "tool_queue_max_depth"
+        case toolQueueHighWatermark = "tool_queue_high_watermark"
+    }
+}
+
 /// `UpdateAdminBlogConfigRequest` model.
 public struct UpdateAdminBlogConfigRequest: Codable, Hashable, Sendable {
     public var enabled: Bool?
@@ -27412,6 +29817,50 @@ public struct UpdateAdminBlogPostResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateAdminCodeInterpreterConfigResponse` model.
+public struct UpdateAdminCodeInterpreterConfigResponse: Codable, Hashable, Sendable {
+    public var codeInterpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter
+    public var updated: Bool
+
+    public init(codeInterpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter, updated: Bool) {
+        self.codeInterpreter = codeInterpreter
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case codeInterpreter = "code_interpreter"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminCodeInterpreterConfigResponseCodeInterpreter` model.
+public struct UpdateAdminCodeInterpreterConfigResponseCodeInterpreter: Codable, Hashable, Sendable {
+    public var isolation: String
+    public var timeoutMs: Int?
+    public var maxMemoryMb: Int?
+    public var containerImage: String?
+    public var pythonContainerImage: String?
+    public var pythonSandboxHostDir: String?
+
+    public init(isolation: String, timeoutMs: Int? = nil, maxMemoryMb: Int? = nil, containerImage: String? = nil, pythonContainerImage: String? = nil, pythonSandboxHostDir: String? = nil) {
+        self.isolation = isolation
+        self.timeoutMs = timeoutMs
+        self.maxMemoryMb = maxMemoryMb
+        self.containerImage = containerImage
+        self.pythonContainerImage = pythonContainerImage
+        self.pythonSandboxHostDir = pythonSandboxHostDir
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case isolation = "isolation"
+        case timeoutMs = "timeout_ms"
+        case maxMemoryMb = "max_memory_mb"
+        case containerImage = "container_image"
+        case pythonContainerImage = "python_container_image"
+        case pythonSandboxHostDir = "python_sandbox_host_dir"
+    }
+}
+
 /// `UpdateAdminDisabledToolsResponse` model.
 public struct UpdateAdminDisabledToolsResponse: Codable, Hashable, Sendable {
     public var ok: Bool
@@ -27425,6 +29874,53 @@ public struct UpdateAdminDisabledToolsResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case ok = "ok"
         case disabledTools = "disabled_tools"
+    }
+}
+
+/// `UpdateAdminEvaluationConfigResponse` model.
+public struct UpdateAdminEvaluationConfigResponse: Codable, Hashable, Sendable {
+    public var evaluation: UpdateAdminEvaluationConfigResponseEvaluation
+    public var updated: Bool
+
+    public init(evaluation: UpdateAdminEvaluationConfigResponseEvaluation, updated: Bool) {
+        self.evaluation = evaluation
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case evaluation = "evaluation"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminEvaluationConfigResponseEvaluation` model.
+public struct UpdateAdminEvaluationConfigResponseEvaluation: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxConcurrentEvalCases: Int
+    public var regressionThreshold: Double
+    public var defaultScorers: [String]
+    public var maxCasesPerDataset: Int
+    public var evalRunTimeoutMs: Int
+    public var autoRollbackEnabled: Bool
+
+    public init(enabled: Bool, maxConcurrentEvalCases: Int, regressionThreshold: Double, defaultScorers: [String], maxCasesPerDataset: Int, evalRunTimeoutMs: Int, autoRollbackEnabled: Bool) {
+        self.enabled = enabled
+        self.maxConcurrentEvalCases = maxConcurrentEvalCases
+        self.regressionThreshold = regressionThreshold
+        self.defaultScorers = defaultScorers
+        self.maxCasesPerDataset = maxCasesPerDataset
+        self.evalRunTimeoutMs = evalRunTimeoutMs
+        self.autoRollbackEnabled = autoRollbackEnabled
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxConcurrentEvalCases = "max_concurrent_eval_cases"
+        case regressionThreshold = "regression_threshold"
+        case defaultScorers = "default_scorers"
+        case maxCasesPerDataset = "max_cases_per_dataset"
+        case evalRunTimeoutMs = "eval_run_timeout_ms"
+        case autoRollbackEnabled = "auto_rollback_enabled"
     }
 }
 
@@ -27447,6 +29943,347 @@ public struct UpdateAdminFounderConfigRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateAdminGuardrailsResponse` model.
+public struct UpdateAdminGuardrailsResponse: Codable, Hashable, Sendable {
+    public var guardrails: [JSONObject]?
+    public var updated: Bool
+
+    public init(guardrails: [JSONObject]? = nil, updated: Bool) {
+        self.guardrails = guardrails
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case guardrails = "guardrails"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminIdempotencyConfigResponse` model.
+public struct UpdateAdminIdempotencyConfigResponse: Codable, Hashable, Sendable {
+    public var idempotency: UpdateAdminIdempotencyConfigResponseIdempotency
+    public var updated: Bool
+
+    public init(idempotency: UpdateAdminIdempotencyConfigResponseIdempotency, updated: Bool) {
+        self.idempotency = idempotency
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case idempotency = "idempotency"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminIdempotencyConfigResponseIdempotency` model.
+public struct UpdateAdminIdempotencyConfigResponseIdempotency: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var ttlHours: Int
+    public var maxResponseCacheBytes: Int
+
+    public init(enabled: Bool, ttlHours: Int, maxResponseCacheBytes: Int) {
+        self.enabled = enabled
+        self.ttlHours = ttlHours
+        self.maxResponseCacheBytes = maxResponseCacheBytes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case ttlHours = "ttl_hours"
+        case maxResponseCacheBytes = "max_response_cache_bytes"
+    }
+}
+
+/// `UpdateAdminIntegrationsResponse` model.
+public struct UpdateAdminIntegrationsResponse: Codable, Hashable, Sendable {
+    public var integrations: [UpdateAdminIntegrationsResponseIntegration]
+    public var updated: Bool
+
+    public init(integrations: [UpdateAdminIntegrationsResponseIntegration], updated: Bool) {
+        self.integrations = integrations
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case integrations = "integrations"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminIntegrationsResponseIntegration` model.
+public struct UpdateAdminIntegrationsResponseIntegration: Codable, Hashable, Sendable {
+    public var id: String
+    public var name: String
+    public var icon: String?
+    public var authType: AdminIntegrationsConfigIntegrationAuthType?
+    public var category: String?
+    public var enabled: Bool
+    public var beta: Bool?
+    /// `kv` when an operator overrode the shipped default, `default` otherwise.
+    public var source: String?
+
+    public init(id: String, name: String, icon: String? = nil, authType: AdminIntegrationsConfigIntegrationAuthType? = nil, category: String? = nil, enabled: Bool, beta: Bool? = nil, source: String? = nil) {
+        self.id = id
+        self.name = name
+        self.icon = icon
+        self.authType = authType
+        self.category = category
+        self.enabled = enabled
+        self.beta = beta
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case name = "name"
+        case icon = "icon"
+        case authType = "auth_type"
+        case category = "category"
+        case enabled = "enabled"
+        case beta = "beta"
+        case source = "source"
+    }
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponse` model.
+public struct UpdateAdminLLMAdaptersConfigResponse: Codable, Hashable, Sendable {
+    public var llmAdapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters
+    public var updated: Bool
+
+    public init(llmAdapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters, updated: Bool) {
+        self.llmAdapters = llmAdapters
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case llmAdapters = "llm_adapters"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponseLLMAdapters` model.
+public struct UpdateAdminLLMAdaptersConfigResponseLLMAdapters: Codable, Hashable, Sendable {
+    public var maxRetries: Int?
+    public var retryBaseDelayMs: Int?
+    public var retryMaxDelayMs: Int?
+    public var streamEmptyTimeoutMs: Int?
+    public var circuitBreaker: UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker?
+    public var providerRateLimits: JSONObject?
+
+    public init(maxRetries: Int? = nil, retryBaseDelayMs: Int? = nil, retryMaxDelayMs: Int? = nil, streamEmptyTimeoutMs: Int? = nil, circuitBreaker: UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker? = nil, providerRateLimits: JSONObject? = nil) {
+        self.maxRetries = maxRetries
+        self.retryBaseDelayMs = retryBaseDelayMs
+        self.retryMaxDelayMs = retryMaxDelayMs
+        self.streamEmptyTimeoutMs = streamEmptyTimeoutMs
+        self.circuitBreaker = circuitBreaker
+        self.providerRateLimits = providerRateLimits
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxRetries = "max_retries"
+        case retryBaseDelayMs = "retry_base_delay_ms"
+        case retryMaxDelayMs = "retry_max_delay_ms"
+        case streamEmptyTimeoutMs = "stream_empty_timeout_ms"
+        case circuitBreaker = "circuit_breaker"
+        case providerRateLimits = "provider_rate_limits"
+    }
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker` model.
+public struct UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker: Codable, Hashable, Sendable {
+    public var failureThreshold: Int?
+    public var resetTimeoutMs: Int?
+    public var halfOpenMaxRequests: Int?
+
+    public init(failureThreshold: Int? = nil, resetTimeoutMs: Int? = nil, halfOpenMaxRequests: Int? = nil) {
+        self.failureThreshold = failureThreshold
+        self.resetTimeoutMs = resetTimeoutMs
+        self.halfOpenMaxRequests = halfOpenMaxRequests
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case failureThreshold = "failure_threshold"
+        case resetTimeoutMs = "reset_timeout_ms"
+        case halfOpenMaxRequests = "half_open_max_requests"
+    }
+}
+
+/// `UpdateAdminLoggingConfigResponse` model.
+public struct UpdateAdminLoggingConfigResponse: Codable, Hashable, Sendable {
+    public var logging: UpdateAdminLoggingConfigResponseLogging
+    public var updated: Bool
+
+    public init(logging: UpdateAdminLoggingConfigResponseLogging, updated: Bool) {
+        self.logging = logging
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case logging = "logging"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminLoggingConfigResponseLogging` model.
+public struct UpdateAdminLoggingConfigResponseLogging: Codable, Hashable, Sendable {
+    public var piiMode: String
+    public var logAgentResponses: Bool
+    public var fileEnabled: Bool
+    public var fileMaxSizeMb: Int
+    public var fileRetentionDays: Int
+    public var fileLevel: String
+    public var fileSeparateError: Bool
+    public var activityLogVerbosity: String
+
+    public init(piiMode: String, logAgentResponses: Bool, fileEnabled: Bool, fileMaxSizeMb: Int, fileRetentionDays: Int, fileLevel: String, fileSeparateError: Bool, activityLogVerbosity: String) {
+        self.piiMode = piiMode
+        self.logAgentResponses = logAgentResponses
+        self.fileEnabled = fileEnabled
+        self.fileMaxSizeMb = fileMaxSizeMb
+        self.fileRetentionDays = fileRetentionDays
+        self.fileLevel = fileLevel
+        self.fileSeparateError = fileSeparateError
+        self.activityLogVerbosity = activityLogVerbosity
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case piiMode = "pii_mode"
+        case logAgentResponses = "log_agent_responses"
+        case fileEnabled = "file_enabled"
+        case fileMaxSizeMb = "file_max_size_mb"
+        case fileRetentionDays = "file_retention_days"
+        case fileLevel = "file_level"
+        case fileSeparateError = "file_separate_error"
+        case activityLogVerbosity = "activity_log_verbosity"
+    }
+}
+
+/// `UpdateAdminLongRunningConfigResponse` model.
+public struct UpdateAdminLongRunningConfigResponse: Codable, Hashable, Sendable {
+    public var longRunning: UpdateAdminLongRunningConfigResponseLongRunning
+    public var updated: Bool
+
+    public init(longRunning: UpdateAdminLongRunningConfigResponseLongRunning, updated: Bool) {
+        self.longRunning = longRunning
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case longRunning = "long_running"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminLongRunningConfigResponseLongRunning` model.
+public struct UpdateAdminLongRunningConfigResponseLongRunning: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxDurationMs: Int
+    public var checkpointIntervalMs: Int
+    public var idleTimeoutMs: Int
+    public var continuationTokenTtlDays: Int
+    public var maxBackgroundRunsPerTenant: Int
+
+    public init(enabled: Bool, maxDurationMs: Int, checkpointIntervalMs: Int, idleTimeoutMs: Int, continuationTokenTtlDays: Int, maxBackgroundRunsPerTenant: Int) {
+        self.enabled = enabled
+        self.maxDurationMs = maxDurationMs
+        self.checkpointIntervalMs = checkpointIntervalMs
+        self.idleTimeoutMs = idleTimeoutMs
+        self.continuationTokenTtlDays = continuationTokenTtlDays
+        self.maxBackgroundRunsPerTenant = maxBackgroundRunsPerTenant
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxDurationMs = "max_duration_ms"
+        case checkpointIntervalMs = "checkpoint_interval_ms"
+        case idleTimeoutMs = "idle_timeout_ms"
+        case continuationTokenTtlDays = "continuation_token_ttl_days"
+        case maxBackgroundRunsPerTenant = "max_background_runs_per_tenant"
+    }
+}
+
+/// `UpdateAdminMCPConfigResponse` model.
+public struct UpdateAdminMCPConfigResponse: Codable, Hashable, Sendable {
+    public var mcp: UpdateAdminMCPConfigResponseMCP
+    public var updated: Bool
+
+    public init(mcp: UpdateAdminMCPConfigResponseMCP, updated: Bool) {
+        self.mcp = mcp
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mcp = "mcp"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminMCPConfigResponseMCP` model.
+public struct UpdateAdminMCPConfigResponseMCP: Codable, Hashable, Sendable {
+    public var maxSessionsPerServer: Int
+    public var maxTotalStdioSessions: Int
+    public var sessionIdleTimeoutMs: Int
+
+    public init(maxSessionsPerServer: Int, maxTotalStdioSessions: Int, sessionIdleTimeoutMs: Int) {
+        self.maxSessionsPerServer = maxSessionsPerServer
+        self.maxTotalStdioSessions = maxTotalStdioSessions
+        self.sessionIdleTimeoutMs = sessionIdleTimeoutMs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxSessionsPerServer = "max_sessions_per_server"
+        case maxTotalStdioSessions = "max_total_stdio_sessions"
+        case sessionIdleTimeoutMs = "session_idle_timeout_ms"
+    }
+}
+
+/// `UpdateAdminMultimodalConfigResponse` model.
+public struct UpdateAdminMultimodalConfigResponse: Codable, Hashable, Sendable {
+    public var multimodal: UpdateAdminMultimodalConfigResponseMultimodal
+    public var updated: Bool
+
+    public init(multimodal: UpdateAdminMultimodalConfigResponseMultimodal, updated: Bool) {
+        self.multimodal = multimodal
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case multimodal = "multimodal"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminMultimodalConfigResponseMultimodal` model.
+public struct UpdateAdminMultimodalConfigResponseMultimodal: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxImageSizeBytes: Int
+    public var maxAudioDurationS: Int
+    public var maxVideoDurationS: Int
+    public var autoResizeImages: Bool
+    public var supportedImageFormats: [String]
+    public var supportedAudioFormats: [String]
+
+    public init(enabled: Bool, maxImageSizeBytes: Int, maxAudioDurationS: Int, maxVideoDurationS: Int, autoResizeImages: Bool, supportedImageFormats: [String], supportedAudioFormats: [String]) {
+        self.enabled = enabled
+        self.maxImageSizeBytes = maxImageSizeBytes
+        self.maxAudioDurationS = maxAudioDurationS
+        self.maxVideoDurationS = maxVideoDurationS
+        self.autoResizeImages = autoResizeImages
+        self.supportedImageFormats = supportedImageFormats
+        self.supportedAudioFormats = supportedAudioFormats
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxImageSizeBytes = "max_image_size_bytes"
+        case maxAudioDurationS = "max_audio_duration_s"
+        case maxVideoDurationS = "max_video_duration_s"
+        case autoResizeImages = "auto_resize_images"
+        case supportedImageFormats = "supported_image_formats"
+        case supportedAudioFormats = "supported_audio_formats"
+    }
+}
+
 /// `UpdateAdminOAuthIdentityConfigRequest` model.
 public struct UpdateAdminOAuthIdentityConfigRequest: Codable, Hashable, Sendable {
     public var appleServicesId: String?
@@ -27466,6 +30303,44 @@ public struct UpdateAdminOAuthIdentityConfigRequest: Codable, Hashable, Sendable
         case appleTeamId = "apple_team_id"
         case appleBundleId = "apple_bundle_id"
         case oauthReturnToHosts = "oauth_return_to_hosts"
+    }
+}
+
+/// `UpdateAdminPersistenceConfigResponse` model.
+public struct UpdateAdminPersistenceConfigResponse: Codable, Hashable, Sendable {
+    public var persistence: UpdateAdminPersistenceConfigResponsePersistence
+    public var updated: Bool
+
+    public init(persistence: UpdateAdminPersistenceConfigResponsePersistence, updated: Bool) {
+        self.persistence = persistence
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case persistence = "persistence"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminPersistenceConfigResponsePersistence` model.
+public struct UpdateAdminPersistenceConfigResponsePersistence: Codable, Hashable, Sendable {
+    public var snapshotEveryNEvents: Int
+    public var checkpointAfterToolCalls: Bool
+    public var usageShards: Int
+    public var autoCapKvValues: Bool
+
+    public init(snapshotEveryNEvents: Int, checkpointAfterToolCalls: Bool, usageShards: Int, autoCapKvValues: Bool) {
+        self.snapshotEveryNEvents = snapshotEveryNEvents
+        self.checkpointAfterToolCalls = checkpointAfterToolCalls
+        self.usageShards = usageShards
+        self.autoCapKvValues = autoCapKvValues
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case snapshotEveryNEvents = "snapshot_every_n_events"
+        case checkpointAfterToolCalls = "checkpoint_after_tool_calls"
+        case usageShards = "usage_shards"
+        case autoCapKvValues = "auto_cap_kv_values"
     }
 }
 
@@ -27498,6 +30373,66 @@ public struct UpdateAdminPlansResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateAdminPricingResponse` model.
+public struct UpdateAdminPricingResponse: Codable, Hashable, Sendable {
+    public var pricing: UpdateAdminPricingResponsePricing
+    public var updated: Bool
+
+    public init(pricing: UpdateAdminPricingResponsePricing, updated: Bool) {
+        self.pricing = pricing
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case pricing = "pricing"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminPricingResponsePricing` model.
+public struct UpdateAdminPricingResponsePricing: Codable, Hashable, Sendable {
+    public var openaiCompatInput: Double
+    public var openaiCompatOutput: Double
+    public var anthropicInput: Int
+    public var anthropicOutput: Double
+    public var anthropicThinking: Double
+
+    public init(openaiCompatInput: Double, openaiCompatOutput: Double, anthropicInput: Int, anthropicOutput: Double, anthropicThinking: Double) {
+        self.openaiCompatInput = openaiCompatInput
+        self.openaiCompatOutput = openaiCompatOutput
+        self.anthropicInput = anthropicInput
+        self.anthropicOutput = anthropicOutput
+        self.anthropicThinking = anthropicThinking
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case openaiCompatInput = "openai_compat_input"
+        case openaiCompatOutput = "openai_compat_output"
+        case anthropicInput = "anthropic_input"
+        case anthropicOutput = "anthropic_output"
+        case anthropicThinking = "anthropic_thinking"
+    }
+}
+
+/// `UpdateAdminProviderResponse` model.
+public struct UpdateAdminProviderResponse: Codable, Hashable, Sendable {
+    public var id: String
+    public var enabled: Bool
+    public var modelAllowlist: [String]
+
+    public init(id: String, enabled: Bool, modelAllowlist: [String]) {
+        self.id = id
+        self.enabled = enabled
+        self.modelAllowlist = modelAllowlist
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case id = "id"
+        case enabled = "enabled"
+        case modelAllowlist = "model_allowlist"
+    }
+}
+
 /// `UpdateAdminRegistrationConfigRequest` model.
 public struct UpdateAdminRegistrationConfigRequest: Codable, Hashable, Sendable {
     public var registrationOpen: Bool?
@@ -27519,6 +30454,138 @@ public struct UpdateAdminRegistrationConfigRequest: Codable, Hashable, Sendable 
         case confirmOpen = "confirm_open"
         case defaultSignupPlan = "default_signup_plan"
         case allowedEmailDomains = "allowed_email_domains"
+    }
+}
+
+/// `UpdateAdminRetentionConfigResponse` model.
+public struct UpdateAdminRetentionConfigResponse: Codable, Hashable, Sendable {
+    public var retention: UpdateAdminRetentionConfigResponseRetention
+    public var updated: Bool
+
+    public init(retention: UpdateAdminRetentionConfigResponseRetention, updated: Bool) {
+        self.retention = retention
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case retention = "retention"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminRetentionConfigResponseRetention` model.
+public struct UpdateAdminRetentionConfigResponseRetention: Codable, Hashable, Sendable {
+    public var completedRunTtlDays: Int
+    public var eventTtlDays: Int
+    public var archiveToSqlite: Bool
+    public var auditLogTtlDays: Int
+    public var archiveJobIntervalMs: Int
+    public var archiveBatchSize: Int
+    public var feedTtlDays: Int
+    public var artifactTtlDays: Int
+    public var checkpointTtlHours: Int
+
+    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, checkpointTtlHours: Int) {
+        self.completedRunTtlDays = completedRunTtlDays
+        self.eventTtlDays = eventTtlDays
+        self.archiveToSqlite = archiveToSqlite
+        self.auditLogTtlDays = auditLogTtlDays
+        self.archiveJobIntervalMs = archiveJobIntervalMs
+        self.archiveBatchSize = archiveBatchSize
+        self.feedTtlDays = feedTtlDays
+        self.artifactTtlDays = artifactTtlDays
+        self.checkpointTtlHours = checkpointTtlHours
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case completedRunTtlDays = "completed_run_ttl_days"
+        case eventTtlDays = "event_ttl_days"
+        case archiveToSqlite = "archive_to_sqlite"
+        case auditLogTtlDays = "audit_log_ttl_days"
+        case archiveJobIntervalMs = "archive_job_interval_ms"
+        case archiveBatchSize = "archive_batch_size"
+        case feedTtlDays = "feed_ttl_days"
+        case artifactTtlDays = "artifact_ttl_days"
+        case checkpointTtlHours = "checkpoint_ttl_hours"
+    }
+}
+
+/// `UpdateAdminRunCommandConfigResponse` model.
+public struct UpdateAdminRunCommandConfigResponse: Codable, Hashable, Sendable {
+    public var runCommand: UpdateAdminRunCommandConfigResponseRunCommand
+    public var updated: Bool
+
+    public init(runCommand: UpdateAdminRunCommandConfigResponseRunCommand, updated: Bool) {
+        self.runCommand = runCommand
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runCommand = "run_command"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminRunCommandConfigResponseRunCommand` model.
+public struct UpdateAdminRunCommandConfigResponseRunCommand: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var isolation: String
+    public var timeoutMs: Int
+    public var maxOutputBytes: Int
+    public var allowedCommands: [String]
+    public var denoAllow: [String]
+
+    public init(enabled: Bool, isolation: String, timeoutMs: Int, maxOutputBytes: Int, allowedCommands: [String], denoAllow: [String]) {
+        self.enabled = enabled
+        self.isolation = isolation
+        self.timeoutMs = timeoutMs
+        self.maxOutputBytes = maxOutputBytes
+        self.allowedCommands = allowedCommands
+        self.denoAllow = denoAllow
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case isolation = "isolation"
+        case timeoutMs = "timeout_ms"
+        case maxOutputBytes = "max_output_bytes"
+        case allowedCommands = "allowed_commands"
+        case denoAllow = "deno_allow"
+    }
+}
+
+/// `UpdateAdminServerConfigResponse` model.
+public struct UpdateAdminServerConfigResponse: Codable, Hashable, Sendable {
+    public var server: UpdateAdminServerConfigResponseServer
+    public var updated: Bool
+
+    public init(server: UpdateAdminServerConfigResponseServer, updated: Bool) {
+        self.server = server
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case server = "server"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminServerConfigResponseServer` model.
+public struct UpdateAdminServerConfigResponseServer: Codable, Hashable, Sendable {
+    public var trustProxy: Bool
+    public var maxBodyBytes: Int
+    public var gracefulShutdownTimeoutMs: Int?
+
+    public init(trustProxy: Bool, maxBodyBytes: Int, gracefulShutdownTimeoutMs: Int? = nil) {
+        self.trustProxy = trustProxy
+        self.maxBodyBytes = maxBodyBytes
+        self.gracefulShutdownTimeoutMs = gracefulShutdownTimeoutMs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case trustProxy = "trust_proxy"
+        case maxBodyBytes = "max_body_bytes"
+        case gracefulShutdownTimeoutMs = "graceful_shutdown_timeout_ms"
     }
 }
 
@@ -27618,6 +30685,50 @@ public struct UpdateAdminSpecPackagesRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateAdminSSEConfigResponse` model.
+public struct UpdateAdminSSEConfigResponse: Codable, Hashable, Sendable {
+    public var sse: UpdateAdminSSEConfigResponseSSE
+    public var updated: Bool
+
+    public init(sse: UpdateAdminSSEConfigResponseSSE, updated: Bool) {
+        self.sse = sse
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case sse = "sse"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminSSEConfigResponseSSE` model.
+public struct UpdateAdminSSEConfigResponseSSE: Codable, Hashable, Sendable {
+    public var heartbeatIntervalMs: Int
+    public var watchTimeoutMs: Int
+    public var pollIntervalMs: Int
+    public var maxPollIntervalMs: Int
+    public var reconnectHintMs: Int
+    public var runWaitTimeoutSec: Int
+
+    public init(heartbeatIntervalMs: Int, watchTimeoutMs: Int, pollIntervalMs: Int, maxPollIntervalMs: Int, reconnectHintMs: Int, runWaitTimeoutSec: Int) {
+        self.heartbeatIntervalMs = heartbeatIntervalMs
+        self.watchTimeoutMs = watchTimeoutMs
+        self.pollIntervalMs = pollIntervalMs
+        self.maxPollIntervalMs = maxPollIntervalMs
+        self.reconnectHintMs = reconnectHintMs
+        self.runWaitTimeoutSec = runWaitTimeoutSec
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case heartbeatIntervalMs = "heartbeat_interval_ms"
+        case watchTimeoutMs = "watch_timeout_ms"
+        case pollIntervalMs = "poll_interval_ms"
+        case maxPollIntervalMs = "max_poll_interval_ms"
+        case reconnectHintMs = "reconnect_hint_ms"
+        case runWaitTimeoutSec = "run_wait_timeout_sec"
+    }
+}
+
 /// `UpdateAdminStripeConfigRequest` model.
 public struct UpdateAdminStripeConfigRequest: Codable, Hashable, Sendable {
     public var enabled: Bool?
@@ -27675,6 +30786,77 @@ public struct UpdateAdminStripeConfigRequestMode: RawRepresentable, Codable, Has
     public static let knownValues: [UpdateAdminStripeConfigRequestMode] = [.test, .live]
 }
 
+/// `UpdateAdminStripeConfigResponse` model.
+public struct UpdateAdminStripeConfigResponse: Codable, Hashable, Sendable {
+    public var stripe: UpdateAdminStripeConfigResponseStripe
+    public var updated: Bool
+
+    public init(stripe: UpdateAdminStripeConfigResponseStripe, updated: Bool) {
+        self.stripe = stripe
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case stripe = "stripe"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminStripeConfigResponseStripe` model.
+public struct UpdateAdminStripeConfigResponseStripe: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var mode: String
+    public var secretKey: String
+    public var webhookSecret: String
+    public var publishableKey: String
+    public var priceIdStarter: String
+    public var priceIdPro: String
+    public var priceIdEnterprise: String
+
+    public init(enabled: Bool, mode: String, secretKey: String, webhookSecret: String, publishableKey: String, priceIdStarter: String, priceIdPro: String, priceIdEnterprise: String) {
+        self.enabled = enabled
+        self.mode = mode
+        self.secretKey = secretKey
+        self.webhookSecret = webhookSecret
+        self.publishableKey = publishableKey
+        self.priceIdStarter = priceIdStarter
+        self.priceIdPro = priceIdPro
+        self.priceIdEnterprise = priceIdEnterprise
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case mode = "mode"
+        case secretKey = "secret_key"
+        case webhookSecret = "webhook_secret"
+        case publishableKey = "publishable_key"
+        case priceIdStarter = "price_id_starter"
+        case priceIdPro = "price_id_pro"
+        case priceIdEnterprise = "price_id_enterprise"
+    }
+}
+
+/// `UpdateAdminTenantSettingsResponse` model.
+public struct UpdateAdminTenantSettingsResponse: Codable, Hashable, Sendable {
+    public var tenantId: String
+    /// types/tenant.ts TenantSettings as stored — legacy records may lack fields.
+    public var settings: JSONObject
+    /// Only when ever set.
+    public var legalHold: Bool?
+
+    public init(tenantId: String, settings: JSONObject, legalHold: Bool? = nil) {
+        self.tenantId = tenantId
+        self.settings = settings
+        self.legalHold = legalHold
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case tenantId = "tenant_id"
+        case settings = "settings"
+        case legalHold = "legal_hold"
+    }
+}
+
 /// `UpdateAdminToolOverridesRequest` model.
 public struct UpdateAdminToolOverridesRequest: Codable, Hashable, Sendable {
     public var overrides: [String: ToolOverride]
@@ -27701,6 +30883,144 @@ public struct UpdateAdminToolOverridesResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case ok = "ok"
         case overrides = "overrides"
+    }
+}
+
+/// `UpdateAdminToolSecurityConfigResponse` model.
+public struct UpdateAdminToolSecurityConfigResponse: Codable, Hashable, Sendable {
+    public var toolSecurity: UpdateAdminToolSecurityConfigResponseToolSecurity
+    public var updated: Bool
+
+    public init(toolSecurity: UpdateAdminToolSecurityConfigResponseToolSecurity, updated: Bool) {
+        self.toolSecurity = toolSecurity
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case toolSecurity = "tool_security"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
+public struct UpdateAdminToolSecurityConfigResponseToolSecurity: Codable, Hashable, Sendable {
+    public var defaultEgressPolicy: String
+    public var egressAllowlistPerTenant: [JSONValue]?
+    public var ssrfDenyPrivateRanges: Bool
+    public var defaultToolTimeoutMs: Int
+    public var defaultToolMaxPayloadBytes: Int
+    public var defaultToolMaxConcurrency: Int
+    public var stdioInheritEnv: Bool
+
+    public init(defaultEgressPolicy: String, egressAllowlistPerTenant: [JSONValue]? = nil, ssrfDenyPrivateRanges: Bool, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
+        self.defaultEgressPolicy = defaultEgressPolicy
+        self.egressAllowlistPerTenant = egressAllowlistPerTenant
+        self.ssrfDenyPrivateRanges = ssrfDenyPrivateRanges
+        self.defaultToolTimeoutMs = defaultToolTimeoutMs
+        self.defaultToolMaxPayloadBytes = defaultToolMaxPayloadBytes
+        self.defaultToolMaxConcurrency = defaultToolMaxConcurrency
+        self.stdioInheritEnv = stdioInheritEnv
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case defaultEgressPolicy = "default_egress_policy"
+        case egressAllowlistPerTenant = "egress_allowlist_per_tenant"
+        case ssrfDenyPrivateRanges = "ssrf_deny_private_ranges"
+        case defaultToolTimeoutMs = "default_tool_timeout_ms"
+        case defaultToolMaxPayloadBytes = "default_tool_max_payload_bytes"
+        case defaultToolMaxConcurrency = "default_tool_max_concurrency"
+        case stdioInheritEnv = "stdio_inherit_env"
+    }
+}
+
+/// `UpdateAdminWebhooksConfigResponse` model.
+public struct UpdateAdminWebhooksConfigResponse: Codable, Hashable, Sendable {
+    public var webhooks: UpdateAdminWebhooksConfigResponseWebhooks
+    public var updated: Bool
+
+    public init(webhooks: UpdateAdminWebhooksConfigResponseWebhooks, updated: Bool) {
+        self.webhooks = webhooks
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case webhooks = "webhooks"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminWebhooksConfigResponseWebhooks` model.
+public struct UpdateAdminWebhooksConfigResponseWebhooks: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    public var maxSubscriptionsPerTenant: Int
+    public var deliveryTimeoutMs: Int
+    public var maxRetryAttempts: Int
+    public var requireHTTPS: Bool
+    public var maxPayloadBytes: Int
+
+    public init(enabled: Bool, maxSubscriptionsPerTenant: Int, deliveryTimeoutMs: Int, maxRetryAttempts: Int, requireHTTPS: Bool, maxPayloadBytes: Int) {
+        self.enabled = enabled
+        self.maxSubscriptionsPerTenant = maxSubscriptionsPerTenant
+        self.deliveryTimeoutMs = deliveryTimeoutMs
+        self.maxRetryAttempts = maxRetryAttempts
+        self.requireHTTPS = requireHTTPS
+        self.maxPayloadBytes = maxPayloadBytes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case maxSubscriptionsPerTenant = "max_subscriptions_per_tenant"
+        case deliveryTimeoutMs = "delivery_timeout_ms"
+        case maxRetryAttempts = "max_retry_attempts"
+        case requireHTTPS = "require_https"
+        case maxPayloadBytes = "max_payload_bytes"
+    }
+}
+
+/// `UpdateAdminWorkerPoolConfigResponse` model.
+public struct UpdateAdminWorkerPoolConfigResponse: Codable, Hashable, Sendable {
+    public var workerPool: UpdateAdminWorkerPoolConfigResponseWorkerPool
+    public var updated: Bool
+
+    public init(workerPool: UpdateAdminWorkerPoolConfigResponseWorkerPool, updated: Bool) {
+        self.workerPool = workerPool
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case workerPool = "worker_pool"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateAdminWorkerPoolConfigResponseWorkerPool` model.
+public struct UpdateAdminWorkerPoolConfigResponseWorkerPool: Codable, Hashable, Sendable {
+    public var maxWorkers: Int
+    public var defaultMode: String
+    public var maxRunDurationMs: Int
+    public var reconciliationIntervalMs: Int
+    public var scheduleMaxRetries: Int
+    public var scheduleBaseDelayMs: Int
+    public var maxQueueSize: Int?
+
+    public init(maxWorkers: Int, defaultMode: String, maxRunDurationMs: Int, reconciliationIntervalMs: Int, scheduleMaxRetries: Int, scheduleBaseDelayMs: Int, maxQueueSize: Int? = nil) {
+        self.maxWorkers = maxWorkers
+        self.defaultMode = defaultMode
+        self.maxRunDurationMs = maxRunDurationMs
+        self.reconciliationIntervalMs = reconciliationIntervalMs
+        self.scheduleMaxRetries = scheduleMaxRetries
+        self.scheduleBaseDelayMs = scheduleBaseDelayMs
+        self.maxQueueSize = maxQueueSize
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maxWorkers = "max_workers"
+        case defaultMode = "default_mode"
+        case maxRunDurationMs = "max_run_duration_ms"
+        case reconciliationIntervalMs = "reconciliation_interval_ms"
+        case scheduleMaxRetries = "schedule_max_retries"
+        case scheduleBaseDelayMs = "schedule_base_delay_ms"
+        case maxQueueSize = "max_queue_size"
     }
 }
 
@@ -27889,6 +31209,38 @@ public struct UpdateIntegrationRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateMarkupConfigResponse` model.
+public struct UpdateMarkupConfigResponse: Codable, Hashable, Sendable {
+    public var markup: UpdateMarkupConfigResponseMarkup
+    public var updated: Bool
+
+    public init(markup: UpdateMarkupConfigResponseMarkup, updated: Bool) {
+        self.markup = markup
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case markup = "markup"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateMarkupConfigResponseMarkup` model.
+public struct UpdateMarkupConfigResponseMarkup: Codable, Hashable, Sendable {
+    public var platformMarkupPercent: Double
+    public var modelMarkupOverrides: JSONObject
+
+    public init(platformMarkupPercent: Double, modelMarkupOverrides: JSONObject) {
+        self.platformMarkupPercent = platformMarkupPercent
+        self.modelMarkupOverrides = modelMarkupOverrides
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case platformMarkupPercent = "platform_markup_percent"
+        case modelMarkupOverrides = "model_markup_overrides"
+    }
+}
+
 /// At least one editable field.
 public struct UpdateMissionObjectiveRequest: Codable, Hashable, Sendable {
     public var title: String?
@@ -27986,6 +31338,38 @@ public struct UpdatePlatformURLSRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdatePlatformURLSResponse` model.
+public struct UpdatePlatformURLSResponse: Codable, Hashable, Sendable {
+    public var urls: UpdatePlatformURLSResponseURLS?
+    public var updated: Bool
+
+    public init(urls: UpdatePlatformURLSResponseURLS? = nil, updated: Bool) {
+        self.urls = urls
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case urls = "urls"
+        case updated = "updated"
+    }
+}
+
+/// `UpdatePlatformURLSResponseURLS` model.
+public struct UpdatePlatformURLSResponseURLS: Codable, Hashable, Sendable {
+    public var publicBaseURL: String?
+    public var webhookBaseURL: String?
+
+    public init(publicBaseURL: String? = nil, webhookBaseURL: String? = nil) {
+        self.publicBaseURL = publicBaseURL
+        self.webhookBaseURL = webhookBaseURL
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case publicBaseURL = "public_base_url"
+        case webhookBaseURL = "webhook_base_url"
+    }
+}
+
 /// `UpdateProjectRequest` model.
 public struct UpdateProjectRequest: Codable, Hashable, Sendable {
     public var name: String?
@@ -28021,6 +31405,28 @@ public struct UpdateProjectRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `UpdateRuntimeConfigResponse` model.
+public struct UpdateRuntimeConfigResponse: Codable, Hashable, Sendable {
+    /// The effective runtime config — sparse: only keys present in the platform config or the
+    /// stored override (RuntimeConfig, every field optional).
+    public var runtime: JSONObject
+    public var updated: Bool
+    /// Only when the body carried keys the schema does not declare.
+    public var ignoredKeys: [String]?
+
+    public init(runtime: JSONObject, updated: Bool, ignoredKeys: [String]? = nil) {
+        self.runtime = runtime
+        self.updated = updated
+        self.ignoredKeys = ignoredKeys
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runtime = "runtime"
+        case updated = "updated"
+        case ignoredKeys = "ignored_keys"
+    }
+}
+
 /// `UpdateSecurityPoliciesRequest` model.
 public struct UpdateSecurityPoliciesRequest: Codable, Hashable, Sendable {
     public var corsAllowedOrigins: [String]?
@@ -28030,6 +31436,47 @@ public struct UpdateSecurityPoliciesRequest: Codable, Hashable, Sendable {
     public var adminProviderSettingsRequireSuperAdmin: Bool?
 
     public init(corsAllowedOrigins: [String]? = nil, webhookURLDenylist: [String]? = nil, fileUploadMaxSizeBytes: Int? = nil, fileUploadAllowedMimeTypes: [String]? = nil, adminProviderSettingsRequireSuperAdmin: Bool? = nil) {
+        self.corsAllowedOrigins = corsAllowedOrigins
+        self.webhookURLDenylist = webhookURLDenylist
+        self.fileUploadMaxSizeBytes = fileUploadMaxSizeBytes
+        self.fileUploadAllowedMimeTypes = fileUploadAllowedMimeTypes
+        self.adminProviderSettingsRequireSuperAdmin = adminProviderSettingsRequireSuperAdmin
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case corsAllowedOrigins = "cors_allowed_origins"
+        case webhookURLDenylist = "webhook_url_denylist"
+        case fileUploadMaxSizeBytes = "file_upload_max_size_bytes"
+        case fileUploadAllowedMimeTypes = "file_upload_allowed_mime_types"
+        case adminProviderSettingsRequireSuperAdmin = "admin_provider_settings_require_super_admin"
+    }
+}
+
+/// `UpdateSecurityPoliciesResponse` model.
+public struct UpdateSecurityPoliciesResponse: Codable, Hashable, Sendable {
+    public var policies: UpdateSecurityPoliciesResponsePolicies
+    public var updated: Bool
+
+    public init(policies: UpdateSecurityPoliciesResponsePolicies, updated: Bool) {
+        self.policies = policies
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case policies = "policies"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateSecurityPoliciesResponsePolicies` model.
+public struct UpdateSecurityPoliciesResponsePolicies: Codable, Hashable, Sendable {
+    public var corsAllowedOrigins: [JSONValue]
+    public var webhookURLDenylist: [String]
+    public var fileUploadMaxSizeBytes: Int
+    public var fileUploadAllowedMimeTypes: [JSONValue]
+    public var adminProviderSettingsRequireSuperAdmin: Bool
+
+    public init(corsAllowedOrigins: [JSONValue], webhookURLDenylist: [String], fileUploadMaxSizeBytes: Int, fileUploadAllowedMimeTypes: [JSONValue], adminProviderSettingsRequireSuperAdmin: Bool) {
         self.corsAllowedOrigins = corsAllowedOrigins
         self.webhookURLDenylist = webhookURLDenylist
         self.fileUploadMaxSizeBytes = fileUploadMaxSizeBytes
@@ -28241,6 +31688,47 @@ public struct UpdateWebhooksPolicyRequest: Codable, Hashable, Sendable {
     public var deliveryMaxWindowHours: Int?
 
     public init(ssrfCheckAtSubscription: Bool? = nil, stripeSignatureToleranceSec: Int? = nil, deliveryMaxRetries: Int? = nil, deliveryBackoffBaseMs: Int? = nil, deliveryMaxWindowHours: Int? = nil) {
+        self.ssrfCheckAtSubscription = ssrfCheckAtSubscription
+        self.stripeSignatureToleranceSec = stripeSignatureToleranceSec
+        self.deliveryMaxRetries = deliveryMaxRetries
+        self.deliveryBackoffBaseMs = deliveryBackoffBaseMs
+        self.deliveryMaxWindowHours = deliveryMaxWindowHours
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ssrfCheckAtSubscription = "ssrf_check_at_subscription"
+        case stripeSignatureToleranceSec = "stripe_signature_tolerance_sec"
+        case deliveryMaxRetries = "delivery_max_retries"
+        case deliveryBackoffBaseMs = "delivery_backoff_base_ms"
+        case deliveryMaxWindowHours = "delivery_max_window_hours"
+    }
+}
+
+/// `UpdateWebhooksPolicyResponse` model.
+public struct UpdateWebhooksPolicyResponse: Codable, Hashable, Sendable {
+    public var policy: UpdateWebhooksPolicyResponsePolicy
+    public var updated: Bool
+
+    public init(policy: UpdateWebhooksPolicyResponsePolicy, updated: Bool) {
+        self.policy = policy
+        self.updated = updated
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case policy = "policy"
+        case updated = "updated"
+    }
+}
+
+/// `UpdateWebhooksPolicyResponsePolicy` model.
+public struct UpdateWebhooksPolicyResponsePolicy: Codable, Hashable, Sendable {
+    public var ssrfCheckAtSubscription: Bool
+    public var stripeSignatureToleranceSec: Int
+    public var deliveryMaxRetries: Int
+    public var deliveryBackoffBaseMs: Int
+    public var deliveryMaxWindowHours: Int
+
+    public init(ssrfCheckAtSubscription: Bool, stripeSignatureToleranceSec: Int, deliveryMaxRetries: Int, deliveryBackoffBaseMs: Int, deliveryMaxWindowHours: Int) {
         self.ssrfCheckAtSubscription = ssrfCheckAtSubscription
         self.stripeSignatureToleranceSec = stripeSignatureToleranceSec
         self.deliveryMaxRetries = deliveryMaxRetries
@@ -28866,6 +32354,22 @@ public struct ValidationPolicy: Codable, Hashable, Sendable {
 
 /// `Value` model.
 public struct Value: Codable, Hashable, Sendable {
+    public var en: String?
+    public var uk: String?
+
+    public init(en: String? = nil, uk: String? = nil) {
+        self.en = en
+        self.uk = uk
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case en = "en"
+        case uk = "uk"
+    }
+}
+
+/// `Value2` model.
+public struct Value2: Codable, Hashable, Sendable {
     public var specId: String
     /// The parsed view document, or null when the stored view was unparseable.
     public var outputView: JSONValue
@@ -28878,22 +32382,6 @@ public struct Value: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case specId = "spec_id"
         case outputView = "output_view"
-    }
-}
-
-/// `Value2` model.
-public struct Value2: Codable, Hashable, Sendable {
-    public var x: Double
-    public var y: Double
-
-    public init(x: Double, y: Double) {
-        self.x = x
-        self.y = y
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case x = "x"
-        case y = "y"
     }
 }
 
@@ -28915,6 +32403,22 @@ public struct Value3: Codable, Hashable, Sendable {
 
 /// `Value4` model.
 public struct Value4: Codable, Hashable, Sendable {
+    public var x: Double
+    public var y: Double
+
+    public init(x: Double, y: Double) {
+        self.x = x
+        self.y = y
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x = "x"
+        case y = "y"
+    }
+}
+
+/// `Value5` model.
+public struct Value5: Codable, Hashable, Sendable {
     public var from: JSONValue?
     public var to: JSONValue?
 

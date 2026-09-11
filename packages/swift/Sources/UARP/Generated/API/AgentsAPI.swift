@@ -396,10 +396,10 @@ public struct AgentsAPI: Sendable {
     /// Partial update agent
     ///
     /// WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
-    /// `metadata` merges one level, `metadata.ui` one more, and `metadata.ui.avatar` one more
-    /// (agent-genome.ts mergeAgentMetadata) — so a client may send `{metadata: {ui: {avatar: {hue:
-    /// 40}}}}` without erasing `protocol`, `variant`, `drop_genome` or `drop_genome_source`. Any
-    /// other nested object is replaced whole.
+    /// `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
+    /// more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) — so a client
+    /// may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
+    /// `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///

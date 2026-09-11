@@ -375,6 +375,429 @@ export interface AdminAnalyticsOverviewResponseTotals {
   app_open?: number;
 }
 
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; types/security.ts
+ * AdminAuditEntry — actor_* and ip_address conditional.
+ */
+export interface AdminAuditList {
+  entries: AdminAuditListEntry[];
+  total: number;
+}
+
+export interface AdminAuditListEntry {
+  entry_id: string;
+  actor_tenant_id?: string;
+  action: string;
+  target_type: string;
+  target_id: string;
+  details: JsonObject;
+  ip_address?: string;
+  timestamp: string;
+  actor_key_id?: string;
+  actor_user_id?: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `agent_memory` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigAgentMemoryConfig {
+  agent_memory: AdminConfigAgentMemoryConfigAgentMemory;
+}
+
+export interface AdminConfigAgentMemoryConfigAgentMemory {
+  enabled: boolean;
+  use_shared_store: boolean;
+  default_max_entries: number;
+  default_retrieval_limit: number;
+  default_retrieval_strategy: string;
+  decay_enabled: boolean;
+  decay_half_life_days: number;
+  decay_job_interval_ms: number;
+  extraction_max_tokens: number;
+  extraction_model: string;
+  eviction_threshold: number;
+  embedding_dimensions: number;
+  embedding_provider: string;
+  embedding_model: string;
+  compression_model: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `auth` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigAuthConfig {
+  auth: AdminConfigAuthConfigAuth;
+}
+
+export interface AdminConfigAuthConfigAuth {
+  super_admin_email: string;
+  otp_ttl_ms: number;
+  verification_ttl_ms: number;
+  jwks_cache_ttl_ms: number;
+  jwks_grace_ttl_ms: number;
+  api_key_cache_ttl_s: number;
+  api_key_rotation_grace_period_h: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `backpressure` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigBackpressureConfig {
+  backpressure: AdminConfigBackpressureConfigBackpressure;
+}
+
+export interface AdminConfigBackpressureConfigBackpressure {
+  sse_buffer_max: number;
+  sse_high_watermark: number;
+  sse_low_watermark: number;
+  tool_queue_max_depth: number;
+  tool_queue_high_watermark: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `code_interpreter` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigCodeInterpreterConfig {
+  code_interpreter: AdminConfigCodeInterpreterConfigCodeInterpreter;
+}
+
+export interface AdminConfigCodeInterpreterConfigCodeInterpreter {
+  isolation: string;
+  timeout_ms?: number;
+  max_memory_mb?: number;
+  container_image?: string;
+  python_container_image?: string;
+  python_sandbox_host_dir?: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `evaluation` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigEvaluationConfig {
+  evaluation: AdminConfigEvaluationConfigEvaluation;
+}
+
+export interface AdminConfigEvaluationConfigEvaluation {
+  enabled: boolean;
+  max_concurrent_eval_cases: number;
+  regression_threshold: number;
+  default_scorers: string[];
+  max_cases_per_dataset: number;
+  eval_run_timeout_ms: number;
+  auto_rollback_enabled: boolean;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `idempotency` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigIdempotencyConfig {
+  idempotency: AdminConfigIdempotencyConfigIdempotency;
+}
+
+export interface AdminConfigIdempotencyConfigIdempotency {
+  enabled: boolean;
+  ttl_hours: number;
+  max_response_cache_bytes: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `llm_adapters` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigLLMAdaptersConfig {
+  llm_adapters: AdminConfigLLMAdaptersConfigLLMAdapters;
+}
+
+export interface AdminConfigLLMAdaptersConfigLLMAdapters {
+  max_retries?: number;
+  retry_base_delay_ms?: number;
+  retry_max_delay_ms?: number;
+  stream_empty_timeout_ms?: number;
+  circuit_breaker?: AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker;
+  provider_rate_limits?: JsonObject;
+}
+
+export interface AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker {
+  failure_threshold?: number;
+  reset_timeout_ms?: number;
+  half_open_max_requests?: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `logging` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigLoggingConfig {
+  logging: AdminConfigLoggingConfigLogging;
+}
+
+export interface AdminConfigLoggingConfigLogging {
+  pii_mode: string;
+  log_agent_responses: boolean;
+  file_enabled: boolean;
+  file_max_size_mb: number;
+  file_retention_days: number;
+  file_level: string;
+  file_separate_error: boolean;
+  activity_log_verbosity: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `long_running` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigLongRunningConfig {
+  long_running: AdminConfigLongRunningConfigLongRunning;
+}
+
+export interface AdminConfigLongRunningConfigLongRunning {
+  enabled: boolean;
+  max_duration_ms: number;
+  checkpoint_interval_ms: number;
+  idle_timeout_ms: number;
+  continuation_token_ttl_days: number;
+  max_background_runs_per_tenant: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `mcp` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigMCPConfig {
+  mcp: AdminConfigMCPConfigMCP;
+}
+
+export interface AdminConfigMCPConfigMCP {
+  max_sessions_per_server: number;
+  max_total_stdio_sessions: number;
+  session_idle_timeout_ms: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `multimodal` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigMultimodalConfig {
+  multimodal: AdminConfigMultimodalConfigMultimodal;
+}
+
+export interface AdminConfigMultimodalConfigMultimodal {
+  enabled: boolean;
+  max_image_size_bytes: number;
+  max_audio_duration_s: number;
+  max_video_duration_s: number;
+  auto_resize_images: boolean;
+  supported_image_formats: string[];
+  supported_audio_formats: string[];
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `persistence` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigPersistenceConfig {
+  persistence: AdminConfigPersistenceConfigPersistence;
+}
+
+export interface AdminConfigPersistenceConfigPersistence {
+  snapshot_every_n_events: number;
+  checkpoint_after_tool_calls: boolean;
+  usage_shards: number;
+  auto_cap_kv_values: boolean;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `retention` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigRetentionConfig {
+  retention: AdminConfigRetentionConfigRetention;
+}
+
+export interface AdminConfigRetentionConfigRetention {
+  completed_run_ttl_days: number;
+  event_ttl_days: number;
+  archive_to_sqlite: boolean;
+  audit_log_ttl_days: number;
+  archive_job_interval_ms: number;
+  archive_batch_size: number;
+  feed_ttl_days: number;
+  artifact_ttl_days: number;
+  checkpoint_ttl_hours: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `run_command` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigRunCommandConfig {
+  run_command: AdminConfigRunCommandConfigRunCommand;
+}
+
+export interface AdminConfigRunCommandConfigRunCommand {
+  enabled: boolean;
+  isolation: string;
+  timeout_ms: number;
+  max_output_bytes: number;
+  allowed_commands: string[];
+  deno_allow: string[];
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policies` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigSecurityPoliciesConfig {
+  policies: AdminConfigSecurityPoliciesConfigPolicies;
+}
+
+export interface AdminConfigSecurityPoliciesConfigPolicies {
+  cors_allowed_origins: JsonValue[];
+  webhook_url_denylist: string[];
+  file_upload_max_size_bytes: number;
+  file_upload_allowed_mime_types: JsonValue[];
+  admin_provider_settings_require_super_admin: boolean;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `server` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigServerConfig {
+  server: AdminConfigServerConfigServer;
+}
+
+export interface AdminConfigServerConfigServer {
+  trust_proxy: boolean;
+  max_body_bytes: number;
+  graceful_shutdown_timeout_ms?: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `sse` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigSSEConfig {
+  sse: AdminConfigSSEConfigSSE;
+}
+
+export interface AdminConfigSSEConfigSSE {
+  heartbeat_interval_ms: number;
+  watch_timeout_ms: number;
+  poll_interval_ms: number;
+  max_poll_interval_ms: number;
+  reconnect_hint_ms: number;
+  run_wait_timeout_sec: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `tool_security` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigToolSecurityConfig {
+  tool_security: AdminConfigToolSecurityConfigToolSecurity;
+}
+
+export interface AdminConfigToolSecurityConfigToolSecurity {
+  default_egress_policy: string;
+  egress_allowlist_per_tenant?: JsonValue[];
+  ssrf_deny_private_ranges: boolean;
+  default_tool_timeout_ms: number;
+  default_tool_max_payload_bytes: number;
+  default_tool_max_concurrency: number;
+  stdio_inherit_env: boolean;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `webhooks` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigWebhooksConfig {
+  webhooks: AdminConfigWebhooksConfigWebhooks;
+}
+
+export interface AdminConfigWebhooksConfigWebhooks {
+  enabled: boolean;
+  max_subscriptions_per_tenant: number;
+  delivery_timeout_ms: number;
+  max_retry_attempts: number;
+  require_https: boolean;
+  max_payload_bytes: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policy` is the effective
+ * section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+ * keys measured present are required unless the handler marks them optional.
+ */
+export interface AdminConfigWebhooksPolicyConfig {
+  policy: AdminConfigWebhooksPolicyConfigPolicy;
+}
+
+export interface AdminConfigWebhooksPolicyConfigPolicy {
+  ssrf_check_at_subscription: boolean;
+  stripe_signature_tolerance_sec: number;
+  delivery_max_retries: number;
+  delivery_backoff_base_ms: number;
+  delivery_max_window_hours: number;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `worker_pool` is the
+ * effective section — platform defaults under the stored override (admin-config.ts
+ * getEffectiveSection); keys measured present are required unless the handler marks them
+ * optional.
+ */
+export interface AdminConfigWorkerPoolConfig {
+  worker_pool: AdminConfigWorkerPoolConfigWorkerPool;
+}
+
+export interface AdminConfigWorkerPoolConfigWorkerPool {
+  max_workers: number;
+  default_mode: string;
+  max_run_duration_ms: number;
+  reconciliation_interval_ms: number;
+  schedule_max_retries: number;
+  schedule_base_delay_ms: number;
+  max_queue_size?: number;
+}
+
 export interface AdminDataExplorerRawKeysResponse {
   keys: AdminDataExplorerRawKeysResponseKey[];
   cursor?: string;
@@ -394,6 +817,35 @@ export type AdminDataExplorerRawKeysResponseKeyType = 'null' | 'array' | 'string
 
 export const ADMIN_DATA_EXPLORER_RAW_KEYS_RESPONSE_KEY_TYPE_VALUES = ['null', 'array', 'string', 'number', 'boolean', 'object', 'undefined'] as const;
 
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminFeatureFlagsConfig {
+  flags?: JsonObject[];
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminFounderConfig {
+  kv: FounderIdentity;
+  env: FounderIdentity;
+  effective: FounderIdentity;
+}
+
+export interface AdminGetLandingConfigResponse {
+  landing: LandingConfigSection;
+  source: AdminGetLandingConfigResponseSource;
+  /**
+   * KV versionstamp; echo it as `expected_version` on PUT.
+   */
+  version: string | null;
+}
+
+export type AdminGetLandingConfigResponseSource = 'kv' | 'none';
+
+export const ADMIN_GET_LANDING_CONFIG_RESPONSE_SOURCE_VALUES = ['kv', 'none'] as const;
+
 export interface AdminGetReconciliationResponse {
   tenant_id: string;
   reconciliation: AdminGetReconciliationResponseReconciliation;
@@ -406,6 +858,59 @@ export interface AdminGetReconciliationResponseReconciliation {
    */
   [key: string]: unknown;
 }
+
+export interface AdminGetVoiceConfigResponse {
+  voice: AdminGetVoiceConfigResponseVoiceVariant1 | null;
+  source: AdminGetLandingConfigResponseSource;
+}
+
+export interface AdminGetVoiceConfigResponseVoiceVariant1 {
+  stt: AdminGetVoiceConfigResponseVoiceVariant1stt;
+  tts: AdminGetVoiceConfigResponseVoiceVariant1tts;
+}
+
+export interface AdminGetVoiceConfigResponseVoiceVariant1stt {
+  provider: string;
+  model: string;
+}
+
+export interface AdminGetVoiceConfigResponseVoiceVariant1tts {
+  provider: string;
+  model: string;
+  voice: string;
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminGuardrailsConfig {
+  guardrails?: JsonObject[];
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminIntegrationsConfig {
+  integrations: AdminIntegrationsConfigIntegration[];
+}
+
+export interface AdminIntegrationsConfigIntegration {
+  id: string;
+  name: string;
+  icon?: string;
+  auth_type?: AdminIntegrationsConfigIntegrationAuthType;
+  category?: string;
+  enabled: boolean;
+  beta?: boolean;
+  /**
+   * `kv` when an operator overrode the shipped default, `default` otherwise.
+   */
+  source?: string;
+}
+
+export type AdminIntegrationsConfigIntegrationAuthType = 'oauth2' | 'api_key' | 'none';
+
+export const ADMIN_INTEGRATIONS_CONFIG_INTEGRATION_AUTH_TYPE_VALUES = ['oauth2', 'api_key', 'none'] as const;
 
 export interface AdminListToolsResponse {
   tools: AdminListToolsResponseTool[];
@@ -435,11 +940,381 @@ export interface AdminListWebhookDLQResponseEntry {
   tenantId?: string | null;
 }
 
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The stored catalogue or,
+ * with `source: seed`, the built-in registry; rows carry computed
+ * `effective_pricing`/`effective_tier`.
+ */
+export interface AdminModelCatalog {
+  models: AdminModelCatalogModel[];
+  source: AdminModelCatalogSource;
+  count: number;
+  version: string | null;
+}
+
+export interface AdminModelCatalogModel {
+  id: string;
+  provider: string;
+  display_name: string;
+  max_context_tokens: number;
+  max_output_tokens: number;
+  supports_streaming: boolean;
+  supports_tool_calls: boolean;
+  supports_json_mode: boolean;
+  supports_vision?: boolean;
+  tier?: string;
+  /**
+   * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+   * seed answers.
+   */
+  effective_pricing?: AdminModelCatalogModelEffectivePricing;
+  /**
+   * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+   * seed answers.
+   */
+  effective_tier?: string;
+}
+
+/**
+ * Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+ * seed answers.
+ */
+export interface AdminModelCatalogModelEffectivePricing {
+  input_per_million: number;
+  output_per_million: number;
+  cached_input_per_million: number;
+  source: string;
+  layer: string;
+  key: string;
+  match: string;
+  confidence: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; the built-in registry merged
+ * with every configured provider's live model list — no `source`, no `version`, no computed
+ * economics.
+ */
+export interface AdminModelCatalogSeed {
+  models: AdminModelCatalogSeedModel[];
+  count: number;
+}
+
+export interface AdminModelCatalogSeedModel {
+  id: string;
+  provider: string;
+  display_name: string;
+  max_context_tokens: number;
+  max_output_tokens: number;
+  supports_streaming: boolean;
+  supports_tool_calls: boolean;
+  supports_json_mode: boolean;
+  supports_vision?: boolean;
+  tier?: string;
+}
+
+export type AdminModelCatalogSource = 'kv' | 'seed';
+
+export const ADMIN_MODEL_CATALOG_SOURCE_VALUES = ['kv', 'seed'] as const;
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; billing/cost-estimator.ts
+ * listAllPricing — a live in-memory view, `layer` says where each price comes from.
+ */
+export interface AdminModelPricingList {
+  models: AdminModelPricingListModel[];
+  count: number;
+  source: string;
+}
+
+export interface AdminModelPricingListModel {
+  model: string;
+  layer: string;
+  input_per_million: number;
+  output_per_million: number;
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminOAuthIdentityConfig {
+  kv: OAuthIdentityConfig;
+  env: OAuthIdentityConfig;
+  effective: OAuthIdentityConfig;
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminPlatformURLSConfig {
+  urls?: AdminPlatformURLSConfigURLS;
+}
+
+export interface AdminPlatformURLSConfigURLS {
+  public_base_url?: string;
+  webhook_base_url?: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The whole stored override
+ * when one exists, else the config defaults; `source` says which (admin-config.ts
+ * getEffectivePricing).
+ */
+export interface AdminPricingConfig {
+  pricing: AdminPricingConfigPricing;
+  source: AdminPricingConfigSource;
+}
+
+export interface AdminPricingConfigPricing {
+  openai_compat_input: number;
+  openai_compat_output: number;
+  anthropic_input: number;
+  anthropic_output: number;
+  anthropic_thinking: number;
+}
+
+export type AdminPricingConfigSource = 'kv' | 'config';
+
+export const ADMIN_PRICING_CONFIG_SOURCE_VALUES = ['kv', 'config'] as const;
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin.ts — a projection over
+ * the custom provider, its settings and catalogue status; never the API key.
+ */
+export interface AdminProvider {
+  id: string;
+  name: string;
+  canonical: string;
+  default_endpoint: string;
+  local: boolean;
+  enabled: boolean;
+  model_allowlist: string[];
+  is_custom: boolean;
+  requires_api_key: boolean;
+  models_in_catalog: number;
+  catalog_model_ids: string[];
+  last_models_sync?: AdminProviderLastModelsSync;
+}
+
+export interface AdminProviderLastModelsSync {
+  at: string;
+  added: number;
+  live: number;
+}
+
+export interface AdminPutLandingConfigResponse {
+  landing: LandingConfigSection;
+  source: AdminPutLandingConfigResponseSource;
+  updated: boolean;
+  version: string | null;
+}
+
+export type AdminPutLandingConfigResponseSource = 'kv';
+
+export const ADMIN_PUT_LANDING_CONFIG_RESPONSE_SOURCE_VALUES = ['kv'] as const;
+
+export interface AdminPutModelCatalogResponse {
+  models: AdminPutModelCatalogResponseModel[];
+  source: AdminPutLandingConfigResponseSource;
+  count: number;
+  version: string | null;
+}
+
+export interface AdminPutModelCatalogResponseModel {
+  id: string;
+  provider: string;
+  display_name: string;
+  max_context_tokens: number;
+  max_output_tokens: number;
+  supports_streaming: boolean;
+  supports_tool_calls: boolean;
+  supports_json_mode: boolean;
+  supports_vision?: boolean;
+  tier?: string;
+}
+
+export interface AdminPutVoiceConfigResponse {
+  voice: AdminPutVoiceConfigResponseVoice;
+  updated: boolean;
+}
+
+export interface AdminPutVoiceConfigResponseVoice {
+  stt: AdminPutVoiceConfigResponseVoiceStt;
+  tts: AdminPutVoiceConfigResponseVoiceTts;
+}
+
+export interface AdminPutVoiceConfigResponseVoiceStt {
+  provider: string;
+  model: string;
+}
+
+export interface AdminPutVoiceConfigResponseVoiceTts {
+  provider: string;
+  model: string;
+  voice: string;
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminRateLimitsConfig {
+  endpoints?: JsonObject[];
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminRegistrationConfig {
+  registration_open: boolean;
+  /**
+   * `free` when nothing is stored.
+   */
+  default_signup_plan: string;
+  /**
+   * Empty means no domain restriction.
+   */
+  allowed_email_domains: string[];
+  setup_status: AdminRegistrationConfigSetupStatus;
+  /**
+   * Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+   * and this is the list it will name.
+   */
+  missing_required: string[];
+  /**
+   * How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
+   * be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+   * froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+   * admin uses to decide when to open registration, so it is the one that must be complete
+   * rather than the roster.
+   */
+  waitlist_count: number;
+  /**
+   * True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+   * and stays bounded at 1000; the count is not.
+   */
+  waitlist_truncated?: boolean;
+  /**
+   * Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
+   * `waitlist.length` as the total.
+   */
+  waitlist: AdminRegistrationConfigWaitlistItem[];
+}
+
+export type AdminRegistrationConfigSetupStatus = 'in_progress' | 'live';
+
+export const ADMIN_REGISTRATION_CONFIG_SETUP_STATUS_VALUES = ['in_progress', 'live'] as const;
+
+export interface AdminRegistrationConfigWaitlistItem {
+  tenant_id: string;
+  email: string;
+  created_at: string;
+}
+
 export interface AdminReplayWebhookDLQResponse {
   success: boolean;
   eventId: string;
   action: string;
   message: string;
+}
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminSmtpConfig {
+  /**
+   * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+   */
+  kv: AdminSmtpConfigKv;
+  /**
+   * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+   */
+  env: AdminSmtpConfigEnv;
+  /**
+   * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+   * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+   * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+   * inert.
+   */
+  source: AdminSmtpConfigSource;
+}
+
+/**
+ * What the environment supplies. `port` defaults to 465 when unset or unparseable.
+ */
+export interface AdminSmtpConfigEnv {
+  host?: string;
+  port?: number;
+  user?: string;
+  from?: string;
+  from_name?: string;
+  /**
+   * Whether a credential is stored. The password itself is never returned by any read.
+   */
+  has_password?: boolean;
+}
+
+/**
+ * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+ */
+export interface AdminSmtpConfigKv {
+  host?: string;
+  port?: number;
+  user?: string;
+  from?: string;
+  from_name?: string;
+  /**
+   * Whether a credential is stored. The password itself is never returned by any read.
+   */
+  has_password?: boolean;
+}
+
+/**
+ * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+ * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+ * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+ * inert.
+ */
+export type AdminSmtpConfigSource = 'kv' | 'env' | 'none';
+
+export const ADMIN_SMTP_CONFIG_SOURCE_VALUES = ['kv', 'env', 'none'] as const;
+
+/**
+ * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+ */
+export interface AdminSpecPackagesList {
+  packages: SpecPackage[];
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
+ * their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
+ */
+export interface AdminStripeConfig {
+  stripe: AdminStripeConfigStripe;
+  has_secret_key: boolean;
+  has_webhook_secret: boolean;
+}
+
+export interface AdminStripeConfigStripe {
+  enabled: boolean;
+  mode: string;
+  secret_key: string;
+  webhook_secret: string;
+  publishable_key: string;
+  price_id_starter: string;
+  price_id_pro: string;
+  price_id_enterprise: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; provider/model → voice ids;
+ * `defaults` is always empty, `effective` equals `override` (admin-config.ts
+ * handleGetVoicePresets).
+ */
+export interface AdminVoicePresets {
+  defaults: JsonObject;
+  override: Record<string, string[]>;
+  effective: Record<string, string[]>;
 }
 
 export interface Agent {
@@ -503,7 +1378,13 @@ export interface Agent {
    */
   knowledge_base_ids?: string[];
   /**
-   * Who can reach the agent. The publication screen is built on this field.
+   * Who can reach the agent. The publication screen is built on this field — but `public` alone
+   * does not open the agent to the world: the anonymous routes (`GET /public/agents/{agentId}`,
+   * public sessions) answer only when `visibility` is `public` AND `public_config.enabled` is
+   * true AND `status` is `active` (public.ts loadPublicAgent). A client that shows "anyone with
+   * the link can reach this agent" on `visibility` alone shows it a step too early. Measured
+   * 2026-09-10 on a real tenant: the one agent with both switches answered 200 without a key,
+   * every other `public` one 404.
    */
   visibility?: AgentUpdateVisibility;
   /**
@@ -846,6 +1727,11 @@ export interface AgentPrompts {
 }
 
 export interface AgentPublicConfig {
+  /**
+   * One of the three switches that make the agent reachable without a key (public.ts
+   * loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+   * `active` (or absent). Any one of them alone does nothing visible.
+   */
   enabled: boolean;
   system_prompt?: string | null;
   greeting?: string | null;
@@ -1010,6 +1896,43 @@ export interface AgentUpdate {
   knowledge_base_ids?: string[];
   workspace_id?: string;
   visibility?: AgentUpdateVisibility;
+  /**
+   * Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+   * ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+   * }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+   * alone does not make the agent reachable — see `Agent.visibility`.
+   */
+  public_config?: AgentUpdatePublicConfig;
+}
+
+/**
+ * Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+ * ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+ * }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+ * alone does not make the agent reachable — see `Agent.visibility`.
+ */
+export interface AgentUpdatePublicConfig {
+  /**
+   * One of the three switches that make the agent reachable without a key (public.ts
+   * loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+   * `active` (or absent). Any one of them alone does nothing visible.
+   */
+  enabled: boolean;
+  system_prompt?: string | null;
+  greeting?: string | null;
+  allowed_tools?: string[];
+  max_messages_per_session?: number;
+  max_concurrent_sessions?: number;
+  rate_limit_sessions_per_ip?: number;
+  rate_limit_messages_per_min?: number;
+  /**
+   * Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+   * ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+   * `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+   * Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+   * default of 15.
+   */
+  daily_message_limit?: number | null;
 }
 
 export type AgentUpdateVisibility = 'private' | 'team' | 'public';
@@ -1867,6 +2790,22 @@ export interface CompleteOAuthLoginResponse {
   email: string;
 }
 
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; api/lib/conformity-report.ts
+ * — three sections, plus the same content as markdown. `?format=markdown` answers
+ * text/markdown instead.
+ */
+export interface ConformityReport {
+  tenant_id: string;
+  sections: ConformityReportSection[];
+  markdown: string;
+}
+
+export interface ConformityReportSection {
+  title: string;
+  content: string;
+}
+
 export interface ConnectorConfigField {
   type: string;
   required?: boolean;
@@ -2113,6 +3052,24 @@ export interface CoreMemoryBlock {
   updated_at?: string;
 }
 
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z;
+ * billing/cost-reconciliation.ts ReconciliationResult — `truncated` and `details` conditional.
+ */
+export interface CostReconciliationResult {
+  tenant_id: string;
+  period: string;
+  runs_total_cost_usd: number;
+  usage_tracker_cost_usd: number;
+  drift_usd: number;
+  drift_pct: number;
+  runs_scanned: number;
+  runs_missing_cost: number;
+  status: string;
+  details?: string;
+  truncated?: boolean;
+}
+
 export interface CreateA2ATaskRequest {
   agent_id: string;
   messages: CreateA2ATaskRequestMessage[];
@@ -2133,6 +3090,40 @@ export interface CreateAdminBlogPostRequest {
 
 export interface CreateAdminBlogPostResponse {
   post: BlogPost;
+}
+
+export interface CreateAdminProviderResponse {
+  id: string;
+  name: string;
+  default_endpoint: string;
+  is_custom: boolean;
+  requires_api_key: boolean;
+  canonical: string;
+  /**
+   * Only when the body sent it.
+   */
+  default_capabilities?: CreateAdminProviderResponseDefaultCapabilities;
+}
+
+/**
+ * Only when the body sent it.
+ */
+export interface CreateAdminProviderResponseDefaultCapabilities {
+  supports_tool_calls?: boolean;
+  supports_streaming?: boolean;
+  supports_json_mode?: boolean;
+  supports_vision?: boolean;
+  max_context_tokens?: number;
+  max_output_tokens?: number;
+}
+
+export interface CreateAdminSpecPackageStripePriceResponse {
+  package_id: string;
+  stripe_price_id: string;
+  stripe_product_id: string;
+  amount_cents: number;
+  currency: string;
+  interval: SpecPackagePricingBillingInterval;
 }
 
 export interface CreateAgentBookmarkRequest {
@@ -3105,7 +4096,7 @@ export interface Error {
   type: string;
   title: string;
   status: number;
-  detail?: string;
+  detail: string;
   /**
    * Request ID for tracing
    */
@@ -3368,7 +4359,7 @@ export interface FleetLayout {
   /**
    * Agent id → its place on the canvas.
    */
-  positions: Record<string, Value3>;
+  positions: Record<string, Value4>;
   edges: FleetLayoutEdge[];
   notes?: FleetLayoutNote[];
   drafts?: FleetLayoutDraft[];
@@ -3443,7 +4434,7 @@ export interface FleetLayoutUpdate {
   /**
    * Agent id → its place on the canvas.
    */
-  positions: Record<string, Value2>;
+  positions: Record<string, Value3>;
   edges: FleetLayoutUpdateEdge[];
   notes?: FleetLayoutUpdateNote[];
   drafts?: FleetLayoutUpdateDraft[];
@@ -3525,16 +4516,6 @@ export interface GetAdminDisabledToolsResponse {
   disabled_tools: string[];
 }
 
-export interface GetAdminFounderConfigResponse {
-  kv: FounderIdentity;
-  env: FounderIdentity;
-  effective: FounderIdentity;
-}
-
-export interface GetAdminGuardrailsResponse {
-  guardrails?: JsonObject[];
-}
-
 export type GetAdminIntegrationOAuthProviderProvider = 'github' | 'google' | 'slack' | 'notion' | 'stripe' | 'jira' | 'zendesk' | 'hubspot' | 'linkedin' | 'youtube' | 'instagram' | 'x_twitter' | 'facebook' | 'tiktok';
 
 export const GET_ADMIN_INTEGRATION_OAUTH_PROVIDER_PROVIDER_VALUES = ['github', 'google', 'slack', 'notion', 'stripe', 'jira', 'zendesk', 'hubspot', 'linkedin', 'youtube', 'instagram', 'x_twitter', 'facebook', 'tiktok'] as const;
@@ -3559,28 +4540,6 @@ export interface GetAdminIntegrationOAuthProviderResponse {
   scopes?: string[] | null;
 }
 
-export interface GetAdminIntegrationsResponse {
-  integrations: GetAdminIntegrationsResponseIntegration[];
-}
-
-export interface GetAdminIntegrationsResponseIntegration {
-  id: string;
-  name: string;
-  icon?: string;
-  auth_type?: GetAdminIntegrationsResponseIntegrationAuthType;
-  category?: string;
-  enabled: boolean;
-  beta?: boolean;
-  /**
-   * `kv` when an operator overrode the shipped default, `default` otherwise.
-   */
-  source?: string;
-}
-
-export type GetAdminIntegrationsResponseIntegrationAuthType = 'oauth2' | 'api_key' | 'none';
-
-export const GET_ADMIN_INTEGRATIONS_RESPONSE_INTEGRATION_AUTH_TYPE_VALUES = ['oauth2', 'api_key', 'none'] as const;
-
 export interface GetAdminLLMDefaultsResponse {
   providers: GetAdminLLMDefaultsResponseProvider[];
   default_provider?: string | null;
@@ -3603,12 +4562,6 @@ export interface GetAdminLLMDefaultsResponseProvider {
   key_hint: string;
 }
 
-export interface GetAdminOAuthIdentityConfigResponse {
-  kv: OAuthIdentityConfig;
-  env: OAuthIdentityConfig;
-  effective: OAuthIdentityConfig;
-}
-
 export interface GetAdminPlansResponse {
   plans: GetAdminPlansResponsePlan[];
 }
@@ -3620,110 +4573,6 @@ export interface GetAdminPlansResponsePlan {
    * Per-plan limits (`max_agents`, `max_monthly_tokens`, …).
    */
   quotas: JsonObject;
-}
-
-export interface GetAdminRegistrationConfigResponse {
-  registration_open: boolean;
-  /**
-   * `free` when nothing is stored.
-   */
-  default_signup_plan: string;
-  /**
-   * Empty means no domain restriction.
-   */
-  allowed_email_domains: string[];
-  setup_status: SetupStateResponseStateStatus;
-  /**
-   * Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
-   * and this is the list it will name.
-   */
-  missing_required: string[];
-  /**
-   * How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
-   * be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
-   * froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
-   * admin uses to decide when to open registration, so it is the one that must be complete
-   * rather than the roster.
-   */
-  waitlist_count: number;
-  /**
-   * True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
-   * and stays bounded at 1000; the count is not.
-   */
-  waitlist_truncated?: boolean;
-  /**
-   * Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
-   * `waitlist.length` as the total.
-   */
-  waitlist: GetAdminRegistrationConfigResponseWaitlistItem[];
-}
-
-export interface GetAdminRegistrationConfigResponseWaitlistItem {
-  tenant_id: string;
-  email: string;
-  created_at: string;
-}
-
-export interface GetAdminSmtpConfigResponse {
-  /**
-   * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-   */
-  kv: GetAdminSmtpConfigResponseKv;
-  /**
-   * What the environment supplies. `port` defaults to 465 when unset or unparseable.
-   */
-  env: GetAdminSmtpConfigResponseEnv;
-  /**
-   * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-   * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-   * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-   * inert.
-   */
-  source: GetAdminSmtpConfigResponseSource;
-}
-
-/**
- * What the environment supplies. `port` defaults to 465 when unset or unparseable.
- */
-export interface GetAdminSmtpConfigResponseEnv {
-  host?: string;
-  port?: number;
-  user?: string;
-  from?: string;
-  from_name?: string;
-  /**
-   * Whether a credential is stored. The password itself is never returned by any read.
-   */
-  has_password?: boolean;
-}
-
-/**
- * What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
- */
-export interface GetAdminSmtpConfigResponseKv {
-  host?: string;
-  port?: number;
-  user?: string;
-  from?: string;
-  from_name?: string;
-  /**
-   * Whether a credential is stored. The password itself is never returned by any read.
-   */
-  has_password?: boolean;
-}
-
-/**
- * Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
- * otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
- * saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
- * inert.
- */
-export type GetAdminSmtpConfigResponseSource = 'kv' | 'env' | 'none';
-
-export const GET_ADMIN_SMTP_CONFIG_RESPONSE_SOURCE_VALUES = ['kv', 'env', 'none'] as const;
-
-export interface GetAdminSpecPackagesResponse {
-  packages: SpecPackage[];
 }
 
 export interface GetAdminStatsResponse {
@@ -3815,7 +4664,7 @@ export interface GetAgentVersionDiffResponse {
   agent_id?: string;
   version_from?: number;
   version_to?: number;
-  diff?: Record<string, Value4>;
+  diff?: Record<string, Value5>;
   changed_fields?: string[];
 }
 
@@ -3889,10 +4738,6 @@ export interface GetDataExplorerValueResponse {
   value?: JsonValue;
   size_bytes?: number;
   type?: string;
-}
-
-export interface GetFeatureFlagsResponse {
-  flags?: JsonObject[];
 }
 
 export interface GetGovernanceLedgerResponse {
@@ -4076,25 +4921,12 @@ export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'start
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
 
-export interface GetPlatformURLSResponse {
-  urls?: GetPlatformURLSResponseURLS;
-}
-
-export interface GetPlatformURLSResponseURLS {
-  public_base_url?: string;
-  webhook_base_url?: string;
-}
-
 export interface GetPublicBlogPostResponse {
   post: PublicBlogPost;
 }
 
 export interface GetPublicFeaturedAgentResponse {
   agent?: JsonObject | null;
-}
-
-export interface GetRateLimitsResponse {
-  endpoints?: JsonObject[];
 }
 
 export interface GetReadyResponse {
@@ -4110,6 +4942,15 @@ export interface GetReadyResponseChecks {
 export type GetReadyResponseStatus = 'ready' | 'not_ready';
 
 export const GET_READY_RESPONSE_STATUS_VALUES = ['ready', 'not_ready'] as const;
+
+export interface GetReconciliationResponse {
+  reconciliation: CostReconciliationResult | null;
+  period: string;
+  /**
+   * Only when there is no result for the period.
+   */
+  message?: string;
+}
 
 export interface GetRegistrationStatusResponse {
   registration_open: boolean;
@@ -4558,6 +5399,14 @@ export interface ImportAdminConfigRequest {
   sections: JsonObject;
 }
 
+export interface ImportAdminConfigResponse {
+  imported: boolean;
+  applied: string[];
+  skipped: string[];
+  applied_count: number;
+  skipped_count: number;
+}
+
 export interface ImportAgentMemoryRequest {
   entries?: MemoryImportEntry[];
   agents?: ImportAgentMemoryRequestAgent[];
@@ -4966,6 +5815,33 @@ export const KNOWLEDGE_BASE_SEARCH_RESULT_STATUS_VALUES = ['KB_EMPTY', 'NO_MATCH
 export interface KnowledgeBaseUpdate {
   name?: string;
   description?: string;
+}
+
+/**
+ * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin-config.ts
+ * LandingConfig, defaults-projected so every key is present.
+ */
+export interface LandingConfigSection {
+  public_agent_id: string | null;
+  texts: Record<string, Value>;
+  multilang_enabled: boolean;
+  default_locale: string;
+  partners_enabled: boolean;
+  partners: LandingConfigSectionPartner[] | null;
+}
+
+export interface LandingConfigSectionPartner {
+  id: string;
+  name: string;
+  tagline: string;
+  tagline_uk?: string;
+  href: string;
+  logo: LandingConfigSectionPartnerLogo;
+}
+
+export interface LandingConfigSectionPartnerLogo {
+  slug?: string;
+  url?: string;
 }
 
 /**
@@ -7624,6 +8500,17 @@ export interface PublicAgentCard {
   specs?: PublicAgentCardSpec[];
   ui_avatar?: JsonObject;
   ui_drop_genome?: JsonObject;
+  /**
+   * The tenant that owns the agent — the same value as `PublicTenant.slug`. The
+   * `/c/{slug}/{agentId}` path segment is NOT authoritative (nothing checks it against the
+   * agent); compare it with this and build the way back from here. Present when the owner record
+   * has a slug.
+   */
+  tenant_slug?: string;
+  /**
+   * The owning tenant's display name. Present when the owner record has one.
+   */
+  tenant_name?: string;
 }
 
 export interface PublicAgentCardSpec {
@@ -7893,6 +8780,11 @@ export interface PushBridgeTaskEventsResponse {
 export interface RateListingRequest {
   rating: number;
   comment?: string;
+}
+
+export interface ReactivateTenantResponse {
+  reactivated: boolean;
+  tenant_id: string;
 }
 
 /**
@@ -8736,6 +9628,10 @@ export interface RunOutput {
   [key: string]: unknown;
 }
 
+export interface RunReconciliationResponse {
+  reconciliation: CostReconciliationResult;
+}
+
 /**
  * Resource limits for the run
  */
@@ -9172,6 +10068,15 @@ export interface SetAdminLLMDefaultResponse {
   updated?: boolean;
 }
 
+export interface SetAdminModelConfigResponse {
+  default_provider: string | null;
+  default_model: string | null;
+  default_endpoint: string | null;
+  fallback_provider: string | null;
+  fallback_model: string | null;
+  fallback_endpoint: string | null;
+}
+
 export interface SetAgentCapabilitiesResponse {
   status?: string;
   agent_id?: string;
@@ -9229,6 +10134,11 @@ export interface SetDataExplorerValueRequest {
 export interface SetDataExplorerValueResponse {
   success: boolean;
   size_bytes: number;
+}
+
+export interface SetFeatureFlagsResponse {
+  flags?: JsonObject[];
+  updated: boolean;
 }
 
 export type SetLLMProviderKeyProvider = 'openai_compat' | 'custom';
@@ -9298,6 +10208,11 @@ export interface SetModelPricingOverrideResponse {
    * Absent when not set.
    */
   cached_input_per_million?: number;
+}
+
+export interface SetRateLimitsResponse {
+  endpoints?: JsonObject[];
+  updated: boolean;
 }
 
 export interface SetRegistrySpecVisibilityRequest {
@@ -9391,7 +10306,7 @@ export interface SetupStateResponseState {
   /**
    * `live` is a one-way latch; closing registration afterwards does not undo it.
    */
-  status: SetupStateResponseStateStatus;
+  status: AdminRegistrationConfigSetupStatus;
   completed_steps: string[];
   registration_open: boolean;
   started_at: string;
@@ -9401,13 +10316,6 @@ export interface SetupStateResponseState {
   completed_at?: string;
   version: number;
 }
-
-/**
- * `live` is a one-way latch; closing registration afterwards does not undo it.
- */
-export type SetupStateResponseStateStatus = 'in_progress' | 'live';
-
-export const SETUP_STATE_RESPONSE_STATE_STATUS_VALUES = ['in_progress', 'live'] as const;
 
 export interface SetUserRoleRequest {
   role: string;
@@ -9540,7 +10448,7 @@ export interface SpecToolCatalog {
    * Tool name → the SPEC that owns it and the view to render its output with. Integration
    * aliases map onto their base tool's view.
    */
-  tools: Record<string, Value>;
+  tools: Record<string, Value2>;
 }
 
 export interface StartMissionRequest {
@@ -9684,6 +10592,12 @@ export interface SuspendAgentRequest {
 
 export interface SuspendTenantRequest {
   reason?: string;
+}
+
+export interface SuspendTenantResponse {
+  suspended: boolean;
+  tenant_id: string;
+  reason: string;
 }
 
 export interface SuspendUserResponse {
@@ -10366,6 +11280,24 @@ export interface TestAdminSmtpConfigResponse {
   sent_to: string;
 }
 
+export interface TestAdminStripeConfigResponseVariant1 {
+  ok: boolean;
+  account_id: string;
+  livemode: boolean;
+  business_name?: string;
+  country: string;
+  default_currency: string;
+}
+
+export interface TestAdminStripeConfigResponseVariant2 {
+  ok: boolean;
+  error: string;
+  /**
+   * Stripe's HTTP status, when it answered.
+   */
+  status?: number;
+}
+
 export interface TestAgentIntegrationResponse {
   /**
    * False when the connector could not reach the remote or the credentials were refused. This is
@@ -10511,6 +11443,57 @@ export interface UpdateACPSessionResponse {
   sessionId: string;
 }
 
+export interface UpdateAdminAgentMemoryConfigResponse {
+  agent_memory: UpdateAdminAgentMemoryConfigResponseAgentMemory;
+  updated: boolean;
+}
+
+export interface UpdateAdminAgentMemoryConfigResponseAgentMemory {
+  enabled: boolean;
+  use_shared_store: boolean;
+  default_max_entries: number;
+  default_retrieval_limit: number;
+  default_retrieval_strategy: string;
+  decay_enabled: boolean;
+  decay_half_life_days: number;
+  decay_job_interval_ms: number;
+  extraction_max_tokens: number;
+  extraction_model: string;
+  eviction_threshold: number;
+  embedding_dimensions: number;
+  embedding_provider: string;
+  embedding_model: string;
+  compression_model: string;
+}
+
+export interface UpdateAdminAuthConfigResponse {
+  auth: UpdateAdminAuthConfigResponseAuth;
+  updated: boolean;
+}
+
+export interface UpdateAdminAuthConfigResponseAuth {
+  super_admin_email: string;
+  otp_ttl_ms: number;
+  verification_ttl_ms: number;
+  jwks_cache_ttl_ms: number;
+  jwks_grace_ttl_ms: number;
+  api_key_cache_ttl_s: number;
+  api_key_rotation_grace_period_h: number;
+}
+
+export interface UpdateAdminBackpressureConfigResponse {
+  backpressure: UpdateAdminBackpressureConfigResponseBackpressure;
+  updated: boolean;
+}
+
+export interface UpdateAdminBackpressureConfigResponseBackpressure {
+  sse_buffer_max: number;
+  sse_high_watermark: number;
+  sse_low_watermark: number;
+  tool_queue_max_depth: number;
+  tool_queue_high_watermark: number;
+}
+
 export interface UpdateAdminBlogConfigRequest {
   enabled?: boolean;
   title?: string;
@@ -10548,9 +11531,38 @@ export interface UpdateAdminBlogPostResponse {
   post: BlogPost;
 }
 
+export interface UpdateAdminCodeInterpreterConfigResponse {
+  code_interpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter;
+  updated: boolean;
+}
+
+export interface UpdateAdminCodeInterpreterConfigResponseCodeInterpreter {
+  isolation: string;
+  timeout_ms?: number;
+  max_memory_mb?: number;
+  container_image?: string;
+  python_container_image?: string;
+  python_sandbox_host_dir?: string;
+}
+
 export interface UpdateAdminDisabledToolsResponse {
   ok: boolean;
   disabled_tools: string[];
+}
+
+export interface UpdateAdminEvaluationConfigResponse {
+  evaluation: UpdateAdminEvaluationConfigResponseEvaluation;
+  updated: boolean;
+}
+
+export interface UpdateAdminEvaluationConfigResponseEvaluation {
+  enabled: boolean;
+  max_concurrent_eval_cases: number;
+  regression_threshold: number;
+  default_scorers: string[];
+  max_cases_per_dataset: number;
+  eval_run_timeout_ms: number;
+  auto_rollback_enabled: boolean;
 }
 
 export interface UpdateAdminFounderConfigRequest {
@@ -10559,11 +11571,134 @@ export interface UpdateAdminFounderConfigRequest {
   founder_public_key?: string;
 }
 
+export interface UpdateAdminGuardrailsResponse {
+  guardrails?: JsonObject[];
+  updated: boolean;
+}
+
+export interface UpdateAdminIdempotencyConfigResponse {
+  idempotency: UpdateAdminIdempotencyConfigResponseIdempotency;
+  updated: boolean;
+}
+
+export interface UpdateAdminIdempotencyConfigResponseIdempotency {
+  enabled: boolean;
+  ttl_hours: number;
+  max_response_cache_bytes: number;
+}
+
+export interface UpdateAdminIntegrationsResponse {
+  integrations: UpdateAdminIntegrationsResponseIntegration[];
+  updated: boolean;
+}
+
+export interface UpdateAdminIntegrationsResponseIntegration {
+  id: string;
+  name: string;
+  icon?: string;
+  auth_type?: AdminIntegrationsConfigIntegrationAuthType;
+  category?: string;
+  enabled: boolean;
+  beta?: boolean;
+  /**
+   * `kv` when an operator overrode the shipped default, `default` otherwise.
+   */
+  source?: string;
+}
+
+export interface UpdateAdminLLMAdaptersConfigResponse {
+  llm_adapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters;
+  updated: boolean;
+}
+
+export interface UpdateAdminLLMAdaptersConfigResponseLLMAdapters {
+  max_retries?: number;
+  retry_base_delay_ms?: number;
+  retry_max_delay_ms?: number;
+  stream_empty_timeout_ms?: number;
+  circuit_breaker?: UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker;
+  provider_rate_limits?: JsonObject;
+}
+
+export interface UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker {
+  failure_threshold?: number;
+  reset_timeout_ms?: number;
+  half_open_max_requests?: number;
+}
+
+export interface UpdateAdminLoggingConfigResponse {
+  logging: UpdateAdminLoggingConfigResponseLogging;
+  updated: boolean;
+}
+
+export interface UpdateAdminLoggingConfigResponseLogging {
+  pii_mode: string;
+  log_agent_responses: boolean;
+  file_enabled: boolean;
+  file_max_size_mb: number;
+  file_retention_days: number;
+  file_level: string;
+  file_separate_error: boolean;
+  activity_log_verbosity: string;
+}
+
+export interface UpdateAdminLongRunningConfigResponse {
+  long_running: UpdateAdminLongRunningConfigResponseLongRunning;
+  updated: boolean;
+}
+
+export interface UpdateAdminLongRunningConfigResponseLongRunning {
+  enabled: boolean;
+  max_duration_ms: number;
+  checkpoint_interval_ms: number;
+  idle_timeout_ms: number;
+  continuation_token_ttl_days: number;
+  max_background_runs_per_tenant: number;
+}
+
+export interface UpdateAdminMCPConfigResponse {
+  mcp: UpdateAdminMCPConfigResponseMCP;
+  updated: boolean;
+}
+
+export interface UpdateAdminMCPConfigResponseMCP {
+  max_sessions_per_server: number;
+  max_total_stdio_sessions: number;
+  session_idle_timeout_ms: number;
+}
+
+export interface UpdateAdminMultimodalConfigResponse {
+  multimodal: UpdateAdminMultimodalConfigResponseMultimodal;
+  updated: boolean;
+}
+
+export interface UpdateAdminMultimodalConfigResponseMultimodal {
+  enabled: boolean;
+  max_image_size_bytes: number;
+  max_audio_duration_s: number;
+  max_video_duration_s: number;
+  auto_resize_images: boolean;
+  supported_image_formats: string[];
+  supported_audio_formats: string[];
+}
+
 export interface UpdateAdminOAuthIdentityConfigRequest {
   apple_services_id?: string;
   apple_team_id?: string;
   apple_bundle_id?: string;
   oauth_return_to_hosts?: string[];
+}
+
+export interface UpdateAdminPersistenceConfigResponse {
+  persistence: UpdateAdminPersistenceConfigResponsePersistence;
+  updated: boolean;
+}
+
+export interface UpdateAdminPersistenceConfigResponsePersistence {
+  snapshot_every_n_events: number;
+  checkpoint_after_tool_calls: boolean;
+  usage_shards: number;
+  auto_cap_kv_values: boolean;
 }
 
 export interface UpdateAdminPlansRequest {
@@ -10575,6 +11710,25 @@ export interface UpdateAdminPlansResponse {
   updated?: boolean;
 }
 
+export interface UpdateAdminPricingResponse {
+  pricing: UpdateAdminPricingResponsePricing;
+  updated: boolean;
+}
+
+export interface UpdateAdminPricingResponsePricing {
+  openai_compat_input: number;
+  openai_compat_output: number;
+  anthropic_input: number;
+  anthropic_output: number;
+  anthropic_thinking: number;
+}
+
+export interface UpdateAdminProviderResponse {
+  id: string;
+  enabled: boolean;
+  model_allowlist: string[];
+}
+
 export interface UpdateAdminRegistrationConfigRequest {
   registration_open?: boolean;
   /**
@@ -10584,6 +11738,48 @@ export interface UpdateAdminRegistrationConfigRequest {
   confirm_open?: boolean;
   default_signup_plan?: string;
   allowed_email_domains?: string[];
+}
+
+export interface UpdateAdminRetentionConfigResponse {
+  retention: UpdateAdminRetentionConfigResponseRetention;
+  updated: boolean;
+}
+
+export interface UpdateAdminRetentionConfigResponseRetention {
+  completed_run_ttl_days: number;
+  event_ttl_days: number;
+  archive_to_sqlite: boolean;
+  audit_log_ttl_days: number;
+  archive_job_interval_ms: number;
+  archive_batch_size: number;
+  feed_ttl_days: number;
+  artifact_ttl_days: number;
+  checkpoint_ttl_hours: number;
+}
+
+export interface UpdateAdminRunCommandConfigResponse {
+  run_command: UpdateAdminRunCommandConfigResponseRunCommand;
+  updated: boolean;
+}
+
+export interface UpdateAdminRunCommandConfigResponseRunCommand {
+  enabled: boolean;
+  isolation: string;
+  timeout_ms: number;
+  max_output_bytes: number;
+  allowed_commands: string[];
+  deno_allow: string[];
+}
+
+export interface UpdateAdminServerConfigResponse {
+  server: UpdateAdminServerConfigResponseServer;
+  updated: boolean;
+}
+
+export interface UpdateAdminServerConfigResponseServer {
+  trust_proxy: boolean;
+  max_body_bytes: number;
+  graceful_shutdown_timeout_ms?: number;
 }
 
 export interface UpdateAdminSetupStateRequest {
@@ -10621,6 +11817,20 @@ export interface UpdateAdminSpecPackagesRequest {
   packages: Record<string, SpecPackage>;
 }
 
+export interface UpdateAdminSSEConfigResponse {
+  sse: UpdateAdminSSEConfigResponseSSE;
+  updated: boolean;
+}
+
+export interface UpdateAdminSSEConfigResponseSSE {
+  heartbeat_interval_ms: number;
+  watch_timeout_ms: number;
+  poll_interval_ms: number;
+  max_poll_interval_ms: number;
+  reconnect_hint_ms: number;
+  run_wait_timeout_sec: number;
+}
+
 export interface UpdateAdminStripeConfigRequest {
   enabled?: boolean;
   mode?: UpdateAdminStripeConfigRequestMode;
@@ -10636,6 +11846,34 @@ export type UpdateAdminStripeConfigRequestMode = 'test' | 'live';
 
 export const UPDATE_ADMIN_STRIPE_CONFIG_REQUEST_MODE_VALUES = ['test', 'live'] as const;
 
+export interface UpdateAdminStripeConfigResponse {
+  stripe: UpdateAdminStripeConfigResponseStripe;
+  updated: boolean;
+}
+
+export interface UpdateAdminStripeConfigResponseStripe {
+  enabled: boolean;
+  mode: string;
+  secret_key: string;
+  webhook_secret: string;
+  publishable_key: string;
+  price_id_starter: string;
+  price_id_pro: string;
+  price_id_enterprise: string;
+}
+
+export interface UpdateAdminTenantSettingsResponse {
+  tenant_id: string;
+  /**
+   * types/tenant.ts TenantSettings as stored — legacy records may lack fields.
+   */
+  settings: JsonObject;
+  /**
+   * Only when ever set.
+   */
+  legal_hold?: boolean;
+}
+
 export interface UpdateAdminToolOverridesRequest {
   overrides: Record<string, ToolOverride>;
 }
@@ -10643,6 +11881,50 @@ export interface UpdateAdminToolOverridesRequest {
 export interface UpdateAdminToolOverridesResponse {
   ok: boolean;
   overrides: Record<string, ToolOverride>;
+}
+
+export interface UpdateAdminToolSecurityConfigResponse {
+  tool_security: UpdateAdminToolSecurityConfigResponseToolSecurity;
+  updated: boolean;
+}
+
+export interface UpdateAdminToolSecurityConfigResponseToolSecurity {
+  default_egress_policy: string;
+  egress_allowlist_per_tenant?: JsonValue[];
+  ssrf_deny_private_ranges: boolean;
+  default_tool_timeout_ms: number;
+  default_tool_max_payload_bytes: number;
+  default_tool_max_concurrency: number;
+  stdio_inherit_env: boolean;
+}
+
+export interface UpdateAdminWebhooksConfigResponse {
+  webhooks: UpdateAdminWebhooksConfigResponseWebhooks;
+  updated: boolean;
+}
+
+export interface UpdateAdminWebhooksConfigResponseWebhooks {
+  enabled: boolean;
+  max_subscriptions_per_tenant: number;
+  delivery_timeout_ms: number;
+  max_retry_attempts: number;
+  require_https: boolean;
+  max_payload_bytes: number;
+}
+
+export interface UpdateAdminWorkerPoolConfigResponse {
+  worker_pool: UpdateAdminWorkerPoolConfigResponseWorkerPool;
+  updated: boolean;
+}
+
+export interface UpdateAdminWorkerPoolConfigResponseWorkerPool {
+  max_workers: number;
+  default_mode: string;
+  max_run_duration_ms: number;
+  reconciliation_interval_ms: number;
+  schedule_max_retries: number;
+  schedule_base_delay_ms: number;
+  max_queue_size?: number;
 }
 
 export interface UpdateAgentIntegrationRequest {
@@ -10720,6 +12002,16 @@ export interface UpdateIntegrationRequest {
   config?: JsonObject;
 }
 
+export interface UpdateMarkupConfigResponse {
+  markup: UpdateMarkupConfigResponseMarkup;
+  updated: boolean;
+}
+
+export interface UpdateMarkupConfigResponseMarkup {
+  platform_markup_percent: number;
+  model_markup_overrides: JsonObject;
+}
+
 /**
  * At least one editable field.
  */
@@ -10765,6 +12057,16 @@ export interface UpdatePlatformURLSRequest {
   webhook_base_url?: string;
 }
 
+export interface UpdatePlatformURLSResponse {
+  urls?: UpdatePlatformURLSResponseURLS;
+  updated: boolean;
+}
+
+export interface UpdatePlatformURLSResponseURLS {
+  public_base_url?: string;
+  webhook_base_url?: string;
+}
+
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
@@ -10779,12 +12081,38 @@ export interface UpdateProjectRequest {
   archived_at?: string | null;
 }
 
+export interface UpdateRuntimeConfigResponse {
+  /**
+   * The effective runtime config — sparse: only keys present in the platform config or the
+   * stored override (RuntimeConfig, every field optional).
+   */
+  runtime: JsonObject;
+  updated: boolean;
+  /**
+   * Only when the body carried keys the schema does not declare.
+   */
+  ignored_keys?: string[];
+}
+
 export interface UpdateSecurityPoliciesRequest {
   cors_allowed_origins?: string[];
   webhook_url_denylist?: string[];
   file_upload_max_size_bytes?: number;
   file_upload_allowed_mime_types?: string[];
   admin_provider_settings_require_super_admin?: boolean;
+}
+
+export interface UpdateSecurityPoliciesResponse {
+  policies: UpdateSecurityPoliciesResponsePolicies;
+  updated: boolean;
+}
+
+export interface UpdateSecurityPoliciesResponsePolicies {
+  cors_allowed_origins: JsonValue[];
+  webhook_url_denylist: string[];
+  file_upload_max_size_bytes: number;
+  file_upload_allowed_mime_types: JsonValue[];
+  admin_provider_settings_require_super_admin: boolean;
 }
 
 export interface UpdateSessionAnnotationRequest {
@@ -10876,6 +12204,19 @@ export interface UpdateWebhooksPolicyRequest {
   delivery_max_retries?: number;
   delivery_backoff_base_ms?: number;
   delivery_max_window_hours?: number;
+}
+
+export interface UpdateWebhooksPolicyResponse {
+  policy: UpdateWebhooksPolicyResponsePolicy;
+  updated: boolean;
+}
+
+export interface UpdateWebhooksPolicyResponsePolicy {
+  ssrf_check_at_subscription: boolean;
+  stripe_signature_tolerance_sec: number;
+  delivery_max_retries: number;
+  delivery_backoff_base_ms: number;
+  delivery_max_window_hours: number;
 }
 
 export interface UpdateWorkspaceRequest {
@@ -11146,16 +12487,16 @@ export interface ValidationPolicy {
 }
 
 export interface Value {
+  en?: string;
+  uk?: string;
+}
+
+export interface Value2 {
   spec_id: string;
   /**
    * The parsed view document, or null when the stored view was unparseable.
    */
   output_view: JsonValue;
-}
-
-export interface Value2 {
-  x: number;
-  y: number;
 }
 
 export interface Value3 {
@@ -11164,6 +12505,11 @@ export interface Value3 {
 }
 
 export interface Value4 {
+  x: number;
+  y: number;
+}
+
+export interface Value5 {
   from?: JsonValue;
   to?: JsonValue;
 }

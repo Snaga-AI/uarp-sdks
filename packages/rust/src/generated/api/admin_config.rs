@@ -53,7 +53,7 @@ impl AdminConfigApi {
     /// `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
     ///
     /// Required scopes: `admin`.
-    pub async fn create_admin_spec_package_stripe_price(&self, package_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_admin_spec_package_stripe_price(&self, package_id: &str) -> Result<models::CreateAdminSpecPackageStripePriceResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -177,7 +177,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_agent_memory_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_agent_memory_config(&self) -> Result<models::AdminConfigAgentMemoryConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -195,7 +195,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_auth_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_auth_config(&self) -> Result<models::AdminConfigAuthConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -213,7 +213,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_backpressure_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_backpressure_config(&self) -> Result<models::AdminConfigBackpressureConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -231,7 +231,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_code_interpreter_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_code_interpreter_config(&self) -> Result<models::AdminConfigCodeInterpreterConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -267,7 +267,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_evaluation_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_evaluation_config(&self) -> Result<models::AdminConfigEvaluationConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -289,7 +289,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/founder`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_founder_config(&self) -> Result<models::GetAdminFounderConfigResponse> {
+    pub async fn get_admin_founder_config(&self) -> Result<models::AdminFounderConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -307,7 +307,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_guardrails(&self) -> Result<models::GetAdminGuardrailsResponse> {
+    pub async fn get_admin_guardrails(&self) -> Result<models::AdminGuardrailsConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -325,7 +325,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_idempotency_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_idempotency_config(&self) -> Result<models::AdminConfigIdempotencyConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -343,7 +343,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/integrations`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_integrations(&self) -> Result<models::GetAdminIntegrationsResponse> {
+    pub async fn get_admin_integrations(&self) -> Result<models::AdminIntegrationsConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -361,7 +361,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_llm_adapters_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_llm_adapters_config(&self) -> Result<models::AdminConfigLLMAdaptersConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -379,7 +379,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_logging_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_logging_config(&self) -> Result<models::AdminConfigLoggingConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -397,7 +397,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_long_running_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_long_running_config(&self) -> Result<models::AdminConfigLongRunningConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -415,7 +415,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_mcp_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_mcp_config(&self) -> Result<models::AdminConfigMCPConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -433,7 +433,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_multimodal_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_multimodal_config(&self) -> Result<models::AdminConfigMultimodalConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -455,7 +455,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/oauth-identity`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_o_auth_identity_config(&self) -> Result<models::GetAdminOAuthIdentityConfigResponse> {
+    pub async fn get_admin_o_auth_identity_config(&self) -> Result<models::AdminOAuthIdentityConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -473,7 +473,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_persistence_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_persistence_config(&self) -> Result<models::AdminConfigPersistenceConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -516,7 +516,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/registration`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_registration_config(&self) -> Result<models::GetAdminRegistrationConfigResponse> {
+    pub async fn get_admin_registration_config(&self) -> Result<models::AdminRegistrationConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -534,7 +534,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_retention_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_retention_config(&self) -> Result<models::AdminConfigRetentionConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -552,7 +552,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_run_command_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_run_command_config(&self) -> Result<models::AdminConfigRunCommandConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -570,7 +570,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_server_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_server_config(&self) -> Result<models::AdminConfigServerConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -614,7 +614,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/smtp`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_smtp_config(&self) -> Result<models::GetAdminSmtpConfigResponse> {
+    pub async fn get_admin_smtp_config(&self) -> Result<models::AdminSmtpConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -636,7 +636,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/spec-packages`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_spec_packages(&self) -> Result<models::GetAdminSpecPackagesResponse> {
+    pub async fn get_admin_spec_packages(&self) -> Result<models::AdminSpecPackagesList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -654,7 +654,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_sse_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_sse_config(&self) -> Result<models::AdminConfigSSEConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -672,7 +672,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/stripe`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_stripe_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_stripe_config(&self) -> Result<models::AdminStripeConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -710,7 +710,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_tool_security_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_tool_security_config(&self) -> Result<models::AdminConfigToolSecurityConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -728,7 +728,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_webhooks_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_webhooks_config(&self) -> Result<models::AdminConfigWebhooksConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -746,7 +746,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_worker_pool_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_worker_pool_config(&self) -> Result<models::AdminConfigWorkerPoolConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -764,7 +764,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_feature_flags(&self) -> Result<models::GetFeatureFlagsResponse> {
+    pub async fn get_feature_flags(&self) -> Result<models::AdminFeatureFlagsConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -800,7 +800,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/platform-urls`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_platform_urls(&self) -> Result<models::GetPlatformURLSResponse> {
+    pub async fn get_platform_urls(&self) -> Result<models::AdminPlatformURLSConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -818,7 +818,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_rate_limits(&self) -> Result<models::GetRateLimitsResponse> {
+    pub async fn get_rate_limits(&self) -> Result<models::AdminRateLimitsConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -836,7 +836,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/reconciliation`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_reconciliation(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_reconciliation(&self) -> Result<models::GetReconciliationResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -872,7 +872,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/security-policies`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_security_policies(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_security_policies(&self) -> Result<models::AdminConfigSecurityPoliciesConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -890,7 +890,7 @@ impl AdminConfigApi {
     /// `GET /api/v1/admin/config/webhooks-policy`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_webhooks_policy(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_webhooks_policy(&self) -> Result<models::AdminConfigWebhooksPolicyConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -908,7 +908,7 @@ impl AdminConfigApi {
     /// `POST /api/v1/admin/config/import`
     ///
     /// Required scopes: `admin`.
-    pub async fn import(&self, body: &models::ImportAdminConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn import(&self, body: &models::ImportAdminConfigRequest) -> Result<models::ImportAdminConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -995,7 +995,7 @@ impl AdminConfigApi {
     /// `POST /api/v1/admin/config/reconciliation`
     ///
     /// Required scopes: `admin`.
-    pub async fn run_reconciliation(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn run_reconciliation(&self) -> Result<models::RunReconciliationResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -1013,7 +1013,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
-    pub async fn set_feature_flags(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_feature_flags(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetFeatureFlagsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1062,7 +1062,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    pub async fn set_rate_limits(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_rate_limits(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetRateLimitsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1102,7 +1102,7 @@ impl AdminConfigApi {
     /// `POST /api/v1/admin/config/stripe/test`
     ///
     /// Required scopes: `admin`.
-    pub async fn test_admin_stripe_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn test_admin_stripe_config(&self) -> Result<serde_json::Value> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -1120,7 +1120,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_agent_memory_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_agent_memory_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminAgentMemoryConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1138,7 +1138,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_auth_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_auth_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminAuthConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1156,7 +1156,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_backpressure_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_backpressure_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminBackpressureConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1174,7 +1174,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_code_interpreter_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_code_interpreter_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminCodeInterpreterConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1219,7 +1219,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_evaluation_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_evaluation_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminEvaluationConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1243,7 +1243,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/founder`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_founder_config(&self, body: &models::UpdateAdminFounderConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_founder_config(&self, body: &models::UpdateAdminFounderConfigRequest) -> Result<models::AdminFounderConfig> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1261,7 +1261,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_guardrails(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_guardrails(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminGuardrailsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1279,7 +1279,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_idempotency_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_idempotency_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminIdempotencyConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1297,7 +1297,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/integrations`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_integrations(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_integrations(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminIntegrationsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1315,7 +1315,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_llm_adapters_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_llm_adapters_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLLMAdaptersConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1333,7 +1333,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_logging_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_logging_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLoggingConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1351,7 +1351,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_long_running_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_long_running_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLongRunningConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1369,7 +1369,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_mcp_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_mcp_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminMCPConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1387,7 +1387,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_multimodal_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_multimodal_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminMultimodalConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1410,7 +1410,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/oauth-identity`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_o_auth_identity_config(&self, body: &models::UpdateAdminOAuthIdentityConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_o_auth_identity_config(&self, body: &models::UpdateAdminOAuthIdentityConfigRequest) -> Result<models::AdminOAuthIdentityConfig> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1428,7 +1428,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_persistence_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_persistence_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminPersistenceConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1479,7 +1479,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/registration`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_registration_config(&self, body: &models::UpdateAdminRegistrationConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_registration_config(&self, body: &models::UpdateAdminRegistrationConfigRequest) -> Result<models::AdminRegistrationConfig> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1497,7 +1497,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_retention_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_retention_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminRetentionConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1515,7 +1515,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_run_command_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_run_command_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminRunCommandConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1533,7 +1533,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_server_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_server_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminServerConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1603,7 +1603,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/smtp`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_smtp_config(&self, body: &models::UpdateAdminSmtpConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_smtp_config(&self, body: &models::UpdateAdminSmtpConfigRequest) -> Result<models::AdminSmtpConfig> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1636,7 +1636,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/spec-packages`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_spec_packages(&self, body: &models::UpdateAdminSpecPackagesRequest, params: &UpdateAdminSpecPackagesParams) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_spec_packages(&self, body: &models::UpdateAdminSpecPackagesRequest, params: &UpdateAdminSpecPackagesParams) -> Result<models::AdminSpecPackagesList> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1654,7 +1654,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_sse_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_sse_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminSSEConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1672,7 +1672,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/stripe`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_stripe_config(&self, body: &models::UpdateAdminStripeConfigRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_stripe_config(&self, body: &models::UpdateAdminStripeConfigRequest) -> Result<models::UpdateAdminStripeConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1725,7 +1725,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_tool_security_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_tool_security_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminToolSecurityConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1743,7 +1743,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_webhooks_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_webhooks_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminWebhooksConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1761,7 +1761,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_worker_pool_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_worker_pool_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminWorkerPoolConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1779,7 +1779,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/markup`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_markup_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_markup_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateMarkupConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1797,7 +1797,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/platform-urls`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_platform_urls(&self, body: &models::UpdatePlatformURLSRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_platform_urls(&self, body: &models::UpdatePlatformURLSRequest) -> Result<models::UpdatePlatformURLSResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1815,7 +1815,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/runtime`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_runtime_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_runtime_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateRuntimeConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1833,7 +1833,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/security-policies`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_security_policies(&self, body: &models::UpdateSecurityPoliciesRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_security_policies(&self, body: &models::UpdateSecurityPoliciesRequest) -> Result<models::UpdateSecurityPoliciesResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1851,7 +1851,7 @@ impl AdminConfigApi {
     /// `PUT /api/v1/admin/config/webhooks-policy`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_webhooks_policy(&self, body: &models::UpdateWebhooksPolicyRequest) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_webhooks_policy(&self, body: &models::UpdateWebhooksPolicyRequest) -> Result<models::UpdateWebhooksPolicyResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

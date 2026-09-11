@@ -34,8 +34,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun createAdminSpecPackageStripePrice(packageId: String, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun createAdminSpecPackageStripePrice(packageId: String, options: RequestOptions = RequestOptions()): CreateAdminSpecPackageStripePriceResponse {
+        return client.request<CreateAdminSpecPackageStripePriceResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/admin/config/spec-packages/${encodePathSegment(packageId)}/stripe-price",
@@ -162,8 +162,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminAgentMemoryConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminAgentMemoryConfig(options: RequestOptions = RequestOptions()): AdminConfigAgentMemoryConfig {
+        return client.request<AdminConfigAgentMemoryConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/agent-memory",
@@ -179,8 +179,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminAuthConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminAuthConfig(options: RequestOptions = RequestOptions()): AdminConfigAuthConfig {
+        return client.request<AdminConfigAuthConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/auth",
@@ -196,8 +196,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminBackpressureConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminBackpressureConfig(options: RequestOptions = RequestOptions()): AdminConfigBackpressureConfig {
+        return client.request<AdminConfigBackpressureConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/backpressure",
@@ -213,8 +213,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminCodeInterpreterConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminCodeInterpreterConfig(options: RequestOptions = RequestOptions()): AdminConfigCodeInterpreterConfig {
+        return client.request<AdminConfigCodeInterpreterConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/code-interpreter",
@@ -247,8 +247,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminEvaluationConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminEvaluationConfig(options: RequestOptions = RequestOptions()): AdminConfigEvaluationConfig {
+        return client.request<AdminConfigEvaluationConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/evaluation",
@@ -268,8 +268,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminFounderConfig(options: RequestOptions = RequestOptions()): GetAdminFounderConfigResponse {
-        return client.request<GetAdminFounderConfigResponse>(
+    public suspend fun getAdminFounderConfig(options: RequestOptions = RequestOptions()): AdminFounderConfig {
+        return client.request<AdminFounderConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/founder",
@@ -285,8 +285,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminGuardrails(options: RequestOptions = RequestOptions()): GetAdminGuardrailsResponse {
-        return client.request<GetAdminGuardrailsResponse>(
+    public suspend fun getAdminGuardrails(options: RequestOptions = RequestOptions()): AdminGuardrailsConfig {
+        return client.request<AdminGuardrailsConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/guardrails",
@@ -302,8 +302,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminIdempotencyConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminIdempotencyConfig(options: RequestOptions = RequestOptions()): AdminConfigIdempotencyConfig {
+        return client.request<AdminConfigIdempotencyConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/idempotency",
@@ -319,8 +319,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminIntegrations(options: RequestOptions = RequestOptions()): GetAdminIntegrationsResponse {
-        return client.request<GetAdminIntegrationsResponse>(
+    public suspend fun getAdminIntegrations(options: RequestOptions = RequestOptions()): AdminIntegrationsConfig {
+        return client.request<AdminIntegrationsConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/integrations",
@@ -336,8 +336,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminLLMAdaptersConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminLLMAdaptersConfig(options: RequestOptions = RequestOptions()): AdminConfigLLMAdaptersConfig {
+        return client.request<AdminConfigLLMAdaptersConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/llm-adapters",
@@ -353,8 +353,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminLoggingConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminLoggingConfig(options: RequestOptions = RequestOptions()): AdminConfigLoggingConfig {
+        return client.request<AdminConfigLoggingConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/logging",
@@ -370,8 +370,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminLongRunningConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminLongRunningConfig(options: RequestOptions = RequestOptions()): AdminConfigLongRunningConfig {
+        return client.request<AdminConfigLongRunningConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/long-running",
@@ -387,8 +387,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminMCPConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminMCPConfig(options: RequestOptions = RequestOptions()): AdminConfigMCPConfig {
+        return client.request<AdminConfigMCPConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/mcp",
@@ -404,8 +404,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminMultimodalConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminMultimodalConfig(options: RequestOptions = RequestOptions()): AdminConfigMultimodalConfig {
+        return client.request<AdminConfigMultimodalConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/multimodal",
@@ -425,8 +425,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminOAuthIdentityConfig(options: RequestOptions = RequestOptions()): GetAdminOAuthIdentityConfigResponse {
-        return client.request<GetAdminOAuthIdentityConfigResponse>(
+    public suspend fun getAdminOAuthIdentityConfig(options: RequestOptions = RequestOptions()): AdminOAuthIdentityConfig {
+        return client.request<AdminOAuthIdentityConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/oauth-identity",
@@ -442,8 +442,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminPersistenceConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminPersistenceConfig(options: RequestOptions = RequestOptions()): AdminConfigPersistenceConfig {
+        return client.request<AdminConfigPersistenceConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/persistence",
@@ -483,8 +483,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminRegistrationConfig(options: RequestOptions = RequestOptions()): GetAdminRegistrationConfigResponse {
-        return client.request<GetAdminRegistrationConfigResponse>(
+    public suspend fun getAdminRegistrationConfig(options: RequestOptions = RequestOptions()): AdminRegistrationConfig {
+        return client.request<AdminRegistrationConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/registration",
@@ -500,8 +500,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminRetentionConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminRetentionConfig(options: RequestOptions = RequestOptions()): AdminConfigRetentionConfig {
+        return client.request<AdminConfigRetentionConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/retention",
@@ -517,8 +517,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminRunCommandConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminRunCommandConfig(options: RequestOptions = RequestOptions()): AdminConfigRunCommandConfig {
+        return client.request<AdminConfigRunCommandConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/run-command",
@@ -534,8 +534,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminServerConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminServerConfig(options: RequestOptions = RequestOptions()): AdminConfigServerConfig {
+        return client.request<AdminConfigServerConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/server",
@@ -576,8 +576,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminSmtpConfig(options: RequestOptions = RequestOptions()): GetAdminSmtpConfigResponse {
-        return client.request<GetAdminSmtpConfigResponse>(
+    public suspend fun getAdminSmtpConfig(options: RequestOptions = RequestOptions()): AdminSmtpConfig {
+        return client.request<AdminSmtpConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/smtp",
@@ -597,8 +597,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminSpecPackages(options: RequestOptions = RequestOptions()): GetAdminSpecPackagesResponse {
-        return client.request<GetAdminSpecPackagesResponse>(
+    public suspend fun getAdminSpecPackages(options: RequestOptions = RequestOptions()): AdminSpecPackagesList {
+        return client.request<AdminSpecPackagesList>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/spec-packages",
@@ -614,8 +614,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminSSEConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminSSEConfig(options: RequestOptions = RequestOptions()): AdminConfigSSEConfig {
+        return client.request<AdminConfigSSEConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/sse",
@@ -631,8 +631,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminStripeConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminStripeConfig(options: RequestOptions = RequestOptions()): AdminStripeConfig {
+        return client.request<AdminStripeConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/stripe",
@@ -667,8 +667,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminToolSecurityConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminToolSecurityConfig(options: RequestOptions = RequestOptions()): AdminConfigToolSecurityConfig {
+        return client.request<AdminConfigToolSecurityConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/tool-security",
@@ -684,8 +684,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminWebhooksConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminWebhooksConfig(options: RequestOptions = RequestOptions()): AdminConfigWebhooksConfig {
+        return client.request<AdminConfigWebhooksConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/webhooks",
@@ -701,8 +701,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAdminWorkerPoolConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getAdminWorkerPoolConfig(options: RequestOptions = RequestOptions()): AdminConfigWorkerPoolConfig {
+        return client.request<AdminConfigWorkerPoolConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/worker-pool",
@@ -718,8 +718,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getFeatureFlags(options: RequestOptions = RequestOptions()): GetFeatureFlagsResponse {
-        return client.request<GetFeatureFlagsResponse>(
+    public suspend fun getFeatureFlags(options: RequestOptions = RequestOptions()): AdminFeatureFlagsConfig {
+        return client.request<AdminFeatureFlagsConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/feature-flags",
@@ -752,8 +752,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getPlatformURLS(options: RequestOptions = RequestOptions()): GetPlatformURLSResponse {
-        return client.request<GetPlatformURLSResponse>(
+    public suspend fun getPlatformURLS(options: RequestOptions = RequestOptions()): AdminPlatformURLSConfig {
+        return client.request<AdminPlatformURLSConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/platform-urls",
@@ -769,8 +769,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getRateLimits(options: RequestOptions = RequestOptions()): GetRateLimitsResponse {
-        return client.request<GetRateLimitsResponse>(
+    public suspend fun getRateLimits(options: RequestOptions = RequestOptions()): AdminRateLimitsConfig {
+        return client.request<AdminRateLimitsConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/rate-limits",
@@ -786,8 +786,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getReconciliation(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getReconciliation(options: RequestOptions = RequestOptions()): GetReconciliationResponse {
+        return client.request<GetReconciliationResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/reconciliation",
@@ -820,8 +820,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getSecurityPolicies(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getSecurityPolicies(options: RequestOptions = RequestOptions()): AdminConfigSecurityPoliciesConfig {
+        return client.request<AdminConfigSecurityPoliciesConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/security-policies",
@@ -837,8 +837,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getWebhooksPolicy(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun getWebhooksPolicy(options: RequestOptions = RequestOptions()): AdminConfigWebhooksPolicyConfig {
+        return client.request<AdminConfigWebhooksPolicyConfig>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/webhooks-policy",
@@ -854,8 +854,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun `import`(body: ImportAdminConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun `import`(body: ImportAdminConfigRequest, options: RequestOptions = RequestOptions()): ImportAdminConfigResponse {
+        return client.request<ImportAdminConfigResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/admin/config/import",
@@ -939,8 +939,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun runReconciliation(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun runReconciliation(options: RequestOptions = RequestOptions()): RunReconciliationResponse {
+        return client.request<RunReconciliationResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/admin/config/reconciliation",
@@ -957,8 +957,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun setFeatureFlags(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun setFeatureFlags(body: JsonObject, options: RequestOptions = RequestOptions()): SetFeatureFlagsResponse {
+        return client.request<SetFeatureFlagsResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/feature-flags",
@@ -1008,8 +1008,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun setRateLimits(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun setRateLimits(body: JsonObject, options: RequestOptions = RequestOptions()): SetRateLimitsResponse {
+        return client.request<SetRateLimitsResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/rate-limits",
@@ -1050,8 +1050,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun testAdminStripeConfig(options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun testAdminStripeConfig(options: RequestOptions = RequestOptions()): JsonElement {
+        return client.request<JsonElement>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/admin/config/stripe/test",
@@ -1068,8 +1068,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminAgentMemoryConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminAgentMemoryConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminAgentMemoryConfigResponse {
+        return client.request<UpdateAdminAgentMemoryConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/agent-memory",
@@ -1087,8 +1087,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminAuthConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminAuthConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminAuthConfigResponse {
+        return client.request<UpdateAdminAuthConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/auth",
@@ -1106,8 +1106,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminBackpressureConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminBackpressureConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminBackpressureConfigResponse {
+        return client.request<UpdateAdminBackpressureConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/backpressure",
@@ -1125,8 +1125,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminCodeInterpreterConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminCodeInterpreterConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminCodeInterpreterConfigResponse {
+        return client.request<UpdateAdminCodeInterpreterConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/code-interpreter",
@@ -1172,8 +1172,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminEvaluationConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminEvaluationConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminEvaluationConfigResponse {
+        return client.request<UpdateAdminEvaluationConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/evaluation",
@@ -1197,8 +1197,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options: RequestOptions = RequestOptions()): AdminFounderConfig {
+        return client.request<AdminFounderConfig>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/founder",
@@ -1216,8 +1216,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminGuardrails(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminGuardrails(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminGuardrailsResponse {
+        return client.request<UpdateAdminGuardrailsResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/guardrails",
@@ -1235,8 +1235,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminIdempotencyConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminIdempotencyConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminIdempotencyConfigResponse {
+        return client.request<UpdateAdminIdempotencyConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/idempotency",
@@ -1254,8 +1254,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminIntegrations(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminIntegrations(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminIntegrationsResponse {
+        return client.request<UpdateAdminIntegrationsResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/integrations",
@@ -1273,8 +1273,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminLLMAdaptersConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminLLMAdaptersConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminLLMAdaptersConfigResponse {
+        return client.request<UpdateAdminLLMAdaptersConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/llm-adapters",
@@ -1292,8 +1292,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminLoggingConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminLoggingConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminLoggingConfigResponse {
+        return client.request<UpdateAdminLoggingConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/logging",
@@ -1311,8 +1311,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminLongRunningConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminLongRunningConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminLongRunningConfigResponse {
+        return client.request<UpdateAdminLongRunningConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/long-running",
@@ -1330,8 +1330,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminMCPConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminMCPConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminMCPConfigResponse {
+        return client.request<UpdateAdminMCPConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/mcp",
@@ -1349,8 +1349,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminMultimodalConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminMultimodalConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminMultimodalConfigResponse {
+        return client.request<UpdateAdminMultimodalConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/multimodal",
@@ -1373,8 +1373,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options: RequestOptions = RequestOptions()): AdminOAuthIdentityConfig {
+        return client.request<AdminOAuthIdentityConfig>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/oauth-identity",
@@ -1392,8 +1392,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminPersistenceConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminPersistenceConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminPersistenceConfigResponse {
+        return client.request<UpdateAdminPersistenceConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/persistence",
@@ -1445,8 +1445,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options: RequestOptions = RequestOptions()): AdminRegistrationConfig {
+        return client.request<AdminRegistrationConfig>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/registration",
@@ -1464,8 +1464,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminRetentionConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminRetentionConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminRetentionConfigResponse {
+        return client.request<UpdateAdminRetentionConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/retention",
@@ -1483,8 +1483,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminRunCommandConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminRunCommandConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminRunCommandConfigResponse {
+        return client.request<UpdateAdminRunCommandConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/run-command",
@@ -1502,8 +1502,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminServerConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminServerConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminServerConfigResponse {
+        return client.request<UpdateAdminServerConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/server",
@@ -1574,8 +1574,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options: RequestOptions = RequestOptions()): AdminSmtpConfig {
+        return client.request<AdminSmtpConfig>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/smtp",
@@ -1608,11 +1608,11 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, confirmDrop: String? = null, options: RequestOptions = RequestOptions()): JsonObject {
+    public suspend fun updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, confirmDrop: String? = null, options: RequestOptions = RequestOptions()): AdminSpecPackagesList {
         val query = buildList {
             if (confirmDrop != null) add("confirm_drop" to confirmDrop)
         }
-        return client.request<JsonObject>(
+        return client.request<AdminSpecPackagesList>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/spec-packages",
@@ -1631,8 +1631,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminSSEConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminSSEConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminSSEConfigResponse {
+        return client.request<UpdateAdminSSEConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/sse",
@@ -1650,8 +1650,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options: RequestOptions = RequestOptions()): UpdateAdminStripeConfigResponse {
+        return client.request<UpdateAdminStripeConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/stripe",
@@ -1705,8 +1705,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminToolSecurityConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminToolSecurityConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminToolSecurityConfigResponse {
+        return client.request<UpdateAdminToolSecurityConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/tool-security",
@@ -1724,8 +1724,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminWebhooksConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminWebhooksConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminWebhooksConfigResponse {
+        return client.request<UpdateAdminWebhooksConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/webhooks",
@@ -1743,8 +1743,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminWorkerPoolConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateAdminWorkerPoolConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminWorkerPoolConfigResponse {
+        return client.request<UpdateAdminWorkerPoolConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/worker-pool",
@@ -1762,8 +1762,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateMarkupConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateMarkupConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateMarkupConfigResponse {
+        return client.request<UpdateMarkupConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/markup",
@@ -1781,8 +1781,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updatePlatformURLS(body: UpdatePlatformURLSRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updatePlatformURLS(body: UpdatePlatformURLSRequest, options: RequestOptions = RequestOptions()): UpdatePlatformURLSResponse {
+        return client.request<UpdatePlatformURLSResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/platform-urls",
@@ -1800,8 +1800,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateRuntimeConfig(body: JsonObject, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateRuntimeConfig(body: JsonObject, options: RequestOptions = RequestOptions()): UpdateRuntimeConfigResponse {
+        return client.request<UpdateRuntimeConfigResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/runtime",
@@ -1819,8 +1819,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options: RequestOptions = RequestOptions()): UpdateSecurityPoliciesResponse {
+        return client.request<UpdateSecurityPoliciesResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/security-policies",
@@ -1838,8 +1838,8 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options: RequestOptions = RequestOptions()): JsonObject {
-        return client.request<JsonObject>(
+    public suspend fun updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options: RequestOptions = RequestOptions()): UpdateWebhooksPolicyResponse {
+        return client.request<UpdateWebhooksPolicyResponse>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/webhooks-policy",

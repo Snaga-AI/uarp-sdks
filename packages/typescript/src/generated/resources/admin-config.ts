@@ -4,6 +4,39 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
+  AdminConfigAgentMemoryConfig,
+  AdminConfigAuthConfig,
+  AdminConfigBackpressureConfig,
+  AdminConfigCodeInterpreterConfig,
+  AdminConfigEvaluationConfig,
+  AdminConfigIdempotencyConfig,
+  AdminConfigLLMAdaptersConfig,
+  AdminConfigLoggingConfig,
+  AdminConfigLongRunningConfig,
+  AdminConfigMCPConfig,
+  AdminConfigMultimodalConfig,
+  AdminConfigPersistenceConfig,
+  AdminConfigRetentionConfig,
+  AdminConfigRunCommandConfig,
+  AdminConfigSSEConfig,
+  AdminConfigSecurityPoliciesConfig,
+  AdminConfigServerConfig,
+  AdminConfigToolSecurityConfig,
+  AdminConfigWebhooksConfig,
+  AdminConfigWebhooksPolicyConfig,
+  AdminConfigWorkerPoolConfig,
+  AdminFeatureFlagsConfig,
+  AdminFounderConfig,
+  AdminGuardrailsConfig,
+  AdminIntegrationsConfig,
+  AdminOAuthIdentityConfig,
+  AdminPlatformURLSConfig,
+  AdminRateLimitsConfig,
+  AdminRegistrationConfig,
+  AdminSmtpConfig,
+  AdminSpecPackagesList,
+  AdminStripeConfig,
+  CreateAdminSpecPackageStripePriceResponse,
   CreatePlanStripePriceRequest,
   CreatePlanStripePriceResponse,
   CustomPlanInput,
@@ -13,47 +46,71 @@ import type {
   DeletePromoCodeResponse,
   ExportAdminConfigResponse,
   GetAdminDisabledToolsResponse,
-  GetAdminFounderConfigResponse,
-  GetAdminGuardrailsResponse,
-  GetAdminIntegrationsResponse,
-  GetAdminOAuthIdentityConfigResponse,
   GetAdminPlansResponse,
-  GetAdminRegistrationConfigResponse,
-  GetAdminSmtpConfigResponse,
-  GetAdminSpecPackagesResponse,
   GetAdminToolOverridesResponse,
-  GetFeatureFlagsResponse,
   GetMarkupConfigResponse,
-  GetPlatformURLSResponse,
-  GetRateLimitsResponse,
+  GetReconciliationResponse,
   GetRuntimeConfigResponse,
   ImportAdminConfigRequest,
+  ImportAdminConfigResponse,
   JsonObject,
   ListCustomPlansResponse,
   ListPromoCodesResponse,
   ListPromoRewardsResponse,
   PlanLLMLimitsTierAccessItem,
   PromoCodeInput,
+  RunReconciliationResponse,
+  SetFeatureFlagsResponse,
   SetModelPricingOverrideRequest,
   SetModelPricingOverrideResponse,
+  SetRateLimitsResponse,
   SetupStateResponse,
   TestAdminSmtpConfigRequest,
   TestAdminSmtpConfigResponse,
+  TestAdminStripeConfigResponseVariant1,
+  TestAdminStripeConfigResponseVariant2,
+  UpdateAdminAgentMemoryConfigResponse,
+  UpdateAdminAuthConfigResponse,
+  UpdateAdminBackpressureConfigResponse,
+  UpdateAdminCodeInterpreterConfigResponse,
   UpdateAdminDisabledToolsResponse,
+  UpdateAdminEvaluationConfigResponse,
   UpdateAdminFounderConfigRequest,
+  UpdateAdminGuardrailsResponse,
+  UpdateAdminIdempotencyConfigResponse,
+  UpdateAdminIntegrationsResponse,
+  UpdateAdminLLMAdaptersConfigResponse,
+  UpdateAdminLoggingConfigResponse,
+  UpdateAdminLongRunningConfigResponse,
+  UpdateAdminMCPConfigResponse,
+  UpdateAdminMultimodalConfigResponse,
   UpdateAdminOAuthIdentityConfigRequest,
+  UpdateAdminPersistenceConfigResponse,
   UpdateAdminPlansRequest,
   UpdateAdminPlansResponse,
   UpdateAdminRegistrationConfigRequest,
+  UpdateAdminRetentionConfigResponse,
+  UpdateAdminRunCommandConfigResponse,
+  UpdateAdminSSEConfigResponse,
+  UpdateAdminServerConfigResponse,
   UpdateAdminSetupStateRequest,
   UpdateAdminSmtpConfigRequest,
   UpdateAdminSpecPackagesRequest,
   UpdateAdminStripeConfigRequest,
+  UpdateAdminStripeConfigResponse,
   UpdateAdminToolOverridesRequest,
   UpdateAdminToolOverridesResponse,
+  UpdateAdminToolSecurityConfigResponse,
+  UpdateAdminWebhooksConfigResponse,
+  UpdateAdminWorkerPoolConfigResponse,
+  UpdateMarkupConfigResponse,
   UpdatePlatformURLSRequest,
+  UpdatePlatformURLSResponse,
+  UpdateRuntimeConfigResponse,
   UpdateSecurityPoliciesRequest,
+  UpdateSecurityPoliciesResponse,
   UpdateWebhooksPolicyRequest,
+  UpdateWebhooksPolicyResponse,
   UpsertCustomPlanResponse,
   UpsertPromoCodeResponse,
 } from '../models.js';
@@ -94,7 +151,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  createAdminSpecPackageStripePrice(packageId: string, options?: RequestOptions): Promise<JsonObject> {
+  createAdminSpecPackageStripePrice(packageId: string, options?: RequestOptions): Promise<CreateAdminSpecPackageStripePriceResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/admin/config/spec-packages/${encodeURIComponent(String(packageId))}/stripe-price`,
@@ -207,7 +264,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminAgentMemoryConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminAgentMemoryConfig(options?: RequestOptions): Promise<AdminConfigAgentMemoryConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/agent-memory',
@@ -222,7 +279,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminAuthConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminAuthConfig(options?: RequestOptions): Promise<AdminConfigAuthConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/auth',
@@ -237,7 +294,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminBackpressureConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminBackpressureConfig(options?: RequestOptions): Promise<AdminConfigBackpressureConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/backpressure',
@@ -252,7 +309,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminCodeInterpreterConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminCodeInterpreterConfig(options?: RequestOptions): Promise<AdminConfigCodeInterpreterConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/code-interpreter',
@@ -282,7 +339,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminEvaluationConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminEvaluationConfig(options?: RequestOptions): Promise<AdminConfigEvaluationConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/evaluation',
@@ -301,7 +358,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminFounderConfig(options?: RequestOptions): Promise<GetAdminFounderConfigResponse> {
+  getAdminFounderConfig(options?: RequestOptions): Promise<AdminFounderConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/founder',
@@ -316,7 +373,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminGuardrails(options?: RequestOptions): Promise<GetAdminGuardrailsResponse> {
+  getAdminGuardrails(options?: RequestOptions): Promise<AdminGuardrailsConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/guardrails',
@@ -331,7 +388,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminIdempotencyConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminIdempotencyConfig(options?: RequestOptions): Promise<AdminConfigIdempotencyConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/idempotency',
@@ -346,7 +403,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminIntegrations(options?: RequestOptions): Promise<GetAdminIntegrationsResponse> {
+  getAdminIntegrations(options?: RequestOptions): Promise<AdminIntegrationsConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/integrations',
@@ -361,7 +418,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminLLMAdaptersConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminLLMAdaptersConfig(options?: RequestOptions): Promise<AdminConfigLLMAdaptersConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/llm-adapters',
@@ -376,7 +433,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminLoggingConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminLoggingConfig(options?: RequestOptions): Promise<AdminConfigLoggingConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/logging',
@@ -391,7 +448,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminLongRunningConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminLongRunningConfig(options?: RequestOptions): Promise<AdminConfigLongRunningConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/long-running',
@@ -406,7 +463,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminMCPConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminMCPConfig(options?: RequestOptions): Promise<AdminConfigMCPConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/mcp',
@@ -421,7 +478,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminMultimodalConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminMultimodalConfig(options?: RequestOptions): Promise<AdminConfigMultimodalConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/multimodal',
@@ -440,7 +497,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminOAuthIdentityConfig(options?: RequestOptions): Promise<GetAdminOAuthIdentityConfigResponse> {
+  getAdminOAuthIdentityConfig(options?: RequestOptions): Promise<AdminOAuthIdentityConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/oauth-identity',
@@ -455,7 +512,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminPersistenceConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminPersistenceConfig(options?: RequestOptions): Promise<AdminConfigPersistenceConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/persistence',
@@ -492,7 +549,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminRegistrationConfig(options?: RequestOptions): Promise<GetAdminRegistrationConfigResponse> {
+  getAdminRegistrationConfig(options?: RequestOptions): Promise<AdminRegistrationConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/registration',
@@ -507,7 +564,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminRetentionConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminRetentionConfig(options?: RequestOptions): Promise<AdminConfigRetentionConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/retention',
@@ -522,7 +579,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminRunCommandConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminRunCommandConfig(options?: RequestOptions): Promise<AdminConfigRunCommandConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/run-command',
@@ -537,7 +594,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminServerConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminServerConfig(options?: RequestOptions): Promise<AdminConfigServerConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/server',
@@ -575,7 +632,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminSmtpConfig(options?: RequestOptions): Promise<GetAdminSmtpConfigResponse> {
+  getAdminSmtpConfig(options?: RequestOptions): Promise<AdminSmtpConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/smtp',
@@ -594,7 +651,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminSpecPackages(options?: RequestOptions): Promise<GetAdminSpecPackagesResponse> {
+  getAdminSpecPackages(options?: RequestOptions): Promise<AdminSpecPackagesList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/spec-packages',
@@ -609,7 +666,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminSSEConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminSSEConfig(options?: RequestOptions): Promise<AdminConfigSSEConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/sse',
@@ -624,7 +681,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminStripeConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminStripeConfig(options?: RequestOptions): Promise<AdminStripeConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/stripe',
@@ -656,7 +713,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminToolSecurityConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminToolSecurityConfig(options?: RequestOptions): Promise<AdminConfigToolSecurityConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/tool-security',
@@ -671,7 +728,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminWebhooksConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminWebhooksConfig(options?: RequestOptions): Promise<AdminConfigWebhooksConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/webhooks',
@@ -686,7 +743,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminWorkerPoolConfig(options?: RequestOptions): Promise<JsonObject> {
+  getAdminWorkerPoolConfig(options?: RequestOptions): Promise<AdminConfigWorkerPoolConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/worker-pool',
@@ -701,7 +758,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getFeatureFlags(options?: RequestOptions): Promise<GetFeatureFlagsResponse> {
+  getFeatureFlags(options?: RequestOptions): Promise<AdminFeatureFlagsConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/feature-flags',
@@ -731,7 +788,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getPlatformURLS(options?: RequestOptions): Promise<GetPlatformURLSResponse> {
+  getPlatformURLS(options?: RequestOptions): Promise<AdminPlatformURLSConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/platform-urls',
@@ -746,7 +803,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getRateLimits(options?: RequestOptions): Promise<GetRateLimitsResponse> {
+  getRateLimits(options?: RequestOptions): Promise<AdminRateLimitsConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/rate-limits',
@@ -761,7 +818,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getReconciliation(options?: RequestOptions): Promise<JsonObject> {
+  getReconciliation(options?: RequestOptions): Promise<GetReconciliationResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/reconciliation',
@@ -791,7 +848,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getSecurityPolicies(options?: RequestOptions): Promise<JsonObject> {
+  getSecurityPolicies(options?: RequestOptions): Promise<AdminConfigSecurityPoliciesConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/security-policies',
@@ -806,7 +863,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getWebhooksPolicy(options?: RequestOptions): Promise<JsonObject> {
+  getWebhooksPolicy(options?: RequestOptions): Promise<AdminConfigWebhooksPolicyConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/webhooks-policy',
@@ -821,7 +878,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  import(body: ImportAdminConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  import(body: ImportAdminConfigRequest, options?: RequestOptions): Promise<ImportAdminConfigResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/admin/config/import',
@@ -898,7 +955,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  runReconciliation(options?: RequestOptions): Promise<JsonObject> {
+  runReconciliation(options?: RequestOptions): Promise<RunReconciliationResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/admin/config/reconciliation',
@@ -914,7 +971,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  setFeatureFlags(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  setFeatureFlags(body: JsonObject, options?: RequestOptions): Promise<SetFeatureFlagsResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/feature-flags',
@@ -961,7 +1018,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  setRateLimits(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  setRateLimits(body: JsonObject, options?: RequestOptions): Promise<SetRateLimitsResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/rate-limits',
@@ -999,7 +1056,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  testAdminStripeConfig(options?: RequestOptions): Promise<JsonObject> {
+  testAdminStripeConfig(options?: RequestOptions): Promise<TestAdminStripeConfigResponseVariant1 | TestAdminStripeConfigResponseVariant2> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/admin/config/stripe/test',
@@ -1015,7 +1072,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminAgentMemoryConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminAgentMemoryConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminAgentMemoryConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/agent-memory',
@@ -1032,7 +1089,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminAuthConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminAuthConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminAuthConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/auth',
@@ -1049,7 +1106,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminBackpressureConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminBackpressureConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminBackpressureConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/backpressure',
@@ -1066,7 +1123,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminCodeInterpreterConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminCodeInterpreterConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminCodeInterpreterConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/code-interpreter',
@@ -1109,7 +1166,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminEvaluationConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminEvaluationConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminEvaluationConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/evaluation',
@@ -1132,7 +1189,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminFounderConfig(body: UpdateAdminFounderConfigRequest, options?: RequestOptions): Promise<AdminFounderConfig> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/founder',
@@ -1149,7 +1206,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminGuardrails(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminGuardrails(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminGuardrailsResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/guardrails',
@@ -1166,7 +1223,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminIdempotencyConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminIdempotencyConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminIdempotencyConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/idempotency',
@@ -1183,7 +1240,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminIntegrations(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminIntegrations(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminIntegrationsResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/integrations',
@@ -1200,7 +1257,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminLLMAdaptersConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminLLMAdaptersConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminLLMAdaptersConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/llm-adapters',
@@ -1217,7 +1274,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminLoggingConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminLoggingConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminLoggingConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/logging',
@@ -1234,7 +1291,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminLongRunningConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminLongRunningConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminLongRunningConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/long-running',
@@ -1251,7 +1308,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminMCPConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminMCPConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminMCPConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/mcp',
@@ -1268,7 +1325,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminMultimodalConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminMultimodalConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminMultimodalConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/multimodal',
@@ -1290,7 +1347,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminOAuthIdentityConfig(body: UpdateAdminOAuthIdentityConfigRequest, options?: RequestOptions): Promise<AdminOAuthIdentityConfig> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/oauth-identity',
@@ -1307,7 +1364,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminPersistenceConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminPersistenceConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminPersistenceConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/persistence',
@@ -1356,7 +1413,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminRegistrationConfig(body: UpdateAdminRegistrationConfigRequest, options?: RequestOptions): Promise<AdminRegistrationConfig> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/registration',
@@ -1373,7 +1430,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminRetentionConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminRetentionConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminRetentionConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/retention',
@@ -1390,7 +1447,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminRunCommandConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminRunCommandConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminRunCommandConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/run-command',
@@ -1407,7 +1464,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminServerConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminServerConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminServerConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/server',
@@ -1475,7 +1532,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminSmtpConfig(body: UpdateAdminSmtpConfigRequest, options?: RequestOptions): Promise<AdminSmtpConfig> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/smtp',
@@ -1507,7 +1564,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, params?: UpdateAdminSpecPackagesParams, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, params?: UpdateAdminSpecPackagesParams, options?: RequestOptions): Promise<AdminSpecPackagesList> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/spec-packages',
@@ -1525,7 +1582,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminSSEConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminSSEConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminSSEConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/sse',
@@ -1542,7 +1599,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminStripeConfig(body: UpdateAdminStripeConfigRequest, options?: RequestOptions): Promise<UpdateAdminStripeConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/stripe',
@@ -1593,7 +1650,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminToolSecurityConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminToolSecurityConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminToolSecurityConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/tool-security',
@@ -1610,7 +1667,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminWebhooksConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminWebhooksConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminWebhooksConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/webhooks',
@@ -1627,7 +1684,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminWorkerPoolConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminWorkerPoolConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateAdminWorkerPoolConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/worker-pool',
@@ -1644,7 +1701,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateMarkupConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateMarkupConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateMarkupConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/markup',
@@ -1661,7 +1718,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updatePlatformURLS(body: UpdatePlatformURLSRequest, options?: RequestOptions): Promise<JsonObject> {
+  updatePlatformURLS(body: UpdatePlatformURLSRequest, options?: RequestOptions): Promise<UpdatePlatformURLSResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/platform-urls',
@@ -1678,7 +1735,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateRuntimeConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateRuntimeConfig(body: JsonObject, options?: RequestOptions): Promise<UpdateRuntimeConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/runtime',
@@ -1695,7 +1752,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateSecurityPolicies(body: UpdateSecurityPoliciesRequest, options?: RequestOptions): Promise<UpdateSecurityPoliciesResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/security-policies',
@@ -1712,7 +1769,7 @@ export class AdminConfigResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options?: RequestOptions): Promise<JsonObject> {
+  updateWebhooksPolicy(body: UpdateWebhooksPolicyRequest, options?: RequestOptions): Promise<UpdateWebhooksPolicyResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/webhooks-policy',

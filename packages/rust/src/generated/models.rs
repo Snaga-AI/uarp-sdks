@@ -950,6 +950,474 @@ pub struct AdminAnalyticsOverviewResponseTotals {
     pub app_open: Option<i64>,
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; types/security.ts
+/// AdminAuditEntry — actor_* and ip_address conditional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAuditList {
+    pub entries: Vec<AdminAuditListEntry>,
+    pub total: i64,
+}
+
+/// `AdminAuditListEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAuditListEntry {
+    pub entry_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor_tenant_id: Option<String>,
+    pub action: String,
+    pub target_type: String,
+    pub target_id: String,
+    pub details: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ip_address: Option<String>,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor_key_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub actor_user_id: Option<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `agent_memory` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigAgentMemoryConfig {
+    pub agent_memory: AdminConfigAgentMemoryConfigAgentMemory,
+}
+
+/// `AdminConfigAgentMemoryConfigAgentMemory` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigAgentMemoryConfigAgentMemory {
+    pub enabled: bool,
+    pub use_shared_store: bool,
+    pub default_max_entries: i64,
+    pub default_retrieval_limit: i64,
+    pub default_retrieval_strategy: String,
+    pub decay_enabled: bool,
+    pub decay_half_life_days: i64,
+    pub decay_job_interval_ms: i64,
+    pub extraction_max_tokens: i64,
+    pub extraction_model: String,
+    pub eviction_threshold: i64,
+    pub embedding_dimensions: i64,
+    pub embedding_provider: String,
+    pub embedding_model: String,
+    pub compression_model: String,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `auth` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigAuthConfig {
+    pub auth: AdminConfigAuthConfigAuth,
+}
+
+/// `AdminConfigAuthConfigAuth` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigAuthConfigAuth {
+    pub super_admin_email: String,
+    pub otp_ttl_ms: i64,
+    pub verification_ttl_ms: i64,
+    pub jwks_cache_ttl_ms: i64,
+    pub jwks_grace_ttl_ms: i64,
+    pub api_key_cache_ttl_s: i64,
+    pub api_key_rotation_grace_period_h: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `backpressure` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigBackpressureConfig {
+    pub backpressure: AdminConfigBackpressureConfigBackpressure,
+}
+
+/// `AdminConfigBackpressureConfigBackpressure` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigBackpressureConfigBackpressure {
+    pub sse_buffer_max: i64,
+    pub sse_high_watermark: i64,
+    pub sse_low_watermark: i64,
+    pub tool_queue_max_depth: i64,
+    pub tool_queue_high_watermark: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `code_interpreter` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigCodeInterpreterConfig {
+    pub code_interpreter: AdminConfigCodeInterpreterConfigCodeInterpreter,
+}
+
+/// `AdminConfigCodeInterpreterConfigCodeInterpreter` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigCodeInterpreterConfigCodeInterpreter {
+    pub isolation: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_memory_mb: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub python_container_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub python_sandbox_host_dir: Option<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `evaluation` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigEvaluationConfig {
+    pub evaluation: AdminConfigEvaluationConfigEvaluation,
+}
+
+/// `AdminConfigEvaluationConfigEvaluation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigEvaluationConfigEvaluation {
+    pub enabled: bool,
+    pub max_concurrent_eval_cases: i64,
+    pub regression_threshold: f64,
+    pub default_scorers: Vec<String>,
+    pub max_cases_per_dataset: i64,
+    pub eval_run_timeout_ms: i64,
+    pub auto_rollback_enabled: bool,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `idempotency` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigIdempotencyConfig {
+    pub idempotency: AdminConfigIdempotencyConfigIdempotency,
+}
+
+/// `AdminConfigIdempotencyConfigIdempotency` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigIdempotencyConfigIdempotency {
+    pub enabled: bool,
+    pub ttl_hours: i64,
+    pub max_response_cache_bytes: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `llm_adapters` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLLMAdaptersConfig {
+    pub llm_adapters: AdminConfigLLMAdaptersConfigLLMAdapters,
+}
+
+/// `AdminConfigLLMAdaptersConfigLLMAdapters` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLLMAdaptersConfigLLMAdapters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_retries: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_base_delay_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_max_delay_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_empty_timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub circuit_breaker: Option<AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_rate_limits: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_threshold: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset_timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub half_open_max_requests: Option<i64>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `logging` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLoggingConfig {
+    pub logging: AdminConfigLoggingConfigLogging,
+}
+
+/// `AdminConfigLoggingConfigLogging` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLoggingConfigLogging {
+    pub pii_mode: String,
+    pub log_agent_responses: bool,
+    pub file_enabled: bool,
+    pub file_max_size_mb: i64,
+    pub file_retention_days: i64,
+    pub file_level: String,
+    pub file_separate_error: bool,
+    pub activity_log_verbosity: String,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `long_running` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLongRunningConfig {
+    pub long_running: AdminConfigLongRunningConfigLongRunning,
+}
+
+/// `AdminConfigLongRunningConfigLongRunning` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigLongRunningConfigLongRunning {
+    pub enabled: bool,
+    pub max_duration_ms: i64,
+    pub checkpoint_interval_ms: i64,
+    pub idle_timeout_ms: i64,
+    pub continuation_token_ttl_days: i64,
+    pub max_background_runs_per_tenant: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `mcp` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigMCPConfig {
+    pub mcp: AdminConfigMCPConfigMCP,
+}
+
+/// `AdminConfigMCPConfigMCP` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigMCPConfigMCP {
+    pub max_sessions_per_server: i64,
+    pub max_total_stdio_sessions: i64,
+    pub session_idle_timeout_ms: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `multimodal` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigMultimodalConfig {
+    pub multimodal: AdminConfigMultimodalConfigMultimodal,
+}
+
+/// `AdminConfigMultimodalConfigMultimodal` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigMultimodalConfigMultimodal {
+    pub enabled: bool,
+    pub max_image_size_bytes: i64,
+    pub max_audio_duration_s: i64,
+    pub max_video_duration_s: i64,
+    pub auto_resize_images: bool,
+    pub supported_image_formats: Vec<String>,
+    pub supported_audio_formats: Vec<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `persistence` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigPersistenceConfig {
+    pub persistence: AdminConfigPersistenceConfigPersistence,
+}
+
+/// `AdminConfigPersistenceConfigPersistence` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigPersistenceConfigPersistence {
+    pub snapshot_every_n_events: i64,
+    pub checkpoint_after_tool_calls: bool,
+    pub usage_shards: i64,
+    pub auto_cap_kv_values: bool,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `retention` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigRetentionConfig {
+    pub retention: AdminConfigRetentionConfigRetention,
+}
+
+/// `AdminConfigRetentionConfigRetention` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigRetentionConfigRetention {
+    pub completed_run_ttl_days: i64,
+    pub event_ttl_days: i64,
+    pub archive_to_sqlite: bool,
+    pub audit_log_ttl_days: i64,
+    pub archive_job_interval_ms: i64,
+    pub archive_batch_size: i64,
+    pub feed_ttl_days: i64,
+    pub artifact_ttl_days: i64,
+    pub checkpoint_ttl_hours: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `run_command` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigRunCommandConfig {
+    pub run_command: AdminConfigRunCommandConfigRunCommand,
+}
+
+/// `AdminConfigRunCommandConfigRunCommand` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigRunCommandConfigRunCommand {
+    pub enabled: bool,
+    pub isolation: String,
+    pub timeout_ms: i64,
+    pub max_output_bytes: i64,
+    pub allowed_commands: Vec<String>,
+    pub deno_allow: Vec<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policies` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigSecurityPoliciesConfig {
+    pub policies: AdminConfigSecurityPoliciesConfigPolicies,
+}
+
+/// `AdminConfigSecurityPoliciesConfigPolicies` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigSecurityPoliciesConfigPolicies {
+    pub cors_allowed_origins: Vec<serde_json::Value>,
+    pub webhook_url_denylist: Vec<String>,
+    pub file_upload_max_size_bytes: i64,
+    pub file_upload_allowed_mime_types: Vec<serde_json::Value>,
+    pub admin_provider_settings_require_super_admin: bool,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `server` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigServerConfig {
+    pub server: AdminConfigServerConfigServer,
+}
+
+/// `AdminConfigServerConfigServer` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigServerConfigServer {
+    pub trust_proxy: bool,
+    pub max_body_bytes: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub graceful_shutdown_timeout_ms: Option<i64>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `sse` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigSSEConfig {
+    pub sse: AdminConfigSSEConfigSSE,
+}
+
+/// `AdminConfigSSEConfigSSE` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigSSEConfigSSE {
+    pub heartbeat_interval_ms: i64,
+    pub watch_timeout_ms: i64,
+    pub poll_interval_ms: i64,
+    pub max_poll_interval_ms: i64,
+    pub reconnect_hint_ms: i64,
+    pub run_wait_timeout_sec: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `tool_security` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigToolSecurityConfig {
+    pub tool_security: AdminConfigToolSecurityConfigToolSecurity,
+}
+
+/// `AdminConfigToolSecurityConfigToolSecurity` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigToolSecurityConfigToolSecurity {
+    pub default_egress_policy: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub egress_allowlist_per_tenant: Option<Vec<serde_json::Value>>,
+    pub ssrf_deny_private_ranges: bool,
+    pub default_tool_timeout_ms: i64,
+    pub default_tool_max_payload_bytes: i64,
+    pub default_tool_max_concurrency: i64,
+    pub stdio_inherit_env: bool,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `webhooks` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWebhooksConfig {
+    pub webhooks: AdminConfigWebhooksConfigWebhooks,
+}
+
+/// `AdminConfigWebhooksConfigWebhooks` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWebhooksConfigWebhooks {
+    pub enabled: bool,
+    pub max_subscriptions_per_tenant: i64,
+    pub delivery_timeout_ms: i64,
+    pub max_retry_attempts: i64,
+    pub require_https: bool,
+    pub max_payload_bytes: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policy` is the effective
+/// section — platform defaults under the stored override (admin-config.ts getEffectiveSection);
+/// keys measured present are required unless the handler marks them optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWebhooksPolicyConfig {
+    pub policy: AdminConfigWebhooksPolicyConfigPolicy,
+}
+
+/// `AdminConfigWebhooksPolicyConfigPolicy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWebhooksPolicyConfigPolicy {
+    pub ssrf_check_at_subscription: bool,
+    pub stripe_signature_tolerance_sec: i64,
+    pub delivery_max_retries: i64,
+    pub delivery_backoff_base_ms: i64,
+    pub delivery_max_window_hours: i64,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `worker_pool` is the
+/// effective section — platform defaults under the stored override (admin-config.ts
+/// getEffectiveSection); keys measured present are required unless the handler marks them
+/// optional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWorkerPoolConfig {
+    pub worker_pool: AdminConfigWorkerPoolConfigWorkerPool,
+}
+
+/// `AdminConfigWorkerPoolConfigWorkerPool` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminConfigWorkerPoolConfigWorkerPool {
+    pub max_workers: i64,
+    pub default_mode: String,
+    pub max_run_duration_ms: i64,
+    pub reconciliation_interval_ms: i64,
+    pub schedule_max_retries: i64,
+    pub schedule_base_delay_ms: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_queue_size: Option<i64>,
+}
+
 /// `AdminDataExplorerRawKeysResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminDataExplorerRawKeysResponse {
@@ -1036,6 +1504,71 @@ impl From<&str> for AdminDataExplorerRawKeysResponseKeyType {
     }
 }
 
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminFeatureFlagsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flags: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminFounderConfig {
+    pub kv: FounderIdentity,
+    pub env: FounderIdentity,
+    pub effective: FounderIdentity,
+}
+
+/// `AdminGetLandingConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGetLandingConfigResponse {
+    pub landing: LandingConfigSection,
+    pub source: AdminGetLandingConfigResponseSource,
+    /// KV versionstamp; echo it as `expected_version` on PUT.
+    #[serde(default)]
+    pub version: Option<String>,
+}
+
+/// `AdminGetLandingConfigResponseSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminGetLandingConfigResponseSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    #[serde(rename = "none")]
+    None,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminGetLandingConfigResponseSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::None => "none",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminGetLandingConfigResponseSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminGetLandingConfigResponseSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            "none" => Self::None,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `AdminGetReconciliationResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminGetReconciliationResponse {
@@ -1051,6 +1584,112 @@ pub struct AdminGetReconciliationResponseReconciliation {
     /// Any additional properties the server returned.
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `AdminGetVoiceConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGetVoiceConfigResponse {
+    #[serde(default)]
+    pub voice: Option<AdminGetVoiceConfigResponseVoiceVariant1>,
+    pub source: AdminGetLandingConfigResponseSource,
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGetVoiceConfigResponseVoiceVariant1 {
+    pub stt: AdminGetVoiceConfigResponseVoiceVariant1stt,
+    pub tts: AdminGetVoiceConfigResponseVoiceVariant1tts,
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1stt` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGetVoiceConfigResponseVoiceVariant1stt {
+    pub provider: String,
+    pub model: String,
+}
+
+/// `AdminGetVoiceConfigResponseVoiceVariant1tts` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGetVoiceConfigResponseVoiceVariant1tts {
+    pub provider: String,
+    pub model: String,
+    pub voice: String,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminGuardrailsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrails: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminIntegrationsConfig {
+    pub integrations: Vec<AdminIntegrationsConfigIntegration>,
+}
+
+/// `AdminIntegrationsConfigIntegration` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminIntegrationsConfigIntegration {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_type: Option<AdminIntegrationsConfigIntegrationAuthType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub beta: Option<bool>,
+    /// `kv` when an operator overrode the shipped default, `default` otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+}
+
+/// `AdminIntegrationsConfigIntegrationAuthType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminIntegrationsConfigIntegrationAuthType {
+    #[default]
+    #[serde(rename = "oauth2")]
+    Oauth2,
+    #[serde(rename = "api_key")]
+    APIKey,
+    #[serde(rename = "none")]
+    None,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminIntegrationsConfigIntegrationAuthType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Oauth2 => "oauth2",
+            Self::APIKey => "api_key",
+            Self::None => "none",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminIntegrationsConfigIntegrationAuthType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminIntegrationsConfigIntegrationAuthType {
+    fn from(value: &str) -> Self {
+        match value {
+            "oauth2" => Self::Oauth2,
+            "api_key" => Self::APIKey,
+            "none" => Self::None,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `AdminListToolsResponse` model.
@@ -1096,6 +1735,435 @@ pub struct AdminListWebhookDLQResponseEntry {
     pub tenant_id: Option<String>,
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The stored catalogue or,
+/// with `source: seed`, the built-in registry; rows carry computed
+/// `effective_pricing`/`effective_tier`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelCatalog {
+    pub models: Vec<AdminModelCatalogModel>,
+    pub source: AdminModelCatalogSource,
+    pub count: i64,
+    #[serde(default)]
+    pub version: Option<String>,
+}
+
+/// `AdminModelCatalogModel` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelCatalogModel {
+    pub id: String,
+    pub provider: String,
+    pub display_name: String,
+    pub max_context_tokens: i64,
+    pub max_output_tokens: i64,
+    pub supports_streaming: bool,
+    pub supports_tool_calls: bool,
+    pub supports_json_mode: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_vision: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+    /// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+    /// seed answers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effective_pricing: Option<AdminModelCatalogModelEffectivePricing>,
+    /// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+    /// seed answers.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub effective_tier: Option<String>,
+}
+
+/// Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+/// seed answers.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelCatalogModelEffectivePricing {
+    pub input_per_million: f64,
+    pub output_per_million: f64,
+    pub cached_input_per_million: f64,
+    pub source: String,
+    pub layer: String,
+    pub key: String,
+    pub r#match: String,
+    pub confidence: String,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; the built-in registry merged
+/// with every configured provider's live model list — no `source`, no `version`, no computed
+/// economics.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelCatalogSeed {
+    pub models: Vec<AdminModelCatalogSeedModel>,
+    pub count: i64,
+}
+
+/// `AdminModelCatalogSeedModel` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelCatalogSeedModel {
+    pub id: String,
+    pub provider: String,
+    pub display_name: String,
+    pub max_context_tokens: i64,
+    pub max_output_tokens: i64,
+    pub supports_streaming: bool,
+    pub supports_tool_calls: bool,
+    pub supports_json_mode: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_vision: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+
+/// `AdminModelCatalogSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminModelCatalogSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    #[serde(rename = "seed")]
+    Seed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminModelCatalogSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::Seed => "seed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminModelCatalogSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminModelCatalogSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            "seed" => Self::Seed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; billing/cost-estimator.ts
+/// listAllPricing — a live in-memory view, `layer` says where each price comes from.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelPricingList {
+    pub models: Vec<AdminModelPricingListModel>,
+    pub count: i64,
+    pub source: String,
+}
+
+/// `AdminModelPricingListModel` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminModelPricingListModel {
+    pub model: String,
+    pub layer: String,
+    pub input_per_million: f64,
+    pub output_per_million: f64,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminOAuthIdentityConfig {
+    pub kv: OAuthIdentityConfig,
+    pub env: OAuthIdentityConfig,
+    pub effective: OAuthIdentityConfig,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPlatformURLSConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub urls: Option<AdminPlatformURLSConfigURLS>,
+}
+
+/// `AdminPlatformURLSConfigURLS` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPlatformURLSConfigURLS {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_base_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub webhook_base_url: Option<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The whole stored override
+/// when one exists, else the config defaults; `source` says which (admin-config.ts
+/// getEffectivePricing).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPricingConfig {
+    pub pricing: AdminPricingConfigPricing,
+    pub source: AdminPricingConfigSource,
+}
+
+/// `AdminPricingConfigPricing` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPricingConfigPricing {
+    pub openai_compat_input: f64,
+    pub openai_compat_output: f64,
+    pub anthropic_input: i64,
+    pub anthropic_output: f64,
+    pub anthropic_thinking: f64,
+}
+
+/// `AdminPricingConfigSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminPricingConfigSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    #[serde(rename = "config")]
+    Config,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminPricingConfigSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::Config => "config",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminPricingConfigSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminPricingConfigSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            "config" => Self::Config,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin.ts — a projection over
+/// the custom provider, its settings and catalogue status; never the API key.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminProvider {
+    pub id: String,
+    pub name: String,
+    pub canonical: String,
+    pub default_endpoint: String,
+    pub local: bool,
+    pub enabled: bool,
+    pub model_allowlist: Vec<String>,
+    pub is_custom: bool,
+    pub requires_api_key: bool,
+    pub models_in_catalog: i64,
+    pub catalog_model_ids: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_models_sync: Option<AdminProviderLastModelsSync>,
+}
+
+/// `AdminProviderLastModelsSync` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminProviderLastModelsSync {
+    pub at: String,
+    pub added: i64,
+    pub live: i64,
+}
+
+/// `AdminPutLandingConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutLandingConfigResponse {
+    pub landing: LandingConfigSection,
+    pub source: AdminPutLandingConfigResponseSource,
+    pub updated: bool,
+    #[serde(default)]
+    pub version: Option<String>,
+}
+
+/// `AdminPutLandingConfigResponseSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminPutLandingConfigResponseSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminPutLandingConfigResponseSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminPutLandingConfigResponseSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminPutLandingConfigResponseSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `AdminPutModelCatalogResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutModelCatalogResponse {
+    pub models: Vec<AdminPutModelCatalogResponseModel>,
+    pub source: AdminPutLandingConfigResponseSource,
+    pub count: i64,
+    #[serde(default)]
+    pub version: Option<String>,
+}
+
+/// `AdminPutModelCatalogResponseModel` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutModelCatalogResponseModel {
+    pub id: String,
+    pub provider: String,
+    pub display_name: String,
+    pub max_context_tokens: i64,
+    pub max_output_tokens: i64,
+    pub supports_streaming: bool,
+    pub supports_tool_calls: bool,
+    pub supports_json_mode: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_vision: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tier: Option<String>,
+}
+
+/// `AdminPutVoiceConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutVoiceConfigResponse {
+    pub voice: AdminPutVoiceConfigResponseVoice,
+    pub updated: bool,
+}
+
+/// `AdminPutVoiceConfigResponseVoice` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutVoiceConfigResponseVoice {
+    pub stt: AdminPutVoiceConfigResponseVoiceStt,
+    pub tts: AdminPutVoiceConfigResponseVoiceTts,
+}
+
+/// `AdminPutVoiceConfigResponseVoiceStt` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutVoiceConfigResponseVoiceStt {
+    pub provider: String,
+    pub model: String,
+}
+
+/// `AdminPutVoiceConfigResponseVoiceTts` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutVoiceConfigResponseVoiceTts {
+    pub provider: String,
+    pub model: String,
+    pub voice: String,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminRateLimitsConfig {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminRegistrationConfig {
+    pub registration_open: bool,
+    /// `free` when nothing is stored.
+    pub default_signup_plan: String,
+    /// Empty means no domain restriction.
+    pub allowed_email_domains: Vec<String>,
+    pub setup_status: AdminRegistrationConfigSetupStatus,
+    /// Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+    /// and this is the list it will name.
+    pub missing_required: Vec<String>,
+    /// How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
+    /// be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+    /// froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+    /// admin uses to decide when to open registration, so it is the one that must be complete
+    /// rather than the roster.
+    pub waitlist_count: i64,
+    /// True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+    /// and stays bounded at 1000; the count is not.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub waitlist_truncated: Option<bool>,
+    /// Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
+    /// `waitlist.length` as the total.
+    pub waitlist: Vec<AdminRegistrationConfigWaitlistItem>,
+}
+
+/// `AdminRegistrationConfigSetupStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminRegistrationConfigSetupStatus {
+    #[default]
+    #[serde(rename = "in_progress")]
+    InProgress,
+    #[serde(rename = "live")]
+    Live,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminRegistrationConfigSetupStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::InProgress => "in_progress",
+            Self::Live => "live",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminRegistrationConfigSetupStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminRegistrationConfigSetupStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "in_progress" => Self::InProgress,
+            "live" => Self::Live,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `AdminRegistrationConfigWaitlistItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminRegistrationConfigWaitlistItem {
+    pub tenant_id: String,
+    pub email: String,
+    pub created_at: String,
+}
+
 /// `AdminReplayWebhookDLQResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminReplayWebhookDLQResponse {
@@ -1104,6 +2172,141 @@ pub struct AdminReplayWebhookDLQResponse {
     pub event_id: String,
     pub action: String,
     pub message: String,
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSmtpConfig {
+    /// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+    pub kv: AdminSmtpConfigKv,
+    /// What the environment supplies. `port` defaults to 465 when unset or unparseable.
+    pub env: AdminSmtpConfigEnv,
+    /// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+    /// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+    /// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+    /// inert.
+    pub source: AdminSmtpConfigSource,
+}
+
+/// What the environment supplies. `port` defaults to 465 when unset or unparseable.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSmtpConfigEnv {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_name: Option<String>,
+    /// Whether a credential is stored. The password itself is never returned by any read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_password: Option<bool>,
+}
+
+/// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSmtpConfigKv {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub host: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub user: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_name: Option<String>,
+    /// Whether a credential is stored. The password itself is never returned by any read.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub has_password: Option<bool>,
+}
+
+/// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+/// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
+/// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+/// inert.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AdminSmtpConfigSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    #[serde(rename = "env")]
+    Env,
+    #[serde(rename = "none")]
+    None,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AdminSmtpConfigSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::Env => "env",
+            Self::None => "none",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AdminSmtpConfigSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AdminSmtpConfigSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            "env" => Self::Env,
+            "none" => Self::None,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminSpecPackagesList {
+    pub packages: Vec<SpecPackage>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
+/// their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminStripeConfig {
+    pub stripe: AdminStripeConfigStripe,
+    pub has_secret_key: bool,
+    pub has_webhook_secret: bool,
+}
+
+/// `AdminStripeConfigStripe` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminStripeConfigStripe {
+    pub enabled: bool,
+    pub mode: String,
+    pub secret_key: String,
+    pub webhook_secret: String,
+    pub publishable_key: String,
+    pub price_id_starter: String,
+    pub price_id_pro: String,
+    pub price_id_enterprise: String,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; provider/model → voice ids;
+/// `defaults` is always empty, `effective` equals `override` (admin-config.ts
+/// handleGetVoicePresets).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminVoicePresets {
+    pub defaults: serde_json::Map<String, serde_json::Value>,
+    pub r#override: HashMap<String, Vec<String>>,
+    pub effective: HashMap<String, Vec<String>>,
 }
 
 /// `Agent` model.
@@ -1167,7 +2370,13 @@ pub struct Agent {
     /// Every knowledge base linked to the agent. `search_kb` searches all of them by default.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub knowledge_base_ids: Option<Vec<String>>,
-    /// Who can reach the agent. The publication screen is built on this field.
+    /// Who can reach the agent. The publication screen is built on this field — but `public` alone
+    /// does not open the agent to the world: the anonymous routes (`GET /public/agents/{agentId}`,
+    /// public sessions) answer only when `visibility` is `public` AND `public_config.enabled` is
+    /// true AND `status` is `active` (public.ts loadPublicAgent). A client that shows "anyone with
+    /// the link can reach this agent" on `visibility` alone shows it a step too early. Measured
+    /// 2026-09-10 on a real tenant: the one agent with both switches answered 200 without a key,
+    /// every other `public` one 404.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<AgentUpdateVisibility>,
     /// Governance state, distinct from a run's status.
@@ -1779,6 +2988,9 @@ pub struct AgentPrompts {
 /// `AgentPublicConfig` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentPublicConfig {
+    /// One of the three switches that make the agent reachable without a key (public.ts
+    /// loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+    /// `active` (or absent). Any one of them alone does nothing visible.
     pub enabled: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub system_prompt: Option<String>,
@@ -2253,6 +3465,45 @@ pub struct AgentUpdate {
     pub workspace_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub visibility: Option<AgentUpdateVisibility>,
+    /// Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+    /// ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+    /// }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+    /// alone does not make the agent reachable — see `Agent.visibility`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_config: Option<AgentUpdatePublicConfig>,
+}
+
+/// Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+/// ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+/// }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+/// alone does not make the agent reachable — see `Agent.visibility`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AgentUpdatePublicConfig {
+    /// One of the three switches that make the agent reachable without a key (public.ts
+    /// loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+    /// `active` (or absent). Any one of them alone does nothing visible.
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub system_prompt: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub greeting: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub allowed_tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_messages_per_session: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_concurrent_sessions: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rate_limit_sessions_per_ip: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rate_limit_messages_per_min: Option<i64>,
+    /// Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+    /// ONLY for the featured landing agent — the one `GET /admin/config/landing` names as
+    /// `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+    /// Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+    /// default of 15.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub daily_message_limit: Option<i64>,
 }
 
 /// `AgentUpdateVisibility` enumeration.
@@ -4033,6 +5284,23 @@ pub struct CompleteOAuthLoginResponse {
     pub email: String,
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; api/lib/conformity-report.ts
+/// — three sections, plus the same content as markdown. `?format=markdown` answers
+/// text/markdown instead.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConformityReport {
+    pub tenant_id: String,
+    pub sections: Vec<ConformityReportSection>,
+    pub markdown: String,
+}
+
+/// `ConformityReportSection` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConformityReportSection {
+    pub title: String,
+    pub content: String,
+}
+
 /// `ConnectorConfigField` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConnectorConfigField {
@@ -4755,6 +6023,25 @@ pub struct CoreMemoryBlock {
     pub updated_at: Option<String>,
 }
 
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z;
+/// billing/cost-reconciliation.ts ReconciliationResult — `truncated` and `details` conditional.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CostReconciliationResult {
+    pub tenant_id: String,
+    pub period: String,
+    pub runs_total_cost_usd: f64,
+    pub usage_tracker_cost_usd: f64,
+    pub drift_usd: f64,
+    pub drift_pct: f64,
+    pub runs_scanned: i64,
+    pub runs_missing_cost: i64,
+    pub status: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub details: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub truncated: Option<bool>,
+}
+
 /// `CreateA2ATaskRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateA2ATaskRequest {
@@ -4788,6 +6075,48 @@ pub struct CreateAdminBlogPostRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAdminBlogPostResponse {
     pub post: BlogPost,
+}
+
+/// `CreateAdminProviderResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminProviderResponse {
+    pub id: String,
+    pub name: String,
+    pub default_endpoint: String,
+    pub is_custom: bool,
+    pub requires_api_key: bool,
+    pub canonical: String,
+    /// Only when the body sent it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub default_capabilities: Option<CreateAdminProviderResponseDefaultCapabilities>,
+}
+
+/// Only when the body sent it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminProviderResponseDefaultCapabilities {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_tool_calls: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_streaming: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_json_mode: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_vision: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_context_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_output_tokens: Option<i64>,
+}
+
+/// `CreateAdminSpecPackageStripePriceResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminSpecPackageStripePriceResponse {
+    pub package_id: String,
+    pub stripe_price_id: String,
+    pub stripe_product_id: String,
+    pub amount_cents: i64,
+    pub currency: String,
+    pub interval: SpecPackagePricingBillingInterval,
 }
 
 /// `CreateAgentBookmarkRequest` model.
@@ -6644,8 +7973,7 @@ pub struct Error {
     pub r#type: String,
     pub title: String,
     pub status: i64,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub detail: Option<String>,
+    pub detail: String,
     /// Request ID for tracing
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
@@ -7273,7 +8601,7 @@ pub struct FileRecord {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FleetLayout {
     /// Agent id → its place on the canvas.
-    pub positions: HashMap<String, Value3>,
+    pub positions: HashMap<String, Value4>,
     pub edges: Vec<FleetLayoutEdge>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<Vec<FleetLayoutNote>>,
@@ -7347,7 +8675,7 @@ pub struct FleetLayoutNote {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FleetLayoutUpdate {
     /// Agent id → its place on the canvas.
-    pub positions: HashMap<String, Value2>,
+    pub positions: HashMap<String, Value3>,
     pub edges: Vec<FleetLayoutUpdateEdge>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<Vec<FleetLayoutUpdateNote>>,
@@ -7502,21 +8830,6 @@ pub struct GetAdminDisabledToolsResponse {
     pub disabled_tools: Vec<String>,
 }
 
-/// `GetAdminFounderConfigResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminFounderConfigResponse {
-    pub kv: FounderIdentity,
-    pub env: FounderIdentity,
-    pub effective: FounderIdentity,
-}
-
-/// `GetAdminGuardrailsResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminGuardrailsResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub guardrails: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
-}
-
 /// `GetAdminIntegrationOAuthProviderProvider` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum GetAdminIntegrationOAuthProviderProvider {
@@ -7624,75 +8937,6 @@ pub struct GetAdminIntegrationOAuthProviderResponse {
     pub scopes: Option<Vec<String>>,
 }
 
-/// `GetAdminIntegrationsResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminIntegrationsResponse {
-    pub integrations: Vec<GetAdminIntegrationsResponseIntegration>,
-}
-
-/// `GetAdminIntegrationsResponseIntegration` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminIntegrationsResponseIntegration {
-    pub id: String,
-    pub name: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub auth_type: Option<GetAdminIntegrationsResponseIntegrationAuthType>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub category: Option<String>,
-    pub enabled: bool,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub beta: Option<bool>,
-    /// `kv` when an operator overrode the shipped default, `default` otherwise.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub source: Option<String>,
-}
-
-/// `GetAdminIntegrationsResponseIntegrationAuthType` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetAdminIntegrationsResponseIntegrationAuthType {
-    #[default]
-    #[serde(rename = "oauth2")]
-    Oauth2,
-    #[serde(rename = "api_key")]
-    APIKey,
-    #[serde(rename = "none")]
-    None,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetAdminIntegrationsResponseIntegrationAuthType {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Oauth2 => "oauth2",
-            Self::APIKey => "api_key",
-            Self::None => "none",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetAdminIntegrationsResponseIntegrationAuthType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetAdminIntegrationsResponseIntegrationAuthType {
-    fn from(value: &str) -> Self {
-        match value {
-            "oauth2" => Self::Oauth2,
-            "api_key" => Self::APIKey,
-            "none" => Self::None,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
 /// `GetAdminLLMDefaultsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAdminLLMDefaultsResponse {
@@ -7721,14 +8965,6 @@ pub struct GetAdminLLMDefaultsResponseProvider {
     pub key_hint: String,
 }
 
-/// `GetAdminOAuthIdentityConfigResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminOAuthIdentityConfigResponse {
-    pub kv: OAuthIdentityConfig,
-    pub env: OAuthIdentityConfig,
-    pub effective: OAuthIdentityConfig,
-}
-
 /// `GetAdminPlansResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAdminPlansResponse {
@@ -7742,144 +8978,6 @@ pub struct GetAdminPlansResponsePlan {
     pub name: String,
     /// Per-plan limits (`max_agents`, `max_monthly_tokens`, …).
     pub quotas: serde_json::Map<String, serde_json::Value>,
-}
-
-/// `GetAdminRegistrationConfigResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminRegistrationConfigResponse {
-    pub registration_open: bool,
-    /// `free` when nothing is stored.
-    pub default_signup_plan: String,
-    /// Empty means no domain restriction.
-    pub allowed_email_domains: Vec<String>,
-    pub setup_status: SetupStateResponseStateStatus,
-    /// Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
-    /// and this is the list it will name.
-    pub missing_required: Vec<String>,
-    /// How many tenants are waitlisted — ALL of them, counted by walking every KV page. It used to
-    /// be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
-    /// froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
-    /// admin uses to decide when to open registration, so it is the one that must be complete
-    /// rather than the roster.
-    pub waitlist_count: i64,
-    /// True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
-    /// and stays bounded at 1000; the count is not.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub waitlist_truncated: Option<bool>,
-    /// Oldest first. Bounded at 1000 rows — check `waitlist_truncated` rather than taking
-    /// `waitlist.length` as the total.
-    pub waitlist: Vec<GetAdminRegistrationConfigResponseWaitlistItem>,
-}
-
-/// `GetAdminRegistrationConfigResponseWaitlistItem` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminRegistrationConfigResponseWaitlistItem {
-    pub tenant_id: String,
-    pub email: String,
-    pub created_at: String,
-}
-
-/// `GetAdminSmtpConfigResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminSmtpConfigResponse {
-    /// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-    pub kv: GetAdminSmtpConfigResponseKv,
-    /// What the environment supplies. `port` defaults to 465 when unset or unparseable.
-    pub env: GetAdminSmtpConfigResponseEnv,
-    /// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-    /// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-    /// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-    /// inert.
-    pub source: GetAdminSmtpConfigResponseSource,
-}
-
-/// What the environment supplies. `port` defaults to 465 when unset or unparseable.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminSmtpConfigResponseEnv {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub host: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub port: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from_name: Option<String>,
-    /// Whether a credential is stored. The password itself is never returned by any read.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub has_password: Option<bool>,
-}
-
-/// What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminSmtpConfigResponseKv {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub host: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub port: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub user: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from_name: Option<String>,
-    /// Whether a credential is stored. The password itself is never returned by any read.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub has_password: Option<bool>,
-}
-
-/// Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-/// otherwise an environment host makes it `env`, otherwise `none`. Note the consequence —
-/// saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-/// inert.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetAdminSmtpConfigResponseSource {
-    #[default]
-    #[serde(rename = "kv")]
-    Kv,
-    #[serde(rename = "env")]
-    Env,
-    #[serde(rename = "none")]
-    None,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetAdminSmtpConfigResponseSource {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Kv => "kv",
-            Self::Env => "env",
-            Self::None => "none",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetAdminSmtpConfigResponseSource {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetAdminSmtpConfigResponseSource {
-    fn from(value: &str) -> Self {
-        match value {
-            "kv" => Self::Kv,
-            "env" => Self::Env,
-            "none" => Self::None,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `GetAdminSpecPackagesResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetAdminSpecPackagesResponse {
-    pub packages: Vec<SpecPackage>,
 }
 
 /// `GetAdminStatsResponse` model.
@@ -8078,7 +9176,7 @@ pub struct GetAgentVersionDiffResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version_to: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub diff: Option<HashMap<String, Value4>>,
+    pub diff: Option<HashMap<String, Value5>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changed_fields: Option<Vec<String>>,
 }
@@ -8209,13 +9307,6 @@ pub struct GetDataExplorerValueResponse {
     pub size_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
-}
-
-/// `GetFeatureFlagsResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetFeatureFlagsResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
 /// `GetGovernanceLedgerResponse` model.
@@ -8630,22 +9721,6 @@ impl From<&str> for GetMyHeadAgentTemplateResponseTierTierRequiredPlan {
     }
 }
 
-/// `GetPlatformURLSResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetPlatformURLSResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub urls: Option<GetPlatformURLSResponseURLS>,
-}
-
-/// `GetPlatformURLSResponseURLS` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetPlatformURLSResponseURLS {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub public_base_url: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub webhook_base_url: Option<String>,
-}
-
 /// `GetPublicBlogPostResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetPublicBlogPostResponse {
@@ -8657,13 +9732,6 @@ pub struct GetPublicBlogPostResponse {
 pub struct GetPublicFeaturedAgentResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent: Option<serde_json::Map<String, serde_json::Value>>,
-}
-
-/// `GetRateLimitsResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct GetRateLimitsResponse {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub endpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
 }
 
 /// `GetReadyResponse` model.
@@ -8722,6 +9790,17 @@ impl From<&str> for GetReadyResponseStatus {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `GetReconciliationResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetReconciliationResponse {
+    #[serde(default)]
+    pub reconciliation: Option<CostReconciliationResult>,
+    pub period: String,
+    /// Only when there is no result for the period.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
 }
 
 /// `GetRegistrationStatusResponse` model.
@@ -9583,6 +10662,16 @@ pub struct ImportAdminConfigRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub source: Option<String>,
     pub sections: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ImportAdminConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ImportAdminConfigResponse {
+    pub imported: bool,
+    pub applied: Vec<String>,
+    pub skipped: Vec<String>,
+    pub applied_count: i64,
+    pub skipped_count: i64,
 }
 
 /// `ImportAgentMemoryRequest` model.
@@ -10491,6 +11580,41 @@ pub struct KnowledgeBaseUpdate {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+}
+
+/// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; admin-config.ts
+/// LandingConfig, defaults-projected so every key is present.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LandingConfigSection {
+    #[serde(default)]
+    pub public_agent_id: Option<String>,
+    pub texts: HashMap<String, Value>,
+    pub multilang_enabled: bool,
+    pub default_locale: String,
+    pub partners_enabled: bool,
+    #[serde(default)]
+    pub partners: Option<Vec<LandingConfigSectionPartner>>,
+}
+
+/// `LandingConfigSectionPartner` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LandingConfigSectionPartner {
+    pub id: String,
+    pub name: String,
+    pub tagline: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tagline_uk: Option<String>,
+    pub href: String,
+    pub logo: LandingConfigSectionPartnerLogo,
+}
+
+/// `LandingConfigSectionPartnerLogo` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LandingConfigSectionPartnerLogo {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
 }
 
 /// Operator-set text and partner logos for the public landing page.
@@ -15018,6 +16142,15 @@ pub struct PublicAgentCard {
     pub ui_avatar: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ui_drop_genome: Option<serde_json::Map<String, serde_json::Value>>,
+    /// The tenant that owns the agent — the same value as `PublicTenant.slug`. The
+    /// `/c/{slug}/{agentId}` path segment is NOT authoritative (nothing checks it against the
+    /// agent); compare it with this and build the way back from here. Present when the owner record
+    /// has a slug.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_slug: Option<String>,
+    /// The owning tenant's display name. Present when the owner record has one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_name: Option<String>,
 }
 
 /// `PublicAgentCardSpec` model.
@@ -15440,6 +16573,13 @@ pub struct RateListingRequest {
     pub rating: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub comment: Option<String>,
+}
+
+/// `ReactivateTenantResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReactivateTenantResponse {
+    pub reactivated: bool,
+    pub tenant_id: String,
 }
 
 /// GET /health/ready and GET /readyz (measured 2026-09-10): overall status, the check's
@@ -16833,6 +17973,12 @@ pub struct RunOutput {
     pub extra: HashMap<String, serde_json::Value>,
 }
 
+/// `RunReconciliationResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunReconciliationResponse {
+    pub reconciliation: CostReconciliationResult,
+}
+
 /// Resource limits for the run
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunResourceLimits {
@@ -17772,6 +18918,23 @@ pub struct SetAdminLLMDefaultResponse {
     pub updated: Option<bool>,
 }
 
+/// `SetAdminModelConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAdminModelConfigResponse {
+    #[serde(default)]
+    pub default_provider: Option<String>,
+    #[serde(default)]
+    pub default_model: Option<String>,
+    #[serde(default)]
+    pub default_endpoint: Option<String>,
+    #[serde(default)]
+    pub fallback_provider: Option<String>,
+    #[serde(default)]
+    pub fallback_model: Option<String>,
+    #[serde(default)]
+    pub fallback_endpoint: Option<String>,
+}
+
 /// `SetAgentCapabilitiesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetAgentCapabilitiesResponse {
@@ -17854,6 +19017,14 @@ pub struct SetDataExplorerValueRequest {
 pub struct SetDataExplorerValueResponse {
     pub success: bool,
     pub size_bytes: i64,
+}
+
+/// `SetFeatureFlagsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetFeatureFlagsResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub flags: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub updated: bool,
 }
 
 /// `SetLLMProviderKeyProvider` enumeration.
@@ -17961,6 +19132,14 @@ pub struct SetModelPricingOverrideResponse {
     /// Absent when not set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cached_input_per_million: Option<f64>,
+}
+
+/// `SetRateLimitsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetRateLimitsResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub endpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub updated: bool,
 }
 
 /// `SetRegistrySpecVisibilityRequest` model.
@@ -18099,7 +19278,7 @@ pub struct SetupStateResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetupStateResponseState {
     /// `live` is a one-way latch; closing registration afterwards does not undo it.
-    pub status: SetupStateResponseStateStatus,
+    pub status: AdminRegistrationConfigSetupStatus,
     pub completed_steps: Vec<String>,
     pub registration_open: bool,
     pub started_at: String,
@@ -18107,46 +19286,6 @@ pub struct SetupStateResponseState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub completed_at: Option<String>,
     pub version: i64,
-}
-
-/// `live` is a one-way latch; closing registration afterwards does not undo it.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SetupStateResponseStateStatus {
-    #[default]
-    #[serde(rename = "in_progress")]
-    InProgress,
-    #[serde(rename = "live")]
-    Live,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SetupStateResponseStateStatus {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::InProgress => "in_progress",
-            Self::Live => "live",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SetupStateResponseStateStatus {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SetupStateResponseStateStatus {
-    fn from(value: &str) -> Self {
-        match value {
-            "in_progress" => Self::InProgress,
-            "live" => Self::Live,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `SetUserRoleRequest` model.
@@ -18374,7 +19513,7 @@ pub struct SpecToolCatalog {
     pub agent_id: String,
     /// Tool name → the SPEC that owns it and the view to render its output with. Integration
     /// aliases map onto their base tool's view.
-    pub tools: HashMap<String, Value>,
+    pub tools: HashMap<String, Value2>,
 }
 
 /// `StartMissionRequest` model.
@@ -18633,6 +19772,14 @@ pub struct SuspendAgentRequest {
 pub struct SuspendTenantRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reason: Option<String>,
+}
+
+/// `SuspendTenantResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SuspendTenantResponse {
+    pub suspended: bool,
+    pub tenant_id: String,
+    pub reason: String,
 }
 
 /// `SuspendUserResponse` model.
@@ -20121,6 +21268,28 @@ pub struct TestAdminSmtpConfigResponse {
     pub sent_to: String,
 }
 
+/// `TestAdminStripeConfigResponseVariant1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TestAdminStripeConfigResponseVariant1 {
+    pub ok: bool,
+    pub account_id: String,
+    pub livemode: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub business_name: Option<String>,
+    pub country: String,
+    pub default_currency: String,
+}
+
+/// `TestAdminStripeConfigResponseVariant2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TestAdminStripeConfigResponseVariant2 {
+    pub ok: bool,
+    pub error: String,
+    /// Stripe's HTTP status, when it answered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<i64>,
+}
+
 /// `TestAgentIntegrationResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TestAgentIntegrationResponse {
@@ -20433,6 +21602,69 @@ pub struct UpdateACPSessionResponse {
     pub session_id: String,
 }
 
+/// `UpdateAdminAgentMemoryConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminAgentMemoryConfigResponse {
+    pub agent_memory: UpdateAdminAgentMemoryConfigResponseAgentMemory,
+    pub updated: bool,
+}
+
+/// `UpdateAdminAgentMemoryConfigResponseAgentMemory` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminAgentMemoryConfigResponseAgentMemory {
+    pub enabled: bool,
+    pub use_shared_store: bool,
+    pub default_max_entries: i64,
+    pub default_retrieval_limit: i64,
+    pub default_retrieval_strategy: String,
+    pub decay_enabled: bool,
+    pub decay_half_life_days: i64,
+    pub decay_job_interval_ms: i64,
+    pub extraction_max_tokens: i64,
+    pub extraction_model: String,
+    pub eviction_threshold: i64,
+    pub embedding_dimensions: i64,
+    pub embedding_provider: String,
+    pub embedding_model: String,
+    pub compression_model: String,
+}
+
+/// `UpdateAdminAuthConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminAuthConfigResponse {
+    pub auth: UpdateAdminAuthConfigResponseAuth,
+    pub updated: bool,
+}
+
+/// `UpdateAdminAuthConfigResponseAuth` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminAuthConfigResponseAuth {
+    pub super_admin_email: String,
+    pub otp_ttl_ms: i64,
+    pub verification_ttl_ms: i64,
+    pub jwks_cache_ttl_ms: i64,
+    pub jwks_grace_ttl_ms: i64,
+    pub api_key_cache_ttl_s: i64,
+    pub api_key_rotation_grace_period_h: i64,
+}
+
+/// `UpdateAdminBackpressureConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminBackpressureConfigResponse {
+    pub backpressure: UpdateAdminBackpressureConfigResponseBackpressure,
+    pub updated: bool,
+}
+
+/// `UpdateAdminBackpressureConfigResponseBackpressure` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminBackpressureConfigResponseBackpressure {
+    pub sse_buffer_max: i64,
+    pub sse_high_watermark: i64,
+    pub sse_low_watermark: i64,
+    pub tool_queue_max_depth: i64,
+    pub tool_queue_high_watermark: i64,
+}
+
 /// `UpdateAdminBlogConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminBlogConfigRequest {
@@ -20486,11 +21718,53 @@ pub struct UpdateAdminBlogPostResponse {
     pub post: BlogPost,
 }
 
+/// `UpdateAdminCodeInterpreterConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminCodeInterpreterConfigResponse {
+    pub code_interpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter,
+    pub updated: bool,
+}
+
+/// `UpdateAdminCodeInterpreterConfigResponseCodeInterpreter` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminCodeInterpreterConfigResponseCodeInterpreter {
+    pub isolation: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_memory_mb: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub container_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub python_container_image: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub python_sandbox_host_dir: Option<String>,
+}
+
 /// `UpdateAdminDisabledToolsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminDisabledToolsResponse {
     pub ok: bool,
     pub disabled_tools: Vec<String>,
+}
+
+/// `UpdateAdminEvaluationConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminEvaluationConfigResponse {
+    pub evaluation: UpdateAdminEvaluationConfigResponseEvaluation,
+    pub updated: bool,
+}
+
+/// `UpdateAdminEvaluationConfigResponseEvaluation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminEvaluationConfigResponseEvaluation {
+    pub enabled: bool,
+    pub max_concurrent_eval_cases: i64,
+    pub regression_threshold: f64,
+    pub default_scorers: Vec<String>,
+    pub max_cases_per_dataset: i64,
+    pub eval_run_timeout_ms: i64,
+    pub auto_rollback_enabled: bool,
 }
 
 /// `UpdateAdminFounderConfigRequest` model.
@@ -20504,6 +21778,162 @@ pub struct UpdateAdminFounderConfigRequest {
     pub founder_public_key: Option<String>,
 }
 
+/// `UpdateAdminGuardrailsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminGuardrailsResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrails: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub updated: bool,
+}
+
+/// `UpdateAdminIdempotencyConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminIdempotencyConfigResponse {
+    pub idempotency: UpdateAdminIdempotencyConfigResponseIdempotency,
+    pub updated: bool,
+}
+
+/// `UpdateAdminIdempotencyConfigResponseIdempotency` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminIdempotencyConfigResponseIdempotency {
+    pub enabled: bool,
+    pub ttl_hours: i64,
+    pub max_response_cache_bytes: i64,
+}
+
+/// `UpdateAdminIntegrationsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminIntegrationsResponse {
+    pub integrations: Vec<UpdateAdminIntegrationsResponseIntegration>,
+    pub updated: bool,
+}
+
+/// `UpdateAdminIntegrationsResponseIntegration` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminIntegrationsResponseIntegration {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth_type: Option<AdminIntegrationsConfigIntegrationAuthType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub beta: Option<bool>,
+    /// `kv` when an operator overrode the shipped default, `default` otherwise.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLLMAdaptersConfigResponse {
+    pub llm_adapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters,
+    pub updated: bool,
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponseLLMAdapters` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLLMAdaptersConfigResponseLLMAdapters {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_retries: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_base_delay_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retry_max_delay_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stream_empty_timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub circuit_breaker: Option<UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub provider_rate_limits: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failure_threshold: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reset_timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub half_open_max_requests: Option<i64>,
+}
+
+/// `UpdateAdminLoggingConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLoggingConfigResponse {
+    pub logging: UpdateAdminLoggingConfigResponseLogging,
+    pub updated: bool,
+}
+
+/// `UpdateAdminLoggingConfigResponseLogging` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLoggingConfigResponseLogging {
+    pub pii_mode: String,
+    pub log_agent_responses: bool,
+    pub file_enabled: bool,
+    pub file_max_size_mb: i64,
+    pub file_retention_days: i64,
+    pub file_level: String,
+    pub file_separate_error: bool,
+    pub activity_log_verbosity: String,
+}
+
+/// `UpdateAdminLongRunningConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLongRunningConfigResponse {
+    pub long_running: UpdateAdminLongRunningConfigResponseLongRunning,
+    pub updated: bool,
+}
+
+/// `UpdateAdminLongRunningConfigResponseLongRunning` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLongRunningConfigResponseLongRunning {
+    pub enabled: bool,
+    pub max_duration_ms: i64,
+    pub checkpoint_interval_ms: i64,
+    pub idle_timeout_ms: i64,
+    pub continuation_token_ttl_days: i64,
+    pub max_background_runs_per_tenant: i64,
+}
+
+/// `UpdateAdminMCPConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminMCPConfigResponse {
+    pub mcp: UpdateAdminMCPConfigResponseMCP,
+    pub updated: bool,
+}
+
+/// `UpdateAdminMCPConfigResponseMCP` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminMCPConfigResponseMCP {
+    pub max_sessions_per_server: i64,
+    pub max_total_stdio_sessions: i64,
+    pub session_idle_timeout_ms: i64,
+}
+
+/// `UpdateAdminMultimodalConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminMultimodalConfigResponse {
+    pub multimodal: UpdateAdminMultimodalConfigResponseMultimodal,
+    pub updated: bool,
+}
+
+/// `UpdateAdminMultimodalConfigResponseMultimodal` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminMultimodalConfigResponseMultimodal {
+    pub enabled: bool,
+    pub max_image_size_bytes: i64,
+    pub max_audio_duration_s: i64,
+    pub max_video_duration_s: i64,
+    pub auto_resize_images: bool,
+    pub supported_image_formats: Vec<String>,
+    pub supported_audio_formats: Vec<String>,
+}
+
 /// `UpdateAdminOAuthIdentityConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminOAuthIdentityConfigRequest {
@@ -20515,6 +21945,22 @@ pub struct UpdateAdminOAuthIdentityConfigRequest {
     pub apple_bundle_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub oauth_return_to_hosts: Option<Vec<String>>,
+}
+
+/// `UpdateAdminPersistenceConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminPersistenceConfigResponse {
+    pub persistence: UpdateAdminPersistenceConfigResponsePersistence,
+    pub updated: bool,
+}
+
+/// `UpdateAdminPersistenceConfigResponsePersistence` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminPersistenceConfigResponsePersistence {
+    pub snapshot_every_n_events: i64,
+    pub checkpoint_after_tool_calls: bool,
+    pub usage_shards: i64,
+    pub auto_cap_kv_values: bool,
 }
 
 /// `UpdateAdminPlansRequest` model.
@@ -20533,6 +21979,31 @@ pub struct UpdateAdminPlansResponse {
     pub updated: Option<bool>,
 }
 
+/// `UpdateAdminPricingResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminPricingResponse {
+    pub pricing: UpdateAdminPricingResponsePricing,
+    pub updated: bool,
+}
+
+/// `UpdateAdminPricingResponsePricing` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminPricingResponsePricing {
+    pub openai_compat_input: f64,
+    pub openai_compat_output: f64,
+    pub anthropic_input: i64,
+    pub anthropic_output: f64,
+    pub anthropic_thinking: f64,
+}
+
+/// `UpdateAdminProviderResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminProviderResponse {
+    pub id: String,
+    pub enabled: bool,
+    pub model_allowlist: Vec<String>,
+}
+
 /// `UpdateAdminRegistrationConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminRegistrationConfigRequest {
@@ -20546,6 +22017,61 @@ pub struct UpdateAdminRegistrationConfigRequest {
     pub default_signup_plan: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub allowed_email_domains: Option<Vec<String>>,
+}
+
+/// `UpdateAdminRetentionConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminRetentionConfigResponse {
+    pub retention: UpdateAdminRetentionConfigResponseRetention,
+    pub updated: bool,
+}
+
+/// `UpdateAdminRetentionConfigResponseRetention` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminRetentionConfigResponseRetention {
+    pub completed_run_ttl_days: i64,
+    pub event_ttl_days: i64,
+    pub archive_to_sqlite: bool,
+    pub audit_log_ttl_days: i64,
+    pub archive_job_interval_ms: i64,
+    pub archive_batch_size: i64,
+    pub feed_ttl_days: i64,
+    pub artifact_ttl_days: i64,
+    pub checkpoint_ttl_hours: i64,
+}
+
+/// `UpdateAdminRunCommandConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminRunCommandConfigResponse {
+    pub run_command: UpdateAdminRunCommandConfigResponseRunCommand,
+    pub updated: bool,
+}
+
+/// `UpdateAdminRunCommandConfigResponseRunCommand` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminRunCommandConfigResponseRunCommand {
+    pub enabled: bool,
+    pub isolation: String,
+    pub timeout_ms: i64,
+    pub max_output_bytes: i64,
+    pub allowed_commands: Vec<String>,
+    pub deno_allow: Vec<String>,
+}
+
+/// `UpdateAdminServerConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminServerConfigResponse {
+    pub server: UpdateAdminServerConfigResponseServer,
+    pub updated: bool,
+}
+
+/// `UpdateAdminServerConfigResponseServer` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminServerConfigResponseServer {
+    pub trust_proxy: bool,
+    pub max_body_bytes: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub graceful_shutdown_timeout_ms: Option<i64>,
 }
 
 /// `UpdateAdminSetupStateRequest` model.
@@ -20662,6 +22188,24 @@ pub struct UpdateAdminSpecPackagesRequest {
     pub packages: HashMap<String, SpecPackage>,
 }
 
+/// `UpdateAdminSSEConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminSSEConfigResponse {
+    pub sse: UpdateAdminSSEConfigResponseSSE,
+    pub updated: bool,
+}
+
+/// `UpdateAdminSSEConfigResponseSSE` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminSSEConfigResponseSSE {
+    pub heartbeat_interval_ms: i64,
+    pub watch_timeout_ms: i64,
+    pub poll_interval_ms: i64,
+    pub max_poll_interval_ms: i64,
+    pub reconnect_hint_ms: i64,
+    pub run_wait_timeout_sec: i64,
+}
+
 /// `UpdateAdminStripeConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminStripeConfigRequest {
@@ -20723,6 +22267,37 @@ impl From<&str> for UpdateAdminStripeConfigRequestMode {
     }
 }
 
+/// `UpdateAdminStripeConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminStripeConfigResponse {
+    pub stripe: UpdateAdminStripeConfigResponseStripe,
+    pub updated: bool,
+}
+
+/// `UpdateAdminStripeConfigResponseStripe` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminStripeConfigResponseStripe {
+    pub enabled: bool,
+    pub mode: String,
+    pub secret_key: String,
+    pub webhook_secret: String,
+    pub publishable_key: String,
+    pub price_id_starter: String,
+    pub price_id_pro: String,
+    pub price_id_enterprise: String,
+}
+
+/// `UpdateAdminTenantSettingsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminTenantSettingsResponse {
+    pub tenant_id: String,
+    /// types/tenant.ts TenantSettings as stored — legacy records may lack fields.
+    pub settings: serde_json::Map<String, serde_json::Value>,
+    /// Only when ever set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub legal_hold: Option<bool>,
+}
+
 /// `UpdateAdminToolOverridesRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminToolOverridesRequest {
@@ -20734,6 +22309,64 @@ pub struct UpdateAdminToolOverridesRequest {
 pub struct UpdateAdminToolOverridesResponse {
     pub ok: bool,
     pub overrides: HashMap<String, ToolOverride>,
+}
+
+/// `UpdateAdminToolSecurityConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminToolSecurityConfigResponse {
+    pub tool_security: UpdateAdminToolSecurityConfigResponseToolSecurity,
+    pub updated: bool,
+}
+
+/// `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminToolSecurityConfigResponseToolSecurity {
+    pub default_egress_policy: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub egress_allowlist_per_tenant: Option<Vec<serde_json::Value>>,
+    pub ssrf_deny_private_ranges: bool,
+    pub default_tool_timeout_ms: i64,
+    pub default_tool_max_payload_bytes: i64,
+    pub default_tool_max_concurrency: i64,
+    pub stdio_inherit_env: bool,
+}
+
+/// `UpdateAdminWebhooksConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminWebhooksConfigResponse {
+    pub webhooks: UpdateAdminWebhooksConfigResponseWebhooks,
+    pub updated: bool,
+}
+
+/// `UpdateAdminWebhooksConfigResponseWebhooks` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminWebhooksConfigResponseWebhooks {
+    pub enabled: bool,
+    pub max_subscriptions_per_tenant: i64,
+    pub delivery_timeout_ms: i64,
+    pub max_retry_attempts: i64,
+    pub require_https: bool,
+    pub max_payload_bytes: i64,
+}
+
+/// `UpdateAdminWorkerPoolConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminWorkerPoolConfigResponse {
+    pub worker_pool: UpdateAdminWorkerPoolConfigResponseWorkerPool,
+    pub updated: bool,
+}
+
+/// `UpdateAdminWorkerPoolConfigResponseWorkerPool` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminWorkerPoolConfigResponseWorkerPool {
+    pub max_workers: i64,
+    pub default_mode: String,
+    pub max_run_duration_ms: i64,
+    pub reconciliation_interval_ms: i64,
+    pub schedule_max_retries: i64,
+    pub schedule_base_delay_ms: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_queue_size: Option<i64>,
 }
 
 /// `UpdateAgentIntegrationRequest` model.
@@ -20863,6 +22496,20 @@ pub struct UpdateIntegrationRequest {
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
+/// `UpdateMarkupConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMarkupConfigResponse {
+    pub markup: UpdateMarkupConfigResponseMarkup,
+    pub updated: bool,
+}
+
+/// `UpdateMarkupConfigResponseMarkup` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMarkupConfigResponseMarkup {
+    pub platform_markup_percent: f64,
+    pub model_markup_overrides: serde_json::Map<String, serde_json::Value>,
+}
+
 /// At least one editable field.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateMissionObjectiveRequest {
@@ -20922,6 +22569,23 @@ pub struct UpdatePlatformURLSRequest {
     pub webhook_base_url: Option<String>,
 }
 
+/// `UpdatePlatformURLSResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdatePlatformURLSResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub urls: Option<UpdatePlatformURLSResponseURLS>,
+    pub updated: bool,
+}
+
+/// `UpdatePlatformURLSResponseURLS` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdatePlatformURLSResponseURLS {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_base_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub webhook_base_url: Option<String>,
+}
+
 /// `UpdateProjectRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateProjectRequest {
@@ -20944,6 +22608,18 @@ pub struct UpdateProjectRequest {
     pub archived_at: Option<String>,
 }
 
+/// `UpdateRuntimeConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateRuntimeConfigResponse {
+    /// The effective runtime config — sparse: only keys present in the platform config or the
+    /// stored override (RuntimeConfig, every field optional).
+    pub runtime: serde_json::Map<String, serde_json::Value>,
+    pub updated: bool,
+    /// Only when the body carried keys the schema does not declare.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ignored_keys: Option<Vec<String>>,
+}
+
 /// `UpdateSecurityPoliciesRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateSecurityPoliciesRequest {
@@ -20957,6 +22633,23 @@ pub struct UpdateSecurityPoliciesRequest {
     pub file_upload_allowed_mime_types: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub admin_provider_settings_require_super_admin: Option<bool>,
+}
+
+/// `UpdateSecurityPoliciesResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateSecurityPoliciesResponse {
+    pub policies: UpdateSecurityPoliciesResponsePolicies,
+    pub updated: bool,
+}
+
+/// `UpdateSecurityPoliciesResponsePolicies` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateSecurityPoliciesResponsePolicies {
+    pub cors_allowed_origins: Vec<serde_json::Value>,
+    pub webhook_url_denylist: Vec<String>,
+    pub file_upload_max_size_bytes: i64,
+    pub file_upload_allowed_mime_types: Vec<serde_json::Value>,
+    pub admin_provider_settings_require_super_admin: bool,
 }
 
 /// `UpdateSessionAnnotationRequest` model.
@@ -21079,6 +22772,23 @@ pub struct UpdateWebhooksPolicyRequest {
     pub delivery_backoff_base_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub delivery_max_window_hours: Option<i64>,
+}
+
+/// `UpdateWebhooksPolicyResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateWebhooksPolicyResponse {
+    pub policy: UpdateWebhooksPolicyResponsePolicy,
+    pub updated: bool,
+}
+
+/// `UpdateWebhooksPolicyResponsePolicy` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateWebhooksPolicyResponsePolicy {
+    pub ssrf_check_at_subscription: bool,
+    pub stripe_signature_tolerance_sec: i64,
+    pub delivery_max_retries: i64,
+    pub delivery_backoff_base_ms: i64,
+    pub delivery_max_window_hours: i64,
 }
 
 /// `UpdateWorkspaceRequest` model.
@@ -21359,16 +23069,18 @@ pub struct ValidationPolicy {
 /// `Value` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Value {
-    pub spec_id: String,
-    /// The parsed view document, or null when the stored view was unparseable.
-    pub output_view: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub en: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uk: Option<String>,
 }
 
 /// `Value2` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Value2 {
-    pub x: f64,
-    pub y: f64,
+    pub spec_id: String,
+    /// The parsed view document, or null when the stored view was unparseable.
+    pub output_view: serde_json::Value,
 }
 
 /// `Value3` model.
@@ -21381,6 +23093,13 @@ pub struct Value3 {
 /// `Value4` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Value4 {
+    pub x: f64,
+    pub y: f64,
+}
+
+/// `Value5` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Value5 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub from: Option<serde_json::Value>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

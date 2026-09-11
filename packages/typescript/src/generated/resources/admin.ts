@@ -9,16 +9,30 @@ import type {
   AddAndroidTestersResponse,
   AdminAnalyticsEventsResponse,
   AdminAnalyticsOverviewResponse,
+  AdminAuditList,
   AdminDataExplorerRawKeysResponse,
   AdminDataExplorerRawKeysResponseKey,
+  AdminGetLandingConfigResponse,
   AdminGetReconciliationResponse,
+  AdminGetVoiceConfigResponse,
   AdminListToolsResponse,
   AdminListWebhookDLQResponse,
+  AdminModelCatalog,
+  AdminModelCatalogSeed,
+  AdminModelPricingList,
+  AdminPricingConfig,
+  AdminProvider,
+  AdminPutLandingConfigResponse,
+  AdminPutModelCatalogResponse,
+  AdminPutVoiceConfigResponse,
   AdminReplayWebhookDLQResponse,
+  AdminVoicePresets,
   AgentAnalyticsSummary,
   AndroidTester,
+  ConformityReport,
   CreateAdminBlogPostRequest,
   CreateAdminBlogPostResponse,
+  CreateAdminProviderResponse,
   DeleteAdminBlogPostResponse,
   DeleteAdminIntegrationOAuthProviderResponse,
   DeleteAdminLLMDefaultResponse,
@@ -36,7 +50,6 @@ import type {
   GetTenantUsageResponse,
   InternalVerifyDomainResponse,
   JsonObject,
-  JsonValue,
   ListAdminBlogPostsResponse,
   ListAdminDomainHealthResponse,
   ListAdminIntegrationOAuthProvidersResponse,
@@ -52,12 +65,15 @@ import type {
   OAuthLoginProviderConfigUpdateResponse,
   PlatformEconomics,
   PurgeAdminTenantResponse,
+  ReactivateTenantResponse,
   SetAdminIntegrationOAuthProviderRequest,
   SetAdminIntegrationOAuthProviderResponse,
   SetAdminLLMDefaultRequest,
   SetAdminLLMDefaultResponse,
+  SetAdminModelConfigResponse,
   SetMaintenanceStateRequest,
   SuspendTenantRequest,
+  SuspendTenantResponse,
   SyncProviderModelsResponse,
   Tenant,
   TenantMefConfigResponse,
@@ -65,6 +81,9 @@ import type {
   UpdateAdminBlogConfigResponse,
   UpdateAdminBlogPostRequest,
   UpdateAdminBlogPostResponse,
+  UpdateAdminPricingResponse,
+  UpdateAdminProviderResponse,
+  UpdateAdminTenantSettingsResponse,
   UpdateFeedbackReportStatusRequest,
   UpdateFeedbackReportStatusResponse,
   UpdateTenantMefConfigRequest,
@@ -302,7 +321,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetLandingConfig(options?: RequestOptions): Promise<JsonObject> {
+  adminGetLandingConfig(options?: RequestOptions): Promise<AdminGetLandingConfigResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/landing',
@@ -317,7 +336,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetModelCatalog(options?: RequestOptions): Promise<JsonObject> {
+  adminGetModelCatalog(options?: RequestOptions): Promise<AdminModelCatalog> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/model-catalog',
@@ -332,7 +351,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetModelCatalogSeed(options?: RequestOptions): Promise<JsonObject> {
+  adminGetModelCatalogSeed(options?: RequestOptions): Promise<AdminModelCatalogSeed> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/model-catalog/seed',
@@ -347,7 +366,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetModelPricing(options?: RequestOptions): Promise<JsonObject> {
+  adminGetModelPricing(options?: RequestOptions): Promise<AdminModelPricingList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/model-pricing',
@@ -395,7 +414,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetVoiceConfig(options?: RequestOptions): Promise<JsonObject> {
+  adminGetVoiceConfig(options?: RequestOptions): Promise<AdminGetVoiceConfigResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/voice',
@@ -410,7 +429,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminGetVoicePresets(options?: RequestOptions): Promise<JsonObject> {
+  adminGetVoicePresets(options?: RequestOptions): Promise<AdminVoicePresets> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/voice-presets',
@@ -455,7 +474,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminPutLandingConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  adminPutLandingConfig(body: JsonObject, options?: RequestOptions): Promise<AdminPutLandingConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/landing',
@@ -472,7 +491,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminPutModelCatalog(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  adminPutModelCatalog(body: JsonObject, options?: RequestOptions): Promise<AdminPutModelCatalogResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/model-catalog',
@@ -510,7 +529,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminPutVoiceConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  adminPutVoiceConfig(body: JsonObject, options?: RequestOptions): Promise<AdminPutVoiceConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/voice',
@@ -527,7 +546,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  adminPutVoicePresets(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  adminPutVoicePresets(body: JsonObject, options?: RequestOptions): Promise<AdminVoicePresets> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/voice-presets',
@@ -580,7 +599,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  createAdminProvider(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  createAdminProvider(body: JsonObject, options?: RequestOptions): Promise<CreateAdminProviderResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/admin/providers',
@@ -799,7 +818,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminPricing(options?: RequestOptions): Promise<JsonValue> {
+  getAdminPricing(options?: RequestOptions): Promise<AdminPricingConfig> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/pricing',
@@ -814,7 +833,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAdminProvider(providerId: string, options?: RequestOptions): Promise<JsonObject> {
+  getAdminProvider(providerId: string, options?: RequestOptions): Promise<AdminProvider> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/admin/providers/${encodeURIComponent(String(providerId))}`,
@@ -859,7 +878,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getAuditForTarget(targetId: string, params?: GetAuditForTargetParams, options?: RequestOptions): Promise<JsonValue> {
+  getAuditForTarget(targetId: string, params?: GetAuditForTargetParams, options?: RequestOptions): Promise<AdminAuditList> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/admin/audit/${encodeURIComponent(String(targetId))}`,
@@ -875,7 +894,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getConformityReport(options?: RequestOptions): Promise<JsonObject> {
+  getConformityReport(options?: RequestOptions): Promise<ConformityReport> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/conformity-report',
@@ -1187,7 +1206,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  queryAuditLog(params?: QueryAuditLogParams, options?: RequestOptions): Promise<JsonValue> {
+  queryAuditLog(params?: QueryAuditLogParams, options?: RequestOptions): Promise<AdminAuditList> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/audit',
@@ -1203,7 +1222,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  reactivateTenant(tenantId: string, options?: RequestOptions): Promise<JsonValue> {
+  reactivateTenant(tenantId: string, options?: RequestOptions): Promise<ReactivateTenantResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/reactivate`,
@@ -1268,7 +1287,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  setAdminModelConfig(body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  setAdminModelConfig(body: JsonObject, options?: RequestOptions): Promise<SetAdminModelConfigResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/llm-defaults/model-config',
@@ -1315,7 +1334,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  suspendTenant(tenantId: string, body?: SuspendTenantRequest, options?: RequestOptions): Promise<JsonValue> {
+  suspendTenant(tenantId: string, body?: SuspendTenantRequest, options?: RequestOptions): Promise<SuspendTenantResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/suspend`,
@@ -1411,7 +1430,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminPricing(body?: JsonObject, options?: RequestOptions): Promise<JsonValue> {
+  updateAdminPricing(body?: JsonObject, options?: RequestOptions): Promise<UpdateAdminPricingResponse> {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/pricing',
@@ -1428,7 +1447,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminProvider(providerId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminProvider(providerId: string, body: JsonObject, options?: RequestOptions): Promise<UpdateAdminProviderResponse> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/admin/providers/${encodeURIComponent(String(providerId))}`,
@@ -1445,7 +1464,7 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  updateAdminTenantSettings(tenantId: string, body: JsonObject, options?: RequestOptions): Promise<JsonObject> {
+  updateAdminTenantSettings(tenantId: string, body: JsonObject, options?: RequestOptions): Promise<UpdateAdminTenantSettingsResponse> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/admin/tenants/${encodeURIComponent(String(tenantId))}/settings`,

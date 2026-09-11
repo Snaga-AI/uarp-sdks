@@ -180,53 +180,57 @@ package body UARP.API.Admin is
    function Admin_Get_Landing_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Get_Landing_Config_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/landing",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/landing",
+             Options => Options));
    end Admin_Get_Landing_Config;
 
    function Admin_Get_Model_Catalog
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Model_Catalog
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/model-catalog",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/model-catalog",
+             Options => Options));
    end Admin_Get_Model_Catalog;
 
    function Admin_Get_Model_Catalog_Seed
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Model_Catalog_Seed
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/model-catalog/seed",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/model-catalog/seed",
+             Options => Options));
    end Admin_Get_Model_Catalog_Seed;
 
    function Admin_Get_Model_Pricing
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Model_Pricing_List
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/model-pricing",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/model-pricing",
+             Options => Options));
    end Admin_Get_Model_Pricing;
 
    function Admin_Get_O_Auth_Provider
@@ -262,27 +266,29 @@ package body UARP.API.Admin is
    function Admin_Get_Voice_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Get_Voice_Config_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/voice",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/voice",
+             Options => Options));
    end Admin_Get_Voice_Config;
 
    function Admin_Get_Voice_Presets
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Voice_Presets
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/voice-presets",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/voice-presets",
+             Options => Options));
    end Admin_Get_Voice_Presets;
 
    function Admin_List_Tools
@@ -317,34 +323,36 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Put_Landing_Config_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/config/landing",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/landing",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Admin_Put_Landing_Config;
 
    function Admin_Put_Model_Catalog
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Put_Model_Catalog_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/config/model-catalog",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/model-catalog",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Admin_Put_Model_Catalog;
 
    function Admin_Put_O_Auth_Provider
@@ -370,34 +378,36 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Put_Voice_Config_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/config/voice",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/voice",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Admin_Put_Voice_Config;
 
    function Admin_Put_Voice_Presets
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Voice_Presets
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/config/voice-presets",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/voice-presets",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Admin_Put_Voice_Presets;
 
    function Admin_Replay_Webhook_DLQ
@@ -438,17 +448,18 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Create_Admin_Provider_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "POST",
-          "/api/v1/admin/providers",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/providers",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Create_Admin_Provider;
 
    function Create_Tenant
@@ -608,28 +619,30 @@ package body UARP.API.Admin is
    function Get_Admin_Pricing
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Pricing_Config
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/config/pricing",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/pricing",
+             Options => Options));
    end Get_Admin_Pricing;
 
    function Get_Admin_Provider
      (Self : Client_Type;
       Provider_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Provider
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
+             Options => Options));
    end Get_Admin_Provider;
 
    function Get_Admin_Stats
@@ -666,32 +679,34 @@ package body UARP.API.Admin is
       Target_Id : String;
       Params : Get_Audit_For_Target_Params := No_Get_Audit_For_Target_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Audit_List
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Type then
          UARP.Types.Add (Query, "type", Params.Type_K);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/audit/" & UARP.Types.Encode_Path_Segment (Target_Id),
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/audit/" & UARP.Types.Encode_Path_Segment (Target_Id),
+             Query => Query,
+             Options => Options));
    end Get_Audit_For_Target;
 
    function Get_Conformity_Report
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Conformity_Report
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/conformity-report",
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/conformity-report",
+             Options => Options));
    end Get_Conformity_Report;
 
    function Get_Immutable_Audit
@@ -1007,7 +1022,7 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Params : Query_Audit_Log_Params := No_Query_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Admin_Audit_List
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
@@ -1020,27 +1035,29 @@ package body UARP.API.Admin is
       if Params.Has_Actor_Id then
          UARP.Types.Add (Query, "actor_id", Params.Actor_Id);
       end if;
-      return UARP.Client.Call
-         (Self,
-          "GET",
-          "/api/v1/admin/audit",
-          Query => Query,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/audit",
+             Query => Query,
+             Options => Options));
    end Query_Audit_Log;
 
    function Reactivate_Tenant
      (Self : Client_Type;
       Tenant_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Reactivate_Tenant_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/reactivate",
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/reactivate",
+             Idempotent => True,
+             Options => Options));
    end Reactivate_Tenant;
 
    function Set_Admin_Integration_O_Auth_Provider
@@ -1085,17 +1102,18 @@ package body UARP.API.Admin is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Set_Admin_Model_Config_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/llm-defaults/model-config",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/llm-defaults/model-config",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Set_Admin_Model_Config;
 
    function Set_Maintenance_State
@@ -1122,17 +1140,18 @@ package body UARP.API.Admin is
       Payload : UARP.Models.Suspend_Tenant_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Suspend_Tenant_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/suspend",
-          Payload => UARP.Models.To_JSON (Payload),
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/suspend",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Suspend_Tenant;
 
    function Sync_Provider_Models
@@ -1193,17 +1212,18 @@ package body UARP.API.Admin is
       Payload : UARP.JSON_Support.JSON_Value;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Update_Admin_Pricing_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PUT",
-          "/api/v1/admin/config/pricing",
-          Payload => Payload,
-          Has_Payload => Include_Payload,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/pricing",
+             Payload => Payload,
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
    end Update_Admin_Pricing;
 
    function Update_Admin_Provider
@@ -1211,17 +1231,18 @@ package body UARP.API.Admin is
       Provider_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Update_Admin_Provider_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Admin_Provider;
 
    function Update_Admin_Tenant_Settings
@@ -1229,17 +1250,18 @@ package body UARP.API.Admin is
       Tenant_Id : String;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value
+      return UARP.Models.Update_Admin_Tenant_Settings_Response
    is
    begin
-      return UARP.Client.Call
-         (Self,
-          "PATCH",
-          "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/settings",
-          Payload => Payload,
-          Has_Payload => True,
-          Idempotent => True,
-          Options => Options);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/settings",
+             Payload => Payload,
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
    end Update_Admin_Tenant_Settings;
 
    function Update_Feedback_Report_Status

@@ -451,7 +451,11 @@ test('parses the production document into the expected shape', () => {
   // 2b typed the 56 non-admin responses — 21 named schemas (RunOutput,
   // UsageQuota, EvalRun, PublicAgentCard, JsonRpcResponse, …) plus the inline
   // objects nested under them (search results, eval cases, task items).
-  assert.equal(spec.types.length, 1212);
+  // 1212 -> 1365 on 2026-09-11 (build fb2f530f, uarp #457): CTR-07 tranche 3
+  // typed the 83 admin responses — 42 named schemas (the config sections,
+  // AdminAuditList, AdminProvider, ConformityReport, AdminModelCatalog, …) and
+  // the objects nested inside them (sections, catalogue rows, partners).
+  assert.equal(spec.types.length, 1365);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

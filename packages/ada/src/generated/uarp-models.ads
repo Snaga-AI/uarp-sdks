@@ -844,6 +844,570 @@ package UARP.Models is
    function To_JSON (Model : Admin_Analytics_Overview_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Analytics_Overview_Response;
 
+   --  `AdminAuditListEntry` model.
+   type Admin_Audit_List_Entry is record
+      Entry_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Actor_Tenant_Id : Boolean := False;
+      Actor_Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Action : UARP.Types.Text := UARP.Types.Empty_Text;
+      Target_Type : UARP.Types.Text := UARP.Types.Empty_Text;
+      Target_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Ip_Address : Boolean := False;
+      Ip_Address : UARP.Types.Text := UARP.Types.Empty_Text;
+      Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Actor_Key_Id : Boolean := False;
+      Actor_Key_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Actor_User_Id : Boolean := False;
+      Actor_User_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Audit_List_Entry) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Audit_List_Entry;
+
+   package Admin_Audit_List_Entry_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Audit_List_Entry);
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; types/security.ts
+   --  AdminAuditEntry - actor_* and ip_address conditional.
+   type Admin_Audit_List is record
+      Entries : UARP.Models.Admin_Audit_List_Entry_Vectors.Vector;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Audit_List) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Audit_List;
+
+   --  `AdminConfigAgentMemoryConfigAgentMemory` model.
+   type Admin_Config_Agent_Memory_Config_Agent_Memory is record
+      Enabled : Standard.Boolean := False;
+      Use_Shared_Store : Standard.Boolean := False;
+      Default_Max_Entries : UARP.Types.Integer_Value := 0;
+      Default_Retrieval_Limit : UARP.Types.Integer_Value := 0;
+      Default_Retrieval_Strategy : UARP.Types.Text := UARP.Types.Empty_Text;
+      Decay_Enabled : Standard.Boolean := False;
+      Decay_Half_Life_Days : UARP.Types.Integer_Value := 0;
+      Decay_Job_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Extraction_Max_Tokens : UARP.Types.Integer_Value := 0;
+      Extraction_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Eviction_Threshold : UARP.Types.Integer_Value := 0;
+      Embedding_Dimensions : UARP.Types.Integer_Value := 0;
+      Embedding_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Embedding_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Compression_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Agent_Memory_Config_Agent_Memory) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Agent_Memory_Config_Agent_Memory;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `agent_memory` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Agent_Memory_Config is record
+      Agent_Memory : UARP.Models.Admin_Config_Agent_Memory_Config_Agent_Memory;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Agent_Memory_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Agent_Memory_Config;
+
+   --  `AdminConfigAuthConfigAuth` model.
+   type Admin_Config_Auth_Config_Auth is record
+      Super_Admin_Email : UARP.Types.Text := UARP.Types.Empty_Text;
+      Otp_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Verification_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Jwks_Cache_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Jwks_Grace_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      API_Key_Cache_Ttl_S : UARP.Types.Integer_Value := 0;
+      API_Key_Rotation_Grace_Period_H : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Auth_Config_Auth) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Auth_Config_Auth;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `auth` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_Auth_Config is record
+      Auth : UARP.Models.Admin_Config_Auth_Config_Auth;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Auth_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Auth_Config;
+
+   --  `AdminConfigBackpressureConfigBackpressure` model.
+   type Admin_Config_Backpressure_Config_Backpressure is record
+      SSE_Buffer_Max : UARP.Types.Integer_Value := 0;
+      SSE_High_Watermark : UARP.Types.Integer_Value := 0;
+      SSE_Low_Watermark : UARP.Types.Integer_Value := 0;
+      Tool_Queue_Max_Depth : UARP.Types.Integer_Value := 0;
+      Tool_Queue_High_Watermark : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Backpressure_Config_Backpressure) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Backpressure_Config_Backpressure;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `backpressure` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Backpressure_Config is record
+      Backpressure : UARP.Models.Admin_Config_Backpressure_Config_Backpressure;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Backpressure_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Backpressure_Config;
+
+   --  `AdminConfigCodeInterpreterConfigCodeInterpreter` model.
+   type Admin_Config_Code_Interpreter_Config_Code_Interpreter is record
+      Isolation : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timeout_Ms : Boolean := False;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Mb : Boolean := False;
+      Max_Memory_Mb : UARP.Types.Integer_Value := 0;
+      Has_Container_Image : Boolean := False;
+      Container_Image : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Python_Container_Image : Boolean := False;
+      Python_Container_Image : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Python_Sandbox_Host_Dir : Boolean := False;
+      Python_Sandbox_Host_Dir : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Code_Interpreter_Config_Code_Interpreter) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Code_Interpreter_Config_Code_Interpreter;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `code_interpreter` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Code_Interpreter_Config is record
+      Code_Interpreter : UARP.Models.Admin_Config_Code_Interpreter_Config_Code_Interpreter;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Code_Interpreter_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Code_Interpreter_Config;
+
+   --  `AdminConfigEvaluationConfigEvaluation` model.
+   type Admin_Config_Evaluation_Config_Evaluation is record
+      Enabled : Standard.Boolean := False;
+      Max_Concurrent_Eval_Cases : UARP.Types.Integer_Value := 0;
+      Regression_Threshold : UARP.Types.Float_Value := 0.0;
+      Default_Scorers : UARP.Types.Text_Vectors.Vector;
+      Max_Cases_Per_Dataset : UARP.Types.Integer_Value := 0;
+      Eval_Run_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Auto_Rollback_Enabled : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Evaluation_Config_Evaluation) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Evaluation_Config_Evaluation;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `evaluation` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Evaluation_Config is record
+      Evaluation : UARP.Models.Admin_Config_Evaluation_Config_Evaluation;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Evaluation_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Evaluation_Config;
+
+   --  `AdminConfigIdempotencyConfigIdempotency` model.
+   type Admin_Config_Idempotency_Config_Idempotency is record
+      Enabled : Standard.Boolean := False;
+      Ttl_Hours : UARP.Types.Integer_Value := 0;
+      Max_Response_Cache_Bytes : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Idempotency_Config_Idempotency) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Idempotency_Config_Idempotency;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `idempotency` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Idempotency_Config is record
+      Idempotency : UARP.Models.Admin_Config_Idempotency_Config_Idempotency;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Idempotency_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Idempotency_Config;
+
+   --  `AdminConfigLLMAdaptersConfigLLMAdaptersCircuitBreaker` model.
+   type Admin_Config_LLM_Adapters_Config_LLM_Adapters_Circuit_Breaker is record
+      Has_Failure_Threshold : Boolean := False;
+      Failure_Threshold : UARP.Types.Integer_Value := 0;
+      Has_Reset_Timeout_Ms : Boolean := False;
+      Reset_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Half_Open_Max_Requests : Boolean := False;
+      Half_Open_Max_Requests : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_LLM_Adapters_Config_LLM_Adapters_Circuit_Breaker) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_LLM_Adapters_Config_LLM_Adapters_Circuit_Breaker;
+
+   --  `AdminConfigLLMAdaptersConfigLLMAdapters` model.
+   type Admin_Config_LLM_Adapters_Config_LLM_Adapters is record
+      Has_Max_Retries : Boolean := False;
+      Max_Retries : UARP.Types.Integer_Value := 0;
+      Has_Retry_Base_Delay_Ms : Boolean := False;
+      Retry_Base_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Retry_Max_Delay_Ms : Boolean := False;
+      Retry_Max_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Stream_Empty_Timeout_Ms : Boolean := False;
+      Stream_Empty_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Circuit_Breaker : Boolean := False;
+      Circuit_Breaker : UARP.Models.Admin_Config_LLM_Adapters_Config_LLM_Adapters_Circuit_Breaker;
+      Has_Provider_Rate_Limits : Boolean := False;
+      Provider_Rate_Limits : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Admin_Config_LLM_Adapters_Config_LLM_Adapters) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_LLM_Adapters_Config_LLM_Adapters;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `llm_adapters` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_LLM_Adapters_Config is record
+      LLM_Adapters : UARP.Models.Admin_Config_LLM_Adapters_Config_LLM_Adapters;
+   end record;
+
+   function To_JSON (Model : Admin_Config_LLM_Adapters_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_LLM_Adapters_Config;
+
+   --  `AdminConfigLoggingConfigLogging` model.
+   type Admin_Config_Logging_Config_Logging is record
+      Pii_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Log_Agent_Responses : Standard.Boolean := False;
+      File_Enabled : Standard.Boolean := False;
+      File_Max_Size_Mb : UARP.Types.Integer_Value := 0;
+      File_Retention_Days : UARP.Types.Integer_Value := 0;
+      File_Level : UARP.Types.Text := UARP.Types.Empty_Text;
+      File_Separate_Error : Standard.Boolean := False;
+      Activity_Log_Verbosity : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Logging_Config_Logging) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Logging_Config_Logging;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `logging` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_Logging_Config is record
+      Logging : UARP.Models.Admin_Config_Logging_Config_Logging;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Logging_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Logging_Config;
+
+   --  `AdminConfigLongRunningConfigLongRunning` model.
+   type Admin_Config_Long_Running_Config_Long_Running is record
+      Enabled : Standard.Boolean := False;
+      Max_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Checkpoint_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Idle_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Continuation_Token_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Max_Background_Runs_Per_Tenant : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Long_Running_Config_Long_Running) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Long_Running_Config_Long_Running;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `long_running` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Long_Running_Config is record
+      Long_Running : UARP.Models.Admin_Config_Long_Running_Config_Long_Running;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Long_Running_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Long_Running_Config;
+
+   --  `AdminConfigMCPConfigMCP` model.
+   type Admin_Config_MCP_Config_MCP is record
+      Max_Sessions_Per_Server : UARP.Types.Integer_Value := 0;
+      Max_Total_Stdio_Sessions : UARP.Types.Integer_Value := 0;
+      Session_Idle_Timeout_Ms : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_MCP_Config_MCP) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_MCP_Config_MCP;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `mcp` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_MCP_Config is record
+      MCP : UARP.Models.Admin_Config_MCP_Config_MCP;
+   end record;
+
+   function To_JSON (Model : Admin_Config_MCP_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_MCP_Config;
+
+   --  `AdminConfigMultimodalConfigMultimodal` model.
+   type Admin_Config_Multimodal_Config_Multimodal is record
+      Enabled : Standard.Boolean := False;
+      Max_Image_Size_Bytes : UARP.Types.Integer_Value := 0;
+      Max_Audio_Duration_S : UARP.Types.Integer_Value := 0;
+      Max_Video_Duration_S : UARP.Types.Integer_Value := 0;
+      Auto_Resize_Images : Standard.Boolean := False;
+      Supported_Image_Formats : UARP.Types.Text_Vectors.Vector;
+      Supported_Audio_Formats : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Multimodal_Config_Multimodal) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Multimodal_Config_Multimodal;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `multimodal` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Multimodal_Config is record
+      Multimodal : UARP.Models.Admin_Config_Multimodal_Config_Multimodal;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Multimodal_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Multimodal_Config;
+
+   --  `AdminConfigPersistenceConfigPersistence` model.
+   type Admin_Config_Persistence_Config_Persistence is record
+      Snapshot_Every_N_Events : UARP.Types.Integer_Value := 0;
+      Checkpoint_After_Tool_Calls : Standard.Boolean := False;
+      Usage_Shards : UARP.Types.Integer_Value := 0;
+      Auto_Cap_Kv_Values : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Persistence_Config_Persistence) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Persistence_Config_Persistence;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `persistence` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Persistence_Config is record
+      Persistence : UARP.Models.Admin_Config_Persistence_Config_Persistence;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Persistence_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Persistence_Config;
+
+   --  `AdminConfigRetentionConfigRetention` model.
+   type Admin_Config_Retention_Config_Retention is record
+      Completed_Run_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Event_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Archive_To_Sqlite : Standard.Boolean := False;
+      Audit_Log_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Archive_Job_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Archive_Batch_Size : UARP.Types.Integer_Value := 0;
+      Feed_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Artifact_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Checkpoint_Ttl_Hours : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Retention_Config_Retention) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Retention_Config_Retention;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `retention` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Retention_Config is record
+      Retention : UARP.Models.Admin_Config_Retention_Config_Retention;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Retention_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Retention_Config;
+
+   --  `AdminConfigRunCommandConfigRunCommand` model.
+   type Admin_Config_Run_Command_Config_Run_Command is record
+      Enabled : Standard.Boolean := False;
+      Isolation : UARP.Types.Text := UARP.Types.Empty_Text;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Max_Output_Bytes : UARP.Types.Integer_Value := 0;
+      Allowed_Commands : UARP.Types.Text_Vectors.Vector;
+      Deno_Allow : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Run_Command_Config_Run_Command) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Run_Command_Config_Run_Command;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `run_command` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Run_Command_Config is record
+      Run_Command : UARP.Models.Admin_Config_Run_Command_Config_Run_Command;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Run_Command_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Run_Command_Config;
+
+   --  `AdminConfigSecurityPoliciesConfigPolicies` model.
+   type Admin_Config_Security_Policies_Config_Policies is record
+      CORS_Allowed_Origins : UARP.JSON_Support.JSON_Value;
+      Webhook_URL_Denylist : UARP.Types.Text_Vectors.Vector;
+      File_Upload_Max_Size_Bytes : UARP.Types.Integer_Value := 0;
+      File_Upload_Allowed_Mime_Types : UARP.JSON_Support.JSON_Value;
+      Admin_Provider_Settings_Require_Super_Admin : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Security_Policies_Config_Policies) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Security_Policies_Config_Policies;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `policies` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Security_Policies_Config is record
+      Policies : UARP.Models.Admin_Config_Security_Policies_Config_Policies;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Security_Policies_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Security_Policies_Config;
+
+   --  `AdminConfigServerConfigServer` model.
+   type Admin_Config_Server_Config_Server is record
+      Trust_Proxy : Standard.Boolean := False;
+      Max_Body_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Graceful_Shutdown_Timeout_Ms : Boolean := False;
+      Graceful_Shutdown_Timeout_Ms : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Server_Config_Server) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Server_Config_Server;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `server` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_Server_Config is record
+      Server : UARP.Models.Admin_Config_Server_Config_Server;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Server_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Server_Config;
+
+   --  `AdminConfigSSEConfigSSE` model.
+   type Admin_Config_SSE_Config_SSE is record
+      Heartbeat_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Watch_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Poll_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Max_Poll_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Reconnect_Hint_Ms : UARP.Types.Integer_Value := 0;
+      Run_Wait_Timeout_Sec : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_SSE_Config_SSE) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_SSE_Config_SSE;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `sse` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_SSE_Config is record
+      SSE : UARP.Models.Admin_Config_SSE_Config_SSE;
+   end record;
+
+   function To_JSON (Model : Admin_Config_SSE_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_SSE_Config;
+
+   --  `AdminConfigToolSecurityConfigToolSecurity` model.
+   type Admin_Config_Tool_Security_Config_Tool_Security is record
+      Default_Egress_Policy : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Egress_Allowlist_Per_Tenant : Boolean := False;
+      Egress_Allowlist_Per_Tenant : UARP.JSON_Support.JSON_Value;
+      Ssrf_Deny_Private_Ranges : Standard.Boolean := False;
+      Default_Tool_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Default_Tool_Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
+      Default_Tool_Max_Concurrency : UARP.Types.Integer_Value := 0;
+      Stdio_Inherit_Env : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Tool_Security_Config_Tool_Security) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Tool_Security_Config_Tool_Security;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `tool_security` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Tool_Security_Config is record
+      Tool_Security : UARP.Models.Admin_Config_Tool_Security_Config_Tool_Security;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Tool_Security_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Tool_Security_Config;
+
+   --  `AdminConfigWebhooksConfigWebhooks` model.
+   type Admin_Config_Webhooks_Config_Webhooks is record
+      Enabled : Standard.Boolean := False;
+      Max_Subscriptions_Per_Tenant : UARP.Types.Integer_Value := 0;
+      Delivery_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Max_Retry_Attempts : UARP.Types.Integer_Value := 0;
+      Require_HTTPS : Standard.Boolean := False;
+      Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Webhooks_Config_Webhooks) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Webhooks_Config_Webhooks;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `webhooks` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Webhooks_Config is record
+      Webhooks : UARP.Models.Admin_Config_Webhooks_Config_Webhooks;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Webhooks_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Webhooks_Config;
+
+   --  `AdminConfigWebhooksPolicyConfigPolicy` model.
+   type Admin_Config_Webhooks_Policy_Config_Policy is record
+      Ssrf_Check_At_Subscription : Standard.Boolean := False;
+      Stripe_Signature_Tolerance_Sec : UARP.Types.Integer_Value := 0;
+      Delivery_Max_Retries : UARP.Types.Integer_Value := 0;
+      Delivery_Backoff_Base_Ms : UARP.Types.Integer_Value := 0;
+      Delivery_Max_Window_Hours : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Webhooks_Policy_Config_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Webhooks_Policy_Config_Policy;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `policy` is the effective
+   --  section - platform defaults under the stored override (admin-config.ts getEffectiveSection);
+   --  keys measured present are required unless the handler marks them optional.
+   type Admin_Config_Webhooks_Policy_Config is record
+      Policy : UARP.Models.Admin_Config_Webhooks_Policy_Config_Policy;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Webhooks_Policy_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Webhooks_Policy_Config;
+
+   --  `AdminConfigWorkerPoolConfigWorkerPool` model.
+   type Admin_Config_Worker_Pool_Config_Worker_Pool is record
+      Max_Workers : UARP.Types.Integer_Value := 0;
+      Default_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Run_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Reconciliation_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Schedule_Max_Retries : UARP.Types.Integer_Value := 0;
+      Schedule_Base_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Queue_Size : Boolean := False;
+      Max_Queue_Size : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Worker_Pool_Config_Worker_Pool) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Worker_Pool_Config_Worker_Pool;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. `worker_pool` is the
+   --  effective section - platform defaults under the stored override (admin-config.ts
+   --  getEffectiveSection); keys measured present are required unless the handler marks them
+   --  optional.
+   type Admin_Config_Worker_Pool_Config is record
+      Worker_Pool : UARP.Models.Admin_Config_Worker_Pool_Config_Worker_Pool;
+   end record;
+
+   function To_JSON (Model : Admin_Config_Worker_Pool_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Config_Worker_Pool_Config;
+
    --  Values of `AdminDataExplorerRawKeysResponseKeyType`.
    --  A value the API introduces later decodes as Admin_Data_Explorer_Raw_Keys_Response_Key_Type_Unrecognized
    --  with the original text kept in Raw.
@@ -901,6 +1465,122 @@ package UARP.Models is
    function To_JSON (Model : Admin_Data_Explorer_Raw_Keys_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Data_Explorer_Raw_Keys_Response;
 
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Feature_Flags_Config is record
+      Has_Flags : Boolean := False;
+      Flags : UARP.JSON_Support.JSON_Value;
+   end record;
+
+   function To_JSON (Model : Admin_Feature_Flags_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Feature_Flags_Config;
+
+   --  `FounderIdentity` model.
+   type Founder_Identity is record
+      --  Empty string when unset - this read never omits the key.
+      Founder_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Founder_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Founder_Public_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Founder_Identity) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Founder_Identity;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Founder_Config is record
+      Kv : UARP.Models.Founder_Identity;
+      Env : UARP.Models.Founder_Identity;
+      Effective : UARP.Models.Founder_Identity;
+   end record;
+
+   function To_JSON (Model : Admin_Founder_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Founder_Config;
+
+   --  `Value` model.
+   type Value is record
+      Has_En : Boolean := False;
+      En : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Uk : Boolean := False;
+      Uk : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Value) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value;
+
+   --  `LandingConfigSectionPartnerLogo` model.
+   type Landing_Config_Section_Partner_Logo is record
+      Has_Slug : Boolean := False;
+      Slug : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_URL : Boolean := False;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Landing_Config_Section_Partner_Logo) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Landing_Config_Section_Partner_Logo;
+
+   --  `LandingConfigSectionPartner` model.
+   type Landing_Config_Section_Partner is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tagline : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tagline_Uk : Boolean := False;
+      Tagline_Uk : UARP.Types.Text := UARP.Types.Empty_Text;
+      Href : UARP.Types.Text := UARP.Types.Empty_Text;
+      Logo : UARP.Models.Landing_Config_Section_Partner_Logo;
+   end record;
+
+   function To_JSON (Model : Landing_Config_Section_Partner) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Landing_Config_Section_Partner;
+
+   package Landing_Config_Section_Partner_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Landing_Config_Section_Partner);
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; admin-config.ts
+   --  LandingConfig, defaults-projected so every key is present.
+   type Landing_Config_Section is record
+      Has_Public_Agent_Id : Boolean := False;
+      Public_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Texts : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Multilang_Enabled : Standard.Boolean := False;
+      Default_Locale : UARP.Types.Text := UARP.Types.Empty_Text;
+      Partners_Enabled : Standard.Boolean := False;
+      Has_Partners : Boolean := False;
+      Partners : UARP.Models.Landing_Config_Section_Partner_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Landing_Config_Section) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Landing_Config_Section;
+
+   --  Values of `AdminGetLandingConfigResponseSource`.
+   --  A value the API introduces later decodes as Admin_Get_Landing_Config_Response_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Get_Landing_Config_Response_Source_Kind is
+     (Admin_Get_Landing_Config_Response_Source_Kv,
+   Admin_Get_Landing_Config_Response_Source_None,
+   Admin_Get_Landing_Config_Response_Source_Unrecognized);
+
+   type Admin_Get_Landing_Config_Response_Source is record
+      Kind : Admin_Get_Landing_Config_Response_Source_Kind := Admin_Get_Landing_Config_Response_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Get_Landing_Config_Response_Source (Value : String) return Admin_Get_Landing_Config_Response_Source;
+   function To_Admin_Get_Landing_Config_Response_Source (Kind : Admin_Get_Landing_Config_Response_Source_Kind) return Admin_Get_Landing_Config_Response_Source;
+   function Image (Model : Admin_Get_Landing_Config_Response_Source) return String;
+   function To_JSON (Model : Admin_Get_Landing_Config_Response_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Landing_Config_Response_Source;
+
+   --  `AdminGetLandingConfigResponse` model.
+   type Admin_Get_Landing_Config_Response is record
+      Landing : UARP.Models.Landing_Config_Section;
+      Source : UARP.Models.Admin_Get_Landing_Config_Response_Source;
+      --  KV versionstamp; echo it as `expected_version` on PUT.
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Get_Landing_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Landing_Config_Response;
+
    --  `AdminGetReconciliationResponseReconciliation` model.
    type Admin_Get_Reconciliation_Response_Reconciliation is record
       Has_Period : Boolean := False;
@@ -920,6 +1600,105 @@ package UARP.Models is
 
    function To_JSON (Model : Admin_Get_Reconciliation_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Reconciliation_Response;
+
+   --  `AdminGetVoiceConfigResponseVoiceVariant1stt` model.
+   type Admin_Get_Voice_Config_Response_Voice_Variant1stt is record
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Get_Voice_Config_Response_Voice_Variant1stt) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Voice_Config_Response_Voice_Variant1stt;
+
+   --  `AdminGetVoiceConfigResponseVoiceVariant1tts` model.
+   type Admin_Get_Voice_Config_Response_Voice_Variant1tts is record
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Voice : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Get_Voice_Config_Response_Voice_Variant1tts) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Voice_Config_Response_Voice_Variant1tts;
+
+   --  `AdminGetVoiceConfigResponseVoiceVariant1` model.
+   type Admin_Get_Voice_Config_Response_Voice_Variant1 is record
+      Stt : UARP.Models.Admin_Get_Voice_Config_Response_Voice_Variant1stt;
+      Tts : UARP.Models.Admin_Get_Voice_Config_Response_Voice_Variant1tts;
+   end record;
+
+   function To_JSON (Model : Admin_Get_Voice_Config_Response_Voice_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Voice_Config_Response_Voice_Variant1;
+
+   --  `AdminGetVoiceConfigResponse` model.
+   type Admin_Get_Voice_Config_Response is record
+      Has_Voice : Boolean := False;
+      Voice : UARP.Models.Admin_Get_Voice_Config_Response_Voice_Variant1;
+      Source : UARP.Models.Admin_Get_Landing_Config_Response_Source;
+   end record;
+
+   function To_JSON (Model : Admin_Get_Voice_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Get_Voice_Config_Response;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Guardrails_Config is record
+      Has_Guardrails : Boolean := False;
+      Guardrails : UARP.JSON_Support.JSON_Value;
+   end record;
+
+   function To_JSON (Model : Admin_Guardrails_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Guardrails_Config;
+
+   --  Values of `AdminIntegrationsConfigIntegrationAuthType`.
+   --  A value the API introduces later decodes as Admin_Integrations_Config_Integration_Auth_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Integrations_Config_Integration_Auth_Type_Kind is
+     (Admin_Integrations_Config_Integration_Auth_Type_Oauth2,
+   Admin_Integrations_Config_Integration_Auth_Type_API_Key,
+   Admin_Integrations_Config_Integration_Auth_Type_None,
+   Admin_Integrations_Config_Integration_Auth_Type_Unrecognized);
+
+   type Admin_Integrations_Config_Integration_Auth_Type is record
+      Kind : Admin_Integrations_Config_Integration_Auth_Type_Kind := Admin_Integrations_Config_Integration_Auth_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Integrations_Config_Integration_Auth_Type (Value : String) return Admin_Integrations_Config_Integration_Auth_Type;
+   function To_Admin_Integrations_Config_Integration_Auth_Type (Kind : Admin_Integrations_Config_Integration_Auth_Type_Kind) return Admin_Integrations_Config_Integration_Auth_Type;
+   function Image (Model : Admin_Integrations_Config_Integration_Auth_Type) return String;
+   function To_JSON (Model : Admin_Integrations_Config_Integration_Auth_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Integrations_Config_Integration_Auth_Type;
+
+   --  `AdminIntegrationsConfigIntegration` model.
+   type Admin_Integrations_Config_Integration is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Icon : Boolean := False;
+      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Auth_Type : Boolean := False;
+      Auth_Type : UARP.Models.Admin_Integrations_Config_Integration_Auth_Type;
+      Has_Category : Boolean := False;
+      Category : UARP.Types.Text := UARP.Types.Empty_Text;
+      Enabled : Standard.Boolean := False;
+      Has_Beta : Boolean := False;
+      Beta : Standard.Boolean := False;
+      --  `kv` when an operator overrode the shipped default, `default` otherwise.
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Integrations_Config_Integration) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Integrations_Config_Integration;
+
+   package Admin_Integrations_Config_Integration_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Integrations_Config_Integration);
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Integrations_Config is record
+      Integrations : UARP.Models.Admin_Integrations_Config_Integration_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Admin_Integrations_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Integrations_Config;
 
    --  `AdminListToolsResponseTool` model.
    type Admin_List_Tools_Response_Tool is record
@@ -975,6 +1754,429 @@ package UARP.Models is
    function To_JSON (Model : Admin_List_Webhook_DLQ_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_List_Webhook_DLQ_Response;
 
+   --  Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+   --  seed answers.
+   type Admin_Model_Catalog_Model_Effective_Pricing is record
+      Input_Per_Million : UARP.Types.Float_Value := 0.0;
+      Output_Per_Million : UARP.Types.Float_Value := 0.0;
+      Cached_Input_Per_Million : UARP.Types.Float_Value := 0.0;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+      Layer : UARP.Types.Text := UARP.Types.Empty_Text;
+      Key : UARP.Types.Text := UARP.Types.Empty_Text;
+      Match : UARP.Types.Text := UARP.Types.Empty_Text;
+      Confidence : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Catalog_Model_Effective_Pricing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog_Model_Effective_Pricing;
+
+   --  `AdminModelCatalogModel` model.
+   type Admin_Model_Catalog_Model is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Display_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+      Max_Output_Tokens : UARP.Types.Integer_Value := 0;
+      Supports_Streaming : Standard.Boolean := False;
+      Supports_Tool_Calls : Standard.Boolean := False;
+      Supports_JSON_Mode : Standard.Boolean := False;
+      Has_Supports_Vision : Boolean := False;
+      Supports_Vision : Standard.Boolean := False;
+      Has_Tier : Boolean := False;
+      Tier : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+      --  seed answers.
+      Has_Effective_Pricing : Boolean := False;
+      Effective_Pricing : UARP.Models.Admin_Model_Catalog_Model_Effective_Pricing;
+      --  Read-only, computed on read (admin-config.ts withEffectiveEconomics); absent from PUT and
+      --  seed answers.
+      Has_Effective_Tier : Boolean := False;
+      Effective_Tier : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Catalog_Model) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog_Model;
+
+   package Admin_Model_Catalog_Model_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Model_Catalog_Model);
+
+   --  Values of `AdminModelCatalogSource`.
+   --  A value the API introduces later decodes as Admin_Model_Catalog_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Model_Catalog_Source_Kind is
+     (Admin_Model_Catalog_Source_Kv,
+   Admin_Model_Catalog_Source_Seed,
+   Admin_Model_Catalog_Source_Unrecognized);
+
+   type Admin_Model_Catalog_Source is record
+      Kind : Admin_Model_Catalog_Source_Kind := Admin_Model_Catalog_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Model_Catalog_Source (Value : String) return Admin_Model_Catalog_Source;
+   function To_Admin_Model_Catalog_Source (Kind : Admin_Model_Catalog_Source_Kind) return Admin_Model_Catalog_Source;
+   function Image (Model : Admin_Model_Catalog_Source) return String;
+   function To_JSON (Model : Admin_Model_Catalog_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog_Source;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. The stored catalogue or,
+   --  with `source: seed`, the built-in registry; rows carry computed
+   --  `effective_pricing`/`effective_tier`.
+   type Admin_Model_Catalog is record
+      Models : UARP.Models.Admin_Model_Catalog_Model_Vectors.Vector;
+      Source : UARP.Models.Admin_Model_Catalog_Source;
+      Count : UARP.Types.Integer_Value := 0;
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Catalog) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog;
+
+   --  `AdminModelCatalogSeedModel` model.
+   type Admin_Model_Catalog_Seed_Model is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Display_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+      Max_Output_Tokens : UARP.Types.Integer_Value := 0;
+      Supports_Streaming : Standard.Boolean := False;
+      Supports_Tool_Calls : Standard.Boolean := False;
+      Supports_JSON_Mode : Standard.Boolean := False;
+      Has_Supports_Vision : Boolean := False;
+      Supports_Vision : Standard.Boolean := False;
+      Has_Tier : Boolean := False;
+      Tier : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Catalog_Seed_Model) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog_Seed_Model;
+
+   package Admin_Model_Catalog_Seed_Model_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Model_Catalog_Seed_Model);
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; the built-in registry
+   --  merged with every configured provider's live model list - no `source`, no `version`, no
+   --  computed economics.
+   type Admin_Model_Catalog_Seed is record
+      Models : UARP.Models.Admin_Model_Catalog_Seed_Model_Vectors.Vector;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Catalog_Seed) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Catalog_Seed;
+
+   --  `AdminModelPricingListModel` model.
+   type Admin_Model_Pricing_List_Model is record
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Layer : UARP.Types.Text := UARP.Types.Empty_Text;
+      Input_Per_Million : UARP.Types.Float_Value := 0.0;
+      Output_Per_Million : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Pricing_List_Model) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Pricing_List_Model;
+
+   package Admin_Model_Pricing_List_Model_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Model_Pricing_List_Model);
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; billing/cost-estimator.ts
+   --  listAllPricing - a live in-memory view, `layer` says where each price comes from.
+   type Admin_Model_Pricing_List is record
+      Models : UARP.Models.Admin_Model_Pricing_List_Model_Vectors.Vector;
+      Count : UARP.Types.Integer_Value := 0;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Model_Pricing_List) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Model_Pricing_List;
+
+   --  `OAuthIdentityConfig` model.
+   type O_Auth_Identity_Config is record
+      Apple_Services_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Apple_Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Apple_Bundle_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Lower-cased hostnames. Empty means nothing is allowlisted.
+      Oauth_Return_To_Hosts : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : O_Auth_Identity_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return O_Auth_Identity_Config;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_O_Auth_Identity_Config is record
+      Kv : UARP.Models.O_Auth_Identity_Config;
+      Env : UARP.Models.O_Auth_Identity_Config;
+      Effective : UARP.Models.O_Auth_Identity_Config;
+   end record;
+
+   function To_JSON (Model : Admin_O_Auth_Identity_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_O_Auth_Identity_Config;
+
+   --  `AdminPlatformURLSConfigURLS` model.
+   type Admin_Platform_URLS_Config_URLS is record
+      Has_Public_Base_URL : Boolean := False;
+      Public_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Webhook_Base_URL : Boolean := False;
+      Webhook_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Platform_URLS_Config_URLS) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Platform_URLS_Config_URLS;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Platform_URLS_Config is record
+      Has_URLS : Boolean := False;
+      URLS : UARP.Models.Admin_Platform_URLS_Config_URLS;
+   end record;
+
+   function To_JSON (Model : Admin_Platform_URLS_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Platform_URLS_Config;
+
+   --  `AdminPricingConfigPricing` model.
+   type Admin_Pricing_Config_Pricing is record
+      Openai_Compat_Input : UARP.Types.Float_Value := 0.0;
+      Openai_Compat_Output : UARP.Types.Float_Value := 0.0;
+      Anthropic_Input : UARP.Types.Integer_Value := 0;
+      Anthropic_Output : UARP.Types.Float_Value := 0.0;
+      Anthropic_Thinking : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Admin_Pricing_Config_Pricing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Pricing_Config_Pricing;
+
+   --  Values of `AdminPricingConfigSource`.
+   --  A value the API introduces later decodes as Admin_Pricing_Config_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Pricing_Config_Source_Kind is
+     (Admin_Pricing_Config_Source_Kv,
+   Admin_Pricing_Config_Source_Config,
+   Admin_Pricing_Config_Source_Unrecognized);
+
+   type Admin_Pricing_Config_Source is record
+      Kind : Admin_Pricing_Config_Source_Kind := Admin_Pricing_Config_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Pricing_Config_Source (Value : String) return Admin_Pricing_Config_Source;
+   function To_Admin_Pricing_Config_Source (Kind : Admin_Pricing_Config_Source_Kind) return Admin_Pricing_Config_Source;
+   function Image (Model : Admin_Pricing_Config_Source) return String;
+   function To_JSON (Model : Admin_Pricing_Config_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Pricing_Config_Source;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. The whole stored override
+   --  when one exists, else the config defaults; `source` says which (admin-config.ts
+   --  getEffectivePricing).
+   type Admin_Pricing_Config is record
+      Pricing : UARP.Models.Admin_Pricing_Config_Pricing;
+      Source : UARP.Models.Admin_Pricing_Config_Source;
+   end record;
+
+   function To_JSON (Model : Admin_Pricing_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Pricing_Config;
+
+   --  `AdminProviderLastModelsSync` model.
+   type Admin_Provider_Last_Models_Sync is record
+      At_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Added : UARP.Types.Integer_Value := 0;
+      Live : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Admin_Provider_Last_Models_Sync) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Provider_Last_Models_Sync;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; admin.ts - a projection
+   --  over the custom provider, its settings and catalogue status; never the API key.
+   type Admin_Provider is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Canonical : UARP.Types.Text := UARP.Types.Empty_Text;
+      Default_Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+      Local : Standard.Boolean := False;
+      Enabled : Standard.Boolean := False;
+      Model_Allowlist : UARP.Types.Text_Vectors.Vector;
+      Is_Custom : Standard.Boolean := False;
+      Requires_API_Key : Standard.Boolean := False;
+      Models_In_Catalog : UARP.Types.Integer_Value := 0;
+      Catalog_Model_Ids : UARP.Types.Text_Vectors.Vector;
+      Has_Last_Models_Sync : Boolean := False;
+      Last_Models_Sync : UARP.Models.Admin_Provider_Last_Models_Sync;
+   end record;
+
+   function To_JSON (Model : Admin_Provider) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Provider;
+
+   --  Values of `AdminPutLandingConfigResponseSource`.
+   --  A value the API introduces later decodes as Admin_Put_Landing_Config_Response_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Put_Landing_Config_Response_Source_Kind is
+     (Admin_Put_Landing_Config_Response_Source_Kv,
+   Admin_Put_Landing_Config_Response_Source_Unrecognized);
+
+   type Admin_Put_Landing_Config_Response_Source is record
+      Kind : Admin_Put_Landing_Config_Response_Source_Kind := Admin_Put_Landing_Config_Response_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Put_Landing_Config_Response_Source (Value : String) return Admin_Put_Landing_Config_Response_Source;
+   function To_Admin_Put_Landing_Config_Response_Source (Kind : Admin_Put_Landing_Config_Response_Source_Kind) return Admin_Put_Landing_Config_Response_Source;
+   function Image (Model : Admin_Put_Landing_Config_Response_Source) return String;
+   function To_JSON (Model : Admin_Put_Landing_Config_Response_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Response_Source;
+
+   --  `AdminPutLandingConfigResponse` model.
+   type Admin_Put_Landing_Config_Response is record
+      Landing : UARP.Models.Landing_Config_Section;
+      Source : UARP.Models.Admin_Put_Landing_Config_Response_Source;
+      Updated : Standard.Boolean := False;
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Landing_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Response;
+
+   --  `AdminPutModelCatalogResponseModel` model.
+   type Admin_Put_Model_Catalog_Response_Model is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Display_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+      Max_Output_Tokens : UARP.Types.Integer_Value := 0;
+      Supports_Streaming : Standard.Boolean := False;
+      Supports_Tool_Calls : Standard.Boolean := False;
+      Supports_JSON_Mode : Standard.Boolean := False;
+      Has_Supports_Vision : Boolean := False;
+      Supports_Vision : Standard.Boolean := False;
+      Has_Tier : Boolean := False;
+      Tier : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Model_Catalog_Response_Model) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Model_Catalog_Response_Model;
+
+   package Admin_Put_Model_Catalog_Response_Model_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Put_Model_Catalog_Response_Model);
+
+   --  `AdminPutModelCatalogResponse` model.
+   type Admin_Put_Model_Catalog_Response is record
+      Models : UARP.Models.Admin_Put_Model_Catalog_Response_Model_Vectors.Vector;
+      Source : UARP.Models.Admin_Put_Landing_Config_Response_Source;
+      Count : UARP.Types.Integer_Value := 0;
+      Has_Version : Boolean := False;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Model_Catalog_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Model_Catalog_Response;
+
+   --  `AdminPutVoiceConfigResponseVoiceStt` model.
+   type Admin_Put_Voice_Config_Response_Voice_Stt is record
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Voice_Config_Response_Voice_Stt) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Voice_Config_Response_Voice_Stt;
+
+   --  `AdminPutVoiceConfigResponseVoiceTts` model.
+   type Admin_Put_Voice_Config_Response_Voice_Tts is record
+      Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Voice : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Voice_Config_Response_Voice_Tts) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Voice_Config_Response_Voice_Tts;
+
+   --  `AdminPutVoiceConfigResponseVoice` model.
+   type Admin_Put_Voice_Config_Response_Voice is record
+      Stt : UARP.Models.Admin_Put_Voice_Config_Response_Voice_Stt;
+      Tts : UARP.Models.Admin_Put_Voice_Config_Response_Voice_Tts;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Voice_Config_Response_Voice) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Voice_Config_Response_Voice;
+
+   --  `AdminPutVoiceConfigResponse` model.
+   type Admin_Put_Voice_Config_Response is record
+      Voice : UARP.Models.Admin_Put_Voice_Config_Response_Voice;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Put_Voice_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Voice_Config_Response;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Rate_Limits_Config is record
+      Has_Endpoints : Boolean := False;
+      Endpoints : UARP.JSON_Support.JSON_Value;
+   end record;
+
+   function To_JSON (Model : Admin_Rate_Limits_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Rate_Limits_Config;
+
+   --  Values of `AdminRegistrationConfigSetupStatus`.
+   --  A value the API introduces later decodes as Admin_Registration_Config_Setup_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Registration_Config_Setup_Status_Kind is
+     (Admin_Registration_Config_Setup_Status_In_Progress,
+   Admin_Registration_Config_Setup_Status_Live,
+   Admin_Registration_Config_Setup_Status_Unrecognized);
+
+   type Admin_Registration_Config_Setup_Status is record
+      Kind : Admin_Registration_Config_Setup_Status_Kind := Admin_Registration_Config_Setup_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Registration_Config_Setup_Status (Value : String) return Admin_Registration_Config_Setup_Status;
+   function To_Admin_Registration_Config_Setup_Status (Kind : Admin_Registration_Config_Setup_Status_Kind) return Admin_Registration_Config_Setup_Status;
+   function Image (Model : Admin_Registration_Config_Setup_Status) return String;
+   function To_JSON (Model : Admin_Registration_Config_Setup_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Registration_Config_Setup_Status;
+
+   --  `AdminRegistrationConfigWaitlistItem` model.
+   type Admin_Registration_Config_Waitlist_Item is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Email : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Registration_Config_Waitlist_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Registration_Config_Waitlist_Item;
+
+   package Admin_Registration_Config_Waitlist_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Admin_Registration_Config_Waitlist_Item);
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Registration_Config is record
+      Registration_Open : Standard.Boolean := False;
+      --  `free` when nothing is stored.
+      Default_Signup_Plan : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Empty means no domain restriction.
+      Allowed_Email_Domains : UARP.Types.Text_Vectors.Vector;
+      Setup_Status : UARP.Models.Admin_Registration_Config_Setup_Status;
+      --  Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
+      --  and this is the list it will name.
+      Missing_Required : UARP.Types.Text_Vectors.Vector;
+      --  How many tenants are waitlisted - ALL of them, counted by walking every KV page. It used to
+      --  be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
+      --  froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
+      --  admin uses to decide when to open registration, so it is the one that must be complete
+      --  rather than the roster.
+      Waitlist_Count : UARP.Types.Integer_Value := 0;
+      --  True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
+      --  and stays bounded at 1000; the count is not.
+      Has_Waitlist_Truncated : Boolean := False;
+      Waitlist_Truncated : Standard.Boolean := False;
+      --  Oldest first. Bounded at 1000 rows - check `waitlist_truncated` rather than taking
+      --  `waitlist.length` as the total.
+      Waitlist : UARP.Models.Admin_Registration_Config_Waitlist_Item_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Admin_Registration_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Registration_Config;
+
    --  `AdminReplayWebhookDLQResponse` model.
    type Admin_Replay_Webhook_DLQ_Response is record
       Success : Standard.Boolean := False;
@@ -985,6 +2187,257 @@ package UARP.Models is
 
    function To_JSON (Model : Admin_Replay_Webhook_DLQ_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Replay_Webhook_DLQ_Response;
+
+   --  What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+   type Admin_Smtp_Config_Kv is record
+      Has_Host : Boolean := False;
+      Host : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Port : Boolean := False;
+      Port : UARP.Types.Integer_Value := 0;
+      Has_User : Boolean := False;
+      User : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From_Name : Boolean := False;
+      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Whether a credential is stored. The password itself is never returned by any read.
+      Has_Has_Password : Boolean := False;
+      Has_Password : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Smtp_Config_Kv) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Kv;
+
+   --  What the environment supplies. `port` defaults to 465 when unset or unparseable.
+   type Admin_Smtp_Config_Env is record
+      Has_Host : Boolean := False;
+      Host : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Port : Boolean := False;
+      Port : UARP.Types.Integer_Value := 0;
+      Has_User : Boolean := False;
+      User : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From : Boolean := False;
+      From : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_From_Name : Boolean := False;
+      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Whether a credential is stored. The password itself is never returned by any read.
+      Has_Has_Password : Boolean := False;
+      Has_Password : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Smtp_Config_Env) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Env;
+
+   --  Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+   --  otherwise an environment host makes it `env`, otherwise `none`. Note the consequence -
+   --  saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+   --  inert.
+   --  A value the API introduces later decodes as Admin_Smtp_Config_Source_Unrecognized
+   --  with the original text kept in Raw.
+   type Admin_Smtp_Config_Source_Kind is
+     (Admin_Smtp_Config_Source_Kv,
+   Admin_Smtp_Config_Source_Env,
+   Admin_Smtp_Config_Source_None,
+   Admin_Smtp_Config_Source_Unrecognized);
+
+   type Admin_Smtp_Config_Source is record
+      Kind : Admin_Smtp_Config_Source_Kind := Admin_Smtp_Config_Source_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Admin_Smtp_Config_Source (Value : String) return Admin_Smtp_Config_Source;
+   function To_Admin_Smtp_Config_Source (Kind : Admin_Smtp_Config_Source_Kind) return Admin_Smtp_Config_Source;
+   function Image (Model : Admin_Smtp_Config_Source) return String;
+   function To_JSON (Model : Admin_Smtp_Config_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config_Source;
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Smtp_Config is record
+      --  What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
+      Kv : UARP.Models.Admin_Smtp_Config_Kv;
+      --  What the environment supplies. `port` defaults to 465 when unset or unparseable.
+      Env : UARP.Models.Admin_Smtp_Config_Env;
+      --  Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
+      --  otherwise an environment host makes it `env`, otherwise `none`. Note the consequence -
+      --  saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
+      --  inert.
+      Source : UARP.Models.Admin_Smtp_Config_Source;
+   end record;
+
+   function To_JSON (Model : Admin_Smtp_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config;
+
+   --  Values of `SpecPackageIncludedInPlan`.
+   --  A value the API introduces later decodes as Spec_Package_Included_In_Plan_Unrecognized
+   --  with the original text kept in Raw.
+   type Spec_Package_Included_In_Plan_Kind is
+     (Spec_Package_Included_In_Plan_Free,
+   Spec_Package_Included_In_Plan_Starter,
+   Spec_Package_Included_In_Plan_Pro,
+   Spec_Package_Included_In_Plan_Enterprise,
+   Spec_Package_Included_In_Plan_Unrecognized);
+
+   type Spec_Package_Included_In_Plan is record
+      Kind : Spec_Package_Included_In_Plan_Kind := Spec_Package_Included_In_Plan_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Spec_Package_Included_In_Plan (Value : String) return Spec_Package_Included_In_Plan;
+   function To_Spec_Package_Included_In_Plan (Kind : Spec_Package_Included_In_Plan_Kind) return Spec_Package_Included_In_Plan;
+   function Image (Model : Spec_Package_Included_In_Plan) return String;
+   function To_JSON (Model : Spec_Package_Included_In_Plan) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Included_In_Plan;
+
+   package Spec_Package_Included_In_Plan_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Spec_Package_Included_In_Plan);
+
+   --  Values of `SpecPackagePricingBillingInterval`.
+   --  A value the API introduces later decodes as Spec_Package_Pricing_Billing_Interval_Unrecognized
+   --  with the original text kept in Raw.
+   type Spec_Package_Pricing_Billing_Interval_Kind is
+     (Spec_Package_Pricing_Billing_Interval_Month,
+   Spec_Package_Pricing_Billing_Interval_Year,
+   Spec_Package_Pricing_Billing_Interval_Unrecognized);
+
+   type Spec_Package_Pricing_Billing_Interval is record
+      Kind : Spec_Package_Pricing_Billing_Interval_Kind := Spec_Package_Pricing_Billing_Interval_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Spec_Package_Pricing_Billing_Interval (Value : String) return Spec_Package_Pricing_Billing_Interval;
+   function To_Spec_Package_Pricing_Billing_Interval (Kind : Spec_Package_Pricing_Billing_Interval_Kind) return Spec_Package_Pricing_Billing_Interval;
+   function Image (Model : Spec_Package_Pricing_Billing_Interval) return String;
+   function To_JSON (Model : Spec_Package_Pricing_Billing_Interval) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing_Billing_Interval;
+
+   --  `SpecPackagePricing` model.
+   type Spec_Package_Pricing is record
+      Has_Price_Amount_Cents : Boolean := False;
+      Price_Amount_Cents : UARP.Types.Integer_Value := 0;
+      Has_Price_Currency : Boolean := False;
+      Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Billing_Interval : Boolean := False;
+      Billing_Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
+      --  Never returned by the tenant-facing read. Its presence is what protects the package from a
+      --  silent drop.
+      Has_Stripe_Price_Id : Boolean := False;
+      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Spec_Package_Pricing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing;
+
+   --  `SpecPackageProgramNav` model.
+   type Spec_Package_Program_Nav is record
+      Label : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Icon : Boolean := False;
+      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Spec_Package_Program_Nav) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Nav;
+
+   --  `SpecPackageProgramPage` model.
+   type Spec_Package_Program_Page is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Route : Boolean := False;
+      Route : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Spec_Package_Program_Page) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Page;
+
+   package Spec_Package_Program_Page_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Spec_Package_Program_Page);
+
+   --  `SpecPackageProgram` model.
+   type Spec_Package_Program is record
+      Nav : UARP.Models.Spec_Package_Program_Nav;
+      Pages : UARP.Models.Spec_Package_Program_Page_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Spec_Package_Program) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program;
+
+   --  `SpecPackage` model.
+   type Spec_Package is record
+      --  Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
+      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Description : Boolean := False;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Category : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
+      --  `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
+      --  fails later.
+      Included_Specs : UARP.Types.Text_Vectors.Vector;
+      Has_Included_In_Plans : Boolean := False;
+      Included_In_Plans : UARP.Models.Spec_Package_Included_In_Plan_Vectors.Vector;
+      Has_Pricing : Boolean := False;
+      Pricing : UARP.Models.Spec_Package_Pricing;
+      Has_Display_Order : Boolean := False;
+      Display_Order : UARP.Types.Integer_Value := 0;
+      Has_Archived : Boolean := False;
+      Archived : Standard.Boolean := False;
+      Has_Program : Boolean := False;
+      Program : UARP.Models.Spec_Package_Program;
+      --  Stamped by the server on every write; not read from the body.
+      Has_Updated_At : Boolean := False;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Spec_Package) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package;
+
+   package Spec_Package_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Spec_Package);
+
+   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
+   type Admin_Spec_Packages_List is record
+      Packages : UARP.Models.Spec_Package_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Admin_Spec_Packages_List) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Spec_Packages_List;
+
+   --  `AdminStripeConfigStripe` model.
+   type Admin_Stripe_Config_Stripe is record
+      Enabled : Standard.Boolean := False;
+      Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Secret_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+      Webhook_Secret : UARP.Types.Text := UARP.Types.Empty_Text;
+      Publishable_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Starter : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Pro : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Enterprise : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Admin_Stripe_Config_Stripe) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Stripe_Config_Stripe;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z. Secrets are redacted to
+   --  their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
+   type Admin_Stripe_Config is record
+      Stripe : UARP.Models.Admin_Stripe_Config_Stripe;
+      Has_Secret_Key : Standard.Boolean := False;
+      Has_Webhook_Secret : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Admin_Stripe_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Stripe_Config;
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z; provider/model ? voice
+   --  ids; `defaults` is always empty, `effective` equals `override` (admin-config.ts
+   --  handleGetVoicePresets).
+   type Admin_Voice_Presets is record
+      Defaults : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Override : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+      Effective : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Admin_Voice_Presets) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Voice_Presets;
 
    --  Values of `AgentSpecPermissionsGrantedItemGrantedBy`.
    --  A value the API introduces later decodes as Agent_Spec_Permissions_Granted_Item_Granted_By_Unrecognized
@@ -1320,6 +2773,9 @@ package UARP.Models is
 
    --  `AgentPublicConfig` model.
    type Agent_Public_Config is record
+      --  One of the three switches that make the agent reachable without a key (public.ts
+      --  loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+      --  `active` (or absent). Any one of them alone does nothing visible.
       Enabled : Standard.Boolean := False;
       Has_System_Prompt : Boolean := False;
       System_Prompt : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -1505,7 +2961,13 @@ package UARP.Models is
       --  Every knowledge base linked to the agent. `search_kb` searches all of them by default.
       Has_Knowledge_Base_Ids : Boolean := False;
       Knowledge_Base_Ids : UARP.Types.Text_Vectors.Vector;
-      --  Who can reach the agent. The publication screen is built on this field.
+      --  Who can reach the agent. The publication screen is built on this field - but `public` alone
+      --  does not open the agent to the world: the anonymous routes (`GET /public/agents/{agentId}`,
+      --  public sessions) answer only when `visibility` is `public` AND `public_config.enabled` is
+      --  true AND `status` is `active` (public.ts loadPublicAgent). A client that shows "anyone with
+      --  the link can reach this agent" on `visibility` alone shows it a step too early. Measured
+      --  2026-09-10 on a real tenant: the one agent with both switches answered 200 without a key,
+      --  every other `public` one 404.
       Has_Visibility : Boolean := False;
       Visibility : UARP.Models.Agent_Update_Visibility;
       --  Governance state, distinct from a run's status.
@@ -2017,6 +3479,41 @@ package UARP.Models is
    function To_JSON (Model : Agent_Tool_Override_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Tool_Override_Update;
 
+   --  Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+   --  ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+   --  }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+   --  alone does not make the agent reachable - see `Agent.visibility`.
+   type Agent_Update_Public_Config is record
+      --  One of the three switches that make the agent reachable without a key (public.ts
+      --  loadPublicAgent): `visibility` must be `public`, this must be true, and `status` must be
+      --  `active` (or absent). Any one of them alone does nothing visible.
+      Enabled : Standard.Boolean := False;
+      Has_System_Prompt : Boolean := False;
+      System_Prompt : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Greeting : Boolean := False;
+      Greeting : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Allowed_Tools : Boolean := False;
+      Allowed_Tools : UARP.Types.Text_Vectors.Vector;
+      Has_Max_Messages_Per_Session : Boolean := False;
+      Max_Messages_Per_Session : UARP.Types.Integer_Value := 0;
+      Has_Max_Concurrent_Sessions : Boolean := False;
+      Max_Concurrent_Sessions : UARP.Types.Integer_Value := 0;
+      Has_Rate_Limit_Sessions_Per_Ip : Boolean := False;
+      Rate_Limit_Sessions_Per_Ip : UARP.Types.Integer_Value := 0;
+      Has_Rate_Limit_Messages_Per_Min : Boolean := False;
+      Rate_Limit_Messages_Per_Min : UARP.Types.Integer_Value := 0;
+      --  Messages per UTC day per visitor identity (a hash of IP + anonymous visitor id). Enforced
+      --  ONLY for the featured landing agent - the one `GET /admin/config/landing` names as
+      --  `public_agent_id`; every other public agent keeps its per-session caps and ignores this.
+      --  Over the cap the server answers 429 with `code: "DAILY_LIMIT"`. Unset means the platform
+      --  default of 15.
+      Has_Daily_Message_Limit : Boolean := False;
+      Daily_Message_Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Agent_Update_Public_Config) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Update_Public_Config;
+
    --  Body for `PUT /api/v1/agents/{agentId}`. Every field optional - an omitted field means NO
    --  CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model
    --  lockdown).
@@ -2056,6 +3553,12 @@ package UARP.Models is
       Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Visibility : Boolean := False;
       Visibility : UARP.Models.Agent_Update_Visibility;
+      --  Partial: the handler merges it one level over the stored `public_config` (agents.ts, `{
+      --  ...existing.public_config, ...body.public_config }`), so `{ public_config: { enabled: true }
+      --  }` flips the switch and keeps the greeting, limits and allowed tools. Sending `enabled`
+      --  alone does not make the agent reachable - see `Agent.visibility`.
+      Has_Public_Config : Boolean := False;
+      Public_Config : UARP.Models.Agent_Update_Public_Config;
    end record;
 
    function To_JSON (Model : Agent_Update) return UARP.JSON_Support.JSON_Value;
@@ -3761,6 +5264,30 @@ package UARP.Models is
    function To_JSON (Model : Complete_O_Auth_Login_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Complete_O_Auth_Login_Response;
 
+   --  `ConformityReportSection` model.
+   type Conformity_Report_Section is record
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Content : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Conformity_Report_Section) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Conformity_Report_Section;
+
+   package Conformity_Report_Section_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Conformity_Report_Section);
+
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z;
+   --  api/lib/conformity-report.ts - three sections, plus the same content as markdown.
+   --  `?format=markdown` answers text/markdown instead.
+   type Conformity_Report is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Sections : UARP.Models.Conformity_Report_Section_Vectors.Vector;
+      Markdown : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Conformity_Report) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Conformity_Report;
+
    --  `ConnectorConfigField` model.
    type Connector_Config_Field is record
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -4271,6 +5798,27 @@ package UARP.Models is
    function To_JSON (Model : Core_Memory_Block) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Core_Memory_Block;
 
+   --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z;
+   --  billing/cost-reconciliation.ts ReconciliationResult - `truncated` and `details` conditional.
+   type Cost_Reconciliation_Result is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Period : UARP.Types.Text := UARP.Types.Empty_Text;
+      Runs_Total_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Usage_Tracker_Cost_Usd : UARP.Types.Float_Value := 0.0;
+      Drift_Usd : UARP.Types.Float_Value := 0.0;
+      Drift_Pct : UARP.Types.Float_Value := 0.0;
+      Runs_Scanned : UARP.Types.Integer_Value := 0;
+      Runs_Missing_Cost : UARP.Types.Integer_Value := 0;
+      Status : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Details : Boolean := False;
+      Details : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Truncated : Boolean := False;
+      Truncated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Cost_Reconciliation_Result) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Cost_Reconciliation_Result;
+
    --  `CreateA2ATaskRequestMessage` model.
    type Create_A2A_Task_Request_Message is record
       Has_Role : Boolean := False;
@@ -4316,6 +5864,54 @@ package UARP.Models is
 
    function To_JSON (Model : Create_Admin_Blog_Post_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Blog_Post_Response;
+
+   --  Only when the body sent it.
+   type Create_Admin_Provider_Response_Default_Capabilities is record
+      Has_Supports_Tool_Calls : Boolean := False;
+      Supports_Tool_Calls : Standard.Boolean := False;
+      Has_Supports_Streaming : Boolean := False;
+      Supports_Streaming : Standard.Boolean := False;
+      Has_Supports_JSON_Mode : Boolean := False;
+      Supports_JSON_Mode : Standard.Boolean := False;
+      Has_Supports_Vision : Boolean := False;
+      Supports_Vision : Standard.Boolean := False;
+      Has_Max_Context_Tokens : Boolean := False;
+      Max_Context_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Max_Output_Tokens : Boolean := False;
+      Max_Output_Tokens : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Create_Admin_Provider_Response_Default_Capabilities) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Provider_Response_Default_Capabilities;
+
+   --  `CreateAdminProviderResponse` model.
+   type Create_Admin_Provider_Response is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Default_Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+      Is_Custom : Standard.Boolean := False;
+      Requires_API_Key : Standard.Boolean := False;
+      Canonical : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Only when the body sent it.
+      Has_Default_Capabilities : Boolean := False;
+      Default_Capabilities : UARP.Models.Create_Admin_Provider_Response_Default_Capabilities;
+   end record;
+
+   function To_JSON (Model : Create_Admin_Provider_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Provider_Response;
+
+   --  `CreateAdminSpecPackageStripePriceResponse` model.
+   type Create_Admin_Spec_Package_Stripe_Price_Response is record
+      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Stripe_Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Amount_Cents : UARP.Types.Integer_Value := 0;
+      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+      Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
+   end record;
+
+   function To_JSON (Model : Create_Admin_Spec_Package_Stripe_Price_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Spec_Package_Stripe_Price_Response;
 
    --  `CreateAgentBookmarkRequest` model.
    type Create_Agent_Bookmark_Request is record
@@ -4753,25 +6349,6 @@ package UARP.Models is
 
    function To_JSON (Model : Create_My_Tenant_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_My_Tenant_Response;
-
-   --  Values of `SpecPackagePricingBillingInterval`.
-   --  A value the API introduces later decodes as Spec_Package_Pricing_Billing_Interval_Unrecognized
-   --  with the original text kept in Raw.
-   type Spec_Package_Pricing_Billing_Interval_Kind is
-     (Spec_Package_Pricing_Billing_Interval_Month,
-   Spec_Package_Pricing_Billing_Interval_Year,
-   Spec_Package_Pricing_Billing_Interval_Unrecognized);
-
-   type Spec_Package_Pricing_Billing_Interval is record
-      Kind : Spec_Package_Pricing_Billing_Interval_Kind := Spec_Package_Pricing_Billing_Interval_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Spec_Package_Pricing_Billing_Interval (Value : String) return Spec_Package_Pricing_Billing_Interval;
-   function To_Spec_Package_Pricing_Billing_Interval (Kind : Spec_Package_Pricing_Billing_Interval_Kind) return Spec_Package_Pricing_Billing_Interval;
-   function Image (Model : Spec_Package_Pricing_Billing_Interval) return String;
-   function To_JSON (Model : Spec_Package_Pricing_Billing_Interval) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing_Billing_Interval;
 
    --  `CreatePlanStripePriceRequest` model.
    type Create_Plan_Stripe_Price_Request is record
@@ -5222,30 +6799,6 @@ package UARP.Models is
 
    function To_JSON (Model : Create_Workspace_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Workspace_Request;
-
-   --  Values of `SpecPackageIncludedInPlan`.
-   --  A value the API introduces later decodes as Spec_Package_Included_In_Plan_Unrecognized
-   --  with the original text kept in Raw.
-   type Spec_Package_Included_In_Plan_Kind is
-     (Spec_Package_Included_In_Plan_Free,
-   Spec_Package_Included_In_Plan_Starter,
-   Spec_Package_Included_In_Plan_Pro,
-   Spec_Package_Included_In_Plan_Enterprise,
-   Spec_Package_Included_In_Plan_Unrecognized);
-
-   type Spec_Package_Included_In_Plan is record
-      Kind : Spec_Package_Included_In_Plan_Kind := Spec_Package_Included_In_Plan_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Spec_Package_Included_In_Plan (Value : String) return Spec_Package_Included_In_Plan;
-   function To_Spec_Package_Included_In_Plan (Kind : Spec_Package_Included_In_Plan_Kind) return Spec_Package_Included_In_Plan;
-   function Image (Model : Spec_Package_Included_In_Plan) return String;
-   function To_JSON (Model : Spec_Package_Included_In_Plan) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Included_In_Plan;
-
-   package Spec_Package_Included_In_Plan_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package_Included_In_Plan);
 
    --  `TenantQuotas` model.
    type Tenant_Quotas is record
@@ -6248,7 +7801,6 @@ package UARP.Models is
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
       Title : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Types.Integer_Value := 0;
-      Has_Detail : Boolean := False;
       Detail : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Request ID for tracing
       Has_Correlation_Id : Boolean := False;
@@ -6728,14 +8280,14 @@ package UARP.Models is
    function To_JSON (Model : File_Record) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return File_Record;
 
-   --  `Value3` model.
-   type Value3 is record
+   --  `Value4` model.
+   type Value4 is record
       X : UARP.Types.Float_Value := 0.0;
       Y : UARP.Types.Float_Value := 0.0;
    end record;
 
-   function To_JSON (Model : Value3) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value3;
+   function To_JSON (Model : Value4) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value4;
 
    --  `FleetLayoutEdge` model.
    type Fleet_Layout_Edge is record
@@ -6829,14 +8381,14 @@ package UARP.Models is
    function To_JSON (Model : Fleet_Layout) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fleet_Layout;
 
-   --  `Value2` model.
-   type Value2 is record
+   --  `Value3` model.
+   type Value3 is record
       X : UARP.Types.Float_Value := 0.0;
       Y : UARP.Types.Float_Value := 0.0;
    end record;
 
-   function To_JSON (Model : Value2) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value2;
+   function To_JSON (Model : Value3) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value3;
 
    --  `FleetLayoutUpdateEdge` model.
    type Fleet_Layout_Update_Edge is record
@@ -6907,17 +8459,6 @@ package UARP.Models is
    function To_JSON (Model : Fleet_Layout_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fleet_Layout_Update;
 
-   --  `FounderIdentity` model.
-   type Founder_Identity is record
-      --  Empty string when unset - this read never omits the key.
-      Founder_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Founder_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Founder_Public_Key : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Founder_Identity) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Founder_Identity;
-
    --  `FriaRight` model.
    type Fria_Right is record
       Right : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -6985,25 +8526,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Admin_Disabled_Tools_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Disabled_Tools_Response;
 
-   --  `GetAdminFounderConfigResponse` model.
-   type Get_Admin_Founder_Config_Response is record
-      Kv : UARP.Models.Founder_Identity;
-      Env : UARP.Models.Founder_Identity;
-      Effective : UARP.Models.Founder_Identity;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Founder_Config_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Founder_Config_Response;
-
-   --  `GetAdminGuardrailsResponse` model.
-   type Get_Admin_Guardrails_Response is record
-      Has_Guardrails : Boolean := False;
-      Guardrails : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Guardrails_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Guardrails_Response;
-
    --  Values of `GetAdminIntegrationOAuthProviderProvider`.
    --  A value the API introduces later decodes as Get_Admin_Integration_O_Auth_Provider_Provider_Unrecognized
    --  with the original text kept in Raw.
@@ -7056,58 +8578,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Admin_Integration_O_Auth_Provider_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Integration_O_Auth_Provider_Response;
 
-   --  Values of `GetAdminIntegrationsResponseIntegrationAuthType`.
-   --  A value the API introduces later decodes as Get_Admin_Integrations_Response_Integration_Auth_Type_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Admin_Integrations_Response_Integration_Auth_Type_Kind is
-     (Get_Admin_Integrations_Response_Integration_Auth_Type_Oauth2,
-   Get_Admin_Integrations_Response_Integration_Auth_Type_API_Key,
-   Get_Admin_Integrations_Response_Integration_Auth_Type_None,
-   Get_Admin_Integrations_Response_Integration_Auth_Type_Unrecognized);
-
-   type Get_Admin_Integrations_Response_Integration_Auth_Type is record
-      Kind : Get_Admin_Integrations_Response_Integration_Auth_Type_Kind := Get_Admin_Integrations_Response_Integration_Auth_Type_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Admin_Integrations_Response_Integration_Auth_Type (Value : String) return Get_Admin_Integrations_Response_Integration_Auth_Type;
-   function To_Get_Admin_Integrations_Response_Integration_Auth_Type (Kind : Get_Admin_Integrations_Response_Integration_Auth_Type_Kind) return Get_Admin_Integrations_Response_Integration_Auth_Type;
-   function Image (Model : Get_Admin_Integrations_Response_Integration_Auth_Type) return String;
-   function To_JSON (Model : Get_Admin_Integrations_Response_Integration_Auth_Type) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Integrations_Response_Integration_Auth_Type;
-
-   --  `GetAdminIntegrationsResponseIntegration` model.
-   type Get_Admin_Integrations_Response_Integration is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Icon : Boolean := False;
-      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Auth_Type : Boolean := False;
-      Auth_Type : UARP.Models.Get_Admin_Integrations_Response_Integration_Auth_Type;
-      Has_Category : Boolean := False;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      Enabled : Standard.Boolean := False;
-      Has_Beta : Boolean := False;
-      Beta : Standard.Boolean := False;
-      --  `kv` when an operator overrode the shipped default, `default` otherwise.
-      Has_Source : Boolean := False;
-      Source : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Integrations_Response_Integration) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Integrations_Response_Integration;
-
-   package Get_Admin_Integrations_Response_Integration_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Admin_Integrations_Response_Integration);
-
-   --  `GetAdminIntegrationsResponse` model.
-   type Get_Admin_Integrations_Response is record
-      Integrations : UARP.Models.Get_Admin_Integrations_Response_Integration_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Integrations_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Integrations_Response;
-
    --  `GetAdminLLMDefaultsResponseProvider` model.
    type Get_Admin_LLM_Defaults_Response_Provider is record
       Provider_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7143,28 +8613,6 @@ package UARP.Models is
    function To_JSON (Model : Get_Admin_LLM_Defaults_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_LLM_Defaults_Response;
 
-   --  `OAuthIdentityConfig` model.
-   type O_Auth_Identity_Config is record
-      Apple_Services_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Apple_Team_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Apple_Bundle_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Lower-cased hostnames. Empty means nothing is allowlisted.
-      Oauth_Return_To_Hosts : UARP.Types.Text_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : O_Auth_Identity_Config) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return O_Auth_Identity_Config;
-
-   --  `GetAdminOAuthIdentityConfigResponse` model.
-   type Get_Admin_O_Auth_Identity_Config_Response is record
-      Kv : UARP.Models.O_Auth_Identity_Config;
-      Env : UARP.Models.O_Auth_Identity_Config;
-      Effective : UARP.Models.O_Auth_Identity_Config;
-   end record;
-
-   function To_JSON (Model : Get_Admin_O_Auth_Identity_Config_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_O_Auth_Identity_Config_Response;
-
    --  `GetAdminPlansResponsePlan` model.
    type Get_Admin_Plans_Response_Plan is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7186,237 +8634,6 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Admin_Plans_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Plans_Response;
-
-   --  `live` is a one-way latch; closing registration afterwards does not undo it.
-   --  A value the API introduces later decodes as Setup_State_Response_State_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type Setup_State_Response_State_Status_Kind is
-     (Setup_State_Response_State_Status_In_Progress,
-   Setup_State_Response_State_Status_Live,
-   Setup_State_Response_State_Status_Unrecognized);
-
-   type Setup_State_Response_State_Status is record
-      Kind : Setup_State_Response_State_Status_Kind := Setup_State_Response_State_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Setup_State_Response_State_Status (Value : String) return Setup_State_Response_State_Status;
-   function To_Setup_State_Response_State_Status (Kind : Setup_State_Response_State_Status_Kind) return Setup_State_Response_State_Status;
-   function Image (Model : Setup_State_Response_State_Status) return String;
-   function To_JSON (Model : Setup_State_Response_State_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Setup_State_Response_State_Status;
-
-   --  `GetAdminRegistrationConfigResponseWaitlistItem` model.
-   type Get_Admin_Registration_Config_Response_Waitlist_Item is record
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Email : UARP.Types.Text := UARP.Types.Empty_Text;
-      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Registration_Config_Response_Waitlist_Item) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Registration_Config_Response_Waitlist_Item;
-
-   package Get_Admin_Registration_Config_Response_Waitlist_Item_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Get_Admin_Registration_Config_Response_Waitlist_Item);
-
-   --  `GetAdminRegistrationConfigResponse` model.
-   type Get_Admin_Registration_Config_Response is record
-      Registration_Open : Standard.Boolean := False;
-      --  `free` when nothing is stored.
-      Default_Signup_Plan : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Empty means no domain restriction.
-      Allowed_Email_Domains : UARP.Types.Text_Vectors.Vector;
-      Setup_Status : UARP.Models.Setup_State_Response_State_Status;
-      --  Setup steps still outstanding. Non-empty means an attempt to open registration is refused,
-      --  and this is the list it will name.
-      Missing_Required : UARP.Types.Text_Vectors.Vector;
-      --  How many tenants are waitlisted - ALL of them, counted by walking every KV page. It used to
-      --  be `waitlist.length`, from a single unpaginated read, so past a thousand signups the number
-      --  froze at exactly 1000 with nothing saying it had been cut (ADM-04). This is the number an
-      --  admin uses to decide when to open registration, so it is the one that must be complete
-      --  rather than the roster.
-      Waitlist_Count : UARP.Types.Integer_Value := 0;
-      --  True when `waitlist` holds fewer rows than `waitlist_count`. The roster is a display list
-      --  and stays bounded at 1000; the count is not.
-      Has_Waitlist_Truncated : Boolean := False;
-      Waitlist_Truncated : Standard.Boolean := False;
-      --  Oldest first. Bounded at 1000 rows - check `waitlist_truncated` rather than taking
-      --  `waitlist.length` as the total.
-      Waitlist : UARP.Models.Get_Admin_Registration_Config_Response_Waitlist_Item_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Registration_Config_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Registration_Config_Response;
-
-   --  What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-   type Get_Admin_Smtp_Config_Response_Kv is record
-      Has_Host : Boolean := False;
-      Host : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Port : Boolean := False;
-      Port : UARP.Types.Integer_Value := 0;
-      Has_User : Boolean := False;
-      User : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_From : Boolean := False;
-      From : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_From_Name : Boolean := False;
-      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Whether a credential is stored. The password itself is never returned by any read.
-      Has_Has_Password : Boolean := False;
-      Has_Password : Standard.Boolean := False;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Smtp_Config_Response_Kv) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Smtp_Config_Response_Kv;
-
-   --  What the environment supplies. `port` defaults to 465 when unset or unparseable.
-   type Get_Admin_Smtp_Config_Response_Env is record
-      Has_Host : Boolean := False;
-      Host : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Port : Boolean := False;
-      Port : UARP.Types.Integer_Value := 0;
-      Has_User : Boolean := False;
-      User : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_From : Boolean := False;
-      From : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_From_Name : Boolean := False;
-      From_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Whether a credential is stored. The password itself is never returned by any read.
-      Has_Has_Password : Boolean := False;
-      Has_Password : Standard.Boolean := False;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Smtp_Config_Response_Env) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Smtp_Config_Response_Env;
-
-   --  Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-   --  otherwise an environment host makes it `env`, otherwise `none`. Note the consequence -
-   --  saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-   --  inert.
-   --  A value the API introduces later decodes as Get_Admin_Smtp_Config_Response_Source_Unrecognized
-   --  with the original text kept in Raw.
-   type Get_Admin_Smtp_Config_Response_Source_Kind is
-     (Get_Admin_Smtp_Config_Response_Source_Kv,
-   Get_Admin_Smtp_Config_Response_Source_Env,
-   Get_Admin_Smtp_Config_Response_Source_None,
-   Get_Admin_Smtp_Config_Response_Source_Unrecognized);
-
-   type Get_Admin_Smtp_Config_Response_Source is record
-      Kind : Get_Admin_Smtp_Config_Response_Source_Kind := Get_Admin_Smtp_Config_Response_Source_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Get_Admin_Smtp_Config_Response_Source (Value : String) return Get_Admin_Smtp_Config_Response_Source;
-   function To_Get_Admin_Smtp_Config_Response_Source (Kind : Get_Admin_Smtp_Config_Response_Source_Kind) return Get_Admin_Smtp_Config_Response_Source;
-   function Image (Model : Get_Admin_Smtp_Config_Response_Source) return String;
-   function To_JSON (Model : Get_Admin_Smtp_Config_Response_Source) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Smtp_Config_Response_Source;
-
-   --  `GetAdminSmtpConfigResponse` model.
-   type Get_Admin_Smtp_Config_Response is record
-      --  What is stored. Empty strings and a `port` of 0 mean nothing has been saved for that field.
-      Kv : UARP.Models.Get_Admin_Smtp_Config_Response_Kv;
-      --  What the environment supplies. `port` defaults to 465 when unset or unparseable.
-      Env : UARP.Models.Get_Admin_Smtp_Config_Response_Env;
-      --  Which layer is in force, decided by the stored HOST alone: a saved host makes it `kv`,
-      --  otherwise an environment host makes it `env`, otherwise `none`. Note the consequence -
-      --  saving a user or a password WITHOUT a host leaves `source` at `env` and the stored fields
-      --  inert.
-      Source : UARP.Models.Get_Admin_Smtp_Config_Response_Source;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Smtp_Config_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Smtp_Config_Response;
-
-   --  `SpecPackagePricing` model.
-   type Spec_Package_Pricing is record
-      Has_Price_Amount_Cents : Boolean := False;
-      Price_Amount_Cents : UARP.Types.Integer_Value := 0;
-      Has_Price_Currency : Boolean := False;
-      Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Billing_Interval : Boolean := False;
-      Billing_Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
-      --  Never returned by the tenant-facing read. Its presence is what protects the package from a
-      --  silent drop.
-      Has_Stripe_Price_Id : Boolean := False;
-      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Pricing) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing;
-
-   --  `SpecPackageProgramNav` model.
-   type Spec_Package_Program_Nav is record
-      Label : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Icon : Boolean := False;
-      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program_Nav) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Nav;
-
-   --  `SpecPackageProgramPage` model.
-   type Spec_Package_Program_Page is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Title : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Route : Boolean := False;
-      Route : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program_Page) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Page;
-
-   package Spec_Package_Program_Page_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package_Program_Page);
-
-   --  `SpecPackageProgram` model.
-   type Spec_Package_Program is record
-      Nav : UARP.Models.Spec_Package_Program_Nav;
-      Pages : UARP.Models.Spec_Package_Program_Page_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program;
-
-   --  `SpecPackage` model.
-   type Spec_Package is record
-      --  Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-      --  `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
-      --  fails later.
-      Included_Specs : UARP.Types.Text_Vectors.Vector;
-      Has_Included_In_Plans : Boolean := False;
-      Included_In_Plans : UARP.Models.Spec_Package_Included_In_Plan_Vectors.Vector;
-      Has_Pricing : Boolean := False;
-      Pricing : UARP.Models.Spec_Package_Pricing;
-      Has_Display_Order : Boolean := False;
-      Display_Order : UARP.Types.Integer_Value := 0;
-      Has_Archived : Boolean := False;
-      Archived : Standard.Boolean := False;
-      Has_Program : Boolean := False;
-      Program : UARP.Models.Spec_Package_Program;
-      --  Stamped by the server on every write; not read from the body.
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package;
-
-   package Spec_Package_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package);
-
-   --  `GetAdminSpecPackagesResponse` model.
-   type Get_Admin_Spec_Packages_Response is record
-      Packages : UARP.Models.Spec_Package_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Get_Admin_Spec_Packages_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Spec_Packages_Response;
 
    --  `GetAdminStatsResponse` model.
    type Get_Admin_Stats_Response is record
@@ -7632,16 +8849,16 @@ package UARP.Models is
    function To_JSON (Model : Get_Agent_Traffic_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Traffic_Response;
 
-   --  `Value4` model.
-   type Value4 is record
+   --  `Value5` model.
+   type Value5 is record
       Has_From : Boolean := False;
       From : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
       Has_To : Boolean := False;
       To : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
-   function To_JSON (Model : Value4) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value4;
+   function To_JSON (Model : Value5) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value5;
 
    --  `GetAgentVersionDiffResponse` model.
    type Get_Agent_Version_Diff_Response is record
@@ -7816,15 +9033,6 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Data_Explorer_Value_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Data_Explorer_Value_Response;
-
-   --  `GetFeatureFlagsResponse` model.
-   type Get_Feature_Flags_Response is record
-      Has_Flags : Boolean := False;
-      Flags : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Get_Feature_Flags_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Feature_Flags_Response;
 
    --  `GovernanceLedgerEntry` model.
    type Governance_Ledger_Entry is record
@@ -8315,26 +9523,6 @@ package UARP.Models is
    function To_JSON (Model : Get_My_Head_Agent_Template_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response;
 
-   --  `GetPlatformURLSResponseURLS` model.
-   type Get_Platform_URLS_Response_URLS is record
-      Has_Public_Base_URL : Boolean := False;
-      Public_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Webhook_Base_URL : Boolean := False;
-      Webhook_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Get_Platform_URLS_Response_URLS) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Platform_URLS_Response_URLS;
-
-   --  `GetPlatformURLSResponse` model.
-   type Get_Platform_URLS_Response is record
-      Has_URLS : Boolean := False;
-      URLS : UARP.Models.Get_Platform_URLS_Response_URLS;
-   end record;
-
-   function To_JSON (Model : Get_Platform_URLS_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Platform_URLS_Response;
-
    --  `PublicBlogPost` model.
    type Public_Blog_Post is record
       Slug : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -8366,15 +9554,6 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Public_Featured_Agent_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Public_Featured_Agent_Response;
-
-   --  `GetRateLimitsResponse` model.
-   type Get_Rate_Limits_Response is record
-      Has_Endpoints : Boolean := False;
-      Endpoints : UARP.JSON_Support.JSON_Value;
-   end record;
-
-   function To_JSON (Model : Get_Rate_Limits_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Rate_Limits_Response;
 
    --  Values of `GetReadyResponseStatus`.
    --  A value the API introduces later decodes as Get_Ready_Response_Status_Unrecognized
@@ -8416,6 +9595,19 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Ready_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Ready_Response;
+
+   --  `GetReconciliationResponse` model.
+   type Get_Reconciliation_Response is record
+      Has_Reconciliation : Boolean := False;
+      Reconciliation : UARP.Models.Cost_Reconciliation_Result;
+      Period : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Only when there is no result for the period.
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Get_Reconciliation_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Reconciliation_Response;
 
    --  `GetRegistrationStatusResponse` model.
    type Get_Registration_Status_Response is record
@@ -9395,6 +10587,18 @@ package UARP.Models is
 
    function To_JSON (Model : Import_Admin_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Admin_Config_Request;
+
+   --  `ImportAdminConfigResponse` model.
+   type Import_Admin_Config_Response is record
+      Imported : Standard.Boolean := False;
+      Applied : UARP.Types.Text_Vectors.Vector;
+      Skipped : UARP.Types.Text_Vectors.Vector;
+      Applied_Count : UARP.Types.Integer_Value := 0;
+      Skipped_Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Import_Admin_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Admin_Config_Response;
 
    --  `MemoryImportEntry` model.
    type Memory_Import_Entry is record
@@ -15198,6 +16402,15 @@ package UARP.Models is
       Ui_Avatar : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Ui_Drop_Genome : Boolean := False;
       Ui_Drop_Genome : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  The tenant that owns the agent - the same value as `PublicTenant.slug`. The
+      --  `/c/{slug}/{agentId}` path segment is NOT authoritative (nothing checks it against the
+      --  agent); compare it with this and build the way back from here. Present when the owner record
+      --  has a slug.
+      Has_Tenant_Slug : Boolean := False;
+      Tenant_Slug : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The owning tenant's display name. Present when the owner record has one.
+      Has_Tenant_Name : Boolean := False;
+      Tenant_Name : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Public_Agent_Card) return UARP.JSON_Support.JSON_Value;
@@ -15481,6 +16694,15 @@ package UARP.Models is
 
    function To_JSON (Model : Rate_Listing_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Rate_Listing_Request;
+
+   --  `ReactivateTenantResponse` model.
+   type Reactivate_Tenant_Response is record
+      Reactivated : Standard.Boolean := False;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Reactivate_Tenant_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Reactivate_Tenant_Response;
 
    --  GET /health/ready and GET /readyz (measured 2026-09-10): overall status, the check's
    --  timestamp, and one entry per component - cron, events, kv, mcp, workers.
@@ -16543,6 +17765,14 @@ package UARP.Models is
    function To_JSON (Model : Run_Mission_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Mission_Response;
 
+   --  `RunReconciliationResponse` model.
+   type Run_Reconciliation_Response is record
+      Reconciliation : UARP.Models.Cost_Reconciliation_Result;
+   end record;
+
+   function To_JSON (Model : Run_Reconciliation_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Reconciliation_Response;
+
    --  `RunWorkspaceCommandRequest` model.
    type Run_Workspace_Command_Request is record
       Command : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -17113,6 +18343,25 @@ package UARP.Models is
    function To_JSON (Model : Set_Admin_LLM_Default_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Admin_LLM_Default_Response;
 
+   --  `SetAdminModelConfigResponse` model.
+   type Set_Admin_Model_Config_Response is record
+      Has_Default_Provider : Boolean := False;
+      Default_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Default_Model : Boolean := False;
+      Default_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Default_Endpoint : Boolean := False;
+      Default_Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Fallback_Provider : Boolean := False;
+      Fallback_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Fallback_Model : Boolean := False;
+      Fallback_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Fallback_Endpoint : Boolean := False;
+      Fallback_Endpoint : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Set_Admin_Model_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Admin_Model_Config_Response;
+
    --  `SetAgentCapabilitiesResponse` model.
    type Set_Agent_Capabilities_Response is record
       Has_Status : Boolean := False;
@@ -17222,6 +18471,16 @@ package UARP.Models is
    function To_JSON (Model : Set_Data_Explorer_Value_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Data_Explorer_Value_Response;
 
+   --  `SetFeatureFlagsResponse` model.
+   type Set_Feature_Flags_Response is record
+      Has_Flags : Boolean := False;
+      Flags : UARP.JSON_Support.JSON_Value;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Set_Feature_Flags_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Feature_Flags_Response;
+
    --  Values of `SetLLMProviderKeyProvider`.
    --  A value the API introduces later decodes as Set_LLM_Provider_Key_Provider_Unrecognized
    --  with the original text kept in Raw.
@@ -17317,6 +18576,16 @@ package UARP.Models is
    function To_JSON (Model : Set_Model_Pricing_Override_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Model_Pricing_Override_Response;
 
+   --  `SetRateLimitsResponse` model.
+   type Set_Rate_Limits_Response is record
+      Has_Endpoints : Boolean := False;
+      Endpoints : UARP.JSON_Support.JSON_Value;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Set_Rate_Limits_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Rate_Limits_Response;
+
    --  `SetRegistrySpecVisibilityRequest` model.
    type Set_Registry_Spec_Visibility_Request is record
       Visibility : UARP.Models.Set_Registry_Spec_Visibility_Request_Visibility;
@@ -17410,7 +18679,7 @@ package UARP.Models is
    --  `SetupStateResponseState` model.
    type Setup_State_Response_State is record
       --  `live` is a one-way latch; closing registration afterwards does not undo it.
-      Status : UARP.Models.Setup_State_Response_State_Status;
+      Status : UARP.Models.Admin_Registration_Config_Setup_Status;
       Completed_Steps : UARP.Types.Text_Vectors.Vector;
       Registration_Open : Standard.Boolean := False;
       Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -17513,15 +18782,15 @@ package UARP.Models is
    function To_JSON (Model : Spawn_Policy_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spawn_Policy_Update;
 
-   --  `Value` model.
-   type Value is record
+   --  `Value2` model.
+   type Value2 is record
       Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The parsed view document, or null when the stored view was unparseable.
       Output_View : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
    end record;
 
-   function To_JSON (Model : Value) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value;
+   function To_JSON (Model : Value2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value2;
 
    --  Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
    --  the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
@@ -17762,6 +19031,16 @@ package UARP.Models is
 
    function To_JSON (Model : Suspend_Tenant_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Suspend_Tenant_Request;
+
+   --  `SuspendTenantResponse` model.
+   type Suspend_Tenant_Response is record
+      Suspended : Standard.Boolean := False;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Suspend_Tenant_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Suspend_Tenant_Response;
 
    --  `SuspendUserResponse` model.
    type Suspend_User_Response is record
@@ -18146,6 +19425,32 @@ package UARP.Models is
    function To_JSON (Model : Test_Admin_Smtp_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Test_Admin_Smtp_Config_Response;
 
+   --  `TestAdminStripeConfigResponseVariant1` model.
+   type Test_Admin_Stripe_Config_Response_Variant1 is record
+      Ok : Standard.Boolean := False;
+      Account_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Livemode : Standard.Boolean := False;
+      Has_Business_Name : Boolean := False;
+      Business_Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Country : UARP.Types.Text := UARP.Types.Empty_Text;
+      Default_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Test_Admin_Stripe_Config_Response_Variant1) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Test_Admin_Stripe_Config_Response_Variant1;
+
+   --  `TestAdminStripeConfigResponseVariant2` model.
+   type Test_Admin_Stripe_Config_Response_Variant2 is record
+      Ok : Standard.Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Stripe's HTTP status, when it answered.
+      Has_Status : Boolean := False;
+      Status : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Test_Admin_Stripe_Config_Response_Variant2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Test_Admin_Stripe_Config_Response_Variant2;
+
    --  `TestAgentIntegrationResponse` model.
    type Test_Agent_Integration_Response is record
       --  False when the connector could not reach the remote or the credentials were refused. This is
@@ -18295,6 +19600,81 @@ package UARP.Models is
    function To_JSON (Model : Update_ACP_Session_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_ACP_Session_Response;
 
+   --  `UpdateAdminAgentMemoryConfigResponseAgentMemory` model.
+   type Update_Admin_Agent_Memory_Config_Response_Agent_Memory is record
+      Enabled : Standard.Boolean := False;
+      Use_Shared_Store : Standard.Boolean := False;
+      Default_Max_Entries : UARP.Types.Integer_Value := 0;
+      Default_Retrieval_Limit : UARP.Types.Integer_Value := 0;
+      Default_Retrieval_Strategy : UARP.Types.Text := UARP.Types.Empty_Text;
+      Decay_Enabled : Standard.Boolean := False;
+      Decay_Half_Life_Days : UARP.Types.Integer_Value := 0;
+      Decay_Job_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Extraction_Max_Tokens : UARP.Types.Integer_Value := 0;
+      Extraction_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Eviction_Threshold : UARP.Types.Integer_Value := 0;
+      Embedding_Dimensions : UARP.Types.Integer_Value := 0;
+      Embedding_Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      Embedding_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+      Compression_Model : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Agent_Memory_Config_Response_Agent_Memory) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Agent_Memory_Config_Response_Agent_Memory;
+
+   --  `UpdateAdminAgentMemoryConfigResponse` model.
+   type Update_Admin_Agent_Memory_Config_Response is record
+      Agent_Memory : UARP.Models.Update_Admin_Agent_Memory_Config_Response_Agent_Memory;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Agent_Memory_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Agent_Memory_Config_Response;
+
+   --  `UpdateAdminAuthConfigResponseAuth` model.
+   type Update_Admin_Auth_Config_Response_Auth is record
+      Super_Admin_Email : UARP.Types.Text := UARP.Types.Empty_Text;
+      Otp_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Verification_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Jwks_Cache_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      Jwks_Grace_Ttl_Ms : UARP.Types.Integer_Value := 0;
+      API_Key_Cache_Ttl_S : UARP.Types.Integer_Value := 0;
+      API_Key_Rotation_Grace_Period_H : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Auth_Config_Response_Auth) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Auth_Config_Response_Auth;
+
+   --  `UpdateAdminAuthConfigResponse` model.
+   type Update_Admin_Auth_Config_Response is record
+      Auth : UARP.Models.Update_Admin_Auth_Config_Response_Auth;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Auth_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Auth_Config_Response;
+
+   --  `UpdateAdminBackpressureConfigResponseBackpressure` model.
+   type Update_Admin_Backpressure_Config_Response_Backpressure is record
+      SSE_Buffer_Max : UARP.Types.Integer_Value := 0;
+      SSE_High_Watermark : UARP.Types.Integer_Value := 0;
+      SSE_Low_Watermark : UARP.Types.Integer_Value := 0;
+      Tool_Queue_Max_Depth : UARP.Types.Integer_Value := 0;
+      Tool_Queue_High_Watermark : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Backpressure_Config_Response_Backpressure) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Backpressure_Config_Response_Backpressure;
+
+   --  `UpdateAdminBackpressureConfigResponse` model.
+   type Update_Admin_Backpressure_Config_Response is record
+      Backpressure : UARP.Models.Update_Admin_Backpressure_Config_Response_Backpressure;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Backpressure_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Backpressure_Config_Response;
+
    --  `UpdateAdminBlogConfigRequest` model.
    type Update_Admin_Blog_Config_Request is record
       Has_Enabled : Boolean := False;
@@ -18356,6 +19736,33 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Blog_Post_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Blog_Post_Response;
 
+   --  `UpdateAdminCodeInterpreterConfigResponseCodeInterpreter` model.
+   type Update_Admin_Code_Interpreter_Config_Response_Code_Interpreter is record
+      Isolation : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Timeout_Ms : Boolean := False;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Memory_Mb : Boolean := False;
+      Max_Memory_Mb : UARP.Types.Integer_Value := 0;
+      Has_Container_Image : Boolean := False;
+      Container_Image : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Python_Container_Image : Boolean := False;
+      Python_Container_Image : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Python_Sandbox_Host_Dir : Boolean := False;
+      Python_Sandbox_Host_Dir : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Code_Interpreter_Config_Response_Code_Interpreter) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Code_Interpreter_Config_Response_Code_Interpreter;
+
+   --  `UpdateAdminCodeInterpreterConfigResponse` model.
+   type Update_Admin_Code_Interpreter_Config_Response is record
+      Code_Interpreter : UARP.Models.Update_Admin_Code_Interpreter_Config_Response_Code_Interpreter;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Code_Interpreter_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Code_Interpreter_Config_Response;
+
    --  `UpdateAdminDisabledToolsResponse` model.
    type Update_Admin_Disabled_Tools_Response is record
       Ok : Standard.Boolean := False;
@@ -18364,6 +19771,29 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Admin_Disabled_Tools_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Disabled_Tools_Response;
+
+   --  `UpdateAdminEvaluationConfigResponseEvaluation` model.
+   type Update_Admin_Evaluation_Config_Response_Evaluation is record
+      Enabled : Standard.Boolean := False;
+      Max_Concurrent_Eval_Cases : UARP.Types.Integer_Value := 0;
+      Regression_Threshold : UARP.Types.Float_Value := 0.0;
+      Default_Scorers : UARP.Types.Text_Vectors.Vector;
+      Max_Cases_Per_Dataset : UARP.Types.Integer_Value := 0;
+      Eval_Run_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Auto_Rollback_Enabled : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Evaluation_Config_Response_Evaluation) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Evaluation_Config_Response_Evaluation;
+
+   --  `UpdateAdminEvaluationConfigResponse` model.
+   type Update_Admin_Evaluation_Config_Response is record
+      Evaluation : UARP.Models.Update_Admin_Evaluation_Config_Response_Evaluation;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Evaluation_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Evaluation_Config_Response;
 
    --  `UpdateAdminFounderConfigRequest` model.
    type Update_Admin_Founder_Config_Request is record
@@ -18377,6 +19807,197 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Admin_Founder_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Founder_Config_Request;
+
+   --  `UpdateAdminGuardrailsResponse` model.
+   type Update_Admin_Guardrails_Response is record
+      Has_Guardrails : Boolean := False;
+      Guardrails : UARP.JSON_Support.JSON_Value;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Guardrails_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Guardrails_Response;
+
+   --  `UpdateAdminIdempotencyConfigResponseIdempotency` model.
+   type Update_Admin_Idempotency_Config_Response_Idempotency is record
+      Enabled : Standard.Boolean := False;
+      Ttl_Hours : UARP.Types.Integer_Value := 0;
+      Max_Response_Cache_Bytes : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Idempotency_Config_Response_Idempotency) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Idempotency_Config_Response_Idempotency;
+
+   --  `UpdateAdminIdempotencyConfigResponse` model.
+   type Update_Admin_Idempotency_Config_Response is record
+      Idempotency : UARP.Models.Update_Admin_Idempotency_Config_Response_Idempotency;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Idempotency_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Idempotency_Config_Response;
+
+   --  `UpdateAdminIntegrationsResponseIntegration` model.
+   type Update_Admin_Integrations_Response_Integration is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Icon : Boolean := False;
+      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Auth_Type : Boolean := False;
+      Auth_Type : UARP.Models.Admin_Integrations_Config_Integration_Auth_Type;
+      Has_Category : Boolean := False;
+      Category : UARP.Types.Text := UARP.Types.Empty_Text;
+      Enabled : Standard.Boolean := False;
+      Has_Beta : Boolean := False;
+      Beta : Standard.Boolean := False;
+      --  `kv` when an operator overrode the shipped default, `default` otherwise.
+      Has_Source : Boolean := False;
+      Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Integrations_Response_Integration) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Integrations_Response_Integration;
+
+   package Update_Admin_Integrations_Response_Integration_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Update_Admin_Integrations_Response_Integration);
+
+   --  `UpdateAdminIntegrationsResponse` model.
+   type Update_Admin_Integrations_Response is record
+      Integrations : UARP.Models.Update_Admin_Integrations_Response_Integration_Vectors.Vector;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Integrations_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Integrations_Response;
+
+   --  `UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker` model.
+   type Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters_Circuit_Breaker is record
+      Has_Failure_Threshold : Boolean := False;
+      Failure_Threshold : UARP.Types.Integer_Value := 0;
+      Has_Reset_Timeout_Ms : Boolean := False;
+      Reset_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Half_Open_Max_Requests : Boolean := False;
+      Half_Open_Max_Requests : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters_Circuit_Breaker) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters_Circuit_Breaker;
+
+   --  `UpdateAdminLLMAdaptersConfigResponseLLMAdapters` model.
+   type Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters is record
+      Has_Max_Retries : Boolean := False;
+      Max_Retries : UARP.Types.Integer_Value := 0;
+      Has_Retry_Base_Delay_Ms : Boolean := False;
+      Retry_Base_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Retry_Max_Delay_Ms : Boolean := False;
+      Retry_Max_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Stream_Empty_Timeout_Ms : Boolean := False;
+      Stream_Empty_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Has_Circuit_Breaker : Boolean := False;
+      Circuit_Breaker : UARP.Models.Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters_Circuit_Breaker;
+      Has_Provider_Rate_Limits : Boolean := False;
+      Provider_Rate_Limits : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters;
+
+   --  `UpdateAdminLLMAdaptersConfigResponse` model.
+   type Update_Admin_LLM_Adapters_Config_Response is record
+      LLM_Adapters : UARP.Models.Update_Admin_LLM_Adapters_Config_Response_LLM_Adapters;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_LLM_Adapters_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_LLM_Adapters_Config_Response;
+
+   --  `UpdateAdminLoggingConfigResponseLogging` model.
+   type Update_Admin_Logging_Config_Response_Logging is record
+      Pii_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Log_Agent_Responses : Standard.Boolean := False;
+      File_Enabled : Standard.Boolean := False;
+      File_Max_Size_Mb : UARP.Types.Integer_Value := 0;
+      File_Retention_Days : UARP.Types.Integer_Value := 0;
+      File_Level : UARP.Types.Text := UARP.Types.Empty_Text;
+      File_Separate_Error : Standard.Boolean := False;
+      Activity_Log_Verbosity : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Logging_Config_Response_Logging) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Logging_Config_Response_Logging;
+
+   --  `UpdateAdminLoggingConfigResponse` model.
+   type Update_Admin_Logging_Config_Response is record
+      Logging : UARP.Models.Update_Admin_Logging_Config_Response_Logging;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Logging_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Logging_Config_Response;
+
+   --  `UpdateAdminLongRunningConfigResponseLongRunning` model.
+   type Update_Admin_Long_Running_Config_Response_Long_Running is record
+      Enabled : Standard.Boolean := False;
+      Max_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Checkpoint_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Idle_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Continuation_Token_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Max_Background_Runs_Per_Tenant : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Long_Running_Config_Response_Long_Running) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Long_Running_Config_Response_Long_Running;
+
+   --  `UpdateAdminLongRunningConfigResponse` model.
+   type Update_Admin_Long_Running_Config_Response is record
+      Long_Running : UARP.Models.Update_Admin_Long_Running_Config_Response_Long_Running;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Long_Running_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Long_Running_Config_Response;
+
+   --  `UpdateAdminMCPConfigResponseMCP` model.
+   type Update_Admin_MCP_Config_Response_MCP is record
+      Max_Sessions_Per_Server : UARP.Types.Integer_Value := 0;
+      Max_Total_Stdio_Sessions : UARP.Types.Integer_Value := 0;
+      Session_Idle_Timeout_Ms : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_MCP_Config_Response_MCP) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_MCP_Config_Response_MCP;
+
+   --  `UpdateAdminMCPConfigResponse` model.
+   type Update_Admin_MCP_Config_Response is record
+      MCP : UARP.Models.Update_Admin_MCP_Config_Response_MCP;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_MCP_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_MCP_Config_Response;
+
+   --  `UpdateAdminMultimodalConfigResponseMultimodal` model.
+   type Update_Admin_Multimodal_Config_Response_Multimodal is record
+      Enabled : Standard.Boolean := False;
+      Max_Image_Size_Bytes : UARP.Types.Integer_Value := 0;
+      Max_Audio_Duration_S : UARP.Types.Integer_Value := 0;
+      Max_Video_Duration_S : UARP.Types.Integer_Value := 0;
+      Auto_Resize_Images : Standard.Boolean := False;
+      Supported_Image_Formats : UARP.Types.Text_Vectors.Vector;
+      Supported_Audio_Formats : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Multimodal_Config_Response_Multimodal) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Multimodal_Config_Response_Multimodal;
+
+   --  `UpdateAdminMultimodalConfigResponse` model.
+   type Update_Admin_Multimodal_Config_Response is record
+      Multimodal : UARP.Models.Update_Admin_Multimodal_Config_Response_Multimodal;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Multimodal_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Multimodal_Config_Response;
 
    --  `UpdateAdminOAuthIdentityConfigRequest` model.
    type Update_Admin_O_Auth_Identity_Config_Request is record
@@ -18392,6 +20013,26 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Admin_O_Auth_Identity_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_O_Auth_Identity_Config_Request;
+
+   --  `UpdateAdminPersistenceConfigResponsePersistence` model.
+   type Update_Admin_Persistence_Config_Response_Persistence is record
+      Snapshot_Every_N_Events : UARP.Types.Integer_Value := 0;
+      Checkpoint_After_Tool_Calls : Standard.Boolean := False;
+      Usage_Shards : UARP.Types.Integer_Value := 0;
+      Auto_Cap_Kv_Values : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Persistence_Config_Response_Persistence) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Persistence_Config_Response_Persistence;
+
+   --  `UpdateAdminPersistenceConfigResponse` model.
+   type Update_Admin_Persistence_Config_Response is record
+      Persistence : UARP.Models.Update_Admin_Persistence_Config_Response_Persistence;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Persistence_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Persistence_Config_Response;
 
    --  `UpdateAdminPlansRequest` model.
    type Update_Admin_Plans_Request is record
@@ -18413,6 +20054,37 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Plans_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Plans_Response;
 
+   --  `UpdateAdminPricingResponsePricing` model.
+   type Update_Admin_Pricing_Response_Pricing is record
+      Openai_Compat_Input : UARP.Types.Float_Value := 0.0;
+      Openai_Compat_Output : UARP.Types.Float_Value := 0.0;
+      Anthropic_Input : UARP.Types.Integer_Value := 0;
+      Anthropic_Output : UARP.Types.Float_Value := 0.0;
+      Anthropic_Thinking : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Pricing_Response_Pricing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Pricing_Response_Pricing;
+
+   --  `UpdateAdminPricingResponse` model.
+   type Update_Admin_Pricing_Response is record
+      Pricing : UARP.Models.Update_Admin_Pricing_Response_Pricing;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Pricing_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Pricing_Response;
+
+   --  `UpdateAdminProviderResponse` model.
+   type Update_Admin_Provider_Response is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Enabled : Standard.Boolean := False;
+      Model_Allowlist : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Provider_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Provider_Response;
+
    --  `UpdateAdminRegistrationConfigRequest` model.
    type Update_Admin_Registration_Config_Request is record
       Has_Registration_Open : Boolean := False;
@@ -18429,6 +20101,73 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Admin_Registration_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Registration_Config_Request;
+
+   --  `UpdateAdminRetentionConfigResponseRetention` model.
+   type Update_Admin_Retention_Config_Response_Retention is record
+      Completed_Run_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Event_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Archive_To_Sqlite : Standard.Boolean := False;
+      Audit_Log_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Archive_Job_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Archive_Batch_Size : UARP.Types.Integer_Value := 0;
+      Feed_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Artifact_Ttl_Days : UARP.Types.Integer_Value := 0;
+      Checkpoint_Ttl_Hours : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Retention_Config_Response_Retention) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Retention_Config_Response_Retention;
+
+   --  `UpdateAdminRetentionConfigResponse` model.
+   type Update_Admin_Retention_Config_Response is record
+      Retention : UARP.Models.Update_Admin_Retention_Config_Response_Retention;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Retention_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Retention_Config_Response;
+
+   --  `UpdateAdminRunCommandConfigResponseRunCommand` model.
+   type Update_Admin_Run_Command_Config_Response_Run_Command is record
+      Enabled : Standard.Boolean := False;
+      Isolation : UARP.Types.Text := UARP.Types.Empty_Text;
+      Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Max_Output_Bytes : UARP.Types.Integer_Value := 0;
+      Allowed_Commands : UARP.Types.Text_Vectors.Vector;
+      Deno_Allow : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Run_Command_Config_Response_Run_Command) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Run_Command_Config_Response_Run_Command;
+
+   --  `UpdateAdminRunCommandConfigResponse` model.
+   type Update_Admin_Run_Command_Config_Response is record
+      Run_Command : UARP.Models.Update_Admin_Run_Command_Config_Response_Run_Command;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Run_Command_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Run_Command_Config_Response;
+
+   --  `UpdateAdminServerConfigResponseServer` model.
+   type Update_Admin_Server_Config_Response_Server is record
+      Trust_Proxy : Standard.Boolean := False;
+      Max_Body_Bytes : UARP.Types.Integer_Value := 0;
+      Has_Graceful_Shutdown_Timeout_Ms : Boolean := False;
+      Graceful_Shutdown_Timeout_Ms : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Server_Config_Response_Server) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Server_Config_Response_Server;
+
+   --  `UpdateAdminServerConfigResponse` model.
+   type Update_Admin_Server_Config_Response is record
+      Server : UARP.Models.Update_Admin_Server_Config_Response_Server;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Server_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Server_Config_Response;
 
    --  Values of `UpdateAdminSetupStateRequestCompletedStep`.
    --  A value the API introduces later decodes as Update_Admin_Setup_State_Request_Completed_Step_Unrecognized
@@ -18505,6 +20244,28 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Spec_Packages_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Spec_Packages_Request;
 
+   --  `UpdateAdminSSEConfigResponseSSE` model.
+   type Update_Admin_SSE_Config_Response_SSE is record
+      Heartbeat_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Watch_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Poll_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Max_Poll_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Reconnect_Hint_Ms : UARP.Types.Integer_Value := 0;
+      Run_Wait_Timeout_Sec : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_SSE_Config_Response_SSE) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_SSE_Config_Response_SSE;
+
+   --  `UpdateAdminSSEConfigResponse` model.
+   type Update_Admin_SSE_Config_Response is record
+      SSE : UARP.Models.Update_Admin_SSE_Config_Response_SSE;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_SSE_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_SSE_Config_Response;
+
    --  Values of `UpdateAdminStripeConfigRequestMode`.
    --  A value the API introduces later decodes as Update_Admin_Stripe_Config_Request_Mode_Unrecognized
    --  with the original text kept in Raw.
@@ -18547,6 +20308,43 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Stripe_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Stripe_Config_Request;
 
+   --  `UpdateAdminStripeConfigResponseStripe` model.
+   type Update_Admin_Stripe_Config_Response_Stripe is record
+      Enabled : Standard.Boolean := False;
+      Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Secret_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+      Webhook_Secret : UARP.Types.Text := UARP.Types.Empty_Text;
+      Publishable_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Starter : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Pro : UARP.Types.Text := UARP.Types.Empty_Text;
+      Price_Id_Enterprise : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Stripe_Config_Response_Stripe) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Stripe_Config_Response_Stripe;
+
+   --  `UpdateAdminStripeConfigResponse` model.
+   type Update_Admin_Stripe_Config_Response is record
+      Stripe : UARP.Models.Update_Admin_Stripe_Config_Response_Stripe;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Stripe_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Stripe_Config_Response;
+
+   --  `UpdateAdminTenantSettingsResponse` model.
+   type Update_Admin_Tenant_Settings_Response is record
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  types/tenant.ts TenantSettings as stored - legacy records may lack fields.
+      Settings : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Only when ever set.
+      Has_Legal_Hold : Boolean := False;
+      Legal_Hold : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Tenant_Settings_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Tenant_Settings_Response;
+
    --  `UpdateAdminToolOverridesRequest` model.
    type Update_Admin_Tool_Overrides_Request is record
       Overrides : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
@@ -18563,6 +20361,76 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Admin_Tool_Overrides_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Tool_Overrides_Response;
+
+   --  `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
+   type Update_Admin_Tool_Security_Config_Response_Tool_Security is record
+      Default_Egress_Policy : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Egress_Allowlist_Per_Tenant : Boolean := False;
+      Egress_Allowlist_Per_Tenant : UARP.JSON_Support.JSON_Value;
+      Ssrf_Deny_Private_Ranges : Standard.Boolean := False;
+      Default_Tool_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Default_Tool_Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
+      Default_Tool_Max_Concurrency : UARP.Types.Integer_Value := 0;
+      Stdio_Inherit_Env : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Tool_Security_Config_Response_Tool_Security) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Tool_Security_Config_Response_Tool_Security;
+
+   --  `UpdateAdminToolSecurityConfigResponse` model.
+   type Update_Admin_Tool_Security_Config_Response is record
+      Tool_Security : UARP.Models.Update_Admin_Tool_Security_Config_Response_Tool_Security;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Tool_Security_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Tool_Security_Config_Response;
+
+   --  `UpdateAdminWebhooksConfigResponseWebhooks` model.
+   type Update_Admin_Webhooks_Config_Response_Webhooks is record
+      Enabled : Standard.Boolean := False;
+      Max_Subscriptions_Per_Tenant : UARP.Types.Integer_Value := 0;
+      Delivery_Timeout_Ms : UARP.Types.Integer_Value := 0;
+      Max_Retry_Attempts : UARP.Types.Integer_Value := 0;
+      Require_HTTPS : Standard.Boolean := False;
+      Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Webhooks_Config_Response_Webhooks) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Webhooks_Config_Response_Webhooks;
+
+   --  `UpdateAdminWebhooksConfigResponse` model.
+   type Update_Admin_Webhooks_Config_Response is record
+      Webhooks : UARP.Models.Update_Admin_Webhooks_Config_Response_Webhooks;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Webhooks_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Webhooks_Config_Response;
+
+   --  `UpdateAdminWorkerPoolConfigResponseWorkerPool` model.
+   type Update_Admin_Worker_Pool_Config_Response_Worker_Pool is record
+      Max_Workers : UARP.Types.Integer_Value := 0;
+      Default_Mode : UARP.Types.Text := UARP.Types.Empty_Text;
+      Max_Run_Duration_Ms : UARP.Types.Integer_Value := 0;
+      Reconciliation_Interval_Ms : UARP.Types.Integer_Value := 0;
+      Schedule_Max_Retries : UARP.Types.Integer_Value := 0;
+      Schedule_Base_Delay_Ms : UARP.Types.Integer_Value := 0;
+      Has_Max_Queue_Size : Boolean := False;
+      Max_Queue_Size : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Worker_Pool_Config_Response_Worker_Pool) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Worker_Pool_Config_Response_Worker_Pool;
+
+   --  `UpdateAdminWorkerPoolConfigResponse` model.
+   type Update_Admin_Worker_Pool_Config_Response is record
+      Worker_Pool : UARP.Models.Update_Admin_Worker_Pool_Config_Response_Worker_Pool;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Admin_Worker_Pool_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Worker_Pool_Config_Response;
 
    --  `UpdateAgentIntegrationRequest` model.
    type Update_Agent_Integration_Request is record
@@ -18690,6 +20558,24 @@ package UARP.Models is
    function To_JSON (Model : Update_Integration_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Integration_Request;
 
+   --  `UpdateMarkupConfigResponseMarkup` model.
+   type Update_Markup_Config_Response_Markup is record
+      Platform_Markup_Percent : UARP.Types.Float_Value := 0.0;
+      Model_Markup_Overrides : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Update_Markup_Config_Response_Markup) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Markup_Config_Response_Markup;
+
+   --  `UpdateMarkupConfigResponse` model.
+   type Update_Markup_Config_Response is record
+      Markup : UARP.Models.Update_Markup_Config_Response_Markup;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Markup_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Markup_Config_Response;
+
    --  Ceilings only; the spent counters are not writable.
    type Update_Mission_Objective_Request_Budget is record
       Has_Max_Runs : Boolean := False;
@@ -18757,6 +20643,27 @@ package UARP.Models is
    function To_JSON (Model : Update_Platform_URLS_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Platform_URLS_Request;
 
+   --  `UpdatePlatformURLSResponseURLS` model.
+   type Update_Platform_URLS_Response_URLS is record
+      Has_Public_Base_URL : Boolean := False;
+      Public_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Webhook_Base_URL : Boolean := False;
+      Webhook_Base_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Update_Platform_URLS_Response_URLS) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Platform_URLS_Response_URLS;
+
+   --  `UpdatePlatformURLSResponse` model.
+   type Update_Platform_URLS_Response is record
+      Has_URLS : Boolean := False;
+      URLS : UARP.Models.Update_Platform_URLS_Response_URLS;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Platform_URLS_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Platform_URLS_Response;
+
    --  `UpdateProjectRequest` model.
    type Update_Project_Request is record
       Has_Name : Boolean := False;
@@ -18781,6 +20688,20 @@ package UARP.Models is
    function To_JSON (Model : Update_Project_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Project_Request;
 
+   --  `UpdateRuntimeConfigResponse` model.
+   type Update_Runtime_Config_Response is record
+      --  The effective runtime config - sparse: only keys present in the platform config or the
+      --  stored override (RuntimeConfig, every field optional).
+      Runtime : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Updated : Standard.Boolean := False;
+      --  Only when the body carried keys the schema does not declare.
+      Has_Ignored_Keys : Boolean := False;
+      Ignored_Keys : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Update_Runtime_Config_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Runtime_Config_Response;
+
    --  `UpdateSecurityPoliciesRequest` model.
    type Update_Security_Policies_Request is record
       Has_CORS_Allowed_Origins : Boolean := False;
@@ -18797,6 +20718,27 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Security_Policies_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Security_Policies_Request;
+
+   --  `UpdateSecurityPoliciesResponsePolicies` model.
+   type Update_Security_Policies_Response_Policies is record
+      CORS_Allowed_Origins : UARP.JSON_Support.JSON_Value;
+      Webhook_URL_Denylist : UARP.Types.Text_Vectors.Vector;
+      File_Upload_Max_Size_Bytes : UARP.Types.Integer_Value := 0;
+      File_Upload_Allowed_Mime_Types : UARP.JSON_Support.JSON_Value;
+      Admin_Provider_Settings_Require_Super_Admin : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Security_Policies_Response_Policies) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Security_Policies_Response_Policies;
+
+   --  `UpdateSecurityPoliciesResponse` model.
+   type Update_Security_Policies_Response is record
+      Policies : UARP.Models.Update_Security_Policies_Response_Policies;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Security_Policies_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Security_Policies_Response;
 
    --  `UpdateSessionAnnotationRequest` model.
    type Update_Session_Annotation_Request is record
@@ -18939,6 +20881,27 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Webhooks_Policy_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Webhooks_Policy_Request;
+
+   --  `UpdateWebhooksPolicyResponsePolicy` model.
+   type Update_Webhooks_Policy_Response_Policy is record
+      Ssrf_Check_At_Subscription : Standard.Boolean := False;
+      Stripe_Signature_Tolerance_Sec : UARP.Types.Integer_Value := 0;
+      Delivery_Max_Retries : UARP.Types.Integer_Value := 0;
+      Delivery_Backoff_Base_Ms : UARP.Types.Integer_Value := 0;
+      Delivery_Max_Window_Hours : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Update_Webhooks_Policy_Response_Policy) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Webhooks_Policy_Response_Policy;
+
+   --  `UpdateWebhooksPolicyResponse` model.
+   type Update_Webhooks_Policy_Response is record
+      Policy : UARP.Models.Update_Webhooks_Policy_Response_Policy;
+      Updated : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Update_Webhooks_Policy_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Webhooks_Policy_Response;
 
    --  `UpdateWorkspaceRequest` model.
    type Update_Workspace_Request is record

@@ -279,7 +279,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/landing`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_landing_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_landing_config(&self) -> Result<models::AdminGetLandingConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -297,7 +297,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/model-catalog`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_model_catalog(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_model_catalog(&self) -> Result<models::AdminModelCatalog> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -315,7 +315,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/model-catalog/seed`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_model_catalog_seed(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_model_catalog_seed(&self) -> Result<models::AdminModelCatalogSeed> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -333,7 +333,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/model-pricing`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_model_pricing(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_model_pricing(&self) -> Result<models::AdminModelPricingList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -390,7 +390,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/voice`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_voice_config(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_voice_config(&self) -> Result<models::AdminGetVoiceConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -408,7 +408,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/voice-presets`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_get_voice_presets(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_get_voice_presets(&self) -> Result<models::AdminVoicePresets> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -462,7 +462,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/config/landing`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_landing_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_put_landing_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminPutLandingConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -480,7 +480,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/config/model-catalog`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_model_catalog(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_put_model_catalog(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminPutModelCatalogResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -520,7 +520,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/config/voice`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_voice_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_put_voice_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminPutVoiceConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -538,7 +538,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/config/voice-presets`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_voice_presets(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn admin_put_voice_presets(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminVoicePresets> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -595,7 +595,7 @@ impl AdminApi {
     /// `POST /api/v1/admin/providers`
     ///
     /// Required scopes: `admin`.
-    pub async fn create_admin_provider(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn create_admin_provider(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::CreateAdminProviderResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -836,7 +836,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/config/pricing`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_pricing(&self) -> Result<serde_json::Value> {
+    pub async fn get_admin_pricing(&self) -> Result<models::AdminPricingConfig> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -854,7 +854,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/providers/{providerId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_admin_provider(&self, provider_id: &str) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_admin_provider(&self, provider_id: &str) -> Result<models::AdminProvider> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -908,7 +908,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/audit/{targetId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_audit_for_target(&self, target_id: &str, params: &GetAuditForTargetParams) -> Result<serde_json::Value> {
+    pub async fn get_audit_for_target(&self, target_id: &str, params: &GetAuditForTargetParams) -> Result<models::AdminAuditList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -926,7 +926,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/conformity-report`
     ///
     /// Required scopes: `admin`.
-    pub async fn get_conformity_report(&self) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn get_conformity_report(&self) -> Result<models::ConformityReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -1290,7 +1290,7 @@ impl AdminApi {
     /// `GET /api/v1/admin/audit`
     ///
     /// Required scopes: `admin`.
-    pub async fn query_audit_log(&self, params: &QueryAuditLogParams) -> Result<serde_json::Value> {
+    pub async fn query_audit_log(&self, params: &QueryAuditLogParams) -> Result<models::AdminAuditList> {
         self.client
             .request_json(Request {
                 method: Method::GET,
@@ -1308,7 +1308,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/tenants/{tenantId}/reactivate`
     ///
     /// Required scopes: `admin`.
-    pub async fn reactivate_tenant(&self, tenant_id: &str) -> Result<serde_json::Value> {
+    pub async fn reactivate_tenant(&self, tenant_id: &str) -> Result<models::ReactivateTenantResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1377,7 +1377,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/llm-defaults/model-config`
     ///
     /// Required scopes: `admin`.
-    pub async fn set_admin_model_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn set_admin_model_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetAdminModelConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1426,7 +1426,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/tenants/{tenantId}/suspend`
     ///
     /// Required scopes: `admin`.
-    pub async fn suspend_tenant(&self, tenant_id: &str, body: &models::SuspendTenantRequest) -> Result<serde_json::Value> {
+    pub async fn suspend_tenant(&self, tenant_id: &str, body: &models::SuspendTenantRequest) -> Result<models::SuspendTenantResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1527,7 +1527,7 @@ impl AdminApi {
     /// `PUT /api/v1/admin/config/pricing`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_pricing(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Value> {
+    pub async fn update_admin_pricing(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminPricingResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1545,7 +1545,7 @@ impl AdminApi {
     /// `PATCH /api/v1/admin/providers/{providerId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_provider(&self, provider_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_provider(&self, provider_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminProviderResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
@@ -1563,7 +1563,7 @@ impl AdminApi {
     /// `PATCH /api/v1/admin/tenants/{tenantId}/settings`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_tenant_settings(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<serde_json::Map<String, serde_json::Value>> {
+    pub async fn update_admin_tenant_settings(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminTenantSettingsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

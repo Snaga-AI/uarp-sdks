@@ -43,7 +43,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Package_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Create_Admin_Spec_Package_Stripe_Price_Response;
 
    --  Create Stripe Product+Price for plan
    --
@@ -125,7 +125,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Agent_Memory_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Agent_Memory_Config;
 
    --  Get auth runtime overrides (super-admin email, OTP/JWKS TTLs)
    --
@@ -135,7 +135,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Auth_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Auth_Config;
 
    --  Get backpressure overrides (SSE buffers + tool queue watermarks)
    --
@@ -145,7 +145,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Backpressure_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Backpressure_Config;
 
    --  Get code-interpreter overrides (isolation, timeout, memory)
    --
@@ -155,7 +155,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Code_Interpreter_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Code_Interpreter_Config;
 
    --  Tool ids disabled platform-wide
    --
@@ -175,7 +175,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Evaluation_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Evaluation_Config;
 
    --  Founder identity, stored and from the environment
    --
@@ -189,7 +189,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Founder_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Founder_Config_Response;
+      return UARP.Models.Admin_Founder_Config;
 
    --  Get guardrail config
    --
@@ -199,7 +199,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Guardrails
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Guardrails_Response;
+      return UARP.Models.Admin_Guardrails_Config;
 
    --  Get idempotency overrides (enabled, TTL hours, max cache bytes)
    --
@@ -209,7 +209,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Idempotency_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Idempotency_Config;
 
    --  Get integration toggles
    --
@@ -219,7 +219,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Integrations
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Integrations_Response;
+      return UARP.Models.Admin_Integrations_Config;
 
    --  Get LLM adapter overrides (retries, circuit breaker, per-provider RPM)
    --
@@ -229,7 +229,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_LLM_Adapters_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_LLM_Adapters_Config;
 
    --  Get logging overrides (PII mode, file level, activity verbosity)
    --
@@ -239,7 +239,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Logging_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Logging_Config;
 
    --  Get long-running run overrides
    --
@@ -249,7 +249,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Long_Running_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Long_Running_Config;
 
    --  Get MCP overrides (session limits, idle timeout)
    --
@@ -259,7 +259,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_MCP_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_MCP_Config;
 
    --  Get multimodal overrides (size + duration caps + format allowlists)
    --
@@ -269,7 +269,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Multimodal_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Multimodal_Config;
 
    --  Apple native sign-in identifiers and the OAuth return-to allowlist
    --
@@ -283,7 +283,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_O_Auth_Identity_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_O_Auth_Identity_Config_Response;
+      return UARP.Models.Admin_O_Auth_Identity_Config;
 
    --  Get persistence overrides (snapshot interval, KV auto-cap)
    --
@@ -293,7 +293,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Persistence_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Persistence_Config;
 
    --  Get plan overrides
    --
@@ -320,7 +320,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Registration_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Registration_Config_Response;
+      return UARP.Models.Admin_Registration_Config;
 
    --  Get retention overrides (run / event / audit / feed / artifact TTLs)
    --
@@ -330,7 +330,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Retention_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Retention_Config;
 
    --  Get run_command overrides (enabled, allowed commands, deno_allow)
    --
@@ -340,7 +340,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Run_Command_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Run_Command_Config;
 
    --  Get HTTP server overrides (trust_proxy, body cap, shutdown timeout)
    --
@@ -350,7 +350,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Server_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Server_Config;
 
    --  Platform setup progress
    --
@@ -378,7 +378,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Smtp_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Smtp_Config_Response;
+      return UARP.Models.Admin_Smtp_Config;
 
    --  Every SPEC package, archived ones included
    --
@@ -392,7 +392,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Spec_Packages
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Admin_Spec_Packages_Response;
+      return UARP.Models.Admin_Spec_Packages_List;
 
    --  Get SSE overrides (heartbeat, polling, reconnect hint)
    --
@@ -402,7 +402,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_SSE_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_SSE_Config;
 
    --  Get Stripe runtime config (keys redacted)
    --
@@ -412,7 +412,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Stripe_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Stripe_Config;
 
    --  Per-tool presentation overrides
    --
@@ -434,7 +434,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Tool_Security_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Tool_Security_Config;
 
    --  Get webhook delivery overrides (separate from webhooks-policy)
    --
@@ -444,7 +444,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Webhooks_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Webhooks_Config;
 
    --  Get worker pool overrides (max workers, mode, queue size)
    --
@@ -454,7 +454,7 @@ package UARP.API.Admin_Config is
    function Get_Admin_Worker_Pool_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Worker_Pool_Config;
 
    --  Get feature flags
    --
@@ -464,7 +464,7 @@ package UARP.API.Admin_Config is
    function Get_Feature_Flags
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Feature_Flags_Response;
+      return UARP.Models.Admin_Feature_Flags_Config;
 
    --  Get markup config
    --
@@ -484,7 +484,7 @@ package UARP.API.Admin_Config is
    function Get_Platform_URLS
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Platform_URLS_Response;
+      return UARP.Models.Admin_Platform_URLS_Config;
 
    --  Get rate limit config
    --
@@ -494,7 +494,7 @@ package UARP.API.Admin_Config is
    function Get_Rate_Limits
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Get_Rate_Limits_Response;
+      return UARP.Models.Admin_Rate_Limits_Config;
 
    --  Get last reconciliation result
    --
@@ -504,7 +504,7 @@ package UARP.API.Admin_Config is
    function Get_Reconciliation
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Get_Reconciliation_Response;
 
    --  Get runtime config
    --
@@ -524,7 +524,7 @@ package UARP.API.Admin_Config is
    function Get_Security_Policies
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Security_Policies_Config;
 
    --  Get webhook delivery + Stripe verification policy
    --
@@ -534,7 +534,7 @@ package UARP.API.Admin_Config is
    function Get_Webhooks_Policy
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Config_Webhooks_Policy_Config;
 
    --  Bulk-apply a previously exported snapshot
    --
@@ -545,7 +545,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Import_Admin_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Import_Admin_Config_Response;
 
    --  The admin-authored plan catalogue
    --
@@ -601,7 +601,7 @@ package UARP.API.Admin_Config is
    function Run_Reconciliation
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Run_Reconciliation_Response;
 
    --  Set feature flags
    --
@@ -612,7 +612,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Set_Feature_Flags_Response;
 
    --  Override the billed price of one model
    --
@@ -648,7 +648,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Set_Rate_Limits_Response;
 
    --  Send a test email through the effective SMTP config
    --
@@ -684,7 +684,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Agent_Memory_Config_Response;
 
    --  Update auth runtime overrides
    --
@@ -695,7 +695,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Auth_Config_Response;
 
    --  Update backpressure overrides
    --
@@ -706,7 +706,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Backpressure_Config_Response;
 
    --  Update code-interpreter overrides
    --
@@ -717,7 +717,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Code_Interpreter_Config_Response;
 
    --  Replace the platform-wide disabled tool list
    --
@@ -748,7 +748,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Evaluation_Config_Response;
 
    --  Set the stored founder identity
    --
@@ -765,7 +765,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_Founder_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Founder_Config;
 
    --  Update guardrail config
    --
@@ -776,7 +776,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Guardrails_Response;
 
    --  Update idempotency overrides
    --
@@ -787,7 +787,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Idempotency_Config_Response;
 
    --  Update integrations
    --
@@ -798,7 +798,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Integrations_Response;
 
    --  Update LLM adapter overrides
    --
@@ -809,7 +809,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_LLM_Adapters_Config_Response;
 
    --  Update logging overrides
    --
@@ -820,7 +820,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Logging_Config_Response;
 
    --  Update long-running overrides
    --
@@ -831,7 +831,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Long_Running_Config_Response;
 
    --  Update MCP overrides
    --
@@ -842,7 +842,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_MCP_Config_Response;
 
    --  Update multimodal overrides
    --
@@ -853,7 +853,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Multimodal_Config_Response;
 
    --  Set Apple identifiers and the return-to allowlist
    --
@@ -869,7 +869,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_O_Auth_Identity_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_O_Auth_Identity_Config;
 
    --  Update persistence overrides
    --
@@ -880,7 +880,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Persistence_Config_Response;
 
    --  Update plans
    --
@@ -917,7 +917,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_Registration_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Registration_Config;
 
    --  Update retention overrides
    --
@@ -928,7 +928,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Retention_Config_Response;
 
    --  Update run_command overrides
    --
@@ -939,7 +939,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Run_Command_Config_Response;
 
    --  Update server overrides
    --
@@ -950,7 +950,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Server_Config_Response;
 
    --  Mark setup steps complete, or flip the registration gate
    --
@@ -1006,7 +1006,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_Smtp_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Smtp_Config;
 
    --  Replace the SPEC-package map
    --
@@ -1033,7 +1033,7 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Update_Admin_Spec_Packages_Request;
       Params : Update_Admin_Spec_Packages_Params := No_Update_Admin_Spec_Packages_Params;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Admin_Spec_Packages_List;
 
    --  Update SSE overrides
    --
@@ -1044,7 +1044,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_SSE_Config_Response;
 
    --  Update Stripe keys/mode/price IDs; rebuilds BillingManager
    --
@@ -1055,7 +1055,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_Stripe_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Stripe_Config_Response;
 
    --  Replace the per-tool presentation overrides
    --
@@ -1094,7 +1094,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Tool_Security_Config_Response;
 
    --  Update webhook delivery overrides
    --
@@ -1105,7 +1105,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Webhooks_Config_Response;
 
    --  Update worker pool overrides
    --
@@ -1116,7 +1116,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Admin_Worker_Pool_Config_Response;
 
    --  Update markup
    --
@@ -1127,7 +1127,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Markup_Config_Response;
 
    --  Update public_base_url and webhook_base_url
    --
@@ -1138,7 +1138,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Platform_URLS_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Platform_URLS_Response;
 
    --  Update runtime
    --
@@ -1149,7 +1149,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Runtime_Config_Response;
 
    --  Update security policies
    --
@@ -1160,7 +1160,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Security_Policies_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Security_Policies_Response;
 
    --  Update webhooks policy
    --
@@ -1171,7 +1171,7 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Payload : UARP.Models.Update_Webhooks_Policy_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.JSON_Support.JSON_Value;
+      return UARP.Models.Update_Webhooks_Policy_Response;
 
    --  Create or replace one custom plan
    --
