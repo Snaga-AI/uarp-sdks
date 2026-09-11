@@ -5824,6 +5824,12 @@ package UARP.Models is
       --  Conflict resolution - higher wins. Defaults to 0.
       Has_Priority : Boolean := False;
       Priority : UARP.Types.Integer_Value := 0;
+      --  True when no code path can ever raise this rule - the platform emits no such action (the
+      --  constitution digest lists it under ADVISORY and boot logs "Constitution rules that can never
+      --  fire"). A rulebook used to show these as enforced and LOCKED over an audit page with no such
+      --  entries. Served since 2026-09-11; absent on older servers means unknown, not false.
+      Has_Advisory : Boolean := False;
+      Advisory : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Constitution_Rule) return UARP.JSON_Support.JSON_Value;
@@ -12634,6 +12640,24 @@ package UARP.Models is
    function To_JSON (Model : List_Agents_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agents_Response;
 
+   --  Values of `ListAgentVersionsFields`.
+   --  A value the API introduces later decodes as List_Agent_Versions_Fields_Unrecognized
+   --  with the original text kept in Raw.
+   type List_Agent_Versions_Fields_Kind is
+     (List_Agent_Versions_Fields_Summary,
+   List_Agent_Versions_Fields_Unrecognized);
+
+   type List_Agent_Versions_Fields is record
+      Kind : List_Agent_Versions_Fields_Kind := List_Agent_Versions_Fields_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_List_Agent_Versions_Fields (Value : String) return List_Agent_Versions_Fields;
+   function To_List_Agent_Versions_Fields (Kind : List_Agent_Versions_Fields_Kind) return List_Agent_Versions_Fields;
+   function Image (Model : List_Agent_Versions_Fields) return String;
+   function To_JSON (Model : List_Agent_Versions_Fields) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agent_Versions_Fields;
+
    --  `ListAgentVersionsResponse` model.
    type List_Agent_Versions_Response is record
       Items : UARP.Models.Agent_Version_Vectors.Vector;
@@ -12644,6 +12668,10 @@ package UARP.Models is
       --  (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
       --  as, and there is no paging parameter to reach further back.
       Total : UARP.Types.Integer_Value := 0;
+      --  Present only with `limit` and only while older versions remain: the version number to pass
+      --  as `cursor`.
+      Has_Next_Cursor : Boolean := False;
+      Next_Cursor : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : List_Agent_Versions_Response) return UARP.JSON_Support.JSON_Value;
@@ -15121,6 +15149,10 @@ package UARP.Models is
    type Marketplace_Subscription is record
       Listing_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Status : UARP.Models.Marketplace_Subscription_Status;
+      --  The Stripe subscription (`sub_...`) the tenant pays through. Written by the bootstrap path
+      --  and - since 2026-09-11 - by the subscription webhook (created/updated); cleared when the
+      --  subscription is deleted. Absent while the tenant has none, and on tenants whose subscription
+      --  arrived before the webhook stored it.
       Has_Stripe_Subscription_Id : Boolean := False;
       Stripe_Subscription_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -20564,7 +20596,6 @@ package UARP.Models is
       --  one stored here. Until 2026-09-11 this check read the stored key on its own and could say
       --  LIVE while the running manager still held the environment's key of the previous company -
       --  green in the panel, "No such price" at checkout.
-      Has_Active_Key_Matches : Boolean := False;
       Active_Key_Matches : Standard.Boolean := False;
       --  Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
       --  manager from the stored key; boot does the same since 2026-09-11).

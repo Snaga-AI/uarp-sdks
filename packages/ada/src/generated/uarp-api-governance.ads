@@ -13,6 +13,14 @@ package UARP.API.Governance is
 
    --  Query and header parameters for `getGovernanceLedger`.
    type Get_Governance_Ledger_Params is record
+      --  Only rows of this category (e.g. `execution`, `constitution`, `orchestration`, `voting`).
+      --  Accepted and IGNORED until 2026-09-11 - a filter that changed the request and not the
+      --  result.
+      Has_Category : Boolean := False;
+      Category : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Only rows with this action (e.g. `run_complete`, `spawn_agent`, `modify_constitution`).
+      Has_Action : Boolean := False;
+      Action : UARP.Types.Text := UARP.Types.Empty_Text;
       --  How many of THIS TENANT's most recent entries to return, capped at 200. Ignored when both
       --  `from` and `to` are supplied.
       Has_Count : Boolean := False;

@@ -69,6 +69,25 @@ pub struct ListAgentMailParams {
     pub limit: Option<i64>,
 }
 
+/// Query and header parameters for `listAgentVersions`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentVersionsParams {
+    /// Additive (2026-09-11). Absent: the whole history, oldest first, as every client reads it
+    /// today. Present: the newest `limit` versions, newest first, and `next_cursor` while more
+    /// exist.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// Only versions below this version number — pass the previous page's `next_cursor`. Ignored
+    /// without `limit`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<i64>,
+    /// `summary` drops `config` from every item (≈24 KB per version on production; 53 versions on
+    /// one agent ≈ 2.7 MB with the two keys). `version`, `changelog`, `created_by`, `created_at`
+    /// stay.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fields: Option<models::ListAgentVersionsFields>,
+}
+
 /// Agent CRUD and versioning
 #[derive(Debug, Clone)]
 pub struct AgentsApi {
@@ -123,7 +142,13 @@ impl AgentsApi {
     ///
     /// Idempotent on `message_id`: pinning a message already pinned returns the existing record
     /// with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
-    /// Unknown fields are dropped.
+    /// Unknown fields are dropped. `message_id` is stored as sent. The canonical form is the id
+    /// `GET /sessions/{sessionId}/messages` serves for the entry (`{run_id}`,
+    /// `{run_id}-reply\[-N\]`, `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any
+    /// other string is accepted — older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and
+    /// App Store never retires them — but cannot be matched back to the transcript, and each such
+    /// arrival is counted per day (owner's decision 2026-09-11, option A: a 422 comes no earlier
+    /// than a month of zero).
     ///
     /// `POST /api/v1/agents/{agentId}/bookmarks`
     ///
@@ -529,12 +554,12 @@ impl AgentsApi {
     /// `GET /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn list_agent_versions(&self, agent_id: &str) -> Result<models::ListAgentVersionsResponse> {
+    pub async fn list_agent_versions(&self, agent_id: &str, params: &ListAgentVersionsParams) -> Result<models::ListAgentVersionsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/agents/{}/versions", encode_path(agent_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,

@@ -175,6 +175,13 @@ impl SessionsApi {
 
     /// Create annotation
     ///
+    /// `message_id` is stored as sent. The canonical form is the id `GET
+    /// /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply\[-N\]`,
+    /// `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted —
+    /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
+    /// them — but cannot be matched back to the transcript, and each such arrival is counted per
+    /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+    ///
     /// `POST /api/v1/sessions/{sessionId}/annotations`
     ///
     /// Required scopes: `sessions:write`.
@@ -639,6 +646,13 @@ impl SessionsApi {
     }
 
     /// Save feedback/reaction for a session run
+    ///
+    /// `message_id` is stored as sent. The canonical form is the id `GET
+    /// /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply\[-N\]`,
+    /// `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted —
+    /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
+    /// them — but cannot be matched back to the transcript, and each such arrival is counted per
+    /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
     ///
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///

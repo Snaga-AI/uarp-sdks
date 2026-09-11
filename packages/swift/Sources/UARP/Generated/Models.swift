@@ -7836,8 +7836,13 @@ public struct ConstitutionRule: Codable, Hashable, Sendable {
     public var immutable: Bool?
     /// Conflict resolution — higher wins. Defaults to 0.
     public var priority: Int?
+    /// True when no code path can ever raise this rule — the platform emits no such action (the
+    /// constitution digest lists it under ADVISORY and boot logs "Constitution rules that can never
+    /// fire"). A rulebook used to show these as enforced and LOCKED over an audit page with no such
+    /// entries. Served since 2026-09-11; absent on older servers means unknown, not false.
+    public var advisory: Bool?
 
-    public init(id: String, ruleType: ConstitutionRuleRuleType, scope: ConstitutionRuleScope, scopeTargets: [String]? = nil, action: String, obligatedAction: String? = nil, penalty: ConstitutionRulePenalty, `description`: String? = nil, immutable: Bool? = nil, priority: Int? = nil) {
+    public init(id: String, ruleType: ConstitutionRuleRuleType, scope: ConstitutionRuleScope, scopeTargets: [String]? = nil, action: String, obligatedAction: String? = nil, penalty: ConstitutionRulePenalty, `description`: String? = nil, immutable: Bool? = nil, priority: Int? = nil, advisory: Bool? = nil) {
         self.id = id
         self.ruleType = ruleType
         self.scope = scope
@@ -7848,6 +7853,7 @@ public struct ConstitutionRule: Codable, Hashable, Sendable {
         self.`description` = `description`
         self.immutable = immutable
         self.priority = priority
+        self.advisory = advisory
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -7861,6 +7867,7 @@ public struct ConstitutionRule: Codable, Hashable, Sendable {
         case `description` = "description"
         case immutable = "immutable"
         case priority = "priority"
+        case advisory = "advisory"
     }
 }
 
@@ -16896,6 +16903,28 @@ public struct ListAgentsResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListAgentVersionsFields` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ListAgentVersionsFields: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let summary = ListAgentVersionsFields(rawValue: "summary")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ListAgentVersionsFields] = [.summary]
+}
+
 /// `ListAgentVersionsResponse` model.
 public struct ListAgentVersionsResponse: Codable, Hashable, Sendable {
     public var items: [AgentVersion]
@@ -16907,17 +16936,22 @@ public struct ListAgentVersionsResponse: Codable, Hashable, Sendable {
     /// (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
     /// as, and there is no paging parameter to reach further back.
     public var total: Int
+    /// Present only with `limit` and only while older versions remain: the version number to pass
+    /// as `cursor`.
+    public var nextCursor: Int?
 
-    public init(items: [AgentVersion], versions: [AgentVersion]? = nil, total: Int) {
+    public init(items: [AgentVersion], versions: [AgentVersion]? = nil, total: Int, nextCursor: Int? = nil) {
         self.items = items
         self.versions = versions
         self.total = total
+        self.nextCursor = nextCursor
     }
 
     private enum CodingKeys: String, CodingKey {
         case items = "items"
         case versions = "versions"
         case total = "total"
+        case nextCursor = "next_cursor"
     }
 }
 
@@ -19538,6 +19572,10 @@ public struct MarketplaceListingStatus: RawRepresentable, Codable, Hashable, Sen
 public struct MarketplaceSubscription: Codable, Hashable, Sendable {
     public var listingId: String
     public var status: MarketplaceSubscriptionStatus
+    /// The Stripe subscription (`sub_…`) the tenant pays through. Written by the bootstrap path and
+    /// — since 2026-09-11 — by the subscription webhook (created/updated); cleared when the
+    /// subscription is deleted. Absent while the tenant has none, and on tenants whose subscription
+    /// arrived before the webhook stored it.
     public var stripeSubscriptionId: String?
     public var createdAt: String
     public var updatedAt: String?
@@ -30529,12 +30567,12 @@ public struct TestAdminStripeConfigResponseVariant1: Codable, Hashable, Sendable
     /// one stored here. Until 2026-09-11 this check read the stored key on its own and could say
     /// LIVE while the running manager still held the environment's key of the previous company —
     /// green in the panel, "No such price" at checkout.
-    public var activeKeyMatches: Bool?
+    public var activeKeyMatches: Bool
     /// Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
     /// manager from the stored key; boot does the same since 2026-09-11).
     public var warning: String?
 
-    public init(ok: Bool, accountId: String, livemode: Bool, businessName: String? = nil, country: String, defaultCurrency: String, activeKeyMatches: Bool? = nil, warning: String? = nil) {
+    public init(ok: Bool, accountId: String, livemode: Bool, businessName: String? = nil, country: String, defaultCurrency: String, activeKeyMatches: Bool, warning: String? = nil) {
         self.ok = ok
         self.accountId = accountId
         self.livemode = livemode

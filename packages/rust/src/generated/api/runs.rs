@@ -508,7 +508,12 @@ impl RunsApi {
     /// stores it verbatim (max 256 chars) and does not check it against the transcript, which today
     /// carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
     /// There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
-    /// 405 (measured 2026-09-10).
+    /// 405 (measured 2026-09-10). `message_id` is stored as sent. The canonical form is the id `GET
+    /// /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply\[-N\]`,
+    /// `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted —
+    /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
+    /// them — but cannot be matched back to the transcript, and each such arrival is counted per
+    /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
     ///
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///

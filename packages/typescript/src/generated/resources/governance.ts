@@ -80,6 +80,16 @@ import type {
  */
 export interface GetGovernanceLedgerParams {
   /**
+   * Only rows of this category (e.g. `execution`, `constitution`, `orchestration`, `voting`).
+   * Accepted and IGNORED until 2026-09-11 — a filter that changed the request and not the
+   * result.
+   */
+  category?: string;
+  /**
+   * Only rows with this action (e.g. `run_complete`, `spawn_agent`, `modify_constitution`).
+   */
+  action?: string;
+  /**
    * How many of THIS TENANT's most recent entries to return, capped at 200. Ignored when both
    * `from` and `to` are supplied.
    */
@@ -540,7 +550,7 @@ export class GovernanceResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/governance/ledger',
-      query: pick(params, ['count', 'from', 'to']),
+      query: pick(params, ['category', 'action', 'count', 'from', 'to']),
       options,
     });
   }

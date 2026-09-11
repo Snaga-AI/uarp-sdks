@@ -70,6 +70,26 @@ package UARP.API.Agents is
 
    No_List_Agent_Mail_Params : constant List_Agent_Mail_Params := (others => <>);
 
+   --  Query and header parameters for `listAgentVersions`.
+   type List_Agent_Versions_Params is record
+      --  Additive (2026-09-11). Absent: the whole history, oldest first, as every client reads it
+      --  today. Present: the newest `limit` versions, newest first, and `next_cursor` while more
+      --  exist.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  Only versions below this version number - pass the previous page's `next_cursor`. Ignored
+      --  without `limit`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Integer_Value := 0;
+      --  `summary` drops `config` from every item (?24 KB per version on production; 53 versions on
+      --  one agent ? 2.7 MB with the two keys). `version`, `changelog`, `created_by`, `created_at`
+      --  stay.
+      Has_Fields : Boolean := False;
+      Fields : UARP.Models.List_Agent_Versions_Fields;
+   end record;
+
+   No_List_Agent_Versions_Params : constant List_Agent_Versions_Params := (others => <>);
+
    --  Activate agent
    --
    --  POST /api/v1/agents/{agentId}/activate
@@ -96,7 +116,12 @@ package UARP.API.Agents is
    --
    --  Idempotent on `message_id`: pinning a message already pinned returns the existing record
    --  with 200 and changes nothing; a new pin is 201. `content` is stored as sent (?10 000 chars).
-   --  Unknown fields are dropped.
+   --  Unknown fields are dropped. `message_id` is stored as sent. The canonical form is the id
+   --  `GET /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply[-N]`,
+   --  `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted -
+   --  older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
+   --  them - but cannot be matched back to the transcript, and each such arrival is counted per
+   --  day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
    --
    --  POST /api/v1/agents/{agentId}/bookmarks
    --
@@ -358,6 +383,7 @@ package UARP.API.Agents is
    function List_Agent_Versions
      (Self : Client_Type;
       Agent_Id : String;
+      Params : List_Agent_Versions_Params := No_List_Agent_Versions_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_Versions_Response;
 

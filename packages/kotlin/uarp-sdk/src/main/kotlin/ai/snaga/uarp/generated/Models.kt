@@ -5886,6 +5886,13 @@ public data class ConstitutionRule(
      * Conflict resolution — higher wins. Defaults to 0.
      */
     public val priority: Long? = null,
+    /**
+     * True when no code path can ever raise this rule — the platform emits no such action (the
+     * constitution digest lists it under ADVISORY and boot logs "Constitution rules that can never
+     * fire"). A rulebook used to show these as enforced and LOCKED over an audit page with no such
+     * entries. Served since 2026-09-11; absent on older servers means unknown, not false.
+     */
+    public val advisory: Boolean? = null,
 )
 
 /**
@@ -12499,6 +12506,33 @@ public data class ListAgentsResponse(
 )
 
 /**
+ * `ListAgentVersionsFields` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListAgentVersionsFieldsSerializer::class)
+@JvmInline
+public value class ListAgentVersionsFields(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val SUMMARY: ListAgentVersionsFields = ListAgentVersionsFields("summary")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListAgentVersionsFields> = listOf(SUMMARY)
+    }
+}
+
+public object ListAgentVersionsFieldsSerializer : KSerializer<ListAgentVersionsFields> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListAgentVersionsFields", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListAgentVersionsFields): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListAgentVersionsFields = ListAgentVersionsFields(decoder.decodeString())
+}
+
+/**
  * `ListAgentVersionsResponse` model.
  */
 @Serializable
@@ -12514,6 +12548,12 @@ public data class ListAgentVersionsResponse(
      * as, and there is no paging parameter to reach further back.
      */
     public val total: Long,
+    /**
+     * Present only with `limit` and only while older versions remain: the version number to pass
+     * as `cursor`.
+     */
+    @SerialName("next_cursor")
+    public val nextCursor: Long? = null,
 )
 
 /**
@@ -14274,6 +14314,12 @@ public data class MarketplaceSubscription(
     @SerialName("listing_id")
     public val listingId: String,
     public val status: MarketplaceSubscriptionStatus,
+    /**
+     * The Stripe subscription (`sub_…`) the tenant pays through. Written by the bootstrap path and
+     * — since 2026-09-11 — by the subscription webhook (created/updated); cleared when the
+     * subscription is deleted. Absent while the tenant has none, and on tenants whose subscription
+     * arrived before the webhook stored it.
+     */
     @SerialName("stripe_subscription_id")
     public val stripeSubscriptionId: String? = null,
     @SerialName("created_at")
@@ -22957,7 +23003,7 @@ public data class TestAdminStripeConfigResponseVariant1(
      * green in the panel, "No such price" at checkout.
      */
     @SerialName("active_key_matches")
-    public val activeKeyMatches: Boolean? = null,
+    public val activeKeyMatches: Boolean,
     /**
      * Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
      * manager from the stored key; boot does the same since 2026-09-11).

@@ -445,15 +445,27 @@ package body UARP.API.Agents is
    function List_Agent_Versions
      (Self : Client_Type;
       Agent_Id : String;
+      Params : List_Agent_Versions_Params := No_List_Agent_Versions_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_Versions_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
+      if Params.Has_Fields then
+         UARP.Types.Add (Query, "fields", UARP.Models.Image (Params.Fields));
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/versions",
+             Query => Query,
              Options => Options));
    end List_Agent_Versions;
 

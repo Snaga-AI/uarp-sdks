@@ -3009,6 +3009,13 @@ export interface ConstitutionRule {
    * Conflict resolution — higher wins. Defaults to 0.
    */
   priority?: number;
+  /**
+   * True when no code path can ever raise this rule — the platform emits no such action (the
+   * constitution digest lists it under ADVISORY and boot logs "Constitution rules that can never
+   * fire"). A rulebook used to show these as enforced and LOCKED over an audit page with no such
+   * entries. Served since 2026-09-11; absent on older servers means unknown, not false.
+   */
+  advisory?: boolean;
 }
 
 export type ConstitutionRulePenalty = 'block' | 'warn' | 'log' | 'terminate_agent' | 'revoke_permissions';
@@ -6383,6 +6390,10 @@ export interface ListAgentsResponse {
   has_more: boolean;
 }
 
+export type ListAgentVersionsFields = 'summary';
+
+export const LIST_AGENT_VERSIONS_FIELDS_VALUES = ['summary'] as const;
+
 export interface ListAgentVersionsResponse {
   items: AgentVersion[];
   /**
@@ -6397,6 +6408,11 @@ export interface ListAgentVersionsResponse {
    * as, and there is no paging parameter to reach further back.
    */
   total: number;
+  /**
+   * Present only with `limit` and only while older versions remain: the version number to pass
+   * as `cursor`.
+   */
+  next_cursor?: number;
 }
 
 export interface ListAgentWorkspaceFilesResponse {
@@ -7345,6 +7361,12 @@ export const MARKETPLACE_LISTING_STATUS_VALUES = ['draft', 'published', 'suspend
 export interface MarketplaceSubscription {
   listing_id: string;
   status: MarketplaceSubscriptionStatus;
+  /**
+   * The Stripe subscription (`sub_…`) the tenant pays through. Written by the bootstrap path and
+   * — since 2026-09-11 — by the subscription webhook (created/updated); cleared when the
+   * subscription is deleted. Absent while the tenant has none, and on tenants whose subscription
+   * arrived before the webhook stored it.
+   */
   stripe_subscription_id?: string;
   created_at: string;
   updated_at?: string;
@@ -11920,7 +11942,7 @@ export interface TestAdminStripeConfigResponseVariant1 {
    * LIVE while the running manager still held the environment's key of the previous company —
    * green in the panel, "No such price" at checkout.
    */
-  active_key_matches?: boolean;
+  active_key_matches: boolean;
   /**
    * Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
    * manager from the stored key; boot does the same since 2026-09-11).

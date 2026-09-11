@@ -41,7 +41,12 @@ public struct AgentsAPI: Sendable {
     ///
     /// Idempotent on `message_id`: pinning a message already pinned returns the existing record
     /// with 200 and changes nothing; a new pin is 201. `content` is stored as sent (≤10 000 chars).
-    /// Unknown fields are dropped.
+    /// Unknown fields are dropped. `message_id` is stored as sent. The canonical form is the id
+    /// `GET /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply[-N]`,
+    /// `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted —
+    /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
+    /// them — but cannot be matched back to the transcript, and each such arrival is counted per
+    /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
     ///
     /// `POST /api/v1/agents/{agentId}/bookmarks`
     ///
@@ -385,10 +390,21 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:read`.
-    public func listAgentVersions(agentId: String, options: RequestOptions = .init()) async throws -> ListAgentVersionsResponse {
+    public func listAgentVersions(agentId: String, limit: Int? = nil, cursor: Int? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) async throws -> ListAgentVersionsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: String(cursor)))
+        }
+        if let fields {
+            query.append(URLQueryItem(name: "fields", value: fields.rawValue))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/versions",
+            query: query,
             options: options
         ))
     }

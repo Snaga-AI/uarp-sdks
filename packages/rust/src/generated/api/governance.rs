@@ -16,6 +16,14 @@ use crate::util::encode_path;
 /// Query and header parameters for `getGovernanceLedger`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetGovernanceLedgerParams {
+    /// Only rows of this category (e.g. `execution`, `constitution`, `orchestration`, `voting`).
+    /// Accepted and IGNORED until 2026-09-11 — a filter that changed the request and not the
+    /// result.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    /// Only rows with this action (e.g. `run_complete`, `spawn_agent`, `modify_constitution`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
     /// How many of THIS TENANT's most recent entries to return, capped at 200. Ignored when both
     /// `from` and `to` are supplied.
     #[serde(default, skip_serializing_if = "Option::is_none")]

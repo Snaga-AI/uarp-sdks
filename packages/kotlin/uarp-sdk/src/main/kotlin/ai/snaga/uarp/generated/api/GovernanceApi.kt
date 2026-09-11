@@ -486,8 +486,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/ledger`
      */
-    public suspend fun getGovernanceLedger(count: Long? = null, from: Long? = null, to: Long? = null, options: RequestOptions = RequestOptions()): GetGovernanceLedgerResponse {
+    public suspend fun getGovernanceLedger(category: String? = null, action: String? = null, count: Long? = null, from: Long? = null, to: Long? = null, options: RequestOptions = RequestOptions()): GetGovernanceLedgerResponse {
         val query = buildList {
+            if (category != null) add("category" to category)
+            if (action != null) add("action" to action)
             if (count != null) add("count" to count.toString())
             if (from != null) add("from" to from.toString())
             if (to != null) add("to" to to.toString())

@@ -456,6 +456,12 @@ package body UARP.API.Governance is
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Category then
+         UARP.Types.Add (Query, "category", Params.Category);
+      end if;
+      if Params.Has_Action then
+         UARP.Types.Add (Query, "action", Params.Action);
+      end if;
       if Params.Has_Count then
          UARP.Types.Add (Query, "count", Params.Count);
       end if;

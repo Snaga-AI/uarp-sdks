@@ -14645,6 +14645,9 @@ package body UARP.Models is
       if Model.Has_Priority then
          JS.Set (Result, "priority", JS.JSON.Create (Model.Priority));
       end if;
+      if Model.Has_Advisory then
+         JS.Set (Result, "advisory", JS.JSON.Create (Model.Advisory));
+      end if;
       return Result;
    end To_JSON;
 
@@ -14691,6 +14694,10 @@ package body UARP.Models is
       if JS.Present (Node, "priority") then
          Result.Has_Priority := True;
          Result.Priority := JS.As_Integer (JS.Get_Value (Node, "priority"));
+      end if;
+      if JS.Present (Node, "advisory") then
+         Result.Has_Advisory := True;
+         Result.Advisory := JS.As_Boolean (JS.Get_Value (Node, "advisory"));
       end if;
       return Result;
    end From_JSON;
@@ -32044,6 +32051,36 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_List_Agent_Versions_Fields (Value : String) return List_Agent_Versions_Fields is
+   begin
+      if Value = "summary" then
+         return (Kind => List_Agent_Versions_Fields_Summary, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => List_Agent_Versions_Fields_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_List_Agent_Versions_Fields;
+
+   function To_List_Agent_Versions_Fields (Kind : List_Agent_Versions_Fields_Kind) return List_Agent_Versions_Fields is
+   begin
+      case Kind is
+         when List_Agent_Versions_Fields_Summary =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("summary"));
+         when List_Agent_Versions_Fields_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_List_Agent_Versions_Fields;
+
+   function Image (Model : List_Agent_Versions_Fields) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_List_Agent_Versions_Fields (Model.Kind).Raw));
+
+   function To_JSON (Model : List_Agent_Versions_Fields) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agent_Versions_Fields is
+      (To_List_Agent_Versions_Fields (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_JSON (Model : List_Agent_Versions_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -32066,6 +32103,9 @@ package body UARP.Models is
          end;
       end if;
       JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      if Model.Has_Next_Cursor then
+         JS.Set (Result, "next_cursor", JS.JSON.Create (Model.Next_Cursor));
+      end if;
       return Result;
    end To_JSON;
 
@@ -32093,6 +32133,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "total") then
          Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      if JS.Present (Node, "next_cursor") then
+         Result.Has_Next_Cursor := True;
+         Result.Next_Cursor := JS.As_Integer (JS.Get_Value (Node, "next_cursor"));
       end if;
       return Result;
    end From_JSON;
@@ -52995,9 +53039,7 @@ package body UARP.Models is
       end if;
       JS.Set (Result, "country", JS.JSON.Create (Model.Country));
       JS.Set (Result, "default_currency", JS.JSON.Create (Model.Default_Currency));
-      if Model.Has_Active_Key_Matches then
-         JS.Set (Result, "active_key_matches", JS.JSON.Create (Model.Active_Key_Matches));
-      end if;
+      JS.Set (Result, "active_key_matches", JS.JSON.Create (Model.Active_Key_Matches));
       if Model.Has_Warning then
          JS.Set (Result, "warning", JS.JSON.Create (Model.Warning));
       end if;
@@ -53027,7 +53069,6 @@ package body UARP.Models is
          Result.Default_Currency := JS.As_Text (JS.Get_Value (Node, "default_currency"));
       end if;
       if JS.Present (Node, "active_key_matches") then
-         Result.Has_Active_Key_Matches := True;
          Result.Active_Key_Matches := JS.As_Boolean (JS.Get_Value (Node, "active_key_matches"));
       end if;
       if JS.Present (Node, "warning") then

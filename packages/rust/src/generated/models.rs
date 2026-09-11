@@ -5713,6 +5713,12 @@ pub struct ConstitutionRule {
     /// Conflict resolution — higher wins. Defaults to 0.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub priority: Option<i64>,
+    /// True when no code path can ever raise this rule — the platform emits no such action (the
+    /// constitution digest lists it under ADVISORY and boot logs "Constitution rules that can never
+    /// fire"). A rulebook used to show these as enforced and LOCKED over an audit page with no such
+    /// entries. Served since 2026-09-11; absent on older servers means unknown, not false.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub advisory: Option<bool>,
 }
 
 /// `ConstitutionRulePenalty` enumeration.
@@ -12581,6 +12587,42 @@ pub struct ListAgentsResponse {
     pub has_more: bool,
 }
 
+/// `ListAgentVersionsFields` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ListAgentVersionsFields {
+    #[default]
+    #[serde(rename = "summary")]
+    Summary,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ListAgentVersionsFields {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Summary => "summary",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ListAgentVersionsFields {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ListAgentVersionsFields {
+    fn from(value: &str) -> Self {
+        match value {
+            "summary" => Self::Summary,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `ListAgentVersionsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentVersionsResponse {
@@ -12592,6 +12634,10 @@ pub struct ListAgentVersionsResponse {
     /// (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
     /// as, and there is no paging parameter to reach further back.
     pub total: i64,
+    /// Present only with `limit` and only while older versions remain: the version number to pass
+    /// as `cursor`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_cursor: Option<i64>,
 }
 
 /// `ListAgentWorkspaceFilesResponse` model.
@@ -14194,6 +14240,10 @@ impl From<&str> for MarketplaceListingStatus {
 pub struct MarketplaceSubscription {
     pub listing_id: String,
     pub status: MarketplaceSubscriptionStatus,
+    /// The Stripe subscription (`sub_…`) the tenant pays through. Written by the bootstrap path and
+    /// — since 2026-09-11 — by the subscription webhook (created/updated); cleared when the
+    /// subscription is deleted. Absent while the tenant has none, and on tenants whose subscription
+    /// arrived before the webhook stored it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stripe_subscription_id: Option<String>,
     pub created_at: String,
@@ -22420,8 +22470,7 @@ pub struct TestAdminStripeConfigResponseVariant1 {
     /// one stored here. Until 2026-09-11 this check read the stored key on its own and could say
     /// LIVE while the running manager still held the environment's key of the previous company —
     /// green in the panel, "No such price" at checkout.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub active_key_matches: Option<bool>,
+    pub active_key_matches: bool,
     /// Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
     /// manager from the stored key; boot does the same since 2026-09-11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
