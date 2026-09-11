@@ -22933,8 +22933,17 @@ public data class TestAdminSmtpConfigResponse(
 @Serializable
 public data class TestAdminStripeConfigResponseVariant1(
     public val ok: Boolean,
+    /**
+     * The Stripe account (`acct_…`) the key belongs to — the one fact that says which company
+     * receives the money.
+     */
     @SerialName("account_id")
     public val accountId: String,
+    /**
+     * Whether the key is a live one — derived from the key prefix (`sk_live_`/`rk_live_`), because
+     * Stripe's Account object carries no `livemode`; until 2026-09-11 the field was absent and the
+     * panel showed TEST for a live key.
+     */
     public val livemode: Boolean,
     @SerialName("business_name")
     public val businessName: String? = null,

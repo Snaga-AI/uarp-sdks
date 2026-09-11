@@ -11900,7 +11900,16 @@ export interface TestAdminSmtpConfigResponse {
 
 export interface TestAdminStripeConfigResponseVariant1 {
   ok: boolean;
+  /**
+   * The Stripe account (`acct_…`) the key belongs to — the one fact that says which company
+   * receives the money.
+   */
   account_id: string;
+  /**
+   * Whether the key is a live one — derived from the key prefix (`sk_live_`/`rk_live_`), because
+   * Stripe's Account object carries no `livemode`; until 2026-09-11 the field was absent and the
+   * panel showed TEST for a live key.
+   */
   livemode: boolean;
   business_name?: string;
   country: string;

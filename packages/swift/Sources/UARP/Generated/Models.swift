@@ -30515,7 +30515,12 @@ public struct TestAdminSmtpConfigResponse: Codable, Hashable, Sendable {
 /// `TestAdminStripeConfigResponseVariant1` model.
 public struct TestAdminStripeConfigResponseVariant1: Codable, Hashable, Sendable {
     public var ok: Bool
+    /// The Stripe account (`acct_…`) the key belongs to — the one fact that says which company
+    /// receives the money.
     public var accountId: String
+    /// Whether the key is a live one — derived from the key prefix (`sk_live_`/`rk_live_`), because
+    /// Stripe's Account object carries no `livemode`; until 2026-09-11 the field was absent and the
+    /// panel showed TEST for a live key.
     public var livemode: Bool
     public var businessName: String?
     public var country: String

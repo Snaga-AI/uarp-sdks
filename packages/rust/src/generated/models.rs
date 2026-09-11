@@ -22405,7 +22405,12 @@ pub struct TestAdminSmtpConfigResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TestAdminStripeConfigResponseVariant1 {
     pub ok: bool,
+    /// The Stripe account (`acct_…`) the key belongs to — the one fact that says which company
+    /// receives the money.
     pub account_id: String,
+    /// Whether the key is a live one — derived from the key prefix (`sk_live_`/`rk_live_`), because
+    /// Stripe's Account object carries no `livemode`; until 2026-09-11 the field was absent and the
+    /// panel showed TEST for a live key.
     pub livemode: bool,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub business_name: Option<String>,

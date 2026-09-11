@@ -20549,7 +20549,12 @@ package UARP.Models is
    --  `TestAdminStripeConfigResponseVariant1` model.
    type Test_Admin_Stripe_Config_Response_Variant1 is record
       Ok : Standard.Boolean := False;
+      --  The Stripe account (`acct_...`) the key belongs to - the one fact that says which company
+      --  receives the money.
       Account_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Whether the key is a live one - derived from the key prefix (`sk_live_`/`rk_live_`), because
+      --  Stripe's Account object carries no `livemode`; until 2026-09-11 the field was absent and the
+      --  panel showed TEST for a live key.
       Livemode : Standard.Boolean := False;
       Has_Business_Name : Boolean := False;
       Business_Name : UARP.Types.Text := UARP.Types.Empty_Text;
