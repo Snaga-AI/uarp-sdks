@@ -6593,7 +6593,12 @@ package UARP.Models is
 
    --  `CreateBillingPortalSessionRequest` model.
    type Create_Billing_Portal_Session_Request is record
-      --  Same-origin URL to return to after the portal session ends.
+      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
+      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
+      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
+      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
+      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
+      --  Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
       Has_Return_URL : Boolean := False;
       Return_URL : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -6612,8 +6617,20 @@ package UARP.Models is
    --  `CreateCheckoutSessionRequest` model.
    type Create_Checkout_Session_Request is record
       Plan_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
+      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
+      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
+      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
+      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
+      --  Absent or empty: `/browser/settings/billing?success=1` on that origin.
       Has_Success_URL : Boolean := False;
       Success_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
+      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
+      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
+      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
+      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
+      --  Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
       Has_Cancel_URL : Boolean := False;
       Cancel_URL : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -7329,10 +7346,20 @@ package UARP.Models is
 
    --  `CreateSpecPackageCheckoutSessionRequest` model.
    type Create_Spec_Package_Checkout_Session_Request is record
-      --  Same-origin. Defaults to the billing settings page.
+      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
+      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
+      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
+      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
+      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
+      --  Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
       Has_Success_URL : Boolean := False;
       Success_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Same-origin. Defaults to the billing settings page.
+      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
+      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
+      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
+      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
+      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
+      --  Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
       Has_Cancel_URL : Boolean := False;
       Cancel_URL : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
