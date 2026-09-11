@@ -3840,6 +3840,17 @@ public data class AgentVersion(
     @SerialName("tenant_id")
     public val tenantId: String? = null,
     public val version: Long,
+    /**
+     * Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes
+     * five fixed phrases of its own, and a sixth with a number, on the versions it mints — known
+     * values a client may match on, and therefore part of the contract (a change here is a
+     * contract change): `Initial version`, `Initial version (auto-created)` (the lazy first record
+     * of an agent that predates versioning), `Auto-versioned before update` and `Auto-versioned
+     * after update` (the two snapshots every PATCH writes), `Auto-versioned after update (retry)`,
+     * `Rollback to version N`. On production 280 of 312 versions across six tenants carry one of
+     * these (Desktop, 2026-09-11). A reason code beside the prose is the owner's decision (DEC
+     * 11).
+     */
     public val changelog: String? = null,
     @SerialName("created_at")
     public val createdAt: String,
@@ -12549,11 +12560,17 @@ public data class ListAgentVersionsResponse(
      */
     public val total: Long,
     /**
-     * Present only with `limit` and only while older versions remain: the version number to pass
-     * as `cursor`.
+     * Present only with `limit`: whether older versions remain — the document's list convention
+     * (/agents, /sessions, /runs, /files answer the same pair).
      */
-    @SerialName("next_cursor")
-    public val nextCursor: Long? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean? = null,
+    /**
+     * Present only with `limit` and only while older versions remain: the version number to pass
+     * as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
+     * no client had read it.
+     */
+    public val cursor: Long? = null,
 )
 
 /**

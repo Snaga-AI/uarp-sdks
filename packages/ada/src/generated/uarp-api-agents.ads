@@ -72,13 +72,13 @@ package UARP.API.Agents is
 
    --  Query and header parameters for `listAgentVersions`.
    type List_Agent_Versions_Params is record
-      --  Additive (2026-09-11). Absent: the whole history, oldest first, as every client reads it
-      --  today. Present: the newest `limit` versions, newest first, and `next_cursor` while more
-      --  exist.
+      --  Additive (2026-09-11). Absent: the whole history, newest first - the order the route always
+      --  answered and every client reads today. Present: the newest `limit` versions, newest first,
+      --  with `has_more` and `cursor` while more exist.
       Has_Limit : Boolean := False;
       Limit : UARP.Types.Integer_Value := 0;
-      --  Only versions below this version number - pass the previous page's `next_cursor`. Ignored
-      --  without `limit`.
+      --  Only versions below this version number - pass the previous page's `cursor`. Ignored without
+      --  `limit`.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Integer_Value := 0;
       --  `summary` drops `config` from every item (?24 KB per version on production; 53 versions on
@@ -386,6 +386,16 @@ package UARP.API.Agents is
       Params : List_Agent_Versions_Params := No_List_Agent_Versions_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_Versions_Response;
+
+   --  Collect every item `listAgentVersions` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function List_Agent_Versions_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Versions_Params := No_List_Agent_Versions_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Agent_Version_Vectors.Vector;
 
    --  Partial update agent
    --

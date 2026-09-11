@@ -499,6 +499,17 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Stream every item returned by `listAgentVersions`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun listAgentVersionsAll(agentId: String, limit: Long? = null, cursor: Long? = null, fields: ListAgentVersionsFields? = null, options: RequestOptions = RequestOptions()): Flow<AgentVersion> = autoPaginate(
+        fetch = { pageCursor -> listAgentVersions(agentId = agentId, limit = limit, cursor = pageCursor, fields = fields, options = options) },
+        items = { it.items },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
+
+    /**
      * Partial update agent
      *
      * WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.

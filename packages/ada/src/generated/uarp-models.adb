@@ -32103,8 +32103,11 @@ package body UARP.Models is
          end;
       end if;
       JS.Set (Result, "total", JS.JSON.Create (Model.Total));
-      if Model.Has_Next_Cursor then
-         JS.Set (Result, "next_cursor", JS.JSON.Create (Model.Next_Cursor));
+      if Model.Has_Has_More then
+         JS.Set (Result, "has_more", JS.JSON.Create (Model.Has_More));
+      end if;
+      if Model.Has_Cursor then
+         JS.Set (Result, "cursor", JS.JSON.Create (Model.Cursor));
       end if;
       return Result;
    end To_JSON;
@@ -32134,9 +32137,13 @@ package body UARP.Models is
       if JS.Present (Node, "total") then
          Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
       end if;
-      if JS.Present (Node, "next_cursor") then
-         Result.Has_Next_Cursor := True;
-         Result.Next_Cursor := JS.As_Integer (JS.Get_Value (Node, "next_cursor"));
+      if JS.Present (Node, "has_more") then
+         Result.Has_Has_More := True;
+         Result.Has_More := JS.As_Boolean (JS.Get_Value (Node, "has_more"));
+      end if;
+      if JS.Present (Node, "cursor") then
+         Result.Has_Cursor := True;
+         Result.Cursor := JS.As_Integer (JS.Get_Value (Node, "cursor"));
       end if;
       return Result;
    end From_JSON;

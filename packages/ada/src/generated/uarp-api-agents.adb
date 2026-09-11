@@ -469,6 +469,55 @@ package body UARP.API.Agents is
              Options => Options));
    end List_Agent_Versions;
 
+   function List_Agent_Versions_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Versions_Params := No_List_Agent_Versions_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Agent_Version_Vectors.Vector
+   is
+      Collected : UARP.Models.Agent_Version_Vectors.Vector;
+      Page_Params : List_Agent_Versions_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Agent_Versions_Response :=
+               List_Agent_Versions
+                  (Self,
+                   Agent_Id => Agent_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Agent_Versions_All;
+
    function Patch
      (Self : Client_Type;
       Agent_Id : String;

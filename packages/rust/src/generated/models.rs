@@ -3640,6 +3640,15 @@ pub struct AgentVersion {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
     pub version: i64,
+    /// Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes
+    /// five fixed phrases of its own, and a sixth with a number, on the versions it mints — known
+    /// values a client may match on, and therefore part of the contract (a change here is a
+    /// contract change): `Initial version`, `Initial version (auto-created)` (the lazy first record
+    /// of an agent that predates versioning), `Auto-versioned before update` and `Auto-versioned
+    /// after update` (the two snapshots every PATCH writes), `Auto-versioned after update (retry)`,
+    /// `Rollback to version N`. On production 280 of 312 versions across six tenants carry one of
+    /// these (Desktop, 2026-09-11). A reason code beside the prose is the owner's decision (DEC
+    /// 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog: Option<String>,
     pub created_at: String,
@@ -12634,10 +12643,15 @@ pub struct ListAgentVersionsResponse {
     /// (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
     /// as, and there is no paging parameter to reach further back.
     pub total: i64,
-    /// Present only with `limit` and only while older versions remain: the version number to pass
-    /// as `cursor`.
+    /// Present only with `limit`: whether older versions remain — the document's list convention
+    /// (/agents, /sessions, /runs, /files answer the same pair).
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub next_cursor: Option<i64>,
+    pub has_more: Option<bool>,
+    /// Present only with `limit` and only while older versions remain: the version number to pass
+    /// as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
+    /// no client had read it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<i64>,
 }
 
 /// `ListAgentWorkspaceFilesResponse` model.

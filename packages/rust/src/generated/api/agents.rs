@@ -72,13 +72,13 @@ pub struct ListAgentMailParams {
 /// Query and header parameters for `listAgentVersions`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentVersionsParams {
-    /// Additive (2026-09-11). Absent: the whole history, oldest first, as every client reads it
-    /// today. Present: the newest `limit` versions, newest first, and `next_cursor` while more
-    /// exist.
+    /// Additive (2026-09-11). Absent: the whole history, newest first — the order the route always
+    /// answered and every client reads today. Present: the newest `limit` versions, newest first,
+    /// with `has_more` and `cursor` while more exist.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
-    /// Only versions below this version number — pass the previous page's `next_cursor`. Ignored
-    /// without `limit`.
+    /// Only versions below this version number — pass the previous page's `cursor`. Ignored without
+    /// `limit`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<i64>,
     /// `summary` drops `config` from every item (≈24 KB per version on production; 53 versions on
@@ -565,6 +565,29 @@ impl AgentsApi {
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listAgentVersions`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn list_agent_versions_all<'a>(&'a self, agent_id: &'a str, params: &'a ListAgentVersionsParams) -> impl Stream<Item = Result<models::AgentVersion>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_agent_versions(agent_id, &page_params).await?;
+                let items = page.items;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Partial update agent

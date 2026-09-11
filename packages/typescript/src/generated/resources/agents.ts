@@ -113,14 +113,14 @@ export interface ListAgentMailParams {
  */
 export interface ListAgentVersionsParams {
   /**
-   * Additive (2026-09-11). Absent: the whole history, oldest first, as every client reads it
-   * today. Present: the newest `limit` versions, newest first, and `next_cursor` while more
-   * exist.
+   * Additive (2026-09-11). Absent: the whole history, newest first — the order the route always
+   * answered and every client reads today. Present: the newest `limit` versions, newest first,
+   * with `has_more` and `cursor` while more exist.
    */
   limit?: number;
   /**
-   * Only versions below this version number — pass the previous page's `next_cursor`. Ignored
-   * without `limit`.
+   * Only versions below this version number — pass the previous page's `cursor`. Ignored without
+   * `limit`.
    */
   cursor?: number;
   /**
@@ -538,6 +538,19 @@ export class AgentsResource extends APIResource {
       query: pick(params, ['limit', 'cursor', 'fields']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listAgentVersions`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listAgentVersionsAll(agentId: string, params?: ListAgentVersionsParams, options?: RequestOptions): AsyncIterableIterator<AgentVersion> {
+    return autoPaginate<AgentVersion>(
+      (cursor) => this.listAgentVersions(agentId, { ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**

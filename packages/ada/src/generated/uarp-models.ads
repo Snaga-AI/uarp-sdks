@@ -3783,6 +3783,15 @@ package UARP.Models is
       Has_Tenant_Id : Boolean := False;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Version : UARP.Types.Integer_Value := 0;
+      --  Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes
+      --  five fixed phrases of its own, and a sixth with a number, on the versions it mints - known
+      --  values a client may match on, and therefore part of the contract (a change here is a
+      --  contract change): `Initial version`, `Initial version (auto-created)` (the lazy first record
+      --  of an agent that predates versioning), `Auto-versioned before update` and `Auto-versioned
+      --  after update` (the two snapshots every PATCH writes), `Auto-versioned after update (retry)`,
+      --  `Rollback to version N`. On production 280 of 312 versions across six tenants carry one of
+      --  these (Desktop, 2026-09-11). A reason code beside the prose is the owner's decision (DEC
+      --  11).
       Has_Changelog : Boolean := False;
       Changelog : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -12668,10 +12677,15 @@ package UARP.Models is
       --  (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
       --  as, and there is no paging parameter to reach further back.
       Total : UARP.Types.Integer_Value := 0;
+      --  Present only with `limit`: whether older versions remain - the document's list convention
+      --  (/agents, /sessions, /runs, /files answer the same pair).
+      Has_Has_More : Boolean := False;
+      Has_More : Standard.Boolean := False;
       --  Present only with `limit` and only while older versions remain: the version number to pass
-      --  as `cursor`.
-      Has_Next_Cursor : Boolean := False;
-      Next_Cursor : UARP.Types.Integer_Value := 0;
+      --  as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
+      --  no client had read it.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : List_Agent_Versions_Response) return UARP.JSON_Support.JSON_Value;

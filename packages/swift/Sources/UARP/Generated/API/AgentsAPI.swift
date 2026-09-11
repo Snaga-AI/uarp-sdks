@@ -409,6 +409,17 @@ public struct AgentsAPI: Sendable {
         ))
     }
 
+    /// Stream every item returned by `listAgentVersions`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func listAgentVersionsAll(agentId: String, limit: Int? = nil, cursor: Int? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AgentVersion, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listAgentVersions(agentId: agentId, limit: limit, cursor: cursor, fields: fields, options: options) },
+            items: { $0.items },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
+    }
+
     /// Partial update agent
     ///
     /// WRITE SEMANTICS: merges. Top-level fields the body omits keep their stored values.
