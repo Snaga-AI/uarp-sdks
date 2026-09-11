@@ -88,7 +88,10 @@ package UARP.API.Workspaces is
       --  Conditional write (workspaces.ts). The file's `etag` from a previous read: the write happens
       --  only if the file is unchanged since; `*` requires the file to exist. Without it (and without
       --  If-None-Match) the write is unconditional, as for every client that predates the header. On
-      --  a mismatch the answer is 412 with the winner's `current_etag` in the body.
+      --  a mismatch the answer is 412 with the winner's `current_etag` in the body - except when the
+      --  file does not exist, where there is no etag to give. The syntax is not validated:
+      --  surrounding quotes and a `W/` prefix are stripped, and any other string is compared as a
+      --  strong validator and simply does not match (412, never 400).
       Has_If_Match : Boolean := False;
       If_Match : UARP.Types.Text := UARP.Types.Empty_Text;
       --  `*` - create only: the write happens only if the file does not exist yet (workspaces.ts).
@@ -111,6 +114,10 @@ package UARP.API.Workspaces is
       return UARP.Models.Workspace;
 
    --  Copy a file within the workspace
+   --
+   --  Stores the bytes again under the new path (workspace-store.ts copyFile ? storeFile): a NEW
+   --  `file_id` and its own record come back, 201; the source is untouched. Body: `source_path`,
+   --  `dest_path` (the move route spells them `from_path`/`to_path`).
    --
    --  POST /api/v1/workspaces/{workspaceId}/files/copy
    --
@@ -279,6 +286,11 @@ package UARP.API.Workspaces is
 
    --  Move/rename a file
    --
+   --  Renames the record in place (workspace-store.ts moveFile): the SAME `file_id` comes back
+   --  with the new `path` - a client holding the id keeps a live key. The content and its `etag`
+   --  do not change. Answers 200. Body: `from_path`, `to_path` (the copy route spells them
+   --  `source_path`/`dest_path`; both stay as they are).
+   --
    --  POST /api/v1/workspaces/{workspaceId}/files/move
    --
    --  Required scopes: files:write.
@@ -400,6 +412,14 @@ package UARP.API.Workspaces is
       return UARP.Models.Workspace;
 
    --  Upload or update a file
+   --
+   --  Writes the file at `?path=` - a NEW record with a NEW `file_id` every time, also when the
+   --  path already exists (workspace-store.ts storeFile: the previous record moves into the path's
+   --  version history and its bytes stay readable through it; a client that keeps the old
+   --  `file_id` after re-uploading holds a key to the previous version). `etag` is the lowercase
+   --  hex sha256 of the content. Body: multipart/form-data with a `file` part, or the raw bytes as
+   --  application/octet-stream. Conditional forms via `If-Match` / `If-None-Match` - see the
+   --  parameters.
    --
    --  PUT /api/v1/workspaces/{workspaceId}/files
    --

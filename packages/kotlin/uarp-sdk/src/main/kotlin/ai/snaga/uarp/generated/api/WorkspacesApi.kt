@@ -45,6 +45,10 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
     /**
      * Copy a file within the workspace
      *
+     * Stores the bytes again under the new path (workspace-store.ts copyFile → storeFile): a NEW
+     * `file_id` and its own record come back, 201; the source is untouched. Body: `source_path`,
+     * `dest_path` (the move route spells them `from_path`/`to_path`).
+     *
      * `POST /api/v1/workspaces/{workspaceId}/files/copy`
      *
      * Required scopes: `files:write`.
@@ -325,6 +329,11 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
     /**
      * Move/rename a file
      *
+     * Renames the record in place (workspace-store.ts moveFile): the SAME `file_id` comes back
+     * with the new `path` — a client holding the id keeps a live key. The content and its `etag`
+     * do not change. Answers 200. Body: `from_path`, `to_path` (the copy route spells them
+     * `source_path`/`dest_path`; both stay as they are).
+     *
      * `POST /api/v1/workspaces/{workspaceId}/files/move`
      *
      * Required scopes: `files:write`.
@@ -512,6 +521,14 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
 
     /**
      * Upload or update a file
+     *
+     * Writes the file at `?path=` — a NEW record with a NEW `file_id` every time, also when the
+     * path already exists (workspace-store.ts storeFile: the previous record moves into the path's
+     * version history and its bytes stay readable through it; a client that keeps the old
+     * `file_id` after re-uploading holds a key to the previous version). `etag` is the lowercase
+     * hex sha256 of the content. Body: multipart/form-data with a `file` part, or the raw bytes as
+     * application/octet-stream. Conditional forms via `If-Match` / `If-None-Match` — see the
+     * parameters.
      *
      * `PUT /api/v1/workspaces/{workspaceId}/files`
      *
