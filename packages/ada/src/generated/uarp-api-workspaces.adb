@@ -458,8 +458,15 @@ package body UARP.API.Workspaces is
       return UARP.Models.Workspace_File
    is
       Query : UARP.Types.Pair_Vectors.Vector;
+      Headers : UARP.Types.Pair_Vectors.Vector;
    begin
       UARP.Types.Add (Query, "path", Params.Path);
+      if Params.Has_If_Match then
+         UARP.Types.Add (Headers, "If-Match", Params.If_Match);
+      end if;
+      if Params.Has_If_None_Match then
+         UARP.Types.Add (Headers, "If-None-Match", UARP.Models.Image (Params.If_None_Match));
+      end if;
       declare
          Form : UARP.Multipart.Builder;
       begin
@@ -471,6 +478,7 @@ package body UARP.API.Workspaces is
                 "PUT",
                 "/api/v1/workspaces/" & UARP.Types.Encode_Path_Segment (Workspace_Id) & "/files",
                 Query => Query,
+                Headers => Headers,
                 Idempotent => True,
                 Options => Options,
                 Payload => UARP.Types.SU.To_String (UARP.Multipart.Body_Text (Form)),

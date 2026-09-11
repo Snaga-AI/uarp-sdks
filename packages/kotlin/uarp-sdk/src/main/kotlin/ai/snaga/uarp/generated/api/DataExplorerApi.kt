@@ -98,7 +98,7 @@ public class DataExplorerApi internal constructor(private val client: UarpClient
      * Stream every item returned by `listDataExplorerKeys`, following the `cursor` cursor until
      * the server reports no further pages.
      */
-    public fun listDataExplorerKeysAll(namespace: String, prefix: String? = null, cursor: String? = null, limit: Long? = null, search: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun listDataExplorerKeysAll(namespace: String, prefix: String? = null, cursor: String? = null, limit: Long? = null, search: String? = null, options: RequestOptions = RequestOptions()): Flow<DataExplorerKey> = autoPaginate(
         fetch = { pageCursor -> listDataExplorerKeys(namespace = namespace, prefix = prefix, cursor = pageCursor, limit = limit, search = search, options = options) },
         items = { it.keys ?: emptyList() },
         cursor = { it.cursor },

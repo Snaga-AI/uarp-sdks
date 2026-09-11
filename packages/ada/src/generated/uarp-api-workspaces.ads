@@ -85,6 +85,15 @@ package UARP.API.Workspaces is
    type Upload_Workspace_File_Params is record
       --  File path within workspace
       Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Conditional write (workspaces.ts). The file's `etag` from a previous read: the write happens
+      --  only if the file is unchanged since; `*` requires the file to exist. Without it (and without
+      --  If-None-Match) the write is unconditional, as for every client that predates the header. On
+      --  a mismatch the answer is 412 with the winner's `current_etag` in the body.
+      Has_If_Match : Boolean := False;
+      If_Match : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `*` - create only: the write happens only if the file does not exist yet (workspaces.ts).
+      Has_If_None_Match : Boolean := False;
+      If_None_Match : UARP.Models.Upload_Workspace_File_If_None_Match;
    end record;
 
    No_Upload_Workspace_File_Params : constant Upload_Workspace_File_Params := (others => <>);

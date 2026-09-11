@@ -41,6 +41,54 @@ package body UARP.API.Marketplace is
              Options => Options));
    end Get_Listing_Reviews;
 
+   function Get_Listing_Reviews_All
+     (Self : Client_Type;
+      Listing_Id : String;
+      Params : Get_Listing_Reviews_Params := No_Get_Listing_Reviews_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Marketplace_Listing_Rating_Vectors.Vector
+   is
+      Collected : UARP.Models.Marketplace_Listing_Rating_Vectors.Vector;
+      Page_Params : Get_Listing_Reviews_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Listing_Reviews_Response :=
+               Get_Listing_Reviews
+                  (Self,
+                   Listing_Id => Listing_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Reviews loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Reviews.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Listing_Reviews_All;
+
    function Get_Marketplace_Categories
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

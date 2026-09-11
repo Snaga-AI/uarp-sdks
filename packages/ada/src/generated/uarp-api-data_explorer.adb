@@ -71,6 +71,53 @@ package body UARP.API.Data_Explorer is
              Options => Options));
    end List_Data_Explorer_Keys;
 
+   function List_Data_Explorer_Keys_All
+     (Self : Client_Type;
+      Params : List_Data_Explorer_Keys_Params := No_List_Data_Explorer_Keys_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Data_Explorer_Key_Vectors.Vector
+   is
+      Collected : UARP.Models.Data_Explorer_Key_Vectors.Vector;
+      Page_Params : List_Data_Explorer_Keys_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Data_Explorer_Keys_Response :=
+               List_Data_Explorer_Keys
+                  (Self,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Keys loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Keys.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Data_Explorer_Keys_All;
+
    function List_Data_Explorer_Namespaces
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

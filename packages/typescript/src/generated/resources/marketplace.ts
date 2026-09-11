@@ -8,7 +8,6 @@ import type {
   GetListingReviewsResponse,
   GetMarketplaceCategoriesResponse,
   InvokeListingAgentRequest,
-  JsonObject,
   ListFeaturedSpecsResponse,
   ListSubscriptionsResponse,
   MarketplaceInvocation,
@@ -79,8 +78,8 @@ export class MarketplaceResource extends APIResource {
    * Iterate every item returned by `getListingReviews`, following the `cursor` cursor until the
    * server reports no further pages.
    */
-  getListingReviewsAll(listingId: string, params?: GetListingReviewsParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  getListingReviewsAll(listingId: string, params?: GetListingReviewsParams, options?: RequestOptions): AsyncIterableIterator<MarketplaceListingRating> {
+    return autoPaginate<MarketplaceListingRating>(
       (cursor) => this.getListingReviews(listingId, { ...params, cursor }, options),
       'reviews',
       'cursor',

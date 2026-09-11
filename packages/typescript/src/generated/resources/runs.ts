@@ -10,6 +10,7 @@ import type {
   CancelRunResponse,
   ContinueRunRequest,
   ContinueRunResponse,
+  CreateRunCheckpointResponse,
   CreateRunRequest,
   EstimateRunCostRequest,
   GetRunAuditLogResponse,
@@ -30,7 +31,6 @@ import type {
   ResumeRunResponse,
   Run,
   RunApproveRequest,
-  RunCheckpoint,
   RunCostEstimate,
   RunFeedbackList,
   RunFeedbackOne,
@@ -190,7 +190,7 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  createRunCheckpoint(runId: string, options?: RequestOptions): Promise<RunCheckpoint> {
+  createRunCheckpoint(runId: string, options?: RequestOptions): Promise<CreateRunCheckpointResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/checkpoint`,

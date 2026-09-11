@@ -241,7 +241,7 @@ package body UARP.API.Public is
      (Self : Client_Type;
       State_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Public_State
+      return UARP.Models.Get_Public_State_Response
    is
    begin
       return UARP.Models.From_JSON

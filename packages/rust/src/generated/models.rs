@@ -276,6 +276,75 @@ impl From<&str> for A2ajsonRpcRequestMethod {
     }
 }
 
+/// a2a/agent-card.ts A2APart — `text`, `file` or `data` by `type`. The platform itself emits
+/// one text or data part per message; file parts arrive from remote agents.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2APart {
+    pub r#type: A2APartType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file: Option<A2APartFile>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `A2APartFile` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct A2APartFile {
+    pub name: String,
+    pub mime_type: String,
+    /// Inline base64.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+}
+
+/// `A2APartType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum A2APartType {
+    #[default]
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "file")]
+    File,
+    #[serde(rename = "data")]
+    Data,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl A2APartType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Text => "text",
+            Self::File => "file",
+            Self::Data => "data",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for A2APartType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for A2APartType {
+    fn from(value: &str) -> Self {
+        match value {
+            "text" => Self::Text,
+            "file" => Self::File,
+            "data" => Self::Data,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `A2ATask` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct A2ATask {
@@ -300,7 +369,7 @@ pub struct A2ATaskArtifact {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
-    pub parts: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub parts: Vec<A2APart>,
     pub index: i64,
 }
 
@@ -308,7 +377,7 @@ pub struct A2ATaskArtifact {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct A2ATaskMessage {
     pub role: A2ATaskMessageRole,
-    pub parts: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub parts: Vec<A2APart>,
 }
 
 /// `A2ATaskMessageRole` enumeration.
@@ -911,17 +980,17 @@ pub struct AdminAnalyticsOverviewResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversion_rate: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timeseries: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub timeseries: Option<Vec<AnalyticsTimeseriesPoint>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_countries: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub top_countries: Option<Vec<AnalyticsTopValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_devices: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub top_devices: Option<Vec<AnalyticsTopValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_browsers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub top_browsers: Option<Vec<AnalyticsTopValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_referrers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub top_referrers: Option<Vec<AnalyticsTopValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub top_utm_sources: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub top_utm_sources: Option<Vec<AnalyticsTopValue>>,
 }
 
 /// `AdminAnalyticsOverviewResponseRange` model.
@@ -1294,10 +1363,10 @@ pub struct AdminConfigSecurityPoliciesConfig {
 /// `AdminConfigSecurityPoliciesConfigPolicies` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminConfigSecurityPoliciesConfigPolicies {
-    pub cors_allowed_origins: Vec<serde_json::Value>,
+    pub cors_allowed_origins: Vec<String>,
     pub webhook_url_denylist: Vec<String>,
     pub file_upload_max_size_bytes: i64,
-    pub file_upload_allowed_mime_types: Vec<serde_json::Value>,
+    pub file_upload_allowed_mime_types: Vec<String>,
     pub admin_provider_settings_require_super_admin: bool,
 }
 
@@ -1351,7 +1420,7 @@ pub struct AdminConfigToolSecurityConfig {
 pub struct AdminConfigToolSecurityConfigToolSecurity {
     pub default_egress_policy: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub egress_allowlist_per_tenant: Option<Vec<serde_json::Value>>,
+    pub egress_allowlist_per_tenant: Option<Vec<String>>,
     pub ssrf_deny_private_ranges: bool,
     pub default_tool_timeout_ms: i64,
     pub default_tool_max_payload_bytes: i64,
@@ -1508,7 +1577,7 @@ impl From<&str> for AdminDataExplorerRawKeysResponseKeyType {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminFeatureFlagsConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub flags: Option<Vec<FeatureFlag>>,
 }
 
 /// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
@@ -1620,7 +1689,7 @@ pub struct AdminGetVoiceConfigResponseVoiceVariant1tts {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminGuardrailsConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub guardrails: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub guardrails: Option<Vec<GuardrailConfigItem>>,
 }
 
 /// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
@@ -1980,6 +2049,21 @@ pub struct AdminProviderLastModelsSync {
     pub live: i64,
 }
 
+/// admin.ts — the list projection of a custom provider (the single GET adds catalogue fields;
+/// see AdminProvider).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminProviderSummary {
+    pub id: String,
+    pub name: String,
+    pub canonical: String,
+    pub default_endpoint: String,
+    pub local: bool,
+    pub enabled: bool,
+    pub model_allowlist: Vec<String>,
+    pub is_custom: bool,
+    pub requires_api_key: bool,
+}
+
 /// `AdminPutLandingConfigResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminPutLandingConfigResponse {
@@ -2086,7 +2170,7 @@ pub struct AdminPutVoiceConfigResponseVoiceTts {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminRateLimitsConfig {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub endpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub endpoints: Option<Vec<EndpointRateLimit>>,
 }
 
 /// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
@@ -2341,8 +2425,6 @@ pub struct Agent {
     pub mcp: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub policies: Option<serde_json::Map<String, serde_json::Value>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub skills: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2638,7 +2720,7 @@ pub struct AgentCapabilities {
     pub agent_id: String,
     pub skills: Vec<AgentCapabilitiesSkill>,
     pub constraints: AgentCapabilitiesConstraints,
-    pub tools: Vec<serde_json::Value>,
+    pub tools: Vec<String>,
     pub kb_ids: Vec<String>,
     pub updated_at: String,
 }
@@ -3795,6 +3877,28 @@ pub struct AmendConstitutionRequest {
     pub rule: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub rationale: Option<String>,
+}
+
+/// `AnalyticsTimeseriesPoint` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AnalyticsTimeseriesPoint {
+    pub date: String,
+    pub landing_visit: i64,
+    pub page_view: i64,
+    pub otp_requested: i64,
+    pub signup: i64,
+    pub login: i64,
+    pub app_open: i64,
+    pub activated: i64,
+    pub checkout_started: i64,
+    pub subscribed: i64,
+}
+
+/// `AnalyticsTopValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AnalyticsTopValue {
+    pub value: String,
+    pub count: i64,
 }
 
 /// `AndroidTester` model.
@@ -5008,6 +5112,93 @@ pub struct CancelTeamRunResponse {
     pub orchestrator_stopped: bool,
 }
 
+/// visual-builder.ts CanvasEdge.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CanvasEdge {
+    pub id: String,
+    pub source: String,
+    pub target: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+}
+
+/// visual-builder.ts CanvasNode.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CanvasNode {
+    pub id: String,
+    pub r#type: CanvasNodeType,
+    pub label: String,
+    pub position: CanvasNodePosition,
+    pub config: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `CanvasNodePosition` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CanvasNodePosition {
+    pub x: f64,
+    pub y: f64,
+}
+
+/// `CanvasNodeType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CanvasNodeType {
+    #[default]
+    #[serde(rename = "llm")]
+    LLM,
+    #[serde(rename = "tool")]
+    Tool,
+    #[serde(rename = "guardrail")]
+    Guardrail,
+    #[serde(rename = "memory")]
+    Memory,
+    #[serde(rename = "condition")]
+    Condition,
+    #[serde(rename = "input")]
+    Input,
+    #[serde(rename = "output")]
+    Output,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CanvasNodeType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::LLM => "llm",
+            Self::Tool => "tool",
+            Self::Guardrail => "guardrail",
+            Self::Memory => "memory",
+            Self::Condition => "condition",
+            Self::Input => "input",
+            Self::Output => "output",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CanvasNodeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CanvasNodeType {
+    fn from(value: &str) -> Self {
+        match value {
+            "llm" => Self::LLM,
+            "tool" => Self::Tool,
+            "guardrail" => Self::Guardrail,
+            "memory" => Self::Memory,
+            "condition" => Self::Condition,
+            "input" => Self::Input,
+            "output" => Self::Output,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `CanvasWorkflowStep` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CanvasWorkflowStep {
@@ -5116,7 +5307,7 @@ impl From<&str> for ChatCompletionRequestMessageRole {
 /// `ChatCompletionRequestTool` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ChatCompletionRequestTool {
-    pub r#type: ChatCompletionRequestToolType,
+    pub r#type: OpenAiToolCallType,
     pub function: ChatCompletionRequestToolFunction,
 }
 
@@ -5130,40 +5321,137 @@ pub struct ChatCompletionRequestToolFunction {
     pub parameters: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
-/// `ChatCompletionRequestToolType` enumeration.
+/// types/llm.ts ChatMessage — the model-facing message a checkpoint stores.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ChatMessage {
+    pub role: ChatMessageRole,
+    pub content: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_call_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls: Option<Vec<ChatMessageToolCall>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reasoning_content: Option<String>,
+}
+
+/// `ChatMessageContentVariant2item` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ChatMessageContentVariant2item {
+    pub r#type: ChatMessageContentVariant2itemType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `ChatMessageContentVariant2itemType` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ChatCompletionRequestToolType {
+pub enum ChatMessageContentVariant2itemType {
     #[default]
-    #[serde(rename = "function")]
-    Function,
+    #[serde(rename = "text")]
+    Text,
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "audio")]
+    Audio,
+    #[serde(rename = "video")]
+    Video,
+    #[serde(rename = "file")]
+    File,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
 }
 
-impl ChatCompletionRequestToolType {
+impl ChatMessageContentVariant2itemType {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
-            Self::Function => "function",
+            Self::Text => "text",
+            Self::Image => "image",
+            Self::Audio => "audio",
+            Self::Video => "video",
+            Self::File => "file",
             Self::Other(value) => value.as_str(),
         }
     }
 }
 
-impl std::fmt::Display for ChatCompletionRequestToolType {
+impl std::fmt::Display for ChatMessageContentVariant2itemType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl From<&str> for ChatCompletionRequestToolType {
+impl From<&str> for ChatMessageContentVariant2itemType {
     fn from(value: &str) -> Self {
         match value {
-            "function" => Self::Function,
+            "text" => Self::Text,
+            "image" => Self::Image,
+            "audio" => Self::Audio,
+            "video" => Self::Video,
+            "file" => Self::File,
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `ChatMessageRole` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ChatMessageRole {
+    #[default]
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "assistant")]
+    Assistant,
+    #[serde(rename = "system")]
+    System,
+    #[serde(rename = "tool")]
+    Tool,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ChatMessageRole {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::User => "user",
+            Self::Assistant => "assistant",
+            Self::System => "system",
+            Self::Tool => "tool",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ChatMessageRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ChatMessageRole {
+    fn from(value: &str) -> Self {
+        match value {
+            "user" => Self::User,
+            "assistant" => Self::Assistant,
+            "system" => Self::System,
+            "tool" => Self::Tool,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ChatMessageToolCall` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ChatMessageToolCall {
+    pub id: String,
+    pub name: String,
+    pub arguments: serde_json::Map<String, serde_json::Value>,
 }
 
 /// `CheckGovernanceRequest` model.
@@ -5202,7 +5490,7 @@ pub struct Company {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub mission: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub strategic_goals: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub strategic_goals: Option<Vec<StrategicGoal>>,
     pub strategist_agent_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub team_ids: Option<Vec<String>>,
@@ -5229,6 +5517,17 @@ pub struct Company {
     /// escalation reads this (falling back to updated_at while absent).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_successful_tick_at: Option<String>,
+}
+
+/// companies.ts — a company_activity row; `success` only when recorded.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompanyActivityEntry {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub success: Option<bool>,
 }
 
 /// Body for `POST /api/v1/companies` (`CreateCompanySchema`).
@@ -5918,16 +6217,26 @@ pub struct ContinueRunResponse {
     pub resume_step: Option<i64>,
 }
 
-/// `ConversationEntry` model.
+/// One entry of a session transcript — what GET /sessions/{sessionId}/messages serves in both
+/// `messages` and `items` (types/session.ts ConversationEntry, enriched on read by sessions.ts
+/// with the run's metrics and cost). Measured 2026-09-10 on e2e-canon: a user turn carries
+/// role, content, run_id, timestamp, compacted, importance; an assistant turn adds tool_calls,
+/// thinking, run_metrics, cost_usd.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ConversationEntry {
+    /// The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
+    /// transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
+    /// `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
+    /// system entries `{run_id}-system-N`. Counted per run over the whole history before
+    /// compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
+    /// /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
+    /// (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+    pub message_id: String,
     pub role: PublicSessionViewMessageRole,
-    /// Message content
-    pub content: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub run_id: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub timestamp: Option<String>,
+    /// The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
+    pub content: serde_json::Value,
+    pub run_id: String,
+    pub timestamp: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub compacted: Option<bool>,
     /// Persisted on assistant entries when the run executed tools. Reload re-paints these blocks
@@ -5939,6 +6248,127 @@ pub struct ConversationEntry {
     /// Thinking section above the assistant text.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub thinking: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub importance: Option<ConversationEntryImportance>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub attachments: Option<Vec<ConversationEntryAttachment>>,
+    /// On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
+    /// publicRunMetrics).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_metrics: Option<ConversationEntryRunMetrics>,
+    /// On an assistant entry, when the run recorded a cost.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+    /// The reply came from a run a Todo triggered.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from_todo: Option<bool>,
+    /// The model ran out of output tokens — see RunOutput.output_truncated.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_truncated: Option<bool>,
+}
+
+/// `ConversationEntryAttachment` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConversationEntryAttachment {
+    pub file_id: String,
+    pub filename: String,
+    pub mime_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub size_bytes: Option<i64>,
+}
+
+/// `ConversationEntryContentVariant2item` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConversationEntryContentVariant2item {
+    pub r#type: ChatMessageContentVariant2itemType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub text: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub media: Option<ConversationEntryContentVariant2itemMedia>,
+}
+
+/// `ConversationEntryContentVariant2itemMedia` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConversationEntryContentVariant2itemMedia {
+    pub mime_type: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+}
+
+/// `ConversationEntryImportance` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ConversationEntryImportance {
+    #[default]
+    #[serde(rename = "high")]
+    High,
+    #[serde(rename = "normal")]
+    Normal,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ConversationEntryImportance {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::High => "high",
+            Self::Normal => "normal",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ConversationEntryImportance {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ConversationEntryImportance {
+    fn from(value: &str) -> Self {
+        match value {
+            "high" => Self::High,
+            "normal" => Self::Normal,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
+/// publicRunMetrics).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ConversationEntryRunMetrics {
+    /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_confidence: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub duration_ms: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub steps_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub thinking_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub llm_calls_count: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_checks: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violations: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_retrievals: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub memory_extractions: Option<i64>,
+    /// Estimated total cost in USD
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_cost_usd: Option<f64>,
 }
 
 /// `ConversationEntryToolCall` model.
@@ -6401,7 +6831,7 @@ pub struct CreateGuardrailRequest {
     /// Where the guardrail is called. Checked against the security-policy denylist and resolved
     /// through DNS before it is accepted.
     pub webhook_url: String,
-    pub phase: GuardrailPhase,
+    pub phase: GuardrailConfigItemPhase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<GuardrailAction>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -6585,7 +7015,7 @@ pub struct CreateResponseResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<i64>,
     pub model: String,
-    pub output: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub output: Vec<ResponsesOutputItem>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub usage: Option<CreateResponseResponseUsage>,
 }
@@ -6599,6 +7029,19 @@ pub struct CreateResponseResponseUsage {
     pub output_tokens: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total_tokens: Option<i64>,
+}
+
+/// runs.ts createRunCheckpoint — the checkpoint record; it carries no messages (those live in
+/// the stored checkpoint read back by GET /runs/{runId}/checkpoints).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateRunCheckpointResponse {
+    pub checkpoint_id: String,
+    pub run_id: String,
+    pub status: String,
+    pub step_seq: i64,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<serde_json::Map<String, serde_json::Value>>,
+    pub created_at: String,
 }
 
 /// `CreateRunRequest` model.
@@ -6792,107 +7235,7 @@ pub struct CreateVotingProposalRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateWebhookRequest {
     pub url: String,
-    pub events: Vec<CreateWebhookRequestEvent>,
-}
-
-/// `CreateWebhookRequestEvent` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum CreateWebhookRequestEvent {
-    #[default]
-    #[serde(rename = "run.completed")]
-    RunCompleted,
-    #[serde(rename = "run.failed")]
-    RunFailed,
-    #[serde(rename = "run.cancelled")]
-    RunCancelled,
-    #[serde(rename = "agent.created")]
-    AgentCreated,
-    #[serde(rename = "agent.updated")]
-    AgentUpdated,
-    #[serde(rename = "agent.deleted")]
-    AgentDeleted,
-    #[serde(rename = "quota.threshold")]
-    QuotaThreshold,
-    #[serde(rename = "quota.exceeded")]
-    QuotaExceeded,
-    #[serde(rename = "guardrail.violated")]
-    GuardrailViolated,
-    #[serde(rename = "billing.invoice.created")]
-    BillingInvoiceCreated,
-    #[serde(rename = "billing.payment.failed")]
-    BillingPaymentFailed,
-    #[serde(rename = "eval.auto_rollback")]
-    EvalAutoRollback,
-    #[serde(rename = "company.budget_alert")]
-    CompanyBudgetAlert,
-    #[serde(rename = "company.budget_exceeded")]
-    CompanyBudgetExceeded,
-    #[serde(rename = "company.objective_failed")]
-    CompanyObjectiveFailed,
-    #[serde(rename = "company.goal_completed")]
-    CompanyGoalCompleted,
-    #[serde(rename = "company.paused")]
-    CompanyPaused,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl CreateWebhookRequestEvent {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::RunCompleted => "run.completed",
-            Self::RunFailed => "run.failed",
-            Self::RunCancelled => "run.cancelled",
-            Self::AgentCreated => "agent.created",
-            Self::AgentUpdated => "agent.updated",
-            Self::AgentDeleted => "agent.deleted",
-            Self::QuotaThreshold => "quota.threshold",
-            Self::QuotaExceeded => "quota.exceeded",
-            Self::GuardrailViolated => "guardrail.violated",
-            Self::BillingInvoiceCreated => "billing.invoice.created",
-            Self::BillingPaymentFailed => "billing.payment.failed",
-            Self::EvalAutoRollback => "eval.auto_rollback",
-            Self::CompanyBudgetAlert => "company.budget_alert",
-            Self::CompanyBudgetExceeded => "company.budget_exceeded",
-            Self::CompanyObjectiveFailed => "company.objective_failed",
-            Self::CompanyGoalCompleted => "company.goal_completed",
-            Self::CompanyPaused => "company.paused",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for CreateWebhookRequestEvent {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for CreateWebhookRequestEvent {
-    fn from(value: &str) -> Self {
-        match value {
-            "run.completed" => Self::RunCompleted,
-            "run.failed" => Self::RunFailed,
-            "run.cancelled" => Self::RunCancelled,
-            "agent.created" => Self::AgentCreated,
-            "agent.updated" => Self::AgentUpdated,
-            "agent.deleted" => Self::AgentDeleted,
-            "quota.threshold" => Self::QuotaThreshold,
-            "quota.exceeded" => Self::QuotaExceeded,
-            "guardrail.violated" => Self::GuardrailViolated,
-            "billing.invoice.created" => Self::BillingInvoiceCreated,
-            "billing.payment.failed" => Self::BillingPaymentFailed,
-            "eval.auto_rollback" => Self::EvalAutoRollback,
-            "company.budget_alert" => Self::CompanyBudgetAlert,
-            "company.budget_exceeded" => Self::CompanyBudgetExceeded,
-            "company.objective_failed" => Self::CompanyObjectiveFailed,
-            "company.goal_completed" => Self::CompanyGoalCompleted,
-            "company.paused" => Self::CompanyPaused,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub events: Vec<WebhookDeliveryAttemptEventType>,
 }
 
 /// `CreateWorkspaceRequest` model.
@@ -7000,6 +7343,25 @@ impl From<&str> for CustomPlanVisibility {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// admin-data-explorer.ts handleGetKeys — one KV entry, prefix stripped.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataExplorerKey {
+    pub key: Vec<serde_json::Value>,
+    pub value_preview: String,
+    pub size_bytes: i64,
+    pub r#type: String,
+    pub sensitive: bool,
+}
+
+/// `DataExplorerNamespace` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataExplorerNamespace {
+    pub id: String,
+    pub label: String,
+    pub description: String,
+    pub count: i64,
 }
 
 /// data-subject.ts dataSubjectAccess — ids per store plus their counts; every field always
@@ -7726,6 +8088,57 @@ pub struct DropGenomeSilhouette {
     pub weight: Option<f64>,
 }
 
+/// types/mcp.ts EgressRule — a host glob with optional ports (default \[443\]) and protocol
+/// (default https).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EgressRule {
+    pub host_pattern: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ports: Option<Vec<i64>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub protocol: Option<EgressRuleProtocol>,
+}
+
+/// `EgressRuleProtocol` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum EgressRuleProtocol {
+    #[default]
+    #[serde(rename = "https")]
+    HTTPS,
+    #[serde(rename = "http")]
+    HTTP,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl EgressRuleProtocol {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::HTTPS => "https",
+            Self::HTTP => "http",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for EgressRuleProtocol {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for EgressRuleProtocol {
+    fn from(value: &str) -> Self {
+        match value {
+            "https" => Self::HTTPS,
+            "http" => Self::HTTP,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `EmbeddingsRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EmbeddingsRequest {
@@ -7881,6 +8294,17 @@ pub struct EmptyWorkspaceTrashResponse {
     pub message: String,
 }
 
+/// middleware/rate-limit.ts EndpointRateLimitConfig — camelCase on the wire.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EndpointRateLimit {
+    pub pattern: String,
+    #[serde(rename = "maxRequests")]
+    pub max_requests: i64,
+    #[serde(rename = "windowSec")]
+    pub window_sec: i64,
+    pub source: GuardrailConfigItemSource,
+}
+
 /// `EnforcementResult` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResult {
@@ -7971,8 +8395,15 @@ impl From<&str> for EnrolMfaRequestAlgorithm {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub r#type: String,
-    pub title: String,
+    /// The HTTP reason phrase of `status` — one dictionary for every status the platform answers
+    /// with (lib/error-titles.ts; the enum is built from it). The one deliberate exception: 422
+    /// says "Validation Error", as it always has. Never an exception class name; that lives in
+    /// `code`.
+    pub title: ErrorTitle,
     pub status: i64,
+    /// The sentence a person reads — specific to this occurrence, never empty, never a repeat of
+    /// `title`. On a 500 it is the fixed sentence the sanitizer allows; 501–504 carry the handler's
+    /// own operator guidance.
     pub detail: String,
     /// Request ID for tracing
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
@@ -8096,6 +8527,121 @@ impl From<&str> for ErrorReportStatus {
         match value {
             "new" => Self::New,
             "resolved" => Self::Resolved,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// The HTTP reason phrase of `status` — one dictionary for every status the platform answers
+/// with (lib/error-titles.ts; the enum is built from it). The one deliberate exception: 422
+/// says "Validation Error", as it always has. Never an exception class name; that lives in
+/// `code`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ErrorTitle {
+    #[default]
+    #[serde(rename = "Bad Request")]
+    BadRequest,
+    #[serde(rename = "Unauthorized")]
+    Unauthorized,
+    #[serde(rename = "Payment Required")]
+    PaymentRequired,
+    #[serde(rename = "Forbidden")]
+    Forbidden,
+    #[serde(rename = "Not Found")]
+    NotFound,
+    #[serde(rename = "Method Not Allowed")]
+    MethodNotAllowed,
+    #[serde(rename = "Conflict")]
+    Conflict,
+    #[serde(rename = "Gone")]
+    Gone,
+    #[serde(rename = "Length Required")]
+    LengthRequired,
+    #[serde(rename = "Precondition Failed")]
+    PreconditionFailed,
+    #[serde(rename = "Payload Too Large")]
+    PayloadTooLarge,
+    #[serde(rename = "Unsupported Media Type")]
+    UnsupportedMediaType,
+    #[serde(rename = "Validation Error")]
+    ValidationError,
+    #[serde(rename = "Locked")]
+    Locked,
+    #[serde(rename = "Too Many Requests")]
+    TooManyRequests,
+    #[serde(rename = "Internal Server Error")]
+    InternalServerError,
+    #[serde(rename = "Not Implemented")]
+    NotImplemented,
+    #[serde(rename = "Bad Gateway")]
+    BadGateway,
+    #[serde(rename = "Service Unavailable")]
+    ServiceUnavailable,
+    #[serde(rename = "Gateway Timeout")]
+    GatewayTimeout,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ErrorTitle {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::BadRequest => "Bad Request",
+            Self::Unauthorized => "Unauthorized",
+            Self::PaymentRequired => "Payment Required",
+            Self::Forbidden => "Forbidden",
+            Self::NotFound => "Not Found",
+            Self::MethodNotAllowed => "Method Not Allowed",
+            Self::Conflict => "Conflict",
+            Self::Gone => "Gone",
+            Self::LengthRequired => "Length Required",
+            Self::PreconditionFailed => "Precondition Failed",
+            Self::PayloadTooLarge => "Payload Too Large",
+            Self::UnsupportedMediaType => "Unsupported Media Type",
+            Self::ValidationError => "Validation Error",
+            Self::Locked => "Locked",
+            Self::TooManyRequests => "Too Many Requests",
+            Self::InternalServerError => "Internal Server Error",
+            Self::NotImplemented => "Not Implemented",
+            Self::BadGateway => "Bad Gateway",
+            Self::ServiceUnavailable => "Service Unavailable",
+            Self::GatewayTimeout => "Gateway Timeout",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ErrorTitle {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ErrorTitle {
+    fn from(value: &str) -> Self {
+        match value {
+            "Bad Request" => Self::BadRequest,
+            "Unauthorized" => Self::Unauthorized,
+            "Payment Required" => Self::PaymentRequired,
+            "Forbidden" => Self::Forbidden,
+            "Not Found" => Self::NotFound,
+            "Method Not Allowed" => Self::MethodNotAllowed,
+            "Conflict" => Self::Conflict,
+            "Gone" => Self::Gone,
+            "Length Required" => Self::LengthRequired,
+            "Precondition Failed" => Self::PreconditionFailed,
+            "Payload Too Large" => Self::PayloadTooLarge,
+            "Unsupported Media Type" => Self::UnsupportedMediaType,
+            "Validation Error" => Self::ValidationError,
+            "Locked" => Self::Locked,
+            "Too Many Requests" => Self::TooManyRequests,
+            "Internal Server Error" => Self::InternalServerError,
+            "Not Implemented" => Self::NotImplemented,
+            "Bad Gateway" => Self::BadGateway,
+            "Service Unavailable" => Self::ServiceUnavailable,
+            "Gateway Timeout" => Self::GatewayTimeout,
             other => Self::Other(other.to_string()),
         }
     }
@@ -8349,6 +8895,19 @@ impl From<&str> for ExportSessionFormat {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// admin-config.ts mergeFeatureFlags — a closed set of ids; `rollout_pct` only when an override
+/// set it.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FeatureFlag {
+    pub id: String,
+    pub label: String,
+    pub description: String,
+    pub enabled: bool,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rollout_pct: Option<i64>,
+    pub source: GuardrailConfigItemSource,
 }
 
 /// `FeedEntry` model.
@@ -9057,7 +9616,7 @@ pub struct GetAgentActivityStatsResponse {
     #[serde(rename = "avgThinkingTokens", default, skip_serializing_if = "Option::is_none")]
     pub avg_thinking_tokens: Option<f64>,
     #[serde(rename = "toolBreakdown", default, skip_serializing_if = "Option::is_none")]
-    pub tool_breakdown: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub tool_breakdown: Option<Vec<ToolBreakdownEntry>>,
     #[serde(rename = "topErrorMessages", default, skip_serializing_if = "Option::is_none")]
     pub top_error_messages: Option<Vec<GetAgentActivityStatsResponseTopErrorMessage>>,
     #[serde(rename = "runsByDay", default, skip_serializing_if = "Option::is_none")]
@@ -9267,7 +9826,7 @@ pub struct GetClientConfigResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetCompanyActivityResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub activity: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub entries: Option<Vec<CompanyActivityEntry>>,
 }
 
 /// `GetCompanyBudgetResponse` model.
@@ -9289,9 +9848,9 @@ pub struct GetCompanyBudgetResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetCompanyObjectivesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub trees: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub trees: Option<Vec<ObjectiveTree>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub objectives: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub objectives: Option<Vec<Objective>>,
 }
 
 /// `GetDataExplorerValueResponse` model.
@@ -9413,7 +9972,7 @@ impl From<&str> for GetHealthResponseStatus {
 /// `GetImmutableAuditResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetImmutableAuditResponse {
-    pub events: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub events: Vec<ImmutableAuditEvent>,
     pub total: i64,
 }
 
@@ -9427,7 +9986,7 @@ pub struct GetLinkPreviewResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetListingReviewsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reviews: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub reviews: Option<Vec<MarketplaceListingRating>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub total: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9734,6 +10293,37 @@ pub struct GetPublicFeaturedAgentResponse {
     pub agent: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
+/// `GetPublicStateResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicStateResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marketplace: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub governance: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub plan: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branding: Option<serde_json::Map<String, serde_json::Value>>,
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_at: Option<String>,
+    pub short_description: String,
+    pub slug: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stats: Option<serde_json::Map<String, serde_json::Value>>,
+    pub tags: Vec<String>,
+    pub tenant_id: String,
+    /// Only this route joins the state's agents (public.ts); the list does not carry them.
+    pub agents: Vec<PublicStateAgent>,
+}
+
 /// `GetReadyResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetReadyResponse {
@@ -9861,7 +10451,7 @@ impl From<&str> for GetResponseResponseObject {
 /// `GetResponseResponseOutputItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetResponseResponseOutputItem {
-    pub r#type: GetResponseResponseOutputItemType,
+    pub r#type: ResponsesOutputItemType,
     pub role: OpenAiChatCompletionChoiceMessageRole,
     pub content: Vec<GetResponseResponseOutputItemContentItem>,
 }
@@ -9869,80 +10459,8 @@ pub struct GetResponseResponseOutputItem {
 /// `GetResponseResponseOutputItemContentItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetResponseResponseOutputItemContentItem {
-    pub r#type: GetResponseResponseOutputItemContentItemType,
+    pub r#type: ResponsesOutputItemContentItemType,
     pub text: String,
-}
-
-/// `GetResponseResponseOutputItemContentItemType` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetResponseResponseOutputItemContentItemType {
-    #[default]
-    #[serde(rename = "output_text")]
-    OutputText,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetResponseResponseOutputItemContentItemType {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::OutputText => "output_text",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetResponseResponseOutputItemContentItemType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetResponseResponseOutputItemContentItemType {
-    fn from(value: &str) -> Self {
-        match value {
-            "output_text" => Self::OutputText,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `GetResponseResponseOutputItemType` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GetResponseResponseOutputItemType {
-    #[default]
-    #[serde(rename = "message")]
-    Message,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl GetResponseResponseOutputItemType {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Message => "message",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for GetResponseResponseOutputItemType {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for GetResponseResponseOutputItemType {
-    fn from(value: &str) -> Self {
-        match value {
-            "message" => Self::Message,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `GetResponseResponseUsage` model.
@@ -10079,7 +10597,7 @@ pub struct GetRunResponse {
     /// ABSENT — not empty — when the run is not awaiting approval, and absent too if the scan
     /// fails, which is deliberate: a failed scan must not turn a readable run into an error.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pending_approvals: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub pending_approvals: Option<Vec<PendingApproval>>,
     /// The question the run is blocked on, taken from the most recent `run.awaiting_input` event
     /// (runs.ts:673-681). Like `pending_approvals` it is ABSENT rather than empty when the run is
     /// not awaiting input. A squad chat reads this to render the prompt; the document never
@@ -10103,7 +10621,7 @@ pub struct GetRunResponsePendingInput {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tool_call_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub options: Option<Vec<serde_json::Value>>,
+    pub options: Option<Vec<String>>,
 }
 
 /// Resource limits for the run
@@ -10144,9 +10662,12 @@ pub struct GetSessionAuditLogResponse {
 /// `GetSessionMessagesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetSessionMessagesResponse {
-    pub messages: Vec<serde_json::Map<String, serde_json::Value>>,
-    /// The same list as `messages`.
-    pub items: Vec<serde_json::Map<String, serde_json::Value>>,
+    /// The transcript; the key clients read first. `items` is the Wave 7.2 list alias of the same
+    /// array.
+    pub messages: Vec<ConversationEntry>,
+    /// The same list as `messages` — the canonical list key (Wave 7.2); both are served so no
+    /// client moves.
+    pub items: Vec<ConversationEntry>,
     pub total: i64,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active_run_id: Option<String>,
@@ -10194,8 +10715,8 @@ pub struct GetSquadGraphResponse {
 pub struct GetSquadRunMessagesResponse {
     pub team_id: String,
     pub team_run_id: String,
-    pub messages: Vec<serde_json::Map<String, serde_json::Value>>,
-    pub protocol_messages: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub messages: Vec<TeamRunChatTurn>,
+    pub protocol_messages: Vec<TeamMessage>,
     pub total: i64,
 }
 
@@ -10226,8 +10747,8 @@ pub struct GetTeamGraphResponse {
 pub struct GetTeamRunMessagesResponse {
     pub team_id: String,
     pub team_run_id: String,
-    pub messages: Vec<serde_json::Map<String, serde_json::Value>>,
-    pub protocol_messages: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub messages: Vec<TeamRunChatTurn>,
+    pub protocol_messages: Vec<TeamMessage>,
     pub total: i64,
 }
 
@@ -10479,7 +11000,7 @@ pub struct Guardrail {
     pub tenant_id: String,
     pub name: String,
     pub webhook_url: String,
-    pub phase: GuardrailPhase,
+    pub phase: GuardrailConfigItemPhase,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub action: Option<GuardrailAction>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10536,9 +11057,70 @@ impl From<&str> for GuardrailAction {
     }
 }
 
-/// `GuardrailPhase` enumeration.
+/// admin-config.ts GuardrailConfigItem.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GuardrailConfigItem {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    pub phase: GuardrailConfigItemPhase,
+    pub default_action: GuardrailConfigItemDefaultAction,
+    pub enabled: bool,
+    pub mandatory: bool,
+    pub source: GuardrailConfigItemSource,
+}
+
+/// `GuardrailConfigItemDefaultAction` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum GuardrailPhase {
+pub enum GuardrailConfigItemDefaultAction {
+    #[default]
+    #[serde(rename = "block")]
+    Block,
+    #[serde(rename = "warn")]
+    Warn,
+    #[serde(rename = "redact")]
+    Redact,
+    #[serde(rename = "log")]
+    Log,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GuardrailConfigItemDefaultAction {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Block => "block",
+            Self::Warn => "warn",
+            Self::Redact => "redact",
+            Self::Log => "log",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GuardrailConfigItemDefaultAction {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GuardrailConfigItemDefaultAction {
+    fn from(value: &str) -> Self {
+        match value {
+            "block" => Self::Block,
+            "warn" => Self::Warn,
+            "redact" => Self::Redact,
+            "log" => Self::Log,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GuardrailConfigItemPhase` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GuardrailConfigItemPhase {
     #[default]
     #[serde(rename = "input")]
     Input,
@@ -10551,7 +11133,7 @@ pub enum GuardrailPhase {
     Other(String),
 }
 
-impl GuardrailPhase {
+impl GuardrailConfigItemPhase {
     /// The value as it appears on the wire.
     pub fn as_str(&self) -> &str {
         match self {
@@ -10563,18 +11145,58 @@ impl GuardrailPhase {
     }
 }
 
-impl std::fmt::Display for GuardrailPhase {
+impl std::fmt::Display for GuardrailConfigItemPhase {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(self.as_str())
     }
 }
 
-impl From<&str> for GuardrailPhase {
+impl From<&str> for GuardrailConfigItemPhase {
     fn from(value: &str) -> Self {
         match value {
             "input" => Self::Input,
             "output" => Self::Output,
             "both" => Self::Both,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GuardrailConfigItemSource` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GuardrailConfigItemSource {
+    #[default]
+    #[serde(rename = "kv")]
+    Kv,
+    #[serde(rename = "default")]
+    Default,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GuardrailConfigItemSource {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Kv => "kv",
+            Self::Default => "default",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GuardrailConfigItemSource {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GuardrailConfigItemSource {
+    fn from(value: &str) -> Self {
+        match value {
+            "kv" => Self::Kv,
+            "default" => Self::Default,
             other => Self::Other(other.to_string()),
         }
     }
@@ -10653,7 +11275,131 @@ pub struct HostDroplet {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ImageProviderList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub providers: Option<Vec<MediaProvider>>,
+}
+
+/// audit/immutable-audit-log.ts AuditEvent — an HMAC-chained record; `hmac` absent when
+/// UARP_AUDIT_HMAC_KEY is unset.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ImmutableAuditEvent {
+    pub event_id: String,
+    pub timestamp: String,
+    pub tenant_id: String,
+    pub actor_agent_id: String,
+    pub event_type: ImmutableAuditEventEventType,
+    pub details: serde_json::Map<String, serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub target_run_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prev_hmac: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hmac: Option<String>,
+}
+
+/// `ImmutableAuditEventEventType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ImmutableAuditEventEventType {
+    #[default]
+    #[serde(rename = "agent.created")]
+    AgentCreated,
+    #[serde(rename = "agent.updated")]
+    AgentUpdated,
+    #[serde(rename = "agent.terminated")]
+    AgentTerminated,
+    #[serde(rename = "agent.deposed")]
+    AgentDeposed,
+    #[serde(rename = "run.started")]
+    RunStarted,
+    #[serde(rename = "run.completed")]
+    RunCompleted,
+    #[serde(rename = "run.failed")]
+    RunFailed,
+    #[serde(rename = "tool.denied")]
+    ToolDenied,
+    #[serde(rename = "security.self_escalation_blocked")]
+    SecuritySelfEscalationBlocked,
+    #[serde(rename = "security.opcon_violation")]
+    SecurityOpconViolation,
+    #[serde(rename = "security.immutable_field_blocked")]
+    SecurityImmutableFieldBlocked,
+    #[serde(rename = "security.rate_limited")]
+    SecurityRateLimited,
+    #[serde(rename = "dag.created")]
+    DagCreated,
+    #[serde(rename = "dag.step_completed")]
+    DagStepCompleted,
+    #[serde(rename = "dag.cancelled")]
+    DagCancelled,
+    #[serde(rename = "budget.transfer")]
+    BudgetTransfer,
+    #[serde(rename = "budget.exceeded")]
+    BudgetExceeded,
+    #[serde(rename = "cascade.failure")]
+    CascadeFailure,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ImmutableAuditEventEventType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AgentCreated => "agent.created",
+            Self::AgentUpdated => "agent.updated",
+            Self::AgentTerminated => "agent.terminated",
+            Self::AgentDeposed => "agent.deposed",
+            Self::RunStarted => "run.started",
+            Self::RunCompleted => "run.completed",
+            Self::RunFailed => "run.failed",
+            Self::ToolDenied => "tool.denied",
+            Self::SecuritySelfEscalationBlocked => "security.self_escalation_blocked",
+            Self::SecurityOpconViolation => "security.opcon_violation",
+            Self::SecurityImmutableFieldBlocked => "security.immutable_field_blocked",
+            Self::SecurityRateLimited => "security.rate_limited",
+            Self::DagCreated => "dag.created",
+            Self::DagStepCompleted => "dag.step_completed",
+            Self::DagCancelled => "dag.cancelled",
+            Self::BudgetTransfer => "budget.transfer",
+            Self::BudgetExceeded => "budget.exceeded",
+            Self::CascadeFailure => "cascade.failure",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ImmutableAuditEventEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ImmutableAuditEventEventType {
+    fn from(value: &str) -> Self {
+        match value {
+            "agent.created" => Self::AgentCreated,
+            "agent.updated" => Self::AgentUpdated,
+            "agent.terminated" => Self::AgentTerminated,
+            "agent.deposed" => Self::AgentDeposed,
+            "run.started" => Self::RunStarted,
+            "run.completed" => Self::RunCompleted,
+            "run.failed" => Self::RunFailed,
+            "tool.denied" => Self::ToolDenied,
+            "security.self_escalation_blocked" => Self::SecuritySelfEscalationBlocked,
+            "security.opcon_violation" => Self::SecurityOpconViolation,
+            "security.immutable_field_blocked" => Self::SecurityImmutableFieldBlocked,
+            "security.rate_limited" => Self::SecurityRateLimited,
+            "dag.created" => Self::DagCreated,
+            "dag.step_completed" => Self::DagStepCompleted,
+            "dag.cancelled" => Self::DagCancelled,
+            "budget.transfer" => Self::BudgetTransfer,
+            "budget.exceeded" => Self::BudgetExceeded,
+            "cascade.failure" => Self::CascadeFailure,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `ImportAdminConfigRequest` model.
@@ -11758,7 +12504,7 @@ pub struct ListAdminIntegrationOAuthProvidersResponseProvider {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAdminProvidersResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub providers: Option<Vec<AdminProviderSummary>>,
 }
 
 /// `ListAgentBookmarksResponse` model.
@@ -12080,7 +12826,7 @@ pub struct ListCustomPlansResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListDataExplorerKeysResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub keys: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub keys: Option<Vec<DataExplorerKey>>,
     /// Opaque cursor for the next page; null on the last page.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
@@ -12092,20 +12838,20 @@ pub struct ListDataExplorerKeysResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListDataExplorerNamespacesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub namespaces: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub namespaces: Option<Vec<DataExplorerNamespace>>,
 }
 
 /// `ListDatasetsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListDatasetsResponse {
-    pub datasets: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub datasets: Vec<EvalDataset>,
     pub total: i64,
 }
 
 /// `ListEvalRunsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListEvalRunsResponse {
-    pub eval_runs: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub eval_runs: Vec<EvalRun>,
     pub total: i64,
 }
 
@@ -12681,7 +13427,7 @@ pub struct ListSessionsResponseItem {
     pub team_id: Option<String>,
     /// Session branches for conversation forking
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub branches: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub branches: Option<Vec<SessionBranch>>,
     /// Currently active branch ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active_branch: Option<String>,
@@ -12770,7 +13516,7 @@ pub struct ListSquadsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSubscriptionsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub subscriptions: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub subscriptions: Option<Vec<MarketplaceSubscription>>,
 }
 
 /// `ListTeamGraphEdgesResponse` model.
@@ -12865,7 +13611,7 @@ pub struct ListVotingProposalsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListWebhookDeliveriesResponse {
     pub webhook_id: String,
-    pub deliveries: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub deliveries: Vec<WebhookDeliveryAttempt>,
     pub total: i64,
 }
 
@@ -12932,7 +13678,7 @@ pub struct ListWorkspacesResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListWorkspaceTrashResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub items: Option<Vec<TrashManifestEntry>>,
 }
 
 /// `LLMModel` model.
@@ -13518,7 +14264,7 @@ pub struct MCPServer {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub egress_allowlist: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub egress_allowlist: Option<Vec<EgressRule>>,
     pub enabled: bool,
     /// Tool names and resource URIs discovered from the server.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13586,7 +14332,7 @@ pub struct MCPServerTestResult {
     pub tool_count: Option<i64>,
     /// Present only when `ok` is true.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tools: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub tools: Option<Vec<MCPTestTool>>,
     /// Present only when `ok` is false.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
@@ -13613,7 +14359,7 @@ pub struct MCPServerWithConnectResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub egress_allowlist: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub egress_allowlist: Option<Vec<EgressRule>>,
     pub enabled: bool,
     /// Tool names and resource URIs discovered from the server.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13628,6 +14374,13 @@ pub struct MCPServerWithConnectResult {
     /// distinguishing 'saved' from 'saved and working', and it arrives on a 200.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub connect_error: Option<String>,
+}
+
+/// `MCPTestTool` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPTestTool {
+    pub name: String,
+    pub description: String,
 }
 
 /// `stdio` is blocked in production unless UARP_ALLOW_MCP_STDIO=true.
@@ -13672,6 +14425,16 @@ impl From<&str> for MCPTransport {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// providers.ts listMediaProviders — image and video providers.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MediaProvider {
+    pub id: String,
+    pub name: String,
+    pub configured: bool,
+    pub local: bool,
+    pub models: Vec<ModelInfo>,
 }
 
 /// `MemoryEntry` model.
@@ -14021,6 +14784,26 @@ impl From<&str> for MissionStatus {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// providers.ts ModelInfo — only id and name are populated for media providers.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ModelInfo {
+    pub id: String,
+    pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub created: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context_window: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_tools: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub supports_vision: Option<bool>,
+    /// TTS models only, when an admin preset names voices.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub voices: Option<Vec<String>>,
 }
 
 /// `MoveWorkspaceFileRequest` model.
@@ -15176,6 +15959,13 @@ impl From<&str> for ObjectiveStatus {
     }
 }
 
+/// agent-teams/objective-tracker.ts ObjectiveTree — recursive.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ObjectiveTree {
+    pub objective: Objective,
+    pub children: Vec<ObjectiveTree>,
+}
+
 /// An OpenAI Chat Completions object. `/v1/chat/completions` builds it (openai-compat.ts:
 /// exactly one choice, no `logprobs`, no `system_fingerprint`); `/api/v1/llm/chat/completions`
 /// passes the provider's body through (llm-proxy.ts) — `model` is then the provider's id, and a
@@ -15214,7 +16004,7 @@ pub struct OpenAiChatCompletionChoiceMessage {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub content: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub tool_calls: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub tool_calls: Option<Vec<OpenAiToolCall>>,
     /// Any additional properties the server returned.
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
@@ -15322,6 +16112,62 @@ pub struct OpenAiErrorError {
     pub code: Option<String>,
 }
 
+/// The OpenAI tool-call object as passed through from the provider (llm-proxy.ts);
+/// /v1/chat/completions itself emits tool calls only as streaming deltas.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiToolCall {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub r#type: Option<OpenAiToolCallType>,
+    pub function: OpenAiToolCallFunction,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `OpenAiToolCallFunction` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenAiToolCallFunction {
+    pub name: String,
+    pub arguments: String,
+}
+
+/// `OpenAiToolCallType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum OpenAiToolCallType {
+    #[default]
+    #[serde(rename = "function")]
+    Function,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl OpenAiToolCallType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Function => "function",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for OpenAiToolCallType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for OpenAiToolCallType {
+    fn from(value: &str) -> Self {
+        match value {
+            "function" => Self::Function,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `PatchMeRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PatchMeRequest {
@@ -15370,6 +16216,20 @@ pub struct PauseMissionResponse {
 pub struct PauseRunResponse {
     pub paused: bool,
     pub run_id: String,
+}
+
+/// runs.ts — the tool calls of the newest run.awaiting_approval event (agent-runtime.ts /
+/// bridge.ts); `options`/`kind` only from the bridge.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PendingApproval {
+    pub id: String,
+    pub name: String,
+    pub args: serde_json::Map<String, serde_json::Value>,
+    /// Choices the bridge reported for the approval, when any.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub options: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
 }
 
 /// `PermissionCheckResult` model.
@@ -15847,8 +16707,8 @@ pub struct PlatformLLMDefaults {
 pub struct PlaygroundAgentState {
     pub agent_id: String,
     pub tenant_id: String,
-    pub nodes: Vec<serde_json::Map<String, serde_json::Value>>,
-    pub edges: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub nodes: Vec<CanvasNode>,
+    pub edges: Vec<CanvasEdge>,
     pub metadata: serde_json::Map<String, serde_json::Value>,
     pub updated_at: String,
 }
@@ -15860,8 +16720,8 @@ pub struct PlaygroundTemplate {
     pub name: String,
     pub description: String,
     pub category: String,
-    pub nodes: Vec<serde_json::Map<String, serde_json::Value>>,
-    pub edges: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub nodes: Vec<CanvasNode>,
+    pub edges: Vec<CanvasEdge>,
 }
 
 /// An ordered curriculum an agent delivers.
@@ -16327,6 +17187,8 @@ pub struct PublicSessionView {
 /// `PublicSessionViewMessage` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicSessionViewMessage {
+    /// The same derived id the authenticated transcript carries (ConversationEntry.message_id).
+    pub message_id: String,
     pub role: PublicSessionViewMessageRole,
     pub content: String,
     pub timestamp: String,
@@ -16431,8 +17293,6 @@ pub struct PublicState {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub marketplace: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agents: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub governance: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<String>,
@@ -16454,6 +17314,21 @@ pub struct PublicState {
     pub stats: Option<serde_json::Map<String, serde_json::Value>>,
     pub tags: Vec<String>,
     pub tenant_id: String,
+}
+
+/// public.ts — keys always present, values may be absent when the index row lacks them.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicStateAgent {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub icon: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub greeting: Option<String>,
 }
 
 /// `PublicTenant` model.
@@ -16746,7 +17621,7 @@ pub struct RegistryGetSpecVersionResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub size_bytes: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dependencies: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub dependencies: Option<Vec<ResolvedDep>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub yanked: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -16804,7 +17679,7 @@ pub struct RegistryPublishResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub artifact_key: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub dependencies: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub dependencies: Option<Vec<ResolvedDep>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub yanked: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17233,6 +18108,93 @@ pub struct RespondToRunResponse {
     pub accepted: Option<bool>,
 }
 
+/// openai-responses.ts — always exactly one message with one output_text part.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResponsesOutputItem {
+    pub r#type: ResponsesOutputItemType,
+    pub role: OpenAiChatCompletionChoiceMessageRole,
+    pub content: Vec<ResponsesOutputItemContentItem>,
+}
+
+/// `ResponsesOutputItemContentItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResponsesOutputItemContentItem {
+    pub r#type: ResponsesOutputItemContentItemType,
+    pub text: String,
+}
+
+/// `ResponsesOutputItemContentItemType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ResponsesOutputItemContentItemType {
+    #[default]
+    #[serde(rename = "output_text")]
+    OutputText,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ResponsesOutputItemContentItemType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::OutputText => "output_text",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ResponsesOutputItemContentItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ResponsesOutputItemContentItemType {
+    fn from(value: &str) -> Self {
+        match value {
+            "output_text" => Self::OutputText,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ResponsesOutputItemType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ResponsesOutputItemType {
+    #[default]
+    #[serde(rename = "message")]
+    Message,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ResponsesOutputItemType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Message => "message",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ResponsesOutputItemType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ResponsesOutputItemType {
+    fn from(value: &str) -> Self {
+        match value {
+            "message" => Self::Message,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `RestoreWorkspaceTrashRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RestoreWorkspaceTrashRequest {
@@ -17579,10 +18541,11 @@ pub struct RunCanvasWorkflowResponse {
 pub struct RunCheckpoint {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub step: Option<i64>,
-    /// Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
-    /// shape, which differs per adapter.
+    /// The conversation as it stood at this checkpoint — the model-facing ChatMessage list the
+    /// runtime stores (checkpoint-manager.ts CheckpointData / continuation.ts); a manual checkpoint
+    /// row carries none.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub messages: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub messages: Option<Vec<ChatMessage>>,
     /// Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
     /// step and token counters, optionally provider cache hits.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -17838,6 +18801,8 @@ pub struct RunFeedbackList {
 /// `RunFeedbackListFeedback` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunFeedbackListFeedback {
+    /// The entry's `message_id` from GET /sessions/{sessionId}/messages
+    /// (ConversationEntry.message_id) — the canonical key; any string is stored as sent.
     pub message_id: String,
     pub reaction: RunFeedbackListFeedbackReaction,
 }
@@ -17900,6 +18865,9 @@ pub struct RunFeedbackSet {
 /// `RunMetrics` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunMetrics {
+    /// How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pricing_confidence: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18704,7 +19672,7 @@ pub struct Session {
     pub team_id: Option<String>,
     /// Session branches for conversation forking
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub branches: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub branches: Option<Vec<SessionBranch>>,
     /// Currently active branch ID
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active_branch: Option<String>,
@@ -18992,7 +19960,7 @@ pub struct SetAgentTrafficRequestEntry {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetAgentTrafficResponse {
     pub agent_id: String,
-    pub entries: Vec<serde_json::Map<String, serde_json::Value>>,
+    pub entries: Vec<TrafficSplitEntry>,
     #[serde(default)]
     pub updated_at: Option<String>,
 }
@@ -19023,7 +19991,7 @@ pub struct SetDataExplorerValueResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetFeatureFlagsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub flags: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub flags: Option<Vec<FeatureFlag>>,
     pub updated: bool,
 }
 
@@ -19138,7 +20106,7 @@ pub struct SetModelPricingOverrideResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetRateLimitsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub endpoints: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub endpoints: Option<Vec<EndpointRateLimit>>,
     pub updated: bool,
 }
 
@@ -19725,6 +20693,29 @@ pub struct StartTeamRunResponse {
     pub team_run_id: String,
 }
 
+/// types/company.ts StrategicGoal — as stored; the create/update body is looser (goal_id
+/// assigned by the server).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StrategicGoal {
+    pub goal_id: String,
+    pub title: String,
+    pub description: String,
+    pub kpis: Vec<StrategicGoalKpisItem>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub root_objective_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub deadline: Option<String>,
+}
+
+/// `StrategicGoalKpisItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct StrategicGoalKpisItem {
+    pub name: String,
+    pub target: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub current: Option<String>,
+}
+
 /// `SubmitFeedbackRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubmitFeedbackRequest {
@@ -20159,6 +21150,21 @@ impl From<&str> for TeamMergeStrategy {
     }
 }
 
+/// types/team.ts TeamMessage — one protocol message between team agents.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamMessage {
+    pub message_id: String,
+    pub team_run_id: String,
+    pub from_agent_id: String,
+    pub to_agent_id: String,
+    pub r#type: TeamMessageType,
+    pub content: String,
+    pub round: i64,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_message_id: Option<String>,
+}
+
 /// `TeamMessageProtocol` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum TeamMessageProtocol {
@@ -20194,6 +21200,62 @@ impl From<&str> for TeamMessageProtocol {
         match value {
             "shared_context" => Self::SharedContext,
             "message_passing" => Self::MessagePassing,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `TeamMessageType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum TeamMessageType {
+    #[default]
+    #[serde(rename = "delegation")]
+    Delegation,
+    #[serde(rename = "result")]
+    Result,
+    #[serde(rename = "question")]
+    Question,
+    #[serde(rename = "status_update")]
+    StatusUpdate,
+    #[serde(rename = "merge_request")]
+    MergeRequest,
+    #[serde(rename = "validation")]
+    Validation,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl TeamMessageType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Delegation => "delegation",
+            Self::Result => "result",
+            Self::Question => "question",
+            Self::StatusUpdate => "status_update",
+            Self::MergeRequest => "merge_request",
+            Self::Validation => "validation",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for TeamMessageType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for TeamMessageType {
+    fn from(value: &str) -> Self {
+        match value {
+            "delegation" => Self::Delegation,
+            "result" => Self::Result,
+            "question" => Self::Question,
+            "status_update" => Self::StatusUpdate,
+            "merge_request" => Self::MergeRequest,
+            "validation" => Self::Validation,
             other => Self::Other(other.to_string()),
         }
     }
@@ -20375,6 +21437,13 @@ impl From<&str> for TeamPoliciesOnWorkerFailure {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// teams.ts — the chat turn of a team run; at most one element.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TeamRunChatTurn {
+    pub user_message: String,
+    pub assistant_message: String,
 }
 
 /// GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
@@ -21492,6 +22561,13 @@ impl From<&str> for TodoStatus {
     }
 }
 
+/// `ToolBreakdownEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ToolBreakdownEntry {
+    pub name: String,
+    pub count: i64,
+}
+
 /// `ToolOverride` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ToolOverride {
@@ -21505,12 +22581,33 @@ pub struct ToolOverride {
     pub hidden: Option<bool>,
 }
 
+/// agent-versioning.ts TrafficSplitEntry; weights sum to 100.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TrafficSplitEntry {
+    pub version: i64,
+    pub weight: f64,
+}
+
 /// `TransferTenantOwnershipResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct TransferTenantOwnershipResponse {
     pub transferred: bool,
     pub new_owner: String,
     pub previous_owner: String,
+}
+
+/// persistence/workspace-store.ts TrashManifestEntry — read back from .trash/_manifest.json as
+/// written.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TrashManifestEntry {
+    pub trash_path: String,
+    pub original_path: String,
+    pub original_workspace_id: String,
+    pub original_agent_id: String,
+    pub trashed_by: String,
+    pub trashed_at: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// Exactly one of the three. The handler trims each and acts on the first non-empty one.
@@ -21782,7 +22879,7 @@ pub struct UpdateAdminFounderConfigRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminGuardrailsResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub guardrails: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub guardrails: Option<Vec<GuardrailConfigItem>>,
     pub updated: bool,
 }
 
@@ -22323,7 +23420,7 @@ pub struct UpdateAdminToolSecurityConfigResponse {
 pub struct UpdateAdminToolSecurityConfigResponseToolSecurity {
     pub default_egress_policy: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub egress_allowlist_per_tenant: Option<Vec<serde_json::Value>>,
+    pub egress_allowlist_per_tenant: Option<Vec<String>>,
     pub ssrf_deny_private_ranges: bool,
     pub default_tool_timeout_ms: i64,
     pub default_tool_max_payload_bytes: i64,
@@ -22645,10 +23742,10 @@ pub struct UpdateSecurityPoliciesResponse {
 /// `UpdateSecurityPoliciesResponsePolicies` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateSecurityPoliciesResponsePolicies {
-    pub cors_allowed_origins: Vec<serde_json::Value>,
+    pub cors_allowed_origins: Vec<String>,
     pub webhook_url_denylist: Vec<String>,
     pub file_upload_max_size_bytes: i64,
-    pub file_upload_allowed_mime_types: Vec<serde_json::Value>,
+    pub file_upload_allowed_mime_types: Vec<String>,
     pub admin_provider_settings_require_super_admin: bool,
 }
 
@@ -22827,6 +23924,42 @@ pub struct UploadPublicSessionImageResponse {
     pub mime_type: String,
     /// Bytes stored.
     pub size: i64,
+}
+
+/// `UploadWorkspaceFileIfNoneMatch` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum UploadWorkspaceFileIfNoneMatch {
+    #[default]
+    #[serde(rename = "*")]
+    Empty,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl UploadWorkspaceFileIfNoneMatch {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Empty => "*",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for UploadWorkspaceFileIfNoneMatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for UploadWorkspaceFileIfNoneMatch {
+    fn from(value: &str) -> Self {
+        match value {
+            "*" => Self::Empty,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `UploadWorkspaceFileRequest` model.
@@ -23232,7 +24365,7 @@ pub struct VideoProvider {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub local: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub models: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub models: Option<Vec<ModelInfo>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -23274,11 +24407,21 @@ pub struct VoiceConfigTts {
     pub voice: Option<String>,
 }
 
+/// providers.ts voice-providers — STT and TTS models split.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct VoiceProvider {
+    pub id: String,
+    pub name: String,
+    pub configured: bool,
+    pub stt_models: Vec<ModelInfo>,
+    pub tts_models: Vec<ModelInfo>,
+}
+
 /// `VoiceProviderList` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct VoiceProviderList {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub providers: Option<Vec<VoiceProvider>>,
 }
 
 /// `VoteResult` model.
@@ -23406,6 +24549,171 @@ impl From<&str> for VotingProposalStatus {
             "rejected" => Self::Rejected,
             "expired" => Self::Expired,
             "vetoed" => Self::Vetoed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// webhooks/webhook-manager.ts DeliveryAttempt (7-day TTL).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct WebhookDeliveryAttempt {
+    pub delivery_id: String,
+    pub webhook_id: String,
+    pub tenant_id: String,
+    pub event_type: WebhookDeliveryAttemptEventType,
+    pub attempt_number: i64,
+    pub status: WebhookDeliveryAttemptStatus,
+    pub request_body: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response_status: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub latency_ms: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub next_retry_at: Option<String>,
+    pub created_at: String,
+}
+
+/// `WebhookDeliveryAttemptEventType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum WebhookDeliveryAttemptEventType {
+    #[default]
+    #[serde(rename = "run.completed")]
+    RunCompleted,
+    #[serde(rename = "run.failed")]
+    RunFailed,
+    #[serde(rename = "run.cancelled")]
+    RunCancelled,
+    #[serde(rename = "agent.created")]
+    AgentCreated,
+    #[serde(rename = "agent.updated")]
+    AgentUpdated,
+    #[serde(rename = "agent.deleted")]
+    AgentDeleted,
+    #[serde(rename = "quota.threshold")]
+    QuotaThreshold,
+    #[serde(rename = "quota.exceeded")]
+    QuotaExceeded,
+    #[serde(rename = "guardrail.violated")]
+    GuardrailViolated,
+    #[serde(rename = "billing.invoice.created")]
+    BillingInvoiceCreated,
+    #[serde(rename = "billing.payment.failed")]
+    BillingPaymentFailed,
+    #[serde(rename = "eval.auto_rollback")]
+    EvalAutoRollback,
+    #[serde(rename = "company.budget_alert")]
+    CompanyBudgetAlert,
+    #[serde(rename = "company.budget_exceeded")]
+    CompanyBudgetExceeded,
+    #[serde(rename = "company.objective_failed")]
+    CompanyObjectiveFailed,
+    #[serde(rename = "company.goal_completed")]
+    CompanyGoalCompleted,
+    #[serde(rename = "company.paused")]
+    CompanyPaused,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl WebhookDeliveryAttemptEventType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunCompleted => "run.completed",
+            Self::RunFailed => "run.failed",
+            Self::RunCancelled => "run.cancelled",
+            Self::AgentCreated => "agent.created",
+            Self::AgentUpdated => "agent.updated",
+            Self::AgentDeleted => "agent.deleted",
+            Self::QuotaThreshold => "quota.threshold",
+            Self::QuotaExceeded => "quota.exceeded",
+            Self::GuardrailViolated => "guardrail.violated",
+            Self::BillingInvoiceCreated => "billing.invoice.created",
+            Self::BillingPaymentFailed => "billing.payment.failed",
+            Self::EvalAutoRollback => "eval.auto_rollback",
+            Self::CompanyBudgetAlert => "company.budget_alert",
+            Self::CompanyBudgetExceeded => "company.budget_exceeded",
+            Self::CompanyObjectiveFailed => "company.objective_failed",
+            Self::CompanyGoalCompleted => "company.goal_completed",
+            Self::CompanyPaused => "company.paused",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for WebhookDeliveryAttemptEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for WebhookDeliveryAttemptEventType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.completed" => Self::RunCompleted,
+            "run.failed" => Self::RunFailed,
+            "run.cancelled" => Self::RunCancelled,
+            "agent.created" => Self::AgentCreated,
+            "agent.updated" => Self::AgentUpdated,
+            "agent.deleted" => Self::AgentDeleted,
+            "quota.threshold" => Self::QuotaThreshold,
+            "quota.exceeded" => Self::QuotaExceeded,
+            "guardrail.violated" => Self::GuardrailViolated,
+            "billing.invoice.created" => Self::BillingInvoiceCreated,
+            "billing.payment.failed" => Self::BillingPaymentFailed,
+            "eval.auto_rollback" => Self::EvalAutoRollback,
+            "company.budget_alert" => Self::CompanyBudgetAlert,
+            "company.budget_exceeded" => Self::CompanyBudgetExceeded,
+            "company.objective_failed" => Self::CompanyObjectiveFailed,
+            "company.goal_completed" => Self::CompanyGoalCompleted,
+            "company.paused" => Self::CompanyPaused,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `WebhookDeliveryAttemptStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum WebhookDeliveryAttemptStatus {
+    #[default]
+    #[serde(rename = "pending")]
+    Pending,
+    #[serde(rename = "success")]
+    Success,
+    #[serde(rename = "failed")]
+    Failed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl WebhookDeliveryAttemptStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Pending => "pending",
+            Self::Success => "success",
+            Self::Failed => "failed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for WebhookDeliveryAttemptStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for WebhookDeliveryAttemptStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "pending" => Self::Pending,
+            "success" => Self::Success,
+            "failed" => Self::Failed,
             other => Self::Other(other.to_string()),
         }
     }

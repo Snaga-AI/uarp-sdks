@@ -42,7 +42,7 @@ public struct MarketplaceAPI: Sendable {
 
     /// Stream every item returned by `getListingReviews`, following the `cursor` cursor until the
     /// server reports no further pages.
-    public func getListingReviewsAll(listingId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func getListingReviewsAll(listingId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<MarketplaceListingRating, Error> {
         autoPaginate(
             fetch: { cursor in try await self.getListingReviews(listingId: listingId, limit: limit, cursor: cursor, options: options) },
             items: { $0.reviews ?? [] },

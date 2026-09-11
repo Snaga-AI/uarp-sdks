@@ -55,6 +55,16 @@ package UARP.API.Marketplace is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Listing_Reviews_Response;
 
+   --  Collect every item `getListingReviews` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Listing_Reviews_All
+     (Self : Client_Type;
+      Listing_Id : String;
+      Params : Get_Listing_Reviews_Params := No_Get_Listing_Reviews_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Marketplace_Listing_Rating_Vectors.Vector;
+
    --  List marketplace categories
    --
    --  GET /api/v1/marketplace/categories

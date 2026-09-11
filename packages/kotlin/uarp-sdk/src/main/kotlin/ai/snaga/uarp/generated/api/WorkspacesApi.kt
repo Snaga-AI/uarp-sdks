@@ -517,9 +517,13 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `files:write`.
      */
-    public suspend fun uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = RequestOptions()): WorkspaceFile {
+    public suspend fun uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, ifMatch: String? = null, ifNoneMatch: UploadWorkspaceFileIfNoneMatch? = null, options: RequestOptions = RequestOptions()): WorkspaceFile {
         val query = buildList {
             add("path" to path)
+        }
+        val headers = buildList {
+            if (ifMatch != null) add("If-Match" to ifMatch)
+            if (ifNoneMatch != null) add("If-None-Match" to ifNoneMatch.value)
         }
         val parts = buildList {
             add(Part.File("file", body.`file`))
@@ -529,6 +533,7 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
                 method = "PUT",
                 path = "/api/v1/workspaces/${encodePathSegment(workspaceId)}/files",
                 query = query,
+                headers = headers,
                 body = Body.Multipart(parts),
                 idempotent = true,
                 options = options,

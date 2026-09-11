@@ -73,7 +73,7 @@ public struct DataExplorerAPI: Sendable {
 
     /// Stream every item returned by `listDataExplorerKeys`, following the `cursor` cursor until
     /// the server reports no further pages.
-    public func listDataExplorerKeysAll(namespace: String, prefix: String? = nil, cursor: String? = nil, limit: Int? = nil, search: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<JSONObject, Error> {
+    public func listDataExplorerKeysAll(namespace: String, prefix: String? = nil, cursor: String? = nil, limit: Int? = nil, search: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<DataExplorerKey, Error> {
         autoPaginate(
             fetch: { cursor in try await self.listDataExplorerKeys(namespace: namespace, prefix: prefix, cursor: cursor, limit: limit, search: search, options: options) },
             items: { $0.keys ?? [] },

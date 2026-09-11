@@ -143,7 +143,7 @@ package UARP.API.Runs is
      (Self : Client_Type;
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Run_Checkpoint;
+      return UARP.Models.Create_Run_Checkpoint_Response;
 
    --  What will this run cost
    --

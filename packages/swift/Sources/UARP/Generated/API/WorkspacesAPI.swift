@@ -409,15 +409,23 @@ public struct WorkspacesAPI: Sendable {
     /// `PUT /api/v1/workspaces/{workspaceId}/files`
     ///
     /// Required scopes: `files:write`.
-    public func uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, options: RequestOptions = .init()) async throws -> WorkspaceFile {
+    public func uploadWorkspaceFile(workspaceId: String, body: UploadWorkspaceFileRequest, path: String, ifMatch: String? = nil, ifNoneMatch: UploadWorkspaceFileIfNoneMatch? = nil, options: RequestOptions = .init()) async throws -> WorkspaceFile {
         var query: [URLQueryItem] = []
         query.append(URLQueryItem(name: "path", value: path))
+        var headers: [String: String] = [:]
+        if let ifMatch {
+            headers["If-Match"] = ifMatch
+        }
+        if let ifNoneMatch {
+            headers["If-None-Match"] = ifNoneMatch.rawValue
+        }
         var parts: [MultipartPart] = []
         parts.append(MultipartPart(name: "file", value: .file(body.file)))
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/workspaces/\(encodePathSegment(workspaceId))/files",
             query: query,
+            headers: headers,
             body: .multipart(parts),
             idempotent: true,
             options: options

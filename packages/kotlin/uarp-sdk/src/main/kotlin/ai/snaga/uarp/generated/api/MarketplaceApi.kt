@@ -65,7 +65,7 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      * Stream every item returned by `getListingReviews`, following the `cursor` cursor until the
      * server reports no further pages.
      */
-    public fun getListingReviewsAll(listingId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<JsonObject> = autoPaginate(
+    public fun getListingReviewsAll(listingId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<MarketplaceListingRating> = autoPaginate(
         fetch = { pageCursor -> getListingReviews(listingId = listingId, limit = limit, cursor = pageCursor, options = options) },
         items = { it.reviews ?: emptyList() },
         cursor = { it.cursor },

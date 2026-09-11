@@ -5,9 +5,9 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
+  DataExplorerKey,
   DeleteDataExplorerValueResponse,
   GetDataExplorerValueResponse,
-  JsonObject,
   ListDataExplorerKeysResponse,
   ListDataExplorerNamespacesResponse,
   SetDataExplorerValueRequest,
@@ -98,8 +98,8 @@ export class DataExplorerResource extends APIResource {
    * Iterate every item returned by `listDataExplorerKeys`, following the `cursor` cursor until
    * the server reports no further pages.
    */
-  listDataExplorerKeysAll(params: ListDataExplorerKeysParams, options?: RequestOptions): AsyncIterableIterator<JsonObject> {
-    return autoPaginate<JsonObject>(
+  listDataExplorerKeysAll(params: ListDataExplorerKeysParams, options?: RequestOptions): AsyncIterableIterator<DataExplorerKey> {
+    return autoPaginate<DataExplorerKey>(
       (cursor) => this.listDataExplorerKeys({ ...params, cursor }, options),
       'keys',
       'cursor',

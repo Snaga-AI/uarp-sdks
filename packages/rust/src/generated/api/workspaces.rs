@@ -81,6 +81,15 @@ pub struct SearchWorkspaceFilesParams {
 pub struct UploadWorkspaceFileParams {
     /// File path within workspace
     pub path: String,
+    /// Conditional write (workspaces.ts). The file's `etag` from a previous read: the write happens
+    /// only if the file is unchanged since; `*` requires the file to exist. Without it (and without
+    /// If-None-Match) the write is unconditional, as for every client that predates the header. On
+    /// a mismatch the answer is 412 with the winner's `current_etag` in the body.
+    #[serde(skip)]
+    pub if_match: Option<String>,
+    /// `*` — create only: the write happens only if the file does not exist yet (workspaces.ts).
+    #[serde(skip)]
+    pub if_none_match: Option<models::UploadWorkspaceFileIfNoneMatch>,
 }
 
 /// Workspace management, file storage, and sharing
@@ -557,6 +566,13 @@ impl WorkspacesApi {
     ///
     /// Required scopes: `files:write`.
     pub async fn upload_workspace_file(&self, workspace_id: &str, body: &models::UploadWorkspaceFileRequest, params: &UploadWorkspaceFileParams) -> Result<models::WorkspaceFile> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.if_match {
+            headers.push(("If-Match", value.clone()));
+        }
+        if let Some(value) = &params.if_none_match {
+            headers.push(("If-None-Match", value.to_string()));
+        }
         self.client
             .request_multipart(
                 Request {
@@ -564,7 +580,7 @@ impl WorkspacesApi {
                     path: format!("/api/v1/workspaces/{}/files", encode_path(workspace_id)),
                     query: Some(params),
                     body: NO_BODY,
-                    headers: Vec::new(),
+                    headers,
                     idempotent: true,
                 },
                 || {

@@ -83,7 +83,7 @@ public struct RunsAPI: Sendable {
     /// `POST /api/v1/runs/{runId}/checkpoint`
     ///
     /// Required scopes: `runs:create`.
-    public func createRunCheckpoint(runId: String, options: RequestOptions = .init()) async throws -> RunCheckpoint {
+    public func createRunCheckpoint(runId: String, options: RequestOptions = .init()) async throws -> CreateRunCheckpointResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/runs/\(encodePathSegment(runId))/checkpoint",

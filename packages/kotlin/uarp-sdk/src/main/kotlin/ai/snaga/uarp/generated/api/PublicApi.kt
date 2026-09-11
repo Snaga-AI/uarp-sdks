@@ -315,8 +315,8 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/public/states/{stateId}`
      */
-    public suspend fun getPublicState(stateId: String, options: RequestOptions = RequestOptions()): PublicState {
-        return client.request<PublicState>(
+    public suspend fun getPublicState(stateId: String, options: RequestOptions = RequestOptions()): GetPublicStateResponse {
+        return client.request<GetPublicStateResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/states/${encodePathSegment(stateId)}",

@@ -76,6 +76,31 @@ export type A2ajsonRpcRequestMethod = 'tasks/send' | 'tasks/sendSubscribe' | 'ta
 
 export const A2AJSON_RPC_REQUEST_METHOD_VALUES = ['tasks/send', 'tasks/sendSubscribe', 'tasks/get', 'tasks/cancel', 'tasks/pushNotification/set', 'tasks/pushNotification/get'] as const;
 
+/**
+ * a2a/agent-card.ts A2APart — `text`, `file` or `data` by `type`. The platform itself emits
+ * one text or data part per message; file parts arrive from remote agents.
+ */
+export interface A2APart {
+  type: A2APartType;
+  text?: string;
+  file?: A2APartFile;
+  data?: JsonObject;
+}
+
+export interface A2APartFile {
+  name: string;
+  mime_type: string;
+  /**
+   * Inline base64.
+   */
+  data?: string;
+  uri?: string;
+}
+
+export type A2APartType = 'text' | 'file' | 'data';
+
+export const A2_APART_TYPE_VALUES = ['text', 'file', 'data'] as const;
+
 export interface A2ATask {
   id: string;
   agent_id?: string;
@@ -91,13 +116,13 @@ export interface A2ATask {
 export interface A2ATaskArtifact {
   name: string;
   description?: string;
-  parts: JsonObject[];
+  parts: A2APart[];
   index: number;
 }
 
 export interface A2ATaskMessage {
   role: A2ATaskMessageRole;
-  parts: JsonObject[];
+  parts: A2APart[];
 }
 
 export type A2ATaskMessageRole = 'user' | 'agent';
@@ -353,12 +378,12 @@ export interface AdminAnalyticsOverviewResponse {
   unique_visitors_30d?: number;
   signups_30d?: number;
   conversion_rate?: number;
-  timeseries?: JsonObject[];
-  top_countries?: JsonObject[];
-  top_devices?: JsonObject[];
-  top_browsers?: JsonObject[];
-  top_referrers?: JsonObject[];
-  top_utm_sources?: JsonObject[];
+  timeseries?: AnalyticsTimeseriesPoint[];
+  top_countries?: AnalyticsTopValue[];
+  top_devices?: AnalyticsTopValue[];
+  top_browsers?: AnalyticsTopValue[];
+  top_referrers?: AnalyticsTopValue[];
+  top_utm_sources?: AnalyticsTopValue[];
 }
 
 export interface AdminAnalyticsOverviewResponseRange {
@@ -683,10 +708,10 @@ export interface AdminConfigSecurityPoliciesConfig {
 }
 
 export interface AdminConfigSecurityPoliciesConfigPolicies {
-  cors_allowed_origins: JsonValue[];
+  cors_allowed_origins: string[];
   webhook_url_denylist: string[];
   file_upload_max_size_bytes: number;
-  file_upload_allowed_mime_types: JsonValue[];
+  file_upload_allowed_mime_types: string[];
   admin_provider_settings_require_super_admin: boolean;
 }
 
@@ -735,7 +760,7 @@ export interface AdminConfigToolSecurityConfig {
 
 export interface AdminConfigToolSecurityConfigToolSecurity {
   default_egress_policy: string;
-  egress_allowlist_per_tenant?: JsonValue[];
+  egress_allowlist_per_tenant?: string[];
   ssrf_deny_private_ranges: boolean;
   default_tool_timeout_ms: number;
   default_tool_max_payload_bytes: number;
@@ -821,7 +846,7 @@ export const ADMIN_DATA_EXPLORER_RAW_KEYS_RESPONSE_KEY_TYPE_VALUES = ['null', 'a
  * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
  */
 export interface AdminFeatureFlagsConfig {
-  flags?: JsonObject[];
+  flags?: FeatureFlag[];
 }
 
 /**
@@ -884,7 +909,7 @@ export interface AdminGetVoiceConfigResponseVoiceVariant1tts {
  * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
  */
 export interface AdminGuardrailsConfig {
-  guardrails?: JsonObject[];
+  guardrails?: GuardrailConfigItem[];
 }
 
 /**
@@ -1102,6 +1127,22 @@ export interface AdminProviderLastModelsSync {
   live: number;
 }
 
+/**
+ * admin.ts — the list projection of a custom provider (the single GET adds catalogue fields;
+ * see AdminProvider).
+ */
+export interface AdminProviderSummary {
+  id: string;
+  name: string;
+  canonical: string;
+  default_endpoint: string;
+  local: boolean;
+  enabled: boolean;
+  model_allowlist: string[];
+  is_custom: boolean;
+  requires_api_key: boolean;
+}
+
 export interface AdminPutLandingConfigResponse {
   landing: LandingConfigSection;
   source: AdminPutLandingConfigResponseSource;
@@ -1158,7 +1199,7 @@ export interface AdminPutVoiceConfigResponseVoiceTts {
  * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
  */
 export interface AdminRateLimitsConfig {
-  endpoints?: JsonObject[];
+  endpoints?: EndpointRateLimit[];
 }
 
 /**
@@ -1347,7 +1388,6 @@ export interface Agent {
   prompts?: AgentPrompts;
   mcp?: JsonObject;
   policies?: JsonObject;
-  skills?: JsonObject[];
   thinking?: JsonObject | null;
   effort_policy?: JsonObject | null;
   resource_limits?: JsonObject | null;
@@ -1551,7 +1591,7 @@ export interface AgentCapabilities {
   agent_id: string;
   skills: AgentCapabilitiesSkill[];
   constraints: AgentCapabilitiesConstraints;
-  tools: JsonValue[];
+  tools: string[];
   kb_ids: string[];
   updated_at: string;
 }
@@ -2032,6 +2072,24 @@ export interface AmendConstitutionRequest {
   action: string;
   rule?: JsonObject;
   rationale?: string;
+}
+
+export interface AnalyticsTimeseriesPoint {
+  date: string;
+  landing_visit: number;
+  page_view: number;
+  otp_requested: number;
+  signup: number;
+  login: number;
+  app_open: number;
+  activated: number;
+  checkout_started: number;
+  subscribed: number;
+}
+
+export interface AnalyticsTopValue {
+  value: string;
+  count: number;
 }
 
 export interface AndroidTester {
@@ -2619,6 +2677,36 @@ export interface CancelTeamRunResponse {
   orchestrator_stopped: boolean;
 }
 
+/**
+ * visual-builder.ts CanvasEdge.
+ */
+export interface CanvasEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+/**
+ * visual-builder.ts CanvasNode.
+ */
+export interface CanvasNode {
+  id: string;
+  type: CanvasNodeType;
+  label: string;
+  position: CanvasNodePosition;
+  config: JsonObject;
+}
+
+export interface CanvasNodePosition {
+  x: number;
+  y: number;
+}
+
+export type CanvasNodeType = 'llm' | 'tool' | 'guardrail' | 'memory' | 'condition' | 'input' | 'output';
+
+export const CANVAS_NODE_TYPE_VALUES = ['llm', 'tool', 'guardrail', 'memory', 'condition', 'input', 'output'] as const;
+
 export interface CanvasWorkflowStep {
   /**
    * The agent this step runs. An entry without it is silently discarded.
@@ -2675,7 +2763,7 @@ export type ChatCompletionRequestMessageRole = 'system' | 'user' | 'assistant' |
 export const CHAT_COMPLETION_REQUEST_MESSAGE_ROLE_VALUES = ['system', 'user', 'assistant', 'tool'] as const;
 
 export interface ChatCompletionRequestTool {
-  type: ChatCompletionRequestToolType;
+  type: OpenAiToolCallType;
   function: ChatCompletionRequestToolFunction;
 }
 
@@ -2688,9 +2776,37 @@ export interface ChatCompletionRequestToolFunction {
   parameters?: JsonObject;
 }
 
-export type ChatCompletionRequestToolType = 'function';
+/**
+ * types/llm.ts ChatMessage — the model-facing message a checkpoint stores.
+ */
+export interface ChatMessage {
+  role: ChatMessageRole;
+  content: string | ChatMessageContentVariant2item[];
+  name?: string;
+  tool_call_id?: string;
+  tool_calls?: ChatMessageToolCall[];
+  reasoning_content?: string;
+}
 
-export const CHAT_COMPLETION_REQUEST_TOOL_TYPE_VALUES = ['function'] as const;
+export interface ChatMessageContentVariant2item {
+  type: ChatMessageContentVariant2itemType;
+  text?: string;
+  media?: JsonObject;
+}
+
+export type ChatMessageContentVariant2itemType = 'text' | 'image' | 'audio' | 'video' | 'file';
+
+export const CHAT_MESSAGE_CONTENT_VARIANT2ITEM_TYPE_VALUES = ['text', 'image', 'audio', 'video', 'file'] as const;
+
+export type ChatMessageRole = 'user' | 'assistant' | 'system' | 'tool';
+
+export const CHAT_MESSAGE_ROLE_VALUES = ['user', 'assistant', 'system', 'tool'] as const;
+
+export interface ChatMessageToolCall {
+  id: string;
+  name: string;
+  arguments: JsonObject;
+}
 
 export interface CheckGovernanceRequest {
   agent_id: string;
@@ -2718,7 +2834,7 @@ export interface Company {
   name: string;
   description?: string;
   mission?: string;
-  strategic_goals?: JsonObject[];
+  strategic_goals?: StrategicGoal[];
   strategist_agent_id: string;
   team_ids?: string[];
   created_agent_ids?: string[];
@@ -2739,6 +2855,15 @@ export interface Company {
    * escalation reads this (falling back to updated_at while absent).
    */
   last_successful_tick_at?: string;
+}
+
+/**
+ * companies.ts — a company_activity row; `success` only when recorded.
+ */
+export interface CompanyActivityEntry {
+  run_id?: string;
+  created_at?: string;
+  success?: boolean;
 }
 
 /**
@@ -3001,14 +3126,31 @@ export interface ContinueRunResponse {
   resume_step?: number;
 }
 
+/**
+ * One entry of a session transcript — what GET /sessions/{sessionId}/messages serves in both
+ * `messages` and `items` (types/session.ts ConversationEntry, enriched on read by sessions.ts
+ * with the run's metrics and cost). Measured 2026-09-10 on e2e-canon: a user turn carries
+ * role, content, run_id, timestamp, compacted, importance; an assistant turn adds tool_calls,
+ * thinking, run_metrics, cost_usd.
+ */
 export interface ConversationEntry {
+  /**
+   * The stable id of this entry — derived on read (lib/message-ids.ts), never stored, so every
+   * transcript has it: the first user turn of a run is `{run_id}`, the first assistant reply
+   * `{run_id}-reply`, further replies `{run_id}-reply-2`…, tool results `{run_id}-tool-N`,
+   * system entries `{run_id}-system-N`. Counted per run over the whole history before
+   * compaction, so it does not move. This is the canonical `message_id` for reactions (PUT
+   * /runs/{runId}/feedback), bookmarks (/agents/{agentId}/bookmarks/{messageId}) and annotations
+   * (POST /sessions/{sessionId}/annotations); it is a safe path segment.
+   */
+  message_id: string;
   role: PublicSessionViewMessageRole;
   /**
-   * Message content
+   * The text, or content parts for a multimodal turn (types/llm.ts MessageContent).
    */
-  content: string;
-  run_id?: string;
-  timestamp?: string;
+  content: string | ConversationEntryContentVariant2item[];
+  run_id: string;
+  timestamp: string;
   compacted?: boolean;
   /**
    * Persisted on assistant entries when the run executed tools. Reload re-paints these blocks
@@ -3021,6 +3163,74 @@ export interface ConversationEntry {
    * section above the assistant text.
    */
   thinking?: string;
+  importance?: ConversationEntryImportance;
+  attachments?: ConversationEntryAttachment[];
+  /**
+   * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
+   * publicRunMetrics).
+   */
+  run_metrics?: ConversationEntryRunMetrics;
+  /**
+   * On an assistant entry, when the run recorded a cost.
+   */
+  cost_usd?: number;
+  /**
+   * The reply came from a run a Todo triggered.
+   */
+  from_todo?: boolean;
+  /**
+   * The model ran out of output tokens — see RunOutput.output_truncated.
+   */
+  output_truncated?: boolean;
+}
+
+export interface ConversationEntryAttachment {
+  file_id: string;
+  filename: string;
+  mime_type: string;
+  size_bytes?: number;
+}
+
+export interface ConversationEntryContentVariant2item {
+  type: ChatMessageContentVariant2itemType;
+  text?: string;
+  media?: ConversationEntryContentVariant2itemMedia;
+}
+
+export interface ConversationEntryContentVariant2itemMedia {
+  mime_type: string;
+  data?: string;
+  url?: string;
+}
+
+export type ConversationEntryImportance = 'high' | 'normal';
+
+export const CONVERSATION_ENTRY_IMPORTANCE_VALUES = ['high', 'normal'] as const;
+
+/**
+ * On an assistant entry: the run's metrics as served by GET /runs/{runId} (sessions.ts
+ * publicRunMetrics).
+ */
+export interface ConversationEntryRunMetrics {
+  /**
+   * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
+   */
+  pricing_confidence?: string;
+  duration_ms?: number;
+  steps_count?: number;
+  input_tokens?: number;
+  output_tokens?: number;
+  thinking_tokens?: number;
+  tool_calls_count?: number;
+  llm_calls_count?: number;
+  guardrail_checks?: number;
+  guardrail_violations?: number;
+  memory_retrievals?: number;
+  memory_extractions?: number;
+  /**
+   * Estimated total cost in USD
+   */
+  total_cost_usd?: number | null;
 }
 
 export interface ConversationEntryToolCall {
@@ -3281,7 +3491,7 @@ export interface CreateGuardrailRequest {
    * through DNS before it is accepted.
    */
   webhook_url: string;
-  phase: GuardrailPhase;
+  phase: GuardrailConfigItemPhase;
   action?: GuardrailAction;
   timeout_ms?: number;
   /**
@@ -3412,7 +3622,7 @@ export interface CreateResponseResponse {
   object: 'response';
   created_at?: number;
   model: string;
-  output: JsonObject[];
+  output: ResponsesOutputItem[];
   usage?: CreateResponseResponseUsage;
 }
 
@@ -3420,6 +3630,19 @@ export interface CreateResponseResponseUsage {
   input_tokens?: number;
   output_tokens?: number;
   total_tokens?: number;
+}
+
+/**
+ * runs.ts createRunCheckpoint — the checkpoint record; it carries no messages (those live in
+ * the stored checkpoint read back by GET /runs/{runId}/checkpoints).
+ */
+export interface CreateRunCheckpointResponse {
+  checkpoint_id: string;
+  run_id: string;
+  status: string;
+  step_seq: number;
+  metrics?: JsonObject;
+  created_at: string;
 }
 
 export interface CreateRunRequest {
@@ -3541,12 +3764,8 @@ export interface CreateVotingProposalRequest {
 
 export interface CreateWebhookRequest {
   url: string;
-  events: CreateWebhookRequestEvent[];
+  events: WebhookDeliveryAttemptEventType[];
 }
-
-export type CreateWebhookRequestEvent = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
-
-export const CREATE_WEBHOOK_REQUEST_EVENT_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
 
 export interface CreateWorkspaceRequest {
   name?: string;
@@ -3612,6 +3831,24 @@ export interface CustomPlanInput {
 export type CustomPlanVisibility = 'public' | 'hidden';
 
 export const CUSTOM_PLAN_VISIBILITY_VALUES = ['public', 'hidden'] as const;
+
+/**
+ * admin-data-explorer.ts handleGetKeys — one KV entry, prefix stripped.
+ */
+export interface DataExplorerKey {
+  key: Array<string | number>;
+  value_preview: string;
+  size_bytes: number;
+  type: string;
+  sensitive: boolean;
+}
+
+export interface DataExplorerNamespace {
+  id: string;
+  label: string;
+  description: string;
+  count: number;
+}
 
 /**
  * data-subject.ts dataSubjectAccess — ids per store plus their counts; every field always
@@ -3985,6 +4222,20 @@ export interface DropGenomeSilhouette {
   weight?: number;
 }
 
+/**
+ * types/mcp.ts EgressRule — a host glob with optional ports (default [443]) and protocol
+ * (default https).
+ */
+export interface EgressRule {
+  host_pattern: string;
+  ports?: number[];
+  protocol?: EgressRuleProtocol;
+}
+
+export type EgressRuleProtocol = 'https' | 'http';
+
+export const EGRESS_RULE_PROTOCOL_VALUES = ['https', 'http'] as const;
+
 export interface EmbeddingsRequest {
   /**
    * Embedding model (optional; platform default used)
@@ -4046,6 +4297,16 @@ export interface EmptyWorkspaceTrashResponse {
   message: string;
 }
 
+/**
+ * middleware/rate-limit.ts EndpointRateLimitConfig — camelCase on the wire.
+ */
+export interface EndpointRateLimit {
+  pattern: string;
+  maxRequests: number;
+  windowSec: number;
+  source: GuardrailConfigItemSource;
+}
+
 export interface EnforcementResult {
   /**
    * False when any matched rule carries a blocking penalty.
@@ -4094,8 +4355,19 @@ export const ENROL_MFA_REQUEST_ALGORITHM_VALUES = ['SHA-1', 'SHA-256', 'SHA-512'
  */
 export interface Error {
   type: string;
-  title: string;
+  /**
+   * The HTTP reason phrase of `status` — one dictionary for every status the platform answers
+   * with (lib/error-titles.ts; the enum is built from it). The one deliberate exception: 422
+   * says "Validation Error", as it always has. Never an exception class name; that lives in
+   * `code`.
+   */
+  title: ErrorTitle;
   status: number;
+  /**
+   * The sentence a person reads — specific to this occurrence, never empty, never a repeat of
+   * `title`. On a 500 it is the fixed sentence the sanitizer allows; 501–504 carry the handler's
+   * own operator guidance.
+   */
   detail: string;
   /**
    * Request ID for tracing
@@ -4155,6 +4427,16 @@ export const ERROR_REPORT_KIND_VALUES = ['error', 'feedback'] as const;
 export type ErrorReportStatus = 'new' | 'resolved';
 
 export const ERROR_REPORT_STATUS_VALUES = ['new', 'resolved'] as const;
+
+/**
+ * The HTTP reason phrase of `status` — one dictionary for every status the platform answers
+ * with (lib/error-titles.ts; the enum is built from it). The one deliberate exception: 422
+ * says "Validation Error", as it always has. Never an exception class name; that lives in
+ * `code`.
+ */
+export type ErrorTitle = 'Bad Request' | 'Unauthorized' | 'Payment Required' | 'Forbidden' | 'Not Found' | 'Method Not Allowed' | 'Conflict' | 'Gone' | 'Length Required' | 'Precondition Failed' | 'Payload Too Large' | 'Unsupported Media Type' | 'Validation Error' | 'Locked' | 'Too Many Requests' | 'Internal Server Error' | 'Not Implemented' | 'Bad Gateway' | 'Service Unavailable' | 'Gateway Timeout';
+
+export const ERROR_TITLE_VALUES = ['Bad Request', 'Unauthorized', 'Payment Required', 'Forbidden', 'Not Found', 'Method Not Allowed', 'Conflict', 'Gone', 'Length Required', 'Precondition Failed', 'Payload Too Large', 'Unsupported Media Type', 'Validation Error', 'Locked', 'Too Many Requests', 'Internal Server Error', 'Not Implemented', 'Bad Gateway', 'Service Unavailable', 'Gateway Timeout'] as const;
 
 export interface EstimateRunCostRequest {
   agent_id: string;
@@ -4268,6 +4550,19 @@ export const EXPORT_MY_ACCOUNT_FORMAT_VALUES = ['zip', 'json'] as const;
 export type ExportSessionFormat = 'md' | 'json';
 
 export const EXPORT_SESSION_FORMAT_VALUES = ['md', 'json'] as const;
+
+/**
+ * admin-config.ts mergeFeatureFlags — a closed set of ids; `rollout_pct` only when an override
+ * set it.
+ */
+export interface FeatureFlag {
+  id: string;
+  label: string;
+  description: string;
+  enabled: boolean;
+  rollout_pct?: number;
+  source: GuardrailConfigItemSource;
+}
 
 export interface FeedEntry {
   feed_id: string;
@@ -4617,7 +4912,7 @@ export interface GetAgentActivityStatsResponse {
   avgInputTokens?: number;
   avgOutputTokens?: number;
   avgThinkingTokens?: number;
-  toolBreakdown?: JsonObject[];
+  toolBreakdown?: ToolBreakdownEntry[];
   topErrorMessages?: GetAgentActivityStatsResponseTopErrorMessage[];
   runsByDay?: GetAgentActivityStatsResponseRunsByDayItem[];
 }
@@ -4716,7 +5011,7 @@ export interface GetClientConfigResponse {
 }
 
 export interface GetCompanyActivityResponse {
-  activity?: JsonObject[];
+  entries?: CompanyActivityEntry[];
 }
 
 export interface GetCompanyBudgetResponse {
@@ -4728,8 +5023,8 @@ export interface GetCompanyBudgetResponse {
 }
 
 export interface GetCompanyObjectivesResponse {
-  trees?: JsonObject[];
-  objectives?: JsonObject[];
+  trees?: ObjectiveTree[];
+  objectives?: Objective[];
 }
 
 export interface GetDataExplorerValueResponse {
@@ -4802,7 +5097,7 @@ export type GetHealthResponseStatus = 'healthy' | 'degraded' | 'unhealthy';
 export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unhealthy'] as const;
 
 export interface GetImmutableAuditResponse {
-  events: JsonObject[];
+  events: ImmutableAuditEvent[];
   total: number;
 }
 
@@ -4811,7 +5106,7 @@ export interface GetLinkPreviewResponse {
 }
 
 export interface GetListingReviewsResponse {
-  reviews?: JsonObject[];
+  reviews?: MarketplaceListingRating[];
   total?: number;
   cursor?: string;
 }
@@ -4929,6 +5224,28 @@ export interface GetPublicFeaturedAgentResponse {
   agent?: JsonObject | null;
 }
 
+export interface GetPublicStateResponse {
+  marketplace?: JsonObject;
+  governance?: JsonObject;
+  plan?: string;
+  branding?: JsonObject;
+  category: string;
+  description?: string;
+  logo_url?: string;
+  name: string;
+  published_at?: string;
+  short_description: string;
+  slug: string;
+  social_links?: JsonObject;
+  stats?: JsonObject;
+  tags: string[];
+  tenant_id: string;
+  /**
+   * Only this route joins the state's agents (public.ts); the list does not carry them.
+   */
+  agents: PublicStateAgent[];
+}
+
 export interface GetReadyResponse {
   status?: GetReadyResponseStatus;
   timestamp?: string;
@@ -4976,23 +5293,15 @@ export type GetResponseResponseObject = 'response';
 export const GET_RESPONSE_RESPONSE_OBJECT_VALUES = ['response'] as const;
 
 export interface GetResponseResponseOutputItem {
-  type: GetResponseResponseOutputItemType;
+  type: ResponsesOutputItemType;
   role: OpenAiChatCompletionChoiceMessageRole;
   content: GetResponseResponseOutputItemContentItem[];
 }
 
 export interface GetResponseResponseOutputItemContentItem {
-  type: GetResponseResponseOutputItemContentItemType;
+  type: ResponsesOutputItemContentItemType;
   text: string;
 }
-
-export type GetResponseResponseOutputItemContentItemType = 'output_text';
-
-export const GET_RESPONSE_RESPONSE_OUTPUT_ITEM_CONTENT_ITEM_TYPE_VALUES = ['output_text'] as const;
-
-export type GetResponseResponseOutputItemType = 'message';
-
-export const GET_RESPONSE_RESPONSE_OUTPUT_ITEM_TYPE_VALUES = ['message'] as const;
 
 export interface GetResponseResponseUsage {
   input_tokens: number;
@@ -5090,7 +5399,7 @@ export interface GetRunResponse {
    * ABSENT — not empty — when the run is not awaiting approval, and absent too if the scan
    * fails, which is deliberate: a failed scan must not turn a readable run into an error.
    */
-  pending_approvals?: JsonObject[];
+  pending_approvals?: PendingApproval[];
   /**
    * The question the run is blocked on, taken from the most recent `run.awaiting_input` event
    * (runs.ts:673-681). Like `pending_approvals` it is ABSENT rather than empty when the run is
@@ -5112,7 +5421,7 @@ export interface GetRunResponsePendingInput {
   question?: string;
   context?: string;
   tool_call_id?: string;
-  options?: JsonValue[];
+  options?: string[];
 }
 
 /**
@@ -5141,11 +5450,16 @@ export interface GetSessionAuditLogResponse {
 }
 
 export interface GetSessionMessagesResponse {
-  messages: JsonObject[];
   /**
-   * The same list as `messages`.
+   * The transcript; the key clients read first. `items` is the Wave 7.2 list alias of the same
+   * array.
    */
-  items: JsonObject[];
+  messages: ConversationEntry[];
+  /**
+   * The same list as `messages` — the canonical list key (Wave 7.2); both are served so no
+   * client moves.
+   */
+  items: ConversationEntry[];
   total: number;
   active_run_id?: string;
   active_run_status?: string;
@@ -5173,8 +5487,8 @@ export interface GetSquadGraphResponse {
 export interface GetSquadRunMessagesResponse {
   team_id: string;
   team_run_id: string;
-  messages: JsonObject[];
-  protocol_messages: JsonObject[];
+  messages: TeamRunChatTurn[];
+  protocol_messages: TeamMessage[];
   total: number;
 }
 
@@ -5193,8 +5507,8 @@ export interface GetTeamGraphResponse {
 export interface GetTeamRunMessagesResponse {
   team_id: string;
   team_run_id: string;
-  messages: JsonObject[];
-  protocol_messages: JsonObject[];
+  messages: TeamRunChatTurn[];
+  protocol_messages: TeamMessage[];
   total: number;
 }
 
@@ -5331,7 +5645,7 @@ export interface Guardrail {
   tenant_id: string;
   name: string;
   webhook_url: string;
-  phase: GuardrailPhase;
+  phase: GuardrailConfigItemPhase;
   action?: GuardrailAction;
   timeout_ms?: number;
   created_at?: string;
@@ -5341,9 +5655,31 @@ export type GuardrailAction = 'block' | 'redact' | 'warn' | 'log';
 
 export const GUARDRAIL_ACTION_VALUES = ['block', 'redact', 'warn', 'log'] as const;
 
-export type GuardrailPhase = 'input' | 'output' | 'both';
+/**
+ * admin-config.ts GuardrailConfigItem.
+ */
+export interface GuardrailConfigItem {
+  id: string;
+  name: string;
+  description: string;
+  phase: GuardrailConfigItemPhase;
+  default_action: GuardrailConfigItemDefaultAction;
+  enabled: boolean;
+  mandatory: boolean;
+  source: GuardrailConfigItemSource;
+}
 
-export const GUARDRAIL_PHASE_VALUES = ['input', 'output', 'both'] as const;
+export type GuardrailConfigItemDefaultAction = 'block' | 'warn' | 'redact' | 'log';
+
+export const GUARDRAIL_CONFIG_ITEM_DEFAULT_ACTION_VALUES = ['block', 'warn', 'redact', 'log'] as const;
+
+export type GuardrailConfigItemPhase = 'input' | 'output' | 'both';
+
+export const GUARDRAIL_CONFIG_ITEM_PHASE_VALUES = ['input', 'output', 'both'] as const;
+
+export type GuardrailConfigItemSource = 'kv' | 'default';
+
+export const GUARDRAIL_CONFIG_ITEM_SOURCE_VALUES = ['kv', 'default'] as const;
 
 export interface HandleStripeWebhookRequest {
   type: string;
@@ -5391,8 +5727,29 @@ export interface HostDroplet {
 }
 
 export interface ImageProviderList {
-  providers?: JsonObject[];
+  providers?: MediaProvider[];
 }
+
+/**
+ * audit/immutable-audit-log.ts AuditEvent — an HMAC-chained record; `hmac` absent when
+ * UARP_AUDIT_HMAC_KEY is unset.
+ */
+export interface ImmutableAuditEvent {
+  event_id: string;
+  timestamp: string;
+  tenant_id: string;
+  actor_agent_id: string;
+  event_type: ImmutableAuditEventEventType;
+  details: JsonObject;
+  target_agent_id?: string;
+  target_run_id?: string;
+  prev_hmac?: string | null;
+  hmac?: string;
+}
+
+export type ImmutableAuditEventEventType = 'agent.created' | 'agent.updated' | 'agent.terminated' | 'agent.deposed' | 'run.started' | 'run.completed' | 'run.failed' | 'tool.denied' | 'security.self_escalation_blocked' | 'security.opcon_violation' | 'security.immutable_field_blocked' | 'security.rate_limited' | 'dag.created' | 'dag.step_completed' | 'dag.cancelled' | 'budget.transfer' | 'budget.exceeded' | 'cascade.failure';
+
+export const IMMUTABLE_AUDIT_EVENT_EVENT_TYPE_VALUES = ['agent.created', 'agent.updated', 'agent.terminated', 'agent.deposed', 'run.started', 'run.completed', 'run.failed', 'tool.denied', 'security.self_escalation_blocked', 'security.opcon_violation', 'security.immutable_field_blocked', 'security.rate_limited', 'dag.created', 'dag.step_completed', 'dag.cancelled', 'budget.transfer', 'budget.exceeded', 'cascade.failure'] as const;
 
 export interface ImportAdminConfigRequest {
   source?: string;
@@ -5955,7 +6312,7 @@ export interface ListAdminIntegrationOAuthProvidersResponseProvider {
 }
 
 export interface ListAdminProvidersResponse {
-  providers?: JsonObject[];
+  providers?: AdminProviderSummary[];
 }
 
 export interface ListAgentBookmarksResponse {
@@ -6135,7 +6492,7 @@ export interface ListCustomPlansResponse {
 }
 
 export interface ListDataExplorerKeysResponse {
-  keys?: JsonObject[];
+  keys?: DataExplorerKey[];
   /**
    * Opaque cursor for the next page; null on the last page.
    */
@@ -6144,16 +6501,16 @@ export interface ListDataExplorerKeysResponse {
 }
 
 export interface ListDataExplorerNamespacesResponse {
-  namespaces?: JsonObject[];
+  namespaces?: DataExplorerNamespace[];
 }
 
 export interface ListDatasetsResponse {
-  datasets: JsonObject[];
+  datasets: EvalDataset[];
   total: number;
 }
 
 export interface ListEvalRunsResponse {
-  eval_runs: JsonObject[];
+  eval_runs: EvalRun[];
   total: number;
 }
 
@@ -6526,7 +6883,7 @@ export interface ListSessionsResponseItem {
   /**
    * Session branches for conversation forking
    */
-  branches?: JsonObject[];
+  branches?: SessionBranch[];
   /**
    * Currently active branch ID
    */
@@ -6596,7 +6953,7 @@ export interface ListSquadsResponse {
 }
 
 export interface ListSubscriptionsResponse {
-  subscriptions?: JsonObject[];
+  subscriptions?: MarketplaceSubscription[];
 }
 
 export interface ListTeamGraphEdgesResponse {
@@ -6664,7 +7021,7 @@ export interface ListVotingProposalsResponse {
 
 export interface ListWebhookDeliveriesResponse {
   webhook_id: string;
-  deliveries: JsonObject[];
+  deliveries: WebhookDeliveryAttempt[];
   total: number;
 }
 
@@ -6725,7 +7082,7 @@ export interface ListWorkspacesResponse {
 }
 
 export interface ListWorkspaceTrashResponse {
-  items?: JsonObject[];
+  items?: TrashManifestEntry[];
 }
 
 export interface LLMModel {
@@ -7007,7 +7364,7 @@ export interface MCPServer {
    * How many env vars are set. The values are never returned.
    */
   env_count?: number;
-  egress_allowlist?: JsonObject[];
+  egress_allowlist?: EgressRule[];
   enabled: boolean;
   /**
    * Tool names and resource URIs discovered from the server.
@@ -7035,7 +7392,7 @@ export interface MCPServerTestResult {
   /**
    * Present only when `ok` is true.
    */
-  tools?: JsonObject[];
+  tools?: MCPTestTool[];
   /**
    * Present only when `ok` is false.
    */
@@ -7061,7 +7418,7 @@ export interface MCPServerWithConnectResult {
    * How many env vars are set. The values are never returned.
    */
   env_count?: number;
-  egress_allowlist?: JsonObject[];
+  egress_allowlist?: EgressRule[];
   enabled: boolean;
   /**
    * Tool names and resource URIs discovered from the server.
@@ -7077,12 +7434,28 @@ export interface MCPServerWithConnectResult {
   connect_error?: string | null;
 }
 
+export interface MCPTestTool {
+  name: string;
+  description: string;
+}
+
 /**
  * `stdio` is blocked in production unless UARP_ALLOW_MCP_STDIO=true.
  */
 export type MCPTransport = 'stdio' | 'http' | 'streamable_http';
 
 export const MCPTRANSPORT_VALUES = ['stdio', 'http', 'streamable_http'] as const;
+
+/**
+ * providers.ts listMediaProviders — image and video providers.
+ */
+export interface MediaProvider {
+  id: string;
+  name: string;
+  configured: boolean;
+  local: boolean;
+  models: ModelInfo[];
+}
 
 export interface MemoryEntry {
   agent_id?: string;
@@ -7267,6 +7640,23 @@ export interface MissionStartResponseClassification {
 export type MissionStatus = 'draft' | 'planning' | 'awaiting_authorization' | 'executing' | 'paused' | 'verifying' | 'completed' | 'failed' | 'aborted';
 
 export const MISSION_STATUS_VALUES = ['draft', 'planning', 'awaiting_authorization', 'executing', 'paused', 'verifying', 'completed', 'failed', 'aborted'] as const;
+
+/**
+ * providers.ts ModelInfo — only id and name are populated for media providers.
+ */
+export interface ModelInfo {
+  id: string;
+  name: string;
+  created?: number;
+  capabilities?: JsonObject;
+  context_window?: number;
+  supports_tools?: boolean;
+  supports_vision?: boolean;
+  /**
+   * TTS models only, when an admin preset names voices.
+   */
+  voices?: string[];
+}
 
 export interface MoveWorkspaceFileRequest {
   from_path: string;
@@ -7811,6 +8201,14 @@ export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'completed
 export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'completed', 'failed'] as const;
 
 /**
+ * agent-teams/objective-tracker.ts ObjectiveTree — recursive.
+ */
+export interface ObjectiveTree {
+  objective: Objective;
+  children: ObjectiveTree[];
+}
+
+/**
  * An OpenAI Chat Completions object. `/v1/chat/completions` builds it (openai-compat.ts:
  * exactly one choice, no `logprobs`, no `system_fingerprint`); `/api/v1/llm/chat/completions`
  * passes the provider's body through (llm-proxy.ts) — `model` is then the provider's id, and a
@@ -7845,7 +8243,7 @@ export interface OpenAiChatCompletionChoice {
 export interface OpenAiChatCompletionChoiceMessage {
   role: OpenAiChatCompletionChoiceMessageRole;
   content?: string | null;
-  tool_calls?: JsonObject[];
+  tool_calls?: OpenAiToolCall[];
   /**
    * Additional free-form properties (`JsonValue` on the wire).
    */
@@ -7891,6 +8289,29 @@ export interface OpenAiErrorError {
   code?: string;
 }
 
+/**
+ * The OpenAI tool-call object as passed through from the provider (llm-proxy.ts);
+ * /v1/chat/completions itself emits tool calls only as streaming deltas.
+ */
+export interface OpenAiToolCall {
+  id: string;
+  type?: OpenAiToolCallType;
+  function: OpenAiToolCallFunction;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface OpenAiToolCallFunction {
+  name: string;
+  arguments: string;
+}
+
+export type OpenAiToolCallType = 'function';
+
+export const OPEN_AI_TOOL_CALL_TYPE_VALUES = ['function'] as const;
+
 export interface PatchMeRequest {
   /**
    * `/api/v1/files/<file_id>/content` of an image uploaded with `POST /files`, or `null` to
@@ -7925,6 +8346,21 @@ export interface PauseMissionResponse {
 export interface PauseRunResponse {
   paused: boolean;
   run_id: string;
+}
+
+/**
+ * runs.ts — the tool calls of the newest run.awaiting_approval event (agent-runtime.ts /
+ * bridge.ts); `options`/`kind` only from the bridge.
+ */
+export interface PendingApproval {
+  id: string;
+  name: string;
+  args: JsonObject;
+  /**
+   * Choices the bridge reported for the approval, when any.
+   */
+  options?: string[];
+  kind?: string;
 }
 
 export interface PermissionCheckResult {
@@ -8254,8 +8690,8 @@ export interface PlatformLLMDefaults {
 export interface PlaygroundAgentState {
   agent_id: string;
   tenant_id: string;
-  nodes: JsonObject[];
-  edges: JsonObject[];
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
   metadata: JsonObject;
   updated_at: string;
 }
@@ -8268,8 +8704,8 @@ export interface PlaygroundTemplate {
   name: string;
   description: string;
   category: string;
-  nodes: JsonObject[];
-  edges: JsonObject[];
+  nodes: CanvasNode[];
+  edges: CanvasEdge[];
 }
 
 /**
@@ -8667,6 +9103,10 @@ export interface PublicSessionView {
 }
 
 export interface PublicSessionViewMessage {
+  /**
+   * The same derived id the authenticated transcript carries (ConversationEntry.message_id).
+   */
+  message_id: string;
   role: PublicSessionViewMessageRole;
   content: string;
   timestamp: string;
@@ -8683,7 +9123,6 @@ export const PUBLIC_SESSION_VIEW_STATUS_VALUES = ['active', 'closed', 'expired']
 
 export interface PublicState {
   marketplace?: JsonObject;
-  agents?: JsonObject[];
   governance?: JsonObject;
   plan?: string;
   branding?: JsonObject;
@@ -8698,6 +9137,17 @@ export interface PublicState {
   stats?: JsonObject;
   tags: string[];
   tenant_id: string;
+}
+
+/**
+ * public.ts — keys always present, values may be absent when the index row lacks them.
+ */
+export interface PublicStateAgent {
+  agent_id?: string;
+  name?: string;
+  description?: string;
+  icon?: string;
+  greeting?: string;
 }
 
 export interface PublicTenant {
@@ -8900,7 +9350,7 @@ export interface RegistryGetSpecVersionResponse {
   manifest?: JsonObject;
   sha256?: string;
   size_bytes?: number;
-  dependencies?: JsonObject[];
+  dependencies?: ResolvedDep[];
   yanked?: boolean;
   visibility?: SetRegistrySpecVisibilityRequestVisibility;
   shared_with?: string[];
@@ -8946,7 +9396,7 @@ export interface RegistryPublishResponse {
   sha256: string;
   size_bytes: number;
   artifact_key?: string;
-  dependencies?: JsonObject[];
+  dependencies?: ResolvedDep[];
   yanked?: boolean;
   yanked_reason?: string;
   visibility: SetRegistrySpecVisibilityRequestVisibility;
@@ -9166,6 +9616,28 @@ export interface RespondToRunRequest {
 export interface RespondToRunResponse {
   accepted?: boolean;
 }
+
+/**
+ * openai-responses.ts — always exactly one message with one output_text part.
+ */
+export interface ResponsesOutputItem {
+  type: ResponsesOutputItemType;
+  role: OpenAiChatCompletionChoiceMessageRole;
+  content: ResponsesOutputItemContentItem[];
+}
+
+export interface ResponsesOutputItemContentItem {
+  type: ResponsesOutputItemContentItemType;
+  text: string;
+}
+
+export type ResponsesOutputItemContentItemType = 'output_text';
+
+export const RESPONSES_OUTPUT_ITEM_CONTENT_ITEM_TYPE_VALUES = ['output_text'] as const;
+
+export type ResponsesOutputItemType = 'message';
+
+export const RESPONSES_OUTPUT_ITEM_TYPE_VALUES = ['message'] as const;
 
 export interface RestoreWorkspaceTrashRequest {
   /**
@@ -9405,10 +9877,11 @@ export interface RunCanvasWorkflowResponse {
 export interface RunCheckpoint {
   step?: number;
   /**
-   * Conversation as it stood at this checkpoint. Left opaque: it mirrors the provider's message
-   * shape, which differs per adapter.
+   * The conversation as it stood at this checkpoint — the model-facing ChatMessage list the
+   * runtime stores (checkpoint-manager.ts CheckpointData / continuation.ts); a manual checkpoint
+   * row carries none.
    */
-  messages?: JsonObject[];
+  messages?: ChatMessage[];
   /**
    * Accumulated run metrics — `RunMetricsAccumulator` (`runtime/core/step-executor.ts:156`):
    * step and token counters, optionally provider cache hits.
@@ -9535,6 +10008,10 @@ export interface RunFeedbackList {
 }
 
 export interface RunFeedbackListFeedback {
+  /**
+   * The entry's `message_id` from GET /sessions/{sessionId}/messages
+   * (ConversationEntry.message_id) — the canonical key; any string is stored as sent.
+   */
   message_id: string;
   reaction: RunFeedbackListFeedbackReaction;
 }
@@ -9560,6 +10037,10 @@ export interface RunFeedbackSet {
 }
 
 export interface RunMetrics {
+  /**
+   * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
+   */
+  pricing_confidence?: string;
   duration_ms?: number;
   steps_count?: number;
   input_tokens?: number;
@@ -9950,7 +10431,7 @@ export interface Session {
   /**
    * Session branches for conversation forking
    */
-  branches?: JsonObject[];
+  branches?: SessionBranch[];
   /**
    * Currently active branch ID
    */
@@ -10117,7 +10598,7 @@ export interface SetAgentTrafficRequestEntry {
 
 export interface SetAgentTrafficResponse {
   agent_id: string;
-  entries: JsonObject[];
+  entries: TrafficSplitEntry[];
   updated_at: string | null;
 }
 
@@ -10137,7 +10618,7 @@ export interface SetDataExplorerValueResponse {
 }
 
 export interface SetFeatureFlagsResponse {
-  flags?: JsonObject[];
+  flags?: FeatureFlag[];
   updated: boolean;
 }
 
@@ -10211,7 +10692,7 @@ export interface SetModelPricingOverrideResponse {
 }
 
 export interface SetRateLimitsResponse {
-  endpoints?: JsonObject[];
+  endpoints?: EndpointRateLimit[];
   updated: boolean;
 }
 
@@ -10553,6 +11034,25 @@ export interface StartTeamRunResponse {
   team_run_id: string;
 }
 
+/**
+ * types/company.ts StrategicGoal — as stored; the create/update body is looser (goal_id
+ * assigned by the server).
+ */
+export interface StrategicGoal {
+  goal_id: string;
+  title: string;
+  description: string;
+  kpis: StrategicGoalKpisItem[];
+  root_objective_id?: string;
+  deadline?: string;
+}
+
+export interface StrategicGoalKpisItem {
+  name: string;
+  target: string;
+  current?: string;
+}
+
 export interface SubmitFeedbackRequest {
   /**
    * Clipped at 8000 characters.
@@ -10747,9 +11247,28 @@ export type TeamMergeStrategy = 'supervisor_merges' | 'concatenate' | 'vote';
 
 export const TEAM_MERGE_STRATEGY_VALUES = ['supervisor_merges', 'concatenate', 'vote'] as const;
 
+/**
+ * types/team.ts TeamMessage — one protocol message between team agents.
+ */
+export interface TeamMessage {
+  message_id: string;
+  team_run_id: string;
+  from_agent_id: string;
+  to_agent_id: string;
+  type: TeamMessageType;
+  content: string;
+  round: number;
+  timestamp: string;
+  parent_message_id?: string;
+}
+
 export type TeamMessageProtocol = 'shared_context' | 'message_passing';
 
 export const TEAM_MESSAGE_PROTOCOL_VALUES = ['shared_context', 'message_passing'] as const;
+
+export type TeamMessageType = 'delegation' | 'result' | 'question' | 'status_update' | 'merge_request' | 'validation';
+
+export const TEAM_MESSAGE_TYPE_VALUES = ['delegation', 'result', 'question', 'status_update', 'merge_request', 'validation'] as const;
 
 /**
  * Ceiling for a goal-driven team's pursuit of its objective.
@@ -10812,6 +11331,14 @@ export const TEAM_POLICIES_EFFORT_VALUES = ['low', 'medium', 'high', 'max'] as c
 export type TeamPoliciesOnWorkerFailure = 'retry' | 'skip' | 'abort_team';
 
 export const TEAM_POLICIES_ON_WORKER_FAILURE_VALUES = ['retry', 'skip', 'abort_team'] as const;
+
+/**
+ * teams.ts — the chat turn of a team run; at most one element.
+ */
+export interface TeamRunChatTurn {
+  user_message: string;
+  assistant_message: string;
+}
 
 /**
  * GET /teams/{teamId}/runs/{teamRunId} and GET /squads/{squadId}/runs/{teamRunId} (measured
@@ -11387,6 +11914,11 @@ export type TodoStatus = 'pending' | 'pending_confirmation' | 'in_progress' | 'd
 
 export const TODO_STATUS_VALUES = ['pending', 'pending_confirmation', 'in_progress', 'done', 'cancelled'] as const;
 
+export interface ToolBreakdownEntry {
+  name: string;
+  count: number;
+}
+
 export interface ToolOverride {
   category?: string;
   description?: string;
@@ -11397,10 +11929,32 @@ export interface ToolOverride {
   hidden?: boolean;
 }
 
+/**
+ * agent-versioning.ts TrafficSplitEntry; weights sum to 100.
+ */
+export interface TrafficSplitEntry {
+  version: number;
+  weight: number;
+}
+
 export interface TransferTenantOwnershipResponse {
   transferred: boolean;
   new_owner: string;
   previous_owner: string;
+}
+
+/**
+ * persistence/workspace-store.ts TrashManifestEntry — read back from .trash/_manifest.json as
+ * written.
+ */
+export interface TrashManifestEntry {
+  trash_path: string;
+  original_path: string;
+  original_workspace_id: string;
+  original_agent_id: string;
+  trashed_by: string;
+  trashed_at: string;
+  reason?: string;
 }
 
 /**
@@ -11572,7 +12126,7 @@ export interface UpdateAdminFounderConfigRequest {
 }
 
 export interface UpdateAdminGuardrailsResponse {
-  guardrails?: JsonObject[];
+  guardrails?: GuardrailConfigItem[];
   updated: boolean;
 }
 
@@ -11890,7 +12444,7 @@ export interface UpdateAdminToolSecurityConfigResponse {
 
 export interface UpdateAdminToolSecurityConfigResponseToolSecurity {
   default_egress_policy: string;
-  egress_allowlist_per_tenant?: JsonValue[];
+  egress_allowlist_per_tenant?: string[];
   ssrf_deny_private_ranges: boolean;
   default_tool_timeout_ms: number;
   default_tool_max_payload_bytes: number;
@@ -12108,10 +12662,10 @@ export interface UpdateSecurityPoliciesResponse {
 }
 
 export interface UpdateSecurityPoliciesResponsePolicies {
-  cors_allowed_origins: JsonValue[];
+  cors_allowed_origins: string[];
   webhook_url_denylist: string[];
   file_upload_max_size_bytes: number;
-  file_upload_allowed_mime_types: JsonValue[];
+  file_upload_allowed_mime_types: string[];
   admin_provider_settings_require_super_admin: boolean;
 }
 
@@ -12251,6 +12805,10 @@ export interface UploadPublicSessionImageResponse {
    */
   size: number;
 }
+
+export type UploadWorkspaceFileIfNoneMatch = '*';
+
+export const UPLOAD_WORKSPACE_FILE_IF_NONE_MATCH_VALUES = ['*'] as const;
 
 export interface UploadWorkspaceFileRequest {
   file: BinaryInput;
@@ -12576,7 +13134,7 @@ export interface VideoProvider {
   configured?: boolean;
   id?: string;
   local?: boolean;
-  models?: JsonObject[];
+  models?: ModelInfo[];
   name?: string;
 }
 
@@ -12600,8 +13158,19 @@ export interface VoiceConfigTts {
   voice?: string;
 }
 
+/**
+ * providers.ts voice-providers — STT and TTS models split.
+ */
+export interface VoiceProvider {
+  id: string;
+  name: string;
+  configured: boolean;
+  stt_models: ModelInfo[];
+  tts_models: ModelInfo[];
+}
+
 export interface VoiceProviderList {
-  providers?: JsonObject[];
+  providers?: VoiceProvider[];
 }
 
 export interface VoteResult {
@@ -12637,6 +13206,32 @@ export interface VotingProposal {
 export type VotingProposalStatus = 'open' | 'passed' | 'rejected' | 'expired' | 'vetoed';
 
 export const VOTING_PROPOSAL_STATUS_VALUES = ['open', 'passed', 'rejected', 'expired', 'vetoed'] as const;
+
+/**
+ * webhooks/webhook-manager.ts DeliveryAttempt (7-day TTL).
+ */
+export interface WebhookDeliveryAttempt {
+  delivery_id: string;
+  webhook_id: string;
+  tenant_id: string;
+  event_type: WebhookDeliveryAttemptEventType;
+  attempt_number: number;
+  status: WebhookDeliveryAttemptStatus;
+  request_body: string;
+  response_status?: number;
+  error_message?: string;
+  latency_ms?: number;
+  next_retry_at?: string;
+  created_at: string;
+}
+
+export type WebhookDeliveryAttemptEventType = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
+
+export const WEBHOOK_DELIVERY_ATTEMPT_EVENT_TYPE_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
+
+export type WebhookDeliveryAttemptStatus = 'pending' | 'success' | 'failed';
+
+export const WEBHOOK_DELIVERY_ATTEMPT_STATUS_VALUES = ['pending', 'success', 'failed'] as const;
 
 export interface WebhookSubscription {
   webhook_id: string;

@@ -17,6 +17,7 @@ import type {
   GetLinkPreviewResponse,
   GetPublicBlogPostResponse,
   GetPublicFeaturedAgentResponse,
+  GetPublicStateResponse,
   GetRegistrationStatusResponse,
   LandingOverrides,
   ListPublicBlogPostsResponse,
@@ -29,7 +30,6 @@ import type {
   PublicAgentCard,
   PublicDomainLookupResponse,
   PublicSessionView,
-  PublicState,
   PublicTenant,
   PublicTrackEventRequest,
   RespondToPublicHitlRequest,
@@ -355,7 +355,7 @@ export class PublicResource extends APIResource {
    *
    * `GET /api/v1/public/states/{stateId}`
    */
-  getPublicState(stateId: string, options?: RequestOptions): Promise<PublicState> {
+  getPublicState(stateId: string, options?: RequestOptions): Promise<GetPublicStateResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/public/states/${encodeURIComponent(String(stateId))}`,

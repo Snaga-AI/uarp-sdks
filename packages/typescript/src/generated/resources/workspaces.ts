@@ -28,6 +28,7 @@ import type {
   ShareWorkspaceRequest,
   UnassignWorkspaceRequest,
   UpdateWorkspaceRequest,
+  UploadWorkspaceFileIfNoneMatch,
   UploadWorkspaceFileRequest,
   Workspace,
   WorkspaceFile,
@@ -119,6 +120,17 @@ export interface UploadWorkspaceFileParams {
    * File path within workspace
    */
   path: string;
+  /**
+   * Conditional write (workspaces.ts). The file's `etag` from a previous read: the write happens
+   * only if the file is unchanged since; `*` requires the file to exist. Without it (and without
+   * If-None-Match) the write is unconditional, as for every client that predates the header. On
+   * a mismatch the answer is 412 with the winner's `current_etag` in the body.
+   */
+  'If-Match'?: string;
+  /**
+   * `*` — create only: the write happens only if the file does not exist yet (workspaces.ts).
+   */
+  'If-None-Match'?: UploadWorkspaceFileIfNoneMatch;
 }
 
 /**
@@ -553,6 +565,7 @@ export class WorkspacesResource extends APIResource {
       method: 'PUT',
       path: `/api/v1/workspaces/${encodeURIComponent(String(workspaceId))}/files`,
       query: pick(params, ['path']),
+      headers: pick(params, ['If-Match', 'If-None-Match']),
       multipart: body,
       idempotent: true,
       options,

@@ -177,7 +177,7 @@ impl RunsApi {
     /// `POST /api/v1/runs/{runId}/checkpoint`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn create_run_checkpoint(&self, run_id: &str) -> Result<models::RunCheckpoint> {
+    pub async fn create_run_checkpoint(&self, run_id: &str) -> Result<models::CreateRunCheckpointResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

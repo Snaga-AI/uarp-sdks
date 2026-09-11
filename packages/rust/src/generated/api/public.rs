@@ -371,7 +371,7 @@ impl PublicApi {
     /// Get public state detail
     ///
     /// `GET /api/v1/public/states/{stateId}`
-    pub async fn get_public_state(&self, state_id: &str) -> Result<models::PublicState> {
+    pub async fn get_public_state(&self, state_id: &str) -> Result<models::GetPublicStateResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,

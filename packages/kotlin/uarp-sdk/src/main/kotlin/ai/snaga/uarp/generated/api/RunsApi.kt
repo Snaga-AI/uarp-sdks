@@ -116,8 +116,8 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun createRunCheckpoint(runId: String, options: RequestOptions = RequestOptions()): RunCheckpoint {
-        return client.request<RunCheckpoint>(
+    public suspend fun createRunCheckpoint(runId: String, options: RequestOptions = RequestOptions()): CreateRunCheckpointResponse {
+        return client.request<CreateRunCheckpointResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/checkpoint",

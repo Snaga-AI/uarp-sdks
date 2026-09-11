@@ -455,7 +455,12 @@ test('parses the production document into the expected shape', () => {
   // typed the 83 admin responses — 42 named schemas (the config sections,
   // AdminAuditList, AdminProvider, ConformityReport, AdminModelCatalog, …) and
   // the objects nested inside them (sections, catalogue rows, partners).
-  assert.equal(spec.types.length, 1365);
+  // 1365 -> 1422 on 2026-09-11 (build 2b987dd8, uarp #459): CTR-07b tranche 4
+  // typed the 88 array elements — 30 named element schemas (SessionBranch,
+  // StrategicGoal, A2APart, Objective, TeamMessage, ChatMessage, …) and the
+  // objects nested inside them; ConversationEntry grew content parts,
+  // attachments and run metrics.
+  assert.equal(spec.types.length, 1422);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
