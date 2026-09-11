@@ -22416,6 +22416,16 @@ pub struct TestAdminStripeConfigResponseVariant1 {
     pub business_name: Option<String>,
     pub country: String,
     pub default_currency: String,
+    /// Whether the billing manager that serves checkout and the portal holds the same key as the
+    /// one stored here. Until 2026-09-11 this check read the stored key on its own and could say
+    /// LIVE while the running manager still held the environment's key of the previous company —
+    /// green in the panel, "No such price" at checkout.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active_key_matches: Option<bool>,
+    /// Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
+    /// manager from the stored key; boot does the same since 2026-09-11).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub warning: Option<String>,
 }
 
 /// `TestAdminStripeConfigResponseVariant2` model.

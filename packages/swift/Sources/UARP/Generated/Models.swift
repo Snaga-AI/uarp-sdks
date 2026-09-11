@@ -30525,14 +30525,24 @@ public struct TestAdminStripeConfigResponseVariant1: Codable, Hashable, Sendable
     public var businessName: String?
     public var country: String
     public var defaultCurrency: String
+    /// Whether the billing manager that serves checkout and the portal holds the same key as the
+    /// one stored here. Until 2026-09-11 this check read the stored key on its own and could say
+    /// LIVE while the running manager still held the environment's key of the previous company —
+    /// green in the panel, "No such price" at checkout.
+    public var activeKeyMatches: Bool?
+    /// Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
+    /// manager from the stored key; boot does the same since 2026-09-11).
+    public var warning: String?
 
-    public init(ok: Bool, accountId: String, livemode: Bool, businessName: String? = nil, country: String, defaultCurrency: String) {
+    public init(ok: Bool, accountId: String, livemode: Bool, businessName: String? = nil, country: String, defaultCurrency: String, activeKeyMatches: Bool? = nil, warning: String? = nil) {
         self.ok = ok
         self.accountId = accountId
         self.livemode = livemode
         self.businessName = businessName
         self.country = country
         self.defaultCurrency = defaultCurrency
+        self.activeKeyMatches = activeKeyMatches
+        self.warning = warning
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -30542,6 +30552,8 @@ public struct TestAdminStripeConfigResponseVariant1: Codable, Hashable, Sendable
         case businessName = "business_name"
         case country = "country"
         case defaultCurrency = "default_currency"
+        case activeKeyMatches = "active_key_matches"
+        case warning = "warning"
     }
 }
 

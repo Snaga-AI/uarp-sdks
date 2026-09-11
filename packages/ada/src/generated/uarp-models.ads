@@ -20560,6 +20560,16 @@ package UARP.Models is
       Business_Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Country : UARP.Types.Text := UARP.Types.Empty_Text;
       Default_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Whether the billing manager that serves checkout and the portal holds the same key as the
+      --  one stored here. Until 2026-09-11 this check read the stored key on its own and could say
+      --  LIVE while the running manager still held the environment's key of the previous company -
+      --  green in the panel, "No such price" at checkout.
+      Has_Active_Key_Matches : Boolean := False;
+      Active_Key_Matches : Standard.Boolean := False;
+      --  Only when `active_key_matches` is false: what to do (save the panel, which rebuilds the
+      --  manager from the stored key; boot does the same since 2026-09-11).
+      Has_Warning : Boolean := False;
+      Warning : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Test_Admin_Stripe_Config_Response_Variant1) return UARP.JSON_Support.JSON_Value;

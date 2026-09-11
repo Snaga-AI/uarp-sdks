@@ -52995,6 +52995,12 @@ package body UARP.Models is
       end if;
       JS.Set (Result, "country", JS.JSON.Create (Model.Country));
       JS.Set (Result, "default_currency", JS.JSON.Create (Model.Default_Currency));
+      if Model.Has_Active_Key_Matches then
+         JS.Set (Result, "active_key_matches", JS.JSON.Create (Model.Active_Key_Matches));
+      end if;
+      if Model.Has_Warning then
+         JS.Set (Result, "warning", JS.JSON.Create (Model.Warning));
+      end if;
       return Result;
    end To_JSON;
 
@@ -53019,6 +53025,14 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "default_currency") then
          Result.Default_Currency := JS.As_Text (JS.Get_Value (Node, "default_currency"));
+      end if;
+      if JS.Present (Node, "active_key_matches") then
+         Result.Has_Active_Key_Matches := True;
+         Result.Active_Key_Matches := JS.As_Boolean (JS.Get_Value (Node, "active_key_matches"));
+      end if;
+      if JS.Present (Node, "warning") then
+         Result.Has_Warning := True;
+         Result.Warning := JS.As_Text (JS.Get_Value (Node, "warning"));
       end if;
       return Result;
    end From_JSON;
