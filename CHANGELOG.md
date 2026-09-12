@@ -6,6 +6,53 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.6.0 — 2026-09-11
+
+The copy follows the served document byte for byte: `spec/openapi.json` is
+`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
+`3215b5c52c3a0e1d…`, build `f6c6f93e` (uarp #456–#470, eleven merges on
+2026-09-11). 709 operations, 344 schemas. A minor, not a patch: generated
+types changed shape (fields became optional, parameters and fields were
+added); nothing that decodes today stops decoding.
+
+### Changed — types
+
+- `TenantOverview`: nine members are optional — `usage`, `cost`, `system`,
+  `runs.cost_24h_usd`, `fleet.top_by_cost` (a server may not measure cost,
+  tokens or system health) and `fleet.by_execution_mode`, `fleet.bridge`,
+  `fleet.head_agent_id`, `schedules.at_risk` (a server may not have the
+  field). v1 still serves all nine; readers must tolerate absence.
+- The Stripe test-connection success carries `active_key_matches` (required)
+  and `warning` — whether the billing manager serving checkout holds the key
+  the panel stores; `livemode` is derived from the key prefix.
+- `ConstitutionRule.advisory` — true when no code path can raise the rule;
+  present on `GET /governance/constitution` and `/governance/obligations/{agentId}`.
+- `Error.title` is an enum of the HTTP reason phrases (422 is
+  "Validation Error"); `detail` is required.
+- `ConversationEntry.message_id` — the derived id of every transcript entry
+  (`{run_id}`, `{run_id}-reply[-N]`, `{run_id}-user-N`, `{run_id}-tool-N`,
+  `{run_id}-system-N`), the canonical key for reactions, bookmarks and
+  annotations; any other string is still accepted and counted.
+- `AgentVersion.changelog` names the eleven values the server writes.
+
+### Added — parameters and fields
+
+- `GET /agents/{agentId}/versions`: `limit`, `cursor`, `fields=summary`;
+  with `limit` the answer carries `cursor` and `has_more` (the document's
+  list convention). Without `limit` the answer is unchanged.
+- `GET /governance/ledger`: `category`, `action` (they filter now).
+- `PUT /workspaces/{workspaceId}/files`: `If-Match` / `If-None-Match`;
+  412 is `Error` plus an optional `current_etag`.
+- `PublicAgentCard.tenant_slug`, `tenant_name`; `RunOutput.search_sources`.
+
+### Documented — what the wire always did
+
+- Billing return URLs accept the app scheme (`snaga://`) beside same-origin
+  URLs; the public chat's 401 and 410 carry the bare fact
+  "This conversation has expired."; workspace move/copy/overwrite and what
+  they do to `file_id`; `PUT /admin/config/stripe` body semantics (omit =
+  unchanged, empty string = clear).
+
 ## 0.5.24 — 2026-09-10
 
 The copy follows the served document byte for byte: `spec/openapi.json` is
