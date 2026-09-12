@@ -11,28 +11,40 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 The copy follows the served document byte for byte: `spec/openapi.json` is
 `curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
 `3215b5c52c3a0e1d…`, build `f6c6f93e` (uarp #456–#470, eleven merges on
-2026-09-11). 709 operations, 344 schemas. A minor, not a patch: generated
-types changed shape (fields became optional, parameters and fields were
-added); nothing that decodes today stops decoding.
+2026-09-11). Against 0.5.24 (document `ba6417e3…`): 709 → 709 operations,
+none added, none removed, 121 with a changed shape; 271 → 344 schemas
+(+73, none removed), 23 with a changed shape. A minor, not a patch: types
+changed shape; nothing that decodes today stops decoding.
+
+### Changed — typed responses (121 operations, 73 new schemas)
+
+- Operations that decoded to a bare object now have a model: the whole
+  `admin/config` family (Auth, Guardrails, FeatureFlags, RateLimits,
+  Retention, SSE, WorkerPool, ToolSecurity, LlmAdapters, Logging,
+  CodeInterpreter, RunCommand, Stripe, Smtp…), admin audit, marketplace
+  reviews and subscriptions, company objectives and activity, workspace
+  trash, activity-stats, public states and agents, team-run messages.
 
 ### Changed — types
 
+- `Error`: `title` is an enum of the twenty HTTP reason phrases (422 is
+  "Validation Error"), `detail` is required, `code` is the machine code.
+- `ConversationEntry.message_id` is required — the derived id of every
+  transcript entry (`{run_id}`, `{run_id}-reply[-N]`, `{run_id}-user-N`,
+  `{run_id}-tool-N`, `{run_id}-system-N`), the canonical key for reactions,
+  bookmarks and annotations; `content` is a string on v1. The session detail
+  (`Session.conversation_history`) carries `message_id` too.
+- `ConstitutionRule.advisory` (true when no code path can raise the rule;
+  on `GET /governance/constitution` and `/governance/obligations/{agentId}`)
+  and `obligated_action`.
 - `TenantOverview`: nine members are optional — `usage`, `cost`, `system`,
-  `runs.cost_24h_usd`, `fleet.top_by_cost` (a server may not measure cost,
-  tokens or system health) and `fleet.by_execution_mode`, `fleet.bridge`,
-  `fleet.head_agent_id`, `schedules.at_risk` (a server may not have the
-  field). v1 still serves all nine; readers must tolerate absence.
-- The Stripe test-connection success carries `active_key_matches` (required)
-  and `warning` — whether the billing manager serving checkout holds the key
-  the panel stores; `livemode` is derived from the key prefix.
-- `ConstitutionRule.advisory` — true when no code path can raise the rule;
-  present on `GET /governance/constitution` and `/governance/obligations/{agentId}`.
-- `Error.title` is an enum of the HTTP reason phrases (422 is
-  "Validation Error"); `detail` is required.
-- `ConversationEntry.message_id` — the derived id of every transcript entry
-  (`{run_id}`, `{run_id}-reply[-N]`, `{run_id}-user-N`, `{run_id}-tool-N`,
-  `{run_id}-system-N`), the canonical key for reactions, bookmarks and
-  annotations; any other string is still accepted and counted.
+  `runs.cost_24h_usd`, `fleet.top_by_cost`, `fleet.by_execution_mode`,
+  `fleet.bridge`, `fleet.head_agent_id`, `schedules.at_risk`. v1 still
+  serves all nine; readers must tolerate absence.
+- Additive fields on `Agent`, `AgentUpdate`, `RunMetrics`, `Session`,
+  `Company`, `A2ATask`, `PublicSessionView`, `PublicAgentCard`
+  (`tenant_slug`, `tenant_name`), `PublicState`, `RunCheckpoint`,
+  `McpServer*`; `RunOutput.search_sources`.
 - `AgentVersion.changelog` names the eleven values the server writes.
 
 ### Added — parameters and fields
@@ -41,17 +53,24 @@ added); nothing that decodes today stops decoding.
   with `limit` the answer carries `cursor` and `has_more` (the document's
   list convention). Without `limit` the answer is unchanged.
 - `GET /governance/ledger`: `category`, `action` (they filter now).
+- `POST /admin/config/stripe/test` success: `active_key_matches` (required)
+  and `warning` — whether the billing manager serving checkout holds the
+  key the panel stores; `livemode` is derived from the key prefix.
 - `PUT /workspaces/{workspaceId}/files`: `If-Match` / `If-None-Match`;
-  412 is `Error` plus an optional `current_etag`.
-- `PublicAgentCard.tenant_slug`, `tenant_name`; `RunOutput.search_sources`.
+  the 412 is `Error` plus an optional `current_etag` (absent when the file
+  does not exist).
 
 ### Documented — what the wire always did
 
-- Billing return URLs accept the app scheme (`snaga://`) beside same-origin
-  URLs; the public chat's 401 and 410 carry the bare fact
-  "This conversation has expired."; workspace move/copy/overwrite and what
-  they do to `file_id`; `PUT /admin/config/stripe` body semantics (omit =
-  unchanged, empty string = clear).
+- `PUT /admin/config/stripe` body: omit = unchanged, empty string = clear,
+  a redacted read-back is ignored.
+- Billing `return_url` / `success_url` / `cancel_url` accept the app scheme
+  (`snaga://`) beside same-origin URLs.
+- The public chat's 401 and 410 carry the bare fact
+  "This conversation has expired."
+- `message_id` on feedback, bookmarks and annotations is stored as sent; a
+  non-canonical one is counted, never refused.
+- Workspace move/copy/overwrite and what they do to `file_id`.
 
 ## 0.5.24 — 2026-09-10
 
