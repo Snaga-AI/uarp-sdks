@@ -3,6 +3,8 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+.env
+
 # Rust
 target/
 Cargo.lock
