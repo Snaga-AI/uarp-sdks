@@ -306,9 +306,10 @@ public struct AuthAPI: Sendable {
 
     /// Unlink an OAuth provider from the user
     ///
-    /// Refuses to drop the user's last sign-in factor (counts other linked providers + OTP recovery
-    /// email). Idempotent — unlinking an already-unlinked provider returns 200 with
-    /// `already_unlinked: true`.
+    /// Removes only the link between the user and this provider; the user record and every other
+    /// sign-in method stay. Refuses to drop the user's last sign-in factor (counts other linked
+    /// providers + OTP recovery email). Idempotent — unlinking an already-unlinked provider returns
+    /// 200 with `already_unlinked: true`. Signing in with the provider again re-links it.
     ///
     /// `DELETE /api/v1/me/auth-providers/{provider}`
     public func unlinkAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = .init()) async throws -> UnlinkAuthProviderResponse {

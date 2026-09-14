@@ -292,12 +292,17 @@ test('parses the production document into the expected shape', () => {
   // 710 -> 709 on 2026-09-10 (0.5.18): +16 operations described from their
   // bytes (uarp #444) and -19 with Training and Creativity removed (#445);
   // two more paths gained operations along the way, hence the net of one.
-  assert.equal(ops.length, 709);
+  // 709 -> 723 on 2026-09-14 (build d19c367e, uarp #471-#477): the Drawings
+  // surface arrives whole (#472, stage 1) — nine paths, twelve operations —
+  // plus `DELETE /sessions/{id}/branches/{id}` in the same merge, and the two
+  // feedback withdrawals of #474/#477 on paths that already existed.
+  assert.equal(ops.length, 723);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
   // 50 -> 48 on 2026-09-10 (0.5.18): Training and Creativity gone too.
-  assert.equal(spec.groups.length, 48);
+  // 48 -> 49 on 2026-09-14 (uarp #472): Drawings.
+  assert.equal(spec.groups.length, 49);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -460,7 +465,15 @@ test('parses the production document into the expected shape', () => {
   // StrategicGoal, A2APart, Objective, TeamMessage, ChatMessage, …) and the
   // objects nested inside them; ConversationEntry grew content parts,
   // attachments and run metrics.
-  assert.equal(spec.types.length, 1422);
+  // 1422 -> 1423 on 2026-09-11 (build c0e79e8b, uarp #468): versions paging
+  // gained `?fields=summary`, and its enum became ListAgentVersionsFields.
+  // The copy (66b8c1f) landed without this line; the 0.6.0 tag was cut with
+  // the generator tests red on it.
+  // 1423 -> 1456 on 2026-09-14 (build d19c367e, uarp #472): the Drawings
+  // surface brings eight named schemas (Drawing, DrawingBrush, DrawingLayer,
+  // DrawingMask, DrawingOp, DrawingJournalEntry, DrawingSelectionShape,
+  // DrawingStrokePoint) and the objects nested inside them.
+  assert.equal(spec.types.length, 1456);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
@@ -478,7 +491,13 @@ test('parses the production document into the expected shape', () => {
   // operation could not have been counted here before they existed.
   // 16 -> 15 on 2026-09-10: `listCommerceProducts` was one of them.
   // 15 -> 14 on 2026-09-10 (0.5.18): `listTrainingJobs` was another.
-  assert.equal(ops.filter((o) => o.pagination).length, 14);
+  // 14 -> 15 on 2026-09-11 (build f6c6f93e, uarp #470): `listAgentVersions`.
+  // Its `cursor` stopped being the version number and became an opaque
+  // string, which is what pagination detection keys on — the parameter
+  // existed before and was not counted. This count is the proof the change
+  // took: an integer `cursor` reads as a filter, a string one as a page.
+  // 15 -> 16 on 2026-09-14 (uarp #472): `listSessionDrawings`.
+  assert.equal(ops.filter((o) => o.pagination).length, 16);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.

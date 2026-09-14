@@ -476,16 +476,18 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * List version snapshots for an agent
      *
      * Returns the ordered version history for an agent. Lazily creates v1 from the current config
-     * if no versions exist yet.
+     * if no versions exist yet. Versions are never deleted and there is no DELETE for one: a
+     * rollback records a NEW version (`changelog` "Rollback to version N"), so the history stays
+     * complete for the audit.
      *
      * `GET /api/v1/agents/{agentId}/versions`
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun listAgentVersions(agentId: String, limit: Long? = null, cursor: Long? = null, fields: ListAgentVersionsFields? = null, options: RequestOptions = RequestOptions()): ListAgentVersionsResponse {
+    public suspend fun listAgentVersions(agentId: String, limit: Long? = null, cursor: String? = null, fields: ListAgentVersionsFields? = null, options: RequestOptions = RequestOptions()): ListAgentVersionsResponse {
         val query = buildList {
             if (limit != null) add("limit" to limit.toString())
-            if (cursor != null) add("cursor" to cursor.toString())
+            if (cursor != null) add("cursor" to cursor)
             if (fields != null) add("fields" to fields.value)
         }
         return client.request<ListAgentVersionsResponse>(
@@ -502,7 +504,7 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listAgentVersions`, following the `cursor` cursor until the
      * server reports no further pages.
      */
-    public fun listAgentVersionsAll(agentId: String, limit: Long? = null, cursor: Long? = null, fields: ListAgentVersionsFields? = null, options: RequestOptions = RequestOptions()): Flow<AgentVersion> = autoPaginate(
+    public fun listAgentVersionsAll(agentId: String, limit: Long? = null, cursor: String? = null, fields: ListAgentVersionsFields? = null, options: RequestOptions = RequestOptions()): Flow<AgentVersion> = autoPaginate(
         fetch = { pageCursor -> listAgentVersions(agentId = agentId, limit = limit, cursor = pageCursor, fields = fields, options = options) },
         items = { it.items },
         cursor = { it.cursor },

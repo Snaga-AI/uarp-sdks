@@ -43,6 +43,11 @@ public struct SessionsAPI: Sendable {
 
     /// Close a session
     ///
+    /// Deletes the session and everything it owns: its runs, their events and message feedback, the
+    /// share link (and its public lookup), annotations, and its todos with their schedules and
+    /// watchers. Refused with 423 while the tenant is under legal hold. Irreversible — there is no
+    /// restore; `POST /sessions/bulk-delete` runs the same cascade.
+    ///
     /// `DELETE /api/v1/sessions/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
@@ -180,6 +185,52 @@ public struct SessionsAPI: Sendable {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/annotations/\(encodePathSegment(annotationId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Delete a branch
+    ///
+    /// Deletes the branch record and everything the runs it lists own: those runs, their events and
+    /// message feedback; the run ids leave the session's `runs` too. Refused with 422 for `main`
+    /// (the session's own timeline, not a branch record), with 409 while the branch is the
+    /// session's active branch (activate another first) or has child branches (delete them first),
+    /// and with 423 while the tenant is under legal hold. Irreversible — there is no restore. Until
+    /// 2026-09-12 branches could only be created, listed and activated, so every probe left one
+    /// behind.
+    ///
+    /// `DELETE /api/v1/sessions/{sessionId}/branches/{branchId}`
+    ///
+    /// Required scopes: `sessions:write`.
+    public func deleteSessionBranch(sessionId: String, branchId: String, options: RequestOptions = .init()) async throws -> DeleteSessionBranchResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/sessions/\(encodePathSegment(sessionId))/branches/\(encodePathSegment(branchId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Take back a reaction
+    ///
+    /// Removes the caller's own reaction on one message. Until 2026-09-13 there was no way back —
+    /// the reaction was required and enumerated, `null` and `""` answered 422 and DELETE answered
+    /// 405, so a reader who pressed thumbs-down by mistake had it recorded for ever and the web
+    /// chat hid its own toggle rather than lie about it. Only the row for THIS caller and this
+    /// `message_id` goes; another person's reaction on the same message is untouched. 204 whether
+    /// or not a reaction was there, so a retry is safe.
+    ///
+    /// `DELETE /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
+    ///
+    /// Required scopes: `sessions:write`.
+    public func deleteSessionRunFeedback(sessionId: String, runId: String, messageId: String, options: RequestOptions = .init()) async throws {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "message_id", value: messageId))
+        try await client.sendVoid(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/sessions/\(encodePathSegment(sessionId))/runs/\(encodePathSegment(runId))/feedback",
+            query: query,
             idempotent: true,
             options: options
         ))
@@ -427,6 +478,10 @@ public struct SessionsAPI: Sendable {
 
     /// Revoke session share link
     ///
+    /// Deletes the share record and its public lookup, so the `/shared/{shareId}` URL stops
+    /// resolving. The session itself is untouched. Irreversible for that link — a new `POST` mints
+    /// a different share id. 204 whether or not a share existed.
+    ///
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
@@ -489,7 +544,7 @@ public struct SessionsAPI: Sendable {
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:write`.
-    public func setSessionRunFeedback(sessionId: String, runId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> RunFeedbackSet {
+    public func setSessionRunFeedback(sessionId: String, runId: String, body: SetSessionRunFeedbackRequest, options: RequestOptions = .init()) async throws -> RunFeedbackSet {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/runs/\(encodePathSegment(runId))/feedback",
@@ -500,6 +555,13 @@ public struct SessionsAPI: Sendable {
     }
 
     /// Stream session events (SSE)
+    ///
+    /// Server-Sent Events of the session: `connected`, `run_added`, every run event by type,
+    /// `run_done`, `session_closed`, and — for the session's drawings (docs/DESIGNER-CANVAS.md
+    /// §5.4) — `drawing.created` (data: Drawing) and `drawing.ops` (data: { drawing_id, from_seq,
+    /// to_seq, items: DrawingJournalEntry[] }, up to 100 entries a frame). Event ids are
+    /// `<runId>:<seq>` and `drawing:<drawingId>:<seq>`; send the last one as `Last-Event-ID` to
+    /// resume. An unknown event name is ignored by clients, which is how new ones arrive.
     ///
     /// `GET /api/v1/sessions/{sessionId}/events`
     ///

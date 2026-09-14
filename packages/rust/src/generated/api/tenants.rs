@@ -289,6 +289,10 @@ impl TenantsApi {
 
     /// Revoke an API key
     ///
+    /// Changes the key's state to `revoked` and keeps the record for the listing and the audit
+    /// trail (`api_key.revoked`); the key stops authenticating immediately. Only the key's owner
+    /// can revoke it — another member's key answers 404. Not reversible: mint a new key instead.
+    ///
     /// `DELETE /api/v1/tenants/me/keys/{keyId}`
     ///
     /// Required scopes: `api_keys:write`.

@@ -121,13 +121,9 @@ export interface A2ATaskArtifact {
 }
 
 export interface A2ATaskMessage {
-  role: A2ATaskMessageRole;
+  role: DrawingJournalEntryAuthorKind;
   parts: A2APart[];
 }
-
-export type A2ATaskMessageRole = 'user' | 'agent';
-
-export const A2_ATASK_MESSAGE_ROLE_VALUES = ['user', 'agent'] as const;
 
 export type A2ATaskStatus = 'submitted' | 'working' | 'input-required' | 'completed' | 'canceled' | 'failed';
 
@@ -2179,6 +2175,28 @@ export type APIKeySummaryStatus = 'active' | 'revoked';
 
 export const APIKEY_SUMMARY_STATUS_VALUES = ['active', 'revoked'] as const;
 
+export interface AppendDrawingOpsRequest {
+  ops: AppendDrawingOpsRequestOp[];
+}
+
+export interface AppendDrawingOpsRequestOp {
+  client_op_id: string;
+  op: DrawingOp;
+}
+
+export interface AppendDrawingOpsResponse {
+  items: AppendDrawingOpsResponseItem[];
+  /**
+   * The drawing's head after the batch.
+   */
+  seq: number;
+}
+
+export interface AppendDrawingOpsResponseItem {
+  client_op_id: string;
+  seq: number;
+}
+
 export interface AppleNativeAuthRequest {
   /**
    * Apple-signed JWT from `ASAuthorizationAppleIDCredential.identityToken`.
@@ -3488,6 +3506,14 @@ export interface CreateDatasetRequestCas {
   tags?: string[];
 }
 
+export interface CreateDrawingMaskRequest {
+  shape?: DrawingSelectionShape;
+  /**
+   * An L8 PNG of the drawing's exact size.
+   */
+  file_id?: string;
+}
+
 /**
  * sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
  * multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
@@ -3759,6 +3785,20 @@ export interface CreateSessionBranchRequest {
   name?: string;
 }
 
+export interface CreateSessionDrawingRequest {
+  width: number;
+  height: number;
+  /**
+   * `#rrggbb` or `transparent`; default `#ffffff`.
+   */
+  background?: string;
+  dpi?: number;
+  /**
+   * Name of the first layer.
+   */
+  name?: string;
+}
+
 export interface CreateSessionRequest {
   agent_id: string;
   team_id?: string;
@@ -4021,6 +4061,16 @@ export interface DeleteDataExplorerValueResponse {
   success?: boolean;
 }
 
+export interface DeleteDrawingResponse {
+  deleted: boolean;
+  drawing_id: string;
+  /**
+   * Journal entries the cascade removed.
+   */
+  ops: number;
+  masks: number;
+}
+
 export interface DeleteGuardrailResponse {
   deleted?: boolean;
   guardrail_id?: string;
@@ -4079,6 +4129,16 @@ export interface DeletePromoCodeResponse {
    * Upper-cased, which may differ from what was sent.
    */
   code: string;
+}
+
+export interface DeleteSessionBranchResponse {
+  deleted: boolean;
+  session_id: string;
+  branch_id: string;
+  /**
+   * How many runs the branch listed and the cascade removed.
+   */
+  runs: number;
 }
 
 export interface DeleteSessionTodoResponse {
@@ -4243,6 +4303,226 @@ export const DOMAIN_DNS_LIFECYCLE_METHOD_VALUES = ['cname', 'a'] as const;
 export type DomainDnsLifecycleState = 'pending' | 'verified' | 'failed' | 'drift' | 'deactivated';
 
 export const DOMAIN_DNS_LIFECYCLE_STATE_VALUES = ['pending', 'verified', 'failed', 'drift', 'deactivated'] as const;
+
+/**
+ * A drawing a person and an agent share in real time (docs/DESIGNER-CANVAS.md §4.1). Pixels
+ * live in 256×256 tiles behind the journal; this record is the structure.
+ */
+export interface Drawing {
+  drawing_id: string;
+  session_id: string;
+  workspace_id: string;
+  width: number;
+  height: number;
+  dpi: number;
+  /**
+   * `#rrggbb` or `transparent`.
+   */
+  background: string;
+  layers: DrawingLayer[];
+  /**
+   * The last journal entry applied to this drawing.
+   */
+  seq: number;
+  /**
+   * The seq up to which tiles are materialised; 0 until the first snapshot.
+   */
+  snapshot_seq: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface DrawingBrush {
+  preset: string;
+  /**
+   * Diameter in canvas pixels.
+   */
+  size: number;
+  hardness: number;
+  opacity: number;
+  flow: number;
+  /**
+   * Percent of `size` between dabs; the client spaces the points, the renderer stamps every
+   * point it is given.
+   */
+  spacing: number;
+  /**
+   * Absent on `erase`.
+   */
+  color?: string;
+}
+
+export interface DrawingJournalEntry {
+  seq: number;
+  client_op_id: string;
+  author: DrawingJournalEntryAuthor;
+  at: string;
+  op: DrawingOp;
+}
+
+export interface DrawingJournalEntryAuthor {
+  kind: DrawingJournalEntryAuthorKind;
+  id: string;
+  run_id?: string;
+}
+
+export type DrawingJournalEntryAuthorKind = 'user' | 'agent';
+
+export const DRAWING_JOURNAL_ENTRY_AUTHOR_KIND_VALUES = ['user', 'agent'] as const;
+
+export interface DrawingLayer {
+  layer_id: string;
+  name: string;
+  /**
+   * An integer 0–255, like every channel value in a drawing (docs/DESIGNER-CANVAS.md §4.4).
+   */
+  opacity: number;
+  blend: DrawingLayerBlend;
+  visible: boolean;
+  locked: boolean;
+  kind: DrawingLayerKind;
+  /**
+   * Set when the layer was placed from a generated or uploaded image.
+   */
+  source?: DrawingLayerSource;
+}
+
+export type DrawingLayerBlend = 'normal' | 'multiply' | 'screen' | 'overlay' | 'darken' | 'lighten' | 'add';
+
+export const DRAWING_LAYER_BLEND_VALUES = ['normal', 'multiply', 'screen', 'overlay', 'darken', 'lighten', 'add'] as const;
+
+export type DrawingLayerKind = 'raster';
+
+export const DRAWING_LAYER_KIND_VALUES = ['raster'] as const;
+
+/**
+ * Set when the layer was placed from a generated or uploaded image.
+ */
+export interface DrawingLayerSource {
+  file_id: string;
+  tool: string;
+}
+
+/**
+ * What a person hands the agent (docs/DESIGNER-CANVAS.md §4.3): the selection as an L8 PNG of
+ * the drawing's size plus its bounding box.
+ */
+export interface DrawingMask {
+  mask_id: string;
+  drawing_id: string;
+  width: number;
+  height: number;
+  bbox: DrawingMaskBbox;
+  /**
+   * The L8 PNG in the workspace; also served by `…/masks/{maskId}/content`.
+   */
+  file_id: string;
+  created_at: string;
+}
+
+export interface DrawingMaskBbox {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+/**
+ * One journal op (docs/DESIGNER-CANVAS.md §4.2), discriminated by `type`: stroke, erase, fill,
+ * place_image, layer_add, layer_remove, layer_update, layer_reorder, undo, redo. A stroke
+ * longer than 1 024 points is sent in parts that share `stroke_id`, count `part` from 0 and
+ * carry `continues: true` on every part but the last; `t` runs across the parts. `encoding` is
+ * required and is `json` in v1.
+ */
+export interface DrawingOp {
+  type: DrawingOpType;
+  layer_id?: string;
+  brush?: DrawingBrush;
+  encoding?: DrawingOpEncoding;
+  points?: DrawingStrokePoint[];
+  stroke_id?: string;
+  part?: number;
+  continues?: boolean;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  color?: string;
+  tolerance?: number;
+  contiguous?: boolean;
+  file_id?: string;
+  fit?: DrawingOpFit;
+  layer?: DrawingLayer;
+  index?: number;
+  patch?: DrawingOpPatch;
+  order?: string[];
+  undo_of?: number;
+  redo_of?: number;
+}
+
+export type DrawingOpEncoding = 'json';
+
+export const DRAWING_OP_ENCODING_VALUES = ['json'] as const;
+
+export type DrawingOpFit = 'stretch' | 'contain';
+
+export const DRAWING_OP_FIT_VALUES = ['stretch', 'contain'] as const;
+
+export interface DrawingOpPatch {
+  name?: string;
+  opacity?: number;
+  blend?: DrawingLayerBlend;
+  visible?: boolean;
+  locked?: boolean;
+}
+
+export type DrawingOpType = 'stroke' | 'erase' | 'fill' | 'place_image' | 'layer_add' | 'layer_remove' | 'layer_update' | 'layer_reorder' | 'undo' | 'redo';
+
+export const DRAWING_OP_TYPE_VALUES = ['stroke', 'erase', 'fill', 'place_image', 'layer_add', 'layer_remove', 'layer_update', 'layer_reorder', 'undo', 'redo'] as const;
+
+/**
+ * A selection in canvas pixels: `rect` {x, y, w, h}, `ellipse` {cx, cy, rx, ry} or `lasso`
+ * {points[]}.
+ */
+export interface DrawingSelectionShape {
+  kind: DrawingSelectionShapeKind;
+  x?: number;
+  y?: number;
+  w?: number;
+  h?: number;
+  cx?: number;
+  cy?: number;
+  rx?: number;
+  ry?: number;
+  points?: DrawingSelectionShapePoint[];
+}
+
+export type DrawingSelectionShapeKind = 'rect' | 'ellipse' | 'lasso';
+
+export const DRAWING_SELECTION_SHAPE_KIND_VALUES = ['rect', 'ellipse', 'lasso'] as const;
+
+export interface DrawingSelectionShapePoint {
+  x: number;
+  y: number;
+}
+
+export interface DrawingStrokePoint {
+  x: number;
+  y: number;
+  /**
+   * Pressure.
+   */
+  p: number;
+  /**
+   * Tilt.
+   */
+  tx: number;
+  ty: number;
+  /**
+   * Milliseconds from the start of the stroke, across every part.
+   */
+  t: number;
+}
 
 /**
  * The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
@@ -4491,9 +4771,9 @@ export const ERROR_REPORT_STATUS_VALUES = ['new', 'resolved'] as const;
  * says "Validation Error", as it always has. Never an exception class name; that lives in
  * `code`.
  */
-export type ErrorTitle = 'Bad Request' | 'Unauthorized' | 'Payment Required' | 'Forbidden' | 'Not Found' | 'Method Not Allowed' | 'Conflict' | 'Gone' | 'Length Required' | 'Precondition Failed' | 'Payload Too Large' | 'Unsupported Media Type' | 'Validation Error' | 'Locked' | 'Too Many Requests' | 'Internal Server Error' | 'Not Implemented' | 'Bad Gateway' | 'Service Unavailable' | 'Gateway Timeout';
+export type ErrorTitle = 'Bad Request' | 'Unauthorized' | 'Payment Required' | 'Forbidden' | 'Not Found' | 'Method Not Allowed' | 'Conflict' | 'Gone' | 'Length Required' | 'Precondition Failed' | 'Payload Too Large' | 'Unsupported Media Type' | 'Validation Error' | 'Locked' | 'Precondition Required' | 'Too Many Requests' | 'Internal Server Error' | 'Not Implemented' | 'Bad Gateway' | 'Service Unavailable' | 'Gateway Timeout';
 
-export const ERROR_TITLE_VALUES = ['Bad Request', 'Unauthorized', 'Payment Required', 'Forbidden', 'Not Found', 'Method Not Allowed', 'Conflict', 'Gone', 'Length Required', 'Precondition Failed', 'Payload Too Large', 'Unsupported Media Type', 'Validation Error', 'Locked', 'Too Many Requests', 'Internal Server Error', 'Not Implemented', 'Bad Gateway', 'Service Unavailable', 'Gateway Timeout'] as const;
+export const ERROR_TITLE_VALUES = ['Bad Request', 'Unauthorized', 'Payment Required', 'Forbidden', 'Not Found', 'Method Not Allowed', 'Conflict', 'Gone', 'Length Required', 'Precondition Failed', 'Payload Too Large', 'Unsupported Media Type', 'Validation Error', 'Locked', 'Precondition Required', 'Too Many Requests', 'Internal Server Error', 'Not Implemented', 'Bad Gateway', 'Service Unavailable', 'Gateway Timeout'] as const;
 
 export interface EstimateRunCostRequest {
   agent_id: string;
@@ -6056,6 +6336,12 @@ export interface InternalVerifyDomainResponse {
   ok: boolean;
 }
 
+/**
+ * An invite as an administrator sees it. The accept token (`secret`) is NOT here: it travels
+ * in the email link and, for the recipient only, in `GET /me/tenants` `pending_invites`. Until
+ * 2026-09-12 the tenant's list, the 201, resend and revoke echoed it, so `users:read` could
+ * accept any pending invite of the tenant.
+ */
 export interface Invite {
   created_at?: string;
   email?: string;
@@ -6063,7 +6349,6 @@ export interface Invite {
   id?: string;
   invited_by?: string;
   role?: string;
-  secret?: string;
   status?: string;
   tenant_id?: string;
 }
@@ -6080,7 +6365,6 @@ export interface InviteUserResponse {
   id?: string;
   invited_by?: string;
   role?: string;
-  secret?: string;
   status?: string;
   tenant_id?: string;
   email_sent: boolean;
@@ -6427,11 +6711,12 @@ export interface ListAgentVersionsResponse {
    */
   has_more?: boolean;
   /**
-   * Present only with `limit` and only while older versions remain: the version number to pass
-   * as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
-   * no client had read it.
+   * Present only with `limit` and only while older versions remain: an opaque string to pass
+   * back as `cursor` for the next page (every cursor in this document is a string; the generated
+   * clients' paging helpers rely on it). Typed integer for one hour in #469 — no client had read
+   * it.
    */
-  cursor?: number;
+  cursor?: string;
 }
 
 export interface ListAgentWorkspaceFilesResponse {
@@ -6579,6 +6864,13 @@ export interface ListDataExplorerNamespacesResponse {
 export interface ListDatasetsResponse {
   datasets: EvalDataset[];
   total: number;
+}
+
+export interface ListDrawingOpsResponse {
+  items: DrawingJournalEntry[];
+  cursor?: string;
+  has_more: boolean;
+  seq: number;
 }
 
 export interface ListEvalRunsResponse {
@@ -6928,6 +7220,12 @@ export interface ListSessionBranchesResponse {
   branches: SessionBranch[];
   active_branch?: string;
   total: number;
+}
+
+export interface ListSessionDrawingsResponse {
+  items: Drawing[];
+  cursor?: string;
+  has_more: boolean;
 }
 
 export interface ListSessionsResponse {
@@ -9418,8 +9716,21 @@ export interface RegistryGetSpecMetadataResponse {
   tool_count: number;
   skill_count: number;
   capabilities: string[];
+  /**
+   * The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+   * and unknown the same way — chat.
+   */
+  canvas?: RegistryGetSpecMetadataResponseCanvas;
   schema_version?: string;
 }
+
+/**
+ * The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+ * and unknown the same way — chat.
+ */
+export type RegistryGetSpecMetadataResponseCanvas = 'document' | 'code' | 'image' | 'drawing';
+
+export const REGISTRY_GET_SPEC_METADATA_RESPONSE_CANVAS_VALUES = ['document', 'code', 'image', 'drawing'] as const;
 
 export interface RegistryGetSpecVersionResponse {
   scope?: string;
@@ -10092,6 +10403,10 @@ export interface RunFeedbackListFeedback {
    */
   message_id: string;
   reaction: RunFeedbackListFeedbackReaction;
+  /**
+   * Present only when the reader gave one with the reaction.
+   */
+  reason?: string;
 }
 
 export type RunFeedbackListFeedbackReaction = 'up' | 'down';
@@ -10103,6 +10418,10 @@ export const RUN_FEEDBACK_LIST_FEEDBACK_REACTION_VALUES = ['up', 'down'] as cons
  */
 export interface RunFeedbackOne {
   reaction: string | null;
+  /**
+   * Present only when the reader gave one with the reaction.
+   */
+  reason?: string;
 }
 
 /**
@@ -10112,6 +10431,10 @@ export interface RunFeedbackOne {
 export interface RunFeedbackSet {
   reaction: RunFeedbackListFeedbackReaction;
   message_id: string;
+  /**
+   * Echoed only when the caller sent one.
+   */
+  reason?: string;
 }
 
 export interface RunMetrics {
@@ -10804,6 +11127,12 @@ export interface SetRootAttestationResponse {
 export interface SetRunFeedbackRequest {
   message_id: string;
   reaction: RunFeedbackListFeedbackReaction;
+  /**
+   * Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+   * only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+   * dropped by the server until 2026-09-13; it is stored and echoed now.
+   */
+  reason?: string;
 }
 
 export interface SetScheduleRequest {
@@ -10838,6 +11167,17 @@ export interface SetScheduleRequest {
    * next steps).
    */
   reflection_prompt?: string;
+}
+
+export interface SetSessionRunFeedbackRequest {
+  message_id: string;
+  reaction: RunFeedbackListFeedbackReaction;
+  /**
+   * Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+   * only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+   * dropped by the server until 2026-09-13; it is stored and echoed now.
+   */
+  reason?: string;
 }
 
 export interface SetSpawnPolicyResponse {
@@ -11004,11 +11344,26 @@ export interface SpecPackageProgramPage {
 export interface SpecToolCatalog {
   agent_id: string;
   /**
+   * The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
+   * only `drawing`. Always present: empty means no drawing canvas, absence means an older
+   * server, and a client must not confuse the two.
+   */
+  drawings: SpecToolCatalogDrawing[];
+  /**
    * Tool name → the SPEC that owns it and the view to render its output with. Integration
    * aliases map onto their base tool's view.
    */
   tools: Record<string, Value2>;
 }
+
+export interface SpecToolCatalogDrawing {
+  spec_id: string;
+  canvas: SpecToolCatalogDrawingCanvas;
+}
+
+export type SpecToolCatalogDrawingCanvas = 'drawing';
+
+export const SPEC_TOOL_CATALOG_DRAWING_CANVAS_VALUES = ['drawing'] as const;
 
 export interface StartMissionRequest {
   /**

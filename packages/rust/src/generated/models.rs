@@ -376,48 +376,8 @@ pub struct A2ATaskArtifact {
 /// `A2ATaskMessage` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct A2ATaskMessage {
-    pub role: A2ATaskMessageRole,
+    pub role: DrawingJournalEntryAuthorKind,
     pub parts: Vec<A2APart>,
-}
-
-/// `A2ATaskMessageRole` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum A2ATaskMessageRole {
-    #[default]
-    #[serde(rename = "user")]
-    User,
-    #[serde(rename = "agent")]
-    Agent,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl A2ATaskMessageRole {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::User => "user",
-            Self::Agent => "agent",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for A2ATaskMessageRole {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for A2ATaskMessageRole {
-    fn from(value: &str) -> Self {
-        match value {
-            "user" => Self::User,
-            "agent" => Self::Agent,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `A2ATaskStatus` enumeration.
@@ -4063,6 +4023,34 @@ impl From<&str> for APIKeySummaryStatus {
     }
 }
 
+/// `AppendDrawingOpsRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AppendDrawingOpsRequest {
+    pub ops: Vec<AppendDrawingOpsRequestOp>,
+}
+
+/// `AppendDrawingOpsRequestOp` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AppendDrawingOpsRequestOp {
+    pub client_op_id: String,
+    pub op: DrawingOp,
+}
+
+/// `AppendDrawingOpsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AppendDrawingOpsResponse {
+    pub items: Vec<AppendDrawingOpsResponseItem>,
+    /// The drawing's head after the batch.
+    pub seq: i64,
+}
+
+/// `AppendDrawingOpsResponseItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AppendDrawingOpsResponseItem {
+    pub client_op_id: String,
+    pub seq: i64,
+}
+
 /// `AppleNativeAuthRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AppleNativeAuthRequest {
@@ -6762,6 +6750,16 @@ pub struct CreateDatasetRequestCas {
     pub tags: Option<Vec<String>>,
 }
 
+/// `CreateDrawingMaskRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateDrawingMaskRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shape: Option<DrawingSelectionShape>,
+    /// An L8 PNG of the drawing's exact size.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
+}
+
 /// sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
 /// multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
 /// name the assignee and `run_id`/`team_run_id` appear only when the item was dispatched
@@ -7159,6 +7157,21 @@ pub struct CreateSessionBranchRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub parent_branch_id: Option<String>,
     /// Defaults to `branch-\<first 8 characters of the branch id\>`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+/// `CreateSessionDrawingRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateSessionDrawingRequest {
+    pub width: i64,
+    pub height: i64,
+    /// `#rrggbb` or `transparent`; default `#ffffff`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub background: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub dpi: Option<i64>,
+    /// Name of the first layer.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub name: Option<String>,
 }
@@ -7581,6 +7594,16 @@ pub struct DeleteDataExplorerValueResponse {
     pub success: Option<bool>,
 }
 
+/// `DeleteDrawingResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteDrawingResponse {
+    pub deleted: bool,
+    pub drawing_id: String,
+    /// Journal entries the cascade removed.
+    pub ops: i64,
+    pub masks: i64,
+}
+
 /// `DeleteGuardrailResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteGuardrailResponse {
@@ -7663,6 +7686,16 @@ pub struct DeletePromoCodeResponse {
     pub deleted: bool,
     /// Upper-cased, which may differ from what was sent.
     pub code: String,
+}
+
+/// `DeleteSessionBranchResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteSessionBranchResponse {
+    pub deleted: bool,
+    pub session_id: String,
+    pub branch_id: String,
+    /// How many runs the branch listed and the cascade removed.
+    pub runs: i64,
 }
 
 /// `DeleteSessionTodoResponse` model.
@@ -8084,6 +8117,552 @@ impl From<&str> for DomainDnsLifecycleState {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// A drawing a person and an agent share in real time (docs/DESIGNER-CANVAS.md §4.1). Pixels
+/// live in 256×256 tiles behind the journal; this record is the structure.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Drawing {
+    pub drawing_id: String,
+    pub session_id: String,
+    pub workspace_id: String,
+    pub width: i64,
+    pub height: i64,
+    pub dpi: i64,
+    /// `#rrggbb` or `transparent`.
+    pub background: String,
+    pub layers: Vec<DrawingLayer>,
+    /// The last journal entry applied to this drawing.
+    pub seq: i64,
+    /// The seq up to which tiles are materialised; 0 until the first snapshot.
+    pub snapshot_seq: i64,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `DrawingBrush` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingBrush {
+    pub preset: String,
+    /// Diameter in canvas pixels.
+    pub size: f64,
+    pub hardness: i64,
+    pub opacity: i64,
+    pub flow: i64,
+    /// Percent of `size` between dabs; the client spaces the points, the renderer stamps every
+    /// point it is given.
+    pub spacing: f64,
+    /// Absent on `erase`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+}
+
+/// `DrawingJournalEntry` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingJournalEntry {
+    pub seq: i64,
+    pub client_op_id: String,
+    pub author: DrawingJournalEntryAuthor,
+    pub at: String,
+    pub op: DrawingOp,
+}
+
+/// `DrawingJournalEntryAuthor` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingJournalEntryAuthor {
+    pub kind: DrawingJournalEntryAuthorKind,
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_id: Option<String>,
+}
+
+/// `DrawingJournalEntryAuthorKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingJournalEntryAuthorKind {
+    #[default]
+    #[serde(rename = "user")]
+    User,
+    #[serde(rename = "agent")]
+    Agent,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingJournalEntryAuthorKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::User => "user",
+            Self::Agent => "agent",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingJournalEntryAuthorKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingJournalEntryAuthorKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "user" => Self::User,
+            "agent" => Self::Agent,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `DrawingLayer` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingLayer {
+    pub layer_id: String,
+    pub name: String,
+    /// An integer 0–255, like every channel value in a drawing (docs/DESIGNER-CANVAS.md §4.4).
+    pub opacity: i64,
+    pub blend: DrawingLayerBlend,
+    pub visible: bool,
+    pub locked: bool,
+    pub kind: DrawingLayerKind,
+    /// Set when the layer was placed from a generated or uploaded image.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<DrawingLayerSource>,
+}
+
+/// `DrawingLayerBlend` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingLayerBlend {
+    #[default]
+    #[serde(rename = "normal")]
+    Normal,
+    #[serde(rename = "multiply")]
+    Multiply,
+    #[serde(rename = "screen")]
+    Screen,
+    #[serde(rename = "overlay")]
+    Overlay,
+    #[serde(rename = "darken")]
+    Darken,
+    #[serde(rename = "lighten")]
+    Lighten,
+    #[serde(rename = "add")]
+    Add,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingLayerBlend {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Normal => "normal",
+            Self::Multiply => "multiply",
+            Self::Screen => "screen",
+            Self::Overlay => "overlay",
+            Self::Darken => "darken",
+            Self::Lighten => "lighten",
+            Self::Add => "add",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingLayerBlend {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingLayerBlend {
+    fn from(value: &str) -> Self {
+        match value {
+            "normal" => Self::Normal,
+            "multiply" => Self::Multiply,
+            "screen" => Self::Screen,
+            "overlay" => Self::Overlay,
+            "darken" => Self::Darken,
+            "lighten" => Self::Lighten,
+            "add" => Self::Add,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `DrawingLayerKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingLayerKind {
+    #[default]
+    #[serde(rename = "raster")]
+    Raster,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingLayerKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Raster => "raster",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingLayerKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingLayerKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "raster" => Self::Raster,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Set when the layer was placed from a generated or uploaded image.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingLayerSource {
+    pub file_id: String,
+    pub tool: String,
+}
+
+/// What a person hands the agent (docs/DESIGNER-CANVAS.md §4.3): the selection as an L8 PNG of
+/// the drawing's size plus its bounding box.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingMask {
+    pub mask_id: String,
+    pub drawing_id: String,
+    pub width: i64,
+    pub height: i64,
+    pub bbox: DrawingMaskBbox,
+    /// The L8 PNG in the workspace; also served by `…/masks/{maskId}/content`.
+    pub file_id: String,
+    pub created_at: String,
+}
+
+/// `DrawingMaskBbox` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingMaskBbox {
+    pub x: i64,
+    pub y: i64,
+    pub w: i64,
+    pub h: i64,
+}
+
+/// One journal op (docs/DESIGNER-CANVAS.md §4.2), discriminated by `type`: stroke, erase, fill,
+/// place_image, layer_add, layer_remove, layer_update, layer_reorder, undo, redo. A stroke
+/// longer than 1 024 points is sent in parts that share `stroke_id`, count `part` from 0 and
+/// carry `continues: true` on every part but the last; `t` runs across the parts. `encoding` is
+/// required and is `json` in v1.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingOp {
+    pub r#type: DrawingOpType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layer_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub brush: Option<DrawingBrush>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub encoding: Option<DrawingOpEncoding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub points: Option<Vec<DrawingStrokePoint>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub stroke_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub part: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub continues: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub w: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub h: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub color: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tolerance: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub contiguous: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub file_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub fit: Option<DrawingOpFit>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub layer: Option<DrawingLayer>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub index: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub patch: Option<DrawingOpPatch>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub undo_of: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub redo_of: Option<i64>,
+}
+
+/// `DrawingOpEncoding` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingOpEncoding {
+    #[default]
+    #[serde(rename = "json")]
+    JSON,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingOpEncoding {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::JSON => "json",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingOpEncoding {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingOpEncoding {
+    fn from(value: &str) -> Self {
+        match value {
+            "json" => Self::JSON,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `DrawingOpFit` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingOpFit {
+    #[default]
+    #[serde(rename = "stretch")]
+    Stretch,
+    #[serde(rename = "contain")]
+    Contain,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingOpFit {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Stretch => "stretch",
+            Self::Contain => "contain",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingOpFit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingOpFit {
+    fn from(value: &str) -> Self {
+        match value {
+            "stretch" => Self::Stretch,
+            "contain" => Self::Contain,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `DrawingOpPatch` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingOpPatch {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub opacity: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub blend: Option<DrawingLayerBlend>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub visible: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locked: Option<bool>,
+}
+
+/// `DrawingOpType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingOpType {
+    #[default]
+    #[serde(rename = "stroke")]
+    Stroke,
+    #[serde(rename = "erase")]
+    Erase,
+    #[serde(rename = "fill")]
+    Fill,
+    #[serde(rename = "place_image")]
+    PlaceImage,
+    #[serde(rename = "layer_add")]
+    LayerAdd,
+    #[serde(rename = "layer_remove")]
+    LayerRemove,
+    #[serde(rename = "layer_update")]
+    LayerUpdate,
+    #[serde(rename = "layer_reorder")]
+    LayerReorder,
+    #[serde(rename = "undo")]
+    Undo,
+    #[serde(rename = "redo")]
+    Redo,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingOpType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Stroke => "stroke",
+            Self::Erase => "erase",
+            Self::Fill => "fill",
+            Self::PlaceImage => "place_image",
+            Self::LayerAdd => "layer_add",
+            Self::LayerRemove => "layer_remove",
+            Self::LayerUpdate => "layer_update",
+            Self::LayerReorder => "layer_reorder",
+            Self::Undo => "undo",
+            Self::Redo => "redo",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingOpType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingOpType {
+    fn from(value: &str) -> Self {
+        match value {
+            "stroke" => Self::Stroke,
+            "erase" => Self::Erase,
+            "fill" => Self::Fill,
+            "place_image" => Self::PlaceImage,
+            "layer_add" => Self::LayerAdd,
+            "layer_remove" => Self::LayerRemove,
+            "layer_update" => Self::LayerUpdate,
+            "layer_reorder" => Self::LayerReorder,
+            "undo" => Self::Undo,
+            "redo" => Self::Redo,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// A selection in canvas pixels: `rect` {x, y, w, h}, `ellipse` {cx, cy, rx, ry} or `lasso`
+/// {points\[\]}.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingSelectionShape {
+    pub kind: DrawingSelectionShapeKind,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub x: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub y: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub w: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub h: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cx: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cy: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rx: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ry: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub points: Option<Vec<DrawingSelectionShapePoint>>,
+}
+
+/// `DrawingSelectionShapeKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum DrawingSelectionShapeKind {
+    #[default]
+    #[serde(rename = "rect")]
+    Rect,
+    #[serde(rename = "ellipse")]
+    Ellipse,
+    #[serde(rename = "lasso")]
+    Lasso,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl DrawingSelectionShapeKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Rect => "rect",
+            Self::Ellipse => "ellipse",
+            Self::Lasso => "lasso",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for DrawingSelectionShapeKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for DrawingSelectionShapeKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "rect" => Self::Rect,
+            "ellipse" => Self::Ellipse,
+            "lasso" => Self::Lasso,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `DrawingSelectionShapePoint` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingSelectionShapePoint {
+    pub x: f64,
+    pub y: f64,
+}
+
+/// `DrawingStrokePoint` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DrawingStrokePoint {
+    pub x: f64,
+    pub y: f64,
+    /// Pressure.
+    pub p: i64,
+    /// Tilt.
+    pub tx: f64,
+    pub ty: f64,
+    /// Milliseconds from the start of the stroke, across every part.
+    pub t: f64,
 }
 
 /// The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
@@ -8617,6 +9196,8 @@ pub enum ErrorTitle {
     ValidationError,
     #[serde(rename = "Locked")]
     Locked,
+    #[serde(rename = "Precondition Required")]
+    PreconditionRequired,
     #[serde(rename = "Too Many Requests")]
     TooManyRequests,
     #[serde(rename = "Internal Server Error")]
@@ -8652,6 +9233,7 @@ impl ErrorTitle {
             Self::UnsupportedMediaType => "Unsupported Media Type",
             Self::ValidationError => "Validation Error",
             Self::Locked => "Locked",
+            Self::PreconditionRequired => "Precondition Required",
             Self::TooManyRequests => "Too Many Requests",
             Self::InternalServerError => "Internal Server Error",
             Self::NotImplemented => "Not Implemented",
@@ -8686,6 +9268,7 @@ impl From<&str> for ErrorTitle {
             "Unsupported Media Type" => Self::UnsupportedMediaType,
             "Validation Error" => Self::ValidationError,
             "Locked" => Self::Locked,
+            "Precondition Required" => Self::PreconditionRequired,
             "Too Many Requests" => Self::TooManyRequests,
             "Internal Server Error" => Self::InternalServerError,
             "Not Implemented" => Self::NotImplemented,
@@ -11945,7 +12528,10 @@ pub struct InternalVerifyDomainResponse {
     pub ok: bool,
 }
 
-/// `Invite` model.
+/// An invite as an administrator sees it. The accept token (`secret`) is NOT here: it travels
+/// in the email link and, for the recipient only, in `GET /me/tenants` `pending_invites`. Until
+/// 2026-09-12 the tenant's list, the 201, resend and revoke echoed it, so `users:read` could
+/// accept any pending invite of the tenant.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Invite {
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11960,8 +12546,6 @@ pub struct Invite {
     pub invited_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secret: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11990,8 +12574,6 @@ pub struct InviteUserResponse {
     pub invited_by: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub secret: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12649,11 +13231,12 @@ pub struct ListAgentVersionsResponse {
     /// (/agents, /sessions, /runs, /files answer the same pair).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub has_more: Option<bool>,
-    /// Present only with `limit` and only while older versions remain: the version number to pass
-    /// as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
-    /// no client had read it.
+    /// Present only with `limit` and only while older versions remain: an opaque string to pass
+    /// back as `cursor` for the next page (every cursor in this document is a string; the generated
+    /// clients' paging helpers rely on it). Typed integer for one hour in #469 — no client had read
+    /// it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cursor: Option<i64>,
+    pub cursor: Option<String>,
 }
 
 /// `ListAgentWorkspaceFilesResponse` model.
@@ -12941,6 +13524,16 @@ pub struct ListDataExplorerNamespacesResponse {
 pub struct ListDatasetsResponse {
     pub datasets: Vec<EvalDataset>,
     pub total: i64,
+}
+
+/// `ListDrawingOpsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListDrawingOpsResponse {
+    pub items: Vec<DrawingJournalEntry>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    pub has_more: bool,
+    pub seq: i64,
 }
 
 /// `ListEvalRunsResponse` model.
@@ -13485,6 +14078,15 @@ pub struct ListSessionBranchesResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub active_branch: Option<String>,
     pub total: i64,
+}
+
+/// `ListSessionDrawingsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListSessionDrawingsResponse {
+    pub items: Vec<Drawing>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+    pub has_more: bool,
 }
 
 /// `ListSessionsResponse` model.
@@ -17700,8 +18302,61 @@ pub struct RegistryGetSpecMetadataResponse {
     pub tool_count: i64,
     pub skill_count: i64,
     pub capabilities: Vec<String>,
+    /// The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+    /// and unknown the same way — chat.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub canvas: Option<RegistryGetSpecMetadataResponseCanvas>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub schema_version: Option<String>,
+}
+
+/// The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+/// and unknown the same way — chat.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RegistryGetSpecMetadataResponseCanvas {
+    #[default]
+    #[serde(rename = "document")]
+    Document,
+    #[serde(rename = "code")]
+    Code,
+    #[serde(rename = "image")]
+    Image,
+    #[serde(rename = "drawing")]
+    Drawing,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RegistryGetSpecMetadataResponseCanvas {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Document => "document",
+            Self::Code => "code",
+            Self::Image => "image",
+            Self::Drawing => "drawing",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RegistryGetSpecMetadataResponseCanvas {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RegistryGetSpecMetadataResponseCanvas {
+    fn from(value: &str) -> Self {
+        match value {
+            "document" => Self::Document,
+            "code" => Self::Code,
+            "image" => Self::Image,
+            "drawing" => Self::Drawing,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `RegistryGetSpecVersionResponse` model.
@@ -18904,6 +19559,9 @@ pub struct RunFeedbackListFeedback {
     /// (ConversationEntry.message_id) — the canonical key; any string is stored as sent.
     pub message_id: String,
     pub reaction: RunFeedbackListFeedbackReaction,
+    /// Present only when the reader gave one with the reaction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// `RunFeedbackListFeedbackReaction` enumeration.
@@ -18951,6 +19609,9 @@ impl From<&str> for RunFeedbackListFeedbackReaction {
 pub struct RunFeedbackOne {
     #[serde(default)]
     pub reaction: Option<String>,
+    /// Present only when the reader gave one with the reaction.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// PUT …/feedback: the stored reaction, echoed (runs.ts putRunFeedback, sessions.ts
@@ -18959,6 +19620,9 @@ pub struct RunFeedbackOne {
 pub struct RunFeedbackSet {
     pub reaction: RunFeedbackListFeedbackReaction,
     pub message_id: String,
+    /// Echoed only when the caller sent one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// `RunMetrics` model.
@@ -20290,6 +20954,11 @@ pub struct SetRootAttestationResponse {
 pub struct SetRunFeedbackRequest {
     pub message_id: String,
     pub reaction: RunFeedbackListFeedbackReaction,
+    /// Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+    /// only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+    /// dropped by the server until 2026-09-13; it is stored and echoed now.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// `SetScheduleRequest` model.
@@ -20319,6 +20988,18 @@ pub struct SetScheduleRequest {
     /// next steps).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub reflection_prompt: Option<String>,
+}
+
+/// `SetSessionRunFeedbackRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetSessionRunFeedbackRequest {
+    pub message_id: String,
+    pub reaction: RunFeedbackListFeedbackReaction,
+    /// Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+    /// only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+    /// dropped by the server until 2026-09-13; it is stored and echoed now.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// `SetSpawnPolicyResponse` model.
@@ -20578,9 +21259,56 @@ pub struct SpecPackageProgramPage {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SpecToolCatalog {
     pub agent_id: String,
+    /// The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
+    /// only `drawing`. Always present: empty means no drawing canvas, absence means an older
+    /// server, and a client must not confuse the two.
+    pub drawings: Vec<SpecToolCatalogDrawing>,
     /// Tool name → the SPEC that owns it and the view to render its output with. Integration
     /// aliases map onto their base tool's view.
     pub tools: HashMap<String, Value2>,
+}
+
+/// `SpecToolCatalogDrawing` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogDrawing {
+    pub spec_id: String,
+    pub canvas: SpecToolCatalogDrawingCanvas,
+}
+
+/// `SpecToolCatalogDrawingCanvas` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SpecToolCatalogDrawingCanvas {
+    #[default]
+    #[serde(rename = "drawing")]
+    Drawing,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SpecToolCatalogDrawingCanvas {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Drawing => "drawing",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SpecToolCatalogDrawingCanvas {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SpecToolCatalogDrawingCanvas {
+    fn from(value: &str) -> Self {
+        match value {
+            "drawing" => Self::Drawing,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `StartMissionRequest` model.

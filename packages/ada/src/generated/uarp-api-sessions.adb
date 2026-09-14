@@ -202,6 +202,42 @@ package body UARP.API.Sessions is
           Options => Options);
    end Delete_Session_Annotation;
 
+   function Delete_Session_Branch
+     (Self : Client_Type;
+      Session_Id : String;
+      Branch_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Delete_Session_Branch_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/branches/" & UARP.Types.Encode_Path_Segment (Branch_Id),
+             Idempotent => True,
+             Options => Options));
+   end Delete_Session_Branch;
+
+   procedure Delete_Session_Run_Feedback
+     (Self : Client_Type;
+      Session_Id : String;
+      Run_Id : String;
+      Params : Delete_Session_Run_Feedback_Params := No_Delete_Session_Run_Feedback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "message_id", Params.Message_Id);
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
+          Query => Query,
+          Idempotent => True,
+          Options => Options);
+   end Delete_Session_Run_Feedback;
+
    function Delete_Session_Todo
      (Self : Client_Type;
       Session_Id : String;
@@ -546,7 +582,7 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Run_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Session_Run_Feedback_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Run_Feedback_Set
    is
@@ -556,7 +592,7 @@ package body UARP.API.Sessions is
             (Self,
              "PUT",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
