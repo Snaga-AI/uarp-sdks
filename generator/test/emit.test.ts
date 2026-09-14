@@ -94,3 +94,56 @@ test('generated files are never empty', () => {
     }
   }
 });
+
+test('Ada declares a cycle member before the record that holds its vector', () => {
+  // Ada has no forward references and Ada.Containers.Vectors cannot be
+  // instantiated over an incomplete type, so a recursive schema needs the
+  // incomplete-type/access/vector dance. Without it GNAT says
+  // `"Tree_Vectors" not declared in "Models"` and the whole Ada SDK fails to
+  // build — which is what shipped from 2026-09-10 until this test existed.
+  //
+  // The assertion is on ORDER, not on presence: every declaration below was
+  // already emitted by the broken generator, just in the losing sequence.
+  const ada = renderTarget(fixture('recursion'), 'ada');
+
+  const ordering = (name: string): void => {
+    const incomplete = ada.indexOf(`type ${name};`);
+    const access = ada.indexOf(`type ${name}_Access is access ${name};`);
+    const vector = ada.indexOf(`package ${name}_Vectors is new Ada.Containers.Vectors`);
+    const record = ada.indexOf(`type ${name} is record`);
+
+    assert.ok(incomplete >= 0, `${name} has no incomplete declaration`);
+    assert.ok(access >= 0, `${name} has no access type`);
+    assert.ok(vector >= 0, `${name} has no vector package`);
+    assert.ok(record >= 0, `${name} has no record`);
+
+    assert.ok(incomplete < access, `${name}: the access type precedes the incomplete type`);
+    assert.ok(access < vector, `${name}: the vector precedes the access type it is built over`);
+    assert.ok(vector < record, `${name}: ${name}_Vectors is used by the record declared before it`);
+  };
+
+  //  Tree holds `children : Tree[]`, so it is always the cycle member.
+  ordering('Tree');
+  assert.match(
+    ada,
+    /package Tree_Vectors is new Ada\.Containers\.Vectors\s*\n\s*\(Index_Type => Positive, Element_Type => Tree_Access\);/,
+    'the element type must be the access, not the value — a vector of the value is exactly what cannot be instantiated',
+  );
+
+  //  Folder and Leaf point at each other. Which of the two gets broken open
+  //  falls out of the emission order and is not worth pinning; that exactly
+  //  one of them does, and that it is well formed, is the invariant.
+  const broken = ['Folder', 'Leaf'].filter((n) => ada.includes(`type ${n}_Access is access ${n};`));
+  assert.equal(broken.length, 1, `mutual recursion should open exactly one side, opened: ${broken.join(', ') || 'none'}`);
+  ordering(broken[0]);
+
+  const intact = broken[0] === 'Folder' ? 'Leaf' : 'Folder';
+  assert.ok(
+    ada.includes(`(Index_Type => Positive, Element_Type => ${intact});`),
+    `${intact} is outside the cycle break and should keep the plain instantiation over its value`,
+  );
+
+  // The body has to match the shape: dereference on write, allocate on read.
+  assert.match(ada, /To_JSON \(Element\.all\)/);
+  assert.match(ada, /Append \(new Tree'\(From_JSON/);
+});

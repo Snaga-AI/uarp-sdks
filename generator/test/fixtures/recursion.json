@@ -1,0 +1,66 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Recursion", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "paths": {
+    "/trees": {
+      "get": {
+        "operationId": "getTree",
+        "tags": ["Trees"],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Tree" } }
+            }
+          }
+        }
+      }
+    },
+    "/folders": {
+      "get": {
+        "operationId": "getFolder",
+        "tags": ["Trees"],
+        "responses": {
+          "200": {
+            "description": "ok",
+            "content": {
+              "application/json": { "schema": { "$ref": "#/components/schemas/Folder" } }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Tree": {
+        "type": "object",
+        "description": "A node that holds a list of itself — direct recursion.",
+        "required": ["label"],
+        "properties": {
+          "label": { "type": "string" },
+          "children": { "type": "array", "items": { "$ref": "#/components/schemas/Tree" } }
+        }
+      },
+      "Folder": {
+        "type": "object",
+        "description": "Mutual recursion: a folder holds entries, an entry holds folders.",
+        "required": ["name"],
+        "properties": {
+          "name": { "type": "string" },
+          "leaves": { "type": "array", "items": { "$ref": "#/components/schemas/Leaf" } }
+        }
+      },
+      "Leaf": {
+        "type": "object",
+        "description": "The other half of the cycle.",
+        "required": ["title"],
+        "properties": {
+          "title": { "type": "string" },
+          "folders": { "type": "array", "items": { "$ref": "#/components/schemas/Folder" } }
+        }
+      }
+    }
+  }
+}
