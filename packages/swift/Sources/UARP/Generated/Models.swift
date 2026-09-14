@@ -383,10 +383,10 @@ public struct A2ATaskArtifact: Codable, Hashable, Sendable {
 
 /// `A2ATaskMessage` model.
 public struct A2ATaskMessage: Codable, Hashable, Sendable {
-    public var role: A2ATaskMessageRole
+    public var role: DrawingJournalEntryAuthorKind
     public var parts: [A2APart]
 
-    public init(role: A2ATaskMessageRole, parts: [A2APart]) {
+    public init(role: DrawingJournalEntryAuthorKind, parts: [A2APart]) {
         self.role = role
         self.parts = parts
     }
@@ -395,29 +395,6 @@ public struct A2ATaskMessage: Codable, Hashable, Sendable {
         case role = "role"
         case parts = "parts"
     }
-}
-
-/// `A2ATaskMessageRole` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct A2ATaskMessageRole: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let user = A2ATaskMessageRole(rawValue: "user")
-    public static let agent = A2ATaskMessageRole(rawValue: "agent")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [A2ATaskMessageRole] = [.user, .agent]
 }
 
 /// `A2ATaskStatus` values.
@@ -5635,6 +5612,68 @@ public struct APIKeySummaryStatus: RawRepresentable, Codable, Hashable, Sendable
     public static let knownValues: [APIKeySummaryStatus] = [.active, .revoked]
 }
 
+/// `AppendDrawingOpsRequest` model.
+public struct AppendDrawingOpsRequest: Codable, Hashable, Sendable {
+    public var ops: [AppendDrawingOpsRequestOp]
+
+    public init(ops: [AppendDrawingOpsRequestOp]) {
+        self.ops = ops
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case ops = "ops"
+    }
+}
+
+/// `AppendDrawingOpsRequestOp` model.
+public struct AppendDrawingOpsRequestOp: Codable, Hashable, Sendable {
+    public var clientOpId: String
+    public var op: DrawingOp
+
+    public init(clientOpId: String, op: DrawingOp) {
+        self.clientOpId = clientOpId
+        self.op = op
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientOpId = "client_op_id"
+        case op = "op"
+    }
+}
+
+/// `AppendDrawingOpsResponse` model.
+public struct AppendDrawingOpsResponse: Codable, Hashable, Sendable {
+    public var items: [AppendDrawingOpsResponseItem]
+    /// The drawing's head after the batch.
+    public var seq: Int
+
+    public init(items: [AppendDrawingOpsResponseItem], seq: Int) {
+        self.items = items
+        self.seq = seq
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+        case seq = "seq"
+    }
+}
+
+/// `AppendDrawingOpsResponseItem` model.
+public struct AppendDrawingOpsResponseItem: Codable, Hashable, Sendable {
+    public var clientOpId: String
+    public var seq: Int
+
+    public init(clientOpId: String, seq: Int) {
+        self.clientOpId = clientOpId
+        self.seq = seq
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case clientOpId = "client_op_id"
+        case seq = "seq"
+    }
+}
+
 /// `AppleNativeAuthRequest` model.
 public struct AppleNativeAuthRequest: Codable, Hashable, Sendable {
     /// Apple-signed JWT from `ASAuthorizationAppleIDCredential.identityToken`.
@@ -9085,6 +9124,23 @@ public struct CreateDatasetRequestCas: Codable, Hashable, Sendable {
     }
 }
 
+/// `CreateDrawingMaskRequest` model.
+public struct CreateDrawingMaskRequest: Codable, Hashable, Sendable {
+    public var shape: DrawingSelectionShape?
+    /// An L8 PNG of the drawing's exact size.
+    public var fileId: String?
+
+    public init(shape: DrawingSelectionShape? = nil, fileId: String? = nil) {
+        self.shape = shape
+        self.fileId = fileId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case shape = "shape"
+        case fileId = "file_id"
+    }
+}
+
 /// sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
 /// multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
 /// name the assignee and `run_id`/`team_run_id` appear only when the item was dispatched
@@ -9750,6 +9806,33 @@ public struct CreateSessionBranchRequest: Codable, Hashable, Sendable {
         case forkPointRunId = "fork_point_run_id"
         case forkPointStepSeq = "fork_point_step_seq"
         case parentBranchId = "parent_branch_id"
+        case name = "name"
+    }
+}
+
+/// `CreateSessionDrawingRequest` model.
+public struct CreateSessionDrawingRequest: Codable, Hashable, Sendable {
+    public var width: Int
+    public var height: Int
+    /// `#rrggbb` or `transparent`; default `#ffffff`.
+    public var background: String?
+    public var dpi: Int?
+    /// Name of the first layer.
+    public var name: String?
+
+    public init(width: Int, height: Int, background: String? = nil, dpi: Int? = nil, name: String? = nil) {
+        self.width = width
+        self.height = height
+        self.background = background
+        self.dpi = dpi
+        self.name = name
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case width = "width"
+        case height = "height"
+        case background = "background"
+        case dpi = "dpi"
         case name = "name"
     }
 }
@@ -10429,6 +10512,29 @@ public struct DeleteDataExplorerValueResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `DeleteDrawingResponse` model.
+public struct DeleteDrawingResponse: Codable, Hashable, Sendable {
+    public var deleted: Bool
+    public var drawingId: String
+    /// Journal entries the cascade removed.
+    public var ops: Int
+    public var masks: Int
+
+    public init(deleted: Bool, drawingId: String, ops: Int, masks: Int) {
+        self.deleted = deleted
+        self.drawingId = drawingId
+        self.ops = ops
+        self.masks = masks
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case deleted = "deleted"
+        case drawingId = "drawing_id"
+        case ops = "ops"
+        case masks = "masks"
+    }
+}
+
 /// `DeleteGuardrailResponse` model.
 public struct DeleteGuardrailResponse: Codable, Hashable, Sendable {
     public var deleted: Bool?
@@ -10601,6 +10707,29 @@ public struct DeletePromoCodeResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case code = "code"
+    }
+}
+
+/// `DeleteSessionBranchResponse` model.
+public struct DeleteSessionBranchResponse: Codable, Hashable, Sendable {
+    public var deleted: Bool
+    public var sessionId: String
+    public var branchId: String
+    /// How many runs the branch listed and the cascade removed.
+    public var runs: Int
+
+    public init(deleted: Bool, sessionId: String, branchId: String, runs: Int) {
+        self.deleted = deleted
+        self.sessionId = sessionId
+        self.branchId = branchId
+        self.runs = runs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case deleted = "deleted"
+        case sessionId = "session_id"
+        case branchId = "branch_id"
+        case runs = "runs"
     }
 }
 
@@ -11063,6 +11192,611 @@ public struct DomainDnsLifecycleState: RawRepresentable, Codable, Hashable, Send
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [DomainDnsLifecycleState] = [.pending, .verified, .failed, .drift, .deactivated]
+}
+
+/// A drawing a person and an agent share in real time (docs/DESIGNER-CANVAS.md §4.1). Pixels
+/// live in 256×256 tiles behind the journal; this record is the structure.
+public struct Drawing: Codable, Hashable, Sendable {
+    public var drawingId: String
+    public var sessionId: String
+    public var workspaceId: String
+    public var width: Int
+    public var height: Int
+    public var dpi: Int
+    /// `#rrggbb` or `transparent`.
+    public var background: String
+    public var layers: [DrawingLayer]
+    /// The last journal entry applied to this drawing.
+    public var seq: Int
+    /// The seq up to which tiles are materialised; 0 until the first snapshot.
+    public var snapshotSeq: Int
+    public var createdAt: String
+    public var updatedAt: String
+
+    public init(drawingId: String, sessionId: String, workspaceId: String, width: Int, height: Int, dpi: Int, background: String, layers: [DrawingLayer], seq: Int, snapshotSeq: Int, createdAt: String, updatedAt: String) {
+        self.drawingId = drawingId
+        self.sessionId = sessionId
+        self.workspaceId = workspaceId
+        self.width = width
+        self.height = height
+        self.dpi = dpi
+        self.background = background
+        self.layers = layers
+        self.seq = seq
+        self.snapshotSeq = snapshotSeq
+        self.createdAt = createdAt
+        self.updatedAt = updatedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case drawingId = "drawing_id"
+        case sessionId = "session_id"
+        case workspaceId = "workspace_id"
+        case width = "width"
+        case height = "height"
+        case dpi = "dpi"
+        case background = "background"
+        case layers = "layers"
+        case seq = "seq"
+        case snapshotSeq = "snapshot_seq"
+        case createdAt = "created_at"
+        case updatedAt = "updated_at"
+    }
+}
+
+/// `DrawingBrush` model.
+public struct DrawingBrush: Codable, Hashable, Sendable {
+    public var preset: String
+    /// Diameter in canvas pixels.
+    public var size: Double
+    public var hardness: Int
+    public var opacity: Int
+    public var flow: Int
+    /// Percent of `size` between dabs; the client spaces the points, the renderer stamps every
+    /// point it is given.
+    public var spacing: Double
+    /// Absent on `erase`.
+    public var color: String?
+
+    public init(preset: String, size: Double, hardness: Int, opacity: Int, flow: Int, spacing: Double, color: String? = nil) {
+        self.preset = preset
+        self.size = size
+        self.hardness = hardness
+        self.opacity = opacity
+        self.flow = flow
+        self.spacing = spacing
+        self.color = color
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case preset = "preset"
+        case size = "size"
+        case hardness = "hardness"
+        case opacity = "opacity"
+        case flow = "flow"
+        case spacing = "spacing"
+        case color = "color"
+    }
+}
+
+/// `DrawingJournalEntry` model.
+public struct DrawingJournalEntry: Codable, Hashable, Sendable {
+    public var seq: Int
+    public var clientOpId: String
+    public var author: DrawingJournalEntryAuthor
+    public var at: String
+    public var op: DrawingOp
+
+    public init(seq: Int, clientOpId: String, author: DrawingJournalEntryAuthor, at: String, op: DrawingOp) {
+        self.seq = seq
+        self.clientOpId = clientOpId
+        self.author = author
+        self.at = at
+        self.op = op
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case seq = "seq"
+        case clientOpId = "client_op_id"
+        case author = "author"
+        case at = "at"
+        case op = "op"
+    }
+}
+
+/// `DrawingJournalEntryAuthor` model.
+public struct DrawingJournalEntryAuthor: Codable, Hashable, Sendable {
+    public var kind: DrawingJournalEntryAuthorKind
+    public var id: String
+    public var runId: String?
+
+    public init(kind: DrawingJournalEntryAuthorKind, id: String, runId: String? = nil) {
+        self.kind = kind
+        self.id = id
+        self.runId = runId
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case id = "id"
+        case runId = "run_id"
+    }
+}
+
+/// `DrawingJournalEntryAuthorKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingJournalEntryAuthorKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let user = DrawingJournalEntryAuthorKind(rawValue: "user")
+    public static let agent = DrawingJournalEntryAuthorKind(rawValue: "agent")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingJournalEntryAuthorKind] = [.user, .agent]
+}
+
+/// `DrawingLayer` model.
+public struct DrawingLayer: Codable, Hashable, Sendable {
+    public var layerId: String
+    public var name: String
+    /// An integer 0–255, like every channel value in a drawing (docs/DESIGNER-CANVAS.md §4.4).
+    public var opacity: Int
+    public var blend: DrawingLayerBlend
+    public var visible: Bool
+    public var locked: Bool
+    public var kind: DrawingLayerKind
+    /// Set when the layer was placed from a generated or uploaded image.
+    public var source: DrawingLayerSource?
+
+    public init(layerId: String, name: String, opacity: Int, blend: DrawingLayerBlend, visible: Bool, locked: Bool, kind: DrawingLayerKind, source: DrawingLayerSource? = nil) {
+        self.layerId = layerId
+        self.name = name
+        self.opacity = opacity
+        self.blend = blend
+        self.visible = visible
+        self.locked = locked
+        self.kind = kind
+        self.source = source
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case layerId = "layer_id"
+        case name = "name"
+        case opacity = "opacity"
+        case blend = "blend"
+        case visible = "visible"
+        case locked = "locked"
+        case kind = "kind"
+        case source = "source"
+    }
+}
+
+/// `DrawingLayerBlend` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingLayerBlend: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let normal = DrawingLayerBlend(rawValue: "normal")
+    public static let multiply = DrawingLayerBlend(rawValue: "multiply")
+    public static let screen = DrawingLayerBlend(rawValue: "screen")
+    public static let overlay = DrawingLayerBlend(rawValue: "overlay")
+    public static let darken = DrawingLayerBlend(rawValue: "darken")
+    public static let lighten = DrawingLayerBlend(rawValue: "lighten")
+    public static let add = DrawingLayerBlend(rawValue: "add")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingLayerBlend] = [.normal, .multiply, .screen, .overlay, .darken, .lighten, .add]
+}
+
+/// `DrawingLayerKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingLayerKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let raster = DrawingLayerKind(rawValue: "raster")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingLayerKind] = [.raster]
+}
+
+/// Set when the layer was placed from a generated or uploaded image.
+public struct DrawingLayerSource: Codable, Hashable, Sendable {
+    public var fileId: String
+    public var tool: String
+
+    public init(fileId: String, tool: String) {
+        self.fileId = fileId
+        self.tool = tool
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case fileId = "file_id"
+        case tool = "tool"
+    }
+}
+
+/// What a person hands the agent (docs/DESIGNER-CANVAS.md §4.3): the selection as an L8 PNG of
+/// the drawing's size plus its bounding box.
+public struct DrawingMask: Codable, Hashable, Sendable {
+    public var maskId: String
+    public var drawingId: String
+    public var width: Int
+    public var height: Int
+    public var bbox: DrawingMaskBbox
+    /// The L8 PNG in the workspace; also served by `…/masks/{maskId}/content`.
+    public var fileId: String
+    public var createdAt: String
+
+    public init(maskId: String, drawingId: String, width: Int, height: Int, bbox: DrawingMaskBbox, fileId: String, createdAt: String) {
+        self.maskId = maskId
+        self.drawingId = drawingId
+        self.width = width
+        self.height = height
+        self.bbox = bbox
+        self.fileId = fileId
+        self.createdAt = createdAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case maskId = "mask_id"
+        case drawingId = "drawing_id"
+        case width = "width"
+        case height = "height"
+        case bbox = "bbox"
+        case fileId = "file_id"
+        case createdAt = "created_at"
+    }
+}
+
+/// `DrawingMaskBbox` model.
+public struct DrawingMaskBbox: Codable, Hashable, Sendable {
+    public var x: Int
+    public var y: Int
+    public var w: Int
+    public var h: Int
+
+    public init(x: Int, y: Int, w: Int, h: Int) {
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x = "x"
+        case y = "y"
+        case w = "w"
+        case h = "h"
+    }
+}
+
+/// One journal op (docs/DESIGNER-CANVAS.md §4.2), discriminated by `type`: stroke, erase, fill,
+/// place_image, layer_add, layer_remove, layer_update, layer_reorder, undo, redo. A stroke
+/// longer than 1 024 points is sent in parts that share `stroke_id`, count `part` from 0 and
+/// carry `continues: true` on every part but the last; `t` runs across the parts. `encoding` is
+/// required and is `json` in v1.
+public struct DrawingOp: Codable, Hashable, Sendable {
+    public var type: DrawingOpType
+    public var layerId: String?
+    public var brush: DrawingBrush?
+    public var encoding: DrawingOpEncoding?
+    public var points: [DrawingStrokePoint]?
+    public var strokeId: String?
+    public var part: Int?
+    public var continues: Bool?
+    public var x: Double?
+    public var y: Double?
+    public var w: Int?
+    public var h: Int?
+    public var color: String?
+    public var tolerance: Int?
+    public var contiguous: Bool?
+    public var fileId: String?
+    public var fit: DrawingOpFit?
+    public var layer: DrawingLayer?
+    public var index: Int?
+    public var patch: DrawingOpPatch?
+    public var order: [String]?
+    public var undoOf: Int?
+    public var redoOf: Int?
+
+    public init(type: DrawingOpType, layerId: String? = nil, brush: DrawingBrush? = nil, encoding: DrawingOpEncoding? = nil, points: [DrawingStrokePoint]? = nil, strokeId: String? = nil, part: Int? = nil, continues: Bool? = nil, x: Double? = nil, y: Double? = nil, w: Int? = nil, h: Int? = nil, color: String? = nil, tolerance: Int? = nil, contiguous: Bool? = nil, fileId: String? = nil, fit: DrawingOpFit? = nil, layer: DrawingLayer? = nil, index: Int? = nil, patch: DrawingOpPatch? = nil, order: [String]? = nil, undoOf: Int? = nil, redoOf: Int? = nil) {
+        self.type = type
+        self.layerId = layerId
+        self.brush = brush
+        self.encoding = encoding
+        self.points = points
+        self.strokeId = strokeId
+        self.part = part
+        self.continues = continues
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.color = color
+        self.tolerance = tolerance
+        self.contiguous = contiguous
+        self.fileId = fileId
+        self.fit = fit
+        self.layer = layer
+        self.index = index
+        self.patch = patch
+        self.order = order
+        self.undoOf = undoOf
+        self.redoOf = redoOf
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type = "type"
+        case layerId = "layer_id"
+        case brush = "brush"
+        case encoding = "encoding"
+        case points = "points"
+        case strokeId = "stroke_id"
+        case part = "part"
+        case continues = "continues"
+        case x = "x"
+        case y = "y"
+        case w = "w"
+        case h = "h"
+        case color = "color"
+        case tolerance = "tolerance"
+        case contiguous = "contiguous"
+        case fileId = "file_id"
+        case fit = "fit"
+        case layer = "layer"
+        case index = "index"
+        case patch = "patch"
+        case order = "order"
+        case undoOf = "undo_of"
+        case redoOf = "redo_of"
+    }
+}
+
+/// `DrawingOpEncoding` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingOpEncoding: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let json = DrawingOpEncoding(rawValue: "json")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingOpEncoding] = [.json]
+}
+
+/// `DrawingOpFit` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingOpFit: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stretch = DrawingOpFit(rawValue: "stretch")
+    public static let contain = DrawingOpFit(rawValue: "contain")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingOpFit] = [.stretch, .contain]
+}
+
+/// `DrawingOpPatch` model.
+public struct DrawingOpPatch: Codable, Hashable, Sendable {
+    public var name: String?
+    public var opacity: Int?
+    public var blend: DrawingLayerBlend?
+    public var visible: Bool?
+    public var locked: Bool?
+
+    public init(name: String? = nil, opacity: Int? = nil, blend: DrawingLayerBlend? = nil, visible: Bool? = nil, locked: Bool? = nil) {
+        self.name = name
+        self.opacity = opacity
+        self.blend = blend
+        self.visible = visible
+        self.locked = locked
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case opacity = "opacity"
+        case blend = "blend"
+        case visible = "visible"
+        case locked = "locked"
+    }
+}
+
+/// `DrawingOpType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingOpType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let stroke = DrawingOpType(rawValue: "stroke")
+    public static let erase = DrawingOpType(rawValue: "erase")
+    public static let fill = DrawingOpType(rawValue: "fill")
+    public static let placeImage = DrawingOpType(rawValue: "place_image")
+    public static let layerAdd = DrawingOpType(rawValue: "layer_add")
+    public static let layerRemove = DrawingOpType(rawValue: "layer_remove")
+    public static let layerUpdate = DrawingOpType(rawValue: "layer_update")
+    public static let layerReorder = DrawingOpType(rawValue: "layer_reorder")
+    public static let undo = DrawingOpType(rawValue: "undo")
+    public static let redo = DrawingOpType(rawValue: "redo")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingOpType] = [.stroke, .erase, .fill, .placeImage, .layerAdd, .layerRemove, .layerUpdate, .layerReorder, .undo, .redo]
+}
+
+/// A selection in canvas pixels: `rect` {x, y, w, h}, `ellipse` {cx, cy, rx, ry} or `lasso`
+/// {points[]}.
+public struct DrawingSelectionShape: Codable, Hashable, Sendable {
+    public var kind: DrawingSelectionShapeKind
+    public var x: Double?
+    public var y: Double?
+    public var w: Double?
+    public var h: Double?
+    public var cx: Double?
+    public var cy: Double?
+    public var rx: Double?
+    public var ry: Double?
+    public var points: [DrawingSelectionShapePoint]?
+
+    public init(kind: DrawingSelectionShapeKind, x: Double? = nil, y: Double? = nil, w: Double? = nil, h: Double? = nil, cx: Double? = nil, cy: Double? = nil, rx: Double? = nil, ry: Double? = nil, points: [DrawingSelectionShapePoint]? = nil) {
+        self.kind = kind
+        self.x = x
+        self.y = y
+        self.w = w
+        self.h = h
+        self.cx = cx
+        self.cy = cy
+        self.rx = rx
+        self.ry = ry
+        self.points = points
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case x = "x"
+        case y = "y"
+        case w = "w"
+        case h = "h"
+        case cx = "cx"
+        case cy = "cy"
+        case rx = "rx"
+        case ry = "ry"
+        case points = "points"
+    }
+}
+
+/// `DrawingSelectionShapeKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct DrawingSelectionShapeKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let rect = DrawingSelectionShapeKind(rawValue: "rect")
+    public static let ellipse = DrawingSelectionShapeKind(rawValue: "ellipse")
+    public static let lasso = DrawingSelectionShapeKind(rawValue: "lasso")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [DrawingSelectionShapeKind] = [.rect, .ellipse, .lasso]
+}
+
+/// `DrawingSelectionShapePoint` model.
+public struct DrawingSelectionShapePoint: Codable, Hashable, Sendable {
+    public var x: Double
+    public var y: Double
+
+    public init(x: Double, y: Double) {
+        self.x = x
+        self.y = y
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x = "x"
+        case y = "y"
+    }
+}
+
+/// `DrawingStrokePoint` model.
+public struct DrawingStrokePoint: Codable, Hashable, Sendable {
+    public var x: Double
+    public var y: Double
+    /// Pressure.
+    public var p: Int
+    /// Tilt.
+    public var tx: Double
+    public var ty: Double
+    /// Milliseconds from the start of the stroke, across every part.
+    public var t: Double
+
+    public init(x: Double, y: Double, p: Int, tx: Double, ty: Double, t: Double) {
+        self.x = x
+        self.y = y
+        self.p = p
+        self.tx = tx
+        self.ty = ty
+        self.t = t
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case x = "x"
+        case y = "y"
+        case p = "p"
+        case tx = "tx"
+        case ty = "ty"
+        case t = "t"
+    }
 }
 
 /// The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
@@ -11692,6 +12426,7 @@ public struct ErrorTitle: RawRepresentable, Codable, Hashable, Sendable, Express
     public static let unsupportedMediaType = ErrorTitle(rawValue: "Unsupported Media Type")
     public static let validationError = ErrorTitle(rawValue: "Validation Error")
     public static let locked = ErrorTitle(rawValue: "Locked")
+    public static let preconditionRequired = ErrorTitle(rawValue: "Precondition Required")
     public static let tooManyRequests = ErrorTitle(rawValue: "Too Many Requests")
     public static let internalServerError = ErrorTitle(rawValue: "Internal Server Error")
     public static let notImplemented = ErrorTitle(rawValue: "Not Implemented")
@@ -11700,7 +12435,7 @@ public struct ErrorTitle: RawRepresentable, Codable, Hashable, Sendable, Express
     public static let gatewayTimeout = ErrorTitle(rawValue: "Gateway Timeout")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorTitle] = [.badRequest, .unauthorized, .paymentRequired, .forbidden, .notFound, .methodNotAllowed, .conflict, .gone, .lengthRequired, .preconditionFailed, .payloadTooLarge, .unsupportedMediaType, .validationError, .locked, .tooManyRequests, .internalServerError, .notImplemented, .badGateway, .serviceUnavailable, .gatewayTimeout]
+    public static let knownValues: [ErrorTitle] = [.badRequest, .unauthorized, .paymentRequired, .forbidden, .notFound, .methodNotAllowed, .conflict, .gone, .lengthRequired, .preconditionFailed, .payloadTooLarge, .unsupportedMediaType, .validationError, .locked, .preconditionRequired, .tooManyRequests, .internalServerError, .notImplemented, .badGateway, .serviceUnavailable, .gatewayTimeout]
 }
 
 /// `EstimateRunCostRequest` model.
@@ -15972,7 +16707,10 @@ public struct InternalVerifyDomainResponse: Codable, Hashable, Sendable {
     }
 }
 
-/// `Invite` model.
+/// An invite as an administrator sees it. The accept token (`secret`) is NOT here: it travels
+/// in the email link and, for the recipient only, in `GET /me/tenants` `pending_invites`. Until
+/// 2026-09-12 the tenant's list, the 201, resend and revoke echoed it, so `users:read` could
+/// accept any pending invite of the tenant.
 public struct Invite: Codable, Hashable, Sendable {
     public var createdAt: String?
     public var email: String?
@@ -15980,18 +16718,16 @@ public struct Invite: Codable, Hashable, Sendable {
     public var id: String?
     public var invitedBy: String?
     public var role: String?
-    public var secret: String?
     public var status: String?
     public var tenantId: String?
 
-    public init(createdAt: String? = nil, email: String? = nil, expiresAt: String? = nil, id: String? = nil, invitedBy: String? = nil, role: String? = nil, secret: String? = nil, status: String? = nil, tenantId: String? = nil) {
+    public init(createdAt: String? = nil, email: String? = nil, expiresAt: String? = nil, id: String? = nil, invitedBy: String? = nil, role: String? = nil, status: String? = nil, tenantId: String? = nil) {
         self.createdAt = createdAt
         self.email = email
         self.expiresAt = expiresAt
         self.id = id
         self.invitedBy = invitedBy
         self.role = role
-        self.secret = secret
         self.status = status
         self.tenantId = tenantId
     }
@@ -16003,7 +16739,6 @@ public struct Invite: Codable, Hashable, Sendable {
         case id = "id"
         case invitedBy = "invited_by"
         case role = "role"
-        case secret = "secret"
         case status = "status"
         case tenantId = "tenant_id"
     }
@@ -16033,19 +16768,17 @@ public struct InviteUserResponse: Codable, Hashable, Sendable {
     public var id: String?
     public var invitedBy: String?
     public var role: String?
-    public var secret: String?
     public var status: String?
     public var tenantId: String?
     public var emailSent: Bool
 
-    public init(createdAt: String? = nil, email: String? = nil, expiresAt: String? = nil, id: String? = nil, invitedBy: String? = nil, role: String? = nil, secret: String? = nil, status: String? = nil, tenantId: String? = nil, emailSent: Bool) {
+    public init(createdAt: String? = nil, email: String? = nil, expiresAt: String? = nil, id: String? = nil, invitedBy: String? = nil, role: String? = nil, status: String? = nil, tenantId: String? = nil, emailSent: Bool) {
         self.createdAt = createdAt
         self.email = email
         self.expiresAt = expiresAt
         self.id = id
         self.invitedBy = invitedBy
         self.role = role
-        self.secret = secret
         self.status = status
         self.tenantId = tenantId
         self.emailSent = emailSent
@@ -16058,7 +16791,6 @@ public struct InviteUserResponse: Codable, Hashable, Sendable {
         case id = "id"
         case invitedBy = "invited_by"
         case role = "role"
-        case secret = "secret"
         case status = "status"
         case tenantId = "tenant_id"
         case emailSent = "email_sent"
@@ -16950,12 +17682,13 @@ public struct ListAgentVersionsResponse: Codable, Hashable, Sendable {
     /// Present only with `limit`: whether older versions remain — the document's list convention
     /// (/agents, /sessions, /runs, /files answer the same pair).
     public var hasMore: Bool?
-    /// Present only with `limit` and only while older versions remain: the version number to pass
-    /// as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
-    /// no client had read it.
-    public var cursor: Int?
+    /// Present only with `limit` and only while older versions remain: an opaque string to pass
+    /// back as `cursor` for the next page (every cursor in this document is a string; the generated
+    /// clients' paging helpers rely on it). Typed integer for one hour in #469 — no client had read
+    /// it.
+    public var cursor: String?
 
-    public init(items: [AgentVersion], versions: [AgentVersion]? = nil, total: Int, hasMore: Bool? = nil, cursor: Int? = nil) {
+    public init(items: [AgentVersion], versions: [AgentVersion]? = nil, total: Int, hasMore: Bool? = nil, cursor: String? = nil) {
         self.items = items
         self.versions = versions
         self.total = total
@@ -17416,6 +18149,28 @@ public struct ListDatasetsResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case datasets = "datasets"
         case total = "total"
+    }
+}
+
+/// `ListDrawingOpsResponse` model.
+public struct ListDrawingOpsResponse: Codable, Hashable, Sendable {
+    public var items: [DrawingJournalEntry]
+    public var cursor: String?
+    public var hasMore: Bool
+    public var seq: Int
+
+    public init(items: [DrawingJournalEntry], cursor: String? = nil, hasMore: Bool, seq: Int) {
+        self.items = items
+        self.cursor = cursor
+        self.hasMore = hasMore
+        self.seq = seq
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+        case cursor = "cursor"
+        case hasMore = "has_more"
+        case seq = "seq"
     }
 }
 
@@ -18403,6 +19158,25 @@ public struct ListSessionBranchesResponse: Codable, Hashable, Sendable {
         case branches = "branches"
         case activeBranch = "active_branch"
         case total = "total"
+    }
+}
+
+/// `ListSessionDrawingsResponse` model.
+public struct ListSessionDrawingsResponse: Codable, Hashable, Sendable {
+    public var items: [Drawing]
+    public var cursor: String?
+    public var hasMore: Bool
+
+    public init(items: [Drawing], cursor: String? = nil, hasMore: Bool) {
+        self.items = items
+        self.cursor = cursor
+        self.hasMore = hasMore
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case items = "items"
+        case cursor = "cursor"
+        case hasMore = "has_more"
     }
 }
 
@@ -24270,9 +25044,12 @@ public struct RegistryGetSpecMetadataResponse: Codable, Hashable, Sendable {
     public var toolCount: Int
     public var skillCount: Int
     public var capabilities: [String]
+    /// The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+    /// and unknown the same way — chat.
+    public var canvas: RegistryGetSpecMetadataResponseCanvas?
     public var schemaVersion: String?
 
-    public init(scope: String, name: String, `description`: String, license: String, repository: String? = nil, homepage: String? = nil, categories: [String], keywords: [String], visibility: SetRegistrySpecVisibilityRequestVisibility, sharedWith: [String]? = nil, ownerTenantId: String, latestVersion: String, versions: [RegistryVersionEntry], createdAt: String, updatedAt: String, toolCount: Int, skillCount: Int, capabilities: [String], schemaVersion: String? = nil) {
+    public init(scope: String, name: String, `description`: String, license: String, repository: String? = nil, homepage: String? = nil, categories: [String], keywords: [String], visibility: SetRegistrySpecVisibilityRequestVisibility, sharedWith: [String]? = nil, ownerTenantId: String, latestVersion: String, versions: [RegistryVersionEntry], createdAt: String, updatedAt: String, toolCount: Int, skillCount: Int, capabilities: [String], canvas: RegistryGetSpecMetadataResponseCanvas? = nil, schemaVersion: String? = nil) {
         self.scope = scope
         self.name = name
         self.`description` = `description`
@@ -24291,6 +25068,7 @@ public struct RegistryGetSpecMetadataResponse: Codable, Hashable, Sendable {
         self.toolCount = toolCount
         self.skillCount = skillCount
         self.capabilities = capabilities
+        self.canvas = canvas
         self.schemaVersion = schemaVersion
     }
 
@@ -24313,8 +25091,35 @@ public struct RegistryGetSpecMetadataResponse: Codable, Hashable, Sendable {
         case toolCount = "tool_count"
         case skillCount = "skill_count"
         case capabilities = "capabilities"
+        case canvas = "canvas"
         case schemaVersion = "schema_version"
     }
+}
+
+/// The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+/// and unknown the same way — chat.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RegistryGetSpecMetadataResponseCanvas: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let document = RegistryGetSpecMetadataResponseCanvas(rawValue: "document")
+    public static let code = RegistryGetSpecMetadataResponseCanvas(rawValue: "code")
+    public static let image = RegistryGetSpecMetadataResponseCanvas(rawValue: "image")
+    public static let drawing = RegistryGetSpecMetadataResponseCanvas(rawValue: "drawing")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RegistryGetSpecMetadataResponseCanvas] = [.document, .code, .image, .drawing]
 }
 
 /// `RegistryGetSpecVersionResponse` model.
@@ -25921,15 +26726,19 @@ public struct RunFeedbackListFeedback: Codable, Hashable, Sendable {
     /// (ConversationEntry.message_id) — the canonical key; any string is stored as sent.
     public var messageId: String
     public var reaction: RunFeedbackListFeedbackReaction
+    /// Present only when the reader gave one with the reaction.
+    public var reason: String?
 
-    public init(messageId: String, reaction: RunFeedbackListFeedbackReaction) {
+    public init(messageId: String, reaction: RunFeedbackListFeedbackReaction, reason: String? = nil) {
         self.messageId = messageId
         self.reaction = reaction
+        self.reason = reason
     }
 
     private enum CodingKeys: String, CodingKey {
         case messageId = "message_id"
         case reaction = "reaction"
+        case reason = "reason"
     }
 }
 
@@ -25959,13 +26768,17 @@ public struct RunFeedbackListFeedbackReaction: RawRepresentable, Codable, Hashab
 /// GET …/feedback with `message_id`: that one reaction, `null` when the caller has not reacted.
 public struct RunFeedbackOne: Codable, Hashable, Sendable {
     public var reaction: String?
+    /// Present only when the reader gave one with the reaction.
+    public var reason: String?
 
-    public init(reaction: String? = nil) {
+    public init(reaction: String? = nil, reason: String? = nil) {
         self.reaction = reaction
+        self.reason = reason
     }
 
     private enum CodingKeys: String, CodingKey {
         case reaction = "reaction"
+        case reason = "reason"
     }
 }
 
@@ -25974,15 +26787,19 @@ public struct RunFeedbackOne: Codable, Hashable, Sendable {
 public struct RunFeedbackSet: Codable, Hashable, Sendable {
     public var reaction: RunFeedbackListFeedbackReaction
     public var messageId: String
+    /// Echoed only when the caller sent one.
+    public var reason: String?
 
-    public init(reaction: RunFeedbackListFeedbackReaction, messageId: String) {
+    public init(reaction: RunFeedbackListFeedbackReaction, messageId: String, reason: String? = nil) {
         self.reaction = reaction
         self.messageId = messageId
+        self.reason = reason
     }
 
     private enum CodingKeys: String, CodingKey {
         case reaction = "reaction"
         case messageId = "message_id"
+        case reason = "reason"
     }
 }
 
@@ -27749,15 +28566,21 @@ public struct SetRootAttestationResponse: Codable, Hashable, Sendable {
 public struct SetRunFeedbackRequest: Codable, Hashable, Sendable {
     public var messageId: String
     public var reaction: RunFeedbackListFeedbackReaction
+    /// Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+    /// only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+    /// dropped by the server until 2026-09-13; it is stored and echoed now.
+    public var reason: String?
 
-    public init(messageId: String, reaction: RunFeedbackListFeedbackReaction) {
+    public init(messageId: String, reaction: RunFeedbackListFeedbackReaction, reason: String? = nil) {
         self.messageId = messageId
         self.reaction = reaction
+        self.reason = reason
     }
 
     private enum CodingKeys: String, CodingKey {
         case messageId = "message_id"
         case reaction = "reaction"
+        case reason = "reason"
     }
 }
 
@@ -27796,6 +28619,28 @@ public struct SetScheduleRequest: Codable, Hashable, Sendable {
         case maxConcurrentScheduled = "max_concurrent_scheduled"
         case autonomousMode = "autonomous_mode"
         case reflectionPrompt = "reflection_prompt"
+    }
+}
+
+/// `SetSessionRunFeedbackRequest` model.
+public struct SetSessionRunFeedbackRequest: Codable, Hashable, Sendable {
+    public var messageId: String
+    public var reaction: RunFeedbackListFeedbackReaction
+    /// Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+    /// only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+    /// dropped by the server until 2026-09-13; it is stored and echoed now.
+    public var reason: String?
+
+    public init(messageId: String, reaction: RunFeedbackListFeedbackReaction, reason: String? = nil) {
+        self.messageId = messageId
+        self.reaction = reaction
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case messageId = "message_id"
+        case reaction = "reaction"
+        case reason = "reason"
     }
 }
 
@@ -28177,19 +29022,63 @@ public struct SpecPackageProgramPage: Codable, Hashable, Sendable {
 /// than failing the call.
 public struct SpecToolCatalog: Codable, Hashable, Sendable {
     public var agentId: String
+    /// The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
+    /// only `drawing`. Always present: empty means no drawing canvas, absence means an older
+    /// server, and a client must not confuse the two.
+    public var drawings: [SpecToolCatalogDrawing]
     /// Tool name → the SPEC that owns it and the view to render its output with. Integration
     /// aliases map onto their base tool's view.
     public var tools: [String: Value2]
 
-    public init(agentId: String, tools: [String: Value2]) {
+    public init(agentId: String, drawings: [SpecToolCatalogDrawing], tools: [String: Value2]) {
         self.agentId = agentId
+        self.drawings = drawings
         self.tools = tools
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
+        case drawings = "drawings"
         case tools = "tools"
     }
+}
+
+/// `SpecToolCatalogDrawing` model.
+public struct SpecToolCatalogDrawing: Codable, Hashable, Sendable {
+    public var specId: String
+    public var canvas: SpecToolCatalogDrawingCanvas
+
+    public init(specId: String, canvas: SpecToolCatalogDrawingCanvas) {
+        self.specId = specId
+        self.canvas = canvas
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case specId = "spec_id"
+        case canvas = "canvas"
+    }
+}
+
+/// `SpecToolCatalogDrawingCanvas` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct SpecToolCatalogDrawingCanvas: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let drawing = SpecToolCatalogDrawingCanvas(rawValue: "drawing")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [SpecToolCatalogDrawingCanvas] = [.drawing]
 }
 
 /// `StartMissionRequest` model.

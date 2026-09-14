@@ -210,7 +210,7 @@ begin
 
          begin
             declare
-               Discarded : constant UARP.JSON_Support.JSON_Value :=
+               Discarded : constant UARP.Models.Delete_Agent_Response :=
                  UARP.API.Agents.Delete (Client, +Created_Id);
             begin
                pragma Unreferenced (Discarded);

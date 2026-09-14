@@ -596,39 +596,39 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return A2A_Task_Status is
       (To_A2A_Task_Status (UARP.Types."+" (JS.As_Text (Node))));
 
-   function To_A2A_Task_Message_Role (Value : String) return A2A_Task_Message_Role is
+   function To_Drawing_Journal_Entry_Author_Kind (Value : String) return Drawing_Journal_Entry_Author_Kind is
    begin
       if Value = "user" then
-         return (Kind => A2A_Task_Message_Role_User, Raw => UARP.Types."+" (Value));
+         return (Kind => Drawing_Journal_Entry_Author_Kind_User, Raw => UARP.Types."+" (Value));
       elsif Value = "agent" then
-         return (Kind => A2A_Task_Message_Role_Agent, Raw => UARP.Types."+" (Value));
+         return (Kind => Drawing_Journal_Entry_Author_Kind_Agent, Raw => UARP.Types."+" (Value));
       else
-         return (Kind => A2A_Task_Message_Role_Unrecognized, Raw => UARP.Types."+" (Value));
+         return (Kind => Drawing_Journal_Entry_Author_Kind_Unrecognized, Raw => UARP.Types."+" (Value));
       end if;
-   end To_A2A_Task_Message_Role;
+   end To_Drawing_Journal_Entry_Author_Kind;
 
-   function To_A2A_Task_Message_Role (Kind : A2A_Task_Message_Role_Kind) return A2A_Task_Message_Role is
+   function To_Drawing_Journal_Entry_Author_Kind (Kind : Drawing_Journal_Entry_Author_Kind_Kind) return Drawing_Journal_Entry_Author_Kind is
    begin
       case Kind is
-         when A2A_Task_Message_Role_User =>
+         when Drawing_Journal_Entry_Author_Kind_User =>
             return (Kind => Kind, Raw => UARP.Types."+" ("user"));
-         when A2A_Task_Message_Role_Agent =>
+         when Drawing_Journal_Entry_Author_Kind_Agent =>
             return (Kind => Kind, Raw => UARP.Types."+" ("agent"));
-         when A2A_Task_Message_Role_Unrecognized =>
+         when Drawing_Journal_Entry_Author_Kind_Unrecognized =>
             return (Kind => Kind, Raw => UARP.Types.Empty_Text);
       end case;
-   end To_A2A_Task_Message_Role;
+   end To_Drawing_Journal_Entry_Author_Kind;
 
-   function Image (Model : A2A_Task_Message_Role) return String is
+   function Image (Model : Drawing_Journal_Entry_Author_Kind) return String is
       (if UARP.Types.SU.Length (Model.Raw) > 0
          then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_A2A_Task_Message_Role (Model.Kind).Raw));
+         else UARP.Types.SU.To_String (To_Drawing_Journal_Entry_Author_Kind (Model.Kind).Raw));
 
-   function To_JSON (Model : A2A_Task_Message_Role) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Drawing_Journal_Entry_Author_Kind) return UARP.JSON_Support.JSON_Value is
       (JS.JSON.Create (Image (Model)));
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return A2A_Task_Message_Role is
-      (To_A2A_Task_Message_Role (UARP.Types."+" (JS.As_Text (Node))));
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry_Author_Kind is
+      (To_Drawing_Journal_Entry_Author_Kind (UARP.Types."+" (JS.As_Text (Node))));
 
    function To_JSON (Model : A2A_Task_Message) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
@@ -10448,6 +10448,711 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Drawing_Op_Type (Value : String) return Drawing_Op_Type is
+   begin
+      if Value = "stroke" then
+         return (Kind => Drawing_Op_Type_Stroke, Raw => UARP.Types."+" (Value));
+      elsif Value = "erase" then
+         return (Kind => Drawing_Op_Type_Erase, Raw => UARP.Types."+" (Value));
+      elsif Value = "fill" then
+         return (Kind => Drawing_Op_Type_Fill, Raw => UARP.Types."+" (Value));
+      elsif Value = "place_image" then
+         return (Kind => Drawing_Op_Type_Place_Image, Raw => UARP.Types."+" (Value));
+      elsif Value = "layer_add" then
+         return (Kind => Drawing_Op_Type_Layer_Add, Raw => UARP.Types."+" (Value));
+      elsif Value = "layer_remove" then
+         return (Kind => Drawing_Op_Type_Layer_Remove, Raw => UARP.Types."+" (Value));
+      elsif Value = "layer_update" then
+         return (Kind => Drawing_Op_Type_Layer_Update, Raw => UARP.Types."+" (Value));
+      elsif Value = "layer_reorder" then
+         return (Kind => Drawing_Op_Type_Layer_Reorder, Raw => UARP.Types."+" (Value));
+      elsif Value = "undo" then
+         return (Kind => Drawing_Op_Type_Undo, Raw => UARP.Types."+" (Value));
+      elsif Value = "redo" then
+         return (Kind => Drawing_Op_Type_Redo, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Op_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Op_Type;
+
+   function To_Drawing_Op_Type (Kind : Drawing_Op_Type_Kind) return Drawing_Op_Type is
+   begin
+      case Kind is
+         when Drawing_Op_Type_Stroke =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("stroke"));
+         when Drawing_Op_Type_Erase =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("erase"));
+         when Drawing_Op_Type_Fill =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("fill"));
+         when Drawing_Op_Type_Place_Image =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("place_image"));
+         when Drawing_Op_Type_Layer_Add =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("layer_add"));
+         when Drawing_Op_Type_Layer_Remove =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("layer_remove"));
+         when Drawing_Op_Type_Layer_Update =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("layer_update"));
+         when Drawing_Op_Type_Layer_Reorder =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("layer_reorder"));
+         when Drawing_Op_Type_Undo =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("undo"));
+         when Drawing_Op_Type_Redo =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("redo"));
+         when Drawing_Op_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Op_Type;
+
+   function Image (Model : Drawing_Op_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Op_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Op_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Type is
+      (To_Drawing_Op_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Drawing_Brush) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "preset", JS.JSON.Create (Model.Preset));
+      JS.Set (Result, "size", JS.JSON.Create (Model.Size));
+      JS.Set (Result, "hardness", JS.JSON.Create (Model.Hardness));
+      JS.Set (Result, "opacity", JS.JSON.Create (Model.Opacity));
+      JS.Set (Result, "flow", JS.JSON.Create (Model.Flow));
+      JS.Set (Result, "spacing", JS.JSON.Create (Model.Spacing));
+      if Model.Has_Color then
+         JS.Set (Result, "color", JS.JSON.Create (Model.Color));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Brush is
+      Result : Drawing_Brush;
+   begin
+      if JS.Present (Node, "preset") then
+         Result.Preset := JS.As_Text (JS.Get_Value (Node, "preset"));
+      end if;
+      if JS.Present (Node, "size") then
+         Result.Size := JS.As_Float (JS.Get_Value (Node, "size"));
+      end if;
+      if JS.Present (Node, "hardness") then
+         Result.Hardness := JS.As_Integer (JS.Get_Value (Node, "hardness"));
+      end if;
+      if JS.Present (Node, "opacity") then
+         Result.Opacity := JS.As_Integer (JS.Get_Value (Node, "opacity"));
+      end if;
+      if JS.Present (Node, "flow") then
+         Result.Flow := JS.As_Integer (JS.Get_Value (Node, "flow"));
+      end if;
+      if JS.Present (Node, "spacing") then
+         Result.Spacing := JS.As_Float (JS.Get_Value (Node, "spacing"));
+      end if;
+      if JS.Present (Node, "color") then
+         Result.Has_Color := True;
+         Result.Color := JS.As_Text (JS.Get_Value (Node, "color"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Drawing_Op_Encoding (Value : String) return Drawing_Op_Encoding is
+   begin
+      if Value = "json" then
+         return (Kind => Drawing_Op_Encoding_JSON, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Op_Encoding_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Op_Encoding;
+
+   function To_Drawing_Op_Encoding (Kind : Drawing_Op_Encoding_Kind) return Drawing_Op_Encoding is
+   begin
+      case Kind is
+         when Drawing_Op_Encoding_JSON =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("json"));
+         when Drawing_Op_Encoding_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Op_Encoding;
+
+   function Image (Model : Drawing_Op_Encoding) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Op_Encoding (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Op_Encoding) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Encoding is
+      (To_Drawing_Op_Encoding (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Drawing_Stroke_Point) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "x", JS.JSON.Create (Model.X));
+      JS.Set (Result, "y", JS.JSON.Create (Model.Y));
+      JS.Set (Result, "p", JS.JSON.Create (Model.P));
+      JS.Set (Result, "tx", JS.JSON.Create (Model.Tx));
+      JS.Set (Result, "ty", JS.JSON.Create (Model.Ty));
+      JS.Set (Result, "t", JS.JSON.Create (Model.T));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Stroke_Point is
+      Result : Drawing_Stroke_Point;
+   begin
+      if JS.Present (Node, "x") then
+         Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
+      end if;
+      if JS.Present (Node, "y") then
+         Result.Y := JS.As_Float (JS.Get_Value (Node, "y"));
+      end if;
+      if JS.Present (Node, "p") then
+         Result.P := JS.As_Integer (JS.Get_Value (Node, "p"));
+      end if;
+      if JS.Present (Node, "tx") then
+         Result.Tx := JS.As_Float (JS.Get_Value (Node, "tx"));
+      end if;
+      if JS.Present (Node, "ty") then
+         Result.Ty := JS.As_Float (JS.Get_Value (Node, "ty"));
+      end if;
+      if JS.Present (Node, "t") then
+         Result.T := JS.As_Float (JS.Get_Value (Node, "t"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Drawing_Op_Fit (Value : String) return Drawing_Op_Fit is
+   begin
+      if Value = "stretch" then
+         return (Kind => Drawing_Op_Fit_Stretch, Raw => UARP.Types."+" (Value));
+      elsif Value = "contain" then
+         return (Kind => Drawing_Op_Fit_Contain, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Op_Fit_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Op_Fit;
+
+   function To_Drawing_Op_Fit (Kind : Drawing_Op_Fit_Kind) return Drawing_Op_Fit is
+   begin
+      case Kind is
+         when Drawing_Op_Fit_Stretch =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("stretch"));
+         when Drawing_Op_Fit_Contain =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("contain"));
+         when Drawing_Op_Fit_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Op_Fit;
+
+   function Image (Model : Drawing_Op_Fit) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Op_Fit (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Op_Fit) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Fit is
+      (To_Drawing_Op_Fit (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Drawing_Layer_Blend (Value : String) return Drawing_Layer_Blend is
+   begin
+      if Value = "normal" then
+         return (Kind => Drawing_Layer_Blend_Normal, Raw => UARP.Types."+" (Value));
+      elsif Value = "multiply" then
+         return (Kind => Drawing_Layer_Blend_Multiply, Raw => UARP.Types."+" (Value));
+      elsif Value = "screen" then
+         return (Kind => Drawing_Layer_Blend_Screen, Raw => UARP.Types."+" (Value));
+      elsif Value = "overlay" then
+         return (Kind => Drawing_Layer_Blend_Overlay, Raw => UARP.Types."+" (Value));
+      elsif Value = "darken" then
+         return (Kind => Drawing_Layer_Blend_Darken, Raw => UARP.Types."+" (Value));
+      elsif Value = "lighten" then
+         return (Kind => Drawing_Layer_Blend_Lighten, Raw => UARP.Types."+" (Value));
+      elsif Value = "add" then
+         return (Kind => Drawing_Layer_Blend_Add, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Layer_Blend_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Layer_Blend;
+
+   function To_Drawing_Layer_Blend (Kind : Drawing_Layer_Blend_Kind) return Drawing_Layer_Blend is
+   begin
+      case Kind is
+         when Drawing_Layer_Blend_Normal =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("normal"));
+         when Drawing_Layer_Blend_Multiply =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("multiply"));
+         when Drawing_Layer_Blend_Screen =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("screen"));
+         when Drawing_Layer_Blend_Overlay =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("overlay"));
+         when Drawing_Layer_Blend_Darken =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("darken"));
+         when Drawing_Layer_Blend_Lighten =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lighten"));
+         when Drawing_Layer_Blend_Add =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("add"));
+         when Drawing_Layer_Blend_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Layer_Blend;
+
+   function Image (Model : Drawing_Layer_Blend) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Layer_Blend (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Layer_Blend) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Blend is
+      (To_Drawing_Layer_Blend (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Drawing_Layer_Kind (Value : String) return Drawing_Layer_Kind is
+   begin
+      if Value = "raster" then
+         return (Kind => Drawing_Layer_Kind_Raster, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Layer_Kind_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Layer_Kind;
+
+   function To_Drawing_Layer_Kind (Kind : Drawing_Layer_Kind_Kind) return Drawing_Layer_Kind is
+   begin
+      case Kind is
+         when Drawing_Layer_Kind_Raster =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("raster"));
+         when Drawing_Layer_Kind_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Layer_Kind;
+
+   function Image (Model : Drawing_Layer_Kind) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Layer_Kind (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Layer_Kind) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Kind is
+      (To_Drawing_Layer_Kind (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Drawing_Layer_Source) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "file_id", JS.JSON.Create (Model.File_Id));
+      JS.Set (Result, "tool", JS.JSON.Create (Model.Tool));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Source is
+      Result : Drawing_Layer_Source;
+   begin
+      if JS.Present (Node, "file_id") then
+         Result.File_Id := JS.As_Text (JS.Get_Value (Node, "file_id"));
+      end if;
+      if JS.Present (Node, "tool") then
+         Result.Tool := JS.As_Text (JS.Get_Value (Node, "tool"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Layer) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "layer_id", JS.JSON.Create (Model.Layer_Id));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "opacity", JS.JSON.Create (Model.Opacity));
+      JS.Set (Result, "blend", To_JSON (Model.Blend));
+      JS.Set (Result, "visible", JS.JSON.Create (Model.Visible));
+      JS.Set (Result, "locked", JS.JSON.Create (Model.Locked));
+      JS.Set (Result, "kind", To_JSON (Model.Kind));
+      if Model.Has_Source then
+         JS.Set (Result, "source", To_JSON (Model.Source));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer is
+      Result : Drawing_Layer;
+   begin
+      if JS.Present (Node, "layer_id") then
+         Result.Layer_Id := JS.As_Text (JS.Get_Value (Node, "layer_id"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "opacity") then
+         Result.Opacity := JS.As_Integer (JS.Get_Value (Node, "opacity"));
+      end if;
+      if JS.Present (Node, "blend") then
+         Result.Blend := From_JSON (JS.Get_Value (Node, "blend"));
+      end if;
+      if JS.Present (Node, "visible") then
+         Result.Visible := JS.As_Boolean (JS.Get_Value (Node, "visible"));
+      end if;
+      if JS.Present (Node, "locked") then
+         Result.Locked := JS.As_Boolean (JS.Get_Value (Node, "locked"));
+      end if;
+      if JS.Present (Node, "kind") then
+         Result.Kind := From_JSON (JS.Get_Value (Node, "kind"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := From_JSON (JS.Get_Value (Node, "source"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Op_Patch) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Name then
+         JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      end if;
+      if Model.Has_Opacity then
+         JS.Set (Result, "opacity", JS.JSON.Create (Model.Opacity));
+      end if;
+      if Model.Has_Blend then
+         JS.Set (Result, "blend", To_JSON (Model.Blend));
+      end if;
+      if Model.Has_Visible then
+         JS.Set (Result, "visible", JS.JSON.Create (Model.Visible));
+      end if;
+      if Model.Has_Locked then
+         JS.Set (Result, "locked", JS.JSON.Create (Model.Locked));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Patch is
+      Result : Drawing_Op_Patch;
+   begin
+      if JS.Present (Node, "name") then
+         Result.Has_Name := True;
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "opacity") then
+         Result.Has_Opacity := True;
+         Result.Opacity := JS.As_Integer (JS.Get_Value (Node, "opacity"));
+      end if;
+      if JS.Present (Node, "blend") then
+         Result.Has_Blend := True;
+         Result.Blend := From_JSON (JS.Get_Value (Node, "blend"));
+      end if;
+      if JS.Present (Node, "visible") then
+         Result.Has_Visible := True;
+         Result.Visible := JS.As_Boolean (JS.Get_Value (Node, "visible"));
+      end if;
+      if JS.Present (Node, "locked") then
+         Result.Has_Locked := True;
+         Result.Locked := JS.As_Boolean (JS.Get_Value (Node, "locked"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Op) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      if Model.Has_Layer_Id then
+         JS.Set (Result, "layer_id", JS.JSON.Create (Model.Layer_Id));
+      end if;
+      if Model.Has_Brush then
+         JS.Set (Result, "brush", To_JSON (Model.Brush));
+      end if;
+      if Model.Has_Encoding then
+         JS.Set (Result, "encoding", To_JSON (Model.Encoding));
+      end if;
+      if Model.Has_Points then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Points loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "points", Items);
+         end;
+      end if;
+      if Model.Has_Stroke_Id then
+         JS.Set (Result, "stroke_id", JS.JSON.Create (Model.Stroke_Id));
+      end if;
+      if Model.Has_Part then
+         JS.Set (Result, "part", JS.JSON.Create (Model.Part));
+      end if;
+      if Model.Has_Continues then
+         JS.Set (Result, "continues", JS.JSON.Create (Model.Continues));
+      end if;
+      if Model.Has_X then
+         JS.Set (Result, "x", JS.JSON.Create (Model.X));
+      end if;
+      if Model.Has_Y then
+         JS.Set (Result, "y", JS.JSON.Create (Model.Y));
+      end if;
+      if Model.Has_W then
+         JS.Set (Result, "w", JS.JSON.Create (Model.W));
+      end if;
+      if Model.Has_H then
+         JS.Set (Result, "h", JS.JSON.Create (Model.H));
+      end if;
+      if Model.Has_Color then
+         JS.Set (Result, "color", JS.JSON.Create (Model.Color));
+      end if;
+      if Model.Has_Tolerance then
+         JS.Set (Result, "tolerance", JS.JSON.Create (Model.Tolerance));
+      end if;
+      if Model.Has_Contiguous then
+         JS.Set (Result, "contiguous", JS.JSON.Create (Model.Contiguous));
+      end if;
+      if Model.Has_File_Id then
+         JS.Set (Result, "file_id", JS.JSON.Create (Model.File_Id));
+      end if;
+      if Model.Has_Fit then
+         JS.Set (Result, "fit", To_JSON (Model.Fit));
+      end if;
+      if Model.Has_Layer then
+         JS.Set (Result, "layer", To_JSON (Model.Layer));
+      end if;
+      if Model.Has_Index then
+         JS.Set (Result, "index", JS.JSON.Create (Model.Index));
+      end if;
+      if Model.Has_Patch then
+         JS.Set (Result, "patch", To_JSON (Model.Patch));
+      end if;
+      if Model.Has_Order then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Order loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "order", Items);
+         end;
+      end if;
+      if Model.Has_Undo_Of then
+         JS.Set (Result, "undo_of", JS.JSON.Create (Model.Undo_Of));
+      end if;
+      if Model.Has_Redo_Of then
+         JS.Set (Result, "redo_of", JS.JSON.Create (Model.Redo_Of));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op is
+      Result : Drawing_Op;
+   begin
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "layer_id") then
+         Result.Has_Layer_Id := True;
+         Result.Layer_Id := JS.As_Text (JS.Get_Value (Node, "layer_id"));
+      end if;
+      if JS.Present (Node, "brush") then
+         Result.Has_Brush := True;
+         Result.Brush := From_JSON (JS.Get_Value (Node, "brush"));
+      end if;
+      if JS.Present (Node, "encoding") then
+         Result.Has_Encoding := True;
+         Result.Encoding := From_JSON (JS.Get_Value (Node, "encoding"));
+      end if;
+      if JS.Present (Node, "points") then
+         Result.Has_Points := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "points");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Points.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "stroke_id") then
+         Result.Has_Stroke_Id := True;
+         Result.Stroke_Id := JS.As_Text (JS.Get_Value (Node, "stroke_id"));
+      end if;
+      if JS.Present (Node, "part") then
+         Result.Has_Part := True;
+         Result.Part := JS.As_Integer (JS.Get_Value (Node, "part"));
+      end if;
+      if JS.Present (Node, "continues") then
+         Result.Has_Continues := True;
+         Result.Continues := JS.As_Boolean (JS.Get_Value (Node, "continues"));
+      end if;
+      if JS.Present (Node, "x") then
+         Result.Has_X := True;
+         Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
+      end if;
+      if JS.Present (Node, "y") then
+         Result.Has_Y := True;
+         Result.Y := JS.As_Float (JS.Get_Value (Node, "y"));
+      end if;
+      if JS.Present (Node, "w") then
+         Result.Has_W := True;
+         Result.W := JS.As_Integer (JS.Get_Value (Node, "w"));
+      end if;
+      if JS.Present (Node, "h") then
+         Result.Has_H := True;
+         Result.H := JS.As_Integer (JS.Get_Value (Node, "h"));
+      end if;
+      if JS.Present (Node, "color") then
+         Result.Has_Color := True;
+         Result.Color := JS.As_Text (JS.Get_Value (Node, "color"));
+      end if;
+      if JS.Present (Node, "tolerance") then
+         Result.Has_Tolerance := True;
+         Result.Tolerance := JS.As_Integer (JS.Get_Value (Node, "tolerance"));
+      end if;
+      if JS.Present (Node, "contiguous") then
+         Result.Has_Contiguous := True;
+         Result.Contiguous := JS.As_Boolean (JS.Get_Value (Node, "contiguous"));
+      end if;
+      if JS.Present (Node, "file_id") then
+         Result.Has_File_Id := True;
+         Result.File_Id := JS.As_Text (JS.Get_Value (Node, "file_id"));
+      end if;
+      if JS.Present (Node, "fit") then
+         Result.Has_Fit := True;
+         Result.Fit := From_JSON (JS.Get_Value (Node, "fit"));
+      end if;
+      if JS.Present (Node, "layer") then
+         Result.Has_Layer := True;
+         Result.Layer := From_JSON (JS.Get_Value (Node, "layer"));
+      end if;
+      if JS.Present (Node, "index") then
+         Result.Has_Index := True;
+         Result.Index := JS.As_Integer (JS.Get_Value (Node, "index"));
+      end if;
+      if JS.Present (Node, "patch") then
+         Result.Has_Patch := True;
+         Result.Patch := From_JSON (JS.Get_Value (Node, "patch"));
+      end if;
+      if JS.Present (Node, "order") then
+         Result.Has_Order := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "order");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Order.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "undo_of") then
+         Result.Has_Undo_Of := True;
+         Result.Undo_Of := JS.As_Integer (JS.Get_Value (Node, "undo_of"));
+      end if;
+      if JS.Present (Node, "redo_of") then
+         Result.Has_Redo_Of := True;
+         Result.Redo_Of := JS.As_Integer (JS.Get_Value (Node, "redo_of"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Append_Drawing_Ops_Request_Op) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "client_op_id", JS.JSON.Create (Model.Client_Op_Id));
+      JS.Set (Result, "op", To_JSON (Model.Op));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Request_Op is
+      Result : Append_Drawing_Ops_Request_Op;
+   begin
+      if JS.Present (Node, "client_op_id") then
+         Result.Client_Op_Id := JS.As_Text (JS.Get_Value (Node, "client_op_id"));
+      end if;
+      if JS.Present (Node, "op") then
+         Result.Op := From_JSON (JS.Get_Value (Node, "op"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Append_Drawing_Ops_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Ops loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "ops", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Request is
+      Result : Append_Drawing_Ops_Request;
+   begin
+      if JS.Present (Node, "ops") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "ops");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Ops.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Append_Drawing_Ops_Response_Item) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "client_op_id", JS.JSON.Create (Model.Client_Op_Id));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Response_Item is
+      Result : Append_Drawing_Ops_Response_Item;
+   begin
+      if JS.Present (Node, "client_op_id") then
+         Result.Client_Op_Id := JS.As_Text (JS.Get_Value (Node, "client_op_id"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Append_Drawing_Ops_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Response is
+      Result : Append_Drawing_Ops_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Apple_Native_Auth_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -16675,6 +17380,182 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Drawing_Selection_Shape_Kind (Value : String) return Drawing_Selection_Shape_Kind is
+   begin
+      if Value = "rect" then
+         return (Kind => Drawing_Selection_Shape_Kind_Rect, Raw => UARP.Types."+" (Value));
+      elsif Value = "ellipse" then
+         return (Kind => Drawing_Selection_Shape_Kind_Ellipse, Raw => UARP.Types."+" (Value));
+      elsif Value = "lasso" then
+         return (Kind => Drawing_Selection_Shape_Kind_Lasso, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Drawing_Selection_Shape_Kind_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Drawing_Selection_Shape_Kind;
+
+   function To_Drawing_Selection_Shape_Kind (Kind : Drawing_Selection_Shape_Kind_Kind) return Drawing_Selection_Shape_Kind is
+   begin
+      case Kind is
+         when Drawing_Selection_Shape_Kind_Rect =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("rect"));
+         when Drawing_Selection_Shape_Kind_Ellipse =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ellipse"));
+         when Drawing_Selection_Shape_Kind_Lasso =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lasso"));
+         when Drawing_Selection_Shape_Kind_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Drawing_Selection_Shape_Kind;
+
+   function Image (Model : Drawing_Selection_Shape_Kind) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Drawing_Selection_Shape_Kind (Model.Kind).Raw));
+
+   function To_JSON (Model : Drawing_Selection_Shape_Kind) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape_Kind is
+      (To_Drawing_Selection_Shape_Kind (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Drawing_Selection_Shape_Point) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "x", JS.JSON.Create (Model.X));
+      JS.Set (Result, "y", JS.JSON.Create (Model.Y));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape_Point is
+      Result : Drawing_Selection_Shape_Point;
+   begin
+      if JS.Present (Node, "x") then
+         Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
+      end if;
+      if JS.Present (Node, "y") then
+         Result.Y := JS.As_Float (JS.Get_Value (Node, "y"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Selection_Shape) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "kind", To_JSON (Model.Kind));
+      if Model.Has_X then
+         JS.Set (Result, "x", JS.JSON.Create (Model.X));
+      end if;
+      if Model.Has_Y then
+         JS.Set (Result, "y", JS.JSON.Create (Model.Y));
+      end if;
+      if Model.Has_W then
+         JS.Set (Result, "w", JS.JSON.Create (Model.W));
+      end if;
+      if Model.Has_H then
+         JS.Set (Result, "h", JS.JSON.Create (Model.H));
+      end if;
+      if Model.Has_Cx then
+         JS.Set (Result, "cx", JS.JSON.Create (Model.Cx));
+      end if;
+      if Model.Has_Cy then
+         JS.Set (Result, "cy", JS.JSON.Create (Model.Cy));
+      end if;
+      if Model.Has_Rx then
+         JS.Set (Result, "rx", JS.JSON.Create (Model.Rx));
+      end if;
+      if Model.Has_Ry then
+         JS.Set (Result, "ry", JS.JSON.Create (Model.Ry));
+      end if;
+      if Model.Has_Points then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Points loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "points", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape is
+      Result : Drawing_Selection_Shape;
+   begin
+      if JS.Present (Node, "kind") then
+         Result.Kind := From_JSON (JS.Get_Value (Node, "kind"));
+      end if;
+      if JS.Present (Node, "x") then
+         Result.Has_X := True;
+         Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
+      end if;
+      if JS.Present (Node, "y") then
+         Result.Has_Y := True;
+         Result.Y := JS.As_Float (JS.Get_Value (Node, "y"));
+      end if;
+      if JS.Present (Node, "w") then
+         Result.Has_W := True;
+         Result.W := JS.As_Float (JS.Get_Value (Node, "w"));
+      end if;
+      if JS.Present (Node, "h") then
+         Result.Has_H := True;
+         Result.H := JS.As_Float (JS.Get_Value (Node, "h"));
+      end if;
+      if JS.Present (Node, "cx") then
+         Result.Has_Cx := True;
+         Result.Cx := JS.As_Float (JS.Get_Value (Node, "cx"));
+      end if;
+      if JS.Present (Node, "cy") then
+         Result.Has_Cy := True;
+         Result.Cy := JS.As_Float (JS.Get_Value (Node, "cy"));
+      end if;
+      if JS.Present (Node, "rx") then
+         Result.Has_Rx := True;
+         Result.Rx := JS.As_Float (JS.Get_Value (Node, "rx"));
+      end if;
+      if JS.Present (Node, "ry") then
+         Result.Has_Ry := True;
+         Result.Ry := JS.As_Float (JS.Get_Value (Node, "ry"));
+      end if;
+      if JS.Present (Node, "points") then
+         Result.Has_Points := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "points");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Points.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Create_Drawing_Mask_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Shape then
+         JS.Set (Result, "shape", To_JSON (Model.Shape));
+      end if;
+      if Model.Has_File_Id then
+         JS.Set (Result, "file_id", JS.JSON.Create (Model.File_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Drawing_Mask_Request is
+      Result : Create_Drawing_Mask_Request;
+   begin
+      if JS.Present (Node, "shape") then
+         Result.Has_Shape := True;
+         Result.Shape := From_JSON (JS.Get_Value (Node, "shape"));
+      end if;
+      if JS.Present (Node, "file_id") then
+         Result.Has_File_Id := True;
+         Result.File_Id := JS.As_Text (JS.Get_Value (Node, "file_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_Created_Task_Item_Status (Value : String) return Created_Task_Item_Status is
    begin
       if Value = "pending" then
@@ -18147,6 +19028,47 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Create_Session_Drawing_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "width", JS.JSON.Create (Model.Width));
+      JS.Set (Result, "height", JS.JSON.Create (Model.Height));
+      if Model.Has_Background then
+         JS.Set (Result, "background", JS.JSON.Create (Model.Background));
+      end if;
+      if Model.Has_Dpi then
+         JS.Set (Result, "dpi", JS.JSON.Create (Model.Dpi));
+      end if;
+      if Model.Has_Name then
+         JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Session_Drawing_Request is
+      Result : Create_Session_Drawing_Request;
+   begin
+      if JS.Present (Node, "width") then
+         Result.Width := JS.As_Integer (JS.Get_Value (Node, "width"));
+      end if;
+      if JS.Present (Node, "height") then
+         Result.Height := JS.As_Integer (JS.Get_Value (Node, "height"));
+      end if;
+      if JS.Present (Node, "background") then
+         Result.Has_Background := True;
+         Result.Background := JS.As_Text (JS.Get_Value (Node, "background"));
+      end if;
+      if JS.Present (Node, "dpi") then
+         Result.Has_Dpi := True;
+         Result.Dpi := JS.As_Integer (JS.Get_Value (Node, "dpi"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Has_Name := True;
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Create_Session_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -19255,9 +20177,6 @@ package body UARP.Models is
       if Model.Has_Role then
          JS.Set (Result, "role", JS.JSON.Create (Model.Role));
       end if;
-      if Model.Has_Secret then
-         JS.Set (Result, "secret", JS.JSON.Create (Model.Secret));
-      end if;
       if Model.Has_Status then
          JS.Set (Result, "status", JS.JSON.Create (Model.Status));
       end if;
@@ -19293,10 +20212,6 @@ package body UARP.Models is
       if JS.Present (Node, "role") then
          Result.Has_Role := True;
          Result.Role := JS.As_Text (JS.Get_Value (Node, "role"));
-      end if;
-      if JS.Present (Node, "secret") then
-         Result.Has_Secret := True;
-         Result.Secret := JS.As_Text (JS.Get_Value (Node, "secret"));
       end if;
       if JS.Present (Node, "status") then
          Result.Has_Status := True;
@@ -19533,6 +20448,34 @@ package body UARP.Models is
       if JS.Present (Node, "success") then
          Result.Has_Success := True;
          Result.Success := JS.As_Boolean (JS.Get_Value (Node, "success"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Delete_Drawing_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "deleted", JS.JSON.Create (Model.Deleted));
+      JS.Set (Result, "drawing_id", JS.JSON.Create (Model.Drawing_Id));
+      JS.Set (Result, "ops", JS.JSON.Create (Model.Ops));
+      JS.Set (Result, "masks", JS.JSON.Create (Model.Masks));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Drawing_Response is
+      Result : Delete_Drawing_Response;
+   begin
+      if JS.Present (Node, "deleted") then
+         Result.Deleted := JS.As_Boolean (JS.Get_Value (Node, "deleted"));
+      end if;
+      if JS.Present (Node, "drawing_id") then
+         Result.Drawing_Id := JS.As_Text (JS.Get_Value (Node, "drawing_id"));
+      end if;
+      if JS.Present (Node, "ops") then
+         Result.Ops := JS.As_Integer (JS.Get_Value (Node, "ops"));
+      end if;
+      if JS.Present (Node, "masks") then
+         Result.Masks := JS.As_Integer (JS.Get_Value (Node, "masks"));
       end if;
       return Result;
    end From_JSON;
@@ -19790,6 +20733,34 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "code") then
          Result.Code := JS.As_Text (JS.Get_Value (Node, "code"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Delete_Session_Branch_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "deleted", JS.JSON.Create (Model.Deleted));
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      JS.Set (Result, "branch_id", JS.JSON.Create (Model.Branch_Id));
+      JS.Set (Result, "runs", JS.JSON.Create (Model.Runs));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Session_Branch_Response is
+      Result : Delete_Session_Branch_Response;
+   begin
+      if JS.Present (Node, "deleted") then
+         Result.Deleted := JS.As_Boolean (JS.Get_Value (Node, "deleted"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "branch_id") then
+         Result.Branch_Id := JS.As_Text (JS.Get_Value (Node, "branch_id"));
+      end if;
+      if JS.Present (Node, "runs") then
+         Result.Runs := JS.As_Integer (JS.Get_Value (Node, "runs"));
       end if;
       return Result;
    end From_JSON;
@@ -20552,6 +21523,206 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Drawing) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "drawing_id", JS.JSON.Create (Model.Drawing_Id));
+      JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      JS.Set (Result, "workspace_id", JS.JSON.Create (Model.Workspace_Id));
+      JS.Set (Result, "width", JS.JSON.Create (Model.Width));
+      JS.Set (Result, "height", JS.JSON.Create (Model.Height));
+      JS.Set (Result, "dpi", JS.JSON.Create (Model.Dpi));
+      JS.Set (Result, "background", JS.JSON.Create (Model.Background));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Layers loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "layers", Items);
+      end;
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "snapshot_seq", JS.JSON.Create (Model.Snapshot_Seq));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing is
+      Result : Drawing;
+   begin
+      if JS.Present (Node, "drawing_id") then
+         Result.Drawing_Id := JS.As_Text (JS.Get_Value (Node, "drawing_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "workspace_id") then
+         Result.Workspace_Id := JS.As_Text (JS.Get_Value (Node, "workspace_id"));
+      end if;
+      if JS.Present (Node, "width") then
+         Result.Width := JS.As_Integer (JS.Get_Value (Node, "width"));
+      end if;
+      if JS.Present (Node, "height") then
+         Result.Height := JS.As_Integer (JS.Get_Value (Node, "height"));
+      end if;
+      if JS.Present (Node, "dpi") then
+         Result.Dpi := JS.As_Integer (JS.Get_Value (Node, "dpi"));
+      end if;
+      if JS.Present (Node, "background") then
+         Result.Background := JS.As_Text (JS.Get_Value (Node, "background"));
+      end if;
+      if JS.Present (Node, "layers") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "layers");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Layers.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "snapshot_seq") then
+         Result.Snapshot_Seq := JS.As_Integer (JS.Get_Value (Node, "snapshot_seq"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Journal_Entry_Author) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "kind", To_JSON (Model.Kind));
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      if Model.Has_Run_Id then
+         JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry_Author is
+      Result : Drawing_Journal_Entry_Author;
+   begin
+      if JS.Present (Node, "kind") then
+         Result.Kind := From_JSON (JS.Get_Value (Node, "kind"));
+      end if;
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Has_Run_Id := True;
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Journal_Entry) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "client_op_id", JS.JSON.Create (Model.Client_Op_Id));
+      JS.Set (Result, "author", To_JSON (Model.Author));
+      JS.Set (Result, "at", JS.JSON.Create (Model.At_K));
+      JS.Set (Result, "op", To_JSON (Model.Op));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry is
+      Result : Drawing_Journal_Entry;
+   begin
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "client_op_id") then
+         Result.Client_Op_Id := JS.As_Text (JS.Get_Value (Node, "client_op_id"));
+      end if;
+      if JS.Present (Node, "author") then
+         Result.Author := From_JSON (JS.Get_Value (Node, "author"));
+      end if;
+      if JS.Present (Node, "at") then
+         Result.At_K := JS.As_Text (JS.Get_Value (Node, "at"));
+      end if;
+      if JS.Present (Node, "op") then
+         Result.Op := From_JSON (JS.Get_Value (Node, "op"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Mask_Bbox) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "x", JS.JSON.Create (Model.X));
+      JS.Set (Result, "y", JS.JSON.Create (Model.Y));
+      JS.Set (Result, "w", JS.JSON.Create (Model.W));
+      JS.Set (Result, "h", JS.JSON.Create (Model.H));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Mask_Bbox is
+      Result : Drawing_Mask_Bbox;
+   begin
+      if JS.Present (Node, "x") then
+         Result.X := JS.As_Integer (JS.Get_Value (Node, "x"));
+      end if;
+      if JS.Present (Node, "y") then
+         Result.Y := JS.As_Integer (JS.Get_Value (Node, "y"));
+      end if;
+      if JS.Present (Node, "w") then
+         Result.W := JS.As_Integer (JS.Get_Value (Node, "w"));
+      end if;
+      if JS.Present (Node, "h") then
+         Result.H := JS.As_Integer (JS.Get_Value (Node, "h"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Drawing_Mask) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "mask_id", JS.JSON.Create (Model.Mask_Id));
+      JS.Set (Result, "drawing_id", JS.JSON.Create (Model.Drawing_Id));
+      JS.Set (Result, "width", JS.JSON.Create (Model.Width));
+      JS.Set (Result, "height", JS.JSON.Create (Model.Height));
+      JS.Set (Result, "bbox", To_JSON (Model.Bbox));
+      JS.Set (Result, "file_id", JS.JSON.Create (Model.File_Id));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Mask is
+      Result : Drawing_Mask;
+   begin
+      if JS.Present (Node, "mask_id") then
+         Result.Mask_Id := JS.As_Text (JS.Get_Value (Node, "mask_id"));
+      end if;
+      if JS.Present (Node, "drawing_id") then
+         Result.Drawing_Id := JS.As_Text (JS.Get_Value (Node, "drawing_id"));
+      end if;
+      if JS.Present (Node, "width") then
+         Result.Width := JS.As_Integer (JS.Get_Value (Node, "width"));
+      end if;
+      if JS.Present (Node, "height") then
+         Result.Height := JS.As_Integer (JS.Get_Value (Node, "height"));
+      end if;
+      if JS.Present (Node, "bbox") then
+         Result.Bbox := From_JSON (JS.Get_Value (Node, "bbox"));
+      end if;
+      if JS.Present (Node, "file_id") then
+         Result.File_Id := JS.As_Text (JS.Get_Value (Node, "file_id"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_Egress_Rule_Protocol (Value : String) return Egress_Rule_Protocol is
    begin
       if Value = "https" then
@@ -21125,6 +22296,8 @@ package body UARP.Models is
          return (Kind => Error_Title_Validation_Error, Raw => UARP.Types."+" (Value));
       elsif Value = "Locked" then
          return (Kind => Error_Title_Locked, Raw => UARP.Types."+" (Value));
+      elsif Value = "Precondition Required" then
+         return (Kind => Error_Title_Precondition_Required, Raw => UARP.Types."+" (Value));
       elsif Value = "Too Many Requests" then
          return (Kind => Error_Title_Too_Many_Requests, Raw => UARP.Types."+" (Value));
       elsif Value = "Internal Server Error" then
@@ -21173,6 +22346,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("Validation Error"));
          when Error_Title_Locked =>
             return (Kind => Kind, Raw => UARP.Types."+" ("Locked"));
+         when Error_Title_Precondition_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("Precondition Required"));
          when Error_Title_Too_Many_Requests =>
             return (Kind => Kind, Raw => UARP.Types."+" ("Too Many Requests"));
          when Error_Title_Internal_Server_Error =>
@@ -24986,7 +26161,7 @@ package body UARP.Models is
          Items : JS.JSON_Array := JS.JSON.Empty_Array;
       begin
          for Element of Model.Children loop
-            JS.JSON.Append (Items, To_JSON (Element));
+            JS.JSON.Append (Items, To_JSON (Element.all));
          end loop;
          JS.Set (Result, "children", Items);
       end;
@@ -25004,7 +26179,7 @@ package body UARP.Models is
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "children");
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Children.Append (From_JSON (JS.JSON.Get (Items, Index)));
+               Result.Children.Append (new Objective_Tree'(From_JSON (JS.JSON.Get (Items, Index))));
             end loop;
          end;
       end if;
@@ -25019,7 +26194,7 @@ package body UARP.Models is
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
             for Element of Model.Trees loop
-               JS.JSON.Append (Items, To_JSON (Element));
+               JS.JSON.Append (Items, To_JSON (Element.all));
             end loop;
             JS.Set (Result, "trees", Items);
          end;
@@ -25046,7 +26221,7 @@ package body UARP.Models is
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "trees");
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Trees.Append (From_JSON (JS.JSON.Get (Items, Index)));
+               Result.Trees.Append (new Objective_Tree'(From_JSON (JS.JSON.Get (Items, Index))));
             end loop;
          end;
       end if;
@@ -30718,9 +31893,6 @@ package body UARP.Models is
       if Model.Has_Role then
          JS.Set (Result, "role", JS.JSON.Create (Model.Role));
       end if;
-      if Model.Has_Secret then
-         JS.Set (Result, "secret", JS.JSON.Create (Model.Secret));
-      end if;
       if Model.Has_Status then
          JS.Set (Result, "status", JS.JSON.Create (Model.Status));
       end if;
@@ -30757,10 +31929,6 @@ package body UARP.Models is
       if JS.Present (Node, "role") then
          Result.Has_Role := True;
          Result.Role := JS.As_Text (JS.Get_Value (Node, "role"));
-      end if;
-      if JS.Present (Node, "secret") then
-         Result.Has_Secret := True;
-         Result.Secret := JS.As_Text (JS.Get_Value (Node, "secret"));
       end if;
       if JS.Present (Node, "status") then
          Result.Has_Status := True;
@@ -32143,7 +33311,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "cursor") then
          Result.Has_Cursor := True;
-         Result.Cursor := JS.As_Integer (JS.Get_Value (Node, "cursor"));
+         Result.Cursor := JS.As_Text (JS.Get_Value (Node, "cursor"));
       end if;
       return Result;
    end From_JSON;
@@ -33245,6 +34413,50 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "total") then
          Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Drawing_Ops_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      if Model.Has_Cursor then
+         JS.Set (Result, "cursor", JS.JSON.Create (Model.Cursor));
+      end if;
+      JS.Set (Result, "has_more", JS.JSON.Create (Model.Has_More));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Drawing_Ops_Response is
+      Result : List_Drawing_Ops_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "cursor") then
+         Result.Has_Cursor := True;
+         Result.Cursor := JS.As_Text (JS.Get_Value (Node, "cursor"));
+      end if;
+      if JS.Present (Node, "has_more") then
+         Result.Has_More := JS.As_Boolean (JS.Get_Value (Node, "has_more"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
       end if;
       return Result;
    end From_JSON;
@@ -37454,6 +38666,46 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "total") then
          Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Session_Drawings_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      if Model.Has_Cursor then
+         JS.Set (Result, "cursor", JS.JSON.Create (Model.Cursor));
+      end if;
+      JS.Set (Result, "has_more", JS.JSON.Create (Model.Has_More));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Session_Drawings_Response is
+      Result : List_Session_Drawings_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "cursor") then
+         Result.Has_Cursor := True;
+         Result.Cursor := JS.As_Text (JS.Get_Value (Node, "cursor"));
+      end if;
+      if JS.Present (Node, "has_more") then
+         Result.Has_More := JS.As_Boolean (JS.Get_Value (Node, "has_more"));
       end if;
       return Result;
    end From_JSON;
@@ -46653,6 +47905,48 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Registry_Get_Spec_Metadata_Response_Canvas (Value : String) return Registry_Get_Spec_Metadata_Response_Canvas is
+   begin
+      if Value = "document" then
+         return (Kind => Registry_Get_Spec_Metadata_Response_Canvas_Document, Raw => UARP.Types."+" (Value));
+      elsif Value = "code" then
+         return (Kind => Registry_Get_Spec_Metadata_Response_Canvas_Code, Raw => UARP.Types."+" (Value));
+      elsif Value = "image" then
+         return (Kind => Registry_Get_Spec_Metadata_Response_Canvas_Image, Raw => UARP.Types."+" (Value));
+      elsif Value = "drawing" then
+         return (Kind => Registry_Get_Spec_Metadata_Response_Canvas_Drawing, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Registry_Get_Spec_Metadata_Response_Canvas_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Registry_Get_Spec_Metadata_Response_Canvas;
+
+   function To_Registry_Get_Spec_Metadata_Response_Canvas (Kind : Registry_Get_Spec_Metadata_Response_Canvas_Kind) return Registry_Get_Spec_Metadata_Response_Canvas is
+   begin
+      case Kind is
+         when Registry_Get_Spec_Metadata_Response_Canvas_Document =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("document"));
+         when Registry_Get_Spec_Metadata_Response_Canvas_Code =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("code"));
+         when Registry_Get_Spec_Metadata_Response_Canvas_Image =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("image"));
+         when Registry_Get_Spec_Metadata_Response_Canvas_Drawing =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("drawing"));
+         when Registry_Get_Spec_Metadata_Response_Canvas_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Registry_Get_Spec_Metadata_Response_Canvas;
+
+   function Image (Model : Registry_Get_Spec_Metadata_Response_Canvas) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Registry_Get_Spec_Metadata_Response_Canvas (Model.Kind).Raw));
+
+   function To_JSON (Model : Registry_Get_Spec_Metadata_Response_Canvas) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Get_Spec_Metadata_Response_Canvas is
+      (To_Registry_Get_Spec_Metadata_Response_Canvas (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_JSON (Model : Registry_Get_Spec_Metadata_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -46715,6 +48009,9 @@ package body UARP.Models is
          end loop;
          JS.Set (Result, "capabilities", Items);
       end;
+      if Model.Has_Canvas then
+         JS.Set (Result, "canvas", To_JSON (Model.Canvas));
+      end if;
       if Model.Has_Schema_Version then
          JS.Set (Result, "schema_version", JS.JSON.Create (Model.Schema_Version));
       end if;
@@ -46810,6 +48107,10 @@ package body UARP.Models is
                Result.Capabilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      if JS.Present (Node, "canvas") then
+         Result.Has_Canvas := True;
+         Result.Canvas := From_JSON (JS.Get_Value (Node, "canvas"));
       end if;
       if JS.Present (Node, "schema_version") then
          Result.Has_Schema_Version := True;
@@ -48704,6 +50005,9 @@ package body UARP.Models is
    begin
       JS.Set (Result, "message_id", JS.JSON.Create (Model.Message_Id));
       JS.Set (Result, "reaction", To_JSON (Model.Reaction));
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
       return Result;
    end To_JSON;
 
@@ -48715,6 +50019,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "reaction") then
          Result.Reaction := From_JSON (JS.Get_Value (Node, "reaction"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
       end if;
       return Result;
    end From_JSON;
@@ -48754,6 +50062,9 @@ package body UARP.Models is
       if Model.Has_Reaction then
          JS.Set (Result, "reaction", JS.JSON.Create (Model.Reaction));
       end if;
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
       return Result;
    end To_JSON;
 
@@ -48764,6 +50075,10 @@ package body UARP.Models is
          Result.Has_Reaction := True;
          Result.Reaction := JS.As_Text (JS.Get_Value (Node, "reaction"));
       end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
+      end if;
       return Result;
    end From_JSON;
 
@@ -48772,6 +50087,9 @@ package body UARP.Models is
    begin
       JS.Set (Result, "reaction", To_JSON (Model.Reaction));
       JS.Set (Result, "message_id", JS.JSON.Create (Model.Message_Id));
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
       return Result;
    end To_JSON;
 
@@ -48783,6 +50101,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "message_id") then
          Result.Message_Id := JS.As_Text (JS.Get_Value (Node, "message_id"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
       end if;
       return Result;
    end From_JSON;
@@ -51016,6 +52338,9 @@ package body UARP.Models is
    begin
       JS.Set (Result, "message_id", JS.JSON.Create (Model.Message_Id));
       JS.Set (Result, "reaction", To_JSON (Model.Reaction));
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
       return Result;
    end To_JSON;
 
@@ -51027,6 +52352,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "reaction") then
          Result.Reaction := From_JSON (JS.Get_Value (Node, "reaction"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
       end if;
       return Result;
    end From_JSON;
@@ -51092,6 +52421,33 @@ package body UARP.Models is
       if JS.Present (Node, "reflection_prompt") then
          Result.Has_Reflection_Prompt := True;
          Result.Reflection_Prompt := JS.As_Text (JS.Get_Value (Node, "reflection_prompt"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Set_Session_Run_Feedback_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "message_id", JS.JSON.Create (Model.Message_Id));
+      JS.Set (Result, "reaction", To_JSON (Model.Reaction));
+      if Model.Has_Reason then
+         JS.Set (Result, "reason", JS.JSON.Create (Model.Reason));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Session_Run_Feedback_Request is
+      Result : Set_Session_Run_Feedback_Request;
+   begin
+      if JS.Present (Node, "message_id") then
+         Result.Message_Id := JS.As_Text (JS.Get_Value (Node, "message_id"));
+      end if;
+      if JS.Present (Node, "reaction") then
+         Result.Reaction := From_JSON (JS.Get_Value (Node, "reaction"));
+      end if;
+      if JS.Present (Node, "reason") then
+         Result.Has_Reason := True;
+         Result.Reason := JS.As_Text (JS.Get_Value (Node, "reason"));
       end if;
       return Result;
    end From_JSON;
@@ -51423,6 +52779,56 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Spec_Tool_Catalog_Drawing_Canvas (Value : String) return Spec_Tool_Catalog_Drawing_Canvas is
+   begin
+      if Value = "drawing" then
+         return (Kind => Spec_Tool_Catalog_Drawing_Canvas_Drawing, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Spec_Tool_Catalog_Drawing_Canvas_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Spec_Tool_Catalog_Drawing_Canvas;
+
+   function To_Spec_Tool_Catalog_Drawing_Canvas (Kind : Spec_Tool_Catalog_Drawing_Canvas_Kind) return Spec_Tool_Catalog_Drawing_Canvas is
+   begin
+      case Kind is
+         when Spec_Tool_Catalog_Drawing_Canvas_Drawing =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("drawing"));
+         when Spec_Tool_Catalog_Drawing_Canvas_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Spec_Tool_Catalog_Drawing_Canvas;
+
+   function Image (Model : Spec_Tool_Catalog_Drawing_Canvas) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Spec_Tool_Catalog_Drawing_Canvas (Model.Kind).Raw));
+
+   function To_JSON (Model : Spec_Tool_Catalog_Drawing_Canvas) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Drawing_Canvas is
+      (To_Spec_Tool_Catalog_Drawing_Canvas (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Spec_Tool_Catalog_Drawing) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "spec_id", JS.JSON.Create (Model.Spec_Id));
+      JS.Set (Result, "canvas", To_JSON (Model.Canvas));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Drawing is
+      Result : Spec_Tool_Catalog_Drawing;
+   begin
+      if JS.Present (Node, "spec_id") then
+         Result.Spec_Id := JS.As_Text (JS.Get_Value (Node, "spec_id"));
+      end if;
+      if JS.Present (Node, "canvas") then
+         Result.Canvas := From_JSON (JS.Get_Value (Node, "canvas"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Value2) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -51447,6 +52853,14 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Drawings loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "drawings", Items);
+      end;
       JS.Set (Result, "tools", Model.Tools);
       return Result;
    end To_JSON;
@@ -51456,6 +52870,15 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "agent_id") then
          Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "drawings") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "drawings");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Drawings.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "tools") then
          Result.Tools := JS.Get_Value (Node, "tools");

@@ -77,10 +77,9 @@ package UARP.API.Agents is
       --  with `has_more` and `cursor` while more exist.
       Has_Limit : Boolean := False;
       Limit : UARP.Types.Integer_Value := 0;
-      --  Only versions below this version number - pass the previous page's `cursor`. Ignored without
-      --  `limit`.
+      --  Opaque: pass the previous page's `cursor` back unchanged. Ignored without `limit`.
       Has_Cursor : Boolean := False;
-      Cursor : UARP.Types.Integer_Value := 0;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
       --  `summary` drops `config` from every item (?24 KB per version on production; 53 versions on
       --  one agent ? 2.7 MB with the two keys). `version`, `changelog`, `created_by`, `created_at`
       --  stay.
@@ -375,7 +374,9 @@ package UARP.API.Agents is
    --  List version snapshots for an agent
    --
    --  Returns the ordered version history for an agent. Lazily creates v1 from the current config
-   --  if no versions exist yet.
+   --  if no versions exist yet. Versions are never deleted and there is no DELETE for one: a
+   --  rollback records a NEW version (`changelog` "Rollback to version N"), so the history stays
+   --  complete for the audit.
    --
    --  GET /api/v1/agents/{agentId}/versions
    --

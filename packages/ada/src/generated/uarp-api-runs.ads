@@ -12,6 +12,15 @@ package UARP.API.Runs is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `deleteRunFeedback`.
+   type Delete_Run_Feedback_Params is record
+      --  The message whose reaction is removed. Without it the request is 422 - a reaction goes one
+      --  message at a time.
+      Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Delete_Run_Feedback_Params : constant Delete_Run_Feedback_Params := (others => <>);
+
    --  Query and header parameters for `getRun`.
    type Get_Run_Params is record
       --  Set to `true` to include `changed_files` in the response. Opt-in because this endpoint is
@@ -144,6 +153,24 @@ package UARP.API.Runs is
       Run_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Run_Checkpoint_Response;
+
+   --  Take back a reaction
+   --
+   --  Removes the caller's own reaction on one message. Until 2026-09-13 there was no way back -
+   --  the reaction was required and enumerated, `null` and `""` answered 422 and DELETE answered
+   --  405, so a reader who pressed thumbs-down by mistake had it recorded for ever and the web
+   --  chat hid its own toggle rather than lie about it. Only the row for THIS caller and this
+   --  `message_id` goes; another person's reaction on the same message is untouched. 204 whether
+   --  or not a reaction was there, so a retry is safe.
+   --
+   --  DELETE /api/v1/runs/{runId}/feedback
+   --
+   --  Required scopes: runs:create.
+   procedure Delete_Run_Feedback
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Delete_Run_Feedback_Params := No_Delete_Run_Feedback_Params;
+      Options : Request_Options := UARP.Client.Default_Options);
 
    --  What will this run cost
    --
@@ -347,10 +374,11 @@ package UARP.API.Runs is
    --  One reaction per (message, caller); a second PUT for the same `message_id` replaces the
    --  first. `message_id` is whatever string the client attaches to a message - the platform
    --  stores it verbatim (max 256 chars) and does not check it against the transcript, which today
-   --  carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped.
-   --  There is no way to remove a reaction: `null` and `""` are rejected with 422 and DELETE is
-   --  405 (measured 2026-09-10). `message_id` is stored as sent. The canonical form is the id `GET
-   --  /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply[-N]`,
+   --  carries no message identifier (see `getSessionMessages`). Unknown body fields are dropped;
+   --  `reason` is not one of them since 2026-09-13. `null` and `""` are still rejected with 422;
+   --  to remove a reaction use DELETE on this path with `?message_id=` (added 2026-09-13 - before
+   --  it, there was no way back). `message_id` is stored as sent. The canonical form is the id
+   --  `GET /sessions/{sessionId}/messages` serves for the entry (`{run_id}`, `{run_id}-reply[-N]`,
    --  `{run_id}-user-N`, `{run_id}-tool-N`, `{run_id}-system-N`); any other string is accepted -
    --  older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
    --  them - but cannot be matched back to the transcript, and each such arrival is counted per

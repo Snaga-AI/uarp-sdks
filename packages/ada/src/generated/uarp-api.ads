@@ -14,6 +14,7 @@
 --    UARP.API.Canvas
 --    UARP.API.Companies
 --    UARP.API.Data_Explorer
+--    UARP.API.Drawings
 --    UARP.API.Evaluations
 --    UARP.API.Feed
 --    UARP.API.Feedback

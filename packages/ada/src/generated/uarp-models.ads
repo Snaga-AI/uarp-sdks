@@ -256,28 +256,28 @@ package UARP.Models is
    function To_JSON (Model : A2A_Task_Status) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return A2A_Task_Status;
 
-   --  Values of `A2ATaskMessageRole`.
-   --  A value the API introduces later decodes as A2A_Task_Message_Role_Unrecognized
+   --  Values of `DrawingJournalEntryAuthorKind`.
+   --  A value the API introduces later decodes as Drawing_Journal_Entry_Author_Kind_Unrecognized
    --  with the original text kept in Raw.
-   type A2A_Task_Message_Role_Kind is
-     (A2A_Task_Message_Role_User,
-   A2A_Task_Message_Role_Agent,
-   A2A_Task_Message_Role_Unrecognized);
+   type Drawing_Journal_Entry_Author_Kind_Kind is
+     (Drawing_Journal_Entry_Author_Kind_User,
+   Drawing_Journal_Entry_Author_Kind_Agent,
+   Drawing_Journal_Entry_Author_Kind_Unrecognized);
 
-   type A2A_Task_Message_Role is record
-      Kind : A2A_Task_Message_Role_Kind := A2A_Task_Message_Role_Unrecognized;
+   type Drawing_Journal_Entry_Author_Kind is record
+      Kind : Drawing_Journal_Entry_Author_Kind_Kind := Drawing_Journal_Entry_Author_Kind_Unrecognized;
       Raw  : Text := Empty_Text;
    end record;
 
-   function To_A2A_Task_Message_Role (Value : String) return A2A_Task_Message_Role;
-   function To_A2A_Task_Message_Role (Kind : A2A_Task_Message_Role_Kind) return A2A_Task_Message_Role;
-   function Image (Model : A2A_Task_Message_Role) return String;
-   function To_JSON (Model : A2A_Task_Message_Role) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return A2A_Task_Message_Role;
+   function To_Drawing_Journal_Entry_Author_Kind (Value : String) return Drawing_Journal_Entry_Author_Kind;
+   function To_Drawing_Journal_Entry_Author_Kind (Kind : Drawing_Journal_Entry_Author_Kind_Kind) return Drawing_Journal_Entry_Author_Kind;
+   function Image (Model : Drawing_Journal_Entry_Author_Kind) return String;
+   function To_JSON (Model : Drawing_Journal_Entry_Author_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry_Author_Kind;
 
    --  `A2ATaskMessage` model.
    type A2A_Task_Message is record
-      Role : UARP.Models.A2A_Task_Message_Role;
+      Role : UARP.Models.Drawing_Journal_Entry_Author_Kind;
       Parts : UARP.Models.A2A_Part_Vectors.Vector;
    end record;
 
@@ -4150,6 +4150,295 @@ package UARP.Models is
    package API_Key_Summary_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => API_Key_Summary);
 
+   --  Values of `DrawingOpType`.
+   --  A value the API introduces later decodes as Drawing_Op_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Op_Type_Kind is
+     (Drawing_Op_Type_Stroke,
+   Drawing_Op_Type_Erase,
+   Drawing_Op_Type_Fill,
+   Drawing_Op_Type_Place_Image,
+   Drawing_Op_Type_Layer_Add,
+   Drawing_Op_Type_Layer_Remove,
+   Drawing_Op_Type_Layer_Update,
+   Drawing_Op_Type_Layer_Reorder,
+   Drawing_Op_Type_Undo,
+   Drawing_Op_Type_Redo,
+   Drawing_Op_Type_Unrecognized);
+
+   type Drawing_Op_Type is record
+      Kind : Drawing_Op_Type_Kind := Drawing_Op_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Op_Type (Value : String) return Drawing_Op_Type;
+   function To_Drawing_Op_Type (Kind : Drawing_Op_Type_Kind) return Drawing_Op_Type;
+   function Image (Model : Drawing_Op_Type) return String;
+   function To_JSON (Model : Drawing_Op_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Type;
+
+   --  `DrawingBrush` model.
+   type Drawing_Brush is record
+      Preset : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Diameter in canvas pixels.
+      Size : UARP.Types.Float_Value := 0.0;
+      Hardness : UARP.Types.Integer_Value := 0;
+      Opacity : UARP.Types.Integer_Value := 0;
+      Flow : UARP.Types.Integer_Value := 0;
+      --  Percent of `size` between dabs; the client spaces the points, the renderer stamps every
+      --  point it is given.
+      Spacing : UARP.Types.Float_Value := 0.0;
+      --  Absent on `erase`.
+      Has_Color : Boolean := False;
+      Color : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Drawing_Brush) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Brush;
+
+   --  Values of `DrawingOpEncoding`.
+   --  A value the API introduces later decodes as Drawing_Op_Encoding_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Op_Encoding_Kind is
+     (Drawing_Op_Encoding_JSON,
+   Drawing_Op_Encoding_Unrecognized);
+
+   type Drawing_Op_Encoding is record
+      Kind : Drawing_Op_Encoding_Kind := Drawing_Op_Encoding_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Op_Encoding (Value : String) return Drawing_Op_Encoding;
+   function To_Drawing_Op_Encoding (Kind : Drawing_Op_Encoding_Kind) return Drawing_Op_Encoding;
+   function Image (Model : Drawing_Op_Encoding) return String;
+   function To_JSON (Model : Drawing_Op_Encoding) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Encoding;
+
+   --  `DrawingStrokePoint` model.
+   type Drawing_Stroke_Point is record
+      X : UARP.Types.Float_Value := 0.0;
+      Y : UARP.Types.Float_Value := 0.0;
+      --  Pressure.
+      P : UARP.Types.Integer_Value := 0;
+      --  Tilt.
+      Tx : UARP.Types.Float_Value := 0.0;
+      Ty : UARP.Types.Float_Value := 0.0;
+      --  Milliseconds from the start of the stroke, across every part.
+      T : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Drawing_Stroke_Point) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Stroke_Point;
+
+   package Drawing_Stroke_Point_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Drawing_Stroke_Point);
+
+   --  Values of `DrawingOpFit`.
+   --  A value the API introduces later decodes as Drawing_Op_Fit_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Op_Fit_Kind is
+     (Drawing_Op_Fit_Stretch,
+   Drawing_Op_Fit_Contain,
+   Drawing_Op_Fit_Unrecognized);
+
+   type Drawing_Op_Fit is record
+      Kind : Drawing_Op_Fit_Kind := Drawing_Op_Fit_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Op_Fit (Value : String) return Drawing_Op_Fit;
+   function To_Drawing_Op_Fit (Kind : Drawing_Op_Fit_Kind) return Drawing_Op_Fit;
+   function Image (Model : Drawing_Op_Fit) return String;
+   function To_JSON (Model : Drawing_Op_Fit) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Fit;
+
+   --  Values of `DrawingLayerBlend`.
+   --  A value the API introduces later decodes as Drawing_Layer_Blend_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Layer_Blend_Kind is
+     (Drawing_Layer_Blend_Normal,
+   Drawing_Layer_Blend_Multiply,
+   Drawing_Layer_Blend_Screen,
+   Drawing_Layer_Blend_Overlay,
+   Drawing_Layer_Blend_Darken,
+   Drawing_Layer_Blend_Lighten,
+   Drawing_Layer_Blend_Add,
+   Drawing_Layer_Blend_Unrecognized);
+
+   type Drawing_Layer_Blend is record
+      Kind : Drawing_Layer_Blend_Kind := Drawing_Layer_Blend_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Layer_Blend (Value : String) return Drawing_Layer_Blend;
+   function To_Drawing_Layer_Blend (Kind : Drawing_Layer_Blend_Kind) return Drawing_Layer_Blend;
+   function Image (Model : Drawing_Layer_Blend) return String;
+   function To_JSON (Model : Drawing_Layer_Blend) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Blend;
+
+   --  Values of `DrawingLayerKind`.
+   --  A value the API introduces later decodes as Drawing_Layer_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Layer_Kind_Kind is
+     (Drawing_Layer_Kind_Raster,
+   Drawing_Layer_Kind_Unrecognized);
+
+   type Drawing_Layer_Kind is record
+      Kind : Drawing_Layer_Kind_Kind := Drawing_Layer_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Layer_Kind (Value : String) return Drawing_Layer_Kind;
+   function To_Drawing_Layer_Kind (Kind : Drawing_Layer_Kind_Kind) return Drawing_Layer_Kind;
+   function Image (Model : Drawing_Layer_Kind) return String;
+   function To_JSON (Model : Drawing_Layer_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Kind;
+
+   --  Set when the layer was placed from a generated or uploaded image.
+   type Drawing_Layer_Source is record
+      File_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tool : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Drawing_Layer_Source) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer_Source;
+
+   --  `DrawingLayer` model.
+   type Drawing_Layer is record
+      Layer_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  An integer 0-255, like every channel value in a drawing (docs/DESIGNER-CANVAS.md ?4.4).
+      Opacity : UARP.Types.Integer_Value := 0;
+      Blend : UARP.Models.Drawing_Layer_Blend;
+      Visible : Standard.Boolean := False;
+      Locked : Standard.Boolean := False;
+      Kind : UARP.Models.Drawing_Layer_Kind;
+      --  Set when the layer was placed from a generated or uploaded image.
+      Has_Source : Boolean := False;
+      Source : UARP.Models.Drawing_Layer_Source;
+   end record;
+
+   function To_JSON (Model : Drawing_Layer) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Layer;
+
+   package Drawing_Layer_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Drawing_Layer);
+
+   --  `DrawingOpPatch` model.
+   type Drawing_Op_Patch is record
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Opacity : Boolean := False;
+      Opacity : UARP.Types.Integer_Value := 0;
+      Has_Blend : Boolean := False;
+      Blend : UARP.Models.Drawing_Layer_Blend;
+      Has_Visible : Boolean := False;
+      Visible : Standard.Boolean := False;
+      Has_Locked : Boolean := False;
+      Locked : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Drawing_Op_Patch) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op_Patch;
+
+   --  One journal op (docs/DESIGNER-CANVAS.md ?4.2), discriminated by `type`: stroke, erase, fill,
+   --  place_image, layer_add, layer_remove, layer_update, layer_reorder, undo, redo. A stroke
+   --  longer than 1 024 points is sent in parts that share `stroke_id`, count `part` from 0 and
+   --  carry `continues: true` on every part but the last; `t` runs across the parts. `encoding` is
+   --  required and is `json` in v1.
+   type Drawing_Op is record
+      Type_K : UARP.Models.Drawing_Op_Type;
+      Has_Layer_Id : Boolean := False;
+      Layer_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Brush : Boolean := False;
+      Brush : UARP.Models.Drawing_Brush;
+      Has_Encoding : Boolean := False;
+      Encoding : UARP.Models.Drawing_Op_Encoding;
+      Has_Points : Boolean := False;
+      Points : UARP.Models.Drawing_Stroke_Point_Vectors.Vector;
+      Has_Stroke_Id : Boolean := False;
+      Stroke_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Part : Boolean := False;
+      Part : UARP.Types.Integer_Value := 0;
+      Has_Continues : Boolean := False;
+      Continues : Standard.Boolean := False;
+      Has_X : Boolean := False;
+      X : UARP.Types.Float_Value := 0.0;
+      Has_Y : Boolean := False;
+      Y : UARP.Types.Float_Value := 0.0;
+      Has_W : Boolean := False;
+      W : UARP.Types.Integer_Value := 0;
+      Has_H : Boolean := False;
+      H : UARP.Types.Integer_Value := 0;
+      Has_Color : Boolean := False;
+      Color : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tolerance : Boolean := False;
+      Tolerance : UARP.Types.Integer_Value := 0;
+      Has_Contiguous : Boolean := False;
+      Contiguous : Standard.Boolean := False;
+      Has_File_Id : Boolean := False;
+      File_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Fit : Boolean := False;
+      Fit : UARP.Models.Drawing_Op_Fit;
+      Has_Layer : Boolean := False;
+      Layer : UARP.Models.Drawing_Layer;
+      Has_Index : Boolean := False;
+      Index : UARP.Types.Integer_Value := 0;
+      Has_Patch : Boolean := False;
+      Patch : UARP.Models.Drawing_Op_Patch;
+      Has_Order : Boolean := False;
+      Order : UARP.Types.Text_Vectors.Vector;
+      Has_Undo_Of : Boolean := False;
+      Undo_Of : UARP.Types.Integer_Value := 0;
+      Has_Redo_Of : Boolean := False;
+      Redo_Of : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Drawing_Op) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Op;
+
+   --  `AppendDrawingOpsRequestOp` model.
+   type Append_Drawing_Ops_Request_Op is record
+      Client_Op_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Op : UARP.Models.Drawing_Op;
+   end record;
+
+   function To_JSON (Model : Append_Drawing_Ops_Request_Op) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Request_Op;
+
+   package Append_Drawing_Ops_Request_Op_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Append_Drawing_Ops_Request_Op);
+
+   --  `AppendDrawingOpsRequest` model.
+   type Append_Drawing_Ops_Request is record
+      Ops : UARP.Models.Append_Drawing_Ops_Request_Op_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Append_Drawing_Ops_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Request;
+
+   --  `AppendDrawingOpsResponseItem` model.
+   type Append_Drawing_Ops_Response_Item is record
+      Client_Op_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Seq : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Append_Drawing_Ops_Response_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Response_Item;
+
+   package Append_Drawing_Ops_Response_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Append_Drawing_Ops_Response_Item);
+
+   --  `AppendDrawingOpsResponse` model.
+   type Append_Drawing_Ops_Response is record
+      Items : UARP.Models.Append_Drawing_Ops_Response_Item_Vectors.Vector;
+      --  The drawing's head after the batch.
+      Seq : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Append_Drawing_Ops_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Append_Drawing_Ops_Response;
+
    --  `AppleNativeAuthRequest` model.
    type Apple_Native_Auth_Request is record
       --  Apple-signed JWT from `ASAuthorizationAppleIDCredential.identityToken`.
@@ -6695,6 +6984,77 @@ package UARP.Models is
    function To_JSON (Model : Create_Dataset_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Dataset_Request;
 
+   --  Values of `DrawingSelectionShapeKind`.
+   --  A value the API introduces later decodes as Drawing_Selection_Shape_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Drawing_Selection_Shape_Kind_Kind is
+     (Drawing_Selection_Shape_Kind_Rect,
+   Drawing_Selection_Shape_Kind_Ellipse,
+   Drawing_Selection_Shape_Kind_Lasso,
+   Drawing_Selection_Shape_Kind_Unrecognized);
+
+   type Drawing_Selection_Shape_Kind is record
+      Kind : Drawing_Selection_Shape_Kind_Kind := Drawing_Selection_Shape_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Drawing_Selection_Shape_Kind (Value : String) return Drawing_Selection_Shape_Kind;
+   function To_Drawing_Selection_Shape_Kind (Kind : Drawing_Selection_Shape_Kind_Kind) return Drawing_Selection_Shape_Kind;
+   function Image (Model : Drawing_Selection_Shape_Kind) return String;
+   function To_JSON (Model : Drawing_Selection_Shape_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape_Kind;
+
+   --  `DrawingSelectionShapePoint` model.
+   type Drawing_Selection_Shape_Point is record
+      X : UARP.Types.Float_Value := 0.0;
+      Y : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Drawing_Selection_Shape_Point) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape_Point;
+
+   package Drawing_Selection_Shape_Point_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Drawing_Selection_Shape_Point);
+
+   --  A selection in canvas pixels: `rect` {x, y, w, h}, `ellipse` {cx, cy, rx, ry} or `lasso`
+   --  {points[]}.
+   type Drawing_Selection_Shape is record
+      Kind : UARP.Models.Drawing_Selection_Shape_Kind;
+      Has_X : Boolean := False;
+      X : UARP.Types.Float_Value := 0.0;
+      Has_Y : Boolean := False;
+      Y : UARP.Types.Float_Value := 0.0;
+      Has_W : Boolean := False;
+      W : UARP.Types.Float_Value := 0.0;
+      Has_H : Boolean := False;
+      H : UARP.Types.Float_Value := 0.0;
+      Has_Cx : Boolean := False;
+      Cx : UARP.Types.Float_Value := 0.0;
+      Has_Cy : Boolean := False;
+      Cy : UARP.Types.Float_Value := 0.0;
+      Has_Rx : Boolean := False;
+      Rx : UARP.Types.Float_Value := 0.0;
+      Has_Ry : Boolean := False;
+      Ry : UARP.Types.Float_Value := 0.0;
+      Has_Points : Boolean := False;
+      Points : UARP.Models.Drawing_Selection_Shape_Point_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Drawing_Selection_Shape) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Selection_Shape;
+
+   --  `CreateDrawingMaskRequest` model.
+   type Create_Drawing_Mask_Request is record
+      Has_Shape : Boolean := False;
+      Shape : UARP.Models.Drawing_Selection_Shape;
+      --  An L8 PNG of the drawing's exact size.
+      Has_File_Id : Boolean := False;
+      File_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Create_Drawing_Mask_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Drawing_Mask_Request;
+
    --  Values of `CreatedTaskItemStatus`.
    --  A value the API introduces later decodes as Created_Task_Item_Status_Unrecognized
    --  with the original text kept in Raw.
@@ -7297,6 +7657,23 @@ package UARP.Models is
    function To_JSON (Model : Create_Session_Branch_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Session_Branch_Request;
 
+   --  `CreateSessionDrawingRequest` model.
+   type Create_Session_Drawing_Request is record
+      Width : UARP.Types.Integer_Value := 0;
+      Height : UARP.Types.Integer_Value := 0;
+      --  `#rrggbb` or `transparent`; default `#ffffff`.
+      Has_Background : Boolean := False;
+      Background : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Dpi : Boolean := False;
+      Dpi : UARP.Types.Integer_Value := 0;
+      --  Name of the first layer.
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Create_Session_Drawing_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Session_Drawing_Request;
+
    --  `CreateSessionRequest` model.
    type Create_Session_Request is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7713,7 +8090,10 @@ package UARP.Models is
    function To_JSON (Model : Deadlock_Report) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Deadlock_Report;
 
-   --  `Invite` model.
+   --  An invite as an administrator sees it. The accept token (`secret`) is NOT here: it travels
+   --  in the email link and, for the recipient only, in `GET /me/tenants` `pending_invites`. Until
+   --  2026-09-12 the tenant's list, the 201, resend and revoke echoed it, so `users:read` could
+   --  accept any pending invite of the tenant.
    type Invite is record
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7727,8 +8107,6 @@ package UARP.Models is
       Invited_By : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Role : Boolean := False;
       Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Secret : Boolean := False;
-      Secret : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tenant_Id : Boolean := False;
@@ -7852,6 +8230,18 @@ package UARP.Models is
    function To_JSON (Model : Delete_Data_Explorer_Value_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Data_Explorer_Value_Response;
 
+   --  `DeleteDrawingResponse` model.
+   type Delete_Drawing_Response is record
+      Deleted : Standard.Boolean := False;
+      Drawing_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Journal entries the cascade removed.
+      Ops : UARP.Types.Integer_Value := 0;
+      Masks : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Delete_Drawing_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Drawing_Response;
+
    --  `DeleteGuardrailResponse` model.
    type Delete_Guardrail_Response is record
       Has_Deleted : Boolean := False;
@@ -7959,6 +8349,18 @@ package UARP.Models is
 
    function To_JSON (Model : Delete_Promo_Code_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Promo_Code_Response;
+
+   --  `DeleteSessionBranchResponse` model.
+   type Delete_Session_Branch_Response is record
+      Deleted : Standard.Boolean := False;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Branch_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  How many runs the branch listed and the cascade removed.
+      Runs : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Delete_Session_Branch_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Session_Branch_Response;
 
    --  `DeleteSessionTodoResponse` model.
    type Delete_Session_Todo_Response is record
@@ -8284,6 +8686,85 @@ package UARP.Models is
    function To_JSON (Model : Domain_Dns_Lifecycle) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Domain_Dns_Lifecycle;
 
+   --  A drawing a person and an agent share in real time (docs/DESIGNER-CANVAS.md ?4.1). Pixels
+   --  live in 256?256 tiles behind the journal; this record is the structure.
+   type Drawing is record
+      Drawing_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Workspace_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Width : UARP.Types.Integer_Value := 0;
+      Height : UARP.Types.Integer_Value := 0;
+      Dpi : UARP.Types.Integer_Value := 0;
+      --  `#rrggbb` or `transparent`.
+      Background : UARP.Types.Text := UARP.Types.Empty_Text;
+      Layers : UARP.Models.Drawing_Layer_Vectors.Vector;
+      --  The last journal entry applied to this drawing.
+      Seq : UARP.Types.Integer_Value := 0;
+      --  The seq up to which tiles are materialised; 0 until the first snapshot.
+      Snapshot_Seq : UARP.Types.Integer_Value := 0;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Drawing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing;
+
+   package Drawing_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Drawing);
+
+   --  `DrawingJournalEntryAuthor` model.
+   type Drawing_Journal_Entry_Author is record
+      Kind : UARP.Models.Drawing_Journal_Entry_Author_Kind;
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Run_Id : Boolean := False;
+      Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Drawing_Journal_Entry_Author) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry_Author;
+
+   --  `DrawingJournalEntry` model.
+   type Drawing_Journal_Entry is record
+      Seq : UARP.Types.Integer_Value := 0;
+      Client_Op_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Author : UARP.Models.Drawing_Journal_Entry_Author;
+      At_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Op : UARP.Models.Drawing_Op;
+   end record;
+
+   function To_JSON (Model : Drawing_Journal_Entry) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Journal_Entry;
+
+   package Drawing_Journal_Entry_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Drawing_Journal_Entry);
+
+   --  `DrawingMaskBbox` model.
+   type Drawing_Mask_Bbox is record
+      X : UARP.Types.Integer_Value := 0;
+      Y : UARP.Types.Integer_Value := 0;
+      W : UARP.Types.Integer_Value := 0;
+      H : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Drawing_Mask_Bbox) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Mask_Bbox;
+
+   --  What a person hands the agent (docs/DESIGNER-CANVAS.md ?4.3): the selection as an L8 PNG of
+   --  the drawing's size plus its bounding box.
+   type Drawing_Mask is record
+      Mask_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Drawing_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Width : UARP.Types.Integer_Value := 0;
+      Height : UARP.Types.Integer_Value := 0;
+      Bbox : UARP.Models.Drawing_Mask_Bbox;
+      --  The L8 PNG in the workspace; also served by `.../masks/{maskId}/content`.
+      File_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Drawing_Mask) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Drawing_Mask;
+
    --  Values of `EgressRuleProtocol`.
    --  A value the API introduces later decodes as Egress_Rule_Protocol_Unrecognized
    --  with the original text kept in Raw.
@@ -8530,6 +9011,7 @@ package UARP.Models is
    Error_Title_Unsupported_Media_Type,
    Error_Title_Validation_Error,
    Error_Title_Locked,
+   Error_Title_Precondition_Required,
    Error_Title_Too_Many_Requests,
    Error_Title_Internal_Server_Error,
    Error_Title_Not_Implemented,
@@ -9947,6 +10429,14 @@ package UARP.Models is
    package Objective_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Objective);
 
+   --  ObjectiveTree closes a cycle in the document's type graph. The vector is
+   --  instantiated over an access so the element type is definite while the
+   --  record below is still incomplete; From_JSON allocates each element.
+   type Objective_Tree;
+   type Objective_Tree_Access is access Objective_Tree;
+   package Objective_Tree_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Objective_Tree_Access);
+
    --  agent-teams/objective-tracker.ts ObjectiveTree - recursive.
    type Objective_Tree is record
       Objective : UARP.Models.Objective;
@@ -9955,9 +10445,6 @@ package UARP.Models is
 
    function To_JSON (Model : Objective_Tree) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Objective_Tree;
-
-   package Objective_Tree_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Objective_Tree);
 
    --  `GetCompanyObjectivesResponse` model.
    type Get_Company_Objectives_Response is record
@@ -12142,8 +12629,6 @@ package UARP.Models is
       Invited_By : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Role : Boolean := False;
       Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Secret : Boolean := False;
-      Secret : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Status : Boolean := False;
       Status : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Tenant_Id : Boolean := False;
@@ -12683,11 +13168,12 @@ package UARP.Models is
       --  (/agents, /sessions, /runs, /files answer the same pair).
       Has_Has_More : Boolean := False;
       Has_More : Standard.Boolean := False;
-      --  Present only with `limit` and only while older versions remain: the version number to pass
-      --  as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
-      --  no client had read it.
+      --  Present only with `limit` and only while older versions remain: an opaque string to pass
+      --  back as `cursor` for the next page (every cursor in this document is a string; the generated
+      --  clients' paging helpers rely on it). Typed integer for one hour in #469 - no client had read
+      --  it.
       Has_Cursor : Boolean := False;
-      Cursor : UARP.Types.Integer_Value := 0;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : List_Agent_Versions_Response) return UARP.JSON_Support.JSON_Value;
@@ -13046,6 +13532,18 @@ package UARP.Models is
 
    function To_JSON (Model : List_Datasets_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Datasets_Response;
+
+   --  `ListDrawingOpsResponse` model.
+   type List_Drawing_Ops_Response is record
+      Items : UARP.Models.Drawing_Journal_Entry_Vectors.Vector;
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_More : Standard.Boolean := False;
+      Seq : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Drawing_Ops_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Drawing_Ops_Response;
 
    --  `ListEvalRunsResponse` model.
    type List_Eval_Runs_Response is record
@@ -14569,6 +15067,17 @@ package UARP.Models is
 
    function To_JSON (Model : List_Session_Branches_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Session_Branches_Response;
+
+   --  `ListSessionDrawingsResponse` model.
+   type List_Session_Drawings_Response is record
+      Items : UARP.Models.Drawing_Vectors.Vector;
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_More : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : List_Session_Drawings_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Session_Drawings_Response;
 
    --  Values of `PublicSessionViewStatus`.
    --  A value the API introduces later decodes as Public_Session_View_Status_Unrecognized
@@ -18027,6 +18536,28 @@ package UARP.Models is
    package Registry_Version_Entry_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Registry_Version_Entry);
 
+   --  The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+   --  and unknown the same way - chat.
+   --  A value the API introduces later decodes as Registry_Get_Spec_Metadata_Response_Canvas_Unrecognized
+   --  with the original text kept in Raw.
+   type Registry_Get_Spec_Metadata_Response_Canvas_Kind is
+     (Registry_Get_Spec_Metadata_Response_Canvas_Document,
+   Registry_Get_Spec_Metadata_Response_Canvas_Code,
+   Registry_Get_Spec_Metadata_Response_Canvas_Image,
+   Registry_Get_Spec_Metadata_Response_Canvas_Drawing,
+   Registry_Get_Spec_Metadata_Response_Canvas_Unrecognized);
+
+   type Registry_Get_Spec_Metadata_Response_Canvas is record
+      Kind : Registry_Get_Spec_Metadata_Response_Canvas_Kind := Registry_Get_Spec_Metadata_Response_Canvas_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Registry_Get_Spec_Metadata_Response_Canvas (Value : String) return Registry_Get_Spec_Metadata_Response_Canvas;
+   function To_Registry_Get_Spec_Metadata_Response_Canvas (Kind : Registry_Get_Spec_Metadata_Response_Canvas_Kind) return Registry_Get_Spec_Metadata_Response_Canvas;
+   function Image (Model : Registry_Get_Spec_Metadata_Response_Canvas) return String;
+   function To_JSON (Model : Registry_Get_Spec_Metadata_Response_Canvas) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Registry_Get_Spec_Metadata_Response_Canvas;
+
    --  `RegistryGetSpecMetadataResponse` model.
    type Registry_Get_Spec_Metadata_Response is record
       Scope : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -18050,6 +18581,10 @@ package UARP.Models is
       Tool_Count : UARP.Types.Integer_Value := 0;
       Skill_Count : UARP.Types.Integer_Value := 0;
       Capabilities : UARP.Types.Text_Vectors.Vector;
+      --  The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+      --  and unknown the same way - chat.
+      Has_Canvas : Boolean := False;
+      Canvas : UARP.Models.Registry_Get_Spec_Metadata_Response_Canvas;
       Has_Schema_Version : Boolean := False;
       Schema_Version : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -18844,6 +19379,9 @@ package UARP.Models is
       --  (ConversationEntry.message_id) - the canonical key; any string is stored as sent.
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Reaction : UARP.Models.Run_Feedback_List_Feedback_Reaction;
+      --  Present only when the reader gave one with the reaction.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Run_Feedback_List_Feedback) return UARP.JSON_Support.JSON_Value;
@@ -18866,6 +19404,9 @@ package UARP.Models is
    type Run_Feedback_One is record
       Has_Reaction : Boolean := False;
       Reaction : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Present only when the reader gave one with the reaction.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Run_Feedback_One) return UARP.JSON_Support.JSON_Value;
@@ -18876,6 +19417,9 @@ package UARP.Models is
    type Run_Feedback_Set is record
       Reaction : UARP.Models.Run_Feedback_List_Feedback_Reaction;
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Echoed only when the caller sent one.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Run_Feedback_Set) return UARP.JSON_Support.JSON_Value;
@@ -19774,6 +20318,11 @@ package UARP.Models is
    type Set_Run_Feedback_Request is record
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Reaction : UARP.Models.Run_Feedback_List_Feedback_Reaction;
+      --  Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+      --  only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+      --  dropped by the server until 2026-09-13; it is stored and echoed now.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Set_Run_Feedback_Request) return UARP.JSON_Support.JSON_Value;
@@ -19804,6 +20353,20 @@ package UARP.Models is
 
    function To_JSON (Model : Set_Schedule_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Schedule_Request;
+
+   --  `SetSessionRunFeedbackRequest` model.
+   type Set_Session_Run_Feedback_Request is record
+      Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Reaction : UARP.Models.Run_Feedback_List_Feedback_Reaction;
+      --  Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+      --  only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+      --  dropped by the server until 2026-09-13; it is stored and echoed now.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Set_Session_Run_Feedback_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Session_Run_Feedback_Request;
 
    --  `SetSpawnPolicyResponse` model.
    type Set_Spawn_Policy_Response is record
@@ -19920,6 +20483,36 @@ package UARP.Models is
    function To_JSON (Model : Spawn_Policy_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spawn_Policy_Update;
 
+   --  Values of `SpecToolCatalogDrawingCanvas`.
+   --  A value the API introduces later decodes as Spec_Tool_Catalog_Drawing_Canvas_Unrecognized
+   --  with the original text kept in Raw.
+   type Spec_Tool_Catalog_Drawing_Canvas_Kind is
+     (Spec_Tool_Catalog_Drawing_Canvas_Drawing,
+   Spec_Tool_Catalog_Drawing_Canvas_Unrecognized);
+
+   type Spec_Tool_Catalog_Drawing_Canvas is record
+      Kind : Spec_Tool_Catalog_Drawing_Canvas_Kind := Spec_Tool_Catalog_Drawing_Canvas_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Spec_Tool_Catalog_Drawing_Canvas (Value : String) return Spec_Tool_Catalog_Drawing_Canvas;
+   function To_Spec_Tool_Catalog_Drawing_Canvas (Kind : Spec_Tool_Catalog_Drawing_Canvas_Kind) return Spec_Tool_Catalog_Drawing_Canvas;
+   function Image (Model : Spec_Tool_Catalog_Drawing_Canvas) return String;
+   function To_JSON (Model : Spec_Tool_Catalog_Drawing_Canvas) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Drawing_Canvas;
+
+   --  `SpecToolCatalogDrawing` model.
+   type Spec_Tool_Catalog_Drawing is record
+      Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Canvas : UARP.Models.Spec_Tool_Catalog_Drawing_Canvas;
+   end record;
+
+   function To_JSON (Model : Spec_Tool_Catalog_Drawing) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Drawing;
+
+   package Spec_Tool_Catalog_Drawing_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Spec_Tool_Catalog_Drawing);
+
    --  `Value2` model.
    type Value2 is record
       Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -19935,6 +20528,10 @@ package UARP.Models is
    --  than failing the call.
    type Spec_Tool_Catalog is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md ?5.1) - today
+      --  only `drawing`. Always present: empty means no drawing canvas, absence means an older
+      --  server, and a client must not confuse the two.
+      Drawings : UARP.Models.Spec_Tool_Catalog_Drawing_Vectors.Vector;
       --  Tool name ? the SPEC that owns it and the view to render its output with. Integration
       --  aliases map onto their base tool's view.
       Tools : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;

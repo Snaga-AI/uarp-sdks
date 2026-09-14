@@ -91,6 +91,24 @@ package body UARP.API.Runs is
              Options => Options));
    end Create_Run_Checkpoint;
 
+   procedure Delete_Run_Feedback
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Delete_Run_Feedback_Params := No_Delete_Run_Feedback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "message_id", Params.Message_Id);
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/feedback",
+          Query => Query,
+          Idempotent => True,
+          Options => Options);
+   end Delete_Run_Feedback;
+
    function Estimate_Run_Cost
      (Self : Client_Type;
       Payload : UARP.Models.Estimate_Run_Cost_Request;

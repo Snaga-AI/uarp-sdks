@@ -14,6 +14,7 @@ import { BridgeResource } from './bridge.js';
 import { CanvasResource } from './canvas.js';
 import { CompaniesResource } from './companies.js';
 import { DataExplorerResource } from './data-explorer.js';
+import { DrawingsResource } from './drawings.js';
 import { EvaluationsResource } from './evaluations.js';
 import { FeedResource } from './feed.js';
 import { FeedbackResource } from './feedback.js';
@@ -63,6 +64,7 @@ export * from './bridge.js';
 export * from './canvas.js';
 export * from './companies.js';
 export * from './data-explorer.js';
+export * from './drawings.js';
 export * from './evaluations.js';
 export * from './feed.js';
 export * from './feedback.js';
@@ -155,6 +157,10 @@ export interface Resources {
    * KV data explorer for admin diagnostics
    */
   readonly dataExplorer: DataExplorerResource;
+  /**
+   * Drawings — a canvas a person and an agent share in real time (docs/DESIGNER-CANVAS.md)
+   */
+  readonly drawings: DrawingsResource;
   /**
    * Agent evaluation datasets and runs
    */
@@ -314,6 +320,7 @@ export function createResources(client: Transport): Resources {
     canvas: new CanvasResource(client),
     companies: new CompaniesResource(client),
     dataExplorer: new DataExplorerResource(client),
+    drawings: new DrawingsResource(client),
     evaluations: new EvaluationsResource(client),
     feed: new FeedResource(client),
     feedback: new FeedbackResource(client),

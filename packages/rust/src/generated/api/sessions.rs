@@ -16,6 +16,14 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `deleteSessionRunFeedback`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteSessionRunFeedbackParams {
+    /// The message whose reaction is removed. Without it the request is 422 — a reaction goes one
+    /// message at a time.
+    pub message_id: String,
+}
+
 /// Query and header parameters for `exportSession`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ExportSessionParams {
@@ -120,6 +128,11 @@ impl SessionsApi {
     }
 
     /// Close a session
+    ///
+    /// Deletes the session and everything it owns: its runs, their events and message feedback, the
+    /// share link (and its public lookup), annotations, and its todos with their schedules and
+    /// watchers. Refused with 423 while the tenant is under legal hold. Irreversible — there is no
+    /// restore; `POST /sessions/bulk-delete` runs the same cascade.
     ///
     /// `DELETE /api/v1/sessions/{sessionId}`
     ///
@@ -283,6 +296,57 @@ impl SessionsApi {
                 method: Method::DELETE,
                 path: format!("/api/v1/sessions/{}/annotations/{}", encode_path(session_id), encode_path(annotation_id)),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Delete a branch
+    ///
+    /// Deletes the branch record and everything the runs it lists own: those runs, their events and
+    /// message feedback; the run ids leave the session's `runs` too. Refused with 422 for `main`
+    /// (the session's own timeline, not a branch record), with 409 while the branch is the
+    /// session's active branch (activate another first) or has child branches (delete them first),
+    /// and with 423 while the tenant is under legal hold. Irreversible — there is no restore. Until
+    /// 2026-09-12 branches could only be created, listed and activated, so every probe left one
+    /// behind.
+    ///
+    /// `DELETE /api/v1/sessions/{sessionId}/branches/{branchId}`
+    ///
+    /// Required scopes: `sessions:write`.
+    pub async fn delete_session_branch(&self, session_id: &str, branch_id: &str) -> Result<models::DeleteSessionBranchResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/sessions/{}/branches/{}", encode_path(session_id), encode_path(branch_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Take back a reaction
+    ///
+    /// Removes the caller's own reaction on one message. Until 2026-09-13 there was no way back —
+    /// the reaction was required and enumerated, `null` and `""` answered 422 and DELETE answered
+    /// 405, so a reader who pressed thumbs-down by mistake had it recorded for ever and the web
+    /// chat hid its own toggle rather than lie about it. Only the row for THIS caller and this
+    /// `message_id` goes; another person's reaction on the same message is untouched. 204 whether
+    /// or not a reaction was there, so a retry is safe.
+    ///
+    /// `DELETE /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
+    ///
+    /// Required scopes: `sessions:write`.
+    pub async fn delete_session_run_feedback(&self, session_id: &str, run_id: &str, params: &DeleteSessionRunFeedbackParams) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/sessions/{}/runs/{}/feedback", encode_path(session_id), encode_path(run_id)),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
@@ -584,6 +648,10 @@ impl SessionsApi {
 
     /// Revoke session share link
     ///
+    /// Deletes the share record and its public lookup, so the `/shared/{shareId}` URL stops
+    /// resolving. The session itself is untouched. Irreversible for that link — a new `POST` mints
+    /// a different share id. 204 whether or not a share existed.
+    ///
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
     /// Required scopes: `sessions:write`.
@@ -657,7 +725,7 @@ impl SessionsApi {
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn set_session_run_feedback(&self, session_id: &str, run_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::RunFeedbackSet> {
+    pub async fn set_session_run_feedback(&self, session_id: &str, run_id: &str, body: &models::SetSessionRunFeedbackRequest) -> Result<models::RunFeedbackSet> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -671,6 +739,14 @@ impl SessionsApi {
     }
 
     /// Stream session events (SSE)
+    ///
+    /// Server-Sent Events of the session: `connected`, `run_added`, every run event by type,
+    /// `run_done`, `session_closed`, and — for the session's drawings (docs/DESIGNER-CANVAS.md
+    /// §5.4) — `drawing.created` (data: Drawing) and `drawing.ops` (data: { drawing_id, from_seq,
+    /// to_seq, items: DrawingJournalEntry\[\] }, up to 100 entries a frame). Event ids are
+    /// `\<runId\>:\<seq\>` and `drawing:\<drawingId\>:\<seq\>`; send the last one as
+    /// `Last-Event-ID` to resume. An unknown event name is ignored by clients, which is how new
+    /// ones arrive.
     ///
     /// `GET /api/v1/sessions/{sessionId}/events`
     ///

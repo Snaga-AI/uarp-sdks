@@ -235,6 +235,9 @@ export class MarketplaceResource extends APIResource {
   /**
    * Unpublish a marketplace listing
    *
+   * Changes the listing's state to `archived` and keeps the record; existing subscriptions are
+   * not touched. Only the publishing tenant may do this — another tenant's listing answers 403.
+   *
    * `DELETE /api/v1/marketplace/listings/{listingId}`
    *
    * Required scopes: `marketplace:write`.
@@ -251,6 +254,9 @@ export class MarketplaceResource extends APIResource {
 
   /**
    * Unsubscribe from a listing
+   *
+   * Changes the subscription's state to `cancelled` and keeps the record (it still appears in
+   * the subscriptions list). 204 whether or not a subscription existed.
    *
    * `DELETE /api/v1/marketplace/listings/{listingId}/subscribe`
    *

@@ -326,37 +326,9 @@ public data class A2ATaskArtifact(
  */
 @Serializable
 public data class A2ATaskMessage(
-    public val role: A2ATaskMessageRole,
+    public val role: DrawingJournalEntryAuthorKind,
     public val parts: List<A2APart>,
 )
-
-/**
- * `A2ATaskMessageRole` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = A2ATaskMessageRoleSerializer::class)
-@JvmInline
-public value class A2ATaskMessageRole(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val USER: A2ATaskMessageRole = A2ATaskMessageRole("user")
-        public val AGENT: A2ATaskMessageRole = A2ATaskMessageRole("agent")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<A2ATaskMessageRole> = listOf(USER, AGENT)
-    }
-}
-
-public object A2ATaskMessageRoleSerializer : KSerializer<A2ATaskMessageRole> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.A2ATaskMessageRole", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: A2ATaskMessageRole): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): A2ATaskMessageRole = A2ATaskMessageRole(decoder.decodeString())
-}
 
 /**
  * `A2ATaskStatus` values.
@@ -4252,6 +4224,46 @@ public object APIKeySummaryStatusSerializer : KSerializer<APIKeySummaryStatus> {
 }
 
 /**
+ * `AppendDrawingOpsRequest` model.
+ */
+@Serializable
+public data class AppendDrawingOpsRequest(
+    public val ops: List<AppendDrawingOpsRequestOp>,
+)
+
+/**
+ * `AppendDrawingOpsRequestOp` model.
+ */
+@Serializable
+public data class AppendDrawingOpsRequestOp(
+    @SerialName("client_op_id")
+    public val clientOpId: String,
+    public val op: DrawingOp,
+)
+
+/**
+ * `AppendDrawingOpsResponse` model.
+ */
+@Serializable
+public data class AppendDrawingOpsResponse(
+    public val items: List<AppendDrawingOpsResponseItem>,
+    /**
+     * The drawing's head after the batch.
+     */
+    public val seq: Long,
+)
+
+/**
+ * `AppendDrawingOpsResponseItem` model.
+ */
+@Serializable
+public data class AppendDrawingOpsResponseItem(
+    @SerialName("client_op_id")
+    public val clientOpId: String,
+    public val seq: Long,
+)
+
+/**
  * `AppleNativeAuthRequest` model.
  */
 @Serializable
@@ -6865,6 +6877,19 @@ public data class CreateDatasetRequestCas(
 )
 
 /**
+ * `CreateDrawingMaskRequest` model.
+ */
+@Serializable
+public data class CreateDrawingMaskRequest(
+    public val shape: DrawingSelectionShape? = null,
+    /**
+     * An L8 PNG of the drawing's exact size.
+     */
+    @SerialName("file_id")
+    public val fileId: String? = null,
+)
+
+/**
  * sessions.ts handleCreateTask — a projection, not the Todo record. `parent_task_id` only on a
  * multi-agent fan-out; `due_at` omitted for a backlog task; per item, `agent_id`/`team_id`
  * name the assignee and `run_id`/`team_run_id` appear only when the item was dispatched
@@ -7298,6 +7323,24 @@ public data class CreateSessionBranchRequest(
     public val parentBranchId: String? = null,
     /**
      * Defaults to `branch-<first 8 characters of the branch id>`.
+     */
+    public val name: String? = null,
+)
+
+/**
+ * `CreateSessionDrawingRequest` model.
+ */
+@Serializable
+public data class CreateSessionDrawingRequest(
+    public val width: Long,
+    public val height: Long,
+    /**
+     * `#rrggbb` or `transparent`; default `#ffffff`.
+     */
+    public val background: String? = null,
+    public val dpi: Long? = null,
+    /**
+     * Name of the first layer.
      */
     public val name: String? = null,
 )
@@ -7767,6 +7810,21 @@ public data class DeleteDataExplorerValueResponse(
 )
 
 /**
+ * `DeleteDrawingResponse` model.
+ */
+@Serializable
+public data class DeleteDrawingResponse(
+    public val deleted: Boolean,
+    @SerialName("drawing_id")
+    public val drawingId: String,
+    /**
+     * Journal entries the cascade removed.
+     */
+    public val ops: Long,
+    public val masks: Long,
+)
+
+/**
  * `DeleteGuardrailResponse` model.
  */
 @Serializable
@@ -7876,6 +7934,22 @@ public data class DeletePromoCodeResponse(
      * Upper-cased, which may differ from what was sent.
      */
     public val code: String,
+)
+
+/**
+ * `DeleteSessionBranchResponse` model.
+ */
+@Serializable
+public data class DeleteSessionBranchResponse(
+    public val deleted: Boolean,
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("branch_id")
+    public val branchId: String,
+    /**
+     * How many runs the branch listed and the cascade removed.
+     */
+    public val runs: Long,
 )
 
 /**
@@ -8255,6 +8329,462 @@ public object DomainDnsLifecycleStateSerializer : KSerializer<DomainDnsLifecycle
     override fun serialize(encoder: Encoder, value: DomainDnsLifecycleState): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): DomainDnsLifecycleState = DomainDnsLifecycleState(decoder.decodeString())
 }
+
+/**
+ * A drawing a person and an agent share in real time (docs/DESIGNER-CANVAS.md §4.1). Pixels
+ * live in 256×256 tiles behind the journal; this record is the structure.
+ */
+@Serializable
+public data class Drawing(
+    @SerialName("drawing_id")
+    public val drawingId: String,
+    @SerialName("session_id")
+    public val sessionId: String,
+    @SerialName("workspace_id")
+    public val workspaceId: String,
+    public val width: Long,
+    public val height: Long,
+    public val dpi: Long,
+    /**
+     * `#rrggbb` or `transparent`.
+     */
+    public val background: String,
+    public val layers: List<DrawingLayer>,
+    /**
+     * The last journal entry applied to this drawing.
+     */
+    public val seq: Long,
+    /**
+     * The seq up to which tiles are materialised; 0 until the first snapshot.
+     */
+    @SerialName("snapshot_seq")
+    public val snapshotSeq: Long,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+)
+
+/**
+ * `DrawingBrush` model.
+ */
+@Serializable
+public data class DrawingBrush(
+    public val preset: String,
+    /**
+     * Diameter in canvas pixels.
+     */
+    public val size: Double,
+    public val hardness: Long,
+    public val opacity: Long,
+    public val flow: Long,
+    /**
+     * Percent of `size` between dabs; the client spaces the points, the renderer stamps every
+     * point it is given.
+     */
+    public val spacing: Double,
+    /**
+     * Absent on `erase`.
+     */
+    public val color: String? = null,
+)
+
+/**
+ * `DrawingJournalEntry` model.
+ */
+@Serializable
+public data class DrawingJournalEntry(
+    public val seq: Long,
+    @SerialName("client_op_id")
+    public val clientOpId: String,
+    public val author: DrawingJournalEntryAuthor,
+    public val at: String,
+    public val op: DrawingOp,
+)
+
+/**
+ * `DrawingJournalEntryAuthor` model.
+ */
+@Serializable
+public data class DrawingJournalEntryAuthor(
+    public val kind: DrawingJournalEntryAuthorKind,
+    public val id: String,
+    @SerialName("run_id")
+    public val runId: String? = null,
+)
+
+/**
+ * `DrawingJournalEntryAuthorKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingJournalEntryAuthorKindSerializer::class)
+@JvmInline
+public value class DrawingJournalEntryAuthorKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val USER: DrawingJournalEntryAuthorKind = DrawingJournalEntryAuthorKind("user")
+        public val AGENT: DrawingJournalEntryAuthorKind = DrawingJournalEntryAuthorKind("agent")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingJournalEntryAuthorKind> = listOf(USER, AGENT)
+    }
+}
+
+public object DrawingJournalEntryAuthorKindSerializer : KSerializer<DrawingJournalEntryAuthorKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingJournalEntryAuthorKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingJournalEntryAuthorKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingJournalEntryAuthorKind = DrawingJournalEntryAuthorKind(decoder.decodeString())
+}
+
+/**
+ * `DrawingLayer` model.
+ */
+@Serializable
+public data class DrawingLayer(
+    @SerialName("layer_id")
+    public val layerId: String,
+    public val name: String,
+    /**
+     * An integer 0–255, like every channel value in a drawing (docs/DESIGNER-CANVAS.md §4.4).
+     */
+    public val opacity: Long,
+    public val blend: DrawingLayerBlend,
+    public val visible: Boolean,
+    public val locked: Boolean,
+    public val kind: DrawingLayerKind,
+    /**
+     * Set when the layer was placed from a generated or uploaded image.
+     */
+    public val source: DrawingLayerSource? = null,
+)
+
+/**
+ * `DrawingLayerBlend` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingLayerBlendSerializer::class)
+@JvmInline
+public value class DrawingLayerBlend(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NORMAL: DrawingLayerBlend = DrawingLayerBlend("normal")
+        public val MULTIPLY: DrawingLayerBlend = DrawingLayerBlend("multiply")
+        public val SCREEN: DrawingLayerBlend = DrawingLayerBlend("screen")
+        public val OVERLAY: DrawingLayerBlend = DrawingLayerBlend("overlay")
+        public val DARKEN: DrawingLayerBlend = DrawingLayerBlend("darken")
+        public val LIGHTEN: DrawingLayerBlend = DrawingLayerBlend("lighten")
+        public val ADD: DrawingLayerBlend = DrawingLayerBlend("add")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingLayerBlend> = listOf(NORMAL, MULTIPLY, SCREEN, OVERLAY, DARKEN, LIGHTEN, ADD)
+    }
+}
+
+public object DrawingLayerBlendSerializer : KSerializer<DrawingLayerBlend> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingLayerBlend", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingLayerBlend): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingLayerBlend = DrawingLayerBlend(decoder.decodeString())
+}
+
+/**
+ * `DrawingLayerKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingLayerKindSerializer::class)
+@JvmInline
+public value class DrawingLayerKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RASTER: DrawingLayerKind = DrawingLayerKind("raster")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingLayerKind> = listOf(RASTER)
+    }
+}
+
+public object DrawingLayerKindSerializer : KSerializer<DrawingLayerKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingLayerKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingLayerKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingLayerKind = DrawingLayerKind(decoder.decodeString())
+}
+
+/**
+ * Set when the layer was placed from a generated or uploaded image.
+ */
+@Serializable
+public data class DrawingLayerSource(
+    @SerialName("file_id")
+    public val fileId: String,
+    public val tool: String,
+)
+
+/**
+ * What a person hands the agent (docs/DESIGNER-CANVAS.md §4.3): the selection as an L8 PNG of
+ * the drawing's size plus its bounding box.
+ */
+@Serializable
+public data class DrawingMask(
+    @SerialName("mask_id")
+    public val maskId: String,
+    @SerialName("drawing_id")
+    public val drawingId: String,
+    public val width: Long,
+    public val height: Long,
+    public val bbox: DrawingMaskBbox,
+    /**
+     * The L8 PNG in the workspace; also served by `…/masks/{maskId}/content`.
+     */
+    @SerialName("file_id")
+    public val fileId: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+)
+
+/**
+ * `DrawingMaskBbox` model.
+ */
+@Serializable
+public data class DrawingMaskBbox(
+    public val x: Long,
+    public val y: Long,
+    public val w: Long,
+    public val h: Long,
+)
+
+/**
+ * One journal op (docs/DESIGNER-CANVAS.md §4.2), discriminated by `type`: stroke, erase, fill,
+ * place_image, layer_add, layer_remove, layer_update, layer_reorder, undo, redo. A stroke
+ * longer than 1 024 points is sent in parts that share `stroke_id`, count `part` from 0 and
+ * carry `continues: true` on every part but the last; `t` runs across the parts. `encoding` is
+ * required and is `json` in v1.
+ */
+@Serializable
+public data class DrawingOp(
+    public val type: DrawingOpType,
+    @SerialName("layer_id")
+    public val layerId: String? = null,
+    public val brush: DrawingBrush? = null,
+    public val encoding: DrawingOpEncoding? = null,
+    public val points: List<DrawingStrokePoint>? = null,
+    @SerialName("stroke_id")
+    public val strokeId: String? = null,
+    public val part: Long? = null,
+    public val continues: Boolean? = null,
+    public val x: Double? = null,
+    public val y: Double? = null,
+    public val w: Long? = null,
+    public val h: Long? = null,
+    public val color: String? = null,
+    public val tolerance: Long? = null,
+    public val contiguous: Boolean? = null,
+    @SerialName("file_id")
+    public val fileId: String? = null,
+    public val fit: DrawingOpFit? = null,
+    public val layer: DrawingLayer? = null,
+    public val index: Long? = null,
+    public val patch: DrawingOpPatch? = null,
+    public val order: List<String>? = null,
+    @SerialName("undo_of")
+    public val undoOf: Long? = null,
+    @SerialName("redo_of")
+    public val redoOf: Long? = null,
+)
+
+/**
+ * `DrawingOpEncoding` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingOpEncodingSerializer::class)
+@JvmInline
+public value class DrawingOpEncoding(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val JSON: DrawingOpEncoding = DrawingOpEncoding("json")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingOpEncoding> = listOf(JSON)
+    }
+}
+
+public object DrawingOpEncodingSerializer : KSerializer<DrawingOpEncoding> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingOpEncoding", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingOpEncoding): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingOpEncoding = DrawingOpEncoding(decoder.decodeString())
+}
+
+/**
+ * `DrawingOpFit` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingOpFitSerializer::class)
+@JvmInline
+public value class DrawingOpFit(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STRETCH: DrawingOpFit = DrawingOpFit("stretch")
+        public val CONTAIN: DrawingOpFit = DrawingOpFit("contain")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingOpFit> = listOf(STRETCH, CONTAIN)
+    }
+}
+
+public object DrawingOpFitSerializer : KSerializer<DrawingOpFit> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingOpFit", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingOpFit): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingOpFit = DrawingOpFit(decoder.decodeString())
+}
+
+/**
+ * `DrawingOpPatch` model.
+ */
+@Serializable
+public data class DrawingOpPatch(
+    public val name: String? = null,
+    public val opacity: Long? = null,
+    public val blend: DrawingLayerBlend? = null,
+    public val visible: Boolean? = null,
+    public val locked: Boolean? = null,
+)
+
+/**
+ * `DrawingOpType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingOpTypeSerializer::class)
+@JvmInline
+public value class DrawingOpType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val STROKE: DrawingOpType = DrawingOpType("stroke")
+        public val ERASE: DrawingOpType = DrawingOpType("erase")
+        public val FILL: DrawingOpType = DrawingOpType("fill")
+        public val PLACE_IMAGE: DrawingOpType = DrawingOpType("place_image")
+        public val LAYER_ADD: DrawingOpType = DrawingOpType("layer_add")
+        public val LAYER_REMOVE: DrawingOpType = DrawingOpType("layer_remove")
+        public val LAYER_UPDATE: DrawingOpType = DrawingOpType("layer_update")
+        public val LAYER_REORDER: DrawingOpType = DrawingOpType("layer_reorder")
+        public val UNDO: DrawingOpType = DrawingOpType("undo")
+        public val REDO: DrawingOpType = DrawingOpType("redo")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingOpType> = listOf(STROKE, ERASE, FILL, PLACE_IMAGE, LAYER_ADD, LAYER_REMOVE, LAYER_UPDATE, LAYER_REORDER, UNDO, REDO)
+    }
+}
+
+public object DrawingOpTypeSerializer : KSerializer<DrawingOpType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingOpType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingOpType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingOpType = DrawingOpType(decoder.decodeString())
+}
+
+/**
+ * A selection in canvas pixels: `rect` {x, y, w, h}, `ellipse` {cx, cy, rx, ry} or `lasso`
+ * {points\[\]}.
+ */
+@Serializable
+public data class DrawingSelectionShape(
+    public val kind: DrawingSelectionShapeKind,
+    public val x: Double? = null,
+    public val y: Double? = null,
+    public val w: Double? = null,
+    public val h: Double? = null,
+    public val cx: Double? = null,
+    public val cy: Double? = null,
+    public val rx: Double? = null,
+    public val ry: Double? = null,
+    public val points: List<DrawingSelectionShapePoint>? = null,
+)
+
+/**
+ * `DrawingSelectionShapeKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = DrawingSelectionShapeKindSerializer::class)
+@JvmInline
+public value class DrawingSelectionShapeKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RECT: DrawingSelectionShapeKind = DrawingSelectionShapeKind("rect")
+        public val ELLIPSE: DrawingSelectionShapeKind = DrawingSelectionShapeKind("ellipse")
+        public val LASSO: DrawingSelectionShapeKind = DrawingSelectionShapeKind("lasso")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<DrawingSelectionShapeKind> = listOf(RECT, ELLIPSE, LASSO)
+    }
+}
+
+public object DrawingSelectionShapeKindSerializer : KSerializer<DrawingSelectionShapeKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DrawingSelectionShapeKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: DrawingSelectionShapeKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): DrawingSelectionShapeKind = DrawingSelectionShapeKind(decoder.decodeString())
+}
+
+/**
+ * `DrawingSelectionShapePoint` model.
+ */
+@Serializable
+public data class DrawingSelectionShapePoint(
+    public val x: Double,
+    public val y: Double,
+)
+
+/**
+ * `DrawingStrokePoint` model.
+ */
+@Serializable
+public data class DrawingStrokePoint(
+    public val x: Double,
+    public val y: Double,
+    /**
+     * Pressure.
+     */
+    public val p: Long,
+    /**
+     * Tilt.
+     */
+    public val tx: Double,
+    public val ty: Double,
+    /**
+     * Milliseconds from the start of the stroke, across every part.
+     */
+    public val t: Double,
+)
 
 /**
  * The mascot character of an agent (DropGenome in @uarp/runtime): silhouette, motion and
@@ -8747,6 +9277,7 @@ public value class ErrorTitle(public val value: String) {
         public val UNSUPPORTED_MEDIA_TYPE: ErrorTitle = ErrorTitle("Unsupported Media Type")
         public val VALIDATION_ERROR: ErrorTitle = ErrorTitle("Validation Error")
         public val LOCKED: ErrorTitle = ErrorTitle("Locked")
+        public val PRECONDITION_REQUIRED: ErrorTitle = ErrorTitle("Precondition Required")
         public val TOO_MANY_REQUESTS: ErrorTitle = ErrorTitle("Too Many Requests")
         public val INTERNAL_SERVER_ERROR: ErrorTitle = ErrorTitle("Internal Server Error")
         public val NOT_IMPLEMENTED: ErrorTitle = ErrorTitle("Not Implemented")
@@ -8755,7 +9286,7 @@ public value class ErrorTitle(public val value: String) {
         public val GATEWAY_TIMEOUT: ErrorTitle = ErrorTitle("Gateway Timeout")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorTitle> = listOf(BAD_REQUEST, UNAUTHORIZED, PAYMENT_REQUIRED, FORBIDDEN, NOT_FOUND, METHOD_NOT_ALLOWED, CONFLICT, GONE, LENGTH_REQUIRED, PRECONDITION_FAILED, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, VALIDATION_ERROR, LOCKED, TOO_MANY_REQUESTS, INTERNAL_SERVER_ERROR, NOT_IMPLEMENTED, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT)
+        public val knownValues: List<ErrorTitle> = listOf(BAD_REQUEST, UNAUTHORIZED, PAYMENT_REQUIRED, FORBIDDEN, NOT_FOUND, METHOD_NOT_ALLOWED, CONFLICT, GONE, LENGTH_REQUIRED, PRECONDITION_FAILED, PAYLOAD_TOO_LARGE, UNSUPPORTED_MEDIA_TYPE, VALIDATION_ERROR, LOCKED, PRECONDITION_REQUIRED, TOO_MANY_REQUESTS, INTERNAL_SERVER_ERROR, NOT_IMPLEMENTED, BAD_GATEWAY, SERVICE_UNAVAILABLE, GATEWAY_TIMEOUT)
     }
 }
 
@@ -11865,7 +12396,10 @@ public data class InternalVerifyDomainResponse(
 )
 
 /**
- * `Invite` model.
+ * An invite as an administrator sees it. The accept token (`secret`) is NOT here: it travels
+ * in the email link and, for the recipient only, in `GET /me/tenants` `pending_invites`. Until
+ * 2026-09-12 the tenant's list, the 201, resend and revoke echoed it, so `users:read` could
+ * accept any pending invite of the tenant.
  */
 @Serializable
 public data class Invite(
@@ -11878,7 +12412,6 @@ public data class Invite(
     @SerialName("invited_by")
     public val invitedBy: String? = null,
     public val role: String? = null,
-    public val secret: String? = null,
     public val status: String? = null,
     @SerialName("tenant_id")
     public val tenantId: String? = null,
@@ -11907,7 +12440,6 @@ public data class InviteUserResponse(
     @SerialName("invited_by")
     public val invitedBy: String? = null,
     public val role: String? = null,
-    public val secret: String? = null,
     public val status: String? = null,
     @SerialName("tenant_id")
     public val tenantId: String? = null,
@@ -12568,11 +13100,12 @@ public data class ListAgentVersionsResponse(
     @SerialName("has_more")
     public val hasMore: Boolean? = null,
     /**
-     * Present only with `limit` and only while older versions remain: the version number to pass
-     * as `cursor` for the next page. The first hour of this paging (#468) called it `next_cursor`;
-     * no client had read it.
+     * Present only with `limit` and only while older versions remain: an opaque string to pass
+     * back as `cursor` for the next page (every cursor in this document is a string; the generated
+     * clients' paging helpers rely on it). Typed integer for one hour in #469 — no client had read
+     * it.
      */
-    public val cursor: Long? = null,
+    public val cursor: String? = null,
 )
 
 /**
@@ -12867,6 +13400,18 @@ public data class ListDataExplorerNamespacesResponse(
 public data class ListDatasetsResponse(
     public val datasets: List<EvalDataset>,
     public val total: Long,
+)
+
+/**
+ * `ListDrawingOpsResponse` model.
+ */
+@Serializable
+public data class ListDrawingOpsResponse(
+    public val items: List<DrawingJournalEntry>,
+    public val cursor: String? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean,
+    public val seq: Long,
 )
 
 /**
@@ -13495,6 +14040,17 @@ public data class ListSessionBranchesResponse(
     @SerialName("active_branch")
     public val activeBranch: String? = null,
     public val total: Long,
+)
+
+/**
+ * `ListSessionDrawingsResponse` model.
+ */
+@Serializable
+public data class ListSessionDrawingsResponse(
+    public val items: List<Drawing>,
+    public val cursor: String? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean,
 )
 
 /**
@@ -18104,9 +18660,45 @@ public data class RegistryGetSpecMetadataResponse(
     @SerialName("skill_count")
     public val skillCount: Long,
     public val capabilities: List<String>,
+    /**
+     * The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+     * and unknown the same way — chat.
+     */
+    public val canvas: RegistryGetSpecMetadataResponseCanvas? = null,
     @SerialName("schema_version")
     public val schemaVersion: String? = null,
 )
+
+/**
+ * The canvas this SPEC's output belongs on. Absent when it names none; a client treats absent
+ * and unknown the same way — chat.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RegistryGetSpecMetadataResponseCanvasSerializer::class)
+@JvmInline
+public value class RegistryGetSpecMetadataResponseCanvas(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DOCUMENT: RegistryGetSpecMetadataResponseCanvas = RegistryGetSpecMetadataResponseCanvas("document")
+        public val CODE: RegistryGetSpecMetadataResponseCanvas = RegistryGetSpecMetadataResponseCanvas("code")
+        public val IMAGE: RegistryGetSpecMetadataResponseCanvas = RegistryGetSpecMetadataResponseCanvas("image")
+        public val DRAWING: RegistryGetSpecMetadataResponseCanvas = RegistryGetSpecMetadataResponseCanvas("drawing")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RegistryGetSpecMetadataResponseCanvas> = listOf(DOCUMENT, CODE, IMAGE, DRAWING)
+    }
+}
+
+public object RegistryGetSpecMetadataResponseCanvasSerializer : KSerializer<RegistryGetSpecMetadataResponseCanvas> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RegistryGetSpecMetadataResponseCanvas", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RegistryGetSpecMetadataResponseCanvas): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RegistryGetSpecMetadataResponseCanvas = RegistryGetSpecMetadataResponseCanvas(decoder.decodeString())
+}
 
 /**
  * `RegistryGetSpecVersionResponse` model.
@@ -19353,6 +19945,10 @@ public data class RunFeedbackListFeedback(
     @SerialName("message_id")
     public val messageId: String,
     public val reaction: RunFeedbackListFeedbackReaction,
+    /**
+     * Present only when the reader gave one with the reaction.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -19389,6 +19985,10 @@ public object RunFeedbackListFeedbackReactionSerializer : KSerializer<RunFeedbac
 @Serializable
 public data class RunFeedbackOne(
     public val reaction: String? = null,
+    /**
+     * Present only when the reader gave one with the reaction.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -19400,6 +20000,10 @@ public data class RunFeedbackSet(
     public val reaction: RunFeedbackListFeedbackReaction,
     @SerialName("message_id")
     public val messageId: String,
+    /**
+     * Echoed only when the caller sent one.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -20814,6 +21418,12 @@ public data class SetRunFeedbackRequest(
     @SerialName("message_id")
     public val messageId: String,
     public val reaction: RunFeedbackListFeedbackReaction,
+    /**
+     * Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+     * only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+     * dropped by the server until 2026-09-13; it is stored and echoed now.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -20841,6 +21451,22 @@ public data class SetScheduleRequest(
      */
     @SerialName("reflection_prompt")
     public val reflectionPrompt: String? = null,
+)
+
+/**
+ * `SetSessionRunFeedbackRequest` model.
+ */
+@Serializable
+public data class SetSessionRunFeedbackRequest(
+    @SerialName("message_id")
+    public val messageId: String,
+    public val reaction: RunFeedbackListFeedbackReaction,
+    /**
+     * Why the answer was bad, in the reader's own words or one of the chat's chips. Optional and
+     * only meaningful with `reaction: "down"`. Sent by the web chat since the chips shipped and
+     * dropped by the server until 2026-09-13; it is stored and echoed now.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -21142,11 +21768,54 @@ public data class SpecToolCatalog(
     @SerialName("agent_id")
     public val agentId: String,
     /**
+     * The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
+     * only `drawing`. Always present: empty means no drawing canvas, absence means an older
+     * server, and a client must not confuse the two.
+     */
+    public val drawings: List<SpecToolCatalogDrawing>,
+    /**
      * Tool name → the SPEC that owns it and the view to render its output with. Integration
      * aliases map onto their base tool's view.
      */
     public val tools: Map<String, Value2>,
 )
+
+/**
+ * `SpecToolCatalogDrawing` model.
+ */
+@Serializable
+public data class SpecToolCatalogDrawing(
+    @SerialName("spec_id")
+    public val specId: String,
+    public val canvas: SpecToolCatalogDrawingCanvas,
+)
+
+/**
+ * `SpecToolCatalogDrawingCanvas` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SpecToolCatalogDrawingCanvasSerializer::class)
+@JvmInline
+public value class SpecToolCatalogDrawingCanvas(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DRAWING: SpecToolCatalogDrawingCanvas = SpecToolCatalogDrawingCanvas("drawing")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SpecToolCatalogDrawingCanvas> = listOf(DRAWING)
+    }
+}
+
+public object SpecToolCatalogDrawingCanvasSerializer : KSerializer<SpecToolCatalogDrawingCanvas> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecToolCatalogDrawingCanvas", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SpecToolCatalogDrawingCanvas): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SpecToolCatalogDrawingCanvas = SpecToolCatalogDrawingCanvas(decoder.decodeString())
+}
 
 /**
  * `StartMissionRequest` model.

@@ -385,18 +385,20 @@ public struct AgentsAPI: Sendable {
     /// List version snapshots for an agent
     ///
     /// Returns the ordered version history for an agent. Lazily creates v1 from the current config
-    /// if no versions exist yet.
+    /// if no versions exist yet. Versions are never deleted and there is no DELETE for one: a
+    /// rollback records a NEW version (`changelog` "Rollback to version N"), so the history stays
+    /// complete for the audit.
     ///
     /// `GET /api/v1/agents/{agentId}/versions`
     ///
     /// Required scopes: `agents:read`.
-    public func listAgentVersions(agentId: String, limit: Int? = nil, cursor: Int? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) async throws -> ListAgentVersionsResponse {
+    public func listAgentVersions(agentId: String, limit: Int? = nil, cursor: String? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) async throws -> ListAgentVersionsResponse {
         var query: [URLQueryItem] = []
         if let limit {
             query.append(URLQueryItem(name: "limit", value: String(limit)))
         }
         if let cursor {
-            query.append(URLQueryItem(name: "cursor", value: String(cursor)))
+            query.append(URLQueryItem(name: "cursor", value: cursor))
         }
         if let fields {
             query.append(URLQueryItem(name: "fields", value: fields.rawValue))
@@ -411,7 +413,7 @@ public struct AgentsAPI: Sendable {
 
     /// Stream every item returned by `listAgentVersions`, following the `cursor` cursor until the
     /// server reports no further pages.
-    public func listAgentVersionsAll(agentId: String, limit: Int? = nil, cursor: Int? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AgentVersion, Error> {
+    public func listAgentVersionsAll(agentId: String, limit: Int? = nil, cursor: String? = nil, fields: ListAgentVersionsFields? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AgentVersion, Error> {
         autoPaginate(
             fetch: { cursor in try await self.listAgentVersions(agentId: agentId, limit: limit, cursor: cursor, fields: fields, options: options) },
             items: { $0.items },

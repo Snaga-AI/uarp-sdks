@@ -456,6 +456,9 @@ impl WorkspacesApi {
 
     /// Revoke workspace sharing
     ///
+    /// Removes the agent from the workspace's `shared_with` list and returns the updated workspace;
+    /// the workspace and its files are untouched. `POST` the share again to restore access.
+    ///
     /// `DELETE /api/v1/workspaces/{workspaceId}/share/{agentId}`
     ///
     /// Required scopes: `files:write`.

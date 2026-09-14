@@ -6,15 +6,64 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.6.0 — 2026-09-11
+## 0.6.0 — 2026-09-14
 
-The copy follows the served document byte for byte: `spec/openapi.json` is
-`curl https://api.snaga.ai/api/v1/openapi.json` verbatim, sha256
-`3215b5c52c3a0e1d…`, build `f6c6f93e` (uarp #456–#470, eleven merges on
-2026-09-11). Against 0.5.24 (document `ba6417e3…`): 709 → 709 operations,
-none added, none removed, 121 with a changed shape; 271 → 344 schemas
-(+73, none removed), 23 with a changed shape. A minor, not a patch: types
-changed shape; nothing that decodes today stops decoding.
+`spec/openapi.json` is `https://api.snaga.ai/api/v1/openapi.json` normalised
+by `python3 -m json.tool`, which is what `scripts/update-spec.sh` writes.
+Earlier entries quoted a sha256 of the served bytes; this one does not,
+because the vendored file is no longer those bytes. The identity that means
+something is the canonical digest — sorted keys, no whitespace —
+`d281e0b33c55a670`, which is exactly what `check-spec-freshness.sh` compares
+and what the release refuses to proceed without. Build `d19c367e`
+(uarp #456–#477). Against 0.5.24 (the last release published to any
+registry): 709 → 723 operations (+14, none removed), 142 with a changed
+shape; 271 → 352 schemas (+81, one member removed — see below), 31 with a
+changed shape.
+
+This tag is cut a second time. `v0.6.0` was first tagged on 2026-09-12 from
+a tree whose generated TypeScript did not compile (`agents.ts` had a string
+cursor reaching a number parameter) and whose generator goldens still said
+`0.5.24`; every job of the release run failed before its publish step, so
+npm, crates.io, Maven Central and the SwiftPM mirror never saw it — 0.5.24
+remained the latest everywhere. Nothing consumed the number, so the number
+is reused rather than burned. The tag now points at a tree that compiles.
+
+### Removed — one field, and it is a breaking change
+
+- `Invite.secret` is gone from the schema (uarp #471). The accept token is
+  not something an administrator reading the invite list is given; only the
+  invitee's own link carries it. Code that read `invite.secret` compiled
+  against 0.5.24 and does not compile here — that is the whole of the
+  breakage in this release, and the reason to read the note before bumping.
+
+### Added — the Drawings surface (uarp #472, stage 1)
+
+- Nine paths and twelve operations: `GET|POST /sessions/{sessionId}/drawings`,
+  `GET|DELETE /drawings/{drawingId}`, `GET|POST /drawings/{drawingId}/ops`,
+  `GET /drawings/{drawingId}/render`,
+  `GET /drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`,
+  `POST /drawings/{drawingId}/masks`, `GET /drawings/{drawingId}/masks/{maskId}`
+  and its `/content`. `listSessionDrawings` pages on the list convention.
+- Eight schemas: `Drawing`, `DrawingLayer`, `DrawingOp`, `DrawingBrush`,
+  `DrawingMask`, `DrawingStrokePoint`, `DrawingSelectionShape`,
+  `DrawingJournalEntry`.
+
+### Added — deletions the API grew
+
+- `DELETE /sessions/{sessionId}/branches/{branchId}` (uarp #472).
+- `DELETE /runs/{runId}/feedback` and
+  `DELETE /sessions/{sessionId}/runs/{runId}/feedback` (uarp #474, #477):
+  a reaction can be taken back, and the feedback reason now comes back on
+  the read rather than only on the write.
+
+### Changed — the versions cursor is an opaque string
+
+- `GET /agents/{agentId}/versions`: `cursor` is a string, in the request and
+  in the answer, where the first draft of this paging made it the version
+  number (uarp #471). Treat it as opaque and pass it back unchanged. No
+  published release ever carried the integer form — it existed only in the
+  0.6.0 tag that failed to publish — so for anyone upgrading from 0.5.24
+  this parameter is simply new.
 
 ### Changed — typed responses (121 operations, 73 new schemas)
 
