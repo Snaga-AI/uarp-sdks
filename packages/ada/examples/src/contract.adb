@@ -225,7 +225,8 @@ begin
 
       --  16. how the decoder handles a payload built to strain it
       declare
-         Probe  : constant UARP.Models.Run := UARP.API.Runs.Get (Client, "probe");
+         Probe  : constant UARP.Models.Get_Run_Response :=
+           UARP.API.Runs.Get (Client, "probe");
          Probes : constant JS.JSON_Value := JS.New_Object;
          Report : constant JS.JSON_Value := JS.New_Object;
          Keys   : UARP.Types.Text := UARP.Types.Empty_Text;
