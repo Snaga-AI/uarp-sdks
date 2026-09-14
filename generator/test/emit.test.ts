@@ -135,9 +135,11 @@ test('Ada declares a cycle member before the record that holds its vector', () =
   //  one of them does, and that it is well formed, is the invariant.
   const broken = ['Folder', 'Leaf'].filter((n) => ada.includes(`type ${n}_Access is access ${n};`));
   assert.equal(broken.length, 1, `mutual recursion should open exactly one side, opened: ${broken.join(', ') || 'none'}`);
-  ordering(broken[0]);
+  const opened = broken[0];
+  assert.ok(opened !== undefined, 'neither side of the mutual recursion was opened');
+  ordering(opened);
 
-  const intact = broken[0] === 'Folder' ? 'Leaf' : 'Folder';
+  const intact = opened === 'Folder' ? 'Leaf' : 'Folder';
   assert.ok(
     ada.includes(`(Index_Type => Positive, Element_Type => ${intact});`),
     `${intact} is outside the cycle break and should keep the plain instantiation over its value`,
