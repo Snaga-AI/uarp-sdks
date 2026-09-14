@@ -26161,7 +26161,7 @@ package body UARP.Models is
          Items : JS.JSON_Array := JS.JSON.Empty_Array;
       begin
          for Element of Model.Children loop
-            JS.JSON.Append (Items, To_JSON (Element));
+            JS.JSON.Append (Items, To_JSON (Element.all));
          end loop;
          JS.Set (Result, "children", Items);
       end;
@@ -26179,7 +26179,7 @@ package body UARP.Models is
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "children");
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Children.Append (From_JSON (JS.JSON.Get (Items, Index)));
+               Result.Children.Append (new Objective_Tree'(From_JSON (JS.JSON.Get (Items, Index))));
             end loop;
          end;
       end if;
@@ -26194,7 +26194,7 @@ package body UARP.Models is
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
             for Element of Model.Trees loop
-               JS.JSON.Append (Items, To_JSON (Element));
+               JS.JSON.Append (Items, To_JSON (Element.all));
             end loop;
             JS.Set (Result, "trees", Items);
          end;
@@ -26221,7 +26221,7 @@ package body UARP.Models is
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "trees");
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Trees.Append (From_JSON (JS.JSON.Get (Items, Index)));
+               Result.Trees.Append (new Objective_Tree'(From_JSON (JS.JSON.Get (Items, Index))));
             end loop;
          end;
       end if;

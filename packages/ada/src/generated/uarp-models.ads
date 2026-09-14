@@ -10429,6 +10429,14 @@ package UARP.Models is
    package Objective_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Objective);
 
+   --  ObjectiveTree closes a cycle in the document's type graph. The vector is
+   --  instantiated over an access so the element type is definite while the
+   --  record below is still incomplete; From_JSON allocates each element.
+   type Objective_Tree;
+   type Objective_Tree_Access is access Objective_Tree;
+   package Objective_Tree_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Objective_Tree_Access);
+
    --  agent-teams/objective-tracker.ts ObjectiveTree - recursive.
    type Objective_Tree is record
       Objective : UARP.Models.Objective;
@@ -10437,9 +10445,6 @@ package UARP.Models is
 
    function To_JSON (Model : Objective_Tree) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Objective_Tree;
-
-   package Objective_Tree_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Objective_Tree);
 
    --  `GetCompanyObjectivesResponse` model.
    type Get_Company_Objectives_Response is record
