@@ -5696,6 +5696,8 @@
           },
           "embedding_model": {
             "type": "string",
+            "deprecated": true,
+            "description": "Informational only — not a choice. The deployment has one embedding model, set by the super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string sent here is stored and echoed by GET until the first reindex, then replaced. `PUT /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395, :688).",
             "maxLength": 10485760
           }
         },
@@ -12985,7 +12987,8 @@
             "type": "string"
           },
           "embedding_model": {
-            "type": "string"
+            "type": "string",
+            "description": "The embedding model recorded on the base: what the caller sent at create, or the deployment's model; rewritten to the model actually used on every reindex (knowledge-bases.ts:688)."
           },
           "chunk_size": {
             "type": "integer"

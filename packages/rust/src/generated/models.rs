@@ -13322,6 +13322,9 @@ pub struct KnowledgeBase {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// The embedding model recorded on the base: what the caller sent at create, or the
+    /// deployment's model; rewritten to the model actually used on every reindex
+    /// (knowledge-bases.ts:688).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub embedding_model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -13361,6 +13364,12 @@ pub struct KnowledgeBaseCreate {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Informational only — not a choice. The deployment has one embedding model, set by the
+    /// super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST
+    /// /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string
+    /// sent here is stored and echoed by GET until the first reindex, then replaced. `PUT
+    /// /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395,
+    /// :688).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub embedding_model: Option<String>,
 }

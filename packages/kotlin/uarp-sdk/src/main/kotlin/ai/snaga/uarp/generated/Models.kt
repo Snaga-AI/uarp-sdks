@@ -13103,6 +13103,11 @@ public data class KnowledgeBase(
     public val tenantId: String,
     public val name: String,
     public val description: String? = null,
+    /**
+     * The embedding model recorded on the base: what the caller sent at create, or the
+     * deployment's model; rewritten to the model actually used on every reindex
+     * (knowledge-bases.ts:688).
+     */
     @SerialName("embedding_model")
     public val embeddingModel: String? = null,
     @SerialName("chunk_size")
@@ -13146,6 +13151,14 @@ public data class KnowledgeBaseAttachedAgent(
 public data class KnowledgeBaseCreate(
     public val name: String,
     public val description: String? = null,
+    /**
+     * Informational only — not a choice. The deployment has one embedding model, set by the
+     * super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST
+     * /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string
+     * sent here is stored and echoed by GET until the first reindex, then replaced. `PUT
+     * /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395,
+     * :688). Deprecated by the API.
+     */
     @SerialName("embedding_model")
     public val embeddingModel: String? = null,
 )

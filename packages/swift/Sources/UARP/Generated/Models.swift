@@ -17606,6 +17606,9 @@ public struct KnowledgeBase: Codable, Hashable, Sendable {
     public var tenantId: String
     public var name: String
     public var `description`: String?
+    /// The embedding model recorded on the base: what the caller sent at create, or the
+    /// deployment's model; rewritten to the model actually used on every reindex
+    /// (knowledge-bases.ts:688).
     public var embeddingModel: String?
     public var chunkSize: Int?
     public var chunkOverlap: Int?
@@ -17675,6 +17678,14 @@ public struct KnowledgeBaseAttachedAgent: Codable, Hashable, Sendable {
 public struct KnowledgeBaseCreate: Codable, Hashable, Sendable {
     public var name: String
     public var `description`: String?
+    /// Informational only — not a choice. The deployment has one embedding model, set by the
+    /// super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST
+    /// /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string
+    /// sent here is stored and echoed by GET until the first reindex, then replaced. `PUT
+    /// /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395,
+    /// :688).
+    ///
+    /// - Warning: Deprecated by the API.
     public var embeddingModel: String?
 
     public init(name: String, `description`: String? = nil, embeddingModel: String? = nil) {

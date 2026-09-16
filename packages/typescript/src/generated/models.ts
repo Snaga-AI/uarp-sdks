@@ -6822,6 +6822,11 @@ export interface KnowledgeBase {
   tenant_id: string;
   name: string;
   description?: string;
+  /**
+   * The embedding model recorded on the base: what the caller sent at create, or the
+   * deployment's model; rewritten to the model actually used on every reindex
+   * (knowledge-bases.ts:688).
+   */
   embedding_model?: string;
   chunk_size?: number;
   chunk_overlap?: number;
@@ -6850,6 +6855,16 @@ export interface KnowledgeBaseAttachedAgent {
 export interface KnowledgeBaseCreate {
   name: string;
   description?: string;
+  /**
+   * Informational only — not a choice. The deployment has one embedding model, set by the
+   * super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST
+   * /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string
+   * sent here is stored and echoed by GET until the first reindex, then replaced. `PUT
+   * /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395,
+   * :688).
+   *
+   * @deprecated
+   */
   embedding_model?: string;
 }
 
