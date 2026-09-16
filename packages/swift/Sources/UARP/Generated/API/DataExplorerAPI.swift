@@ -10,6 +10,15 @@ public struct DataExplorerAPI: Sendable {
 
     /// Delete KV value
     ///
+    /// Deletes one KV row named by the `namespace` and `key` query parameters, both required. A
+    /// sensitive key is refused 403 and an audit-log key 403. The shared destructive guard runs
+    /// against the tenant the key actually resolves to — not the namespace parameter, so a
+    /// `__all__` key naming a held tenant is caught — and refuses under legal hold (423) or a
+    /// suspended/deleted status (403); a missing tenant record falls through so orphaned scratch
+    /// namespaces can be cleaned up. The delete is unconditional and unrecoverable. Writes an
+    /// `admin.data_explorer.delete` audit entry. Requires the `admin` scope and super-admin
+    /// identity.
+    ///
     /// `DELETE /api/v1/admin/data-explorer/value`
     ///
     /// Required scopes: `admin`.
@@ -28,6 +37,14 @@ public struct DataExplorerAPI: Sendable {
 
     /// Get KV value
     ///
+    /// Returns the full value of one KV key with its size, type and versionstamp. `namespace` and
+    /// `key` are both required and 400 when absent, and a key that is missing is 404. A key the
+    /// sensitivity check claims — API keys, OTP codes, tokens, secrets, invites and the persistence
+    /// layer's canonical encrypted prefixes — is refused 403 and must be read through its own admin
+    /// endpoint. The pseudo-namespace `__all__` reads the raw key as given, which is 501 on a
+    /// persistence backend that exposes no raw handle. Requires the `admin` scope and super-admin
+    /// identity.
+    ///
     /// `GET /api/v1/admin/data-explorer/value`
     ///
     /// Required scopes: `admin`.
@@ -44,6 +61,13 @@ public struct DataExplorerAPI: Sendable {
     }
 
     /// List keys
+    ///
+    /// Browses the keys of one namespace. `namespace` is required and is 400 when absent; `prefix`
+    /// is a comma-separated key prefix, `limit` defaults to 50 and is capped at 500, `cursor`
+    /// continues a listing, and `search` filters the fetched page by substring over the key parts.
+    /// Each row carries the key, a truncated `value_preview`, the value's size and type, and a
+    /// `sensitive` flag for keys whose value is a credential. Requires the `admin` scope and
+    /// super-admin identity.
     ///
     /// `GET /api/v1/admin/data-explorer/keys`
     ///
@@ -84,6 +108,12 @@ public struct DataExplorerAPI: Sendable {
 
     /// List KV namespaces
     ///
+    /// Lists the platform's reserved KV namespaces — admin, public, billing, rate limits, API keys,
+    /// health and marketplace — each with a label, a description and an approximate row count taken
+    /// from a bounded listing, alongside every tenant in the registry with its id, name and slug. A
+    /// namespace whose count cannot be read reports zero rather than failing the call. Requires the
+    /// `admin` scope and super-admin identity.
+    ///
     /// `GET /api/v1/admin/data-explorer/namespaces`
     ///
     /// Required scopes: `admin`.
@@ -96,6 +126,16 @@ public struct DataExplorerAPI: Sendable {
     }
 
     /// Set KV value
+    ///
+    /// Overwrites one KV row in place from `{namespace, key, value}`. A sensitive key is refused
+    /// 403 and an audit-log key 403, because that log is append-only. A row under the admin
+    /// namespace that belongs to a known admin-config section must satisfy that section's own PUT
+    /// schema or the write is refused 422 — the explorer would otherwise be a second unguarded door
+    /// onto settings that can brick the platform. For a row belonging to a real tenant the shared
+    /// destructive guard runs, so legal hold or a suspended tenant refuses the write; a missing
+    /// tenant record falls through so a scratch namespace can still be populated. There is no
+    /// version check and no prior value is kept. Writes an `admin.data_explorer.update` audit
+    /// entry. Requires the `admin` scope and super-admin identity.
     ///
     /// `PUT /api/v1/admin/data-explorer/value`
     ///

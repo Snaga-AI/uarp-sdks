@@ -1396,10 +1396,8 @@ package UARP.Models is
 
    --  `AdminConfigToolSecurityConfigToolSecurity` model.
    type Admin_Config_Tool_Security_Config_Tool_Security is record
-      Default_Egress_Policy : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Egress_Allowlist_Per_Tenant : Boolean := False;
       Egress_Allowlist_Per_Tenant : UARP.Types.Text_Vectors.Vector;
-      Ssrf_Deny_Private_Ranges : Standard.Boolean := False;
       Default_Tool_Timeout_Ms : UARP.Types.Integer_Value := 0;
       Default_Tool_Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
       Default_Tool_Max_Concurrency : UARP.Types.Integer_Value := 0;
@@ -1910,14 +1908,29 @@ package UARP.Models is
 
    --  `AdminListWebhookDLQResponseEntry` model.
    type Admin_List_Webhook_DLQ_Response_Entry is record
+      --  Deprecated spelling of `event_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
       Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Deprecated spelling of `event_type` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `event_type`.
       Event_Type : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Payload : Boolean := False;
       Payload : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Deprecated spelling of `error_message` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `error_message`.
       Error_Message : UARP.Types.Text := UARP.Types.Empty_Text;
       Timestamp : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Deprecated spelling of `tenant_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
       Has_Tenant_Id : Boolean := False;
       Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Event_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
+      Event_Type_X : UARP.Types.Text := UARP.Types.Empty_Text;
+      Error_Message_X : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tenant_Id : Boolean := False;
+      Tenant_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Admin_List_Webhook_DLQ_Response_Entry) return UARP.JSON_Support.JSON_Value;
@@ -2310,9 +2323,17 @@ package UARP.Models is
    --  middleware/rate-limit.ts EndpointRateLimitConfig - camelCase on the wire.
    type Endpoint_Rate_Limit is record
       Pattern : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Deprecated spelling of `max_requests` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `max_requests`.
       Max_Requests : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `window_sec` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `window_sec`.
       Window_Sec : UARP.Types.Integer_Value := 0;
       Source : UARP.Models.Guardrail_Config_Item_Source;
+      Max_Requests_X : UARP.Types.Integer_Value := 0;
+      Window_Sec_X : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Endpoint_Rate_Limit) return UARP.JSON_Support.JSON_Value;
@@ -2394,9 +2415,12 @@ package UARP.Models is
    --  `AdminReplayWebhookDLQResponse` model.
    type Admin_Replay_Webhook_DLQ_Response is record
       Success : Standard.Boolean := False;
+      --  Deprecated spelling of `event_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
       Event_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Action : UARP.Types.Text := UARP.Types.Empty_Text;
       Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Event_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Admin_Replay_Webhook_DLQ_Response) return UARP.JSON_Support.JSON_Value;
@@ -4382,6 +4406,7 @@ package UARP.Models is
       Fit : UARP.Models.Drawing_Op_Fit;
       Has_Layer : Boolean := False;
       Layer : UARP.Models.Drawing_Layer;
+      --  Values below 0 are clamped, not refused.
       Has_Index : Boolean := False;
       Index : UARP.Types.Integer_Value := 0;
       Has_Patch : Boolean := False;
@@ -5415,10 +5440,15 @@ package UARP.Models is
       Cancelled : Standard.Boolean := False;
       Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Child runs actually stopped. Zero is normal for a run whose children had already finished.
+      --  Deprecated spelling of `cancelled_count` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `cancelled_count`.
       Cancelled_Count : UARP.Types.Integer_Value := 0;
       --  False when no orchestration loop was in flight in this process - the run had already
       --  settled, or it belongs to another replica.
       Orchestrator_Stopped : Standard.Boolean := False;
+      --  Child runs actually stopped. Zero is normal for a run whose children had already finished.
+      Cancelled_Count_X : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Cancel_Squad_Run_Response) return UARP.JSON_Support.JSON_Value;
@@ -5429,10 +5459,15 @@ package UARP.Models is
       Cancelled : Standard.Boolean := False;
       Team_Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Child runs actually stopped. Zero is normal for a run whose children had already finished.
+      --  Deprecated spelling of `cancelled_count` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `cancelled_count`.
       Cancelled_Count : UARP.Types.Integer_Value := 0;
       --  False when no orchestration loop was in flight in this process - the run had already
       --  settled, or it belongs to another replica.
       Orchestrator_Stopped : Standard.Boolean := False;
+      --  Child runs actually stopped. Zero is normal for a run whose children had already finished.
+      Cancelled_Count_X : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Cancel_Team_Run_Response) return UARP.JSON_Support.JSON_Value;
@@ -5524,7 +5559,8 @@ package UARP.Models is
    type Cast_Ballot_Request is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Vote : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Voting weight; 0 < w ? 100.
+      --  Voting weight; 0 < w ? 1 (the same cap the cast_vote tool applies; 100 was accepted until
+      --  2026-09-16).
       Has_Weight : Boolean := False;
       Weight : UARP.Types.Float_Value := 0.0;
       Has_Reasoning : Boolean := False;
@@ -5621,6 +5657,7 @@ package UARP.Models is
       Messages : UARP.Models.Chat_Completion_Request_Message_Vectors.Vector;
       Has_Temperature : Boolean := False;
       Temperature : UARP.Types.Float_Value := 0.0;
+      --  Values below 1 are clamped, not refused.
       Has_Max_Tokens : Boolean := False;
       Max_Tokens : UARP.Types.Integer_Value := 0;
       Has_Stream : Boolean := False;
@@ -5814,6 +5851,17 @@ package UARP.Models is
 
    function To_JSON (Model : Check_Spawn_Permission_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Check_Spawn_Permission_Request;
+
+   --  `ClearBillingBudgetResponse` model.
+   type Clear_Billing_Budget_Response is record
+      Has_Configured : Boolean := False;
+      Configured : Standard.Boolean := False;
+      Has_Budget : Boolean := False;
+      Budget : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Clear_Billing_Budget_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Clear_Billing_Budget_Response;
 
    --  `CloseSessionResponse` model.
    type Close_Session_Response is record
@@ -7241,6 +7289,17 @@ package UARP.Models is
       Env : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Enabled : Boolean := False;
       Enabled : Standard.Boolean := False;
+      --  Names an environment variable of the API process whose value is sent to this server as a
+      --  bearer token. It MUST begin `MCP_` - 422 otherwise. The namespace is the whole security
+      --  boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+      --  tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+      --  mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+      --  never echoed back; only the ref is stored.
+      Has_API_Key_Ref : Boolean := False;
+      API_Key_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Hosts this server may be reached at, checked with DNS resolution.
+      Has_Egress_Allowlist : Boolean := False;
+      Egress_Allowlist : UARP.Types.Text_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Create_MCP_Server_Request) return UARP.JSON_Support.JSON_Value;
@@ -8078,13 +8137,33 @@ package UARP.Models is
    package Deadlock_Report_Conflicting_Rule_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Deadlock_Report_Conflicting_Rule);
 
+   --  `DeadlockReportConflictingRule2` model.
+   type Deadlock_Report_Conflicting_Rule2 is record
+      Prohibition : UARP.Types.Text := UARP.Types.Empty_Text;
+      Requirement : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Deadlock_Report_Conflicting_Rule2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Deadlock_Report_Conflicting_Rule2;
+
+   package Deadlock_Report_Conflicting_Rule2_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Deadlock_Report_Conflicting_Rule2);
+
    --  governance/emergency.ts DeadlockReport - computed, not stored. Field names are camelCase on
    --  the wire.
    type Deadlock_Report is record
+      --  Deprecated spelling of `has_deadlock` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `has_deadlock`.
       Has_Deadlock : Standard.Boolean := False;
+      --  Deprecated spelling of `conflicting_rules` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `conflicting_rules`.
       Conflicting_Rules : UARP.Models.Deadlock_Report_Conflicting_Rule_Vectors.Vector;
       Recommendation : UARP.Types.Text := UARP.Types.Empty_Text;
       Checked_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Deadlock_X : Standard.Boolean := False;
+      Conflicting_Rules_X : UARP.Models.Deadlock_Report_Conflicting_Rule2_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Deadlock_Report) return UARP.JSON_Support.JSON_Value;
@@ -8191,24 +8270,6 @@ package UARP.Models is
    function To_JSON (Model : Delete_All_Agent_Bookmarks_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_All_Agent_Bookmarks_Response;
 
-   --  Values of `DeleteCustomPlanForce`.
-   --  A value the API introduces later decodes as Delete_Custom_Plan_Force_Unrecognized
-   --  with the original text kept in Raw.
-   type Delete_Custom_Plan_Force_Kind is
-     (Delete_Custom_Plan_Force_N_1,
-   Delete_Custom_Plan_Force_Unrecognized);
-
-   type Delete_Custom_Plan_Force is record
-      Kind : Delete_Custom_Plan_Force_Kind := Delete_Custom_Plan_Force_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Delete_Custom_Plan_Force (Value : String) return Delete_Custom_Plan_Force;
-   function To_Delete_Custom_Plan_Force (Kind : Delete_Custom_Plan_Force_Kind) return Delete_Custom_Plan_Force;
-   function Image (Model : Delete_Custom_Plan_Force) return String;
-   function To_JSON (Model : Delete_Custom_Plan_Force) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Custom_Plan_Force;
-
    --  `DeleteCustomPlanResponse` model.
    type Delete_Custom_Plan_Response is record
       Deleted : Standard.Boolean := False;
@@ -8306,8 +8367,11 @@ package UARP.Models is
 
    --  `DeleteModelPricingOverrideResponse` model.
    type Delete_Model_Pricing_Override_Response is record
+      --  Deprecated spelling of `model_ref` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
       Model_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
       Deleted : Standard.Boolean := False;
+      Model_Ref_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Delete_Model_Pricing_Override_Response) return UARP.JSON_Support.JSON_Value;
@@ -8919,7 +8983,9 @@ package UARP.Models is
    function To_JSON (Model : Empty_Workspace_Trash_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Empty_Workspace_Trash_Response;
 
-   --  `EnforcementResultCheckResult` model.
+   --  Deprecated spelling of `check_result` - the same value, kept for the compatibility window
+   --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   --  `check_result`.
    type Enforcement_Result_Check_Result is record
       Allowed : Standard.Boolean := False;
       --  Rule ids actually evaluated. Empty means no rule applied - never that nothing was checked.
@@ -8933,8 +8999,11 @@ package UARP.Models is
 
    --  `EnforcementResultPenalty` model.
    type Enforcement_Result_Penalty is record
+      --  Deprecated spelling of `rule_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `rule_id`.
       Rule_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Penalty : UARP.Models.Constitution_Rule_Penalty;
+      Rule_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Enforcement_Result_Penalty) return UARP.JSON_Support.JSON_Value;
@@ -8943,13 +9012,29 @@ package UARP.Models is
    package Enforcement_Result_Penalty_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Enforcement_Result_Penalty);
 
+   --  `EnforcementResultCheckResult2` model.
+   type Enforcement_Result_Check_Result2 is record
+      Allowed : Standard.Boolean := False;
+      --  Rule ids actually evaluated. Empty means no rule applied - never that nothing was checked.
+      Checked_Rules : UARP.Types.Text_Vectors.Vector;
+      Violations : UARP.Models.Constitution_Violation_Vectors.Vector;
+      Checked_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Enforcement_Result_Check_Result2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Enforcement_Result_Check_Result2;
+
    --  `EnforcementResult` model.
    type Enforcement_Result is record
       --  False when any matched rule carries a blocking penalty.
       Allowed : Standard.Boolean := False;
+      --  Deprecated spelling of `check_result` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `check_result`.
       Check_Result : UARP.Models.Enforcement_Result_Check_Result;
       --  What the matched rules call for. Empty when nothing matched.
       Penalties : UARP.Models.Enforcement_Result_Penalty_Vectors.Vector;
+      Check_Result_X : UARP.Models.Enforcement_Result_Check_Result2;
    end record;
 
    function To_JSON (Model : Enforcement_Result) return UARP.JSON_Support.JSON_Value;
@@ -9031,6 +9116,86 @@ package UARP.Models is
    function To_JSON (Model : Error_Title) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Error_Title;
 
+   --  What a client should DO about this, as a value it can switch on - `detail` is for the person
+   --  reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+   --  document and the wire cannot drift apart. Two casings are on the wire and both are
+   --  load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+   --  hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+   --  no machine-readable class.
+   --  A value the API introduces later decodes as Error_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Error_Code_Kind is
+     (Error_Code_Aar_Not_Available,
+   Error_Code_Artifact_Integrity_Error,
+   Error_Code_Auth_Error,
+   Error_Code_Billing_Cancelled,
+   Error_Code_Billing_Disputed,
+   Error_Code_Billing_Past_Due,
+   Error_Code_Checksum_Mismatch,
+   Error_Code_Configuration_Error,
+   Error_Code_Event_Store_Error,
+   Error_Code_External_Service_Error,
+   Error_Code_Forbidden,
+   Error_Code_Guardrail_Violation,
+   Error_Code_Invalid_Query,
+   Error_Code_Invalid_Share_List,
+   Error_Code_Invalid_Share_Target,
+   Error_Code_LLM_Error,
+   Error_Code_Migration_Conflict,
+   Error_Code_Mission_Already_Running,
+   Error_Code_Mission_Concurrency_Limit,
+   Error_Code_Mission_Not_Found,
+   Error_Code_Mission_Not_Runnable,
+   Error_Code_Mission_Not_Running,
+   Error_Code_Mission_Route_Not_Found,
+   Error_Code_Not_Found,
+   Error_Code_Not_Yanked,
+   Error_Code_Payload_Too_Large,
+   Error_Code_Persistence_Error,
+   Error_Code_Planner_Output_Invalid,
+   Error_Code_Planner_Refused,
+   Error_Code_Precondition_Failed,
+   Error_Code_Private_Not_Shared,
+   Error_Code_Promo_Redemption_Failed,
+   Error_Code_Quota_Exceeded,
+   Error_Code_Rate_Limit_Exceeded,
+   Error_Code_Reserved_Scope,
+   Error_Code_Run_Cancelled,
+   Error_Code_Scope_Mismatch,
+   Error_Code_Scope_Taken,
+   Error_Code_Share_List_Conflict,
+   Error_Code_Size_Limit,
+   Error_Code_Spec_Not_Found,
+   Error_Code_Team_Abort,
+   Error_Code_Validation_Error,
+   Error_Code_Version_Conflict,
+   Error_Code_Version_Not_Found,
+   Error_Code_Workspace_Storage_Limit,
+   Error_Code_Yank_Conflict,
+   Error_Code_Agent_Not_Found,
+   Error_Code_Already_Bootstrapped,
+   Error_Code_Billing_Not_Configured,
+   Error_Code_Governance_Not_Enabled,
+   Error_Code_Incomplete_Record,
+   Error_Code_Inert_Policy_Field,
+   Error_Code_Inert_Public_Config_Field,
+   Error_Code_Limit_Reached,
+   Error_Code_Quota_Exceeded_X,
+   Error_Code_Rate_Limited,
+   Error_Code_Run_Quota_Exceeded,
+   Error_Code_Unrecognized);
+
+   type Error_Code is record
+      Kind : Error_Code_Kind := Error_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Error_Code (Value : String) return Error_Code;
+   function To_Error_Code (Kind : Error_Code_Kind) return Error_Code;
+   function Image (Model : Error_Code) return String;
+   function To_JSON (Model : Error_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Error_Code;
+
    --  `ErrorError` model.
    type Error_Error is record
       Has_Field : Boolean := False;
@@ -9045,7 +9210,8 @@ package UARP.Models is
    package Error_Error_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Error_Error);
 
-   --  RFC 9457 problem+json style error; correlationId for request tracing.
+   --  RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
+   --  tracing - `correlationId` is the same value for the compatibility window.
    type Error is record
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The HTTP reason phrase of `status` - one dictionary for every status the platform answers
@@ -9058,12 +9224,25 @@ package UARP.Models is
       --  `title`. On a 500 it is the fixed sentence the sanitizer allows; 501-504 carry the handler's
       --  own operator guidance.
       Detail : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Request ID for tracing
+      --  What a client should DO about this, as a value it can switch on - `detail` is for the person
+      --  reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+      --  document and the wire cannot drift apart. Two casings are on the wire and both are
+      --  load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+      --  hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+      --  no machine-readable class.
+      Has_Code : Boolean := False;
+      Code : UARP.Models.Error_Code;
+      --  Request ID for tracing Deprecated spelling of `correlation_id` - the same value, kept for
+      --  the compatibility window and removed in the next breaking release (the one that moves
+      --  `X-API-Version`). Read `correlation_id`.
       Has_Correlation_Id : Boolean := False;
       Correlation_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Field-level validation errors (present on 422 responses)
       Has_Errors : Boolean := False;
       Errors : UARP.Models.Error_Error_Vectors.Vector;
+      --  Request ID for tracing
+      Has_Correlation_Id : Boolean := False;
+      Correlation_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Error) return UARP.JSON_Support.JSON_Value;
@@ -9325,6 +9504,24 @@ package UARP.Models is
 
    function To_JSON (Model : Export_Admin_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Export_Admin_Config_Response;
+
+   --  Values of `ExportDataExplorerIncludeSensitive`.
+   --  A value the API introduces later decodes as Export_Data_Explorer_Include_Sensitive_Unrecognized
+   --  with the original text kept in Raw.
+   type Export_Data_Explorer_Include_Sensitive_Kind is
+     (Export_Data_Explorer_Include_Sensitive_N_1,
+   Export_Data_Explorer_Include_Sensitive_Unrecognized);
+
+   type Export_Data_Explorer_Include_Sensitive is record
+      Kind : Export_Data_Explorer_Include_Sensitive_Kind := Export_Data_Explorer_Include_Sensitive_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Export_Data_Explorer_Include_Sensitive (Value : String) return Export_Data_Explorer_Include_Sensitive;
+   function To_Export_Data_Explorer_Include_Sensitive (Kind : Export_Data_Explorer_Include_Sensitive_Kind) return Export_Data_Explorer_Include_Sensitive;
+   function Image (Model : Export_Data_Explorer_Include_Sensitive) return String;
+   function To_JSON (Model : Export_Data_Explorer_Include_Sensitive) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Export_Data_Explorer_Include_Sensitive;
 
    --  Values of `ExportMyAccountFormat`.
    --  A value the API introduces later decodes as Export_My_Account_Format_Unrecognized
@@ -10018,36 +10215,138 @@ package UARP.Models is
    package Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Runs_By_Day_Item);
 
+   --  `GetAgentActivityStatsResponseTopErrorMessage2` model.
+   type Get_Agent_Activity_Stats_Response_Top_Error_Message2 is record
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Count : Boolean := False;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Top_Error_Message2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Top_Error_Message2;
+
+   package Get_Agent_Activity_Stats_Response_Top_Error_Message2_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Top_Error_Message2);
+
+   --  `GetAgentActivityStatsResponseRunsByDayItem2` model.
+   type Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2 is record
+      Has_Day : Boolean := False;
+      Day : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+      Has_Completed : Boolean := False;
+      Completed : UARP.Types.Integer_Value := 0;
+      Has_Failed : Boolean := False;
+      Failed : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2;
+
+   package Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2);
+
    --  `GetAgentActivityStatsResponse` model.
    type Get_Agent_Activity_Stats_Response is record
+      --  Deprecated spelling of `total_runs` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `total_runs`.
       Has_Total_Runs : Boolean := False;
       Total_Runs : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `completed_runs` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `completed_runs`.
       Has_Completed_Runs : Boolean := False;
       Completed_Runs : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `failed_runs` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `failed_runs`.
       Has_Failed_Runs : Boolean := False;
       Failed_Runs : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `cancelled_runs` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `cancelled_runs`.
       Has_Cancelled_Runs : Boolean := False;
       Cancelled_Runs : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `guardrail_blocked_runs` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `guardrail_blocked_runs`.
       Has_Guardrail_Blocked_Runs : Boolean := False;
       Guardrail_Blocked_Runs : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `error_rate_percent` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `error_rate_percent`.
       Has_Error_Rate_Percent : Boolean := False;
       Error_Rate_Percent : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `avg_steps_per_run` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `avg_steps_per_run`.
       Has_Avg_Steps_Per_Run : Boolean := False;
       Avg_Steps_Per_Run : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `avg_duration_ms` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `avg_duration_ms`.
       Has_Avg_Duration_Ms : Boolean := False;
       Avg_Duration_Ms : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `avg_input_tokens` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `avg_input_tokens`.
       Has_Avg_Input_Tokens : Boolean := False;
       Avg_Input_Tokens : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `avg_output_tokens` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `avg_output_tokens`.
       Has_Avg_Output_Tokens : Boolean := False;
       Avg_Output_Tokens : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `avg_thinking_tokens` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `avg_thinking_tokens`.
       Has_Avg_Thinking_Tokens : Boolean := False;
       Avg_Thinking_Tokens : UARP.Types.Float_Value := 0.0;
+      --  Deprecated spelling of `tool_breakdown` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `tool_breakdown`.
       Has_Tool_Breakdown : Boolean := False;
       Tool_Breakdown : UARP.Models.Tool_Breakdown_Entry_Vectors.Vector;
+      --  Deprecated spelling of `top_error_messages` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `top_error_messages`.
       Has_Top_Error_Messages : Boolean := False;
       Top_Error_Messages : UARP.Models.Get_Agent_Activity_Stats_Response_Top_Error_Message_Vectors.Vector;
+      --  Deprecated spelling of `runs_by_day` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `runs_by_day`.
       Has_Runs_By_Day : Boolean := False;
       Runs_By_Day : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors.Vector;
+      Has_Total_Runs : Boolean := False;
+      Total_Runs_X : UARP.Types.Integer_Value := 0;
+      Has_Completed_Runs : Boolean := False;
+      Completed_Runs_X : UARP.Types.Integer_Value := 0;
+      Has_Failed_Runs : Boolean := False;
+      Failed_Runs_X : UARP.Types.Integer_Value := 0;
+      Has_Cancelled_Runs : Boolean := False;
+      Cancelled_Runs_X : UARP.Types.Integer_Value := 0;
+      Has_Guardrail_Blocked_Runs : Boolean := False;
+      Guardrail_Blocked_Runs_X : UARP.Types.Integer_Value := 0;
+      Has_Error_Rate_Percent : Boolean := False;
+      Error_Rate_Percent_X : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Steps_Per_Run : Boolean := False;
+      Avg_Steps_Per_Run_X : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Duration_Ms : Boolean := False;
+      Avg_Duration_Ms_X : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Input_Tokens : Boolean := False;
+      Avg_Input_Tokens_X : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Output_Tokens : Boolean := False;
+      Avg_Output_Tokens_X : UARP.Types.Float_Value := 0.0;
+      Has_Avg_Thinking_Tokens : Boolean := False;
+      Avg_Thinking_Tokens_X : UARP.Types.Float_Value := 0.0;
+      Has_Tool_Breakdown : Boolean := False;
+      Tool_Breakdown_X : UARP.Models.Tool_Breakdown_Entry_Vectors.Vector;
+      Has_Top_Error_Messages : Boolean := False;
+      Top_Error_Messages_X : UARP.Models.Get_Agent_Activity_Stats_Response_Top_Error_Message2_Vectors.Vector;
+      Has_Runs_By_Day : Boolean := False;
+      Runs_By_Day_X : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Get_Agent_Activity_Stats_Response) return UARP.JSON_Support.JSON_Value;
@@ -10217,6 +10516,66 @@ package UARP.Models is
    function To_JSON (Model : Get_Apple_App_Site_Association_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Apple_App_Site_Association_Response;
 
+   --  Values of `GetBillingBudgetResponseBudgetPeriod`.
+   --  A value the API introduces later decodes as Get_Billing_Budget_Response_Budget_Period_Unrecognized
+   --  with the original text kept in Raw.
+   type Get_Billing_Budget_Response_Budget_Period_Kind is
+     (Get_Billing_Budget_Response_Budget_Period_Monthly,
+   Get_Billing_Budget_Response_Budget_Period_Weekly,
+   Get_Billing_Budget_Response_Budget_Period_Daily,
+   Get_Billing_Budget_Response_Budget_Period_Unrecognized);
+
+   type Get_Billing_Budget_Response_Budget_Period is record
+      Kind : Get_Billing_Budget_Response_Budget_Period_Kind := Get_Billing_Budget_Response_Budget_Period_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Get_Billing_Budget_Response_Budget_Period (Value : String) return Get_Billing_Budget_Response_Budget_Period;
+   function To_Get_Billing_Budget_Response_Budget_Period (Kind : Get_Billing_Budget_Response_Budget_Period_Kind) return Get_Billing_Budget_Response_Budget_Period;
+   function Image (Model : Get_Billing_Budget_Response_Budget_Period) return String;
+   function To_JSON (Model : Get_Billing_Budget_Response_Budget_Period) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Billing_Budget_Response_Budget_Period;
+
+   --  `GetBillingBudgetResponseBudget` model.
+   type Get_Billing_Budget_Response_Budget is record
+      Has_Limit_Usd : Boolean := False;
+      Limit_Usd : UARP.Types.Float_Value := 0.0;
+      --  Fraction, not percent: 0.8 alerts at 80%.
+      Has_Soft_Threshold : Boolean := False;
+      Soft_Threshold : UARP.Types.Float_Value := 0.0;
+      Has_Hard_Threshold : Boolean := False;
+      Hard_Threshold : UARP.Types.Float_Value := 0.0;
+      Has_Period : Boolean := False;
+      Period : UARP.Models.Get_Billing_Budget_Response_Budget_Period;
+   end record;
+
+   function To_JSON (Model : Get_Billing_Budget_Response_Budget) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Billing_Budget_Response_Budget;
+
+   --  `GetBillingBudgetResponse` model.
+   type Get_Billing_Budget_Response is record
+      Configured : Standard.Boolean := False;
+      Has_Budget : Boolean := False;
+      Budget : UARP.Models.Get_Billing_Budget_Response_Budget;
+      Has_Status : Boolean := False;
+      Status : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Get_Billing_Budget_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Billing_Budget_Response;
+
+   --  `GetBillingOverageResponse` model.
+   type Get_Billing_Overage_Response is record
+      Enabled : Standard.Boolean := False;
+      --  Always true: overage cannot be enabled without a spend cap.
+      Requires_Cap : Standard.Boolean := False;
+      Cap_Configured : Standard.Boolean := False;
+      Metered_To_Stripe : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Get_Billing_Overage_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Billing_Overage_Response;
+
    --  `GetBillingTrialResponse` model.
    type Get_Billing_Trial_Response is record
       Has_Active : Boolean := False;
@@ -10233,6 +10592,36 @@ package UARP.Models is
 
    function To_JSON (Model : Get_Billing_Trial_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Billing_Trial_Response;
+
+   --  `GetBridgeAgentSpecsResponseSpec` model.
+   type Get_Bridge_Agent_Specs_Response_Spec is record
+      Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      Enabled : Standard.Boolean := False;
+      --  null when the registry has no row for the SPEC; the reconciler skips it
+      Has_Runtime_Scope : Boolean := False;
+      Runtime_Scope : UARP.Types.Text := UARP.Types.Empty_Text;
+      Permissions_Granted : UARP.Types.Text_Vectors.Vector;
+      Has_Tool_Allowlist : Boolean := False;
+      Tool_Allowlist : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Get_Bridge_Agent_Specs_Response_Spec) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Bridge_Agent_Specs_Response_Spec;
+
+   package Get_Bridge_Agent_Specs_Response_Spec_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Bridge_Agent_Specs_Response_Spec);
+
+   --  `GetBridgeAgentSpecsResponse` model.
+   type Get_Bridge_Agent_Specs_Response is record
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  SHA-256 over the list
+      Revision : UARP.Types.Text := UARP.Types.Empty_Text;
+      Specs : UARP.Models.Get_Bridge_Agent_Specs_Response_Spec_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Get_Bridge_Agent_Specs_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Bridge_Agent_Specs_Response;
 
    --  `GetBridgeTaskApprovalResponse` model.
    type Get_Bridge_Task_Approval_Response is record
@@ -11042,6 +11431,64 @@ package UARP.Models is
 
    function To_JSON (Model : Get_My_Head_Agent_Template_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_My_Head_Agent_Template_Response;
+
+   --  `GetPromoStateResponseAppliedCode` model.
+   type Get_Promo_State_Response_Applied_Code is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Redeemed_At : Boolean := False;
+      Redeemed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Discount_Percent : Boolean := False;
+      Discount_Percent : UARP.Types.Float_Value := 0.0;
+      Has_Rewarded : Boolean := False;
+      Rewarded : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Get_Promo_State_Response_Applied_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Promo_State_Response_Applied_Code;
+
+   --  `GetPromoStateResponseOwnedCode` model.
+   type Get_Promo_State_Response_Owned_Code is record
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Program : Boolean := False;
+      Program : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Active : Boolean := False;
+      Active : Standard.Boolean := False;
+      Has_Uses : Boolean := False;
+      Uses : UARP.Types.Integer_Value := 0;
+      Has_Max_Uses : Boolean := False;
+      Max_Uses : UARP.Types.Integer_Value := 0;
+      Has_Reward_Tokens_Per_Subscription : Boolean := False;
+      Reward_Tokens_Per_Subscription : UARP.Types.Integer_Value := 0;
+      Has_Subscriber_Bonus_Tokens : Boolean := False;
+      Subscriber_Bonus_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Discount_Percent : Boolean := False;
+      Discount_Percent : UARP.Types.Float_Value := 0.0;
+      Has_Total_Rewarded_Tokens : Boolean := False;
+      Total_Rewarded_Tokens : UARP.Types.Integer_Value := 0;
+      Has_Rewarded_Subscriptions : Boolean := False;
+      Rewarded_Subscriptions : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Get_Promo_State_Response_Owned_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Promo_State_Response_Owned_Code;
+
+   package Get_Promo_State_Response_Owned_Code_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Promo_State_Response_Owned_Code);
+
+   --  `GetPromoStateResponse` model.
+   type Get_Promo_State_Response is record
+      Has_Applied_Code : Boolean := False;
+      Applied_Code : UARP.Models.Get_Promo_State_Response_Applied_Code;
+      Bonus_Tokens_Balance : UARP.Types.Integer_Value := 0;
+      --  Codes this tenant OWNS (it is the referrer), with their reward totals. Empty for everyone
+      --  else.
+      Owned_Codes : UARP.Models.Get_Promo_State_Response_Owned_Code_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Get_Promo_State_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Promo_State_Response;
 
    --  `PublicBlogPost` model.
    type Public_Blog_Post is record
@@ -11932,6 +12379,9 @@ package UARP.Models is
    type Get_Unread_Count_Response is record
       Count : UARP.Types.Integer_Value := 0;
       Unread_Count : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `unread_count` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `unread_count`.
       Unread_Count_X : UARP.Types.Integer_Value := 0;
    end record;
 
@@ -12296,6 +12746,29 @@ package UARP.Models is
 
    function To_JSON (Model : Import_Agent_Memory_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Agent_Memory_Response;
+
+   --  `ImportDataExplorerRequest` model.
+   type Import_Data_Explorer_Request is record
+      File : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Import_Data_Explorer_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Data_Explorer_Request;
+
+   --  `ImportDataExplorerResponse` model.
+   type Import_Data_Explorer_Response is record
+      Success : Standard.Boolean := False;
+      Imported : UARP.Types.Integer_Value := 0;
+      Skipped : UARP.Types.Integer_Value := 0;
+      --  Rows refused because the read path would refuse them too - sensitive keys, and anything
+      --  under the `__keys__` namespace auth authenticates against.
+      Refused_Sensitive : UARP.Types.Integer_Value := 0;
+      Errors : UARP.Types.Text_Vectors.Vector;
+      Total_Lines : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Import_Data_Explorer_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Import_Data_Explorer_Response;
 
    --  Values of `ImprovementProposalType`.
    --  A value the API introduces later decodes as Improvement_Proposal_Type_Unrecognized
@@ -13471,11 +13944,10 @@ package UARP.Models is
    --  `ListCompaniesResponse` model.
    type List_Companies_Response is record
       Items : UARP.Models.Company_Vectors.Vector;
-      --  Legacy alias for `items`. Will be removed in API v1.x.
-      Has_Companies : Boolean := False;
-      Companies : UARP.Models.Company_Vectors.Vector;
-      Has_Total : Boolean := False;
-      Total : UARP.Types.Integer_Value := 0;
+      --  Opaque cursor for the next page; null on the last page.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_More : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : List_Companies_Response) return UARP.JSON_Support.JSON_Value;
@@ -18348,6 +18820,26 @@ package UARP.Models is
    function To_JSON (Model : Readiness_Report) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Readiness_Report;
 
+   --  `RedeemPromoCodeRequest` model.
+   type Redeem_Promo_Code_Request is record
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Redeem_Promo_Code_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Redeem_Promo_Code_Request;
+
+   --  `RedeemPromoCodeResponse` model.
+   type Redeem_Promo_Code_Response is record
+      Redeemed : Standard.Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Discount_Percent : Boolean := False;
+      Discount_Percent : UARP.Types.Float_Value := 0.0;
+      Subscriber_Bonus_Tokens : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Redeem_Promo_Code_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Redeem_Promo_Code_Response;
+
    --  `RegisterAmbassadorRequest` model.
    type Register_Ambassador_Request is record
       Ambassador_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -18873,8 +19365,13 @@ package UARP.Models is
       Seq : UARP.Types.Integer_Value := 0;
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
       Matches : Standard.Boolean := False;
+      --  Deprecated spelling of `mismatch_detail` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `mismatch_detail`.
       Has_Mismatch_Detail : Boolean := False;
       Mismatch_Detail : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Mismatch_Detail : Boolean := False;
+      Mismatch_Detail_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Replay_Result_Step_Comparison) return UARP.JSON_Support.JSON_Value;
@@ -18883,21 +19380,63 @@ package UARP.Models is
    package Replay_Result_Step_Comparison_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Replay_Result_Step_Comparison);
 
+   --  `ReplayResultStepComparison2` model.
+   type Replay_Result_Step_Comparison2 is record
+      Seq : UARP.Types.Integer_Value := 0;
+      Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Matches : Standard.Boolean := False;
+      --  Deprecated spelling of `mismatch_detail` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `mismatch_detail`.
+      Has_Mismatch_Detail : Boolean := False;
+      Mismatch_Detail : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Mismatch_Detail : Boolean := False;
+      Mismatch_Detail_X : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Replay_Result_Step_Comparison2) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Replay_Result_Step_Comparison2;
+
+   package Replay_Result_Step_Comparison2_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Replay_Result_Step_Comparison2);
+
    --  runtime/execution/replay-executor.ts ReplayResult. camelCase on the wire, unlike the rest of
    --  the API; `divergencePoint`, `divergenceReason` and `stepComparisons` (execute mode only) are
    --  conditional.
    type Replay_Result is record
       Deterministic : Standard.Boolean := False;
       Verified : UARP.Models.Replay_Result_Verified;
+      --  Deprecated spelling of `events_replayed` - the same value, kept for the compatibility window
+      --  and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `events_replayed`.
       Events_Replayed : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `run_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `run_id`.
       Run_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Mode : UARP.Models.Replay_Result_Mode;
+      --  Deprecated spelling of `divergence_point` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `divergence_point`.
       Has_Divergence_Point : Boolean := False;
       Divergence_Point : UARP.Types.Integer_Value := 0;
+      --  Deprecated spelling of `divergence_reason` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `divergence_reason`.
       Has_Divergence_Reason : Boolean := False;
       Divergence_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Deprecated spelling of `step_comparisons` - the same value, kept for the compatibility
+      --  window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `step_comparisons`.
       Has_Step_Comparisons : Boolean := False;
       Step_Comparisons : UARP.Models.Replay_Result_Step_Comparison_Vectors.Vector;
+      Events_Replayed_X : UARP.Types.Integer_Value := 0;
+      Run_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Divergence_Point : Boolean := False;
+      Divergence_Point_X : UARP.Types.Integer_Value := 0;
+      Has_Divergence_Reason : Boolean := False;
+      Divergence_Reason_X : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Step_Comparisons : Boolean := False;
+      Step_Comparisons_X : UARP.Models.Replay_Result_Step_Comparison2_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Replay_Result) return UARP.JSON_Support.JSON_Value;
@@ -19737,12 +20276,17 @@ package UARP.Models is
    type Search_Workspace_Files_Response_Result is record
       Has_Path : Boolean := False;
       Path : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Deprecated spelling of `line_number` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `line_number`.
       Has_Line_Number : Boolean := False;
       Line_Number : UARP.Types.Integer_Value := 0;
       Has_Line : Boolean := False;
       Line : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Match : Boolean := False;
       Match : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Line_Number : Boolean := False;
+      Line_Number_X : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Search_Workspace_Files_Response_Result) return UARP.JSON_Support.JSON_Value;
@@ -20134,6 +20678,50 @@ package UARP.Models is
    function To_JSON (Model : Set_Arbiter_Registry_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Arbiter_Registry_Response;
 
+   --  `SetBillingBudgetRequest` model.
+   type Set_Billing_Budget_Request is record
+      Limit_Usd : UARP.Types.Float_Value := 0.0;
+      Has_Soft_Threshold : Boolean := False;
+      Soft_Threshold : UARP.Types.Float_Value := 0.0;
+      Has_Hard_Threshold : Boolean := False;
+      Hard_Threshold : UARP.Types.Float_Value := 0.0;
+      Has_Period : Boolean := False;
+      Period : UARP.Models.Get_Billing_Budget_Response_Budget_Period;
+   end record;
+
+   function To_JSON (Model : Set_Billing_Budget_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Billing_Budget_Request;
+
+   --  `SetBillingBudgetResponse` model.
+   type Set_Billing_Budget_Response is record
+      Has_Configured : Boolean := False;
+      Configured : Standard.Boolean := False;
+      Has_Budget : Boolean := False;
+      Budget : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+   end record;
+
+   function To_JSON (Model : Set_Billing_Budget_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Billing_Budget_Response;
+
+   --  `SetBillingOverageRequest` model.
+   type Set_Billing_Overage_Request is record
+      Enabled : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Set_Billing_Overage_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Billing_Overage_Request;
+
+   --  `SetBillingOverageResponse` model.
+   type Set_Billing_Overage_Response is record
+      Has_Enabled : Boolean := False;
+      Enabled : Standard.Boolean := False;
+      Has_Requires_Cap : Boolean := False;
+      Requires_Cap : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Set_Billing_Overage_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Billing_Overage_Response;
+
    --  `SetDataExplorerValueRequest` model.
    type Set_Data_Explorer_Value_Request is record
       Namespace : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -20247,12 +20835,15 @@ package UARP.Models is
 
    --  `SetModelPricingOverrideResponse` model.
    type Set_Model_Pricing_Override_Response is record
+      --  Deprecated spelling of `model_ref` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
       Model_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
       Input_Per_Million : UARP.Types.Float_Value := 0.0;
       Output_Per_Million : UARP.Types.Float_Value := 0.0;
       --  Absent when not set.
       Has_Cached_Input_Per_Million : Boolean := False;
       Cached_Input_Per_Million : UARP.Types.Float_Value := 0.0;
+      Model_Ref_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Set_Model_Pricing_Override_Response) return UARP.JSON_Support.JSON_Value;
@@ -20809,7 +21400,9 @@ package UARP.Models is
    type Sync_Provider_Models_Response is record
       --  New catalogue entries.
       Added : UARP.Types.Integer_Value := 0;
-      --  Ids of the added entries; capped.
+      --  Ids of the added entries; capped. Deprecated spelling of `added_ids` - the same value, kept
+      --  for the compatibility window and removed in the next breaking release (the one that moves
+      --  `X-API-Version`). Read `added_ids`.
       Added_Ids : UARP.Types.Text_Vectors.Vector;
       --  Catalogue size after the merge.
       Total : UARP.Types.Integer_Value := 0;
@@ -20818,6 +21411,8 @@ package UARP.Models is
       --  Present when the run was scoped to one provider, as it is here.
       Has_Provider : Boolean := False;
       Provider : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Ids of the added entries; capped.
+      Added_Ids_X : UARP.Types.Text_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Sync_Provider_Models_Response) return UARP.JSON_Support.JSON_Value;
@@ -21374,7 +21969,11 @@ package UARP.Models is
    --  `UpdateACPSessionResponse` model.
    type Update_ACP_Session_Response is record
       Saved : Standard.Boolean := False;
+      --  Deprecated spelling of `session_id` - the same value, kept for the compatibility window and
+      --  removed in the next breaking release (the one that moves `X-API-Version`). Read
+      --  `session_id`.
       Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Session_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Update_ACP_Session_Response) return UARP.JSON_Support.JSON_Value;
@@ -22144,10 +22743,8 @@ package UARP.Models is
 
    --  `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
    type Update_Admin_Tool_Security_Config_Response_Tool_Security is record
-      Default_Egress_Policy : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Egress_Allowlist_Per_Tenant : Boolean := False;
       Egress_Allowlist_Per_Tenant : UARP.Types.Text_Vectors.Vector;
-      Ssrf_Deny_Private_Ranges : Standard.Boolean := False;
       Default_Tool_Timeout_Ms : UARP.Types.Integer_Value := 0;
       Default_Tool_Max_Payload_Bytes : UARP.Types.Integer_Value := 0;
       Default_Tool_Max_Concurrency : UARP.Types.Integer_Value := 0;
@@ -22263,6 +22860,7 @@ package UARP.Models is
    --  `UpdateCoreMemoryBlockRequest` model.
    type Update_Core_Memory_Block_Request is record
       Content : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Values outside 1..32000 are clamped to the range, not refused.
       Has_Max_Tokens : Boolean := False;
       Max_Tokens : UARP.Types.Integer_Value := 0;
    end record;
@@ -22355,6 +22953,40 @@ package UARP.Models is
 
    function To_JSON (Model : Update_Markup_Config_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Markup_Config_Response;
+
+   --  `UpdateMCPServerRequest` model.
+   type Update_MCP_Server_Request is record
+      Has_Name : Boolean := False;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_URL : Boolean := False;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Command : Boolean := False;
+      Command : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Args : Boolean := False;
+      Args : UARP.Types.Text_Vectors.Vector;
+      --  Re-encrypted on write. `{}` clears it.
+      Has_Env : Boolean := False;
+      Env : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Enabled : Boolean := False;
+      Enabled : Standard.Boolean := False;
+      Has_Capabilities : Boolean := False;
+      Capabilities : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Status : Boolean := False;
+      Status : UARP.Models.MCP_Server_Status;
+      --  Names an environment variable of the API process whose value is sent to this server as a
+      --  bearer token. It MUST begin `MCP_` - 422 otherwise. The namespace is the whole security
+      --  boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+      --  tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+      --  mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+      --  never echoed back; only the ref is stored.
+      Has_API_Key_Ref : Boolean := False;
+      API_Key_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Egress_Allowlist : Boolean := False;
+      Egress_Allowlist : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Update_MCP_Server_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_MCP_Server_Request;
 
    --  Ceilings only; the spent counters are not writable.
    type Update_Mission_Objective_Request_Budget is record
@@ -22546,6 +23178,13 @@ package UARP.Models is
 
    --  `UpdateSessionRequest` model.
    type Update_Session_Request is record
+      --  MERGED into the stored bag, not replaced - a key this body omits keeps its value, and a key
+      --  it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+      --  `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+      --  Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
+      --  most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
+      --  request is refused with 422 and a `detail` naming the number reached. Remove keys you no
+      --  longer need; this is a label bag, not content.
       Has_Metadata : Boolean := False;
       Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       --  Per-conversation model override. Send null to clear (revert to agent default), or {

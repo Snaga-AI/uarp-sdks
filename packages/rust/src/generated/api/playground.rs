@@ -29,7 +29,14 @@ impl Client {
 impl PlaygroundApi {
     /// Load agent canvas state for visual builder
     ///
+    /// Returns the saved visual-builder canvas for this agent — its nodes, edges and metadata. An
+    /// agent that has never been saved from the builder is not a `404`: an empty canvas with the
+    /// current timestamp is returned, so a first-time open renders a blank board. The route matches
+    /// only the bare path; any sub-path under it is refused rather than answered with this canvas.
+    ///
     /// `GET /api/v1/playground/agents/{agentId}`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_playground_canvas(&self, agent_id: &str) -> Result<models::PlaygroundAgentState> {
         self.client
             .request_json(Request {
@@ -44,6 +51,12 @@ impl PlaygroundApi {
     }
 
     /// List starter templates for visual builder
+    ///
+    /// Lists the starter canvases the visual builder offers — a chatbot, a tool-using agent and a
+    /// research team — each with its nodes and edges ready to load. `category` filters by the
+    /// template's category (`starter`, `advanced`). The set is defined in the server code, so it is
+    /// the same for every tenant, is not scoped to any agent, and nothing is read from or written
+    /// to storage.
     ///
     /// `GET /api/v1/playground/templates`
     pub async fn list_playground_templates(&self) -> Result<models::ListPlaygroundTemplatesResponse> {
@@ -60,6 +73,16 @@ impl PlaygroundApi {
     }
 
     /// Execute agent in playground
+    ///
+    /// Executes the agent from the playground and returns the queued run with `202`. Requires the
+    /// `runs:create` scope and the `runs.write` permission, and applies the same gates as the
+    /// canonical run endpoint: `404` when the agent does not exist, `403` when it is suspended,
+    /// `410` when it has been terminated, and `429` when the tenant's run quota is exhausted. This
+    /// creates a REAL run — billed, scheduled and visible with the others — tagged `_playground` in
+    /// its metadata, inheriting the agent's workspace so file tools behave as they do in a session;
+    /// `session_id`, `resource_limits`, `metadata` and `options` are carried onto it. Scheduling is
+    /// fire-and-forget, so the `202` means the run was queued, and follow its progress on the run's
+    /// events stream.
     ///
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
@@ -79,7 +102,16 @@ impl PlaygroundApi {
 
     /// Save agent canvas state
     ///
+    /// Saves the visual-builder canvas for this agent, replacing the stored one wholesale — nodes
+    /// and edges are taken from the body as given, and `metadata` defaults to `{}` when omitted.
+    /// Node types are limited to `llm`, `tool`, `guardrail`, `memory`, `condition`, `input` and
+    /// `output`. Requires the `agents:write` scope and the `agents.write` permission, the same as
+    /// editing the agent itself, because the canvas is the agent's composition. The canvas is
+    /// stored alongside the agent record and does not itself change how the agent runs.
+    ///
     /// `PUT /api/v1/playground/agents/{agentId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn save_playground_canvas(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::PlaygroundAgentState> {
         self.client
             .request_json(Request {

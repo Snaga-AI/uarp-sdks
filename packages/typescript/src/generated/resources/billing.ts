@@ -4,20 +4,30 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
+  ClearBillingBudgetResponse,
   CreateBillingPortalSessionRequest,
   CreateBillingPortalSessionResponse,
   CreateCheckoutSessionRequest,
   CreateCheckoutSessionResponse,
   CreateSpecPackageCheckoutSessionRequest,
   CreateSpecPackageCheckoutSessionResponse,
+  GetBillingBudgetResponse,
+  GetBillingOverageResponse,
   GetBillingTrialResponse,
   GetMediaUsageResponse,
+  GetPromoStateResponse,
   GetUsageTimeseriesMetric,
   GetUsageTimeseriesResponse,
   HandleStripeWebhookRequest,
   HandleStripeWebhookResponse,
   ListBillingPlansResponse,
   ListBillingSpecPackagesResponse,
+  RedeemPromoCodeRequest,
+  RedeemPromoCodeResponse,
+  SetBillingBudgetRequest,
+  SetBillingBudgetResponse,
+  SetBillingOverageRequest,
+  SetBillingOverageResponse,
   UsageQuota,
   UsageSummary,
 } from '../models.js';
@@ -59,6 +69,13 @@ export class BillingResource extends APIResource {
   /**
    * Check tenant quota status
    *
+   * Reports the tenant's quota position: the effective `plan`, the monthly token and run check
+   * from the usage tracker, raw `usage`, the `daily` token share with its `resets_at`, the day
+   * and month reset moments, a `limits` mirror of the plan scalars, and `resource_usage` — the
+   * canonical `{count, limit, over_by}` per resource for agents, teams, knowledge bases and
+   * workspaces. `resource_usage` is what a client should read for a resource's limit; `limits`
+   * exists for older consumers. Gated on the `billing:read` permission and scope.
+   *
    * `GET /api/v1/usage/quota`
    *
    * Required scopes: `billing:read`.
@@ -67,6 +84,27 @@ export class BillingResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/usage/quota',
+      options,
+    });
+  }
+
+  /**
+   * Remove this tenant's spend cap
+   *
+   * Removes the tenant's spend cap, after which run starts are no longer gated by a dollar
+   * ceiling. Refused with **409** while metered overage is enabled, since dropping the cap under
+   * overage would leave the invoice unbounded — disable overage first. Requires the
+   * `billing:write` permission and scope.
+   *
+   * `DELETE /api/v1/billing/budget`
+   *
+   * Required scopes: `billing:write`.
+   */
+  clearBillingBudget(options?: RequestOptions): Promise<ClearBillingBudgetResponse> {
+    return this._client.request({
+      method: 'DELETE',
+      path: '/api/v1/billing/budget',
+      idempotent: true,
       options,
     });
   }
@@ -93,6 +131,15 @@ export class BillingResource extends APIResource {
 
   /**
    * Create Stripe checkout session
+   *
+   * Creates a Stripe Checkout session for `plan_id` and returns its `url`; the optional
+   * `success_url` and `cancel_url` are resolved against the request's own origin and default to
+   * the billing settings page. Before calling Stripe the handler checks the plan has a price
+   * wired — an unknown or missing `plan_id`, a plan with no price, an archived product or a
+   * price Stripe no longer recognises all answer **400** with a message naming what to fix,
+   * while a deployment with no billing configured answers **501** and an unexpected Stripe fault
+   * **502**. Side effects: creates the Stripe session and records a `checkout_started` analytics
+   * event. Requires the `billing:write` permission and scope.
    *
    * `POST /api/v1/billing/checkout-session`
    *
@@ -138,7 +185,55 @@ export class BillingResource extends APIResource {
   }
 
   /**
+   * Read this tenant's spend cap and its current status
+   *
+   * Reads the tenant's spend cap. When none is configured the response is `{configured: false}`
+   * with null `budget` and `status`; otherwise it returns the stored config (limit, soft and
+   * hard thresholds as fractions, period) together with the live status from the budget manager
+   * — the same ceiling that gates every run start. Requires the `billing:read` permission and
+   * scope.
+   *
+   * `GET /api/v1/billing/budget`
+   *
+   * Required scopes: `billing:read`.
+   */
+  getBillingBudget(options?: RequestOptions): Promise<GetBillingBudgetResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/billing/budget',
+      options,
+    });
+  }
+
+  /**
+   * Read metered-overage state
+   *
+   * Reports whether metered overage is enabled for the tenant, that a spend cap is required for
+   * it (`requires_cap` is always true), whether a cap is currently configured, and whether a
+   * Stripe metered item has been provisioned for the subscription. Requires the `billing:read`
+   * permission and scope.
+   *
+   * `GET /api/v1/billing/overage`
+   *
+   * Required scopes: `billing:read`.
+   */
+  getBillingOverage(options?: RequestOptions): Promise<GetBillingOverageResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/billing/overage',
+      options,
+    });
+  }
+
+  /**
    * Trial window and a live usage-based plan recommendation
+   *
+   * Reports whether the tenant's trial is still running — `status` is `trial` and
+   * `trial_ends_at` is in the future — with the end date and whole days left, and, while it is
+   * active, a live plan recommendation computed from the tenant's actual usage and agent count.
+   * The recommendation is advisory: nothing here changes a plan or charges anything, and if the
+   * computation fails the stored recommendation (or `null`) is returned instead. Requires the
+   * `billing:read` permission and scope.
    *
    * `GET /api/v1/billing/trial`
    *
@@ -155,6 +250,10 @@ export class BillingResource extends APIResource {
   /**
    * Image and video generation usage against plan quotas
    *
+   * Reports image and video generation counts for the current month, and the current day for
+   * images, against the effective plan's media quotas; a `null` limit means the plan sets none.
+   * Read-only and gated on the `billing:read` permission and scope.
+   *
    * `GET /api/v1/usage/media`
    *
    * Required scopes: `billing:read`.
@@ -168,7 +267,36 @@ export class BillingResource extends APIResource {
   }
 
   /**
+   * This tenant's promo state: applied code, bonus tokens, owned codes
+   *
+   * Returns this tenant's promo state: the code it has redeemed with the redemption date,
+   * discount percent and whether the referrer has been rewarded; its current bonus-token balance
+   * computed against the plan's monthly token quota; and, for a tenant that owns promo codes,
+   * each owned code with its usage count, caps, reward settings and the totals actually rewarded
+   * so far. Requires the `billing:read` permission and scope.
+   *
+   * `GET /api/v1/billing/promo`
+   *
+   * Required scopes: `billing:read`.
+   */
+  getPromoState(options?: RequestOptions): Promise<GetPromoStateResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/billing/promo',
+      options,
+    });
+  }
+
+  /**
    * Get current tenant usage
+   *
+   * Returns the tenant's token, run and cost totals for the current period, or for the `period`
+   * given as a query parameter, alongside the effective `plan`, the period length in days, the
+   * count of bridge tasks completed in that period, and a `margin_summary` derived from the
+   * configured platform markup. `?agent_id=` switches to a single agent's usage over the last
+   * `days` (default 30, capped at 90) and returns nothing else; `?breakdown=model` adds a
+   * per-model array with per-model margin. Read-only — any method other than GET answers **405**
+   * — and gated on the `billing:read` permission and scope.
    *
    * `GET /api/v1/usage`
    *
@@ -185,6 +313,13 @@ export class BillingResource extends APIResource {
 
   /**
    * Get usage analytics over time
+   *
+   * Returns a daily series for one `metric` — `runs`, `tokens` or `cost`, defaulting to `runs` —
+   * over the last `days` (default 14, clamped to 90), optionally narrowed to one `agent_id`,
+   * along with the effective `plan`. An unrecognised `metric` is refused with **400** rather
+   * than silently defaulting, because returning the runs series under a label the caller asked
+   * to be cost would be the wrong data; a malformed `days` falls back to the default. Gated on
+   * the `billing:read` permission and scope.
    *
    * `GET /api/v1/usage/timeseries`
    *
@@ -221,6 +356,12 @@ export class BillingResource extends APIResource {
 
   /**
    * List available billing plans
+   *
+   * Lists the four built-in billing plans with the admin's name and price overrides merged in,
+   * the per-plan limits taken from the same merged quotas the platform enforces, a `current`
+   * flag marking the caller's effective plan, and `checkout_available` — false for `free` and
+   * for any plan with no Stripe price wired, which is what a client should read before offering
+   * the upgrade button. Requires the `billing:read` permission and scope.
    *
    * `GET /api/v1/billing/plans`
    *
@@ -260,6 +401,71 @@ export class BillingResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/billing/spec-packages',
+      options,
+    });
+  }
+
+  /**
+   * Redeem a promo code for this tenant
+   *
+   * Applies the promo `code` in the body to this tenant, granting the code's subscriber bonus
+   * tokens and any discount percent it carries. A code that cannot be redeemed — unknown,
+   * inactive, exhausted, or already redeemed by this tenant — comes back as a problem response
+   * with the code `PROMO_REDEMPTION_FAILED`, whose HTTP status is chosen by the redemption
+   * result and whose detail names the reason. Requires the `billing:write` permission and scope.
+   *
+   * `POST /api/v1/billing/promo/redeem`
+   *
+   * Required scopes: `billing:read`.
+   */
+  redeemPromoCode(body: RedeemPromoCodeRequest, options?: RequestOptions): Promise<RedeemPromoCodeResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/billing/promo/redeem',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Set this tenant's spend cap
+   *
+   * WRITE SEMANTICS: replaces. A body that omits `soft_threshold` resets it to 0.8,
+   * `hard_threshold` to 1.0 and `period` to `monthly` — the handler builds a whole config from
+   * the body and defaults, it does not read the stored one.
+   *
+   * `PUT /api/v1/billing/budget`
+   *
+   * Required scopes: `billing:write`.
+   */
+  setBillingBudget(body: SetBillingBudgetRequest, options?: RequestOptions): Promise<SetBillingBudgetResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/billing/budget',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Turn metered overage on or off
+   *
+   * WRITE SEMANTICS: mixed — the write touches only `billing.overage_enabled` on the tenant
+   * record (a CAS update), and every other field of that record keeps its stored value. Enabling
+   * is refused (422) on the free plan and without a spend cap.
+   *
+   * `PUT /api/v1/billing/overage`
+   *
+   * Required scopes: `billing:write`.
+   */
+  setBillingOverage(body: SetBillingOverageRequest, options?: RequestOptions): Promise<SetBillingOverageResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: '/api/v1/billing/overage',
+      body,
+      idempotent: true,
       options,
     });
   }

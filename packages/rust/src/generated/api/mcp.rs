@@ -38,6 +38,16 @@ impl Client {
 impl MCPApi {
     /// Create MCP server
     ///
+    /// Registers an external MCP server for the tenant; `admin` role only. `name` and `transport`
+    /// are required and the id `__system__` is reserved; `stdio` is refused on production
+    /// deployments unless the host explicitly opts in, and `http`/`streamable_http` require a `url`
+    /// that passes an SSRF check resolving DNS, so a hostname that points at a private or metadata
+    /// address is rejected and a resolution failure fails closed (422). `api_key_ref`, when given,
+    /// must name an `MCP_*` environment variable. Any `env` block is encrypted at rest and dropped
+    /// from the stored plaintext; after persisting, a live session is opened immediately so tools
+    /// surface on the next run, and a failure to connect is non-fatal and reported as
+    /// `connect_error` on the 201 response.
+    ///
     /// `POST /api/v1/mcp/servers`
     pub async fn create_mcp_server(&self, body: &models::CreateMCPServerRequest) -> Result<models::MCPServer> {
         self.client
@@ -53,6 +63,13 @@ impl MCPApi {
     }
 
     /// Delete MCP server
+    ///
+    /// Unregisters an MCP server; `admin` role only. The live session is disconnected first and the
+    /// stored record deleted afterwards, so a failure leaves an orphan record rather than an orphan
+    /// subprocess or socket. Agents that name this server in their own `mcp.servers` list are NOT
+    /// rewritten — instead the response reports how many carry a now-stale reference and up to 50
+    /// of their ids, as a blast-radius preview; the count can be short if the scan hits its cap,
+    /// which is logged. 200 whether or not the server existed.
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
     pub async fn delete_mcp_server(&self, server_id: &str) -> Result<models::DeleteMCPServerResponse> {
@@ -70,6 +87,10 @@ impl MCPApi {
 
     /// Get MCP server
     ///
+    /// Returns one registered MCP server; `admin` role only, like the rest of this route. The
+    /// record is sanitised the same way the list is — secrets are replaced by an `env_count` and
+    /// never returned. 404 when the tenant has no such server.
+    ///
     /// `GET /api/v1/mcp/servers/{serverId}`
     pub async fn get_mcp_server(&self, server_id: &str) -> Result<models::MCPServer> {
         self.client
@@ -85,6 +106,12 @@ impl MCPApi {
     }
 
     /// List MCP servers
+    ///
+    /// Lists the tenant's registered external MCP servers, up to 200. Every method on this route
+    /// requires the `admin` role: registering a server hands every agent in the tenant a foreign
+    /// tool surface and, with stdio, a subprocess on the API host. Each record is sanitised before
+    /// it leaves — `env` and `env_encrypted` are replaced by an `env_count` so a UI can say how
+    /// many secrets are configured without receiving any of them.
     ///
     /// `GET /api/v1/mcp/servers`
     pub async fn list_mcp_servers(&self) -> Result<models::ListMCPServersResponse> {
@@ -124,6 +151,16 @@ impl MCPApi {
 
     /// MCP SSE transport (Server-Sent Events)
     ///
+    /// The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
+    /// MCP client (POST carries JSON-RPC; this GET is the transport's other half). Requires the
+    /// `agents` read permission and the `agents:read` scope, and a refusal is returned inside a
+    /// JSON-RPC error envelope — code -32001 with status 401 or 403 — rather than the platform's
+    /// problem document, because an MCP client cannot parse the latter. The backend is scoped to
+    /// the agent named by the `X-UARP-Agent-Id` header, falling back to the tenant's head agent;
+    /// with neither the answer is 400 with JSON-RPC code -32600. Each request is served by a
+    /// freshly built stateless transport with JSON responses enabled, so no `Mcp-Session-Id` is
+    /// issued and no state carries between requests.
+    ///
     /// `GET /api/v1/mcp`
     ///
     /// Returns a server-sent event stream.
@@ -159,8 +196,14 @@ impl MCPApi {
 
     /// Update MCP server
     ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; the handler takes
+    /// the fields below BY NAME rather than spreading the body, so a key it does not list is
+    /// ignored rather than written. `id`, `tenant_id` and `transport` are immutable, and
+    /// `env_encrypted` / `last_synced` are the handler's own and are refused from the wire. `env:
+    /// {}` explicitly clears the stored environment.
+    ///
     /// `PATCH /api/v1/mcp/servers/{serverId}`
-    pub async fn update_mcp_server(&self, server_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::MCPServerWithConnectResult> {
+    pub async fn update_mcp_server(&self, server_id: &str, body: &models::UpdateMCPServerRequest) -> Result<models::MCPServerWithConnectResult> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

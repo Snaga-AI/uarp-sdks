@@ -47,6 +47,14 @@ package UARP.API.Feed is
 
    --  Activity feed
    --
+   --  Returns a page of the tenant's activity feed, newest first, with the opaque `cursor` for the
+   --  next page. `limit` defaults to 50 and is clamped to 1..200. `agent_id`, `company_id` and
+   --  `team_id` are indexed filters applied by the store; `types` is a comma-separated event-type
+   --  filter applied in memory, so with it the handler accumulates across up to 12 storage pages
+   --  to fill the page and stops before consuming a batch that would overflow `limit` - which
+   --  means a response can carry fewer entries than `limit` and still have more behind the cursor.
+   --  `total` is the size of THIS page, not of the feed. Requires the `runs:read` scope.
+   --
    --  GET /api/v1/feed
    --
    --  Required scopes: runs:read.
@@ -66,6 +74,15 @@ package UARP.API.Feed is
       return UARP.Models.Feed_Entry_Vectors.Vector;
 
    --  SSE activity feed stream
+   --
+   --  Server-Sent Events of the tenant's activity feed: a `connected` frame, then one event per
+   --  feed entry named by its event type, with the entry's `feed_id` as the SSE id.
+   --  `Last-Event-ID` (or a reconnect carrying it) resumes after that entry; the `agent_id`,
+   --  `company_id`, `team_id` and `types` filters work as they do on the list form. New entries
+   --  are found by polling, and the interval backs off while the feed is idle. The per-tenant
+   --  ceiling on concurrent SSE connections applies and a request over it is refused `429`. The
+   --  heartbeat is also where the credential that opened the stream is re-checked, so a logout, a
+   --  suspension or a deleted tenant closes the stream rather than leaving it open on a stale key.
    --
    --  GET /api/v1/feed/stream
    --

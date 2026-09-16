@@ -27,7 +27,17 @@ public class ACPApi internal constructor(private val client: UarpClient) {
     /**
      * Get ACP session state and events (SSE)
      *
+     * Returns the stored ACP bridge session state — conversation history, selected model, plan
+     * mode and tool permission — with the internal owner field stripped. A session owned by
+     * another identity in the tenant answers the same 404 as a session that does not exist, so the
+     * endpoint does not disclose that the id is taken; records written before ownership existed
+     * carry no owner and stay readable. A `sessionId` longer than 200 characters is 400, because
+     * it becomes a KV key part. Requires the `sessions` read permission and the `sessions:read`
+     * scope. Despite the operation name, this is a plain JSON read and not an event stream.
+     *
      * `GET /api/v1/acp/session/{sessionId}`
+     *
+     * Required scopes: `sessions:read`.
      *
      * Returns a cold flow of server-sent events.
      */
@@ -44,7 +54,19 @@ public class ACPApi internal constructor(private val client: UarpClient) {
     /**
      * Send message / update ACP session
      *
+     * WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
+     * same path does the same thing. Every entry of `conversationHistory` is validated (role
+     * `user` or `assistant`, string content, at most 2000 entries of 200000 characters each, 4 MB
+     * for the record) and `planMode` and `toolPermission` must come from their vocabularies — a
+     * present-but-wrong value is 400, not silently stored, because the bridge reads
+     * `toolPermission` to decide whether a local file write asks first. The first write claims the
+     * session for the caller; a later write from another identity is 403 rather than a silent
+     * drop. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+     * `sessions:write` scope.
+     *
      * `PUT /api/v1/acp/session/{sessionId}`
+     *
+     * Required scopes: `sessions:write`.
      */
     public suspend fun updateACPSession(sessionId: String, body: JsonObject, options: RequestOptions = RequestOptions()): UpdateACPSessionResponse {
         return client.request<UpdateACPSessionResponse>(

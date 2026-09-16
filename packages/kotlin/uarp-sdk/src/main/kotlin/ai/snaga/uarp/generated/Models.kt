@@ -1467,12 +1467,8 @@ public data class AdminConfigToolSecurityConfig(
  */
 @Serializable
 public data class AdminConfigToolSecurityConfigToolSecurity(
-    @SerialName("default_egress_policy")
-    public val defaultEgressPolicy: String,
     @SerialName("egress_allowlist_per_tenant")
     public val egressAllowlistPerTenant: List<String>? = null,
-    @SerialName("ssrf_deny_private_ranges")
-    public val ssrfDenyPrivateRanges: Boolean,
     @SerialName("default_tool_timeout_ms")
     public val defaultToolTimeoutMs: Long,
     @SerialName("default_tool_max_payload_bytes")
@@ -1883,12 +1879,40 @@ public data class AdminListWebhookDLQResponse(
  */
 @Serializable
 public data class AdminListWebhookDLQResponseEntry(
+    /**
+     * Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+     * Deprecated by the API.
+     */
     public val eventId: String,
+    /**
+     * Deprecated spelling of `event_type` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `event_type`. Deprecated by the API.
+     */
     public val eventType: String,
     public val payload: JsonObject? = null,
+    /**
+     * Deprecated spelling of `error_message` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `error_message`. Deprecated by the API.
+     */
     public val errorMessage: String,
     public val timestamp: String,
+    /**
+     * Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+     * Deprecated by the API.
+     */
     public val tenantId: String? = null,
+    @SerialName("event_id")
+    public val eventId_: String,
+    @SerialName("event_type")
+    public val eventType_: String,
+    @SerialName("error_message")
+    public val errorMessage_: String,
+    @SerialName("tenant_id")
+    public val tenantId_: String? = null,
 )
 
 /**
@@ -2400,9 +2424,16 @@ public data class AdminRegistrationConfigWaitlistItem(
 @Serializable
 public data class AdminReplayWebhookDLQResponse(
     public val success: Boolean,
+    /**
+     * Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+     * Deprecated by the API.
+     */
     public val eventId: String,
     public val action: String,
     public val message: String,
+    @SerialName("event_id")
+    public val eventId_: String,
 )
 
 /**
@@ -5291,6 +5322,9 @@ public data class CancelSquadRunResponse(
     public val teamRunId: String,
     /**
      * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+     * Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `cancelled_count`. Deprecated by the API.
      */
     public val cancelledCount: Long,
     /**
@@ -5299,6 +5333,11 @@ public data class CancelSquadRunResponse(
      */
     @SerialName("orchestrator_stopped")
     public val orchestratorStopped: Boolean,
+    /**
+     * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+     */
+    @SerialName("cancelled_count")
+    public val cancelledCount_: Long,
 )
 
 /**
@@ -5311,6 +5350,9 @@ public data class CancelTeamRunResponse(
     public val teamRunId: String,
     /**
      * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+     * Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `cancelled_count`. Deprecated by the API.
      */
     public val cancelledCount: Long,
     /**
@@ -5319,6 +5361,11 @@ public data class CancelTeamRunResponse(
      */
     @SerialName("orchestrator_stopped")
     public val orchestratorStopped: Boolean,
+    /**
+     * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+     */
+    @SerialName("cancelled_count")
+    public val cancelledCount_: Long,
 )
 
 /**
@@ -5416,7 +5463,8 @@ public data class CastBallotRequest(
     public val agentId: String,
     public val vote: String,
     /**
-     * Voting weight; 0 < w ≤ 100.
+     * Voting weight; 0 < w ≤ 1 (the same cap the cast_vote tool applies; 100 was accepted until
+     * 2026-09-16).
      */
     public val weight: Double? = null,
     public val reasoning: String? = null,
@@ -5437,6 +5485,9 @@ public data class ChatCompletionRequest(
     public val model: String,
     public val messages: List<ChatCompletionRequestMessage>,
     public val temperature: Double? = null,
+    /**
+     * Values below 1 are clamped, not refused.
+     */
     @SerialName("max_tokens")
     public val maxTokens: Long? = null,
     public val stream: Boolean? = null,
@@ -5626,6 +5677,15 @@ public data class CheckSpawnPermissionRequest(
     public val parentAgentId: String,
     @SerialName("child_permissions")
     public val childPermissions: PermissionSet,
+)
+
+/**
+ * `ClearBillingBudgetResponse` model.
+ */
+@Serializable
+public data class ClearBillingBudgetResponse(
+    public val configured: Boolean? = null,
+    public val budget: JsonObject? = null,
 )
 
 /**
@@ -7042,6 +7102,21 @@ public data class CreateMCPServerRequest(
     public val args: List<String>? = null,
     public val env: JsonObject? = null,
     public val enabled: Boolean? = null,
+    /**
+     * Names an environment variable of the API process whose value is sent to this server as a
+     * bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+     * boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+     * tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+     * mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+     * never echoed back; only the ref is stored.
+     */
+    @SerialName("api_key_ref")
+    public val apiKeyRef: String? = null,
+    /**
+     * Hosts this server may be reached at, checked with DNS resolution.
+     */
+    @SerialName("egress_allowlist")
+    public val egressAllowlist: List<String>? = null,
 )
 
 /**
@@ -7667,11 +7742,25 @@ public data class DeactivateSafeModeResponse(
  */
 @Serializable
 public data class DeadlockReport(
+    /**
+     * Deprecated spelling of `has_deadlock` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `has_deadlock`. Deprecated by the API.
+     */
     public val hasDeadlock: Boolean,
+    /**
+     * Deprecated spelling of `conflicting_rules` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `conflicting_rules`. Deprecated by the API.
+     */
     public val conflictingRules: List<DeadlockReportConflictingRule>,
     public val recommendation: String,
     @SerialName("checked_at")
     public val checkedAt: String,
+    @SerialName("has_deadlock")
+    public val hasDeadlock_: Boolean,
+    @SerialName("conflicting_rules")
+    public val conflictingRules_: List<DeadlockReportConflictingRule2>,
 )
 
 /**
@@ -7679,6 +7768,15 @@ public data class DeadlockReport(
  */
 @Serializable
 public data class DeadlockReportConflictingRule(
+    public val prohibition: String,
+    public val requirement: String,
+)
+
+/**
+ * `DeadlockReportConflictingRule2` model.
+ */
+@Serializable
+public data class DeadlockReportConflictingRule2(
     public val prohibition: String,
     public val requirement: String,
 )
@@ -7760,33 +7858,6 @@ public data class DeleteAgentResponse(
 public data class DeleteAllAgentBookmarksResponse(
     public val removed: Long,
 )
-
-/**
- * `DeleteCustomPlanForce` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = DeleteCustomPlanForceSerializer::class)
-@JvmInline
-public value class DeleteCustomPlanForce(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val V1: DeleteCustomPlanForce = DeleteCustomPlanForce("1")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<DeleteCustomPlanForce> = listOf(V1)
-    }
-}
-
-public object DeleteCustomPlanForceSerializer : KSerializer<DeleteCustomPlanForce> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.DeleteCustomPlanForce", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: DeleteCustomPlanForce): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): DeleteCustomPlanForce = DeleteCustomPlanForce(decoder.decodeString())
-}
 
 /**
  * `DeleteCustomPlanResponse` model.
@@ -7892,8 +7963,15 @@ public data class DeleteMeResponseTenant(
  */
 @Serializable
 public data class DeleteModelPricingOverrideResponse(
+    /**
+     * Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+     * Deprecated by the API.
+     */
     public val modelRef: String,
     public val deleted: Boolean,
+    @SerialName("model_ref")
+    public val modelRef_: String,
 )
 
 /**
@@ -8596,6 +8674,9 @@ public data class DrawingOp(
     public val fileId: String? = null,
     public val fit: DrawingOpFit? = null,
     public val layer: DrawingLayer? = null,
+    /**
+     * Values below 0 are clamped, not refused.
+     */
     public val index: Long? = null,
     public val patch: DrawingOpPatch? = null,
     public val order: List<String>? = null,
@@ -9020,9 +9101,23 @@ public data class EmptyWorkspaceTrashResponse(
 @Serializable
 public data class EndpointRateLimit(
     public val pattern: String,
+    /**
+     * Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `max_requests`. Deprecated by the API.
+     */
     public val maxRequests: Long,
+    /**
+     * Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `window_sec`. Deprecated by the API.
+     */
     public val windowSec: Long,
     public val source: GuardrailConfigItemSource,
+    @SerialName("max_requests")
+    public val maxRequests_: Long,
+    @SerialName("window_sec")
+    public val windowSec_: Long,
 )
 
 /**
@@ -9034,18 +9129,43 @@ public data class EnforcementResult(
      * False when any matched rule carries a blocking penalty.
      */
     public val allowed: Boolean,
+    /**
+     * Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `check_result`. Deprecated by the API.
+     */
     public val checkResult: EnforcementResultCheckResult,
     /**
      * What the matched rules call for. Empty when nothing matched.
      */
     public val penalties: List<EnforcementResultPenalty>,
+    @SerialName("check_result")
+    public val checkResult_: EnforcementResultCheckResult2,
 )
 
 /**
- * `EnforcementResultCheckResult` model.
+ * Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+ * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+ * `check_result`.
  */
 @Serializable
 public data class EnforcementResultCheckResult(
+    public val allowed: Boolean,
+    /**
+     * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+     */
+    @SerialName("checked_rules")
+    public val checkedRules: List<String>,
+    public val violations: List<ConstitutionViolation>,
+    @SerialName("checked_at")
+    public val checkedAt: String,
+)
+
+/**
+ * `EnforcementResultCheckResult2` model.
+ */
+@Serializable
+public data class EnforcementResultCheckResult2(
     public val allowed: Boolean,
     /**
      * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
@@ -9062,8 +9182,15 @@ public data class EnforcementResultCheckResult(
  */
 @Serializable
 public data class EnforcementResultPenalty(
+    /**
+     * Deprecated spelling of `rule_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `rule_id`.
+     * Deprecated by the API.
+     */
     public val ruleId: String,
     public val penalty: ConstitutionRulePenalty,
+    @SerialName("rule_id")
+    public val ruleId_: String,
 )
 
 /**
@@ -9112,7 +9239,8 @@ public object EnrolMfaRequestAlgorithmSerializer : KSerializer<EnrolMfaRequestAl
 }
 
 /**
- * RFC 9457 problem+json style error; correlationId for request tracing.
+ * RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
+ * tracing — `correlationId` is the same value for the compatibility window.
  */
 @Serializable
 public data class ErrorModel(
@@ -9132,14 +9260,119 @@ public data class ErrorModel(
      */
     public val detail: String,
     /**
-     * Request ID for tracing
+     * What a client should DO about this, as a value it can switch on — `detail` is for the person
+     * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+     * document and the wire cannot drift apart. Two casings are on the wire and both are
+     * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+     * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+     * no machine-readable class.
+     */
+    public val code: ErrorCode? = null,
+    /**
+     * Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
+     * the compatibility window and removed in the next breaking release (the one that moves
+     * `X-API-Version`). Read `correlation_id`. Deprecated by the API.
      */
     public val correlationId: String? = null,
     /**
      * Field-level validation errors (present on 422 responses)
      */
     public val errors: List<ErrorError>? = null,
+    /**
+     * Request ID for tracing
+     */
+    @SerialName("correlation_id")
+    public val correlationId_: String? = null,
 )
+
+/**
+ * What a client should DO about this, as a value it can switch on — `detail` is for the person
+ * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+ * document and the wire cannot drift apart. Two casings are on the wire and both are
+ * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+ * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+ * no machine-readable class.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ErrorCodeSerializer::class)
+@JvmInline
+public value class ErrorCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AAR_NOT_AVAILABLE: ErrorCode = ErrorCode("AAR_NOT_AVAILABLE")
+        public val ARTIFACT_INTEGRITY_ERROR: ErrorCode = ErrorCode("ARTIFACT_INTEGRITY_ERROR")
+        public val AUTH_ERROR: ErrorCode = ErrorCode("AUTH_ERROR")
+        public val BILLING_CANCELLED: ErrorCode = ErrorCode("BILLING_CANCELLED")
+        public val BILLING_DISPUTED: ErrorCode = ErrorCode("BILLING_DISPUTED")
+        public val BILLING_PAST_DUE: ErrorCode = ErrorCode("BILLING_PAST_DUE")
+        public val CHECKSUM_MISMATCH: ErrorCode = ErrorCode("CHECKSUM_MISMATCH")
+        public val CONFIGURATION_ERROR: ErrorCode = ErrorCode("CONFIGURATION_ERROR")
+        public val EVENT_STORE_ERROR: ErrorCode = ErrorCode("EVENT_STORE_ERROR")
+        public val EXTERNAL_SERVICE_ERROR: ErrorCode = ErrorCode("EXTERNAL_SERVICE_ERROR")
+        public val FORBIDDEN: ErrorCode = ErrorCode("FORBIDDEN")
+        public val GUARDRAIL_VIOLATION: ErrorCode = ErrorCode("GUARDRAIL_VIOLATION")
+        public val INVALID_QUERY: ErrorCode = ErrorCode("INVALID_QUERY")
+        public val INVALID_SHARE_LIST: ErrorCode = ErrorCode("INVALID_SHARE_LIST")
+        public val INVALID_SHARE_TARGET: ErrorCode = ErrorCode("INVALID_SHARE_TARGET")
+        public val LLM_ERROR: ErrorCode = ErrorCode("LLM_ERROR")
+        public val MIGRATION_CONFLICT: ErrorCode = ErrorCode("MIGRATION_CONFLICT")
+        public val MISSION_ALREADY_RUNNING: ErrorCode = ErrorCode("MISSION_ALREADY_RUNNING")
+        public val MISSION_CONCURRENCY_LIMIT: ErrorCode = ErrorCode("MISSION_CONCURRENCY_LIMIT")
+        public val MISSION_NOT_FOUND: ErrorCode = ErrorCode("MISSION_NOT_FOUND")
+        public val MISSION_NOT_RUNNABLE: ErrorCode = ErrorCode("MISSION_NOT_RUNNABLE")
+        public val MISSION_NOT_RUNNING: ErrorCode = ErrorCode("MISSION_NOT_RUNNING")
+        public val MISSION_ROUTE_NOT_FOUND: ErrorCode = ErrorCode("MISSION_ROUTE_NOT_FOUND")
+        public val NOT_FOUND: ErrorCode = ErrorCode("NOT_FOUND")
+        public val NOT_YANKED: ErrorCode = ErrorCode("NOT_YANKED")
+        public val PAYLOAD_TOO_LARGE: ErrorCode = ErrorCode("PAYLOAD_TOO_LARGE")
+        public val PERSISTENCE_ERROR: ErrorCode = ErrorCode("PERSISTENCE_ERROR")
+        public val PLANNER_OUTPUT_INVALID: ErrorCode = ErrorCode("PLANNER_OUTPUT_INVALID")
+        public val PLANNER_REFUSED: ErrorCode = ErrorCode("PLANNER_REFUSED")
+        public val PRECONDITION_FAILED: ErrorCode = ErrorCode("PRECONDITION_FAILED")
+        public val PRIVATE_NOT_SHARED: ErrorCode = ErrorCode("PRIVATE_NOT_SHARED")
+        public val PROMO_REDEMPTION_FAILED: ErrorCode = ErrorCode("PROMO_REDEMPTION_FAILED")
+        public val QUOTA_EXCEEDED: ErrorCode = ErrorCode("QUOTA_EXCEEDED")
+        public val RATE_LIMIT_EXCEEDED: ErrorCode = ErrorCode("RATE_LIMIT_EXCEEDED")
+        public val RESERVED_SCOPE: ErrorCode = ErrorCode("RESERVED_SCOPE")
+        public val RUN_CANCELLED: ErrorCode = ErrorCode("RUN_CANCELLED")
+        public val SCOPE_MISMATCH: ErrorCode = ErrorCode("SCOPE_MISMATCH")
+        public val SCOPE_TAKEN: ErrorCode = ErrorCode("SCOPE_TAKEN")
+        public val SHARE_LIST_CONFLICT: ErrorCode = ErrorCode("SHARE_LIST_CONFLICT")
+        public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
+        public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
+        public val TEAM_ABORT: ErrorCode = ErrorCode("TEAM_ABORT")
+        public val VALIDATION_ERROR: ErrorCode = ErrorCode("VALIDATION_ERROR")
+        public val VERSION_CONFLICT: ErrorCode = ErrorCode("VERSION_CONFLICT")
+        public val VERSION_NOT_FOUND: ErrorCode = ErrorCode("VERSION_NOT_FOUND")
+        public val WORKSPACE_STORAGE_LIMIT: ErrorCode = ErrorCode("WORKSPACE_STORAGE_LIMIT")
+        public val YANK_CONFLICT: ErrorCode = ErrorCode("YANK_CONFLICT")
+        public val AGENT_NOT_FOUND: ErrorCode = ErrorCode("agent_not_found")
+        public val ALREADY_BOOTSTRAPPED: ErrorCode = ErrorCode("already_bootstrapped")
+        public val BILLING_NOT_CONFIGURED: ErrorCode = ErrorCode("billing_not_configured")
+        public val GOVERNANCE_NOT_ENABLED: ErrorCode = ErrorCode("governance_not_enabled")
+        public val INCOMPLETE_RECORD: ErrorCode = ErrorCode("incomplete_record")
+        public val INERT_POLICY_FIELD: ErrorCode = ErrorCode("inert_policy_field")
+        public val INERT_PUBLIC_CONFIG_FIELD: ErrorCode = ErrorCode("inert_public_config_field")
+        public val LIMIT_REACHED: ErrorCode = ErrorCode("limit_reached")
+        public val QUOTA_EXCEEDED_: ErrorCode = ErrorCode("quota_exceeded")
+        public val RATE_LIMITED: ErrorCode = ErrorCode("rate_limited")
+        public val RUN_QUOTA_EXCEEDED: ErrorCode = ErrorCode("run_quota_exceeded")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, LIMIT_REACHED, QUOTA_EXCEEDED_, RATE_LIMITED, RUN_QUOTA_EXCEEDED)
+    }
+}
+
+public object ErrorCodeSerializer : KSerializer<ErrorCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ErrorCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ErrorCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ErrorCode = ErrorCode(decoder.decodeString())
+}
 
 /**
  * `ErrorError` model.
@@ -9492,6 +9725,33 @@ public data class ExportAdminConfigResponse(
     public val sectionCount: Long,
     public val sections: JsonObject,
 )
+
+/**
+ * `ExportDataExplorerIncludeSensitive` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ExportDataExplorerIncludeSensitiveSerializer::class)
+@JvmInline
+public value class ExportDataExplorerIncludeSensitive(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val V1: ExportDataExplorerIncludeSensitive = ExportDataExplorerIncludeSensitive("1")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ExportDataExplorerIncludeSensitive> = listOf(V1)
+    }
+}
+
+public object ExportDataExplorerIncludeSensitiveSerializer : KSerializer<ExportDataExplorerIncludeSensitive> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ExportDataExplorerIncludeSensitive", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ExportDataExplorerIncludeSensitive): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ExportDataExplorerIncludeSensitive = ExportDataExplorerIncludeSensitive(decoder.decodeString())
+}
 
 /**
  * `ExportMyAccountFormat` values.
@@ -10211,20 +10471,118 @@ public data class GetAdminTraceResponseRun(
  */
 @Serializable
 public data class GetAgentActivityStatsResponse(
+    /**
+     * Deprecated spelling of `total_runs` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `total_runs`. Deprecated by the API.
+     */
     public val totalRuns: Long? = null,
+    /**
+     * Deprecated spelling of `completed_runs` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `completed_runs`. Deprecated by the API.
+     */
     public val completedRuns: Long? = null,
+    /**
+     * Deprecated spelling of `failed_runs` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `failed_runs`. Deprecated by the API.
+     */
     public val failedRuns: Long? = null,
+    /**
+     * Deprecated spelling of `cancelled_runs` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `cancelled_runs`. Deprecated by the API.
+     */
     public val cancelledRuns: Long? = null,
+    /**
+     * Deprecated spelling of `guardrail_blocked_runs` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `guardrail_blocked_runs`. Deprecated by the API.
+     */
     public val guardrailBlockedRuns: Long? = null,
+    /**
+     * Deprecated spelling of `error_rate_percent` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `error_rate_percent`. Deprecated by the API.
+     */
     public val errorRatePercent: Double? = null,
+    /**
+     * Deprecated spelling of `avg_steps_per_run` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `avg_steps_per_run`. Deprecated by the API.
+     */
     public val avgStepsPerRun: Double? = null,
+    /**
+     * Deprecated spelling of `avg_duration_ms` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `avg_duration_ms`. Deprecated by the API.
+     */
     public val avgDurationMs: Double? = null,
+    /**
+     * Deprecated spelling of `avg_input_tokens` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `avg_input_tokens`. Deprecated by the API.
+     */
     public val avgInputTokens: Double? = null,
+    /**
+     * Deprecated spelling of `avg_output_tokens` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `avg_output_tokens`. Deprecated by the API.
+     */
     public val avgOutputTokens: Double? = null,
+    /**
+     * Deprecated spelling of `avg_thinking_tokens` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `avg_thinking_tokens`. Deprecated by the API.
+     */
     public val avgThinkingTokens: Double? = null,
+    /**
+     * Deprecated spelling of `tool_breakdown` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `tool_breakdown`. Deprecated by the API.
+     */
     public val toolBreakdown: List<ToolBreakdownEntry>? = null,
+    /**
+     * Deprecated spelling of `top_error_messages` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `top_error_messages`. Deprecated by the API.
+     */
     public val topErrorMessages: List<GetAgentActivityStatsResponseTopErrorMessage>? = null,
+    /**
+     * Deprecated spelling of `runs_by_day` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `runs_by_day`. Deprecated by the API.
+     */
     public val runsByDay: List<GetAgentActivityStatsResponseRunsByDayItem>? = null,
+    @SerialName("total_runs")
+    public val totalRuns_: Long? = null,
+    @SerialName("completed_runs")
+    public val completedRuns_: Long? = null,
+    @SerialName("failed_runs")
+    public val failedRuns_: Long? = null,
+    @SerialName("cancelled_runs")
+    public val cancelledRuns_: Long? = null,
+    @SerialName("guardrail_blocked_runs")
+    public val guardrailBlockedRuns_: Long? = null,
+    @SerialName("error_rate_percent")
+    public val errorRatePercent_: Double? = null,
+    @SerialName("avg_steps_per_run")
+    public val avgStepsPerRun_: Double? = null,
+    @SerialName("avg_duration_ms")
+    public val avgDurationMs_: Double? = null,
+    @SerialName("avg_input_tokens")
+    public val avgInputTokens_: Double? = null,
+    @SerialName("avg_output_tokens")
+    public val avgOutputTokens_: Double? = null,
+    @SerialName("avg_thinking_tokens")
+    public val avgThinkingTokens_: Double? = null,
+    @SerialName("tool_breakdown")
+    public val toolBreakdown_: List<ToolBreakdownEntry>? = null,
+    @SerialName("top_error_messages")
+    public val topErrorMessages_: List<GetAgentActivityStatsResponseTopErrorMessage2>? = null,
+    @SerialName("runs_by_day")
+    public val runsByDay_: List<GetAgentActivityStatsResponseRunsByDayItem2>? = null,
 )
 
 /**
@@ -10239,10 +10597,30 @@ public data class GetAgentActivityStatsResponseRunsByDayItem(
 )
 
 /**
+ * `GetAgentActivityStatsResponseRunsByDayItem2` model.
+ */
+@Serializable
+public data class GetAgentActivityStatsResponseRunsByDayItem2(
+    public val day: String? = null,
+    public val total: Long? = null,
+    public val completed: Long? = null,
+    public val failed: Long? = null,
+)
+
+/**
  * `GetAgentActivityStatsResponseTopErrorMessage` model.
  */
 @Serializable
 public data class GetAgentActivityStatsResponseTopErrorMessage(
+    public val message: String? = null,
+    public val count: Long? = null,
+)
+
+/**
+ * `GetAgentActivityStatsResponseTopErrorMessage2` model.
+ */
+@Serializable
+public data class GetAgentActivityStatsResponseTopErrorMessage2(
     public val message: String? = null,
     public val count: Long? = null,
 )
@@ -10390,6 +10768,79 @@ public data class GetAppleAppSiteAssociationResponseWebcredentials(
 )
 
 /**
+ * `GetBillingBudgetResponse` model.
+ */
+@Serializable
+public data class GetBillingBudgetResponse(
+    public val configured: Boolean,
+    public val budget: GetBillingBudgetResponseBudget? = null,
+    public val status: JsonObject? = null,
+)
+
+/**
+ * `GetBillingBudgetResponseBudget` model.
+ */
+@Serializable
+public data class GetBillingBudgetResponseBudget(
+    @SerialName("limit_usd")
+    public val limitUsd: Double? = null,
+    /**
+     * Fraction, not percent: 0.8 alerts at 80%.
+     */
+    @SerialName("soft_threshold")
+    public val softThreshold: Double? = null,
+    @SerialName("hard_threshold")
+    public val hardThreshold: Double? = null,
+    public val period: GetBillingBudgetResponseBudgetPeriod? = null,
+)
+
+/**
+ * `GetBillingBudgetResponseBudgetPeriod` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = GetBillingBudgetResponseBudgetPeriodSerializer::class)
+@JvmInline
+public value class GetBillingBudgetResponseBudgetPeriod(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MONTHLY: GetBillingBudgetResponseBudgetPeriod = GetBillingBudgetResponseBudgetPeriod("monthly")
+        public val WEEKLY: GetBillingBudgetResponseBudgetPeriod = GetBillingBudgetResponseBudgetPeriod("weekly")
+        public val DAILY: GetBillingBudgetResponseBudgetPeriod = GetBillingBudgetResponseBudgetPeriod("daily")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<GetBillingBudgetResponseBudgetPeriod> = listOf(MONTHLY, WEEKLY, DAILY)
+    }
+}
+
+public object GetBillingBudgetResponseBudgetPeriodSerializer : KSerializer<GetBillingBudgetResponseBudgetPeriod> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.GetBillingBudgetResponseBudgetPeriod", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: GetBillingBudgetResponseBudgetPeriod): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): GetBillingBudgetResponseBudgetPeriod = GetBillingBudgetResponseBudgetPeriod(decoder.decodeString())
+}
+
+/**
+ * `GetBillingOverageResponse` model.
+ */
+@Serializable
+public data class GetBillingOverageResponse(
+    public val enabled: Boolean,
+    /**
+     * Always true: overage cannot be enabled without a spend cap.
+     */
+    @SerialName("requires_cap")
+    public val requiresCap: Boolean,
+    @SerialName("cap_configured")
+    public val capConfigured: Boolean,
+    @SerialName("metered_to_stripe")
+    public val meteredToStripe: Boolean,
+)
+
+/**
  * `GetBillingTrialResponse` model.
  */
 @Serializable
@@ -10402,6 +10853,40 @@ public data class GetBillingTrialResponse(
     @SerialName("recommended_plan")
     public val recommendedPlan: String? = null,
     public val signals: JsonObject? = null,
+)
+
+/**
+ * `GetBridgeAgentSpecsResponse` model.
+ */
+@Serializable
+public data class GetBridgeAgentSpecsResponse(
+    @SerialName("agent_id")
+    public val agentId: String,
+    /**
+     * SHA-256 over the list
+     */
+    public val revision: String,
+    public val specs: List<GetBridgeAgentSpecsResponseSpec>,
+)
+
+/**
+ * `GetBridgeAgentSpecsResponseSpec` model.
+ */
+@Serializable
+public data class GetBridgeAgentSpecsResponseSpec(
+    @SerialName("spec_id")
+    public val specId: String,
+    public val version: String,
+    public val enabled: Boolean,
+    /**
+     * null when the registry has no row for the SPEC; the reconciler skips it
+     */
+    @SerialName("runtime_scope")
+    public val runtimeScope: String? = null,
+    @SerialName("permissions_granted")
+    public val permissionsGranted: List<String>,
+    @SerialName("tool_allowlist")
+    public val toolAllowlist: List<String>? = null,
 )
 
 /**
@@ -10856,6 +11341,59 @@ public object GetMyHeadAgentTemplateResponseTierTierRequiredPlanSerializer : KSe
     override fun serialize(encoder: Encoder, value: GetMyHeadAgentTemplateResponseTierTierRequiredPlan): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): GetMyHeadAgentTemplateResponseTierTierRequiredPlan = GetMyHeadAgentTemplateResponseTierTierRequiredPlan(decoder.decodeString())
 }
+
+/**
+ * `GetPromoStateResponse` model.
+ */
+@Serializable
+public data class GetPromoStateResponse(
+    @SerialName("applied_code")
+    public val appliedCode: GetPromoStateResponseAppliedCode? = null,
+    @SerialName("bonus_tokens_balance")
+    public val bonusTokensBalance: Long,
+    /**
+     * Codes this tenant OWNS (it is the referrer), with their reward totals. Empty for everyone
+     * else.
+     */
+    @SerialName("owned_codes")
+    public val ownedCodes: List<GetPromoStateResponseOwnedCode>,
+)
+
+/**
+ * `GetPromoStateResponseAppliedCode` model.
+ */
+@Serializable
+public data class GetPromoStateResponseAppliedCode(
+    public val code: String? = null,
+    @SerialName("redeemed_at")
+    public val redeemedAt: String? = null,
+    @SerialName("discount_percent")
+    public val discountPercent: Double? = null,
+    public val rewarded: Boolean? = null,
+)
+
+/**
+ * `GetPromoStateResponseOwnedCode` model.
+ */
+@Serializable
+public data class GetPromoStateResponseOwnedCode(
+    public val code: String? = null,
+    public val program: String? = null,
+    public val active: Boolean? = null,
+    public val uses: Long? = null,
+    @SerialName("max_uses")
+    public val maxUses: Long? = null,
+    @SerialName("reward_tokens_per_subscription")
+    public val rewardTokensPerSubscription: Long? = null,
+    @SerialName("subscriber_bonus_tokens")
+    public val subscriberBonusTokens: Long? = null,
+    @SerialName("discount_percent")
+    public val discountPercent: Double? = null,
+    @SerialName("total_rewarded_tokens")
+    public val totalRewardedTokens: Long? = null,
+    @SerialName("rewarded_subscriptions")
+    public val rewardedSubscriptions: Long? = null,
+)
 
 /**
  * `GetPublicBlogPostResponse` model.
@@ -11418,6 +11956,11 @@ public data class GetUnreadCountResponse(
     public val count: Long,
     @SerialName("unread_count")
     public val unreadCount: Long,
+    /**
+     * Deprecated spelling of `unread_count` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `unread_count`. Deprecated by the API.
+     */
     @SerialName("unreadCount")
     public val unreadCount_: Long,
 )
@@ -11995,6 +12538,33 @@ public data class ImportAgentMemoryResponse(
      * Entries the store already had.
      */
     public val duplicates: Long,
+)
+
+/**
+ * `ImportDataExplorerRequest` model.
+ */
+@Serializable
+public data class ImportDataExplorerRequest(
+    public val `file`: FilePart,
+)
+
+/**
+ * `ImportDataExplorerResponse` model.
+ */
+@Serializable
+public data class ImportDataExplorerResponse(
+    public val success: Boolean,
+    public val imported: Long,
+    public val skipped: Long,
+    /**
+     * Rows refused because the read path would refuse them too — sensitive keys, and anything
+     * under the `__keys__` namespace auth authenticates against.
+     */
+    @SerialName("refused_sensitive")
+    public val refusedSensitive: Long,
+    public val errors: List<String>,
+    @SerialName("total_lines")
+    public val totalLines: Long,
 )
 
 /**
@@ -13345,10 +13915,11 @@ public data class ListBuilderRequestsResponse(
 public data class ListCompaniesResponse(
     public val items: List<Company>,
     /**
-     * Legacy alias for `items`. Will be removed in API v1.x. Deprecated by the API.
+     * Opaque cursor for the next page; null on the last page.
      */
-    public val companies: List<Company>? = null,
-    public val total: Long? = null,
+    public val cursor: String? = null,
+    @SerialName("has_more")
+    public val hasMore: Boolean,
 )
 
 /**
@@ -18505,6 +19076,27 @@ public data class ReadinessReport(
 )
 
 /**
+ * `RedeemPromoCodeRequest` model.
+ */
+@Serializable
+public data class RedeemPromoCodeRequest(
+    public val code: String,
+)
+
+/**
+ * `RedeemPromoCodeResponse` model.
+ */
+@Serializable
+public data class RedeemPromoCodeResponse(
+    public val redeemed: Boolean,
+    public val code: String,
+    @SerialName("discount_percent")
+    public val discountPercent: Double? = null,
+    @SerialName("subscriber_bonus_tokens")
+    public val subscriberBonusTokens: Long,
+)
+
+/**
  * `RegisterAmbassadorRequest` model.
  */
 @Serializable
@@ -18957,12 +19549,47 @@ public data class ReplaceConstitutionRequest(
 public data class ReplayResult(
     public val deterministic: Boolean,
     public val verified: ReplayResultVerified,
+    /**
+     * Deprecated spelling of `events_replayed` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `events_replayed`. Deprecated by the API.
+     */
     public val eventsReplayed: Long,
+    /**
+     * Deprecated spelling of `run_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `run_id`.
+     * Deprecated by the API.
+     */
     public val runId: String,
     public val mode: ReplayResultMode,
+    /**
+     * Deprecated spelling of `divergence_point` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `divergence_point`. Deprecated by the API.
+     */
     public val divergencePoint: Long? = null,
+    /**
+     * Deprecated spelling of `divergence_reason` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `divergence_reason`. Deprecated by the API.
+     */
     public val divergenceReason: String? = null,
+    /**
+     * Deprecated spelling of `step_comparisons` — the same value, kept for the compatibility
+     * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `step_comparisons`. Deprecated by the API.
+     */
     public val stepComparisons: List<ReplayResultStepComparison>? = null,
+    @SerialName("events_replayed")
+    public val eventsReplayed_: Long,
+    @SerialName("run_id")
+    public val runId_: String,
+    @SerialName("divergence_point")
+    public val divergencePoint_: Long? = null,
+    @SerialName("divergence_reason")
+    public val divergenceReason_: String? = null,
+    @SerialName("step_comparisons")
+    public val stepComparisons_: List<ReplayResultStepComparison2>? = null,
 )
 
 /**
@@ -19001,7 +19628,32 @@ public data class ReplayResultStepComparison(
     public val seq: Long,
     public val type: String,
     public val matches: Boolean,
+    /**
+     * Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `mismatch_detail`. Deprecated by the API.
+     */
     public val mismatchDetail: String? = null,
+    @SerialName("mismatch_detail")
+    public val mismatchDetail_: String? = null,
+)
+
+/**
+ * `ReplayResultStepComparison2` model.
+ */
+@Serializable
+public data class ReplayResultStepComparison2(
+    public val seq: Long,
+    public val type: String,
+    public val matches: Boolean,
+    /**
+     * Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+     * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `mismatch_detail`. Deprecated by the API.
+     */
+    public val mismatchDetail: String? = null,
+    @SerialName("mismatch_detail")
+    public val mismatchDetail_: String? = null,
 )
 
 /**
@@ -20716,9 +21368,16 @@ public data class SearchWorkspaceFilesResponse(
 @Serializable
 public data class SearchWorkspaceFilesResponseResult(
     public val path: String? = null,
+    /**
+     * Deprecated spelling of `line_number` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `line_number`. Deprecated by the API.
+     */
     public val lineNumber: Long? = null,
     public val line: String? = null,
     public val match: String? = null,
+    @SerialName("line_number")
+    public val lineNumber_: Long? = null,
 )
 
 /**
@@ -21181,6 +21840,47 @@ public data class SetArbiterRegistryResponse(
 )
 
 /**
+ * `SetBillingBudgetRequest` model.
+ */
+@Serializable
+public data class SetBillingBudgetRequest(
+    @SerialName("limit_usd")
+    public val limitUsd: Double,
+    @SerialName("soft_threshold")
+    public val softThreshold: Double? = null,
+    @SerialName("hard_threshold")
+    public val hardThreshold: Double? = null,
+    public val period: GetBillingBudgetResponseBudgetPeriod? = null,
+)
+
+/**
+ * `SetBillingBudgetResponse` model.
+ */
+@Serializable
+public data class SetBillingBudgetResponse(
+    public val configured: Boolean? = null,
+    public val budget: JsonObject? = null,
+)
+
+/**
+ * `SetBillingOverageRequest` model.
+ */
+@Serializable
+public data class SetBillingOverageRequest(
+    public val enabled: Boolean,
+)
+
+/**
+ * `SetBillingOverageResponse` model.
+ */
+@Serializable
+public data class SetBillingOverageResponse(
+    public val enabled: Boolean? = null,
+    @SerialName("requires_cap")
+    public val requiresCap: Boolean? = null,
+)
+
+/**
  * `SetDataExplorerValueRequest` model.
  */
 @Serializable
@@ -21316,6 +22016,11 @@ public data class SetModelPricingOverrideRequest(
  */
 @Serializable
 public data class SetModelPricingOverrideResponse(
+    /**
+     * Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+     * Deprecated by the API.
+     */
     public val modelRef: String,
     @SerialName("input_per_million")
     public val inputPerMillion: Double,
@@ -21326,6 +22031,8 @@ public data class SetModelPricingOverrideResponse(
      */
     @SerialName("cached_input_per_million")
     public val cachedInputPerMillion: Double? = null,
+    @SerialName("model_ref")
+    public val modelRef_: String,
 )
 
 /**
@@ -22156,7 +22863,9 @@ public data class SyncProviderModelsResponse(
      */
     public val added: Long,
     /**
-     * Ids of the added entries; capped.
+     * Ids of the added entries; capped. Deprecated spelling of `added_ids` — the same value, kept
+     * for the compatibility window and removed in the next breaking release (the one that moves
+     * `X-API-Version`). Read `added_ids`. Deprecated by the API.
      */
     public val addedIds: List<String>,
     /**
@@ -22171,6 +22880,11 @@ public data class SyncProviderModelsResponse(
      * Present when the run was scoped to one provider, as it is here.
      */
     public val provider: String? = null,
+    /**
+     * Ids of the added entries; capped.
+     */
+    @SerialName("added_ids")
+    public val addedIds_: List<String>,
 )
 
 /**
@@ -24059,7 +24773,14 @@ public data class UnsuspendUserResponse(
 @Serializable
 public data class UpdateACPSessionResponse(
     public val saved: Boolean,
+    /**
+     * Deprecated spelling of `session_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read
+     * `session_id`. Deprecated by the API.
+     */
     public val sessionId: String,
+    @SerialName("session_id")
+    public val sessionId_: String,
 )
 
 /**
@@ -24949,12 +25670,8 @@ public data class UpdateAdminToolSecurityConfigResponse(
  */
 @Serializable
 public data class UpdateAdminToolSecurityConfigResponseToolSecurity(
-    @SerialName("default_egress_policy")
-    public val defaultEgressPolicy: String,
     @SerialName("egress_allowlist_per_tenant")
     public val egressAllowlistPerTenant: List<String>? = null,
-    @SerialName("ssrf_deny_private_ranges")
-    public val ssrfDenyPrivateRanges: Boolean,
     @SerialName("default_tool_timeout_ms")
     public val defaultToolTimeoutMs: Long,
     @SerialName("default_tool_max_payload_bytes")
@@ -25080,6 +25797,9 @@ public data class UpdateBuilderRequestStatusRequest(
 @Serializable
 public data class UpdateCoreMemoryBlockRequest(
     public val content: String,
+    /**
+     * Values outside 1..32000 are clamped to the range, not refused.
+     */
     @SerialName("max_tokens")
     public val maxTokens: Long? = null,
 )
@@ -25180,6 +25900,36 @@ public data class UpdateMarkupConfigResponseMarkup(
     public val platformMarkupPercent: Double,
     @SerialName("model_markup_overrides")
     public val modelMarkupOverrides: JsonObject,
+)
+
+/**
+ * `UpdateMCPServerRequest` model.
+ */
+@Serializable
+public data class UpdateMCPServerRequest(
+    public val name: String? = null,
+    public val url: String? = null,
+    public val command: String? = null,
+    public val args: List<String>? = null,
+    /**
+     * Re-encrypted on write. `{}` clears it.
+     */
+    public val env: JsonObject? = null,
+    public val enabled: Boolean? = null,
+    public val capabilities: JsonObject? = null,
+    public val status: MCPServerStatus? = null,
+    /**
+     * Names an environment variable of the API process whose value is sent to this server as a
+     * bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+     * boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+     * tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+     * mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+     * never echoed back; only the ref is stored.
+     */
+    @SerialName("api_key_ref")
+    public val apiKeyRef: String? = null,
+    @SerialName("egress_allowlist")
+    public val egressAllowlist: List<String>? = null,
 )
 
 /**
@@ -25364,6 +26114,15 @@ public data class UpdateSessionAnnotationRequest(
  */
 @Serializable
 public data class UpdateSessionRequest(
+    /**
+     * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+     * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+     * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+     * Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
+     * most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
+     * request is refused with 422 and a `detail` naming the number reached. Remove keys you no
+     * longer need; this is a label bag, not content.
+     */
     public val metadata: JsonObject? = null,
     /**
      * Per-conversation model override. Send null to clear (revert to agent default), or {

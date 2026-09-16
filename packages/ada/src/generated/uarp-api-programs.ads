@@ -11,6 +11,15 @@ package UARP.API.Programs is
 
    --  Apply program to session (create todos)
    --
+   --  Materialises the program into a session as todos. `session_id` and `start_date` are required
+   --  and both must resolve - an unknown program, session or overriding `agent_id` is 404, an
+   --  unparseable `start_date` is 422. One todo is created per step, due at 09:00 on `start_date`
+   --  plus the step's `suggested_due_offset_days` (falling back to the step's index in days),
+   --  assigned to `agent_id` or the program's default agent; each todo whose due time is still in
+   --  the future also gets a `todo_schedule` row so the scheduler fires it. Not idempotent -
+   --  applying the same program twice creates two full sets of todos. 201 with the created todos.
+   --  Requires the `sessions` write permission and the `sessions:write` scope.
+   --
    --  POST /api/v1/programs/{programId}/apply
    --
    --  Required scopes: sessions:write.
@@ -23,6 +32,13 @@ package UARP.API.Programs is
 
    --  Create a program (curriculum)
    --
+   --  Creates a program: an ordered list of steps that `POST /programs/{programId}/apply` later
+   --  turns into session todos. `name`, `agent_id` and at least one step are required (422
+   --  otherwise); each step is given a server-minted `step_id` and an `order_index` defaulting to
+   --  its position in the array. The `agent_id` is stored as the program's default assignee and is
+   --  not checked for existence here. Returns the stored program, 201. Requires the `agents` write
+   --  permission and the `agents:write` scope.
+   --
    --  POST /api/v1/programs
    --
    --  Required scopes: agents:write.
@@ -34,6 +50,9 @@ package UARP.API.Programs is
 
    --  Get program
    --
+   --  Returns one program with its steps. 404 when the tenant has no such program. Requires the
+   --  `agents` read permission and the `agents:read` scope.
+   --
    --  GET /api/v1/programs/{programId}
    --
    --  Required scopes: agents:read.
@@ -44,6 +63,10 @@ package UARP.API.Programs is
       return UARP.Models.Program;
 
    --  List programs
+   --
+   --  Lists the tenant's programs (curricula) sorted by `updated_at` ascending. There is no paging
+   --  and no filter - the whole prefix is read in one call. Requires the `agents` read permission
+   --  and the `agents:read` scope.
    --
    --  GET /api/v1/programs
    --

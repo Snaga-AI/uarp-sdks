@@ -85,6 +85,13 @@ impl RegistryApi {
 
     /// Admin: list all specs (regardless of visibility)
     ///
+    /// Lists every SPEC in the registry regardless of tenant or visibility; super-admin only, and
+    /// the refusal comes back as a problem document. Paged by `limit`, an integer 1–200 (400
+    /// outside that), and a `cursor` that is not a KV cursor but the plain `"\<scope\>/\<name\>"`
+    /// of the last row on the previous page — an unrecognised value is not an error, it simply
+    /// serves page one. Each row is decorated with a `featured` flag read from the platform's
+    /// featured-spec set.
+    ///
     /// `GET /api/v1/registry/admin/specs`
     pub async fn registry_admin_list_specs(&self, params: &RegistryAdminListSpecsParams) -> Result<models::RegistryAdminListSpecsResponse> {
         self.client
@@ -100,6 +107,15 @@ impl RegistryApi {
     }
 
     /// Download tarball/artifact bundle for a spec version
+    ///
+    /// Streams the version's compressed bundle as `application/zstd`, with the content digest in
+    /// `X-Content-Sha256`, `X-Artifact-SHA256` and the ETag, and a long `Cache-Control` whose scope
+    /// follows visibility — `private` for a private SPEC, so no shared cache hands it to the next
+    /// requester, since the only thing separating a caller from a refusal is a per-credential
+    /// access check no proxy can make. Range requests are not implemented; the body is served
+    /// whole. A yanked version is still downloadable, so existing lockfiles keep resolving.
+    /// Authentication is optional; a SPEC the caller cannot read and a version that does not exist
+    /// are both 404.
     ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/artifact`
     pub async fn registry_get_artifact(&self, scope: &str, name: &str, version: &str) -> Result<bytes::Bytes> {
@@ -117,6 +133,13 @@ impl RegistryApi {
 
     /// Get a single file from inside a spec version artifact
     ///
+    /// Returns one file out of the version's artifact, named by the required `path` query parameter
+    /// — absent or longer than 1024 characters is 400, and no such entry in the bundle is 404 with
+    /// code `FILE_NOT_FOUND`. A path that looks binary is described but its `content` is null; text
+    /// is decoded as UTF-8 and truncated past the content cap with `truncated: true` while `size`
+    /// still reports the real length. The bundle is decompressed on each call, and the response is
+    /// ETagged on the artifact digest plus the path.
+    ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/file`
     pub async fn registry_get_file(&self, scope: &str, name: &str, version: &str, params: &RegistryGetFileParams) -> Result<models::RegistryGetFileResponse> {
         self.client
@@ -132,6 +155,13 @@ impl RegistryApi {
     }
 
     /// Get README for a spec version
+    ///
+    /// Decompresses the version's artifact and returns the README found inside it, or an empty
+    /// string when the bundle has none — the empty string is the answer for a bundle without a
+    /// README, not for a missing version. ETagged on the artifact digest and short-cached with the
+    /// same visibility-dependent scope as the artifact itself. 404 for a SPEC the caller cannot
+    /// read or a version that does not exist; 500 with code `INVALID_ARCHIVE` when the stored
+    /// artifact cannot be parsed.
     ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/readme`
     pub async fn registry_get_readme(&self, scope: &str, name: &str, version: &str) -> Result<models::RegistryGetReadmeResponse> {
@@ -149,6 +179,11 @@ impl RegistryApi {
 
     /// Get share/visibility settings for a spec
     ///
+    /// Returns the SPEC's share list — the tenant ids a private SPEC is readable by — with the
+    /// owner and the last publish time. Requires authentication, and only the publishing tenant may
+    /// read it: any other authenticated caller is 403, while a SPEC with no visible versions is
+    /// 404. Unlike the other spec reads, this one is not open to anonymous callers.
+    ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/share`
     pub async fn registry_get_share(&self, scope: &str, name: &str) -> Result<models::RegistryGetShareResponse> {
         self.client
@@ -165,6 +200,13 @@ impl RegistryApi {
 
     /// Get sparse-index entry for a spec
     ///
+    /// The sparse index for one SPEC: one entry per version the caller may see, carrying only
+    /// `version`, `sha256`, `dependencies` and the `yanked` flag — enough for a resolver to pick a
+    /// version without fetching metadata. `shard` must equal the lowercase first two characters of
+    /// `scope` or the answer is 404. Authentication is optional and visibility is enforced per
+    /// caller: a private SPEC the caller cannot read answers 404 with code `PRIVATE_NOT_SHARED`,
+    /// indistinguishable in status from a SPEC that does not exist.
+    ///
     /// `GET /api/v1/registry/index/{shard}/{scope}/{name}`
     pub async fn registry_get_sparse_index(&self, shard: &str, scope: &str, name: &str) -> Result<models::RegistryGetSparseIndexResponse> {
         self.client
@@ -180,6 +222,15 @@ impl RegistryApi {
     }
 
     /// Get spec metadata (latest version pointers, owners)
+    ///
+    /// Overview metadata for a SPEC, aggregated over the versions the caller may see: the latest
+    /// manifest's description, licence, repository and homepage, categories and keywords, the
+    /// `latest_version` pointer and the full version list, the tool and skill counts, and the union
+    /// of every tool capability — all from the manifest, so no artifact is decompressed.
+    /// `shared_with` and a real `owner_tenant_id` are returned ONLY to the publishing tenant; every
+    /// other caller gets `owner_tenant_id: ""` so its `isOwner` check still resolves without
+    /// learning another tenant's id. Authentication is optional; a SPEC the caller cannot read
+    /// answers the same 404 as one that does not exist.
     ///
     /// `GET /api/v1/registry/spec/{scope}/{name}`
     pub async fn registry_get_spec_metadata(&self, scope: &str, name: &str) -> Result<models::RegistryGetSpecMetadataResponse> {
@@ -216,6 +267,11 @@ impl RegistryApi {
 
     /// List files inside a spec version artifact
     ///
+    /// Lists the files inside the version's artifact. The bundle is fetched and decompressed to
+    /// answer, so this costs the same as the artifact download; the result is ETagged on the
+    /// artifact digest and short-cached with the visibility-dependent scope. Same 404s as the
+    /// artifact route, and 500 `INVALID_ARCHIVE` when the bundle cannot be parsed.
+    ///
     /// `GET /api/v1/registry/spec/{scope}/{name}/{version}/files`
     pub async fn registry_list_files(&self, scope: &str, name: &str, version: &str) -> Result<models::RegistryListFilesResponse> {
         self.client
@@ -237,6 +293,8 @@ impl RegistryApi {
     /// points at the version's metadata endpoint.
     ///
     /// `POST /api/v1/registry/publish`
+    ///
+    /// Required scopes: `marketplace:write`.
     pub async fn registry_publish(&self, body: &models::RegistryPublishRequest) -> Result<models::RegistryPublishResponse> {
         self.client
             .request_multipart(
@@ -266,6 +324,15 @@ impl RegistryApi {
 
     /// Search the registry for specs
     ///
+    /// Searches published SPECs. Authentication is optional: an anonymous caller sees public SPECs
+    /// only, while an authenticated one also sees its own private SPECs and those explicitly shared
+    /// with its tenant. Filters are `q`, `scope`, `category`, `keyword` and `runtime_scope`
+    /// (`cloud` or `local`, 400 otherwise), with `limit` an integer 1–100 (400 outside that) and an
+    /// opaque `cursor`; `q` is refused past a length and a whitespace-token ceiling to stop crafted
+    /// queries fanning out across the index. Rate-limited per client IP and per tenant.
+    /// `publisher_tenant_id` is blanked to `""` on every hit the caller does not own, matching the
+    /// detail routes, and `total` is the length of the page rather than the number of matches.
+    ///
     /// `GET /api/v1/registry/search`
     pub async fn registry_search(&self, params: &RegistrySearchParams) -> Result<models::RegistrySearchResponse> {
         self.client
@@ -282,7 +349,17 @@ impl RegistryApi {
 
     /// Set share/visibility settings for a spec
     ///
+    /// WRITE SEMANTICS: replaces. Sets the SPEC's whole share list, so a tenant id omitted from
+    /// `shared_with` loses access — this is how a private SPEC reaches another tenant, which is why
+    /// it takes the `marketplace` publish permission and the `marketplace:write` scope rather than
+    /// any authenticated key, and is rate-limited per tenant. `shared_with` must be an array of
+    /// non-empty strings (422 naming the bad entries), and is further checked for size, duplicates,
+    /// self-reference and the existence of each tenant. The list is written to a single
+    /// authoritative key rather than mirrored onto each version row. Returns the new list.
+    ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/share`
+    ///
+    /// Required scopes: `marketplace:write`.
     pub async fn registry_set_share(&self, scope: &str, name: &str, body: &models::RegistrySetShareRequest) -> Result<models::RegistrySetShareResponse> {
         self.client
             .request_json(Request {
@@ -298,7 +375,15 @@ impl RegistryApi {
 
     /// Reverse a yank on a published spec version
     ///
+    /// Reverses a yank: clears the flag and drops the stored reason, putting the version back in
+    /// front of resolvers. Same handler and same gates as yank — publish permission,
+    /// `marketplace:write`, owner-only (403 for another tenant), rate-limited per tenant — but no
+    /// body is read. A version that was not yanked is 409 `NOT_YANKED`, so it is not idempotent; an
+    /// unknown version is 404. 204 on success.
+    ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/unyank`
+    ///
+    /// Required scopes: `marketplace:write`.
     pub async fn registry_unyank_version(&self, scope: &str, name: &str, version: &str) -> Result<()> {
         self.client
             .request_empty(Request {
@@ -314,7 +399,18 @@ impl RegistryApi {
 
     /// Yank (mark unsafe) a published spec version
     ///
+    /// Marks a published version unsafe so resolvers stop selecting it; the bytes stay downloadable
+    /// through the artifact route so existing lockfiles keep working. Takes the same authority as
+    /// publishing — the `marketplace` publish permission and the `marketplace:write` scope — and is
+    /// rate-limited per tenant; only the owning tenant may yank, and another tenant is 403. An
+    /// optional `reason` is stored and must be at most 2000 characters (422 rather than a silent
+    /// truncation), while a malformed JSON body is ignored since the reason is optional. A version
+    /// already yanked is 409 `YANK_CONFLICT`, so the call is not idempotent; an unknown version is
+    /// 404. 204 on success.
+    ///
     /// `POST /api/v1/registry/spec/{scope}/{name}/{version}/yank`
+    ///
+    /// Required scopes: `marketplace:write`.
     pub async fn registry_yank_version(&self, scope: &str, name: &str, version: &str, body: &models::RegistryYankVersionRequest) -> Result<()> {
         self.client
             .request_empty(Request {

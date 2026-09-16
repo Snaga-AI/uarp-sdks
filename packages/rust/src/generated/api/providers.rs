@@ -29,6 +29,10 @@ impl Client {
 impl ProvidersApi {
     /// LLM usage stats
     ///
+    /// Reports the tenant's LLM consumption against its plan: monthly tokens used and remaining,
+    /// requests today, this hour and this minute, the per-model breakdown, and the plan's own
+    /// limits and billing period. Read-only; requires the `agents:read` scope.
+    ///
     /// `GET /api/v1/llm/usage`
     ///
     /// Required scopes: `agents:read`.
@@ -46,6 +50,11 @@ impl ProvidersApi {
     }
 
     /// Platform default STT/TTS provider/model
+    ///
+    /// Reports the platform's configured STT and TTS provider, model and voice, and the proxy
+    /// endpoint each role is called through, so a client need not hardcode them. A role with no
+    /// admin configuration answers `configured: false` with null provider and model rather than a
+    /// guessed vendor default. Read-only; requires the `agents:read` scope.
     ///
     /// `GET /api/v1/llm/voice-config`
     ///
@@ -65,6 +74,13 @@ impl ProvidersApi {
 
     /// Get platform default providers
     ///
+    /// Returns the platform's default and fallback provider, model and endpoint by name. It is
+    /// matched before the tenant gate and is deliberately unauthenticated: onboarding screens call
+    /// it before login to decide whether to auto-pick the platform model or show a provider picker.
+    /// Alongside the four stored halves it returns `default_model_ref` and `fallback_model_ref`,
+    /// the joined strings the chat surface actually accepts, so a client never has to guess whether
+    /// the model half already carries a provider head. No API keys are exposed.
+    ///
     /// `GET /api/v1/providers/platform-defaults`
     pub async fn get_platform_defaults(&self) -> Result<models::PlatformLLMDefaults> {
         self.client
@@ -80,6 +96,13 @@ impl ProvidersApi {
     }
 
     /// List configured LLM providers
+    ///
+    /// Lists the providers registered on the platform, minus any the admin has disabled in
+    /// `provider_settings`, each with its canonical adapter family, default endpoint, and whether a
+    /// key resolves for this caller together with the level it resolved at (`configured_level`). A
+    /// provider that declares `requires_api_key: false` is reported as `local` and always
+    /// `configured`. Key resolution is scoped to the caller's tenant and user, so the same list can
+    /// differ between callers.
     ///
     /// `GET /api/v1/providers`
     pub async fn list(&self) -> Result<models::ListProvidersResponse> {
@@ -97,6 +120,13 @@ impl ProvidersApi {
 
     /// List image generation providers and models
     ///
+    /// Returns every registered provider together with the model catalogue it currently serves, for
+    /// choosing an image-generation model. Model ids are returned bare, with the provider prefix
+    /// stripped, because the media proxy forwards the model string to the provider verbatim. An
+    /// OpenAI-compatible `/v1/models` response carries no modality tag, so the list is only
+    /// filtered heuristically: obvious embedding, reranker, router and guard ids are dropped. A
+    /// provider with no resolvable key reports `configured: false` and an empty model list.
+    ///
     /// `GET /api/v1/providers/image-providers`
     pub async fn list_image_providers(&self) -> Result<models::ImageProviderList> {
         self.client
@@ -112,6 +142,14 @@ impl ProvidersApi {
     }
 
     /// List available LLM models
+    ///
+    /// Lists the models this caller may actually call: the admin-curated catalogue (falling back to
+    /// the built-in seed) merged with the live `/v1/models` of every provider that is registered
+    /// and has a resolvable key, deduped with curated rows winning, then filtered to the tiers the
+    /// tenant's plan grants. A row's tier is the effective one — the price is the floor and a
+    /// curated tier may only restrict further — and the price shown is the price this caller pays:
+    /// the provider rate through the platform markup for platform-paid calls, and the raw provider
+    /// rate where the caller's own key resolves. Requires the `agents:read` scope.
     ///
     /// `GET /api/v1/llm/models`
     ///
@@ -131,6 +169,16 @@ impl ProvidersApi {
 
     /// Fetch real models from provider API
     ///
+    /// Fetches the provider's own `/v1/models` over its configured endpoint using the key the
+    /// runtime would resolve, and caches the answer for five minutes partitioned by a hash of that
+    /// key so one tenant's account-scoped catalogue is never served to another. The admin
+    /// `model_allowlist` filters the result unless `?all=true` is passed by a super-admin. An
+    /// unknown or admin-disabled provider is 404; a provider with no usable key answers 200 with an
+    /// empty `models` array and an `error` string, and an empty list from a reachable provider
+    /// carries `empty_reason` instead — deliberately not `error`, because the call succeeded. Only
+    /// the `/models` sub-path is served and only for GET; any other suffix is 404 and any other
+    /// verb 405.
+    ///
     /// `GET /api/v1/providers/{providerId}/models`
     pub async fn list_provider_models(&self, provider_id: &str) -> Result<models::ListProviderModelsResponse> {
         self.client
@@ -146,6 +194,11 @@ impl ProvidersApi {
     }
 
     /// List video providers
+    ///
+    /// Returns every registered provider with the model catalogue it currently serves, for choosing
+    /// a video-generation model — the same provider-agnostic listing the image and voice variants
+    /// return, with bare model ids and the obvious non-media ids filtered out. A provider with no
+    /// resolvable key reports `configured: false` and an empty model list.
     ///
     /// `GET /api/v1/providers/video-providers`
     pub async fn list_video_providers(&self) -> Result<models::ListVideoProvidersResponse> {
@@ -163,6 +216,12 @@ impl ProvidersApi {
 
     /// List available STT/TTS voice providers + models
     ///
+    /// Returns every registered provider with the model catalogue it currently serves, offered
+    /// under both `stt_models` and `tts_models`: a generic OpenAI-compatible `/v1/models` response
+    /// does not say which models do speech, so the admin picks. A TTS entry carries a `voices`
+    /// array when admin config declares presets for that model, and its absence means the provider
+    /// accepts any voice string. A provider with no resolvable key reports `configured: false`.
+    ///
     /// `GET /api/v1/providers/voice-providers`
     pub async fn list_voice_providers(&self) -> Result<models::VoiceProviderList> {
         self.client
@@ -178,6 +237,15 @@ impl ProvidersApi {
     }
 
     /// LLM proxy chat completion
+    ///
+    /// Proxies an OpenAI-shaped chat completion to whichever registered provider serves the
+    /// requested `model`, streaming when `stream` is true, and books the resulting tokens and cost
+    /// against the tenant. Because it spends real provider credit it needs more than the proxy's
+    /// read scope: `runs` write permission plus the `runs:create` scope, and it passes the billing
+    /// and quota gate, so a delinquent subscription is refused 402 with a `code` and an exhausted
+    /// quota 403. An unknown model is 400, a model outside the plan's tier access 403, an over-long
+    /// prompt 400, and the daily, hourly and per-minute limits answer 429. `X-Agent-Id` attributes
+    /// the spend to one agent when it is a well-formed UUID.
     ///
     /// `POST /api/v1/llm/chat/completions`
     ///
@@ -197,6 +265,13 @@ impl ProvidersApi {
 
     /// Text-to-speech via the LLM proxy
     ///
+    /// Synthesises `input` (at most 4096 characters) through the TTS provider, model and voice
+    /// configured in admin → Voice, with `model`, `voice` and `response_format` (default `mp3`)
+    /// overridable per request. It spends provider credit and carries the same `runs:create` scope
+    /// and billing gate as chat completions. Missing or oversized `input` is 400, no configured TTS
+    /// model is 502, no TTS provider configured at all is 501 because nothing upstream was
+    /// contacted, and the plan's per-minute limit answers 429.
+    ///
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.
@@ -214,6 +289,14 @@ impl ProvidersApi {
     }
 
     /// Transcribe audio (Whisper) via the LLM proxy
+    ///
+    /// Transcribes a `multipart/form-data` upload carrying a `file` field through the STT provider
+    /// configured in admin → Voice, forwarding to that provider's own `/audio/transcriptions`. A
+    /// `model` form field overrides the configured default only when this deployment's provider
+    /// actually offers it. It spends provider credit, so it carries the same `runs:create` scope
+    /// and billing gate as chat completions; a body that is not multipart or has no `file` is 400,
+    /// an unconfigured STT provider or model is 502, and the plan's per-minute limit answers 429
+    /// with `Retry-After`.
     ///
     /// `POST /api/v1/llm/audio/transcriptions`
     ///

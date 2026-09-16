@@ -27,6 +27,12 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Switch active branch
      *
+     * Switches which branch subsequent messages in this session extend. `main` is always accepted;
+     * any other id must name a branch of this session, otherwise `404`, and that branch must still
+     * be `active`, otherwise `422`. The switch is a read-modify-write under optimistic
+     * concurrency, retried on conflict, so it cannot be lost to a concurrent session update.
+     * Returns `{session_id, active_branch}`; no history is copied or deleted.
+     *
      * `PUT /api/v1/sessions/{sessionId}/branches/{branchId}/activate`
      *
      * Required scopes: `sessions:write`.
@@ -91,6 +97,14 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Confirm or cancel a todo execution
      *
+     * Answers a todo that is waiting for a human decision. `409` unless its status is
+     * `pending_confirmation`. `execute: false` cancels it and returns it as `cancelled`; `execute:
+     * true` dispatches it — a run on the assigned agent, or a team run when the todo is assigned
+     * to a team — sets the todo to `in_progress` and records the run id on it. The run is subject
+     * to the tenant's run quota, so a dispatch can be refused `429` with the todo left untouched,
+     * and a todo with neither an agent nor a team assigned is `400`. `404` when the session or the
+     * todo does not exist.
+     *
      * `POST /api/v1/sessions/{sessionId}/todos/{todoId}/confirm`
      *
      * Required scopes: `sessions:write`.
@@ -109,6 +123,15 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Create a session
+     *
+     * Opens a conversation against an existing agent and returns it with `201`. `404` when the
+     * agent id is unknown in this tenant, and `403` when the plan's `max_active_sessions` is
+     * already reached by sessions that are both `active` and not past their expiry. To absorb
+     * double-submits the handler first looks for an active session on the same agent, created
+     * within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
+     * instead of minting a second one — so a `200` here means an existing session was reused. A
+     * new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
+     * record written alongside it for the session list.
      *
      * `POST /api/v1/sessions`
      *
@@ -155,6 +178,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Create a branch point in session
      *
+     * A session holds at most 100 branches. The 101st is refused with 422; `detail` names the
+     * count and points at `DELETE /sessions/{id}/branches/{branchId}`. The count is taken inside
+     * the compare-and-set body against the fresh session, so two concurrent creators cannot both
+     * see 99 and both write. There is no paging over the branch list.
+     *
      * `POST /api/v1/sessions/{sessionId}/branch`
      *
      * Required scopes: `sessions:write`.
@@ -174,6 +202,12 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Create session share link
      *
+     * Mints a public share link for the session and returns its URL, `role` and `expires_at`.
+     * `role` is `viewer` or `editor`; `expires_in_hours`, when given, both stamps the record and
+     * sets a matching TTL on the public lookup row, so the link stops resolving on its own. Not
+     * idempotent — each call mints a NEW share id and replaces the session's stored share record,
+     * which silently invalidates the previously issued URL. `404` when the session does not exist.
+     *
      * `POST /api/v1/sessions/{sessionId}/share`
      *
      * Required scopes: `sessions:write`.
@@ -192,6 +226,17 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Create a todo in session
+     *
+     * Creates a todo in the session and returns it with `201`. `assign_agent_id` and
+     * `assign_team_id` default to the session's own agent and team; assigning a platform agent is
+     * refused unless the caller is the super-admin, because the scheduler later dispatches it with
+     * no caller present. `due_at` decides whether it will run by itself: omitted with an assignee
+     * means now (or, with a `recurrence` cron, the next occurrence of that cron), an explicit
+     * `null` keeps it an unscheduled backlog item, and a string is used verbatim. When there is an
+     * assignee, a due time no more than five minutes in the past, and a status of `pending` or
+     * `pending_confirmation`, a schedule row is written for the background tick to fire. A
+     * `delivery.channels` entry of `telegram` or `whatsapp` is refused `422` unless its feature
+     * flag is enabled. `404` when the session does not exist.
      *
      * `POST /api/v1/sessions/{sessionId}/todos`
      *
@@ -232,6 +277,10 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Delete annotation
+     *
+     * Deletes one annotation and answers `204`. `404` when the session or the annotation does not
+     * exist, so a repeat call reports the absence rather than succeeding twice. The message it was
+     * anchored to is untouched.
      *
      * `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
      *
@@ -353,6 +402,15 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Get a session
      *
+     * Returns the session record with its conversation timeline. `404` when the session does not
+     * exist, and `404` again — not `403` — when it is filed under a private project the caller
+     * cannot open, because the existence of that project and of the chats in it is itself
+     * confidential. Assistant turns are enriched from their runs: public run metrics, the billable
+     * `cost_usd`, an `output_truncated` marker for a reply that was cut off, and `from_todo` for a
+     * turn a scheduled todo started; runs still in flight are stitched in from `session.runs` so a
+     * reload during streaming can reattach rather than render an idle screen. An unrecognised
+     * sub-path under the session answers `405`, never this record.
+     *
      * `GET /api/v1/sessions/{sessionId}`
      *
      * Required scopes: `sessions:read`.
@@ -369,6 +427,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Get audit log scoped to session
+     *
+     * Returns the audit entries the audit logger holds against this session, with `total`. `404`
+     * when the session does not exist. It is scoped by audit TARGET, so it carries the acts
+     * performed on the session itself — entries for the runs inside it are read through `GET
+     * /api/v1/runs/{runId}/audit-log`.
      *
      * `GET /api/v1/sessions/{sessionId}/audit-log`
      *
@@ -417,6 +480,13 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Get feedback for a run in session
      *
+     * Returns the reaction THIS caller left on one message of this run — `{reaction, reason?}`,
+     * with `reaction: null` when they left none. `message_id` is required; without it the request
+     * is `400` (the run-scoped `GET /api/v1/runs/{runId}/feedback` is the form that returns them
+     * in bulk). `404` when the session does not exist or the run is not part of it. Reactions are
+     * stored per caller identity, so this never reports another person's reaction to the same
+     * message.
+     *
      * `GET /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
      *
      * Required scopes: `sessions:read`.
@@ -438,6 +508,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Get session share link status
      *
+     * Reports whether this session has a public share link, and its `role` and `expires_at`. "Not
+     * shared" is a state, not a missing resource: the answer is `200` with `share_url`, `role` and
+     * `expires_at` all `null`. `404` only when the session itself does not exist. The URL is built
+     * against the app origin the request arrived through, not the API host.
+     *
      * `GET /api/v1/sessions/{sessionId}/share`
      *
      * Required scopes: `sessions:read`.
@@ -454,6 +529,10 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * List sessions
+     *
+     * Chats filed under a project whose `visibility` is `private` and which the caller neither
+     * created nor was granted are omitted from this list entirely, as they are from `GET
+     * /sessions/{id}` (2026-09-15).
      *
      * `GET /api/v1/sessions`
      *
@@ -489,6 +568,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * List session annotations
      *
+     * Lists the comment annotations left on this session's messages, up to 500, each with the
+     * `message_id` it is anchored to, its author and whether it has been resolved. `404` when the
+     * session does not exist. Message ids are the derived, stable ids that reactions and bookmarks
+     * also key on.
+     *
      * `GET /api/v1/sessions/{sessionId}/annotations`
      *
      * Required scopes: `sessions:read`.
@@ -505,6 +589,14 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * List artifacts across all runs in session
+     *
+     * Lists every artifact produced by any run in this session, with the run each came from. A
+     * session's runs can sit anywhere in the tenant's history and there is no per-session index,
+     * so the handler pages the whole run prefix filtering by session id, bounded at 50 000 rows;
+     * `truncated` is `true` when that cap bound before the prefix ran out, which is the difference
+     * between "this session produced nothing" and "the scan did not reach the end". `404` when the
+     * session does not exist. The entries carry names, types and sizes — fetch the bytes through
+     * the files API.
      *
      * `GET /api/v1/sessions/{sessionId}/artifacts`
      *
@@ -523,6 +615,12 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * List session branches
      *
+     * Lists the session's alternative execution branches together with `active_branch`, the one
+     * runs currently append to. The branches live inside the session record, so this is a single
+     * read and there is no paging; a session may hold at most 100. `404` when the session does not
+     * exist. A session that has never been branched answers with an empty list and `active_branch:
+     * "main"`.
+     *
      * `GET /api/v1/sessions/{sessionId}/branches`
      *
      * Required scopes: `sessions:read`.
@@ -539,6 +637,14 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * List session todos
+     *
+     * Lists this session's todos, up to 500, ordered by `order_index` and then by creation time.
+     * `from` and `to` (ISO timestamps) narrow the list to todos whose `due_at` falls in that
+     * window and reorder it by due date — note that a todo with no `due_at` is excluded entirely
+     * once either bound is given, so the calendar view and the plain list do not return the same
+     * set. Statuses are normalised to the canonical vocabulary before they go on the wire, so a
+     * todo an agent stored as `completed` reads as `done`. `items` and `todos` carry the same
+     * list. `404` when the session does not exist.
      *
      * `GET /api/v1/sessions/{sessionId}/todos`
      *
@@ -562,6 +668,15 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * List all todos across sessions
      *
+     * Lists every todo in the tenant, across all sessions, enriched with the assigned agent's
+     * name. `status` and `agent_id` filter (the status filter is compared against the canonical
+     * spelling, so `?status=done` also finds rows stored as `completed`), and `limit` defaults to
+     * 200 with a ceiling of 500. Ordering puts the unfinished ones first by soonest due date, then
+     * the finished and cancelled ones by most recently updated. `items` and `todos` carry the same
+     * list; `total` counts every matching todo BEFORE `limit` is applied, so it can exceed the
+     * number of entries returned. The scan over sessions is capped as a runaway backstop rather
+     * than a result limit.
+     *
      * `GET /api/v1/todos`
      */
     public suspend fun listTodos(options: RequestOptions = RequestOptions()): ListTodosResponse {
@@ -576,6 +691,16 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Resolve shared session (no auth)
+     *
+     * Resolves a share link into the read-only view of the session behind it. No authentication —
+     * the share id is the credential — so `404` covers both a link that never existed and one that
+     * has expired (an expired lookup row is deleted as it is read). The body carries the
+     * transcript with compacted entries dropped and any file link rewritten to the share-scoped
+     * path, the plan as titles and statuses only, an execution summary for the last 20 runs (tool
+     * NAMES, per-step outcome and latency, run status and duration) and the names, types and sizes
+     * of the artifacts. Nothing that could reach an authenticated resource travels: no run ids, no
+     * todo ids, no tool arguments or outputs, no instructions. The response is sent
+     * `Cache-Control: private, no-store`.
      *
      * `GET /api/v1/shared/{shareId}`
      */
@@ -720,6 +845,14 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Update session metadata
      *
+     * WRITE SEMANTICS: merges. Only `metadata` is writable and it merges one level into what is
+     * stored, so keys the body omits survive and keys accumulate across calls; the merged result
+     * is checked against the key-count, nesting-depth and byte ceilings and `422` if it would
+     * exceed one. `model_override` is accepted and deliberately ignored — the runtime always uses
+     * the platform default model — so old clients that still send it keep working. Malformed JSON
+     * is `400` and an unknown session is `404`; the write is a read-modify-write under optimistic
+     * concurrency, retried on conflict so a concurrent branch switch cannot be clobbered.
+     *
      * `PUT /api/v1/sessions/{sessionId}`
      *
      * Required scopes: `sessions:write`.
@@ -739,6 +872,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
     /**
      * Update annotation (e.g. resolve)
      *
+     * Updates one annotation. `resolved` is the only field applied — `content`, `author` and the
+     * anchored `message_id` cannot be changed through this route, and a body naming them succeeds
+     * without changing them. `404` when the session or the annotation does not exist. Returns the
+     * annotation as stored.
+     *
      * `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
      *
      * Required scopes: `sessions:write`.
@@ -757,6 +895,14 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
 
     /**
      * Update a todo
+     *
+     * WRITE SEMANTICS: merges — only the fields present in the body are applied and the rest of
+     * the todo is kept. `status` is normalised to the canonical spelling before storage; `due_at`,
+     * `assign_agent_id`, `assign_team_id` and `recurrence` accept `null` to clear them. Any change
+     * to title, instructions, status, due time, assignee or recurrence re-derives the background
+     * schedule row from the resulting todo — rescheduling it, re-targeting it, or deleting it when
+     * the todo becomes unscheduled, terminal, or due more than five minutes in the past. `404`
+     * when the session or the todo does not exist. Returns the stored todo.
      *
      * `PATCH /api/v1/sessions/{sessionId}/todos/{todoId}`
      *

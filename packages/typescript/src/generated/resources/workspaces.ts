@@ -143,6 +143,14 @@ export class WorkspacesResource extends APIResource {
   /**
    * Assign agent/team/company to workspace
    *
+   * Binds the workspace to exactly one of `agent_id`, `team_id` or `company_id`; sending none of
+   * them is 400 and only the first present one is acted on. The owning record is updated to
+   * point back at the workspace. Assigning an agent does more: it merges the workspace file
+   * tools into the agent's built-in tools — plus `code_interpreter` and `run_command` when those
+   * are enabled on the deployment — and appends the matching instruction fragments to the
+   * agent's system prompt if they are not already there. 404 when the workspace is not in the
+   * active tenant.
+   *
    * `POST /api/v1/workspaces/{workspaceId}/assign`
    *
    * Required scopes: `files:write`.
@@ -181,6 +189,10 @@ export class WorkspacesResource extends APIResource {
   /**
    * Create a workspace
    *
+   * Creates a standalone workspace, not bound to an agent, team or company until it is assigned.
+   * The tenant's workspace quota is enforced first (403 when full). `name` is optional and
+   * defaults to "New Workspace". Answers 201 with the workspace record.
+   *
    * `POST /api/v1/workspaces`
    *
    * Required scopes: `files:write`.
@@ -197,6 +209,13 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * Delete workspace and all files
+   *
+   * Deletes the workspace and every file in it, in the active tenant only. Refused while the
+   * tenant is under legal hold or suspended, and a `workspace.deleted` audit row is written
+   * before the cascade so a crash mid-way still leaves a trace. When the tenant's
+   * `shared_workspace_id` named this workspace the pointer is cleared, so later reads stop
+   * advertising a workspace that is gone. Answers 204, or 404 when the workspace is unknown.
+   * There is no undo — this is not the trash.
    *
    * `DELETE /api/v1/workspaces/{workspaceId}`
    *
@@ -215,6 +234,13 @@ export class WorkspacesResource extends APIResource {
   /**
    * Delete a file
    *
+   * Deletes the file or folder named by the required `path` query parameter. For a human caller
+   * (JWT auth) the file is moved to `.trash/console/…` with a manifest row and the response says
+   * `trashed: true` with the trash path, so it can be restored; `?trash=false` forces a
+   * permanent delete. API-key callers always delete permanently. When the path is not a file the
+   * handler falls through to deleting a folder and everything beneath it, answering 204; 404
+   * when neither a file nor a folder matches.
+   *
    * `DELETE /api/v1/workspaces/{workspaceId}/files`
    *
    * Required scopes: `files:write`.
@@ -231,6 +257,14 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * Download file content
+   *
+   * Streams the bytes of the file named by the required `path` query parameter, resolving the
+   * owning tenant through the caller's memberships when the active tenant does not hold the
+   * workspace. `If-None-Match` against the underlying artifact's sha256 answers 304.
+   * `Content-Disposition` is `inline` for images other than SVG, PDFs, audio and video and
+   * `attachment` otherwise. A file stored as `application/octet-stream` has its type re-detected
+   * from the extension for this response and the correction written back to the record. 404 when
+   * the file record or its bytes are missing.
    *
    * `GET /api/v1/workspaces/{workspaceId}/files/content`
    *
@@ -249,6 +283,13 @@ export class WorkspacesResource extends APIResource {
   /**
    * Permanently empty workspace trash
    *
+   * Permanently deletes every file the trash manifest names; nothing here is recoverable
+   * afterwards. Human callers only — an API key is refused with 403. The store, not the route,
+   * validates each manifest row and refuses any whose path is not inside `.trash/`, reporting
+   * them as `refused_paths` so a manifest row naming a live file cannot turn "empty the trash"
+   * into deleting it. The response carries `deleted_count` and the action is audit-logged as
+   * `workspace.trash_emptied`.
+   *
    * `DELETE /api/v1/workspaces/{workspaceId}/trash`
    *
    * Required scopes: `files:write`.
@@ -264,6 +305,11 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * Get workspace metadata
+   *
+   * Returns the workspace record enriched with a computed `file_count` and `total_size_bytes`,
+   * which are derived by listing its files on each read. When the active tenant does not hold
+   * the workspace the caller's other verified memberships are walked, so a multi-tenant user can
+   * read a workspace that lives in another of their tenants; 404 when none does.
    *
    * `GET /api/v1/workspaces/{workspaceId}`
    *
@@ -301,6 +347,16 @@ export class WorkspacesResource extends APIResource {
   /**
    * WebSocket terminal session for workspace
    *
+   * Upgrades the connection to a WebSocket carrying an interactive shell; the request must send
+   * `Upgrade: websocket`, or no other branch claims it. Four gates apply: the deployment must
+   * set `run_command.terminal_enabled` (403 — enabling the sandboxed `run_command` does not
+   * enable this), the workspace must exist in the caller's active tenant (404), and the caller
+   * needs the admin role and the `files:write` scope. The shell is a `sh -i` on the API host
+   * with a deliberately minimal environment — no host credentials are inherited — and its
+   * working directory is the server's own, not the workspace. Socket messages are written to the
+   * shell's stdin and its stdout and stderr are sent back; closing the socket terminates the
+   * process.
+   *
    * `GET /api/v1/workspaces/{workspaceId}/terminal`
    *
    * Required scopes: `files:read`.
@@ -316,6 +372,10 @@ export class WorkspacesResource extends APIResource {
   /**
    * List all workspaces
    *
+   * Lists the workspaces in the active tenant — those owned by an agent, a team or a company as
+   * well as standalone ones — with a `total`. Requires files read permission and the
+   * `files:read` scope. Metadata only; no file counts.
+   *
    * `GET /api/v1/workspaces`
    *
    * Required scopes: `files:read`.
@@ -330,6 +390,14 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * List agent workspace files (shortcut)
+   *
+   * Shortcut that resolves the agent's own workspace and lists one directory of it, selected by
+   * `path`. It provisions on read: an agent with no workspace of its own adopts the one its
+   * `workspace_id` names, or else a new workspace is created — spending the tenant's workspace
+   * quota (403 when full) and writing `workspace_id` back onto the agent. Only GET is served on
+   * this path and authorization runs before any of that, so a caller without files read access
+   * causes no writes. 404 when the agent does not exist. The listing is not recursive and omits
+   * the `updated_at`/`etag` the workspace-keyed listing carries.
    *
    * `GET /api/v1/agents/{agentId}/workspace/files`
    *
@@ -367,6 +435,13 @@ export class WorkspacesResource extends APIResource {
   /**
    * List files in workspace directory
    *
+   * Lists one directory of the workspace: `path` selects the directory (the root when omitted)
+   * and `recursive=true` walks the whole subtree instead of one level. Returns `directories` and
+   * a `files` array projected to `file_id`, `path`, `filename`, `mime_type`, `size_bytes`,
+   * `created_at`, `updated_at` and `etag` — the `etag` is what a conditional write sends back as
+   * `If-Match`. Cross-tenant resolution applies; a workspace the caller cannot resolve answers
+   * 200 with an empty listing rather than 404.
+   *
    * `GET /api/v1/workspaces/{workspaceId}/files`
    *
    * Required scopes: `files:read`.
@@ -382,6 +457,11 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * List trashed files in workspace
+   *
+   * Lists what is recoverable in the workspace's trash, read from the `.trash/_manifest.json`
+   * file. Human callers only: an API key is refused with 403, since agents read their trash
+   * through their own tool. A workspace with no manifest, or one that does not parse, answers
+   * 200 with an empty list rather than an error.
    *
    * `GET /api/v1/workspaces/{workspaceId}/trash`
    *
@@ -441,6 +521,12 @@ export class WorkspacesResource extends APIResource {
   /**
    * Restore a trashed file to its original path
    *
+   * Restores one trashed file to the path it was deleted from, using the same store method the
+   * agent's trash tool uses. Human callers only — an API key is refused with 403. `trash_path`
+   * is required and must be a non-empty string (400). 404 when no manifest row names that trash
+   * path, and 410 when the row exists but the bytes behind it are gone — a distinct answer, not
+   * a missing entry. Returns the original path it was restored to.
+   *
    * `POST /api/v1/workspaces/{workspaceId}/trash/restore`
    *
    * Required scopes: `files:write`.
@@ -477,6 +563,13 @@ export class WorkspacesResource extends APIResource {
   /**
    * Execute shell command in workspace
    *
+   * Runs a shell command inside the workspace through the same sandboxed handler the agent's
+   * `run_command` tool uses, and returns its combined output. Refused with 403 unless
+   * `run_command` is enabled on the deployment. `command` is required; `workdir` is interpreted
+   * relative to the workspace root and `timeout_sec` bounds the execution. Requires files write
+   * permission and the `files:write` scope. Side effects are whatever the command does to the
+   * workspace.
+   *
    * `POST /api/v1/workspaces/{workspaceId}/run-command`
    *
    * Required scopes: `files:write`.
@@ -494,6 +587,15 @@ export class WorkspacesResource extends APIResource {
   /**
    * Search files in workspace
    *
+   * Searches the text content of the workspace's files for `q`. An empty `q` answers an empty
+   * result set rather than matching everything. `glob` filters candidate paths and `regex=true`
+   * treats `q` as a regular expression — one screened first for catastrophic backtracking and
+   * refused with 400 if unsafe, or if it does not compile. The search is bounded rather than
+   * exhaustive: at most 500 paths considered, 100 files read and 300 matches returned, and only
+   * text MIME types are opened, so a missing hit may mean the bound was reached. Each result
+   * carries the path, line number, the whole line and the matched text. Cross-tenant resolution
+   * applies; an unresolvable workspace answers an empty result set.
+   *
    * `GET /api/v1/workspaces/{workspaceId}/search`
    *
    * Required scopes: `files:read`.
@@ -509,6 +611,11 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * Share workspace with an agent
+   *
+   * Grants one agent access to this workspace in addition to its owner, so the agent's file
+   * tools can read and write here. `agent_id` is required. Active tenant only — 404 when the
+   * workspace is not in it. Returns the updated workspace record; revoking is a separate delete
+   * on the share path.
    *
    * `POST /api/v1/workspaces/{workspaceId}/share`
    *
@@ -553,6 +660,10 @@ export class WorkspacesResource extends APIResource {
 
   /**
    * Update workspace name
+   *
+   * Renames the workspace; `name` is the only writable field and is required. Unlike the reads,
+   * this is scoped to the active tenant only — a workspace in another of the caller's tenants
+   * answers 404 here.
    *
    * `PATCH /api/v1/workspaces/{workspaceId}`
    *

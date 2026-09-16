@@ -2028,18 +2028,14 @@ public struct AdminConfigToolSecurityConfig: Codable, Hashable, Sendable {
 
 /// `AdminConfigToolSecurityConfigToolSecurity` model.
 public struct AdminConfigToolSecurityConfigToolSecurity: Codable, Hashable, Sendable {
-    public var defaultEgressPolicy: String
     public var egressAllowlistPerTenant: [String]?
-    public var ssrfDenyPrivateRanges: Bool
     public var defaultToolTimeoutMs: Int
     public var defaultToolMaxPayloadBytes: Int
     public var defaultToolMaxConcurrency: Int
     public var stdioInheritEnv: Bool
 
-    public init(defaultEgressPolicy: String, egressAllowlistPerTenant: [String]? = nil, ssrfDenyPrivateRanges: Bool, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
-        self.defaultEgressPolicy = defaultEgressPolicy
+    public init(egressAllowlistPerTenant: [String]? = nil, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
         self.egressAllowlistPerTenant = egressAllowlistPerTenant
-        self.ssrfDenyPrivateRanges = ssrfDenyPrivateRanges
         self.defaultToolTimeoutMs = defaultToolTimeoutMs
         self.defaultToolMaxPayloadBytes = defaultToolMaxPayloadBytes
         self.defaultToolMaxConcurrency = defaultToolMaxConcurrency
@@ -2047,9 +2043,7 @@ public struct AdminConfigToolSecurityConfigToolSecurity: Codable, Hashable, Send
     }
 
     private enum CodingKeys: String, CodingKey {
-        case defaultEgressPolicy = "default_egress_policy"
         case egressAllowlistPerTenant = "egress_allowlist_per_tenant"
-        case ssrfDenyPrivateRanges = "ssrf_deny_private_ranges"
         case defaultToolTimeoutMs = "default_tool_timeout_ms"
         case defaultToolMaxPayloadBytes = "default_tool_max_payload_bytes"
         case defaultToolMaxConcurrency = "default_tool_max_concurrency"
@@ -2603,20 +2597,46 @@ public struct AdminListWebhookDLQResponse: Codable, Hashable, Sendable {
 
 /// `AdminListWebhookDLQResponseEntry` model.
 public struct AdminListWebhookDLQResponseEntry: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var eventId: String
+    /// Deprecated spelling of `event_type` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `event_type`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var eventType: String
     public var payload: JSONObject?
+    /// Deprecated spelling of `error_message` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `error_message`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var errorMessage: String
     public var timestamp: String
+    /// Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var tenantId: String?
+    public var eventId_: String
+    public var eventType_: String
+    public var errorMessage_: String
+    public var tenantId_: String?
 
-    public init(eventId: String, eventType: String, payload: JSONObject? = nil, errorMessage: String, timestamp: String, tenantId: String? = nil) {
+    public init(eventId: String, eventType: String, payload: JSONObject? = nil, errorMessage: String, timestamp: String, tenantId: String? = nil, eventId_: String, eventType_: String, errorMessage_: String, tenantId_: String? = nil) {
         self.eventId = eventId
         self.eventType = eventType
         self.payload = payload
         self.errorMessage = errorMessage
         self.timestamp = timestamp
         self.tenantId = tenantId
+        self.eventId_ = eventId_
+        self.eventType_ = eventType_
+        self.errorMessage_ = errorMessage_
+        self.tenantId_ = tenantId_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -2626,6 +2646,10 @@ public struct AdminListWebhookDLQResponseEntry: Codable, Hashable, Sendable {
         case errorMessage = "errorMessage"
         case timestamp = "timestamp"
         case tenantId = "tenantId"
+        case eventId_ = "event_id"
+        case eventType_ = "event_type"
+        case errorMessage_ = "error_message"
+        case tenantId_ = "tenant_id"
     }
 }
 
@@ -3357,15 +3381,21 @@ public struct AdminRegistrationConfigWaitlistItem: Codable, Hashable, Sendable {
 /// `AdminReplayWebhookDLQResponse` model.
 public struct AdminReplayWebhookDLQResponse: Codable, Hashable, Sendable {
     public var success: Bool
+    /// Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var eventId: String
     public var action: String
     public var message: String
+    public var eventId_: String
 
-    public init(success: Bool, eventId: String, action: String, message: String) {
+    public init(success: Bool, eventId: String, action: String, message: String, eventId_: String) {
         self.success = success
         self.eventId = eventId
         self.action = action
         self.message = message
+        self.eventId_ = eventId_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -3373,6 +3403,7 @@ public struct AdminReplayWebhookDLQResponse: Codable, Hashable, Sendable {
         case eventId = "eventId"
         case action = "action"
         case message = "message"
+        case eventId_ = "event_id"
     }
 }
 
@@ -7062,16 +7093,24 @@ public struct CancelSquadRunResponse: Codable, Hashable, Sendable {
     public var cancelled: Bool
     public var teamRunId: String
     /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    /// Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_count`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var cancelledCount: Int
     /// False when no orchestration loop was in flight in this process — the run had already
     /// settled, or it belongs to another replica.
     public var orchestratorStopped: Bool
+    /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    public var cancelledCount_: Int
 
-    public init(cancelled: Bool, teamRunId: String, cancelledCount: Int, orchestratorStopped: Bool) {
+    public init(cancelled: Bool, teamRunId: String, cancelledCount: Int, orchestratorStopped: Bool, cancelledCount_: Int) {
         self.cancelled = cancelled
         self.teamRunId = teamRunId
         self.cancelledCount = cancelledCount
         self.orchestratorStopped = orchestratorStopped
+        self.cancelledCount_ = cancelledCount_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -7079,6 +7118,7 @@ public struct CancelSquadRunResponse: Codable, Hashable, Sendable {
         case teamRunId = "team_run_id"
         case cancelledCount = "cancelledCount"
         case orchestratorStopped = "orchestrator_stopped"
+        case cancelledCount_ = "cancelled_count"
     }
 }
 
@@ -7087,16 +7127,24 @@ public struct CancelTeamRunResponse: Codable, Hashable, Sendable {
     public var cancelled: Bool
     public var teamRunId: String
     /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    /// Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_count`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var cancelledCount: Int
     /// False when no orchestration loop was in flight in this process — the run had already
     /// settled, or it belongs to another replica.
     public var orchestratorStopped: Bool
+    /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    public var cancelledCount_: Int
 
-    public init(cancelled: Bool, teamRunId: String, cancelledCount: Int, orchestratorStopped: Bool) {
+    public init(cancelled: Bool, teamRunId: String, cancelledCount: Int, orchestratorStopped: Bool, cancelledCount_: Int) {
         self.cancelled = cancelled
         self.teamRunId = teamRunId
         self.cancelledCount = cancelledCount
         self.orchestratorStopped = orchestratorStopped
+        self.cancelledCount_ = cancelledCount_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -7104,6 +7152,7 @@ public struct CancelTeamRunResponse: Codable, Hashable, Sendable {
         case teamRunId = "team_run_id"
         case cancelledCount = "cancelledCount"
         case orchestratorStopped = "orchestrator_stopped"
+        case cancelledCount_ = "cancelled_count"
     }
 }
 
@@ -7225,7 +7274,8 @@ public struct CanvasWorkflowStep: Codable, Hashable, Sendable {
 public struct CastBallotRequest: Codable, Hashable, Sendable {
     public var agentId: String
     public var vote: String
-    /// Voting weight; 0 < w ≤ 100.
+    /// Voting weight; 0 < w ≤ 1 (the same cap the cast_vote tool applies; 100 was accepted until
+    /// 2026-09-16).
     public var weight: Double?
     public var reasoning: String?
     /// Optional cryptographic ballot signature.
@@ -7254,6 +7304,7 @@ public struct ChatCompletionRequest: Codable, Hashable, Sendable {
     public var model: String
     public var messages: [ChatCompletionRequestMessage]
     public var temperature: Double?
+    /// Values below 1 are clamped, not refused.
     public var maxTokens: Int?
     public var stream: Bool?
     public var tools: [ChatCompletionRequestTool]?
@@ -7509,6 +7560,22 @@ public struct CheckSpawnPermissionRequest: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case parentAgentId = "parent_agent_id"
         case childPermissions = "child_permissions"
+    }
+}
+
+/// `ClearBillingBudgetResponse` model.
+public struct ClearBillingBudgetResponse: Codable, Hashable, Sendable {
+    public var configured: Bool?
+    public var budget: JSONObject?
+
+    public init(configured: Bool? = nil, budget: JSONObject? = nil) {
+        self.configured = configured
+        self.budget = budget
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case budget = "budget"
     }
 }
 
@@ -9348,8 +9415,17 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
     public var args: [String]?
     public var env: JSONObject?
     public var enabled: Bool?
+    /// Names an environment variable of the API process whose value is sent to this server as a
+    /// bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+    /// boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+    /// tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+    /// mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+    /// never echoed back; only the ref is stored.
+    public var apiKeyRef: String?
+    /// Hosts this server may be reached at, checked with DNS resolution.
+    public var egressAllowlist: [String]?
 
-    public init(name: String, transport: MCPTransport, url: String? = nil, command: String? = nil, args: [String]? = nil, env: JSONObject? = nil, enabled: Bool? = nil) {
+    public init(name: String, transport: MCPTransport, url: String? = nil, command: String? = nil, args: [String]? = nil, env: JSONObject? = nil, enabled: Bool? = nil, apiKeyRef: String? = nil, egressAllowlist: [String]? = nil) {
         self.name = name
         self.transport = transport
         self.url = url
@@ -9357,6 +9433,8 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
         self.args = args
         self.env = env
         self.enabled = enabled
+        self.apiKeyRef = apiKeyRef
+        self.egressAllowlist = egressAllowlist
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -9367,6 +9445,8 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
         case args = "args"
         case env = "env"
         case enabled = "enabled"
+        case apiKeyRef = "api_key_ref"
+        case egressAllowlist = "egress_allowlist"
     }
 }
 
@@ -10297,16 +10377,30 @@ public struct DeactivateSafeModeResponse: Codable, Hashable, Sendable {
 /// governance/emergency.ts DeadlockReport — computed, not stored. Field names are camelCase on
 /// the wire.
 public struct DeadlockReport: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `has_deadlock` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `has_deadlock`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var hasDeadlock: Bool
+    /// Deprecated spelling of `conflicting_rules` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `conflicting_rules`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var conflictingRules: [DeadlockReportConflictingRule]
     public var recommendation: String
     public var checkedAt: String
+    public var hasDeadlock_: Bool
+    public var conflictingRules_: [DeadlockReportConflictingRule2]
 
-    public init(hasDeadlock: Bool, conflictingRules: [DeadlockReportConflictingRule], recommendation: String, checkedAt: String) {
+    public init(hasDeadlock: Bool, conflictingRules: [DeadlockReportConflictingRule], recommendation: String, checkedAt: String, hasDeadlock_: Bool, conflictingRules_: [DeadlockReportConflictingRule2]) {
         self.hasDeadlock = hasDeadlock
         self.conflictingRules = conflictingRules
         self.recommendation = recommendation
         self.checkedAt = checkedAt
+        self.hasDeadlock_ = hasDeadlock_
+        self.conflictingRules_ = conflictingRules_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -10314,11 +10408,29 @@ public struct DeadlockReport: Codable, Hashable, Sendable {
         case conflictingRules = "conflictingRules"
         case recommendation = "recommendation"
         case checkedAt = "checked_at"
+        case hasDeadlock_ = "has_deadlock"
+        case conflictingRules_ = "conflicting_rules"
     }
 }
 
 /// `DeadlockReportConflictingRule` model.
 public struct DeadlockReportConflictingRule: Codable, Hashable, Sendable {
+    public var prohibition: String
+    public var requirement: String
+
+    public init(prohibition: String, requirement: String) {
+        self.prohibition = prohibition
+        self.requirement = requirement
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case prohibition = "prohibition"
+        case requirement = "requirement"
+    }
+}
+
+/// `DeadlockReportConflictingRule2` model.
+public struct DeadlockReportConflictingRule2: Codable, Hashable, Sendable {
     public var prohibition: String
     public var requirement: String
 
@@ -10455,28 +10567,6 @@ public struct DeleteAllAgentBookmarksResponse: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case removed = "removed"
     }
-}
-
-/// `DeleteCustomPlanForce` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct DeleteCustomPlanForce: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let v1 = DeleteCustomPlanForce(rawValue: "1")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [DeleteCustomPlanForce] = [.v1]
 }
 
 /// `DeleteCustomPlanResponse` model.
@@ -10634,17 +10724,24 @@ public struct DeleteMeResponseTenant: Codable, Hashable, Sendable {
 
 /// `DeleteModelPricingOverrideResponse` model.
 public struct DeleteModelPricingOverrideResponse: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var modelRef: String
     public var deleted: Bool
+    public var modelRef_: String
 
-    public init(modelRef: String, deleted: Bool) {
+    public init(modelRef: String, deleted: Bool, modelRef_: String) {
         self.modelRef = modelRef
         self.deleted = deleted
+        self.modelRef_ = modelRef_
     }
 
     private enum CodingKeys: String, CodingKey {
         case modelRef = "modelRef"
         case deleted = "deleted"
+        case modelRef_ = "model_ref"
     }
 }
 
@@ -11527,6 +11624,7 @@ public struct DrawingOp: Codable, Hashable, Sendable {
     public var fileId: String?
     public var fit: DrawingOpFit?
     public var layer: DrawingLayer?
+    /// Values below 0 are clamped, not refused.
     public var index: Int?
     public var patch: DrawingOpPatch?
     public var order: [String]?
@@ -12115,15 +12213,29 @@ public struct EmptyWorkspaceTrashResponse: Codable, Hashable, Sendable {
 /// middleware/rate-limit.ts EndpointRateLimitConfig — camelCase on the wire.
 public struct EndpointRateLimit: Codable, Hashable, Sendable {
     public var pattern: String
+    /// Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `max_requests`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var maxRequests: Int
+    /// Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `window_sec`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var windowSec: Int
     public var source: GuardrailConfigItemSource
+    public var maxRequests_: Int
+    public var windowSec_: Int
 
-    public init(pattern: String, maxRequests: Int, windowSec: Int, source: GuardrailConfigItemSource) {
+    public init(pattern: String, maxRequests: Int, windowSec: Int, source: GuardrailConfigItemSource, maxRequests_: Int, windowSec_: Int) {
         self.pattern = pattern
         self.maxRequests = maxRequests
         self.windowSec = windowSec
         self.source = source
+        self.maxRequests_ = maxRequests_
+        self.windowSec_ = windowSec_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -12131,6 +12243,8 @@ public struct EndpointRateLimit: Codable, Hashable, Sendable {
         case maxRequests = "maxRequests"
         case windowSec = "windowSec"
         case source = "source"
+        case maxRequests_ = "max_requests"
+        case windowSec_ = "window_sec"
     }
 }
 
@@ -12138,25 +12252,58 @@ public struct EndpointRateLimit: Codable, Hashable, Sendable {
 public struct EnforcementResult: Codable, Hashable, Sendable {
     /// False when any matched rule carries a blocking penalty.
     public var allowed: Bool
+    /// Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `check_result`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var checkResult: EnforcementResultCheckResult
     /// What the matched rules call for. Empty when nothing matched.
     public var penalties: [EnforcementResultPenalty]
+    public var checkResult_: EnforcementResultCheckResult2
 
-    public init(allowed: Bool, checkResult: EnforcementResultCheckResult, penalties: [EnforcementResultPenalty]) {
+    public init(allowed: Bool, checkResult: EnforcementResultCheckResult, penalties: [EnforcementResultPenalty], checkResult_: EnforcementResultCheckResult2) {
         self.allowed = allowed
         self.checkResult = checkResult
         self.penalties = penalties
+        self.checkResult_ = checkResult_
     }
 
     private enum CodingKeys: String, CodingKey {
         case allowed = "allowed"
         case checkResult = "checkResult"
         case penalties = "penalties"
+        case checkResult_ = "check_result"
     }
 }
 
-/// `EnforcementResultCheckResult` model.
+/// Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+/// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+/// `check_result`.
 public struct EnforcementResultCheckResult: Codable, Hashable, Sendable {
+    public var allowed: Bool
+    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+    public var checkedRules: [String]
+    public var violations: [ConstitutionViolation]
+    public var checkedAt: String
+
+    public init(allowed: Bool, checkedRules: [String], violations: [ConstitutionViolation], checkedAt: String) {
+        self.allowed = allowed
+        self.checkedRules = checkedRules
+        self.violations = violations
+        self.checkedAt = checkedAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case allowed = "allowed"
+        case checkedRules = "checked_rules"
+        case violations = "violations"
+        case checkedAt = "checked_at"
+    }
+}
+
+/// `EnforcementResultCheckResult2` model.
+public struct EnforcementResultCheckResult2: Codable, Hashable, Sendable {
     public var allowed: Bool
     /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
     public var checkedRules: [String]
@@ -12180,17 +12327,24 @@ public struct EnforcementResultCheckResult: Codable, Hashable, Sendable {
 
 /// `EnforcementResultPenalty` model.
 public struct EnforcementResultPenalty: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `rule_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `rule_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var ruleId: String
     public var penalty: ConstitutionRulePenalty
+    public var ruleId_: String
 
-    public init(ruleId: String, penalty: ConstitutionRulePenalty) {
+    public init(ruleId: String, penalty: ConstitutionRulePenalty, ruleId_: String) {
         self.ruleId = ruleId
         self.penalty = penalty
+        self.ruleId_ = ruleId_
     }
 
     private enum CodingKeys: String, CodingKey {
         case ruleId = "ruleId"
         case penalty = "penalty"
+        case ruleId_ = "rule_id"
     }
 }
 
@@ -12239,7 +12393,8 @@ public struct EnrolMfaRequestAlgorithm: RawRepresentable, Codable, Hashable, Sen
     public static let knownValues: [EnrolMfaRequestAlgorithm] = [.sha1, .sha256, .sha512]
 }
 
-/// RFC 9457 problem+json style error; correlationId for request tracing.
+/// RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
+/// tracing — `correlationId` is the same value for the compatibility window.
 public struct ErrorModel: Codable, Hashable, Sendable {
     public var type: String
     /// The HTTP reason phrase of `status` — one dictionary for every status the platform answers
@@ -12252,18 +12407,33 @@ public struct ErrorModel: Codable, Hashable, Sendable {
     /// `title`. On a 500 it is the fixed sentence the sanitizer allows; 501–504 carry the handler's
     /// own operator guidance.
     public var detail: String
-    /// Request ID for tracing
+    /// What a client should DO about this, as a value it can switch on — `detail` is for the person
+    /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+    /// document and the wire cannot drift apart. Two casings are on the wire and both are
+    /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+    /// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+    /// no machine-readable class.
+    public var code: ErrorCode?
+    /// Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
+    /// the compatibility window and removed in the next breaking release (the one that moves
+    /// `X-API-Version`). Read `correlation_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var correlationId: String?
     /// Field-level validation errors (present on 422 responses)
     public var errors: [ErrorError]?
+    /// Request ID for tracing
+    public var correlationId_: String?
 
-    public init(type: String, title: ErrorTitle, status: Int, detail: String, correlationId: String? = nil, errors: [ErrorError]? = nil) {
+    public init(type: String, title: ErrorTitle, status: Int, detail: String, code: ErrorCode? = nil, correlationId: String? = nil, errors: [ErrorError]? = nil, correlationId_: String? = nil) {
         self.type = type
         self.title = title
         self.status = status
         self.detail = detail
+        self.code = code
         self.correlationId = correlationId
         self.errors = errors
+        self.correlationId_ = correlationId_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -12271,9 +12441,95 @@ public struct ErrorModel: Codable, Hashable, Sendable {
         case title = "title"
         case status = "status"
         case detail = "detail"
+        case code = "code"
         case correlationId = "correlationId"
         case errors = "errors"
+        case correlationId_ = "correlation_id"
     }
+}
+
+/// What a client should DO about this, as a value it can switch on — `detail` is for the person
+/// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+/// document and the wire cannot drift apart. Two casings are on the wire and both are
+/// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+/// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+/// no machine-readable class.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let aarNotAvailable = ErrorCode(rawValue: "AAR_NOT_AVAILABLE")
+    public static let artifactIntegrityError = ErrorCode(rawValue: "ARTIFACT_INTEGRITY_ERROR")
+    public static let authError = ErrorCode(rawValue: "AUTH_ERROR")
+    public static let billingCancelled = ErrorCode(rawValue: "BILLING_CANCELLED")
+    public static let billingDisputed = ErrorCode(rawValue: "BILLING_DISPUTED")
+    public static let billingPastDue = ErrorCode(rawValue: "BILLING_PAST_DUE")
+    public static let checksumMismatch = ErrorCode(rawValue: "CHECKSUM_MISMATCH")
+    public static let configurationError = ErrorCode(rawValue: "CONFIGURATION_ERROR")
+    public static let eventStoreError = ErrorCode(rawValue: "EVENT_STORE_ERROR")
+    public static let externalServiceError = ErrorCode(rawValue: "EXTERNAL_SERVICE_ERROR")
+    public static let forbidden = ErrorCode(rawValue: "FORBIDDEN")
+    public static let guardrailViolation = ErrorCode(rawValue: "GUARDRAIL_VIOLATION")
+    public static let invalidQuery = ErrorCode(rawValue: "INVALID_QUERY")
+    public static let invalidShareList = ErrorCode(rawValue: "INVALID_SHARE_LIST")
+    public static let invalidShareTarget = ErrorCode(rawValue: "INVALID_SHARE_TARGET")
+    public static let llmError = ErrorCode(rawValue: "LLM_ERROR")
+    public static let migrationConflict = ErrorCode(rawValue: "MIGRATION_CONFLICT")
+    public static let missionAlreadyRunning = ErrorCode(rawValue: "MISSION_ALREADY_RUNNING")
+    public static let missionConcurrencyLimit = ErrorCode(rawValue: "MISSION_CONCURRENCY_LIMIT")
+    public static let missionNotFound = ErrorCode(rawValue: "MISSION_NOT_FOUND")
+    public static let missionNotRunnable = ErrorCode(rawValue: "MISSION_NOT_RUNNABLE")
+    public static let missionNotRunning = ErrorCode(rawValue: "MISSION_NOT_RUNNING")
+    public static let missionRouteNotFound = ErrorCode(rawValue: "MISSION_ROUTE_NOT_FOUND")
+    public static let notFound = ErrorCode(rawValue: "NOT_FOUND")
+    public static let notYanked = ErrorCode(rawValue: "NOT_YANKED")
+    public static let payloadTooLarge = ErrorCode(rawValue: "PAYLOAD_TOO_LARGE")
+    public static let persistenceError = ErrorCode(rawValue: "PERSISTENCE_ERROR")
+    public static let plannerOutputInvalid = ErrorCode(rawValue: "PLANNER_OUTPUT_INVALID")
+    public static let plannerRefused = ErrorCode(rawValue: "PLANNER_REFUSED")
+    public static let preconditionFailed = ErrorCode(rawValue: "PRECONDITION_FAILED")
+    public static let privateNotShared = ErrorCode(rawValue: "PRIVATE_NOT_SHARED")
+    public static let promoRedemptionFailed = ErrorCode(rawValue: "PROMO_REDEMPTION_FAILED")
+    public static let quotaExceeded = ErrorCode(rawValue: "QUOTA_EXCEEDED")
+    public static let rateLimitExceeded = ErrorCode(rawValue: "RATE_LIMIT_EXCEEDED")
+    public static let reservedScope = ErrorCode(rawValue: "RESERVED_SCOPE")
+    public static let runCancelled = ErrorCode(rawValue: "RUN_CANCELLED")
+    public static let scopeMismatch = ErrorCode(rawValue: "SCOPE_MISMATCH")
+    public static let scopeTaken = ErrorCode(rawValue: "SCOPE_TAKEN")
+    public static let shareListConflict = ErrorCode(rawValue: "SHARE_LIST_CONFLICT")
+    public static let sizeLimit = ErrorCode(rawValue: "SIZE_LIMIT")
+    public static let specNotFound = ErrorCode(rawValue: "SPEC_NOT_FOUND")
+    public static let teamAbort = ErrorCode(rawValue: "TEAM_ABORT")
+    public static let validationError = ErrorCode(rawValue: "VALIDATION_ERROR")
+    public static let versionConflict = ErrorCode(rawValue: "VERSION_CONFLICT")
+    public static let versionNotFound = ErrorCode(rawValue: "VERSION_NOT_FOUND")
+    public static let workspaceStorageLimit = ErrorCode(rawValue: "WORKSPACE_STORAGE_LIMIT")
+    public static let yankConflict = ErrorCode(rawValue: "YANK_CONFLICT")
+    public static let agentNotFound = ErrorCode(rawValue: "agent_not_found")
+    public static let alreadyBootstrapped = ErrorCode(rawValue: "already_bootstrapped")
+    public static let billingNotConfigured = ErrorCode(rawValue: "billing_not_configured")
+    public static let governanceNotEnabled = ErrorCode(rawValue: "governance_not_enabled")
+    public static let incompleteRecord = ErrorCode(rawValue: "incomplete_record")
+    public static let inertPolicyField = ErrorCode(rawValue: "inert_policy_field")
+    public static let inertPublicConfigField = ErrorCode(rawValue: "inert_public_config_field")
+    public static let limitReached = ErrorCode(rawValue: "limit_reached")
+    public static let quotaExceeded_ = ErrorCode(rawValue: "quota_exceeded")
+    public static let rateLimited = ErrorCode(rawValue: "rate_limited")
+    public static let runQuotaExceeded = ErrorCode(rawValue: "run_quota_exceeded")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .limitReached, .quotaExceeded_, .rateLimited, .runQuotaExceeded]
 }
 
 /// `ErrorError` model.
@@ -12728,6 +12984,28 @@ public struct ExportAdminConfigResponse: Codable, Hashable, Sendable {
         case sectionCount = "section_count"
         case sections = "sections"
     }
+}
+
+/// `ExportDataExplorerIncludeSensitive` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct ExportDataExplorerIncludeSensitive: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let v1 = ExportDataExplorerIncludeSensitive(rawValue: "1")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [ExportDataExplorerIncludeSensitive] = [.v1]
 }
 
 /// `ExportMyAccountFormat` values.
@@ -13746,22 +14024,106 @@ public struct GetAdminTraceResponseRun: Codable, Hashable, Sendable {
 
 /// `GetAgentActivityStatsResponse` model.
 public struct GetAgentActivityStatsResponse: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `total_runs` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `total_runs`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var totalRuns: Int?
+    /// Deprecated spelling of `completed_runs` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `completed_runs`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var completedRuns: Int?
+    /// Deprecated spelling of `failed_runs` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `failed_runs`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var failedRuns: Int?
+    /// Deprecated spelling of `cancelled_runs` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_runs`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var cancelledRuns: Int?
+    /// Deprecated spelling of `guardrail_blocked_runs` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `guardrail_blocked_runs`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var guardrailBlockedRuns: Int?
+    /// Deprecated spelling of `error_rate_percent` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `error_rate_percent`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var errorRatePercent: Double?
+    /// Deprecated spelling of `avg_steps_per_run` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_steps_per_run`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var avgStepsPerRun: Double?
+    /// Deprecated spelling of `avg_duration_ms` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_duration_ms`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var avgDurationMs: Double?
+    /// Deprecated spelling of `avg_input_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_input_tokens`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var avgInputTokens: Double?
+    /// Deprecated spelling of `avg_output_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_output_tokens`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var avgOutputTokens: Double?
+    /// Deprecated spelling of `avg_thinking_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_thinking_tokens`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var avgThinkingTokens: Double?
+    /// Deprecated spelling of `tool_breakdown` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `tool_breakdown`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var toolBreakdown: [ToolBreakdownEntry]?
+    /// Deprecated spelling of `top_error_messages` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `top_error_messages`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]?
+    /// Deprecated spelling of `runs_by_day` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `runs_by_day`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]?
+    public var totalRuns_: Int?
+    public var completedRuns_: Int?
+    public var failedRuns_: Int?
+    public var cancelledRuns_: Int?
+    public var guardrailBlockedRuns_: Int?
+    public var errorRatePercent_: Double?
+    public var avgStepsPerRun_: Double?
+    public var avgDurationMs_: Double?
+    public var avgInputTokens_: Double?
+    public var avgOutputTokens_: Double?
+    public var avgThinkingTokens_: Double?
+    public var toolBreakdown_: [ToolBreakdownEntry]?
+    public var topErrorMessages_: [GetAgentActivityStatsResponseTopErrorMessage2]?
+    public var runsByDay_: [GetAgentActivityStatsResponseRunsByDayItem2]?
 
-    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil, cancelledRuns: Int? = nil, guardrailBlockedRuns: Int? = nil, errorRatePercent: Double? = nil, avgStepsPerRun: Double? = nil, avgDurationMs: Double? = nil, avgInputTokens: Double? = nil, avgOutputTokens: Double? = nil, avgThinkingTokens: Double? = nil, toolBreakdown: [ToolBreakdownEntry]? = nil, topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]? = nil, runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]? = nil) {
+    public init(totalRuns: Int? = nil, completedRuns: Int? = nil, failedRuns: Int? = nil, cancelledRuns: Int? = nil, guardrailBlockedRuns: Int? = nil, errorRatePercent: Double? = nil, avgStepsPerRun: Double? = nil, avgDurationMs: Double? = nil, avgInputTokens: Double? = nil, avgOutputTokens: Double? = nil, avgThinkingTokens: Double? = nil, toolBreakdown: [ToolBreakdownEntry]? = nil, topErrorMessages: [GetAgentActivityStatsResponseTopErrorMessage]? = nil, runsByDay: [GetAgentActivityStatsResponseRunsByDayItem]? = nil, totalRuns_: Int? = nil, completedRuns_: Int? = nil, failedRuns_: Int? = nil, cancelledRuns_: Int? = nil, guardrailBlockedRuns_: Int? = nil, errorRatePercent_: Double? = nil, avgStepsPerRun_: Double? = nil, avgDurationMs_: Double? = nil, avgInputTokens_: Double? = nil, avgOutputTokens_: Double? = nil, avgThinkingTokens_: Double? = nil, toolBreakdown_: [ToolBreakdownEntry]? = nil, topErrorMessages_: [GetAgentActivityStatsResponseTopErrorMessage2]? = nil, runsByDay_: [GetAgentActivityStatsResponseRunsByDayItem2]? = nil) {
         self.totalRuns = totalRuns
         self.completedRuns = completedRuns
         self.failedRuns = failedRuns
@@ -13776,6 +14138,20 @@ public struct GetAgentActivityStatsResponse: Codable, Hashable, Sendable {
         self.toolBreakdown = toolBreakdown
         self.topErrorMessages = topErrorMessages
         self.runsByDay = runsByDay
+        self.totalRuns_ = totalRuns_
+        self.completedRuns_ = completedRuns_
+        self.failedRuns_ = failedRuns_
+        self.cancelledRuns_ = cancelledRuns_
+        self.guardrailBlockedRuns_ = guardrailBlockedRuns_
+        self.errorRatePercent_ = errorRatePercent_
+        self.avgStepsPerRun_ = avgStepsPerRun_
+        self.avgDurationMs_ = avgDurationMs_
+        self.avgInputTokens_ = avgInputTokens_
+        self.avgOutputTokens_ = avgOutputTokens_
+        self.avgThinkingTokens_ = avgThinkingTokens_
+        self.toolBreakdown_ = toolBreakdown_
+        self.topErrorMessages_ = topErrorMessages_
+        self.runsByDay_ = runsByDay_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -13793,6 +14169,20 @@ public struct GetAgentActivityStatsResponse: Codable, Hashable, Sendable {
         case toolBreakdown = "toolBreakdown"
         case topErrorMessages = "topErrorMessages"
         case runsByDay = "runsByDay"
+        case totalRuns_ = "total_runs"
+        case completedRuns_ = "completed_runs"
+        case failedRuns_ = "failed_runs"
+        case cancelledRuns_ = "cancelled_runs"
+        case guardrailBlockedRuns_ = "guardrail_blocked_runs"
+        case errorRatePercent_ = "error_rate_percent"
+        case avgStepsPerRun_ = "avg_steps_per_run"
+        case avgDurationMs_ = "avg_duration_ms"
+        case avgInputTokens_ = "avg_input_tokens"
+        case avgOutputTokens_ = "avg_output_tokens"
+        case avgThinkingTokens_ = "avg_thinking_tokens"
+        case toolBreakdown_ = "tool_breakdown"
+        case topErrorMessages_ = "top_error_messages"
+        case runsByDay_ = "runs_by_day"
     }
 }
 
@@ -13818,8 +14208,46 @@ public struct GetAgentActivityStatsResponseRunsByDayItem: Codable, Hashable, Sen
     }
 }
 
+/// `GetAgentActivityStatsResponseRunsByDayItem2` model.
+public struct GetAgentActivityStatsResponseRunsByDayItem2: Codable, Hashable, Sendable {
+    public var day: String?
+    public var total: Int?
+    public var completed: Int?
+    public var failed: Int?
+
+    public init(day: String? = nil, total: Int? = nil, completed: Int? = nil, failed: Int? = nil) {
+        self.day = day
+        self.total = total
+        self.completed = completed
+        self.failed = failed
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case day = "day"
+        case total = "total"
+        case completed = "completed"
+        case failed = "failed"
+    }
+}
+
 /// `GetAgentActivityStatsResponseTopErrorMessage` model.
 public struct GetAgentActivityStatsResponseTopErrorMessage: Codable, Hashable, Sendable {
+    public var message: String?
+    public var count: Int?
+
+    public init(message: String? = nil, count: Int? = nil) {
+        self.message = message
+        self.count = count
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case message = "message"
+        case count = "count"
+    }
+}
+
+/// `GetAgentActivityStatsResponseTopErrorMessage2` model.
+public struct GetAgentActivityStatsResponseTopErrorMessage2: Codable, Hashable, Sendable {
     public var message: String?
     public var count: Int?
 
@@ -14048,6 +14476,95 @@ public struct GetAppleAppSiteAssociationResponseWebcredentials: Codable, Hashabl
     }
 }
 
+/// `GetBillingBudgetResponse` model.
+public struct GetBillingBudgetResponse: Codable, Hashable, Sendable {
+    public var configured: Bool
+    public var budget: GetBillingBudgetResponseBudget?
+    public var status: JSONObject?
+
+    public init(configured: Bool, budget: GetBillingBudgetResponseBudget? = nil, status: JSONObject? = nil) {
+        self.configured = configured
+        self.budget = budget
+        self.status = status
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case budget = "budget"
+        case status = "status"
+    }
+}
+
+/// `GetBillingBudgetResponseBudget` model.
+public struct GetBillingBudgetResponseBudget: Codable, Hashable, Sendable {
+    public var limitUsd: Double?
+    /// Fraction, not percent: 0.8 alerts at 80%.
+    public var softThreshold: Double?
+    public var hardThreshold: Double?
+    public var period: GetBillingBudgetResponseBudgetPeriod?
+
+    public init(limitUsd: Double? = nil, softThreshold: Double? = nil, hardThreshold: Double? = nil, period: GetBillingBudgetResponseBudgetPeriod? = nil) {
+        self.limitUsd = limitUsd
+        self.softThreshold = softThreshold
+        self.hardThreshold = hardThreshold
+        self.period = period
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case limitUsd = "limit_usd"
+        case softThreshold = "soft_threshold"
+        case hardThreshold = "hard_threshold"
+        case period = "period"
+    }
+}
+
+/// `GetBillingBudgetResponseBudgetPeriod` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct GetBillingBudgetResponseBudgetPeriod: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let monthly = GetBillingBudgetResponseBudgetPeriod(rawValue: "monthly")
+    public static let weekly = GetBillingBudgetResponseBudgetPeriod(rawValue: "weekly")
+    public static let daily = GetBillingBudgetResponseBudgetPeriod(rawValue: "daily")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [GetBillingBudgetResponseBudgetPeriod] = [.monthly, .weekly, .daily]
+}
+
+/// `GetBillingOverageResponse` model.
+public struct GetBillingOverageResponse: Codable, Hashable, Sendable {
+    public var enabled: Bool
+    /// Always true: overage cannot be enabled without a spend cap.
+    public var requiresCap: Bool
+    public var capConfigured: Bool
+    public var meteredToStripe: Bool
+
+    public init(enabled: Bool, requiresCap: Bool, capConfigured: Bool, meteredToStripe: Bool) {
+        self.enabled = enabled
+        self.requiresCap = requiresCap
+        self.capConfigured = capConfigured
+        self.meteredToStripe = meteredToStripe
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case requiresCap = "requires_cap"
+        case capConfigured = "cap_configured"
+        case meteredToStripe = "metered_to_stripe"
+    }
+}
+
 /// `GetBillingTrialResponse` model.
 public struct GetBillingTrialResponse: Codable, Hashable, Sendable {
     public var active: Bool?
@@ -14070,6 +14587,55 @@ public struct GetBillingTrialResponse: Codable, Hashable, Sendable {
         case daysLeft = "days_left"
         case recommendedPlan = "recommended_plan"
         case signals = "signals"
+    }
+}
+
+/// `GetBridgeAgentSpecsResponse` model.
+public struct GetBridgeAgentSpecsResponse: Codable, Hashable, Sendable {
+    public var agentId: String
+    /// SHA-256 over the list
+    public var revision: String
+    public var specs: [GetBridgeAgentSpecsResponseSpec]
+
+    public init(agentId: String, revision: String, specs: [GetBridgeAgentSpecsResponseSpec]) {
+        self.agentId = agentId
+        self.revision = revision
+        self.specs = specs
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case revision = "revision"
+        case specs = "specs"
+    }
+}
+
+/// `GetBridgeAgentSpecsResponseSpec` model.
+public struct GetBridgeAgentSpecsResponseSpec: Codable, Hashable, Sendable {
+    public var specId: String
+    public var version: String
+    public var enabled: Bool
+    /// null when the registry has no row for the SPEC; the reconciler skips it
+    public var runtimeScope: String?
+    public var permissionsGranted: [String]
+    public var toolAllowlist: [String]?
+
+    public init(specId: String, version: String, enabled: Bool, runtimeScope: String? = nil, permissionsGranted: [String], toolAllowlist: [String]? = nil) {
+        self.specId = specId
+        self.version = version
+        self.enabled = enabled
+        self.runtimeScope = runtimeScope
+        self.permissionsGranted = permissionsGranted
+        self.toolAllowlist = toolAllowlist
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case specId = "spec_id"
+        case version = "version"
+        case enabled = "enabled"
+        case runtimeScope = "runtime_scope"
+        case permissionsGranted = "permissions_granted"
+        case toolAllowlist = "tool_allowlist"
     }
 }
 
@@ -14700,6 +15266,89 @@ public struct GetMyHeadAgentTemplateResponseTierTierRequiredPlan: RawRepresentab
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [GetMyHeadAgentTemplateResponseTierTierRequiredPlan] = [.free, .starter, .pro]
+}
+
+/// `GetPromoStateResponse` model.
+public struct GetPromoStateResponse: Codable, Hashable, Sendable {
+    public var appliedCode: GetPromoStateResponseAppliedCode?
+    public var bonusTokensBalance: Int
+    /// Codes this tenant OWNS (it is the referrer), with their reward totals. Empty for everyone
+    /// else.
+    public var ownedCodes: [GetPromoStateResponseOwnedCode]
+
+    public init(appliedCode: GetPromoStateResponseAppliedCode? = nil, bonusTokensBalance: Int, ownedCodes: [GetPromoStateResponseOwnedCode]) {
+        self.appliedCode = appliedCode
+        self.bonusTokensBalance = bonusTokensBalance
+        self.ownedCodes = ownedCodes
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case appliedCode = "applied_code"
+        case bonusTokensBalance = "bonus_tokens_balance"
+        case ownedCodes = "owned_codes"
+    }
+}
+
+/// `GetPromoStateResponseAppliedCode` model.
+public struct GetPromoStateResponseAppliedCode: Codable, Hashable, Sendable {
+    public var code: String?
+    public var redeemedAt: String?
+    public var discountPercent: Double?
+    public var rewarded: Bool?
+
+    public init(code: String? = nil, redeemedAt: String? = nil, discountPercent: Double? = nil, rewarded: Bool? = nil) {
+        self.code = code
+        self.redeemedAt = redeemedAt
+        self.discountPercent = discountPercent
+        self.rewarded = rewarded
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case redeemedAt = "redeemed_at"
+        case discountPercent = "discount_percent"
+        case rewarded = "rewarded"
+    }
+}
+
+/// `GetPromoStateResponseOwnedCode` model.
+public struct GetPromoStateResponseOwnedCode: Codable, Hashable, Sendable {
+    public var code: String?
+    public var program: String?
+    public var active: Bool?
+    public var uses: Int?
+    public var maxUses: Int?
+    public var rewardTokensPerSubscription: Int?
+    public var subscriberBonusTokens: Int?
+    public var discountPercent: Double?
+    public var totalRewardedTokens: Int?
+    public var rewardedSubscriptions: Int?
+
+    public init(code: String? = nil, program: String? = nil, active: Bool? = nil, uses: Int? = nil, maxUses: Int? = nil, rewardTokensPerSubscription: Int? = nil, subscriberBonusTokens: Int? = nil, discountPercent: Double? = nil, totalRewardedTokens: Int? = nil, rewardedSubscriptions: Int? = nil) {
+        self.code = code
+        self.program = program
+        self.active = active
+        self.uses = uses
+        self.maxUses = maxUses
+        self.rewardTokensPerSubscription = rewardTokensPerSubscription
+        self.subscriberBonusTokens = subscriberBonusTokens
+        self.discountPercent = discountPercent
+        self.totalRewardedTokens = totalRewardedTokens
+        self.rewardedSubscriptions = rewardedSubscriptions
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+        case program = "program"
+        case active = "active"
+        case uses = "uses"
+        case maxUses = "max_uses"
+        case rewardTokensPerSubscription = "reward_tokens_per_subscription"
+        case subscriberBonusTokens = "subscriber_bonus_tokens"
+        case discountPercent = "discount_percent"
+        case totalRewardedTokens = "total_rewarded_tokens"
+        case rewardedSubscriptions = "rewarded_subscriptions"
+    }
 }
 
 /// `GetPublicBlogPostResponse` model.
@@ -15480,6 +16129,11 @@ public struct GetTenantUsageResponse: Codable, Hashable, Sendable {
 public struct GetUnreadCountResponse: Codable, Hashable, Sendable {
     public var count: Int
     public var unreadCount: Int
+    /// Deprecated spelling of `unread_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `unread_count`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var unreadCount_: Int
 
     public init(count: Int, unreadCount: Int, unreadCount_: Int) {
@@ -16234,6 +16888,49 @@ public struct ImportAgentMemoryResponse: Codable, Hashable, Sendable {
         case offered = "offered"
         case added = "added"
         case duplicates = "duplicates"
+    }
+}
+
+/// `ImportDataExplorerRequest` model.
+public struct ImportDataExplorerRequest: Codable, Hashable, Sendable {
+    public var file: FilePart
+
+    public init(file: FilePart) {
+        self.file = file
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case file = "file"
+    }
+}
+
+/// `ImportDataExplorerResponse` model.
+public struct ImportDataExplorerResponse: Codable, Hashable, Sendable {
+    public var success: Bool
+    public var imported: Int
+    public var skipped: Int
+    /// Rows refused because the read path would refuse them too — sensitive keys, and anything
+    /// under the `__keys__` namespace auth authenticates against.
+    public var refusedSensitive: Int
+    public var errors: [String]
+    public var totalLines: Int
+
+    public init(success: Bool, imported: Int, skipped: Int, refusedSensitive: Int, errors: [String], totalLines: Int) {
+        self.success = success
+        self.imported = imported
+        self.skipped = skipped
+        self.refusedSensitive = refusedSensitive
+        self.errors = errors
+        self.totalLines = totalLines
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case success = "success"
+        case imported = "imported"
+        case skipped = "skipped"
+        case refusedSensitive = "refused_sensitive"
+        case errors = "errors"
+        case totalLines = "total_lines"
     }
 }
 
@@ -18049,22 +18746,20 @@ public struct ListBuilderRequestsResponse: Codable, Hashable, Sendable {
 /// `ListCompaniesResponse` model.
 public struct ListCompaniesResponse: Codable, Hashable, Sendable {
     public var items: [Company]
-    /// Legacy alias for `items`. Will be removed in API v1.x.
-    ///
-    /// - Warning: Deprecated by the API.
-    public var companies: [Company]?
-    public var total: Int?
+    /// Opaque cursor for the next page; null on the last page.
+    public var cursor: String?
+    public var hasMore: Bool
 
-    public init(items: [Company], companies: [Company]? = nil, total: Int? = nil) {
+    public init(items: [Company], cursor: String? = nil, hasMore: Bool) {
         self.items = items
-        self.companies = companies
-        self.total = total
+        self.cursor = cursor
+        self.hasMore = hasMore
     }
 
     private enum CodingKeys: String, CodingKey {
         case items = "items"
-        case companies = "companies"
-        case total = "total"
+        case cursor = "cursor"
+        case hasMore = "has_more"
     }
 }
 
@@ -24800,6 +25495,41 @@ public struct ReadinessReport: Codable, Hashable, Sendable {
     }
 }
 
+/// `RedeemPromoCodeRequest` model.
+public struct RedeemPromoCodeRequest: Codable, Hashable, Sendable {
+    public var code: String
+
+    public init(code: String) {
+        self.code = code
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case code = "code"
+    }
+}
+
+/// `RedeemPromoCodeResponse` model.
+public struct RedeemPromoCodeResponse: Codable, Hashable, Sendable {
+    public var redeemed: Bool
+    public var code: String
+    public var discountPercent: Double?
+    public var subscriberBonusTokens: Int
+
+    public init(redeemed: Bool, code: String, discountPercent: Double? = nil, subscriberBonusTokens: Int) {
+        self.redeemed = redeemed
+        self.code = code
+        self.discountPercent = discountPercent
+        self.subscriberBonusTokens = subscriberBonusTokens
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case redeemed = "redeemed"
+        case code = "code"
+        case discountPercent = "discount_percent"
+        case subscriberBonusTokens = "subscriber_bonus_tokens"
+    }
+}
+
 /// `RegisterAmbassadorRequest` model.
 public struct RegisterAmbassadorRequest: Codable, Hashable, Sendable {
     public var ambassadorId: String
@@ -25539,14 +26269,43 @@ public struct ReplaceConstitutionRequest: Codable, Hashable, Sendable {
 public struct ReplayResult: Codable, Hashable, Sendable {
     public var deterministic: Bool
     public var verified: ReplayResultVerified
+    /// Deprecated spelling of `events_replayed` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `events_replayed`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var eventsReplayed: Int
+    /// Deprecated spelling of `run_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `run_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var runId: String
     public var mode: ReplayResultMode
+    /// Deprecated spelling of `divergence_point` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `divergence_point`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var divergencePoint: Int?
+    /// Deprecated spelling of `divergence_reason` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `divergence_reason`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var divergenceReason: String?
+    /// Deprecated spelling of `step_comparisons` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `step_comparisons`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var stepComparisons: [ReplayResultStepComparison]?
+    public var eventsReplayed_: Int
+    public var runId_: String
+    public var divergencePoint_: Int?
+    public var divergenceReason_: String?
+    public var stepComparisons_: [ReplayResultStepComparison2]?
 
-    public init(deterministic: Bool, verified: ReplayResultVerified, eventsReplayed: Int, runId: String, mode: ReplayResultMode, divergencePoint: Int? = nil, divergenceReason: String? = nil, stepComparisons: [ReplayResultStepComparison]? = nil) {
+    public init(deterministic: Bool, verified: ReplayResultVerified, eventsReplayed: Int, runId: String, mode: ReplayResultMode, divergencePoint: Int? = nil, divergenceReason: String? = nil, stepComparisons: [ReplayResultStepComparison]? = nil, eventsReplayed_: Int, runId_: String, divergencePoint_: Int? = nil, divergenceReason_: String? = nil, stepComparisons_: [ReplayResultStepComparison2]? = nil) {
         self.deterministic = deterministic
         self.verified = verified
         self.eventsReplayed = eventsReplayed
@@ -25555,6 +26314,11 @@ public struct ReplayResult: Codable, Hashable, Sendable {
         self.divergencePoint = divergencePoint
         self.divergenceReason = divergenceReason
         self.stepComparisons = stepComparisons
+        self.eventsReplayed_ = eventsReplayed_
+        self.runId_ = runId_
+        self.divergencePoint_ = divergencePoint_
+        self.divergenceReason_ = divergenceReason_
+        self.stepComparisons_ = stepComparisons_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -25566,6 +26330,11 @@ public struct ReplayResult: Codable, Hashable, Sendable {
         case divergencePoint = "divergencePoint"
         case divergenceReason = "divergenceReason"
         case stepComparisons = "stepComparisons"
+        case eventsReplayed_ = "events_replayed"
+        case runId_ = "run_id"
+        case divergencePoint_ = "divergence_point"
+        case divergenceReason_ = "divergence_reason"
+        case stepComparisons_ = "step_comparisons"
     }
 }
 
@@ -25597,13 +26366,20 @@ public struct ReplayResultStepComparison: Codable, Hashable, Sendable {
     public var seq: Int
     public var type: String
     public var matches: Bool
+    /// Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `mismatch_detail`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var mismatchDetail: String?
+    public var mismatchDetail_: String?
 
-    public init(seq: Int, type: String, matches: Bool, mismatchDetail: String? = nil) {
+    public init(seq: Int, type: String, matches: Bool, mismatchDetail: String? = nil, mismatchDetail_: String? = nil) {
         self.seq = seq
         self.type = type
         self.matches = matches
         self.mismatchDetail = mismatchDetail
+        self.mismatchDetail_ = mismatchDetail_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -25611,6 +26387,37 @@ public struct ReplayResultStepComparison: Codable, Hashable, Sendable {
         case type = "type"
         case matches = "matches"
         case mismatchDetail = "mismatchDetail"
+        case mismatchDetail_ = "mismatch_detail"
+    }
+}
+
+/// `ReplayResultStepComparison2` model.
+public struct ReplayResultStepComparison2: Codable, Hashable, Sendable {
+    public var seq: Int
+    public var type: String
+    public var matches: Bool
+    /// Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `mismatch_detail`.
+    ///
+    /// - Warning: Deprecated by the API.
+    public var mismatchDetail: String?
+    public var mismatchDetail_: String?
+
+    public init(seq: Int, type: String, matches: Bool, mismatchDetail: String? = nil, mismatchDetail_: String? = nil) {
+        self.seq = seq
+        self.type = type
+        self.matches = matches
+        self.mismatchDetail = mismatchDetail
+        self.mismatchDetail_ = mismatchDetail_
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case seq = "seq"
+        case type = "type"
+        case matches = "matches"
+        case mismatchDetail = "mismatchDetail"
+        case mismatchDetail_ = "mismatch_detail"
     }
 }
 
@@ -27595,15 +28402,22 @@ public struct SearchWorkspaceFilesResponse: Codable, Hashable, Sendable {
 /// `SearchWorkspaceFilesResponseResult` model.
 public struct SearchWorkspaceFilesResponseResult: Codable, Hashable, Sendable {
     public var path: String?
+    /// Deprecated spelling of `line_number` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `line_number`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var lineNumber: Int?
     public var line: String?
     public var match: String?
+    public var lineNumber_: Int?
 
-    public init(path: String? = nil, lineNumber: Int? = nil, line: String? = nil, match: String? = nil) {
+    public init(path: String? = nil, lineNumber: Int? = nil, line: String? = nil, match: String? = nil, lineNumber_: Int? = nil) {
         self.path = path
         self.lineNumber = lineNumber
         self.line = line
         self.match = match
+        self.lineNumber_ = lineNumber_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -27611,6 +28425,7 @@ public struct SearchWorkspaceFilesResponseResult: Codable, Hashable, Sendable {
         case lineNumber = "lineNumber"
         case line = "line"
         case match = "match"
+        case lineNumber_ = "line_number"
     }
 }
 
@@ -28262,6 +29077,73 @@ public struct SetArbiterRegistryResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `SetBillingBudgetRequest` model.
+public struct SetBillingBudgetRequest: Codable, Hashable, Sendable {
+    public var limitUsd: Double
+    public var softThreshold: Double?
+    public var hardThreshold: Double?
+    public var period: GetBillingBudgetResponseBudgetPeriod?
+
+    public init(limitUsd: Double, softThreshold: Double? = nil, hardThreshold: Double? = nil, period: GetBillingBudgetResponseBudgetPeriod? = nil) {
+        self.limitUsd = limitUsd
+        self.softThreshold = softThreshold
+        self.hardThreshold = hardThreshold
+        self.period = period
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case limitUsd = "limit_usd"
+        case softThreshold = "soft_threshold"
+        case hardThreshold = "hard_threshold"
+        case period = "period"
+    }
+}
+
+/// `SetBillingBudgetResponse` model.
+public struct SetBillingBudgetResponse: Codable, Hashable, Sendable {
+    public var configured: Bool?
+    public var budget: JSONObject?
+
+    public init(configured: Bool? = nil, budget: JSONObject? = nil) {
+        self.configured = configured
+        self.budget = budget
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case configured = "configured"
+        case budget = "budget"
+    }
+}
+
+/// `SetBillingOverageRequest` model.
+public struct SetBillingOverageRequest: Codable, Hashable, Sendable {
+    public var enabled: Bool
+
+    public init(enabled: Bool) {
+        self.enabled = enabled
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+    }
+}
+
+/// `SetBillingOverageResponse` model.
+public struct SetBillingOverageResponse: Codable, Hashable, Sendable {
+    public var enabled: Bool?
+    public var requiresCap: Bool?
+
+    public init(enabled: Bool? = nil, requiresCap: Bool? = nil) {
+        self.enabled = enabled
+        self.requiresCap = requiresCap
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case requiresCap = "requires_cap"
+    }
+}
+
 /// `SetDataExplorerValueRequest` model.
 public struct SetDataExplorerValueRequest: Codable, Hashable, Sendable {
     public var namespace: String
@@ -28428,17 +29310,23 @@ public struct SetModelPricingOverrideRequest: Codable, Hashable, Sendable {
 
 /// `SetModelPricingOverrideResponse` model.
 public struct SetModelPricingOverrideResponse: Codable, Hashable, Sendable {
+    /// Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var modelRef: String
     public var inputPerMillion: Double
     public var outputPerMillion: Double
     /// Absent when not set.
     public var cachedInputPerMillion: Double?
+    public var modelRef_: String
 
-    public init(modelRef: String, inputPerMillion: Double, outputPerMillion: Double, cachedInputPerMillion: Double? = nil) {
+    public init(modelRef: String, inputPerMillion: Double, outputPerMillion: Double, cachedInputPerMillion: Double? = nil, modelRef_: String) {
         self.modelRef = modelRef
         self.inputPerMillion = inputPerMillion
         self.outputPerMillion = outputPerMillion
         self.cachedInputPerMillion = cachedInputPerMillion
+        self.modelRef_ = modelRef_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -28446,6 +29334,7 @@ public struct SetModelPricingOverrideResponse: Codable, Hashable, Sendable {
         case inputPerMillion = "input_per_million"
         case outputPerMillion = "output_per_million"
         case cachedInputPerMillion = "cached_input_per_million"
+        case modelRef_ = "model_ref"
     }
 }
 
@@ -29520,7 +30409,11 @@ public struct SwitchTenantResponse: Codable, Hashable, Sendable {
 public struct SyncProviderModelsResponse: Codable, Hashable, Sendable {
     /// New catalogue entries.
     public var added: Int
-    /// Ids of the added entries; capped.
+    /// Ids of the added entries; capped. Deprecated spelling of `added_ids` — the same value, kept
+    /// for the compatibility window and removed in the next breaking release (the one that moves
+    /// `X-API-Version`). Read `added_ids`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var addedIds: [String]
     /// Catalogue size after the merge.
     public var total: Int
@@ -29528,13 +30421,16 @@ public struct SyncProviderModelsResponse: Codable, Hashable, Sendable {
     public var scanned: Int
     /// Present when the run was scoped to one provider, as it is here.
     public var provider: String?
+    /// Ids of the added entries; capped.
+    public var addedIds_: [String]
 
-    public init(added: Int, addedIds: [String], total: Int, scanned: Int, provider: String? = nil) {
+    public init(added: Int, addedIds: [String], total: Int, scanned: Int, provider: String? = nil, addedIds_: [String]) {
         self.added = added
         self.addedIds = addedIds
         self.total = total
         self.scanned = scanned
         self.provider = provider
+        self.addedIds_ = addedIds_
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -29543,6 +30439,7 @@ public struct SyncProviderModelsResponse: Codable, Hashable, Sendable {
         case total = "total"
         case scanned = "scanned"
         case provider = "provider"
+        case addedIds_ = "added_ids"
     }
 }
 
@@ -31988,16 +32885,24 @@ public struct UnsuspendUserResponse: Codable, Hashable, Sendable {
 /// `UpdateACPSessionResponse` model.
 public struct UpdateACPSessionResponse: Codable, Hashable, Sendable {
     public var saved: Bool
+    /// Deprecated spelling of `session_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `session_id`.
+    ///
+    /// - Warning: Deprecated by the API.
     public var sessionId: String
+    public var sessionId_: String
 
-    public init(saved: Bool, sessionId: String) {
+    public init(saved: Bool, sessionId: String, sessionId_: String) {
         self.saved = saved
         self.sessionId = sessionId
+        self.sessionId_ = sessionId_
     }
 
     private enum CodingKeys: String, CodingKey {
         case saved = "saved"
         case sessionId = "sessionId"
+        case sessionId_ = "session_id"
     }
 }
 
@@ -33338,18 +34243,14 @@ public struct UpdateAdminToolSecurityConfigResponse: Codable, Hashable, Sendable
 
 /// `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
 public struct UpdateAdminToolSecurityConfigResponseToolSecurity: Codable, Hashable, Sendable {
-    public var defaultEgressPolicy: String
     public var egressAllowlistPerTenant: [String]?
-    public var ssrfDenyPrivateRanges: Bool
     public var defaultToolTimeoutMs: Int
     public var defaultToolMaxPayloadBytes: Int
     public var defaultToolMaxConcurrency: Int
     public var stdioInheritEnv: Bool
 
-    public init(defaultEgressPolicy: String, egressAllowlistPerTenant: [String]? = nil, ssrfDenyPrivateRanges: Bool, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
-        self.defaultEgressPolicy = defaultEgressPolicy
+    public init(egressAllowlistPerTenant: [String]? = nil, defaultToolTimeoutMs: Int, defaultToolMaxPayloadBytes: Int, defaultToolMaxConcurrency: Int, stdioInheritEnv: Bool) {
         self.egressAllowlistPerTenant = egressAllowlistPerTenant
-        self.ssrfDenyPrivateRanges = ssrfDenyPrivateRanges
         self.defaultToolTimeoutMs = defaultToolTimeoutMs
         self.defaultToolMaxPayloadBytes = defaultToolMaxPayloadBytes
         self.defaultToolMaxConcurrency = defaultToolMaxConcurrency
@@ -33357,9 +34258,7 @@ public struct UpdateAdminToolSecurityConfigResponseToolSecurity: Codable, Hashab
     }
 
     private enum CodingKeys: String, CodingKey {
-        case defaultEgressPolicy = "default_egress_policy"
         case egressAllowlistPerTenant = "egress_allowlist_per_tenant"
-        case ssrfDenyPrivateRanges = "ssrf_deny_private_ranges"
         case defaultToolTimeoutMs = "default_tool_timeout_ms"
         case defaultToolMaxPayloadBytes = "default_tool_max_payload_bytes"
         case defaultToolMaxConcurrency = "default_tool_max_concurrency"
@@ -33532,6 +34431,7 @@ public struct UpdateBuilderRequestStatusRequest: Codable, Hashable, Sendable {
 /// `UpdateCoreMemoryBlockRequest` model.
 public struct UpdateCoreMemoryBlockRequest: Codable, Hashable, Sendable {
     public var content: String
+    /// Values outside 1..32000 are clamped to the range, not refused.
     public var maxTokens: Int?
 
     public init(content: String, maxTokens: Int? = nil) {
@@ -33672,6 +34572,53 @@ public struct UpdateMarkupConfigResponseMarkup: Codable, Hashable, Sendable {
     private enum CodingKeys: String, CodingKey {
         case platformMarkupPercent = "platform_markup_percent"
         case modelMarkupOverrides = "model_markup_overrides"
+    }
+}
+
+/// `UpdateMCPServerRequest` model.
+public struct UpdateMCPServerRequest: Codable, Hashable, Sendable {
+    public var name: String?
+    public var url: String?
+    public var command: String?
+    public var args: [String]?
+    /// Re-encrypted on write. `{}` clears it.
+    public var env: JSONObject?
+    public var enabled: Bool?
+    public var capabilities: JSONObject?
+    public var status: MCPServerStatus?
+    /// Names an environment variable of the API process whose value is sent to this server as a
+    /// bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+    /// boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+    /// tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+    /// mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+    /// never echoed back; only the ref is stored.
+    public var apiKeyRef: String?
+    public var egressAllowlist: [String]?
+
+    public init(name: String? = nil, url: String? = nil, command: String? = nil, args: [String]? = nil, env: JSONObject? = nil, enabled: Bool? = nil, capabilities: JSONObject? = nil, status: MCPServerStatus? = nil, apiKeyRef: String? = nil, egressAllowlist: [String]? = nil) {
+        self.name = name
+        self.url = url
+        self.command = command
+        self.args = args
+        self.env = env
+        self.enabled = enabled
+        self.capabilities = capabilities
+        self.status = status
+        self.apiKeyRef = apiKeyRef
+        self.egressAllowlist = egressAllowlist
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case url = "url"
+        case command = "command"
+        case args = "args"
+        case env = "env"
+        case enabled = "enabled"
+        case capabilities = "capabilities"
+        case status = "status"
+        case apiKeyRef = "api_key_ref"
+        case egressAllowlist = "egress_allowlist"
     }
 }
 
@@ -33942,6 +34889,13 @@ public struct UpdateSessionAnnotationRequest: Codable, Hashable, Sendable {
 
 /// `UpdateSessionRequest` model.
 public struct UpdateSessionRequest: Codable, Hashable, Sendable {
+    /// MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+    /// it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+    /// `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+    /// Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
+    /// most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
+    /// request is refused with 422 and a `detail` naming the number reached. Remove keys you no
+    /// longer need; this is a label bag, not content.
     public var metadata: JSONObject?
     /// Per-conversation model override. Send null to clear (revert to agent default), or {
     /// provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist

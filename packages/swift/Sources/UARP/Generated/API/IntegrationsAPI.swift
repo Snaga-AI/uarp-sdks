@@ -10,6 +10,15 @@ public struct IntegrationsAPI: Sendable {
 
     /// Complete OAuth after callback (exchange code for tokens, create connection)
     ///
+    /// Exchanges the authorization code with the provider and creates the connection. The stored
+    /// state is consumed — deleted before the exchange — so a replay answers 400 "Invalid or
+    /// expired OAuth state"; an expired state is also 400, and a state belonging to another tenant
+    /// is 403 and audit-logged under `oauth.tenant_mismatch`. A failed token exchange comes back as
+    /// 400 with the provider's message. The access token (`bot_token` for Slack), any refresh
+    /// token, the expiry, provider extras such as the Jira `cloud_id`, and the scopes the authorize
+    /// URL requested are stored on the new connection, which is audit-logged as
+    /// `integration.created` and returned with its secrets masked.
+    ///
     /// `POST /api/v1/integrations/{provider}/oauth/complete`
     ///
     /// Required scopes: `agents:write`.
@@ -24,6 +33,14 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// Create integration
+    ///
+    /// Creates a tenant-wide integration from a manually supplied config; OAuth connections are
+    /// created by the OAuth complete call instead. `connector_id` and a non-empty `name` are
+    /// required (422), the connector must be in the registry (422) and must not be disabled by the
+    /// platform admin (422), and `config` must pass the connector's own validation (422). Creating
+    /// a money-moving connector is owner/admin only (403), because its config carries the spending
+    /// limit. An optional `agent_id` scopes the new connection to one agent rather than the whole
+    /// tenant. Answers 201 with secrets masked and audit-logs `integration.created`.
     ///
     /// `POST /api/v1/integrations`
     ///
@@ -40,6 +57,10 @@ public struct IntegrationsAPI: Sendable {
 
     /// Delete integration
     ///
+    /// Removes the integration record from the tenant. The integration must exist (404); afterwards
+    /// the response is 204 with no body and the deletion is audit-logged as `integration.deleted`.
+    /// Agents that had it assigned simply stop seeing it — no separate unassignment is needed.
+    ///
     /// `DELETE /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
@@ -53,6 +74,12 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// Remove an integration from an agent
+    ///
+    /// Deletes the tenant-wide integration record itself, not merely its assignment to this agent —
+    /// every other agent it was assigned to loses it too. 404 when no such integration exists in
+    /// the tenant; otherwise the record is removed, the deletion is audit-logged as
+    /// `integration.deleted` with the agent id in its details, and the response is 204 with no
+    /// body.
     ///
     /// `DELETE /api/v1/agents/{agentId}/integrations/{integrationId}`
     ///
@@ -68,6 +95,9 @@ public struct IntegrationsAPI: Sendable {
 
     /// List tenant integrations
     ///
+    /// Every integration in the tenant, agent-assigned or not, with each connection's secret config
+    /// fields masked. Unpaginated — the whole set is returned with a `total`.
+    ///
     /// `GET /api/v1/integrations`
     ///
     /// Required scopes: `agents:read`.
@@ -80,6 +110,11 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// List integrations for an agent
+    ///
+    /// Lists only the tenant integrations whose `assigned_agent_ids` names this agent — a
+    /// tenant-wide integration that was never assigned does not appear here, and needs an explicit
+    /// assignment write to surface. The agent must exist (404). Secrets in each connection's
+    /// `config` come back masked.
     ///
     /// `GET /api/v1/agents/{agentId}/integrations`
     ///
@@ -94,6 +129,13 @@ public struct IntegrationsAPI: Sendable {
 
     /// List available integration types (connectors)
     ///
+    /// Returns the connector registry minus every connector a platform super-admin has switched off
+    /// in admin config; absence from that map counts as enabled, so a connector added between
+    /// deploys is offered rather than hidden. Each row carries the connector's `id`, `name`,
+    /// `description`, `icon`, `auth_type` and `config_schema`, plus `oauth_provider` and
+    /// `required_oauth_scopes` when the connector declares them, so a client can show the scopes a
+    /// Connect button will request before the consent screen. Read-only; nothing is created.
+    ///
     /// `GET /api/v1/integrations/catalog`
     ///
     /// Required scopes: `agents:read`.
@@ -106,6 +148,15 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// OAuth callback (redirect from provider); returns HTML that posts to complete
+    ///
+    /// The one integrations route that runs without authentication — a third-party redirect carries
+    /// no bearer key or cookie, so the tenant and permission gates are skipped and the tenant is
+    /// recovered from the `state` prefix instead. Requires `code` and `state`; answers 400 when
+    /// either is missing, when the state does not parse, when no stored state matches, or when the
+    /// stored record's tenant disagrees with the state prefix. On success it answers 302 to
+    /// `{public_base_url}/integrations/oauth/callback` carrying `state`, `code`, `provider` and —
+    /// only when the stored state had one — `agent_id`. No tokens are exchanged here and no
+    /// connection is created.
     ///
     /// `GET /api/v1/integrations/{provider}/oauth/callback`
     ///
@@ -152,6 +203,18 @@ public struct IntegrationsAPI: Sendable {
 
     /// Start OAuth flow for an integration provider
     ///
+    /// Builds the provider authorize URL and records the flow; it does not call the provider.
+    /// `provider` must be in the OAuth allowlist (narrowed further when
+    /// `INTEGRATION_PROVIDERS_ENABLED` is set) and must not be disabled by the platform admin, or
+    /// the request is refused with 422. `agent_id` is optional and must resolve to an existing
+    /// agent (404); `connector_id` names the real destination connector for shared providers such
+    /// as Google, and is checked against the admin toggle separately. Client credentials come from
+    /// the admin-stored provider record or the matching environment variables — 422 when neither
+    /// has both. Scopes resolve from `scopes` in the body, else the admin-configured scopes merged
+    /// with the destination connector's `required_oauth_scopes`, else the adapter default; PKCE is
+    /// used for GitHub, X, YouTube, Google and Jira. The state row (with the code verifier) is
+    /// stored for 10 minutes; the response carries `auth_url` and `state`.
+    ///
     /// `POST /api/v1/integrations/{provider}/oauth/start`
     ///
     /// Required scopes: `agents:write`.
@@ -167,6 +230,13 @@ public struct IntegrationsAPI: Sendable {
 
     /// Test connectivity for an agent integration
     ///
+    /// Runs the connector's own `testConnection` against the integration's stored config, so it
+    /// reaches the provider. The outcome is always carried in the body, never in the status: a
+    /// failed probe, a thrown adapter error and an integration whose connector id is no longer in
+    /// the registry all answer 200 with `success: false` and a message. The integration must exist
+    /// in the tenant (404). Nothing is written — a failing test does not change the integration's
+    /// status.
+    ///
     /// `POST /api/v1/agents/{agentId}/integrations/{integrationId}/test`
     ///
     /// Required scopes: `agents:write`.
@@ -180,6 +250,11 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// Test integration
+    ///
+    /// Calls the connector's `testConnection` with the integration's stored config, reaching the
+    /// provider. The verdict is in the body, not the status: a failing probe, a thrown adapter
+    /// error, and a connector id no longer in the registry all answer 200 with `success: false` and
+    /// a message. 404 when the integration is not in the tenant. Nothing is written.
     ///
     /// `POST /api/v1/integrations/{integrationId}/test`
     ///
@@ -195,6 +270,16 @@ public struct IntegrationsAPI: Sendable {
 
     /// Update integration
     ///
+    /// Updates `name`, `config` and `assigned_agent_ids`. `config` merges into the stored record
+    /// under the store's compare-and-set, a field sent as the `[stored]` mask keeps its stored
+    /// value, and moving the credential anchor while leaning on a masked secret is refused with
+    /// 422. Patching the config of an integration whose status was `error` re-arms it to `active`,
+    /// so its tools surface to agents again. Changing `assigned_agent_ids` is owner/admin only
+    /// (403) — the same gate as assigning integrations to an agent — while `name` and `config` sit
+    /// behind the ordinary developer-level write. A body that changes nothing returns the stored
+    /// record unchanged; any write is audit-logged as `integration.updated`. 404 when the
+    /// integration is not in the tenant.
+    ///
     /// `PATCH /api/v1/integrations/{integrationId}`
     ///
     /// Required scopes: `agents:write`.
@@ -209,6 +294,16 @@ public struct IntegrationsAPI: Sendable {
     }
 
     /// Update an agent integration (e.g. name, config)
+    ///
+    /// Updates the tenant-wide integration record; the agent in the path only scopes the audit
+    /// detail. Accepts `name` and `config` — `config` is merged into the stored record inside the
+    /// store's compare-and-set rather than replacing it, and any field sent as the literal
+    /// `[stored]` mask keeps its stored value, which is what makes a read-modify-write of a masked
+    /// GET non-destructive. Moving the credential anchor (an email connector's `smtp_host`, a
+    /// webhook connector's `url`) while leaning on a masked secret is refused with 422: stored
+    /// credentials are not carried to a new endpoint. A money-moving connector requires owner or
+    /// admin for a config write (403). The merged config must pass the connector's own validation
+    /// (422). The write is audit-logged as `integration.updated`.
     ///
     /// `PATCH /api/v1/agents/{agentId}/integrations/{integrationId}`
     ///

@@ -755,9 +755,7 @@ export interface AdminConfigToolSecurityConfig {
 }
 
 export interface AdminConfigToolSecurityConfigToolSecurity {
-  default_egress_policy: string;
   egress_allowlist_per_tenant?: string[];
-  ssrf_deny_private_ranges: boolean;
   default_tool_timeout_ms: number;
   default_tool_max_payload_bytes: number;
   default_tool_max_concurrency: number;
@@ -953,12 +951,42 @@ export interface AdminListWebhookDLQResponse {
 }
 
 export interface AdminListWebhookDLQResponseEntry {
+  /**
+   * Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+   *
+   * @deprecated
+   */
   eventId: string;
+  /**
+   * Deprecated spelling of `event_type` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `event_type`.
+   *
+   * @deprecated
+   */
   eventType: string;
   payload?: JsonObject;
+  /**
+   * Deprecated spelling of `error_message` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `error_message`.
+   *
+   * @deprecated
+   */
   errorMessage: string;
   timestamp: string;
+  /**
+   * Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+   *
+   * @deprecated
+   */
   tenantId?: string | null;
+  event_id: string;
+  event_type: string;
+  error_message: string;
+  tenant_id?: string | null;
 }
 
 /**
@@ -1249,9 +1277,16 @@ export interface AdminRegistrationConfigWaitlistItem {
 
 export interface AdminReplayWebhookDLQResponse {
   success: boolean;
+  /**
+   * Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
+   *
+   * @deprecated
+   */
   eventId: string;
   action: string;
   message: string;
+  event_id: string;
 }
 
 /**
@@ -2685,6 +2720,11 @@ export interface CancelSquadRunResponse {
   team_run_id: string;
   /**
    * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   * Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `cancelled_count`.
+   *
+   * @deprecated
    */
   cancelledCount: number;
   /**
@@ -2692,6 +2732,10 @@ export interface CancelSquadRunResponse {
    * settled, or it belongs to another replica.
    */
   orchestrator_stopped: boolean;
+  /**
+   * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   */
+  cancelled_count: number;
 }
 
 export interface CancelTeamRunResponse {
@@ -2699,6 +2743,11 @@ export interface CancelTeamRunResponse {
   team_run_id: string;
   /**
    * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   * Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `cancelled_count`.
+   *
+   * @deprecated
    */
   cancelledCount: number;
   /**
@@ -2706,6 +2755,10 @@ export interface CancelTeamRunResponse {
    * settled, or it belongs to another replica.
    */
   orchestrator_stopped: boolean;
+  /**
+   * Child runs actually stopped. Zero is normal for a run whose children had already finished.
+   */
+  cancelled_count: number;
 }
 
 /**
@@ -2758,7 +2811,8 @@ export interface CastBallotRequest {
   agent_id: string;
   vote: string;
   /**
-   * Voting weight; 0 < w ≤ 100.
+   * Voting weight; 0 < w ≤ 1 (the same cap the cast_vote tool applies; 100 was accepted until
+   * 2026-09-16).
    */
   weight?: number;
   reasoning?: string;
@@ -2775,6 +2829,9 @@ export interface ChatCompletionRequest {
   model: string;
   messages: ChatCompletionRequestMessage[];
   temperature?: number;
+  /**
+   * Values below 1 are clamped, not refused.
+   */
   max_tokens?: number;
   /**
    * @default false
@@ -2849,6 +2906,11 @@ export interface CheckGovernanceRequest {
 export interface CheckSpawnPermissionRequest {
   parent_agent_id: string;
   child_permissions: PermissionSet;
+}
+
+export interface ClearBillingBudgetResponse {
+  configured?: boolean;
+  budget?: JsonObject | null;
 }
 
 export interface CloseSessionResponse {
@@ -3592,6 +3654,19 @@ export interface CreateMCPServerRequest {
   args?: string[];
   env?: JsonObject;
   enabled?: boolean;
+  /**
+   * Names an environment variable of the API process whose value is sent to this server as a
+   * bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+   * boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+   * tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+   * mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+   * never echoed back; only the ref is stored.
+   */
+  api_key_ref?: string;
+  /**
+   * Hosts this server may be reached at, checked with DNS resolution.
+   */
+  egress_allowlist?: string[];
 }
 
 export interface CreateMyTenantRequest {
@@ -3989,13 +4064,34 @@ export interface DeactivateSafeModeResponse {
  * the wire.
  */
 export interface DeadlockReport {
+  /**
+   * Deprecated spelling of `has_deadlock` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `has_deadlock`.
+   *
+   * @deprecated
+   */
   hasDeadlock: boolean;
+  /**
+   * Deprecated spelling of `conflicting_rules` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `conflicting_rules`.
+   *
+   * @deprecated
+   */
   conflictingRules: DeadlockReportConflictingRule[];
   recommendation: string;
   checked_at: string;
+  has_deadlock: boolean;
+  conflicting_rules: DeadlockReportConflictingRule2[];
 }
 
 export interface DeadlockReportConflictingRule {
+  prohibition: string;
+  requirement: string;
+}
+
+export interface DeadlockReportConflictingRule2 {
   prohibition: string;
   requirement: string;
 }
@@ -4043,10 +4139,6 @@ export interface DeleteAgentResponse {
 export interface DeleteAllAgentBookmarksResponse {
   removed: number;
 }
-
-export type DeleteCustomPlanForce = '1';
-
-export const DELETE_CUSTOM_PLAN_FORCE_VALUES = ['1'] as const;
 
 export interface DeleteCustomPlanResponse {
   deleted: boolean;
@@ -4105,8 +4197,15 @@ export interface DeleteMeResponseTenant {
 }
 
 export interface DeleteModelPricingOverrideResponse {
+  /**
+   * Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+   *
+   * @deprecated
+   */
   modelRef: string;
   deleted: boolean;
+  model_ref: string;
 }
 
 export interface DeleteNotificationResponse {
@@ -4453,6 +4552,9 @@ export interface DrawingOp {
   file_id?: string;
   fit?: DrawingOpFit;
   layer?: DrawingLayer;
+  /**
+   * Values below 0 are clamped, not refused.
+   */
   index?: number;
   patch?: DrawingOpPatch;
   order?: string[];
@@ -4639,9 +4741,25 @@ export interface EmptyWorkspaceTrashResponse {
  */
 export interface EndpointRateLimit {
   pattern: string;
+  /**
+   * Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `max_requests`.
+   *
+   * @deprecated
+   */
   maxRequests: number;
+  /**
+   * Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `window_sec`.
+   *
+   * @deprecated
+   */
   windowSec: number;
   source: GuardrailConfigItemSource;
+  max_requests: number;
+  window_sec: number;
 }
 
 export interface EnforcementResult {
@@ -4649,13 +4767,26 @@ export interface EnforcementResult {
    * False when any matched rule carries a blocking penalty.
    */
   allowed: boolean;
+  /**
+   * Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `check_result`.
+   *
+   * @deprecated
+   */
   checkResult: EnforcementResultCheckResult;
   /**
    * What the matched rules call for. Empty when nothing matched.
    */
   penalties: EnforcementResultPenalty[];
+  check_result: EnforcementResultCheckResult2;
 }
 
+/**
+ * Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+ * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+ * `check_result`.
+ */
 export interface EnforcementResultCheckResult {
   allowed: boolean;
   /**
@@ -4666,9 +4797,26 @@ export interface EnforcementResultCheckResult {
   checked_at: string;
 }
 
+export interface EnforcementResultCheckResult2 {
+  allowed: boolean;
+  /**
+   * Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+   */
+  checked_rules: string[];
+  violations: ConstitutionViolation[];
+  checked_at: string;
+}
+
 export interface EnforcementResultPenalty {
+  /**
+   * Deprecated spelling of `rule_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `rule_id`.
+   *
+   * @deprecated
+   */
   ruleId: string;
   penalty: ConstitutionRulePenalty;
+  rule_id: string;
 }
 
 export interface EnrolMfaRequest {
@@ -4688,7 +4836,8 @@ export type EnrolMfaRequestAlgorithm = 'SHA-1' | 'SHA-256' | 'SHA-512';
 export const ENROL_MFA_REQUEST_ALGORITHM_VALUES = ['SHA-1', 'SHA-256', 'SHA-512'] as const;
 
 /**
- * RFC 9457 problem+json style error; correlationId for request tracing.
+ * RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
+ * tracing — `correlationId` is the same value for the compatibility window.
  */
 export interface Error {
   type: string;
@@ -4707,14 +4856,43 @@ export interface Error {
    */
   detail: string;
   /**
-   * Request ID for tracing
+   * What a client should DO about this, as a value it can switch on — `detail` is for the person
+   * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+   * document and the wire cannot drift apart. Two casings are on the wire and both are
+   * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+   * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+   * no machine-readable class.
+   */
+  code?: ErrorCode;
+  /**
+   * Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
+   * the compatibility window and removed in the next breaking release (the one that moves
+   * `X-API-Version`). Read `correlation_id`.
+   *
+   * @deprecated
    */
   correlationId?: string;
   /**
    * Field-level validation errors (present on 422 responses)
    */
   errors?: ErrorError[];
+  /**
+   * Request ID for tracing
+   */
+  correlation_id?: string;
 }
+
+/**
+ * What a client should DO about this, as a value it can switch on — `detail` is for the person
+ * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+ * document and the wire cannot drift apart. Two casings are on the wire and both are
+ * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+ * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+ * no machine-readable class.
+ */
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'limit_reached' | 'quota_exceeded' | 'rate_limited' | 'run_quota_exceeded';
+
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'limit_reached', 'quota_exceeded', 'rate_limited', 'run_quota_exceeded'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -4879,6 +5057,10 @@ export interface ExportAdminConfigResponse {
   section_count: number;
   sections: JsonObject;
 }
+
+export type ExportDataExplorerIncludeSensitive = '1';
+
+export const EXPORT_DATA_EXPLORER_INCLUDE_SENSITIVE_VALUES = ['1'] as const;
 
 export type ExportMyAccountFormat = 'zip' | 'json';
 
@@ -5238,20 +5420,132 @@ export interface GetAdminTraceResponseRun {
 }
 
 export interface GetAgentActivityStatsResponse {
+  /**
+   * Deprecated spelling of `total_runs` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `total_runs`.
+   *
+   * @deprecated
+   */
   totalRuns?: number;
+  /**
+   * Deprecated spelling of `completed_runs` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `completed_runs`.
+   *
+   * @deprecated
+   */
   completedRuns?: number;
+  /**
+   * Deprecated spelling of `failed_runs` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `failed_runs`.
+   *
+   * @deprecated
+   */
   failedRuns?: number;
+  /**
+   * Deprecated spelling of `cancelled_runs` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `cancelled_runs`.
+   *
+   * @deprecated
+   */
   cancelledRuns?: number;
+  /**
+   * Deprecated spelling of `guardrail_blocked_runs` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `guardrail_blocked_runs`.
+   *
+   * @deprecated
+   */
   guardrailBlockedRuns?: number;
+  /**
+   * Deprecated spelling of `error_rate_percent` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `error_rate_percent`.
+   *
+   * @deprecated
+   */
   errorRatePercent?: number;
+  /**
+   * Deprecated spelling of `avg_steps_per_run` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `avg_steps_per_run`.
+   *
+   * @deprecated
+   */
   avgStepsPerRun?: number;
+  /**
+   * Deprecated spelling of `avg_duration_ms` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `avg_duration_ms`.
+   *
+   * @deprecated
+   */
   avgDurationMs?: number;
+  /**
+   * Deprecated spelling of `avg_input_tokens` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `avg_input_tokens`.
+   *
+   * @deprecated
+   */
   avgInputTokens?: number;
+  /**
+   * Deprecated spelling of `avg_output_tokens` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `avg_output_tokens`.
+   *
+   * @deprecated
+   */
   avgOutputTokens?: number;
+  /**
+   * Deprecated spelling of `avg_thinking_tokens` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `avg_thinking_tokens`.
+   *
+   * @deprecated
+   */
   avgThinkingTokens?: number;
+  /**
+   * Deprecated spelling of `tool_breakdown` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `tool_breakdown`.
+   *
+   * @deprecated
+   */
   toolBreakdown?: ToolBreakdownEntry[];
+  /**
+   * Deprecated spelling of `top_error_messages` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `top_error_messages`.
+   *
+   * @deprecated
+   */
   topErrorMessages?: GetAgentActivityStatsResponseTopErrorMessage[];
+  /**
+   * Deprecated spelling of `runs_by_day` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `runs_by_day`.
+   *
+   * @deprecated
+   */
   runsByDay?: GetAgentActivityStatsResponseRunsByDayItem[];
+  total_runs?: number;
+  completed_runs?: number;
+  failed_runs?: number;
+  cancelled_runs?: number;
+  guardrail_blocked_runs?: number;
+  error_rate_percent?: number;
+  avg_steps_per_run?: number;
+  avg_duration_ms?: number;
+  avg_input_tokens?: number;
+  avg_output_tokens?: number;
+  avg_thinking_tokens?: number;
+  tool_breakdown?: ToolBreakdownEntry[];
+  top_error_messages?: GetAgentActivityStatsResponseTopErrorMessage2[];
+  runs_by_day?: GetAgentActivityStatsResponseRunsByDayItem2[];
 }
 
 export interface GetAgentActivityStatsResponseRunsByDayItem {
@@ -5261,7 +5555,19 @@ export interface GetAgentActivityStatsResponseRunsByDayItem {
   failed?: number;
 }
 
+export interface GetAgentActivityStatsResponseRunsByDayItem2 {
+  day?: string;
+  total?: number;
+  completed?: number;
+  failed?: number;
+}
+
 export interface GetAgentActivityStatsResponseTopErrorMessage {
+  message?: string;
+  count?: number;
+}
+
+export interface GetAgentActivityStatsResponseTopErrorMessage2 {
   message?: string;
   count?: number;
 }
@@ -5330,12 +5636,63 @@ export interface GetAppleAppSiteAssociationResponseWebcredentials {
   apps?: string[];
 }
 
+export interface GetBillingBudgetResponse {
+  configured: boolean;
+  budget: GetBillingBudgetResponseBudget | null;
+  status?: JsonObject | null;
+}
+
+export interface GetBillingBudgetResponseBudget {
+  limit_usd?: number;
+  /**
+   * Fraction, not percent: 0.8 alerts at 80%.
+   */
+  soft_threshold?: number;
+  hard_threshold?: number;
+  period?: GetBillingBudgetResponseBudgetPeriod;
+}
+
+export type GetBillingBudgetResponseBudgetPeriod = 'monthly' | 'weekly' | 'daily';
+
+export const GET_BILLING_BUDGET_RESPONSE_BUDGET_PERIOD_VALUES = ['monthly', 'weekly', 'daily'] as const;
+
+export interface GetBillingOverageResponse {
+  enabled: boolean;
+  /**
+   * Always true: overage cannot be enabled without a spend cap.
+   */
+  requires_cap: boolean;
+  cap_configured: boolean;
+  metered_to_stripe: boolean;
+}
+
 export interface GetBillingTrialResponse {
   active?: boolean;
   ends_at?: string | null;
   days_left?: number | null;
   recommended_plan?: string | null;
   signals?: JsonObject | null;
+}
+
+export interface GetBridgeAgentSpecsResponse {
+  agent_id: string;
+  /**
+   * SHA-256 over the list
+   */
+  revision: string;
+  specs: GetBridgeAgentSpecsResponseSpec[];
+}
+
+export interface GetBridgeAgentSpecsResponseSpec {
+  spec_id: string;
+  version: string;
+  enabled: boolean;
+  /**
+   * null when the registry has no row for the SPEC; the reconciler skips it
+   */
+  runtime_scope: string | null;
+  permissions_granted: string[];
+  tool_allowlist?: string[];
 }
 
 export interface GetBridgeTaskApprovalResponse {
@@ -5552,6 +5909,36 @@ export interface GetMyHeadAgentTemplateResponseTierTier {
 export type GetMyHeadAgentTemplateResponseTierTierRequiredPlan = 'free' | 'starter' | 'pro';
 
 export const GET_MY_HEAD_AGENT_TEMPLATE_RESPONSE_TIER_TIER_REQUIRED_PLAN_VALUES = ['free', 'starter', 'pro'] as const;
+
+export interface GetPromoStateResponse {
+  applied_code: GetPromoStateResponseAppliedCode | null;
+  bonus_tokens_balance: number;
+  /**
+   * Codes this tenant OWNS (it is the referrer), with their reward totals. Empty for everyone
+   * else.
+   */
+  owned_codes: GetPromoStateResponseOwnedCode[];
+}
+
+export interface GetPromoStateResponseAppliedCode {
+  code?: string;
+  redeemed_at?: string;
+  discount_percent?: number;
+  rewarded?: boolean;
+}
+
+export interface GetPromoStateResponseOwnedCode {
+  code?: string;
+  program?: string;
+  active?: boolean;
+  uses?: number;
+  max_uses?: number | null;
+  reward_tokens_per_subscription?: number;
+  subscriber_bonus_tokens?: number;
+  discount_percent?: number;
+  total_rewarded_tokens?: number;
+  rewarded_subscriptions?: number;
+}
 
 export interface GetPublicBlogPostResponse {
   post: PublicBlogPost;
@@ -5869,6 +6256,13 @@ export interface GetTenantUsageResponse {
 export interface GetUnreadCountResponse {
   count: number;
   unread_count: number;
+  /**
+   * Deprecated spelling of `unread_count` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `unread_count`.
+   *
+   * @deprecated
+   */
   unreadCount: number;
 }
 
@@ -6127,6 +6521,23 @@ export interface ImportAgentMemoryResponse {
    * Entries the store already had.
    */
   duplicates: number;
+}
+
+export interface ImportDataExplorerRequest {
+  file: BinaryInput;
+}
+
+export interface ImportDataExplorerResponse {
+  success: boolean;
+  imported: number;
+  skipped: number;
+  /**
+   * Rows refused because the read path would refuse them too — sensitive keys, and anything
+   * under the `__keys__` namespace auth authenticates against.
+   */
+  refused_sensitive: number;
+  errors: string[];
+  total_lines: number;
 }
 
 /**
@@ -6829,12 +7240,10 @@ export interface ListBuilderRequestsResponse {
 export interface ListCompaniesResponse {
   items: Company[];
   /**
-   * Legacy alias for `items`. Will be removed in API v1.x.
-   *
-   * @deprecated
+   * Opaque cursor for the next page; null on the last page.
    */
-  companies?: Company[];
-  total?: number;
+  cursor: string | null;
+  has_more: boolean;
 }
 
 export interface ListContentReportsResponse {
@@ -9623,6 +10032,17 @@ export interface ReadinessReport {
   components: JsonObject;
 }
 
+export interface RedeemPromoCodeRequest {
+  code: string;
+}
+
+export interface RedeemPromoCodeResponse {
+  redeemed: boolean;
+  code: string;
+  discount_percent?: number;
+  subscriber_bonus_tokens: number;
+}
+
 export interface RegisterAmbassadorRequest {
   ambassador_id: string;
   name?: string;
@@ -9896,12 +10316,51 @@ export interface ReplaceConstitutionRequest {
 export interface ReplayResult {
   deterministic: boolean;
   verified: ReplayResultVerified;
+  /**
+   * Deprecated spelling of `events_replayed` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `events_replayed`.
+   *
+   * @deprecated
+   */
   eventsReplayed: number;
+  /**
+   * Deprecated spelling of `run_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `run_id`.
+   *
+   * @deprecated
+   */
   runId: string;
   mode: ReplayResultMode;
+  /**
+   * Deprecated spelling of `divergence_point` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `divergence_point`.
+   *
+   * @deprecated
+   */
   divergencePoint?: number;
+  /**
+   * Deprecated spelling of `divergence_reason` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `divergence_reason`.
+   *
+   * @deprecated
+   */
   divergenceReason?: string;
+  /**
+   * Deprecated spelling of `step_comparisons` — the same value, kept for the compatibility
+   * window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `step_comparisons`.
+   *
+   * @deprecated
+   */
   stepComparisons?: ReplayResultStepComparison[];
+  events_replayed: number;
+  run_id: string;
+  divergence_point?: number;
+  divergence_reason?: string;
+  step_comparisons?: ReplayResultStepComparison2[];
 }
 
 export type ReplayResultMode = 'verify' | 'execute';
@@ -9912,7 +10371,30 @@ export interface ReplayResultStepComparison {
   seq: number;
   type: string;
   matches: boolean;
+  /**
+   * Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `mismatch_detail`.
+   *
+   * @deprecated
+   */
   mismatchDetail?: string;
+  mismatch_detail?: string;
+}
+
+export interface ReplayResultStepComparison2 {
+  seq: number;
+  type: string;
+  matches: boolean;
+  /**
+   * Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+   * and removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `mismatch_detail`.
+   *
+   * @deprecated
+   */
+  mismatchDetail?: string;
+  mismatch_detail?: string;
 }
 
 export type ReplayResultVerified = 'recorded_log';
@@ -10741,9 +11223,17 @@ export interface SearchWorkspaceFilesResponse {
 
 export interface SearchWorkspaceFilesResponseResult {
   path?: string;
+  /**
+   * Deprecated spelling of `line_number` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `line_number`.
+   *
+   * @deprecated
+   */
   lineNumber?: number;
   line?: string;
   match?: string;
+  line_number?: number;
 }
 
 export interface SeedStarterSpecsResponse {
@@ -11007,6 +11497,36 @@ export interface SetArbiterRegistryResponse {
   ok?: boolean;
 }
 
+export interface SetBillingBudgetRequest {
+  limit_usd: number;
+  /**
+   * @default 0.8
+   */
+  soft_threshold?: number;
+  /**
+   * @default 1
+   */
+  hard_threshold?: number;
+  /**
+   * @default "monthly"
+   */
+  period?: GetBillingBudgetResponseBudgetPeriod;
+}
+
+export interface SetBillingBudgetResponse {
+  configured?: boolean;
+  budget?: JsonObject;
+}
+
+export interface SetBillingOverageRequest {
+  enabled: boolean;
+}
+
+export interface SetBillingOverageResponse {
+  enabled?: boolean;
+  requires_cap?: boolean;
+}
+
 export interface SetDataExplorerValueRequest {
   namespace: string;
   key: Array<string | number>;
@@ -11083,6 +11603,12 @@ export interface SetModelPricingOverrideRequest {
 }
 
 export interface SetModelPricingOverrideResponse {
+  /**
+   * Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
+   *
+   * @deprecated
+   */
   modelRef: string;
   input_per_million: number;
   output_per_million: number;
@@ -11090,6 +11616,7 @@ export interface SetModelPricingOverrideResponse {
    * Absent when not set.
    */
   cached_input_per_million?: number;
+  model_ref: string;
 }
 
 export interface SetRateLimitsResponse {
@@ -11555,7 +12082,11 @@ export interface SyncProviderModelsResponse {
    */
   added: number;
   /**
-   * Ids of the added entries; capped.
+   * Ids of the added entries; capped. Deprecated spelling of `added_ids` — the same value, kept
+   * for the compatibility window and removed in the next breaking release (the one that moves
+   * `X-API-Version`). Read `added_ids`.
+   *
+   * @deprecated
    */
   addedIds: string[];
   /**
@@ -11570,6 +12101,10 @@ export interface SyncProviderModelsResponse {
    * Present when the run was scoped to one provider, as it is here.
    */
   provider?: string;
+  /**
+   * Ids of the added entries; capped.
+   */
+  added_ids: string[];
 }
 
 /**
@@ -12502,7 +13037,15 @@ export interface UnsuspendUserResponse {
 
 export interface UpdateACPSessionResponse {
   saved: boolean;
+  /**
+   * Deprecated spelling of `session_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `session_id`.
+   *
+   * @deprecated
+   */
   sessionId: string;
+  session_id: string;
 }
 
 export interface UpdateAdminAgentMemoryConfigResponse {
@@ -12951,9 +13494,7 @@ export interface UpdateAdminToolSecurityConfigResponse {
 }
 
 export interface UpdateAdminToolSecurityConfigResponseToolSecurity {
-  default_egress_policy: string;
   egress_allowlist_per_tenant?: string[];
-  ssrf_deny_private_ranges: boolean;
   default_tool_timeout_ms: number;
   default_tool_max_payload_bytes: number;
   default_tool_max_concurrency: number;
@@ -13024,6 +13565,9 @@ export interface UpdateBuilderRequestStatusRequest {
 
 export interface UpdateCoreMemoryBlockRequest {
   content: string;
+  /**
+   * Values outside 1..32000 are clamped to the range, not refused.
+   */
   max_tokens?: number;
 }
 
@@ -13072,6 +13616,30 @@ export interface UpdateMarkupConfigResponse {
 export interface UpdateMarkupConfigResponseMarkup {
   platform_markup_percent: number;
   model_markup_overrides: JsonObject;
+}
+
+export interface UpdateMCPServerRequest {
+  name?: string;
+  url?: string;
+  command?: string;
+  args?: string[];
+  /**
+   * Re-encrypted on write. `{}` clears it.
+   */
+  env?: JsonObject;
+  enabled?: boolean;
+  capabilities?: JsonObject;
+  status?: MCPServerStatus;
+  /**
+   * Names an environment variable of the API process whose value is sent to this server as a
+   * bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+   * boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+   * tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+   * mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+   * never echoed back; only the ref is stored.
+   */
+  api_key_ref?: string;
+  egress_allowlist?: string[];
 }
 
 /**
@@ -13182,6 +13750,15 @@ export interface UpdateSessionAnnotationRequest {
 }
 
 export interface UpdateSessionRequest {
+  /**
+   * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+   * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+   * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+   * Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
+   * most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
+   * request is refused with 422 and a `detail` naming the number reached. Remove keys you no
+   * longer need; this is a label bag, not content.
+   */
   metadata?: JsonObject;
   /**
    * Per-conversation model override. Send null to clear (revert to agent default), or {

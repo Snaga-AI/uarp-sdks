@@ -2,6 +2,9 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
+import type { EventStream } from '../../core/sse.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   Company,
   CompanyCreate,
@@ -15,11 +18,49 @@ import type {
 } from '../models.js';
 
 /**
+ * Query and header parameters for `listCompanies`.
+ */
+export interface ListCompaniesParams {
+  /**
+   * Page size. Clamped to 100; anything unparseable or non-positive falls back to 50 rather than
+   * being refused.
+   */
+  limit?: number;
+  /**
+   * The previous page's `cursor`, passed back verbatim. A string this API did not issue is
+   * refused with 422 — it is not handed to the store, because an undecodable cursor throws from
+   * inside the list iterator and surfaced as a 500 for a mistyped query string. An empty
+   * `?cursor=` means the first page.
+   */
+  cursor?: string;
+}
+
+/**
+ * Query and header parameters for `streamCompanyEvents`.
+ */
+export interface StreamCompanyEventsParams {
+  /**
+   * SSE resumption cursor. The browser's EventSource sets this automatically on reconnect;
+   * servers replay events strictly after this id.
+   */
+  'Last-Event-ID'?: string;
+}
+
+/**
  * Company management
  */
 export class CompaniesResource extends APIResource {
   /**
    * Create a company
+   *
+   * Creates a company and, with it, a strategist agent that runs the company's review cycle —
+   * the strategist's model comes from the platform LLM defaults and creation fails loudly when
+   * no default model and endpoint can be resolved, rather than at the first review tick. `name`,
+   * `mission`, `budget` and `config` are required; `spent_usd` is stamped 0 and each strategic
+   * goal is given a server-minted `goal_id`. The tenant is registered with the cron scheduler so
+   * ticks start, and a supplied `workspace_id` must belong to the tenant (422 otherwise) before
+   * it is assigned to the new company. Returns the full company record, 201. Requires the
+   * `companies` write permission and the `agents:write` scope.
    *
    * `POST /api/v1/companies`
    *
@@ -38,6 +79,13 @@ export class CompaniesResource extends APIResource {
   /**
    * Delete company
    *
+   * Deletes the company and cascades: every objective carrying its `company_id` (walked by
+   * cursor, not one fixed page) and the strategist agent it created — the strategist only when
+   * its name still ends in the generated suffix, so an operator who repointed
+   * `strategist_agent_id` at a hand-built agent does not lose it. No resource slot is released,
+   * because company creation claims none. Irreversible, 204; 404 first when the company does not
+   * exist. Requires the `companies` delete permission and the `agents:write` scope.
+   *
    * `DELETE /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:write`.
@@ -55,6 +103,12 @@ export class CompaniesResource extends APIResource {
   /**
    * Get company
    *
+   * Returns one company record. 404 when the tenant has no such company. A path segment after
+   * the id that this handler does not serve is refused before the record is fetched, so the
+   * refusal does not depend on whether the company exists, and a known sub-path asked with a
+   * verb it does not serve is 405 with the allowed verbs named — both guards exist because such
+   * requests used to fall through to the bare-record handlers.
+   *
    * `GET /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:read`.
@@ -69,6 +123,10 @@ export class CompaniesResource extends APIResource {
 
   /**
    * Get company activity log
+   *
+   * Returns the 50 most recent activity rows for the company, newest first, each projected down
+   * to `run_id`, `created_at` and `success`. There is no paging and no window parameter — this
+   * is a fixed recent-activity feed, not the run history. 404 when the company does not exist.
    *
    * `GET /api/v1/companies/{companyId}/activity`
    *
@@ -85,6 +143,11 @@ export class CompaniesResource extends APIResource {
   /**
    * Get company budget allocation
    *
+   * Returns the company's stored budget — total, spent, daily limit and alert threshold — plus
+   * `remaining_usd`, computed as total minus spent and floored at zero. The figures come from
+   * the company record as the strategist ticks maintain it; nothing is recomputed from the run
+   * ledger here. 404 when the company does not exist.
+   *
    * `GET /api/v1/companies/{companyId}/budget`
    *
    * Required scopes: `agents:read`.
@@ -99,6 +162,13 @@ export class CompaniesResource extends APIResource {
 
   /**
    * Get company strategic objectives
+   *
+   * Answers with two views of the company's objectives from a single walk of the tenant's
+   * objective prefix: `trees`, one built tree per strategic goal that carries a
+   * `root_objective_id`, and `objectives`, the flat list of objectives whose `company_id` is
+   * this company. The walk is unfiltered because a tree's children are found by `parent_id` and
+   * need not all belong to this company; it is bounded at 100,000 rows, past which the answer is
+   * short and a warning is logged. 404 when the company does not exist.
    *
    * `GET /api/v1/companies/{companyId}/objectives`
    *
@@ -115,20 +185,45 @@ export class CompaniesResource extends APIResource {
   /**
    * List companies
    *
+   * Lists the tenant's companies, paged by `limit` (default 50, capped at 100) and an opaque
+   * `cursor`; a malformed cursor is refused rather than silently serving page one. The response
+   * carries `items`, `cursor` (null at the end) and `has_more`. Requires the `companies` read
+   * permission and the `agents:read` scope, like every GET on this surface.
+   *
    * `GET /api/v1/companies`
    *
    * Required scopes: `agents:read`.
    */
-  list(options?: RequestOptions): Promise<ListCompaniesResponse> {
+  list(params?: ListCompaniesParams, options?: RequestOptions): Promise<ListCompaniesResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/companies',
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
   }
 
   /**
+   * Iterate every item returned by `listCompanies`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listAll(params?: ListCompaniesParams, options?: RequestOptions): AsyncIterableIterator<Company> {
+    return autoPaginate<Company>(
+      (cursor) => this.list({ ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
+  }
+
+  /**
    * Pause company operations
+   *
+   * Sets the company's status to `paused` and emits a `company.paused` event. Only active
+   * companies are picked up by the strategist review tick, so pausing is what actually stops the
+   * company working. 404 when the company does not exist; idempotent — pausing an already-paused
+   * company answers the same `{status: "paused"}`. Requires the `companies` write permission and
+   * the `agents:write` scope.
    *
    * `POST /api/v1/companies/{companyId}/pause`
    *
@@ -146,6 +241,10 @@ export class CompaniesResource extends APIResource {
   /**
    * Resume company operations
    *
+   * Sets the company's status back to `active`, which is the state the strategist tick selects
+   * on, and emits a `company.resumed` event. 404 when the company does not exist; idempotent.
+   * Requires the `companies` write permission and the `agents:write` scope.
+   *
    * `POST /api/v1/companies/{companyId}/resume`
    *
    * Required scopes: `agents:write`.
@@ -160,7 +259,39 @@ export class CompaniesResource extends APIResource {
   }
 
   /**
+   * Stream company lifecycle events via SSE
+   *
+   * Company lifecycle events, plus the events of the latest strategist run that is still in
+   * progress when the stream opens. A company with no active run still streams: lifecycle frames
+   * continue, and the stream does not carry a run's events retroactively. Counts against the
+   * same per-tenant SSE connection ceiling as every other stream route
+   * (`runtime.sse_max_connections_per_tenant`).
+   *
+   * `GET /api/v1/companies/{companyId}/events`
+   *
+   * Required scopes: `agents:read`.
+   *
+   * Returns a server-sent event stream; iterate it with `for await`.
+   */
+  streamCompanyEvents(companyId: string, params?: StreamCompanyEventsParams, options?: RequestOptions): EventStream {
+    return this._client.stream({
+      method: 'GET',
+      path: `/api/v1/companies/${encodeURIComponent(String(companyId))}/events`,
+      headers: pick(params, ['Last-Event-ID']),
+      options,
+    });
+  }
+
+  /**
    * Update company
+   *
+   * WRITE SEMANTICS: merges. Only the fields present in the body are written; anything omitted
+   * keeps its stored value, and `config` is merged one level over the stored config.
+   * `strategic_goals` is replaced as a list, but a goal already on the record keeps its
+   * `goal_id` and a new one is minted an id, so a read-modify-write does not orphan the
+   * escalation path. `budget` writes only the three editable limits — `spent_usd` is sourced by
+   * the manager's own CAS-fresh read so a concurrent tick's spend is not clobbered — and a
+   * budget change emits a `company.budget_updated` event. Returns the updated company.
    *
    * `PUT /api/v1/companies/{companyId}`
    *

@@ -77,6 +77,14 @@ export class OpenAiCompatResource extends APIResource {
   /**
    * Get response by ID (OpenAI Responses API)
    *
+   * Retrieves one run of the caller's tenant rendered in the OpenAI Responses shape: the
+   * assistant text as a single `message` output item, an input/output/total token `usage` block,
+   * the agent id in `model`, and `created_at` as a Unix timestamp. `responseId` is the run id; a
+   * run that does not exist in this tenant answers **404** in the OpenAI error envelope. Because
+   * this returns the same output as `GET /api/v1/runs/{runId}`, it enforces the same `runs:read`
+   * permission and scope, and it draws on the shared `/v1/responses` per-caller rate-limit
+   * bucket.
+   *
    * `GET /v1/responses/{responseId}`
    */
   getResponse(responseId: string, options?: RequestOptions): Promise<GetResponseResponse> {

@@ -121,6 +121,15 @@ impl RunsApi {
 
     /// Cancel a run
     ///
+    /// Asks for the run to stop. Requires the `runs.cancel` permission. A run executing on a local
+    /// bridge is cancelled through the bridge, since the in-process scheduler has no hold on it;
+    /// otherwise the scheduler aborts it, and a run the scheduler does not hold — queued but
+    /// unclaimed, or stranded by a crashed worker — is flipped to `cancelled` directly in storage
+    /// under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
+    /// the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
+    /// when something was stopped and `{cancelled: false, message}` when the run is unknown or
+    /// already finished — there is no `404` here, and a repeat call is safe.
+    ///
     /// `POST /api/v1/runs/{runId}/cancel`
     ///
     /// Required scopes: `runs:create`.
@@ -181,6 +190,12 @@ impl RunsApi {
     }
 
     /// Create checkpoint for a run
+    ///
+    /// Forces a checkpoint of a long-running run and returns it with `202`. `404` when the run does
+    /// not exist and `422` when its status is anything other than `running` — a finished run cannot
+    /// be checkpointed after the fact. The checkpoint records the run's status, step sequence and
+    /// metrics at that moment; it is a marker for inspection and for `POST
+    /// /api/v1/runs/{runId}/continue`, and taking one does not pause or otherwise disturb the run.
     ///
     /// `POST /api/v1/runs/{runId}/checkpoint`
     ///
@@ -250,6 +265,12 @@ impl RunsApi {
 
     /// Export run events as JSONL
     ///
+    /// Streams the run's complete event log as newline-delimited JSON — one event per line,
+    /// `Content-Type: application/x-ndjson`, sent with a `Content-Disposition: attachment` filename
+    /// so a browser saves it. `404` when the run does not exist. Unlike the SSE stream this is the
+    /// whole recorded log in one response, not a live subscription, and there is no filtering or
+    /// paging.
+    ///
     /// `GET /api/v1/runs/{runId}/events/export`
     ///
     /// Required scopes: `runs:read`.
@@ -267,6 +288,15 @@ impl RunsApi {
     }
 
     /// Get run status and result
+    ///
+    /// Returns the run — its status, input, resource limits, metrics and, once it has finished, its
+    /// output — or `404`. The platform's own provider cost and margin are stripped from the metrics
+    /// before they go out. `changed_files=true` adds the files the run touched. Two fields appear
+    /// only when the run is blocked on a person: for `awaiting_approval` the handler scans back
+    /// through the event log for the most recent approval prompt and returns `pending_approvals`,
+    /// and for `awaiting_input` it returns `pending_input` with the question, its options and
+    /// context — so a client whose SSE stream dropped can rebuild the card by polling instead of
+    /// replaying the stream. Both are best-effort; a failed scan returns the bare run.
     ///
     /// `GET /api/v1/runs/{runId}`
     ///
@@ -286,6 +316,11 @@ impl RunsApi {
 
     /// Get audit trail for a run
     ///
+    /// Returns the audit entries recorded against this run, with `total`. `404` when the run does
+    /// not exist. Scoped by audit target, so it carries the acts performed ON the run — approvals,
+    /// rejections, cancellations — rather than the run's own execution events, which are read
+    /// through the events export or the SSE stream.
+    ///
     /// `GET /api/v1/runs/{runId}/audit-log`
     ///
     /// Required scopes: `runs:read`.
@@ -304,6 +339,14 @@ impl RunsApi {
 
     /// Get user feedback for a run
     ///
+    /// Returns the message reactions THIS caller left on this run. With `message_id` the answer is
+    /// that one message's `{reaction, reason?}`, with `reaction: null` when there is none; without
+    /// `message_id` it is `{feedbacks}` — every reaction this caller left anywhere in the run,
+    /// which is how a client seeds its per-message cache in one request instead of one per bubble.
+    /// The bulk form scans up to 500 stored rows. `404` when the run does not exist. Reactions are
+    /// keyed by caller identity, so another person's reaction to the same message is never reported
+    /// here.
+    ///
     /// `GET /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:read`.
@@ -321,6 +364,11 @@ impl RunsApi {
     }
 
     /// Get run queue position
+    ///
+    /// Reports where the run sits in this worker's scheduling queue. The answer comes from the
+    /// in-process scheduler, not from storage, so the handler does not verify that the run exists —
+    /// an unknown or already-started run answers `200` with whatever the scheduler reports for it
+    /// rather than `404`.
     ///
     /// `GET /api/v1/runs/{runId}/queue-position`
     ///
@@ -410,6 +458,10 @@ impl RunsApi {
 
     /// List run artifacts
     ///
+    /// Lists the artifacts the run produced, read straight off the run record, with `total`. `404`
+    /// when the run does not exist. The entries carry ids, names, types and sizes; the bytes are
+    /// fetched through the files API.
+    ///
     /// `GET /api/v1/runs/{runId}/artifacts`
     ///
     /// Required scopes: `runs:read`.
@@ -427,6 +479,10 @@ impl RunsApi {
     }
 
     /// List checkpoints for a run
+    ///
+    /// Lists the run's checkpoints, up to 500, with `total`. `404` when the run does not exist.
+    /// Both the checkpoints forced through `POST /api/v1/runs/{runId}/checkpoint` and any the
+    /// runtime took appear here.
     ///
     /// `GET /api/v1/runs/{runId}/checkpoints`
     ///
@@ -446,6 +502,11 @@ impl RunsApi {
 
     /// Pause a run
     ///
+    /// Suspends a run that is currently executing, leaving it at `paused` until `POST
+    /// /api/v1/runs/{runId}/resume`. `404` when the run does not exist and `409` when it is in any
+    /// status other than `running`; the transition is a CAS, so losing the race to a concurrent
+    /// write is also `409`. A `run.checkpoint` event with reason `manual_pause` is appended.
+    ///
     /// `POST /api/v1/runs/{runId}/pause`
     ///
     /// Required scopes: `runs:create`.
@@ -463,6 +524,15 @@ impl RunsApi {
     }
 
     /// Reject a pending tool call (HITL)
+    ///
+    /// Refuses a tool call the run is waiting on, requiring the `runs.approve` permission. `404`
+    /// when the run does not exist and `409` unless its status is `awaiting_approval`. The
+    /// rejection — with `reason`, defaulted when absent — is stored as the run's approval signal,
+    /// the run is transitioned to `failed` under CAS (a lost race is `409`, and nothing is mirrored
+    /// outward in that case), a `run.failed` event marked `rejected` is appended and the pending
+    /// approval notifications are retired. For a run executing on a local bridge the decision is
+    /// also written into the bridge's slot so the prompt there is torn down. This ends the run; it
+    /// is not a way to decline one tool and continue.
     ///
     /// `POST /api/v1/runs/{runId}/reject`
     ///
@@ -482,6 +552,11 @@ impl RunsApi {
 
     /// Replay a run for determinism check
     ///
+    /// Re-executes the recorded run from its event log and reports whether the result matches,
+    /// which is how a determinism regression is caught. It takes only the `runs:read` scope and the
+    /// `runs.read` permission, because it reads the recording rather than dispatching new work
+    /// against the agent.
+    ///
     /// `POST /api/v1/runs/{runId}/replay`
     ///
     /// Required scopes: `runs:read`.
@@ -500,6 +575,13 @@ impl RunsApi {
 
     /// Send user input response to a paused run
     ///
+    /// Delivers the user's answer to a run that asked a question with `ask_user`. `404` when the
+    /// run does not exist, `409` unless its status is `awaiting_input` or when a concurrent write
+    /// wins the CAS, and `400` when `response` is empty or missing. The answer is stored for the
+    /// runtime to read on resume, the run is returned to `queued` and rescheduled at realtime
+    /// priority, and a `run.input_received` event is appended. Returns `{status, run_id}` — the run
+    /// resumes asynchronously.
+    ///
     /// `POST /api/v1/runs/{runId}/respond`
     ///
     /// Required scopes: `runs:create`.
@@ -517,6 +599,13 @@ impl RunsApi {
     }
 
     /// Resume a run
+    ///
+    /// Returns a paused run to the queue and reschedules it, answering `202`. `404` when the run
+    /// does not exist and `409` when it is not `paused`, including when a concurrent write wins the
+    /// CAS. An optional `input` object in the body is stored on the run's metadata as
+    /// `_resume_input` for the runtime to pick up; a `run.started` event records that this was a
+    /// resume. The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not
+    /// that it has restarted.
     ///
     /// `POST /api/v1/runs/{runId}/resume`
     ///

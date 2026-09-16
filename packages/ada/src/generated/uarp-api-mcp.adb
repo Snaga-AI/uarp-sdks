@@ -119,7 +119,7 @@ package body UARP.API.MCP is
    function Update_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_MCP_Server_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.MCP_Server_With_Connect_Result
    is
@@ -129,7 +129,7 @@ package body UARP.API.MCP is
             (Self,
              "PATCH",
              "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

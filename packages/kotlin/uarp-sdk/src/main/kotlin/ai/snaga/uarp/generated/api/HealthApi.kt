@@ -27,6 +27,14 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     /**
      * Health check
      *
+     * Probes KV with a single lightweight read and reports `status` (`healthy`, `degraded` or
+     * `unhealthy`), `kv_connected`, `uptime_seconds`, the contract `version`, the `build_sha`
+     * baked in at image build (`unknown` when the build arg was absent), and `runs_queued` taken
+     * from the scheduler's own queue gauge. `status` is `degraded` when the scheduler is at 90% or
+     * more of `maxConcurrentRuns`, and `unhealthy` (answered **503**) when the KV probe throws or
+     * the process is shutting down. `pending_resumes` is a constant zero: nothing on this platform
+     * ever waits to be resumed. No authentication — the path bypasses the auth middleware.
+     *
      * `GET /health`
      */
     public suspend fun `get`(options: RequestOptions = RequestOptions()): GetHealthResponse {
@@ -42,6 +50,13 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     /**
      * Prometheus-compatible metrics export
      *
+     * Returns the whole in-memory OpenTelemetry snapshot — `meta`, `gauges` and `counters` — as
+     * JSON, plus a `config` block naming whether auth, OTel and billing are enabled on this
+     * deployment. These are platform-wide counters, not tenant-scoped. In production the request
+     * must authenticate and the caller must be the platform super-admin: anything else answers
+     * **401** or **403**; outside production the path stays anonymous like the other health
+     * routes.
+     *
      * `GET /metrics`
      */
     public suspend fun getMetrics(options: RequestOptions = RequestOptions()): String {
@@ -56,6 +71,13 @@ public class HealthApi internal constructor(private val client: UarpClient) {
 
     /**
      * Readiness probe (checks KV connectivity)
+     *
+     * Checks five components in turn — KV (with a measured `latency_ms` and a 5 s timeout), the
+     * event store (same timeout), the worker pool's active and queued counts, the MCP manager's
+     * session count, and the cron scheduler's registered-tenant count — and returns each one's
+     * `up`/`down` state with the error text on failure. Overall `status` drops to `degraded` if
+     * any component is down, but only a KV failure makes the response **503**; a shutting-down
+     * process answers 503 outright. Unauthenticated.
      *
      * `GET /ready`
      */
@@ -90,6 +112,11 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     /**
      * Kubernetes liveness probe
      *
+     * Liveness probe with no external dependencies: answers `{status: "ok"}` immediately, and
+     * **503** only once the process has been signalled to shut down. It deliberately touches
+     * neither KV nor the scheduler, so it stays fast and never fails on a dependency the process
+     * could recover from. Unauthenticated.
+     *
      * `GET /health/live`
      */
     public suspend fun healthLive(options: RequestOptions = RequestOptions()): HealthLiveResponse {
@@ -105,6 +132,11 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     /**
      * Kubernetes readiness probe
      *
+     * Kubernetes-style readiness probe; the same handler as `GET /ready`, checking KV latency, the
+     * event store, the worker pool, the MCP manager and the cron scheduler, degrading on any
+     * component failure and returning **503** only when KV is down or the process is shutting
+     * down. Unauthenticated.
+     *
      * `GET /health/ready`
      */
     public suspend fun healthReady(options: RequestOptions = RequestOptions()): ReadinessReport {
@@ -119,6 +151,11 @@ public class HealthApi internal constructor(private val client: UarpClient) {
 
     /**
      * SSE end-to-end health check
+     *
+     * Opens a Server-Sent Events stream that emits exactly three events — `connected`, `ping`,
+     * `done` — followed by a `\[DONE\]` frame, then closes. It exists so a monitor can prove SSE
+     * survives end to end through every proxy in front of the API; it reads nothing and reports no
+     * system state. Unauthenticated, and served with the platform's standard SSE headers.
      *
      * `GET /health/sse`
      *
@@ -137,6 +174,10 @@ public class HealthApi internal constructor(private val client: UarpClient) {
     /**
      * Health check alias (/healthz)
      *
+     * Alias for `GET /health`, serving the identical body — status, KV connectivity, uptime,
+     * contract version, build sha and queue depth — for probes that expect this spelling.
+     * Unauthenticated.
+     *
      * `GET /healthz`
      */
     public suspend fun healthzAlias(options: RequestOptions = RequestOptions()): HealthzAliasResponse {
@@ -151,6 +192,9 @@ public class HealthApi internal constructor(private val client: UarpClient) {
 
     /**
      * Readiness alias (/readyz)
+     *
+     * Alias for `GET /ready`, running the same five component checks and applying the same rule
+     * that only a KV failure makes the response **503**. Unauthenticated.
      *
      * `GET /readyz`
      */

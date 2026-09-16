@@ -24,6 +24,12 @@ package UARP.API.Files is
 
    --  Delete file
    --
+   --  Deletes the record and its bytes from the active tenant only - unlike the reads, this does
+   --  not fall back to the caller's other tenants. Refused while the tenant is under legal hold or
+   --  suspended. A `file.deleted` audit row is written before the delete, so a crash mid-way still
+   --  leaves a trace. Answers 204 with no body, or 404 when the active tenant has no such file.
+   --  There is no undo.
+   --
    --  DELETE /api/v1/files/{fileId}
    --
    --  Required scopes: files:write.
@@ -33,6 +39,14 @@ package UARP.API.Files is
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Download file content
+   --
+   --  Streams the stored bytes, resolving the owning tenant the same way the metadata read does.
+   --  `If-None-Match` carrying the record's sha256 answers 304, and a `bytes=` `Range` header
+   --  answers 206 with `Content-Range` (416 when the range is unsatisfiable).
+   --  `Content-Disposition` is `inline` for images other than SVG, PDFs, audio and video and
+   --  `attachment` for everything else; the filename travels both as an ASCII-sanitised `filename`
+   --  and as a percent-encoded `filename*`. A record that exists but whose bytes are gone answers
+   --  404 with a distinct message, so an expired blob is not confused with an unknown id.
    --
    --  GET /api/v1/files/{fileId}/content
    --
@@ -45,6 +59,13 @@ package UARP.API.Files is
 
    --  Get file metadata
    --
+   --  Returns the stored record - filename, MIME type, size, creation time - without the bytes.
+   --  File ids are tenant-scoped but this path is tenant-implicit, so the lookup tries the
+   --  request's active tenant first and then walks the caller's other memberships, skipping any
+   --  tenant where the caller's user row is missing or suspended or the tenant is deleted; a file
+   --  belonging to another of the caller's tenants is therefore readable. 404 when no authorized
+   --  tenant holds the record.
+   --
    --  GET /api/v1/files/{fileId}
    --
    --  Required scopes: files:read.
@@ -55,6 +76,12 @@ package UARP.API.Files is
       return UARP.Models.File_Record;
 
    --  List files
+   --
+   --  Pages the tenant's uploaded file records. `limit` defaults to 50 and is clamped to 500;
+   --  `cursor` is the opaque value from the previous response's `cursor`, and `has_more` says
+   --  whether one was returned. `mime_prefix` is applied after the page is read, so it filters the
+   --  current page rather than the whole collection - a page can come back empty while later pages
+   --  still hold matches. Metadata only; no bytes.
    --
    --  GET /api/v1/files
    --

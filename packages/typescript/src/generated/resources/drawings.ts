@@ -81,6 +81,8 @@ export class DrawingsResource extends APIResource {
    * never 403: the status does not reveal whether the id exists.
    *
    * `POST /api/v1/drawings/{drawingId}/ops`
+   *
+   * Required scopes: `drawing:write`.
    */
   appendDrawingOps(drawingId: string, body: AppendDrawingOpsRequest, options?: RequestOptions): Promise<AppendDrawingOpsResponse> {
     return this._client.request({
@@ -103,6 +105,8 @@ export class DrawingsResource extends APIResource {
    * 404 — never 403: the status does not reveal whether the id exists.
    *
    * `POST /api/v1/drawings/{drawingId}/masks`
+   *
+   * Required scopes: `drawing:write`.
    */
   createDrawingMask(drawingId: string, body: CreateDrawingMaskRequest, options?: RequestOptions): Promise<DrawingMask> {
     return this._client.request({
@@ -123,7 +127,7 @@ export class DrawingsResource extends APIResource {
    *
    * `POST /api/v1/sessions/{sessionId}/drawings`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `drawing:write`, `sessions:write`.
    */
   createSessionDrawing(sessionId: string, body: CreateSessionDrawingRequest, options?: RequestOptions): Promise<Drawing> {
     return this._client.request({
@@ -148,6 +152,8 @@ export class DrawingsResource extends APIResource {
    * reveal whether the id exists.
    *
    * `DELETE /api/v1/drawings/{drawingId}`
+   *
+   * Required scopes: `drawing:write`.
    */
   delete(drawingId: string, params: DeleteDrawingParams, options?: RequestOptions): Promise<DeleteDrawingResponse> {
     return this._client.request({
@@ -168,6 +174,8 @@ export class DrawingsResource extends APIResource {
    * whether the id exists.
    *
    * `GET /api/v1/drawings/{drawingId}`
+   *
+   * Required scopes: `drawing:read`.
    */
   get(drawingId: string, options?: RequestOptions): Promise<Drawing> {
     return this._client.request({
@@ -185,6 +193,8 @@ export class DrawingsResource extends APIResource {
    * whether the id exists.
    *
    * `GET /api/v1/drawings/{drawingId}/masks/{maskId}`
+   *
+   * Required scopes: `drawing:read`.
    */
   getDrawingMask(drawingId: string, maskId: string, options?: RequestOptions): Promise<DrawingMask> {
     return this._client.request({
@@ -202,6 +212,8 @@ export class DrawingsResource extends APIResource {
    * does not reveal whether the id exists.
    *
    * `GET /api/v1/drawings/{drawingId}/masks/{maskId}/content`
+   *
+   * Required scopes: `drawing:read`.
    */
   getDrawingMaskContent(drawingId: string, maskId: string, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
@@ -221,6 +233,8 @@ export class DrawingsResource extends APIResource {
    * does not reveal whether the id exists.
    *
    * `GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`
+   *
+   * Required scopes: `drawing:read`.
    */
   getDrawingTile(drawingId: string, layerId: string, tx: number, ty: number, params?: GetDrawingTileParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
@@ -243,6 +257,8 @@ export class DrawingsResource extends APIResource {
    * reveal whether the id exists.
    *
    * `GET /api/v1/drawings/{drawingId}/ops`
+   *
+   * Required scopes: `drawing:read`.
    */
   listDrawingOps(drawingId: string, params?: ListDrawingOpsParams, options?: RequestOptions): Promise<ListDrawingOpsResponse> {
     return this._client.request({
@@ -261,7 +277,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/sessions/{sessionId}/drawings`
    *
-   * Required scopes: `sessions:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   listSessionDrawings(sessionId: string, params?: ListSessionDrawingsParams, options?: RequestOptions): Promise<ListSessionDrawingsResponse> {
     return this._client.request({
@@ -296,6 +312,8 @@ export class DrawingsResource extends APIResource {
    * exists.
    *
    * `GET /api/v1/drawings/{drawingId}/render`
+   *
+   * Required scopes: `drawing:read`.
    */
   renderDrawing(drawingId: string, params?: RenderDrawingParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({

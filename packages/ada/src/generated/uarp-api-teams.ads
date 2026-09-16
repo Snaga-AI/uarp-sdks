@@ -42,6 +42,10 @@ package UARP.API.Teams is
 
    --  Add graph edge
    --
+   --  Adds an edge between two graph nodes from `from`, `to`, `type` and an optional `task_id`.
+   --  The write is a compare-and-set against the graph document, so a concurrent graph change
+   --  answers 409 and the request should be retried. Answers 201 with the created edge.
+   --
    --  POST /api/v1/teams/{teamId}/graph/edges
    --
    --  Required scopes: agents:write.
@@ -53,6 +57,11 @@ package UARP.API.Teams is
       return UARP.Models.Team_Graph_Edge;
 
    --  Add graph node
+   --
+   --  Adds a node to the squad's collaboration graph. `agent_id` must resolve to an agent in this
+   --  tenant (422). `role` defaults to `worker`, and `spawned_by` and `goal_summary` default to
+   --  empty. The write is a compare-and-set against the graph document, so a concurrent graph
+   --  change answers 409 and the request should simply be retried. Answers 201 with the node.
    --
    --  POST /api/v1/teams/{teamId}/graph/nodes
    --
@@ -91,6 +100,17 @@ package UARP.API.Teams is
 
    --  Create a team
    --
+   --  Creates a squad. Refused with 403 when the plan includes no teams or the tenant is at its
+   --  team limit; the slot is then claimed atomically, so concurrent creates cannot both pass the
+   --  count check. A `swarm` topology needs `swarm_config` whose `initial_agent_id` exists; every
+   --  other topology needs an existing `supervisor_agent_id` and at least one worker that is not
+   --  the supervisor, with duplicate worker ids and unknown agent ids refused as 422. Policies not
+   --  supplied take documented defaults (`max_rounds` 10, `early_termination` true,
+   --  `max_delegation_depth` 3, and so on). A workspace is provisioned for the squad, or the
+   --  `workspace_id` in the body is adopted when it belongs to the tenant; the workspace quota
+   --  applies, and a failure anywhere after the slot claim releases it. A collaboration graph is
+   --  created from the workers, and the create is audit-logged. Answers 201 with the stored team.
+   --
    --  POST /api/v1/teams
    --
    --  Required scopes: agents:write.
@@ -102,6 +122,14 @@ package UARP.API.Teams is
 
    --  Delete team
    --
+   --  Deletes the squad and cascades: its own workspace, all chat turns, every chat-state row,
+   --  every run whose metadata names this team together with that run's events, the team-run index
+   --  rows, the cron schedules of the member agents, and the collaboration graph - then the team
+   --  record, releasing the plan slot. Refused while the tenant is under legal hold or suspended,
+   --  and a `team.deleted` audit row is written before the cascade starts so a crash mid-way still
+   --  proves what was attempted. 404 when the team is unknown. The member agents themselves are
+   --  not deleted. There is no undo.
+   --
    --  DELETE /api/v1/teams/{teamId}
    --
    --  Required scopes: agents:write.
@@ -112,6 +140,10 @@ package UARP.API.Teams is
       return UARP.Models.Delete_Team_Response;
 
    --  Remove edge
+   --
+   --  Removes one edge by its id, leaving both nodes in place. The write is a compare-and-set
+   --  against the graph document, so a concurrent change answers 409 and the request should be
+   --  retried.
    --
    --  DELETE /api/v1/teams/{teamId}/graph/edges/{edgeId}
    --
@@ -125,6 +157,10 @@ package UARP.API.Teams is
 
    --  Remove node
    --
+   --  Removes the node and every edge connected to it from the graph; the agent itself and its
+   --  membership of the team are untouched. The write is a compare-and-set against the graph
+   --  document, so a concurrent change answers 409 and the request should be retried.
+   --
    --  DELETE /api/v1/teams/{teamId}/graph/nodes/{agentId}
    --
    --  Required scopes: agents:write.
@@ -137,6 +173,11 @@ package UARP.API.Teams is
 
    --  Get team
    --
+   --  Returns the stored squad record. A squad written before workspaces were provisioned gets one
+   --  lazily on this read; when the tenant is at its workspace quota the read still succeeds and
+   --  answers with the team as stored rather than turning a read into an upgrade prompt. 404 when
+   --  the tenant has no such team.
+   --
    --  GET /api/v1/teams/{teamId}
    --
    --  Required scopes: agents:read.
@@ -147,6 +188,14 @@ package UARP.API.Teams is
       return UARP.Models.Team;
 
    --  Get team chat history
+   --
+   --  Returns up to the 100 most recent chat turns for the squad, each expanded into a `user` and
+   --  an `assistant` entry sharing the turn's `team_run_id` and timestamp, with per-run token
+   --  totals per participating agent attached. `thread_id` narrows to one addressed thread;
+   --  `include_internal=1` also returns the supervisor's internal message, which is otherwise
+   --  withheld along with turns marked internal. While a run is in progress a pending
+   --  user/assistant pair is appended and `active_team_run_id` is set, so a client returning to
+   --  the page can reattach to the stream. 404 when the team is unknown.
    --
    --  GET /api/v1/teams/{teamId}/chat
    --
@@ -160,6 +209,11 @@ package UARP.API.Teams is
 
    --  Get full team graph
    --
+   --  Returns the squad's collaboration graph - the envelope, its nodes and its edges. When no
+   --  graph exists yet one is created from the team's static supervisor and workers as a side
+   --  effect of this read. Nodes whose status is `terminated` are kept as an audit trail but
+   --  omitted by default; `include_terminated=true` returns them. 404 when the team is unknown.
+   --
    --  GET /api/v1/teams/{teamId}/graph
    --
    --  Required scopes: agents:read.
@@ -170,6 +224,10 @@ package UARP.API.Teams is
       return UARP.Models.Get_Team_Graph_Response;
 
    --  Get graph node
+   --
+   --  Returns one graph node - its role, status, goal summary and provenance - addressed by the
+   --  agent id it represents rather than a separate node id. 404 when the graph has no node for
+   --  that agent.
    --
    --  GET /api/v1/teams/{teamId}/graph/nodes/{agentId}
    --
@@ -183,6 +241,14 @@ package UARP.API.Teams is
 
    --  Get specific team run
    --
+   --  Reports the state of one squad run. The parent run has no stored status: it is derived on
+   --  every read from its child runs - `completed` when all finished, `failed` when some failed
+   --  and none completed or is still going, `partial_failure` when both, `running`, `cancelled`,
+   --  otherwise `pending` - which means the derivation also corrects runs that finished long ago.
+   --  Timeouts and guardrail blocks count as failures. Each child is listed with its agent,
+   --  status, output, metrics and, when it failed, its error; a `failed` verdict also carries the
+   --  first child error as `error`. 404 when the team is unknown.
+   --
    --  GET /api/v1/teams/{teamId}/runs/{teamRunId}
    --
    --  Required scopes: agents:read.
@@ -194,6 +260,12 @@ package UARP.API.Teams is
       return UARP.Models.Team_Run_Detail;
 
    --  Get team run messages
+   --
+   --  Returns two views of one squad run: `protocol_messages`, the full delegation transcript (who
+   --  sent what to whom, in which round), and `messages`, the chat-turn shape. The turn is read by
+   --  primary key, so it is found however old the run is; when no turn was saved the response
+   --  falls back to a single synthesised message built from the last protocol message, with an
+   --  empty user side. 404 when the team is unknown.
    --
    --  GET /api/v1/teams/{teamId}/runs/{teamRunId}/messages
    --
@@ -207,6 +279,10 @@ package UARP.API.Teams is
 
    --  List teams
    --
+   --  Lists up to 200 team (squad) records for the tenant. The same array is returned twice - as
+   --  the canonical `items` and as the deprecated `teams` alias - so clients written against
+   --  either shape decode.
+   --
    --  GET /api/v1/teams
    --
    --  Required scopes: agents:read.
@@ -216,6 +292,9 @@ package UARP.API.Teams is
       return UARP.Models.List_Teams_Response;
 
    --  List graph edges
+   --
+   --  Lists the graph's edges - the delegation and handoff links between nodes - with a `total`.
+   --  The team's existence is not checked, so an unknown team id answers an empty list.
    --
    --  GET /api/v1/teams/{teamId}/graph/edges
    --
@@ -227,6 +306,10 @@ package UARP.API.Teams is
       return UARP.Models.List_Team_Graph_Edges_Response;
 
    --  List graph nodes
+   --
+   --  Lists the graph's nodes with a `total`. Unlike the full-graph read this neither checks that
+   --  the team exists nor filters terminated nodes, so terminated members are included and an
+   --  unknown team id answers an empty list rather than 404.
    --
    --  GET /api/v1/teams/{teamId}/graph/nodes
    --
@@ -268,6 +351,18 @@ package UARP.API.Teams is
 
    --  Start a team run
    --
+   --  Starts a squad run and answers 202 with a `team_run_id` immediately; the orchestration runs
+   --  in the background and progress is read from the run-status, messages or event-stream
+   --  endpoints. `input` may be a plain string or an object with a `message`. Several gates run
+   --  first: the team must still have workers that exist (400 after pruning deleted ones), members
+   --  paused on the squad canvas are excluded and addressing one - or having every member paused -
+   --  is 400; the token/budget/billing quota and the concurrent-team-run cap answer 429; a member
+   --  whose model is above the plan's tier answers 403. On the free plan `max_rounds` is clamped
+   --  to 3 for this run. `@mentions` in the message, or an explicit `addressed_to`, narrow the run
+   --  to named members and open a thread. The team's chat state moves to ADDRESSING, and when the
+   --  run settles a chat turn is saved, the state goes to DONE and the concurrency slot is
+   --  released; the run is bounded by the team's timeout with a safety timeout behind it.
+   --
    --  POST /api/v1/teams/{teamId}/runs
    --
    --  Required scopes: agents:write.
@@ -279,6 +374,13 @@ package UARP.API.Teams is
       return UARP.Models.Start_Team_Run_Response;
 
    --  SSE stream for team chat
+   --
+   --  Opens a Server-Sent Events stream for the squad's currently running chat turn. It only
+   --  streams while the chat state is `RUNNING` with a run attached - otherwise it answers 200
+   --  with an ordinary JSON body naming the state and saying there is no active run, rather than
+   --  an empty stream. `thread_id` selects an addressed thread's state instead of the main one.
+   --  404 when the team is unknown, and 429 when the tenant is already at its concurrent-SSE
+   --  ceiling.
    --
    --  GET /api/v1/teams/{teamId}/chat/events
    --
@@ -312,6 +414,13 @@ package UARP.API.Teams is
 
    --  Update team
    --
+   --  Updates the squad. Despite the verb this is a field-wise merge: a top-level field the body
+   --  omits keeps its stored value, `policies` merge one level over the stored policies, and
+   --  `workers` are replaced when present, carrying over per-worker fields the body leaves out.
+   --  Every worker `agent_id` must resolve to an agent in this tenant and duplicates are refused
+   --  (422), the same check the create performs. `swarm_config` and `goal_config` are only touched
+   --  when supplied. 404 when the team is unknown; the write is audit-logged as `team.updated`.
+   --
    --  PUT /api/v1/teams/{teamId}
    --
    --  Required scopes: agents:write.
@@ -323,6 +432,11 @@ package UARP.API.Teams is
       return UARP.Models.Team;
 
    --  Update graph node
+   --
+   --  Updates a node's `status` (`active`, `idle` or `terminated`) and `goal_summary`; nothing
+   --  else on the node is writable here and omitted fields are left alone. The status is
+   --  load-bearing rather than decorative: a member whose node is not active is excluded from
+   --  later squad runs, so the supervisor never sees it and addressing it is refused.
    --
    --  PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}
    --

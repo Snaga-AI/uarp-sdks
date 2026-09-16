@@ -51,6 +51,12 @@ package UARP.API.A2A is
 
    --  Cancel an A2A task
    --
+   --  Cancels an A2A task and, through the scheduler, the UARP run executing behind it - without
+   --  that second half a cancelled task left its run burning the publisher's resources to
+   --  completion. A task that does not exist and one already in a terminal state are both answered
+   --  409 and are not distinguished, so the call is not repeatable: the second cancel of the same
+   --  task is a conflict. Requires the `agents` write permission and the `agents:write` scope.
+   --
    --  POST /api/v1/a2a/tasks/{taskId}/cancel
    --
    --  Required scopes: agents:write.
@@ -75,6 +81,12 @@ package UARP.API.A2A is
 
    --  Get A2A task status
    --
+   --  Returns one A2A task after reconciling it against its underlying UARP run, so the status and
+   --  the agent's reply are current rather than whatever was last written to the task record.
+   --  Unlike the list, this read carries the push notifier and the message signer, so it can
+   --  dispatch the task's configured push notification as a side effect. 404 when the tenant has
+   --  no such task. Requires the `agents` read permission and the `agents:read` scope.
+   --
    --  GET /api/v1/a2a/tasks/{taskId}
    --
    --  Required scopes: agents:read.
@@ -86,6 +98,15 @@ package UARP.API.A2A is
 
    --  Get A2A agent card for discovery
    --
+   --  Serves the A2A agent card for the agent named by the required `agent_id` query parameter.
+   --  The router reaches this handler before authentication, so the tenant is resolved through the
+   --  global published-agent index and only an agent whose `visibility` is `public` with
+   --  `public_config.enabled` has a card - an unpublished or unknown agent is 404, and a stale
+   --  index row is re-checked against the live record so unpublishing takes the card down. With
+   --  `format=oasf` the response is an OASF record whose advertised capabilities are resolved from
+   --  the agent's installed SPEC tool surface instead of the default card. A missing `agent_id` is
+   --  422; anything other than GET is 405.
+   --
    --  GET /.well-known/agent.json
    function Get_Agent_Card
      (Self : Client_Type;
@@ -94,6 +115,15 @@ package UARP.API.A2A is
       return UARP.Models.A2A_Agent_Card;
 
    --  List A2A tasks
+   --
+   --  Lists the tenant's A2A tasks newest first - the prefix is walked in reverse because the ids
+   --  are UUIDv7 - paged by `limit` (default 50, capped at 200) and `offset`. `total` counts the
+   --  whole set rather than the page, `has_more` reflects the set, and `cursor` (the next offset)
+   --  is present only when more remain. Every non-terminal task on the page is reconciled against
+   --  its underlying run before it is returned, so a task whose run has finished shows its real
+   --  status and reply; a reconciliation failure falls back to the stored record rather than
+   --  failing the page. Deliberately does not fire the tasks' push notifications - reading a list
+   --  is not an event. Requires the `agents` read permission and the `agents:read` scope.
    --
    --  GET /api/v1/a2a/tasks
    --
@@ -114,6 +144,12 @@ package UARP.API.A2A is
       return UARP.Models.A2A_Task_Vectors.Vector;
 
    --  Stream A2A task status updates (SSE)
+   --
+   --  Server-Sent Events for one A2A task's status updates, driven by polling with a heartbeat and
+   --  a reconnect hint from the deployment's SSE configuration. The caller's credential is
+   --  revalidated on each keepalive tick, so a logout, a suspended user or a suspended tenant
+   --  closes a stream that is already open. Requires the `agents` read permission and the
+   --  `agents:read` scope.
    --
    --  GET /api/v1/a2a/tasks/{taskId}/events
    --

@@ -82,6 +82,15 @@ public struct AnalyticsAPI: Sendable {
 
     /// Tenant-scoped agent analytics
     ///
+    /// Summarises the caller's own agents over the last `days` (default 30, clamped to 90): the
+    /// total, the split between cloud and bridge execution, bridge machine counts with how many are
+    /// online, stale or offline, platform totals for runs, cost and tokens, the ten busiest by runs
+    /// and by cost, and the full per-agent list. It is the same shape as the super-admin
+    /// cross-tenant report but scanned only within the caller's tenant, which is what scopes it —
+    /// no super-admin check is applied. An unauthenticated caller, or one resolving to the default
+    /// tenant, answers **401**; the `analytics:read` scope is required (the legacy spelling
+    /// `read:analytics` is accepted as a fallback).
+    ///
     /// `GET /api/v1/analytics/agents`
     ///
     /// Required scopes: `analytics:read`.

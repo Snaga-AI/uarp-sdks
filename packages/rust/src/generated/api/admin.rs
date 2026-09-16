@@ -54,6 +54,17 @@ pub struct AdminDataExplorerRawKeysParams {
     pub search: Option<String>,
 }
 
+/// Query and header parameters for `exportDataExplorer`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ExportDataExplorerParams {
+    /// Tenant id to scope the export to. Omit, or pass `__all__`, for the whole store.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub namespace: Option<String>,
+    /// `1` includes rows the export otherwise withholds. Anything else is treated as absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_sensitive: Option<models::ExportDataExplorerIncludeSensitive>,
+}
+
 /// Query and header parameters for `getAuditForTarget`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAuditForTargetParams {
@@ -82,7 +93,7 @@ pub struct GetImmutableAuditParams {
 pub struct GetPlatformEconomicsParams {
     /// `1` bypasses the cache and recomputes.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub refresh: Option<models::DeleteCustomPlanForce>,
+    pub refresh: Option<models::ExportDataExplorerIncludeSensitive>,
 }
 
 /// Query and header parameters for `getTenantUsage`.
@@ -160,6 +171,13 @@ impl AdminApi {
 
     /// Platform-wide agent analytics
     ///
+    /// Cross-tenant agent roster for the super-admin analytics page: it walks the tenant registry
+    /// and joins each tenant's agents with their bridge connections and per-agent usage, then
+    /// summarises how the platform's agents split between cloud and bridge execution, which bridge
+    /// agents are online, stale or offline, and which agents ran, spent and consumed most over the
+    /// window. `days` defaults to 30 and is capped at 90. Requires the `admin` scope and
+    /// super-admin identity.
+    ///
     /// `GET /api/v1/admin/analytics/agents`
     ///
     /// Required scopes: `admin`.
@@ -178,6 +196,11 @@ impl AdminApi {
 
     /// Platform-wide event analytics
     ///
+    /// Returns recent raw analytics events newest day first, stopping as soon as `limit` is
+    /// reached. `days` defaults to 7 and is clamped to 1..30, `limit` defaults to 100 and is
+    /// clamped to 1..500, and `type` filters to one event type. Requires the `admin` scope and
+    /// super-admin identity.
+    ///
     /// `GET /api/v1/admin/analytics/events`
     ///
     /// Required scopes: `admin`.
@@ -195,6 +218,13 @@ impl AdminApi {
     }
 
     /// Platform-wide analytics overview
+    ///
+    /// Platform-wide funnel and traffic overview over the last `days` days (default 30, capped at
+    /// 90): per-event-type totals, a daily timeseries, the signup and revenue funnel with its
+    /// conversion percentages, and the top countries, devices, browsers, referrers and UTM sources.
+    /// Unique visitors are counted over a fixed 30-day window regardless of `days`, because that
+    /// section scans raw events rather than the daily counters. Requires the `admin` scope and
+    /// super-admin identity.
     ///
     /// `GET /api/v1/admin/analytics/overview`
     ///
@@ -258,6 +288,13 @@ impl AdminApi {
 
     /// Remove OAuth login provider (super-admin)
     ///
+    /// Deletes the stored client id and secret for one login OAuth provider, which turns that
+    /// sign-in method off platform-wide. Idempotent: a provider with no stored record still answers
+    /// 200 with `configured: false`, and an unsupported provider id is 404. DELETE is accepted for
+    /// `apple` even though GET and PUT refuse it, because a record written by an older build is
+    /// inert but still holds a secret and this is the only route that removes it. Writes an
+    /// `admin.config_updated` audit entry. Super-admin only.
+    ///
     /// `DELETE /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
@@ -275,6 +312,13 @@ impl AdminApi {
     }
 
     /// Admin: get landing-page featured-agent config
+    ///
+    /// Returns the landing-page configuration as a fully-shaped record even when the stored row
+    /// predates some of its fields: the featured public agent id, the per-path text overrides, the
+    /// multilingual switch and default locale, and the partner list with its switch. It also
+    /// returns the KV `version` (a versionstamp) so the admin UI can send it back as
+    /// `expected_version` and detect a concurrent edit, and a `source` of `kv` or `none`.
+    /// Super-admin only, like every `/admin/config` route.
     ///
     /// `GET /api/v1/admin/config/landing`
     ///
@@ -294,6 +338,14 @@ impl AdminApi {
 
     /// Admin: get curated model catalog
     ///
+    /// Returns the curated model catalogue with each row's effective economics projected in — what
+    /// the platform would charge for that model and which plan tier may select it, computed the
+    /// same way the proxy computes it. When no operator override has been stored it falls back to
+    /// the built-in `MODEL_REGISTRY` seed with `source: "seed"` and a null `version`, so the admin
+    /// sees the same list the runtime will use. The `version` versionstamp is meant to be echoed
+    /// back as `expected_version` on the next save. Super-admin only, like every `/admin/config`
+    /// route.
+    ///
     /// `GET /api/v1/admin/config/model-catalog`
     ///
     /// Required scopes: `admin`.
@@ -312,6 +364,13 @@ impl AdminApi {
 
     /// Admin: model catalog default seed
     ///
+    /// Returns the catalogue an operator would start from: the built-in `MODEL_REGISTRY` seed
+    /// merged with the live models of every configured provider, so a freshly registered provider's
+    /// current lineup appears without anyone editing source. The live merge is best-effort and
+    /// additive — a provider whose endpoint is unreachable simply contributes nothing, and an id
+    /// already in the seed is not duplicated. It reads nothing from and writes nothing to the
+    /// stored catalogue. Super-admin only, like every `/admin/config` route.
+    ///
     /// `GET /api/v1/admin/config/model-catalog/seed`
     ///
     /// Required scopes: `admin`.
@@ -329,6 +388,12 @@ impl AdminApi {
     }
 
     /// Admin: live per-model pricing (synced from the configured provider)
+    ///
+    /// Returns the live per-model pricing the cost estimator holds — the provider `/v1/models`
+    /// sync, the admin per-model overrides and the catalogue rates already resolved into one list —
+    /// with a count and a `source` of `provider_sync`. Read-only; this is what the platform will
+    /// actually charge on, not a stored document. Super-admin only, like every `/admin/config`
+    /// route.
     ///
     /// `GET /api/v1/admin/config/model-pricing`
     ///
@@ -369,6 +434,11 @@ impl AdminApi {
 
     /// Get last stored cost-reconciliation result for a tenant
     ///
+    /// Returns the most recent stored cost-reconciliation result for the named tenant, chosen by
+    /// sorting the last twelve period rows descending. 404 when that tenant has no reconciliation
+    /// result at all, 400 without a tenant id, and 403 for a caller who is not a super admin.
+    /// Read-only.
+    ///
     /// `GET /api/v1/admin/reconciliation/{tenantId}`
     ///
     /// Required scopes: `admin`.
@@ -386,6 +456,11 @@ impl AdminApi {
     }
 
     /// Admin: get default voice (STT/TTS) config
+    ///
+    /// Returns the platform's default voice configuration — the STT provider and model, and the TTS
+    /// provider, model and voice — with a `source` of `kv` or `none`. A platform that has never
+    /// been configured answers `voice: null` rather than a guessed vendor default. Super-admin
+    /// only, like every `/admin/config` route.
     ///
     /// `GET /api/v1/admin/config/voice`
     ///
@@ -405,6 +480,12 @@ impl AdminApi {
 
     /// Admin: get per-model voice presets
     ///
+    /// Returns the admin-managed map of model id to the list of TTS voice names that model accepts,
+    /// as `override` and `effective` (identical) alongside an empty `defaults` — there is no
+    /// built-in preset list, the admin owns it entirely. A model absent from the map means the
+    /// provider is assumed to accept any voice string. Super-admin only, like every `/admin/config`
+    /// route.
+    ///
     /// `GET /api/v1/admin/config/voice-presets`
     ///
     /// Required scopes: `admin`.
@@ -422,6 +503,13 @@ impl AdminApi {
     }
 
     /// Admin: enumerate available built-in tools
+    ///
+    /// Returns the canonical built-in tool definitions the runtime actually serves — id,
+    /// description and JSON parameter schema — so a client renders an always-current list instead
+    /// of a hardcoded one. Platform-level overrides are merged in, so each row also carries an
+    /// effective category and description (admin override, then the tool catalogue, then the
+    /// definition, then the `system` default) and a `hidden` flag where one is set. SPEC-installed
+    /// tools are not included; those are tenant-scoped and listed per agent. Super-admin only.
     ///
     /// `GET /api/v1/admin/tools`
     ///
@@ -441,6 +529,11 @@ impl AdminApi {
 
     /// List dead-lettered webhook deliveries
     ///
+    /// Lists every dead-lettered Stripe webhook event — the events whose handler failed and that
+    /// were parked instead of dropped — newest first by timestamp, each entry carrying the Stripe
+    /// event id, type, payload, the error that parked it and the tenant it was aimed at. Requires
+    /// the `admin` scope and super-admin identity.
+    ///
     /// `GET /api/v1/admin/webhooks/dlq`
     ///
     /// Required scopes: `admin`.
@@ -459,6 +552,17 @@ impl AdminApi {
 
     /// Admin: set landing-page featured-agent config
     ///
+    /// Writes the landing-page configuration. An omitted field means no change and is read back
+    /// from the stored record — it used to mean "reset to default", and one partial PUT erased the
+    /// featured agent, nine partners and the locale lock in a single write — while an explicit
+    /// `null` still clears `public_agent_id` and `partners`. Text values and partner names and
+    /// taglines are sanitised at write time and empty strings are dropped rather than stored as
+    /// blanks. Passing `expected_version` makes the write a compare-and-set that answers 409 when
+    /// another admin saved first; omitting it keeps last-write-wins. A save that actually carries
+    /// identity — an agent, a text override or partners — marks the `platform_identity` setup step
+    /// complete. Writes an `admin.config_updated` audit entry and returns the new version.
+    /// Super-admin only, like every `/admin/config` route.
+    ///
     /// `PUT /api/v1/admin/config/landing`
     ///
     /// Required scopes: `admin`.
@@ -476,6 +580,14 @@ impl AdminApi {
     }
 
     /// Admin: replace curated model catalog
+    ///
+    /// Replaces the curated model catalogue with the body's `models` array. A duplicate model id is
+    /// refused 422, because the downstream lookup map would drop it silently and leave a phantom
+    /// row. Passing `expected_version` makes the write a compare-and-set that answers 409 when
+    /// another admin saved first; omitting it keeps last-write-wins for scripts. On success the
+    /// runtime's catalogue cache is push-invalidated so the next run sees the new capabilities
+    /// rather than waiting out the TTL, an `admin.config_updated` audit entry is written, and the
+    /// new version is returned. Super-admin only, like every `/admin/config` route.
     ///
     /// `PUT /api/v1/admin/config/model-catalog`
     ///
@@ -517,6 +629,16 @@ impl AdminApi {
 
     /// Admin: set default voice config
     ///
+    /// Sets the platform's default STT and TTS provider, model and voice, replacing the stored
+    /// record whole. Both providers must be registered or the call is refused. After the KV write
+    /// the values are mirrored into the live `container.config.runtime` — including the TTS
+    /// endpoint resolved from the provider record and the TTS price resolved from voice pricing —
+    /// because the synthesis tool reads that in-memory snapshot and would otherwise keep using the
+    /// previous model until the next restart; the mirror is best-effort and its failure does not
+    /// fail the save. This endpoint is the only way to set these settings: `PUT
+    /// /admin/config/runtime` refuses them. Writes an `admin.config_updated` audit entry.
+    /// Super-admin only, like every `/admin/config` route.
+    ///
     /// `PUT /api/v1/admin/config/voice`
     ///
     /// Required scopes: `admin`.
@@ -535,6 +657,11 @@ impl AdminApi {
 
     /// Admin: set per-model voice presets
     ///
+    /// Replaces the whole voice-preset map with the body; a model id the body omits loses its
+    /// presets rather than keeping them. Writes an `admin.config_updated` audit entry naming the
+    /// model ids and responds with the same view the GET returns. Super-admin only, like every
+    /// `/admin/config` route.
+    ///
     /// `PUT /api/v1/admin/config/voice-presets`
     ///
     /// Required scopes: `admin`.
@@ -552,6 +679,16 @@ impl AdminApi {
     }
 
     /// Replay a dead-lettered webhook event
+    ///
+    /// Re-applies one dead-lettered Stripe event through the billing manager. The whole replay runs
+    /// under a per-event lock and the DLQ row is read inside it, so two concurrent replays cannot
+    /// both apply the same mutation. On success the event claims the same dedup key the live
+    /// webhook path uses, with its ten-day TTL, so a later Stripe re-delivery is not processed a
+    /// second time, and the DLQ row is deleted. An event the manager still cannot handle answers
+    /// 422 and a thrown handler 500, both updating the DLQ row's error and timestamp rather than
+    /// removing it; an unknown event id is 404 and a deployment with no billing configured is 501.
+    /// Every outcome writes a `billing.event` audit entry. Requires the `admin` scope and
+    /// super-admin identity.
     ///
     /// `POST /api/v1/admin/webhooks/dlq/{eventId}/replay`
     ///
@@ -592,6 +729,15 @@ impl AdminApi {
 
     /// Create custom provider
     ///
+    /// Registers a custom provider: `id`, `name`, `default_endpoint` and optionally `canonical`,
+    /// `requires_api_key` and `default_capabilities`. When the provider requires a key, `api_key`
+    /// must be supplied in the same call — this platform has no per-tenant BYO tier, so a provider
+    /// registered without one would 404 on its first model call — and the key is stored on the same
+    /// path `PUT /admin/llm-defaults/{providerId}` writes. A duplicate id or a reserved id such as
+    /// `openai_compat` is 400. On success the model-catalogue and provider model caches are
+    /// invalidated, a `provider.created` audit entry is written, and the answer is 201. Super-admin
+    /// only.
+    ///
     /// `POST /api/v1/admin/providers`
     ///
     /// Required scopes: `admin`.
@@ -610,6 +756,13 @@ impl AdminApi {
 
     /// Create new tenant
     ///
+    /// Creates a tenant with a generated UUIDv7 id, writing the canonical `tenant` record and its
+    /// registry entry and registering it with the cron scheduler. `slug` defaults to a slugified
+    /// `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
+    /// defaults when omitted. Deliberately writes only the canonical record and not the
+    /// `tenant_meta` overlay, because suspend and reactivate act on the canonical row alone.
+    /// Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
+    ///
     /// `POST /api/v1/admin/tenants`
     ///
     /// Required scopes: `admin`.
@@ -627,6 +780,11 @@ impl AdminApi {
     }
 
     /// Delete a post
+    ///
+    /// Deletes one blog post and the slug index row that resolves it publicly. 404 when the post id
+    /// does not exist — the record is loaded before the method is dispatched — and 405 for a verb
+    /// other than PATCH or DELETE on this path. The delete is unconditional and leaves nothing to
+    /// restore from. Requires the `admin` scope and super-admin identity.
     ///
     /// `DELETE /api/v1/admin/blog/posts/{postId}`
     ///
@@ -740,6 +898,29 @@ impl AdminApi {
             .await
     }
 
+    /// Stream the KV store as NDJSON
+    ///
+    /// Super-admin only. Streams one JSON object per line — `{key, value}` — and ends with a single
+    /// `{_meta: {...}}` line. Sensitive rows are WITHHELD unless `include_sensitive=1`, and the
+    /// footer's `withheld_sensitive_keys` says how many, so an operator sees that something was
+    /// held back rather than concluding the store is smaller than it is.
+    ///
+    /// `GET /api/v1/admin/data-explorer/export`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn export_data_explorer(&self, params: &ExportDataExplorerParams) -> Result<String> {
+        self.client
+            .request_text(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/data-explorer/export".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Run the authoring agent now and create a post
     ///
     /// Generates immediately, ignoring `frequency` — this is the operator's manual trigger, not a
@@ -815,6 +996,11 @@ impl AdminApi {
 
     /// List platform API keys (masked)
     ///
+    /// Lists the providers that have a platform-level API key configured, each with a masked
+    /// `key_hint` and `configured: true` — a provider with no key is simply absent. The response
+    /// also carries the platform's default and fallback provider, model and endpoint. Keys are
+    /// never returned in full. Super-admin only.
+    ///
     /// `GET /api/v1/admin/llm-defaults`
     ///
     /// Required scopes: `admin`.
@@ -832,6 +1018,11 @@ impl AdminApi {
     }
 
     /// Get pricing configuration
+    ///
+    /// Returns the effective billing pricing block — the stored KV override when one exists,
+    /// otherwise the boot config — with a `source` field saying which of the two answered. Values
+    /// are served from a short in-process cache. Super-admin only, like every `/admin/config`
+    /// route.
     ///
     /// `GET /api/v1/admin/config/pricing`
     ///
@@ -851,6 +1042,11 @@ impl AdminApi {
 
     /// Get single provider
     ///
+    /// Returns one registered provider with its admin settings, plus a catalogue status best-effort
+    /// read: how many of its models the agent-facing catalogue currently carries, their ids, and
+    /// the last sync timestamp when one exists. A KV failure on that status read degrades the field
+    /// rather than failing the request. 404 for an unknown provider id. Super-admin only.
+    ///
     /// `GET /api/v1/admin/providers/{providerId}`
     ///
     /// Required scopes: `admin`.
@@ -868,6 +1064,13 @@ impl AdminApi {
     }
 
     /// Aggregate usage stats
+    ///
+    /// Aggregates usage across every tenant in the platform registry for one billing period:
+    /// tokens, runs, tool calls, cost and agent count, both totalled and broken down per tenant.
+    /// `period` is a `YYYY-MM` string and defaults to the current month. The response also carries
+    /// the scheduler's own capacity view — the concurrency ceiling it enforces now, the active run
+    /// count, and the persisted high-water mark with the ceiling that applied when that peak was
+    /// recorded. Super-admin only.
     ///
     /// `GET /api/v1/admin/stats`
     ///
@@ -887,6 +1090,14 @@ impl AdminApi {
 
     /// Trace delegation chain
     ///
+    /// Follows one delegation chain by scanning the caller's tenant for runs carrying that
+    /// `trace_id`, and returns each run's id, agent, status, parent run, timestamps, duration and a
+    /// truncated error. The scan pages the whole run prefix rather than reading a fixed window,
+    /// because runs list oldest-first and a windowed read answered an empty trace for anything
+    /// recent; a `truncated` flag says when the 50,000-row scan cap bound first, so an empty result
+    /// can be told apart from a capped one. The tenant comes from the auth context. Super-admin
+    /// only.
+    ///
     /// `GET /api/v1/admin/trace/{traceId}`
     ///
     /// Required scopes: `admin`.
@@ -904,6 +1115,11 @@ impl AdminApi {
     }
 
     /// Get audit entries for a specific target
+    ///
+    /// Returns every audit entry recorded against one target object. The target type comes from the
+    /// `type` query parameter and defaults to the literal `unknown`, so a caller that omits it
+    /// generally matches nothing rather than every type. Read-only; requires the `admin` role and
+    /// super-admin identity.
     ///
     /// `GET /api/v1/admin/audit/{targetId}`
     ///
@@ -923,6 +1139,11 @@ impl AdminApi {
 
     /// EU AI Act conformity report
     ///
+    /// Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
+    /// from the auth context rather than a parameter, and returns it as `sections` plus a rendered
+    /// `markdown` string. `?format=markdown` returns the markdown alone as `text/markdown` instead
+    /// of JSON. The report is computed on the fly; nothing is written. Super-admin only.
+    ///
     /// `GET /api/v1/admin/conformity-report`
     ///
     /// Required scopes: `admin`.
@@ -940,6 +1161,14 @@ impl AdminApi {
     }
 
     /// Immutable audit log
+    ///
+    /// Queries the append-only, HMAC-chained audit log of agent-lifecycle and security events.
+    /// `tenant_id` is required and is 400 when absent; `limit` defaults to 100 and is capped at
+    /// 500, and a malformed value falls back to the default rather than returning an empty page.
+    /// `event_type` and `actor_agent_id` narrow the query. Reading another tenant's trail is itself
+    /// recorded: a cross-tenant query writes an `audit.cross_tenant_read` entry naming the actor,
+    /// the filters and the result count, while a query against the actor's own tenant does not.
+    /// Super-admin only.
     ///
     /// `GET /api/v1/admin/immutable-audit`
     ///
@@ -1007,6 +1236,10 @@ impl AdminApi {
 
     /// Get tenant details
     ///
+    /// Returns one tenant record — the `tenant_meta` overlay when present, otherwise the canonical
+    /// `tenant` row — with the live platform model defaults projected in and `primary_email` from
+    /// the owner index. 404 when neither record exists. Super-admin only.
+    ///
     /// `GET /api/v1/admin/tenants/{tenantId}`
     ///
     /// Required scopes: `admin`.
@@ -1051,6 +1284,10 @@ impl AdminApi {
 
     /// Get tenant usage metrics
     ///
+    /// Returns one tenant's tracked usage for a billing period — tokens, runs, tool calls and cost.
+    /// `period` is a `YYYY-MM` string and defaults to the current month. A tenant with no recorded
+    /// usage answers 200 with zeroed counters rather than 404. Super-admin only.
+    ///
     /// `GET /api/v1/admin/tenants/{tenantId}/usage`
     ///
     /// Required scopes: `admin`.
@@ -1067,7 +1304,47 @@ impl AdminApi {
             .await
     }
 
+    /// Restore an NDJSON dump into the KV store
+    ///
+    /// Super-admin only. Accepts the export's own format, either as a raw body or as
+    /// `multipart/form-data` with a `file` part. Rows the matching READ path refuses are refused
+    /// here too and counted in `refused_sensitive` — an import that wrote any key at all could
+    /// forge an `api_key_hash` row and mint a credential for any tenant from a pasted file. `_meta`
+    /// lines and rows without an array `key` are skipped. The response is 200 even when nothing was
+    /// imported: read `imported`, `skipped` and `errors`, never the status alone.
+    ///
+    /// `POST /api/v1/admin/data-explorer/import`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn import_data_explorer(&self, body: &models::ImportDataExplorerRequest) -> Result<models::ImportDataExplorerResponse> {
+        self.client
+            .request_multipart(
+                Request {
+                    method: Method::POST,
+                    path: "/api/v1/admin/data-explorer/import".to_string(),
+                    query: NO_QUERY,
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                || {
+                    let mut form = reqwest::multipart::Form::new();
+                    form = form.part("file", body.file.clone().into_part()?);
+                    Ok(form)
+                },
+            )
+            .await
+    }
+
     /// Internal domain verification
+    ///
+    /// Answers Caddy's on-demand TLS question — may a certificate be issued for this SNI. It is
+    /// dispatched before the authentication layer and is instead gated by a shared secret passed as
+    /// `?secret=` and compared in constant time: without `UARP_CADDY_INTERNAL_SECRET` configured
+    /// the endpoint answers 501 and names the missing switch, and a wrong or absent secret is 403.
+    /// A missing `domain` is 400. A bare IP, a known infrastructure host, a domain absent from the
+    /// public domain map, or one whose tenant's custom domain is not `verified` all answer 404; a
+    /// verified mapping answers `{"ok": true}`. Read-only.
     ///
     /// `GET /api/v1/internal/verify-domain`
     pub async fn internal_verify_domain(&self) -> Result<models::InternalVerifyDomainResponse> {
@@ -1163,6 +1440,11 @@ impl AdminApi {
 
     /// List providers with admin settings
     ///
+    /// Lists every provider registered on the platform with its admin-side settings: name,
+    /// canonical adapter family, default endpoint, whether it is enabled, its `model_allowlist`,
+    /// and whether it requires an API key. Every provider is an admin-registered record — there are
+    /// no built-ins — so a fresh platform answers with an empty list. Super-admin only.
+    ///
     /// `GET /api/v1/admin/providers`
     ///
     /// Required scopes: `admin`.
@@ -1251,6 +1533,11 @@ impl AdminApi {
 
     /// List all tenants (super admin only)
     ///
+    /// Lists every tenant in the platform registry, up to 5000, each record enriched with the owner
+    /// address from the `tenant_primary_email` index. A record is read from the `tenant_meta`
+    /// overlay first and falls back to the canonical `tenant` row. When the registry is empty the
+    /// caller's own tenant is returned so the console is never blank. Super-admin only.
+    ///
     /// `GET /api/v1/admin/tenants`
     ///
     /// Required scopes: `admin`.
@@ -1268,6 +1555,14 @@ impl AdminApi {
     }
 
     /// Purge tenant
+    ///
+    /// Irreversibly deletes every KV row belonging to the tenant; there is no inverse anywhere in
+    /// the platform. The body must carry `confirm` equal to the tenant's id, name or slug or the
+    /// call is refused 422 naming the tenant, and `{"dry_run": true}` instead counts what would be
+    /// deleted without touching anything. A reserved platform namespace — any `__…__` id — is
+    /// refused 403, the shared destructive guard refuses a tenant under legal hold or in a
+    /// suspended or deleted status, and an admin who has enrolled MFA must present a fresh
+    /// challenge first. Super-admin only.
     ///
     /// `DELETE /api/v1/admin/tenants/{tenantId}`
     ///
@@ -1287,6 +1582,12 @@ impl AdminApi {
 
     /// Query admin audit log
     ///
+    /// Queries the operator audit trail `AuditLogger` writes. `limit` defaults to 50 and is clamped
+    /// to 1..500, `action` filters by audit action in the query, and `actor_id` filters the
+    /// returned page by `actor_key_id` afterwards. The path is matched exactly so that an unknown
+    /// `/admin/*` path 404s instead of falling through to this feed. Requires the `admin` role and
+    /// super-admin identity, as every `/admin` route does.
+    ///
     /// `GET /api/v1/admin/audit`
     ///
     /// Required scopes: `admin`.
@@ -1304,6 +1605,10 @@ impl AdminApi {
     }
 
     /// Reactivate a suspended tenant
+    ///
+    /// Clears the suspension on the tenant record and re-registers the tenant with the cron
+    /// scheduler. Takes no body and is idempotent for an already-active tenant; 404 when no tenant
+    /// record exists. Writes a `tenant.updated` audit entry. Super-admin only.
     ///
     /// `PUT /api/v1/admin/tenants/{tenantId}/reactivate`
     ///
@@ -1356,6 +1661,13 @@ impl AdminApi {
 
     /// Set platform API key
     ///
+    /// Stores the platform-level API key for one provider — the key the runtime resolves for every
+    /// tenant that has none of its own — writing it to KV and into the in-memory key pool so the
+    /// next request picks it up without a restart. `api_key` must be 10 to 500 characters; anything
+    /// outside that is 400. Because rotating the key changes which account answers `/v1/models`,
+    /// the cached provider model metadata is dropped. Writes a `platform.llm_defaults.set` audit
+    /// entry naming the provider but never the key. Super-admin only.
+    ///
     /// `PUT /api/v1/admin/llm-defaults/{providerId}`
     ///
     /// Required scopes: `admin`.
@@ -1373,6 +1685,15 @@ impl AdminApi {
     }
 
     /// Set default model config
+    ///
+    /// Sets the platform's default and fallback provider, model and endpoint. Each named provider
+    /// must already be registered or the call is 400, and when the provider declares a model
+    /// allowlist the chosen model must be in it; an endpoint must be a public absolute URL, so
+    /// loopback, private-range and cloud-metadata hosts are refused because
+    /// `/providers/platform-defaults` republishes these values unauthenticated. An omitted endpoint
+    /// is backfilled from the provider's registered endpoint. Setting both a default provider and
+    /// model marks the `llm_provider` step of the setup wizard complete, and a
+    /// `platform.llm_defaults.set` audit entry is written. Super-admin only.
     ///
     /// `PUT /api/v1/admin/llm-defaults/model-config`
     ///
@@ -1422,6 +1743,12 @@ impl AdminApi {
     }
 
     /// Suspend a tenant
+    ///
+    /// Marks the tenant suspended, unregisters it from the cron scheduler so its schedules stop
+    /// firing, and deletes its custom-domain row from the `__public__` domain index so the public
+    /// site stops resolving. The optional body field `reason` is stored and recorded in the
+    /// `tenant.suspended` audit entry; an absent or unparseable body defaults it. 404 when the
+    /// tenant record does not exist. Super-admin only.
     ///
     /// `PUT /api/v1/admin/tenants/{tenantId}/suspend`
     ///
@@ -1524,6 +1851,11 @@ impl AdminApi {
 
     /// Update pricing configuration
     ///
+    /// Replaces the stored pricing override with the current effective pricing merged field by
+    /// field with the body, so a rate the body omits keeps its current value. The write refreshes
+    /// the in-process cache and fans out to `ConfigStore` subscribers; a fan-out failure is logged
+    /// and does not undo the KV write. Super-admin only, like every `/admin/config` route.
+    ///
     /// `PUT /api/v1/admin/config/pricing`
     ///
     /// Required scopes: `admin`.
@@ -1542,6 +1874,15 @@ impl AdminApi {
 
     /// Update provider
     ///
+    /// Updates one provider's admin settings: `enabled` and `model_allowlist` are merged into the
+    /// provider-settings row, while `requires_api_key` and `canonical` are written onto the
+    /// provider record itself and invalidate the model-catalogue cache. Supplying `api_key` rotates
+    /// the platform key for this provider and refreshes the in-memory pool; there is no way to
+    /// clear a key here — that is `DELETE /admin/llm-defaults/{providerId}` — so an omitted
+    /// `api_key` never means "remove it". 404 for an unknown provider. Writes a `provider.updated`
+    /// audit entry, and a separate `platform.llm_defaults.set` entry when a key was rotated.
+    /// Super-admin only.
+    ///
     /// `PATCH /api/v1/admin/providers/{providerId}`
     ///
     /// Required scopes: `admin`.
@@ -1559,6 +1900,13 @@ impl AdminApi {
     }
 
     /// Update tenant settings
+    ///
+    /// Updates the narrow slice of tenant settings an operator may change directly:
+    /// `egress_allowlist`, `max_retention_days` and the `legal_hold` flag. An omitted field is left
+    /// as it was. The canonical `tenant` record is updated through a compare-and-set so a
+    /// concurrent suspend or plan sync cannot clobber it from a stale snapshot, and the
+    /// `tenant_meta` overlay is kept in step only when it already exists. 404 when neither record
+    /// exists. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin only.
     ///
     /// `PATCH /api/v1/admin/tenants/{tenantId}/settings`
     ///
