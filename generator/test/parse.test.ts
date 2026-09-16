@@ -241,6 +241,22 @@ test('marks mutating /api/v1 requests idempotent', () => {
   assert.equal(operation(spec, 'listAgents').idempotent, false);
 });
 
+// -------------------------------------------------------------------- scopes
+
+test('reads scopes from x-scopes on the operation and the scheme, and still from security', () => {
+  // CTR-10 (2026-09-10): the served document names an operation's scopes in
+  // `x-scopes` and leaves `security: [{bearerAuth: []}]`, because an `http`
+  // scheme carries no scope strings under the specification. A document that
+  // still puts them under `security` reads the same as before.
+  const spec = fixture('scopes');
+  assert.deepEqual(operation(spec, 'listAgents').scopes, ['agents:read']);
+  assert.deepEqual(operation(spec, 'createAgent').scopes, ['agents:write']);
+  assert.deepEqual(operation(spec, 'health').scopes, []);
+  // The catalogue is the scheme's `x-scopes` keys — a scope no operation
+  // requires is still a scope a key can carry.
+  assert.deepEqual(spec.scopes, ['agents:read', 'agents:write', 'billing:read']);
+});
+
 // ----------------------------------------------------------------- streaming
 
 test('recognises event streams and leaves transport headers alone', () => {
@@ -478,7 +494,10 @@ test('parses the production document into the expected shape', () => {
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
   // not a count change — the old spelling stays a server-side alias).
-  assert.equal(spec.scopes.length, 32);
+  // 32 -> 34 on 2026-09-16: the catalogue is read from the scheme's
+  // `x-scopes` (CTR-10) and it names `drawing:read`/`drawing:write`, which the
+  // drawings operations already required under `x-scopes`.
+  assert.equal(spec.scopes.length, 34);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.
   assert.equal(ops.filter((o) => o.sse).length, 14);
