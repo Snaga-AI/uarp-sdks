@@ -147,6 +147,31 @@ git push origin main --tags
 ```
 
 The tag starts the workflow. Two steps do not finish on their own: Alire, where
-the tarball from the run goes into an index pull request, and the Swift mirror,
-which is skipped with a warning while `SWIFT_MIRROR_TOKEN` is unset — a release
-that ignores that warning leaves Swift consumers on the previous version.
+the tarball from the run goes into an index pull request, and the Swift mirror.
+
+The mirror fails in two different ways and **neither is a warning** — both
+turn the release run red. An earlier version of this file said a missing
+token warns and skips; that stopped being true when the job was changed to
+`exit 1`, because warn-and-skip had made it green while publishing nothing
+through 0.3.0, 0.4.0, 0.5.0 and 0.5.1. The comment in `release.yml` records
+that history.
+
+- **Unset**: the job stops immediately with `::error::SWIFT_MIRROR_TOKEN is
+  not set` before touching the mirror.
+- **Set but expired**: the package assembles (`swift-mirror: assembled in
+  mirror`) and the push dies with `Authentication failed`.
+
+What the red does *not* tell you is how much of the release went out. This
+job only gates `github-release` indirectly — it is not in its `needs` — so
+npm, crates.io, Maven Central, SwiftPM and Alire can all publish and the
+GitHub release can be created while this one job fails. A red release run
+therefore does not mean "the release failed"; read the jobs.
+
+Neither mode can be undone by fixing the token afterwards, because the other
+registries are already out. Check the mirror **before** tagging.
+
+Measured 2026-09-16: the token is expired, `Snaga-AI/uarp-swift` was last
+pushed 2026-08-21, and its newest tag is 0.5.13 against 0.6.0 everywhere
+else — 0.5.15, 0.5.21, 0.5.24 and 0.6.0 never reached SwiftPM consumers.
+Rotate the secret and re-run the `SwiftPM mirror` job on its own; do not
+re-run a release whose other jobs have published.
