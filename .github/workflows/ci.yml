@@ -42,6 +42,16 @@ jobs:
       - name: Is the vendored spec still current?
         run: ./scripts/check-spec-freshness.sh
 
+      # Same reasoning, different question: the document can be current and
+      # still contradict itself. `POST /governance/goals` described seven
+      # required fields beside a schema holding one, so the generated client
+      # took 422 on every call while its own doc comment named all seven.
+      # Reports here because the defect is upstream's to fix; --strict at
+      # release, where shipping a type that cannot form a valid request is
+      # not a thing to do knowingly.
+      - name: Does the prose agree with the request schemas?
+        run: node scripts/check-prose-schema.ts
+
   typescript:
     name: TypeScript
     runs-on: ubuntu-latest

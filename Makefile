@@ -6,7 +6,7 @@
 #   make test-rust           just one
 
 .DEFAULT_GOAL := help
-.PHONY: help generate stats check ts-deps check-docs test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
+.PHONY: help generate stats check ts-deps check-docs check-prose-schema test contract smoke smoke-dry smoke-live update-golden test-generator test-typescript test-rust test-swift test-kotlin test-ada clean
 
 T ?=
 
@@ -27,6 +27,9 @@ ts-deps: ## Install the TypeScript SDK's dev dependencies (check-docs needs tsc)
 
 check-docs: ts-deps ## Compile the code samples in the documentation
 	@node scripts/check-docs.ts
+
+check-prose-schema: ## Does the prose agree with the request schemas?
+	@node scripts/check-prose-schema.ts
 
 test: check-docs test-generator test-typescript test-rust test-swift test-kotlin test-ada ## Build and test everything
 

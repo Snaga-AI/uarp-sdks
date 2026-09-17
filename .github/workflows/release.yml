@@ -45,6 +45,13 @@ jobs:
       - name: The vendored spec must be what the platform serves
         run: ./scripts/check-spec-freshness.sh --strict
 
+      # A document current AND self-consistent. 0.6.0 shipped
+      # CreateGoalRequest with one field beside a doc comment listing seven
+      # and saying "422" — the two halves disagreed in the same generated
+      # file, and nothing read them together.
+      - name: The prose and the request schemas must agree
+        run: node scripts/check-prose-schema.ts --strict
+
   npm:
     name: npm
     needs: verify
