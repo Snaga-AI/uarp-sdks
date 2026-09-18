@@ -291,7 +291,7 @@ impl TenantsApi {
     /// `PATCH /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    pub async fn patch(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
+    pub async fn patch(&self, body: &models::PatchTenantRequest) -> Result<models::Tenant> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

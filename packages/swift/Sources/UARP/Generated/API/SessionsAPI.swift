@@ -403,11 +403,9 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
     /// Required scopes: `sessions:read`.
-    public func getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = nil, options: RequestOptions = .init()) async throws -> JSONValue {
+    public func getSessionRunFeedback(sessionId: String, runId: String, messageId: String, options: RequestOptions = .init()) async throws -> JSONValue {
         var query: [URLQueryItem] = []
-        if let messageId {
-            query.append(URLQueryItem(name: "message_id", value: messageId))
-        }
+        query.append(URLQueryItem(name: "message_id", value: messageId))
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/runs/\(encodePathSegment(runId))/feedback",

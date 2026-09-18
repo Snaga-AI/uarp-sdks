@@ -226,7 +226,7 @@ public struct TenantsAPI: Sendable {
     /// `PATCH /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
-    public func patch(body: JSONObject, options: RequestOptions = .init()) async throws -> Tenant {
+    public func patch(body: PatchTenantRequest, options: RequestOptions = .init()) async throws -> Tenant {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/tenants/me",

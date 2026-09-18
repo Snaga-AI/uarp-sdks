@@ -2264,7 +2264,7 @@ export interface AppleNativeAuthResponse {
 
 export interface ApplyProgramRequest {
   session_id: string;
-  start_date?: string;
+  start_date: string;
   agent_id?: string;
 }
 
@@ -2507,8 +2507,25 @@ export interface BridgeConnection {
 }
 
 export interface BridgeDelegateRequest {
+  /**
+   * The bridge agent to hand the task to.
+   */
   agent_id: string;
-  context: JsonObject;
+  /**
+   * The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+   * This block used to omit it entirely while requiring `context`, which the handler never
+   * checks — so a body written from the document was refused for a field it was told to send,
+   * and accepted without the one that is actually needed. Measured 2026-09-18.
+   */
+  message: string;
+  /**
+   * Optional.
+   */
+  priority?: string;
+  /**
+   * Optional. Rendered into the message ahead of it when present.
+   */
+  context?: JsonObject;
 }
 
 export interface BridgeDelegateResponse {
@@ -4413,12 +4430,15 @@ export interface DesignRequest {
 }
 
 /**
- * Body for `POST /api/v1/governance/builder/requests`.
+ * Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+ * requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+ * accepted from the body — it comes from the authenticated caller. The block carried no
+ * `required` at all until 2026-09-18.
  */
 export interface DesignRequestCreate {
   submitted_by?: string;
-  agent_name?: string;
-  agent_description?: string;
+  agent_name: string;
+  agent_description: string;
   agent_role?: string;
   tools?: string[];
   parent_agent_id?: string | null;
@@ -6063,7 +6083,7 @@ export interface GetPublicStateResponse {
   published_at?: string;
   short_description: string;
   slug: string;
-  social_links?: JsonObject;
+  social_links?: TenantSocialLinks;
   stats?: JsonObject;
   tags: string[];
   tenant_id: string;
@@ -9258,6 +9278,35 @@ export interface PatchMeResponseUser {
   avatar_url: string | null;
 }
 
+/**
+ * A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED
+ * wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+ * one platform and nothing else. Send every link you want to keep, `custom` included.
+ *
+ * `social_links` values are filtered, not rejected: a url that does not match
+ * `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+ * the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT
+ * to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+ * working-looking link that goes somewhere else is worse than a missing one, and a client
+ * checking only whether the key came back cannot see it.
+ *
+ * Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+ * against what came back — values and lengths, not just which keys are present. No second GET
+ * is needed. See `Tenant.social_links` for the field-by-field shape.
+ *
+ * Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+ * left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+ * SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+ * JsonObject)` that could not describe what to send.
+ */
+export interface PatchTenantRequest {
+  social_links?: TenantSocialLinks;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
 export interface PauseCompanyResponse {
   status?: string;
 }
@@ -10057,7 +10106,7 @@ export interface PublicState {
   published_at?: string;
   short_description: string;
   slug: string;
-  social_links?: JsonObject;
+  social_links?: TenantSocialLinks;
   stats?: JsonObject;
   tags: string[];
   tenant_id: string;
@@ -10089,7 +10138,7 @@ export interface PublicTenant {
   agents_count: number;
   agents: PublicTenantAgent[];
   stats: PublicTenantStats;
-  social_links?: JsonObject;
+  social_links?: TenantSocialLinks;
   branding?: JsonObject;
   published_at?: string;
 }
@@ -12212,7 +12261,11 @@ export interface SubmitFeedbackResponse {
 }
 
 export interface SubscribeToListingRequest {
-  stripe_subscription_id?: string;
+  /**
+   * Required: the handler answers 403 without one. The block carried no `required` until
+   * 2026-09-18.
+   */
+  stripe_subscription_id: string;
 }
 
 export interface SuspendAgentRequest {
@@ -12603,24 +12656,6 @@ export interface Tenant {
   logo_url?: string;
   custom_domain?: TenantCustomDomain;
   branding?: TenantBranding;
-  /**
-   * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-   * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-   * — send every link you want to keep, `custom` included.
-   *
-   * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-   * dropped and the request still answers 200. Nothing is hidden by this — the response body
-   * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-   * is not needed to see what survived. Compare what you sent against what came back; a key
-   * missing from the answer was refused.
-   *
-   * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-   * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
-   * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-   * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-   * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-   * measured the filtering and could not find it described anywhere.
-   */
   social_links?: TenantSocialLinks;
   marketplace_listing?: JsonObject;
   public_agent_id?: string;

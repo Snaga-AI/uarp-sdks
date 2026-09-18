@@ -18,10 +18,13 @@ public struct GDPRAPI: Sendable {
     /// lesser role **403** — and writes a `data_subject.access` audit entry.
     ///
     /// `GET /api/v1/data-subject/access`
-    public func dataSubjectAccess(options: RequestOptions = .init()) async throws -> DataSubjectAccessReport {
+    public func dataSubjectAccess(subjectId: String, options: RequestOptions = .init()) async throws -> DataSubjectAccessReport {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "subject_id", value: subjectId))
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/data-subject/access",
+            query: query,
             options: options
         ))
     }

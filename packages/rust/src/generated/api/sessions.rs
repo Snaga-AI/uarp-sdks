@@ -34,8 +34,9 @@ pub struct ExportSessionParams {
 /// Query and header parameters for `getSessionRunFeedback`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetSessionRunFeedbackParams {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub message_id: Option<String>,
+    /// Required - the handler answers 400 without it. Declared without `required` until 2026-09-18,
+    /// while the DELETE on the same path had it right: the two halves of one feature disagreed.
+    pub message_id: String,
 }
 
 /// Query and header parameters for `listSessions`.

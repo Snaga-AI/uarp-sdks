@@ -4344,7 +4344,7 @@ public data class ApplyProgramRequest(
     @SerialName("session_id")
     public val sessionId: String,
     @SerialName("start_date")
-    public val startDate: String? = null,
+    public val startDate: String,
     @SerialName("agent_id")
     public val agentId: String? = null,
 )
@@ -4842,9 +4842,26 @@ public data class BridgeConnection(
  */
 @Serializable
 public data class BridgeDelegateRequest(
+    /**
+     * The bridge agent to hand the task to.
+     */
     @SerialName("agent_id")
     public val agentId: String,
-    public val context: JsonObject,
+    /**
+     * The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+     * This block used to omit it entirely while requiring `context`, which the handler never
+     * checks — so a body written from the document was refused for a field it was told to send,
+     * and accepted without the one that is actually needed. Measured 2026-09-18.
+     */
+    public val message: String,
+    /**
+     * Optional.
+     */
+    public val priority: String? = null,
+    /**
+     * Optional. Rendered into the message ahead of it when present.
+     */
+    public val context: JsonObject? = null,
 )
 
 /**
@@ -8306,16 +8323,19 @@ public data class DesignRequest(
 )
 
 /**
- * Body for `POST /api/v1/governance/builder/requests`.
+ * Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+ * requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+ * accepted from the body — it comes from the authenticated caller. The block carried no
+ * `required` at all until 2026-09-18.
  */
 @Serializable
 public data class DesignRequestCreate(
     @SerialName("submitted_by")
     public val submittedBy: String? = null,
     @SerialName("agent_name")
-    public val agentName: String? = null,
+    public val agentName: String,
     @SerialName("agent_description")
-    public val agentDescription: String? = null,
+    public val agentDescription: String,
     @SerialName("agent_role")
     public val agentRole: String? = null,
     public val tools: List<String>? = null,
@@ -11549,7 +11569,7 @@ public data class GetPublicStateResponse(
     public val shortDescription: String,
     public val slug: String,
     @SerialName("social_links")
-    public val socialLinks: JsonObject? = null,
+    public val socialLinks: TenantSocialLinks? = null,
     public val stats: JsonObject? = null,
     public val tags: List<String>,
     @SerialName("tenant_id")
@@ -17785,6 +17805,74 @@ public data class PatchMeResponseUser(
 )
 
 /**
+ * A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED
+ * wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+ * one platform and nothing else. Send every link you want to keep, `custom` included.
+ *
+ * `social_links` values are filtered, not rejected: a url that does not match
+ * `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+ * the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT
+ * to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+ * working-looking link that goes somewhere else is worse than a missing one, and a client
+ * checking only whether the key came back cannot see it.
+ *
+ * Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+ * against what came back — values and lengths, not just which keys are present. No second GET
+ * is needed. See `Tenant.social_links` for the field-by-field shape.
+ *
+ * Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+ * left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+ * SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+ * JsonObject)` that could not describe what to send.
+ */
+@Serializable(with = PatchTenantRequestSerializer::class)
+public data class PatchTenantRequest(
+    @SerialName("social_links")
+    public val socialLinks: TenantSocialLinks? = null,
+    /**
+     * Properties the server returned that this SDK does not model.
+     */
+    public val additionalProperties: JsonObject = JsonObject(emptyMap()),
+)
+
+/**
+ * Serializer for \[PatchTenantRequest\] that preserves unmodelled properties.
+ */
+public object PatchTenantRequestSerializer : KSerializer<PatchTenantRequest> {
+    @Serializable
+    @SerialName("PatchTenantRequest")
+    private data class Surrogate(
+        @SerialName("social_links")
+        val socialLinks: TenantSocialLinks? = null,
+    )
+
+    private val declaredNames: Set<String> = setOf("social_links")
+
+    override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
+
+    override fun deserialize(decoder: Decoder): PatchTenantRequest {
+        val input = decoder as? JsonDecoder
+            ?: throw SerializationException("PatchTenantRequest can only be read from JSON")
+        val node = input.decodeJsonElement().jsonObject
+        val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
+        return PatchTenantRequest(
+            socialLinks = declared.socialLinks,
+            additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
+        )
+    }
+
+    override fun serialize(encoder: Encoder, value: PatchTenantRequest) {
+        val output = encoder as? JsonEncoder
+            ?: throw SerializationException("PatchTenantRequest can only be written as JSON")
+        val declared = Surrogate(
+            socialLinks = value.socialLinks,
+        )
+        val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
+        output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
+    }
+}
+
+/**
  * `PauseCompanyResponse` model.
  */
 @Serializable
@@ -19082,7 +19170,7 @@ public data class PublicState(
     public val shortDescription: String,
     public val slug: String,
     @SerialName("social_links")
-    public val socialLinks: JsonObject? = null,
+    public val socialLinks: TenantSocialLinks? = null,
     public val stats: JsonObject? = null,
     public val tags: List<String>,
     @SerialName("tenant_id")
@@ -19125,7 +19213,7 @@ public data class PublicTenant(
     public val agents: List<PublicTenantAgent>,
     public val stats: PublicTenantStats,
     @SerialName("social_links")
-    public val socialLinks: JsonObject? = null,
+    public val socialLinks: TenantSocialLinks? = null,
     public val branding: JsonObject? = null,
     @SerialName("published_at")
     public val publishedAt: String? = null,
@@ -23010,8 +23098,12 @@ public data class SubmitFeedbackResponse(
  */
 @Serializable
 public data class SubscribeToListingRequest(
+    /**
+     * Required: the handler answers 403 without one. The block carried no `required` until
+     * 2026-09-18.
+     */
     @SerialName("stripe_subscription_id")
-    public val stripeSubscriptionId: String? = null,
+    public val stripeSubscriptionId: String,
 )
 
 /**
@@ -23896,24 +23988,6 @@ public data class Tenant(
     @SerialName("custom_domain")
     public val customDomain: TenantCustomDomain? = null,
     public val branding: TenantBranding? = null,
-    /**
-     * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-     * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-     * — send every link you want to keep, `custom` included.
-     *
-     * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-     * dropped and the request still answers 200. Nothing is hidden by this — the response body
-     * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-     * is not needed to see what survived. Compare what you sent against what came back; a key
-     * missing from the answer was refused.
-     *
-     * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-     * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
-     * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-     * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-     * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-     * measured the filtering and could not find it described anywhere.
-     */
     @SerialName("social_links")
     public val socialLinks: TenantSocialLinks? = null,
     @SerialName("marketplace_listing")

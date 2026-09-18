@@ -5801,7 +5801,11 @@
             },
             "DesignRequestCreate": {
                 "type": "object",
-                "description": "Body for `POST /api/v1/governance/builder/requests`.",
+                "description": "Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema` requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT accepted from the body — it comes from the authenticated caller. The block carried no `required` at all until 2026-09-18.",
+                "required": [
+                    "agent_name",
+                    "agent_description"
+                ],
                 "properties": {
                     "submitted_by": {
                         "type": "string",
@@ -9308,7 +9312,7 @@
                         "type": "string"
                     },
                     "social_links": {
-                        "type": "object"
+                        "$ref": "#/components/schemas/TenantSocialLinks"
                     },
                     "stats": {
                         "type": "object"
@@ -9406,7 +9410,7 @@
                         ]
                     },
                     "social_links": {
-                        "type": "object"
+                        "$ref": "#/components/schemas/TenantSocialLinks"
                     },
                     "branding": {
                         "type": "object"
@@ -14698,6 +14702,73 @@
                     }
                 }
             },
+            "TenantSocialLinks": {
+                "type": "object",
+                "description": "REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the tenant with that one platform and nothing else, so read-modify-write is the only safe shape — send every link you want to keep, `custom` included.\n\nValues are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is dropped and the request still answers 200. Nothing is hidden by this — the response body carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET is not needed to see what survived. Compare what you sent against what came back; a key missing from the answer was refused.\n\nLength is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5 entries, each with a label and a url; labels are stripped of angle brackets and cut to 50, urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane measured the filtering and could not find it described anywhere.",
+                "properties": {
+                    "website": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "twitter": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "github": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "linkedin": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "discord": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "telegram": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "youtube": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "instagram": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "facebook": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "tiktok": {
+                        "type": "string",
+                        "maxLength": 10485760
+                    },
+                    "custom": {
+                        "type": "array",
+                        "maxItems": 5,
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "label": {
+                                    "type": "string",
+                                    "maxLength": 50
+                                },
+                                "url": {
+                                    "type": "string",
+                                    "maxLength": 500
+                                }
+                            },
+                            "required": [
+                                "label",
+                                "url"
+                            ]
+                        }
+                    }
+                }
+            },
             "TenantBranding": {
                 "type": "object",
                 "properties": {
@@ -14941,61 +15012,7 @@
                         "$ref": "#/components/schemas/TenantBranding"
                     },
                     "social_links": {
-                        "type": "object",
-                        "description": "REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the tenant with that one platform and nothing else, so read-modify-write is the only safe shape — send every link you want to keep, `custom` included.\n\nValues are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is dropped and the request still answers 200. Nothing is hidden by this — the response body carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET is not needed to see what survived. Compare what you sent against what came back; a key missing from the answer was refused.\n\nLength is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5 entries, each with a label and a url; labels are stripped of angle brackets and cut to 50, urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane measured the filtering and could not find it described anywhere.",
-                        "properties": {
-                            "website": {
-                                "type": "string"
-                            },
-                            "twitter": {
-                                "type": "string"
-                            },
-                            "github": {
-                                "type": "string"
-                            },
-                            "linkedin": {
-                                "type": "string"
-                            },
-                            "discord": {
-                                "type": "string"
-                            },
-                            "telegram": {
-                                "type": "string"
-                            },
-                            "youtube": {
-                                "type": "string"
-                            },
-                            "instagram": {
-                                "type": "string"
-                            },
-                            "facebook": {
-                                "type": "string"
-                            },
-                            "tiktok": {
-                                "type": "string"
-                            },
-                            "custom": {
-                                "type": "array",
-                                "maxItems": 5,
-                                "items": {
-                                    "type": "object",
-                                    "properties": {
-                                        "label": {
-                                            "type": "string",
-                                            "maxLength": 50
-                                        },
-                                        "url": {
-                                            "type": "string",
-                                            "maxLength": 500
-                                        }
-                                    },
-                                    "required": [
-                                        "label",
-                                        "url"
-                                    ]
-                                }
-                            }
-                        }
+                        "$ref": "#/components/schemas/TenantSocialLinks"
                     },
                     "marketplace_listing": {
                         "type": "object"
@@ -26486,7 +26503,14 @@
                     "content": {
                         "application/json": {
                             "schema": {
-                                "type": "object"
+                                "type": "object",
+                                "description": "A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that one platform and nothing else. Send every link you want to keep, `custom` included.\n\n`social_links` values are filtered, not rejected: a url that does not match `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A working-looking link that goes somewhere else is worse than a missing one, and a client checking only whether the key came back cannot see it.\n\nNothing here is hidden: the response is the tenant AS STORED, so compare what you sent against what came back — values and lengths, not just which keys are present. No second GET is needed. See `Tenant.social_links` for the field-by-field shape.\n\nDocumented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and left the request body an untyped `object`: right words, wrong end of the call. Caught by the SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body: JsonObject)` that could not describe what to send.",
+                                "additionalProperties": true,
+                                "properties": {
+                                    "social_links": {
+                                        "$ref": "#/components/schemas/TenantSocialLinks"
+                                    }
+                                }
                             }
                         }
                     }
@@ -34801,6 +34825,18 @@
                 ],
                 "summary": "Data subject access request",
                 "description": "Collects every record in the caller's tenant tagged with the `subject_id` given as a query parameter and returns their ids by family — runs, sessions, memory entries, files and message feedback — plus a count for each. Each family is scanned to exhaustion with a cursor, so the answer is not truncated. `subject_id` is required and at most 256 characters (**422**). Requires an authenticated caller with the `admin` role — anonymous is **401**, a lesser role **403** — and writes a `data_subject.access` audit entry.",
+                "parameters": [
+                    {
+                        "name": "subject_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 256
+                        },
+                        "description": "Whose records to collect. Required - 422 without it, and 422 over 256 characters. Undeclared here until 2026-09-18: the prose named it, the parameter list was empty, so a generated client had nothing to pass it with."
+                    }
+                ],
                 "security": [
                     {
                         "bearerAuth": []
@@ -35486,7 +35522,7 @@
                     "Companies"
                 ],
                 "summary": "Create a company",
-                "description": "Creates a company and, with it, a strategist agent that runs the company's review cycle — the strategist's model comes from the platform LLM defaults and creation fails loudly when no default model and endpoint can be resolved, rather than at the first review tick. `name`, `mission`, `budget` and `config` are required; `spent_usd` is stamped 0 and each strategic goal is given a server-minted `goal_id`. The tenant is registered with the cron scheduler so ticks start, and a supplied `workspace_id` must belong to the tenant (422 otherwise) before it is assigned to the new company. Returns the full company record, 201. Requires the `companies` write permission and the `agents:write` scope.",
+                "description": "Creates a company and, with it, a strategist agent that runs the company's review cycle — the strategist's model comes from the platform LLM defaults and creation fails loudly when no default model and endpoint can be resolved, rather than at the first review tick. `name`, `mission` and `budget` are required — `config` is NOT: `CreateCompanySchema` gives it a default, so a body without it is accepted. This sentence named it required until 2026-09-18, which would have had a client send a field it does not have to; `spent_usd` is stamped 0 and each strategic goal is given a server-minted `goal_id`. The tenant is registered with the cron scheduler so ticks start, and a supplied `workspace_id` must belong to the tenant (422 otherwise) before it is assigned to the new company. Returns the full company record, 201. Requires the `companies` write permission and the `agents:write` scope.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -40034,7 +40070,8 @@
                             "schema": {
                                 "type": "object",
                                 "required": [
-                                    "session_id"
+                                    "session_id",
+                                    "start_date"
                                 ],
                                 "properties": {
                                     "session_id": {
@@ -46404,10 +46441,12 @@
                     {
                         "name": "message_id",
                         "in": "query",
+                        "required": true,
                         "schema": {
                             "type": "string",
                             "maxLength": 65536
-                        }
+                        },
+                        "description": "Required - the handler answers 400 without it. Declared without `required` until 2026-09-18, while the DELETE on the same path had it right: the two halves of one feature disagreed."
                     }
                 ],
                 "responses": {
@@ -48053,9 +48092,13 @@
                                 "properties": {
                                     "stripe_subscription_id": {
                                         "type": "string",
+                                        "description": "Required: the handler answers 403 without one. The block carried no `required` until 2026-09-18.",
                                         "maxLength": 10485760
                                     }
-                                }
+                                },
+                                "required": [
+                                    "stripe_subscription_id"
+                                ]
                             }
                         }
                     }
@@ -70478,6 +70521,16 @@
                 "description": "Queries the append-only, HMAC-chained audit log of agent-lifecycle and security events. `tenant_id` is required and is 400 when absent; `limit` defaults to 100 and is capped at 500, and a malformed value falls back to the default rather than returning an empty page. `event_type` and `actor_agent_id` narrow the query. Reading another tenant's trail is itself recorded: a cross-tenant query writes an `audit.cross_tenant_read` entry naming the actor, the filters and the result count, while a query against the actor's own tenant does not. Super-admin only.",
                 "parameters": [
                     {
+                        "name": "tenant_id",
+                        "in": "query",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
+                        },
+                        "description": "Required - absent, the request is 400. Undeclared here until 2026-09-18, so a generated client had no way to send the one parameter the route cannot work without."
+                    },
+                    {
                         "name": "agent_id",
                         "in": "query",
                         "schema": {
@@ -70508,17 +70561,17 @@
                         "schema": {
                             "type": "string",
                             "format": "date-time",
-                            "maxLength": 65536
+                            "maxLength": 65536,
+                            "minimum": 1,
+                            "maximum": 500,
+                            "description": "Values outside 1..500 are clamped to the range, not refused."
                         }
                     },
                     {
                         "name": "limit",
                         "in": "query",
                         "schema": {
-                            "type": "integer",
-                            "minimum": 1,
-                            "maximum": 500,
-                            "description": "Values outside 1..500 are clamped to the range, not refused."
+                            "type": "integer"
                         }
                     }
                 ],
@@ -73592,15 +73645,28 @@
                                 "properties": {
                                     "agent_id": {
                                         "type": "string",
+                                        "description": "The bridge agent to hand the task to.",
+                                        "maxLength": 10485760
+                                    },
+                                    "message": {
+                                        "type": "string",
+                                        "description": "The task itself. Required: the handler answers 400 when either this or agent_id is missing. This block used to omit it entirely while requiring `context`, which the handler never checks — so a body written from the document was refused for a field it was told to send, and accepted without the one that is actually needed. Measured 2026-09-18.",
+                                        "maxLength": 10485760
+                                    },
+                                    "priority": {
+                                        "type": "string",
+                                        "description": "Optional.",
                                         "maxLength": 10485760
                                     },
                                     "context": {
-                                        "type": "object"
+                                        "type": "object",
+                                        "additionalProperties": true,
+                                        "description": "Optional. Rendered into the message ahead of it when present."
                                     }
                                 },
                                 "required": [
                                     "agent_id",
-                                    "context"
+                                    "message"
                                 ]
                             }
                         }

@@ -181,7 +181,7 @@ package body UARP.API.Tenants is
 
    function Patch
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Patch_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Tenant
    is
@@ -191,7 +191,7 @@ package body UARP.API.Tenants is
             (Self,
              "PATCH",
              "/api/v1/tenants/me",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

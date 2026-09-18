@@ -11244,9 +11244,7 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
-      if Model.Has_Start_Date then
-         JS.Set (Result, "start_date", JS.JSON.Create (Model.Start_Date));
-      end if;
+      JS.Set (Result, "start_date", JS.JSON.Create (Model.Start_Date));
       if Model.Has_Agent_Id then
          JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
       end if;
@@ -11260,7 +11258,6 @@ package body UARP.Models is
          Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
       end if;
       if JS.Present (Node, "start_date") then
-         Result.Has_Start_Date := True;
          Result.Start_Date := JS.As_Text (JS.Get_Value (Node, "start_date"));
       end if;
       if JS.Present (Node, "agent_id") then
@@ -12611,7 +12608,13 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
-      JS.Set (Result, "context", Model.Context);
+      JS.Set (Result, "message", JS.JSON.Create (Model.Message));
+      if Model.Has_Priority then
+         JS.Set (Result, "priority", JS.JSON.Create (Model.Priority));
+      end if;
+      if Model.Has_Context then
+         JS.Set (Result, "context", Model.Context);
+      end if;
       return Result;
    end To_JSON;
 
@@ -12621,7 +12624,15 @@ package body UARP.Models is
       if JS.Present (Node, "agent_id") then
          Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
       end if;
+      if JS.Present (Node, "message") then
+         Result.Message := JS.As_Text (JS.Get_Value (Node, "message"));
+      end if;
+      if JS.Present (Node, "priority") then
+         Result.Has_Priority := True;
+         Result.Priority := JS.As_Text (JS.Get_Value (Node, "priority"));
+      end if;
       if JS.Present (Node, "context") then
+         Result.Has_Context := True;
          Result.Context := JS.Get_Value (Node, "context");
       end if;
       return Result;
@@ -21558,12 +21569,8 @@ package body UARP.Models is
       if Model.Has_Submitted_By then
          JS.Set (Result, "submitted_by", JS.JSON.Create (Model.Submitted_By));
       end if;
-      if Model.Has_Agent_Name then
-         JS.Set (Result, "agent_name", JS.JSON.Create (Model.Agent_Name));
-      end if;
-      if Model.Has_Agent_Description then
-         JS.Set (Result, "agent_description", JS.JSON.Create (Model.Agent_Description));
-      end if;
+      JS.Set (Result, "agent_name", JS.JSON.Create (Model.Agent_Name));
+      JS.Set (Result, "agent_description", JS.JSON.Create (Model.Agent_Description));
       if Model.Has_Agent_Role then
          JS.Set (Result, "agent_role", JS.JSON.Create (Model.Agent_Role));
       end if;
@@ -21594,11 +21601,9 @@ package body UARP.Models is
          Result.Submitted_By := JS.As_Text (JS.Get_Value (Node, "submitted_by"));
       end if;
       if JS.Present (Node, "agent_name") then
-         Result.Has_Agent_Name := True;
          Result.Agent_Name := JS.As_Text (JS.Get_Value (Node, "agent_name"));
       end if;
       if JS.Present (Node, "agent_description") then
-         Result.Has_Agent_Description := True;
          Result.Agent_Description := JS.As_Text (JS.Get_Value (Node, "agent_description"));
       end if;
       if JS.Present (Node, "agent_role") then
@@ -29145,6 +29150,128 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Tenant_Social_Links_Custom_Item) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "label", JS.JSON.Create (Model.Label));
+      JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links_Custom_Item is
+      Result : Tenant_Social_Links_Custom_Item;
+   begin
+      if JS.Present (Node, "label") then
+         Result.Label := JS.As_Text (JS.Get_Value (Node, "label"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Tenant_Social_Links) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Website then
+         JS.Set (Result, "website", JS.JSON.Create (Model.Website));
+      end if;
+      if Model.Has_Twitter then
+         JS.Set (Result, "twitter", JS.JSON.Create (Model.Twitter));
+      end if;
+      if Model.Has_Github then
+         JS.Set (Result, "github", JS.JSON.Create (Model.Github));
+      end if;
+      if Model.Has_Linkedin then
+         JS.Set (Result, "linkedin", JS.JSON.Create (Model.Linkedin));
+      end if;
+      if Model.Has_Discord then
+         JS.Set (Result, "discord", JS.JSON.Create (Model.Discord));
+      end if;
+      if Model.Has_Telegram then
+         JS.Set (Result, "telegram", JS.JSON.Create (Model.Telegram));
+      end if;
+      if Model.Has_Youtube then
+         JS.Set (Result, "youtube", JS.JSON.Create (Model.Youtube));
+      end if;
+      if Model.Has_Instagram then
+         JS.Set (Result, "instagram", JS.JSON.Create (Model.Instagram));
+      end if;
+      if Model.Has_Facebook then
+         JS.Set (Result, "facebook", JS.JSON.Create (Model.Facebook));
+      end if;
+      if Model.Has_Tiktok then
+         JS.Set (Result, "tiktok", JS.JSON.Create (Model.Tiktok));
+      end if;
+      if Model.Has_Custom then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Custom loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "custom", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links is
+      Result : Tenant_Social_Links;
+   begin
+      if JS.Present (Node, "website") then
+         Result.Has_Website := True;
+         Result.Website := JS.As_Text (JS.Get_Value (Node, "website"));
+      end if;
+      if JS.Present (Node, "twitter") then
+         Result.Has_Twitter := True;
+         Result.Twitter := JS.As_Text (JS.Get_Value (Node, "twitter"));
+      end if;
+      if JS.Present (Node, "github") then
+         Result.Has_Github := True;
+         Result.Github := JS.As_Text (JS.Get_Value (Node, "github"));
+      end if;
+      if JS.Present (Node, "linkedin") then
+         Result.Has_Linkedin := True;
+         Result.Linkedin := JS.As_Text (JS.Get_Value (Node, "linkedin"));
+      end if;
+      if JS.Present (Node, "discord") then
+         Result.Has_Discord := True;
+         Result.Discord := JS.As_Text (JS.Get_Value (Node, "discord"));
+      end if;
+      if JS.Present (Node, "telegram") then
+         Result.Has_Telegram := True;
+         Result.Telegram := JS.As_Text (JS.Get_Value (Node, "telegram"));
+      end if;
+      if JS.Present (Node, "youtube") then
+         Result.Has_Youtube := True;
+         Result.Youtube := JS.As_Text (JS.Get_Value (Node, "youtube"));
+      end if;
+      if JS.Present (Node, "instagram") then
+         Result.Has_Instagram := True;
+         Result.Instagram := JS.As_Text (JS.Get_Value (Node, "instagram"));
+      end if;
+      if JS.Present (Node, "facebook") then
+         Result.Has_Facebook := True;
+         Result.Facebook := JS.As_Text (JS.Get_Value (Node, "facebook"));
+      end if;
+      if JS.Present (Node, "tiktok") then
+         Result.Has_Tiktok := True;
+         Result.Tiktok := JS.As_Text (JS.Get_Value (Node, "tiktok"));
+      end if;
+      if JS.Present (Node, "custom") then
+         Result.Has_Custom := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "custom");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Custom.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Public_State_Agent) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -29221,7 +29348,7 @@ package body UARP.Models is
       JS.Set (Result, "short_description", JS.JSON.Create (Model.Short_Description));
       JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
       if Model.Has_Social_Links then
-         JS.Set (Result, "social_links", Model.Social_Links);
+         JS.Set (Result, "social_links", To_JSON (Model.Social_Links));
       end if;
       if Model.Has_Stats then
          JS.Set (Result, "stats", Model.Stats);
@@ -29291,7 +29418,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "social_links") then
          Result.Has_Social_Links := True;
-         Result.Social_Links := JS.Get_Value (Node, "social_links");
+         Result.Social_Links := From_JSON (JS.Get_Value (Node, "social_links"));
       end if;
       if JS.Present (Node, "stats") then
          Result.Has_Stats := True;
@@ -39065,7 +39192,7 @@ package body UARP.Models is
       JS.Set (Result, "short_description", JS.JSON.Create (Model.Short_Description));
       JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
       if Model.Has_Social_Links then
-         JS.Set (Result, "social_links", Model.Social_Links);
+         JS.Set (Result, "social_links", To_JSON (Model.Social_Links));
       end if;
       if Model.Has_Stats then
          JS.Set (Result, "stats", Model.Stats);
@@ -39127,7 +39254,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "social_links") then
          Result.Has_Social_Links := True;
-         Result.Social_Links := JS.Get_Value (Node, "social_links");
+         Result.Social_Links := From_JSON (JS.Get_Value (Node, "social_links"));
       end if;
       if JS.Present (Node, "stats") then
          Result.Has_Stats := True;
@@ -39282,7 +39409,7 @@ package body UARP.Models is
       end;
       JS.Set (Result, "stats", To_JSON (Model.Stats));
       if Model.Has_Social_Links then
-         JS.Set (Result, "social_links", Model.Social_Links);
+         JS.Set (Result, "social_links", To_JSON (Model.Social_Links));
       end if;
       if Model.Has_Branding then
          JS.Set (Result, "branding", Model.Branding);
@@ -39347,7 +39474,7 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "social_links") then
          Result.Has_Social_Links := True;
-         Result.Social_Links := JS.Get_Value (Node, "social_links");
+         Result.Social_Links := From_JSON (JS.Get_Value (Node, "social_links"));
       end if;
       if JS.Present (Node, "branding") then
          Result.Has_Branding := True;
@@ -42468,128 +42595,6 @@ package body UARP.Models is
       if JS.Present (Node, "dark_mode") then
          Result.Has_Dark_Mode := True;
          Result.Dark_Mode := JS.As_Boolean (JS.Get_Value (Node, "dark_mode"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Tenant_Social_Links_Custom_Item) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "label", JS.JSON.Create (Model.Label));
-      JS.Set (Result, "url", JS.JSON.Create (Model.URL));
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links_Custom_Item is
-      Result : Tenant_Social_Links_Custom_Item;
-   begin
-      if JS.Present (Node, "label") then
-         Result.Label := JS.As_Text (JS.Get_Value (Node, "label"));
-      end if;
-      if JS.Present (Node, "url") then
-         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_JSON (Model : Tenant_Social_Links) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      if Model.Has_Website then
-         JS.Set (Result, "website", JS.JSON.Create (Model.Website));
-      end if;
-      if Model.Has_Twitter then
-         JS.Set (Result, "twitter", JS.JSON.Create (Model.Twitter));
-      end if;
-      if Model.Has_Github then
-         JS.Set (Result, "github", JS.JSON.Create (Model.Github));
-      end if;
-      if Model.Has_Linkedin then
-         JS.Set (Result, "linkedin", JS.JSON.Create (Model.Linkedin));
-      end if;
-      if Model.Has_Discord then
-         JS.Set (Result, "discord", JS.JSON.Create (Model.Discord));
-      end if;
-      if Model.Has_Telegram then
-         JS.Set (Result, "telegram", JS.JSON.Create (Model.Telegram));
-      end if;
-      if Model.Has_Youtube then
-         JS.Set (Result, "youtube", JS.JSON.Create (Model.Youtube));
-      end if;
-      if Model.Has_Instagram then
-         JS.Set (Result, "instagram", JS.JSON.Create (Model.Instagram));
-      end if;
-      if Model.Has_Facebook then
-         JS.Set (Result, "facebook", JS.JSON.Create (Model.Facebook));
-      end if;
-      if Model.Has_Tiktok then
-         JS.Set (Result, "tiktok", JS.JSON.Create (Model.Tiktok));
-      end if;
-      if Model.Has_Custom then
-         declare
-            Items : JS.JSON_Array := JS.JSON.Empty_Array;
-         begin
-            for Element of Model.Custom loop
-               JS.JSON.Append (Items, To_JSON (Element));
-            end loop;
-            JS.Set (Result, "custom", Items);
-         end;
-      end if;
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links is
-      Result : Tenant_Social_Links;
-   begin
-      if JS.Present (Node, "website") then
-         Result.Has_Website := True;
-         Result.Website := JS.As_Text (JS.Get_Value (Node, "website"));
-      end if;
-      if JS.Present (Node, "twitter") then
-         Result.Has_Twitter := True;
-         Result.Twitter := JS.As_Text (JS.Get_Value (Node, "twitter"));
-      end if;
-      if JS.Present (Node, "github") then
-         Result.Has_Github := True;
-         Result.Github := JS.As_Text (JS.Get_Value (Node, "github"));
-      end if;
-      if JS.Present (Node, "linkedin") then
-         Result.Has_Linkedin := True;
-         Result.Linkedin := JS.As_Text (JS.Get_Value (Node, "linkedin"));
-      end if;
-      if JS.Present (Node, "discord") then
-         Result.Has_Discord := True;
-         Result.Discord := JS.As_Text (JS.Get_Value (Node, "discord"));
-      end if;
-      if JS.Present (Node, "telegram") then
-         Result.Has_Telegram := True;
-         Result.Telegram := JS.As_Text (JS.Get_Value (Node, "telegram"));
-      end if;
-      if JS.Present (Node, "youtube") then
-         Result.Has_Youtube := True;
-         Result.Youtube := JS.As_Text (JS.Get_Value (Node, "youtube"));
-      end if;
-      if JS.Present (Node, "instagram") then
-         Result.Has_Instagram := True;
-         Result.Instagram := JS.As_Text (JS.Get_Value (Node, "instagram"));
-      end if;
-      if JS.Present (Node, "facebook") then
-         Result.Has_Facebook := True;
-         Result.Facebook := JS.As_Text (JS.Get_Value (Node, "facebook"));
-      end if;
-      if JS.Present (Node, "tiktok") then
-         Result.Has_Tiktok := True;
-         Result.Tiktok := JS.As_Text (JS.Get_Value (Node, "tiktok"));
-      end if;
-      if JS.Present (Node, "custom") then
-         Result.Has_Custom := True;
-         declare
-            Items : constant JS.JSON_Array := JS.Get_Array (Node, "custom");
-         begin
-            for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Custom.Append (From_JSON (JS.JSON.Get (Items, Index)));
-            end loop;
-         end;
       end if;
       return Result;
    end From_JSON;
@@ -46921,6 +46926,26 @@ package body UARP.Models is
       if JS.Present (Node, "updated_rows") then
          Result.Updated_Rows := JS.As_Integer (JS.Get_Value (Node, "updated_rows"));
       end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Patch_Tenant_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Social_Links then
+         JS.Set (Result, "social_links", To_JSON (Model.Social_Links));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Tenant_Request is
+      Result : Patch_Tenant_Request;
+   begin
+      if JS.Present (Node, "social_links") then
+         Result.Has_Social_Links := True;
+         Result.Social_Links := From_JSON (JS.Get_Value (Node, "social_links"));
+      end if;
+      Result.Extra := Node;
       return Result;
    end From_JSON;
 
@@ -55185,9 +55210,7 @@ package body UARP.Models is
    function To_JSON (Model : Subscribe_To_Listing_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      if Model.Has_Stripe_Subscription_Id then
-         JS.Set (Result, "stripe_subscription_id", JS.JSON.Create (Model.Stripe_Subscription_Id));
-      end if;
+      JS.Set (Result, "stripe_subscription_id", JS.JSON.Create (Model.Stripe_Subscription_Id));
       return Result;
    end To_JSON;
 
@@ -55195,7 +55218,6 @@ package body UARP.Models is
       Result : Subscribe_To_Listing_Request;
    begin
       if JS.Present (Node, "stripe_subscription_id") then
-         Result.Has_Stripe_Subscription_Id := True;
          Result.Stripe_Subscription_Id := JS.As_Text (JS.Get_Value (Node, "stripe_subscription_id"));
       end if;
       return Result;

@@ -76,6 +76,9 @@ pub struct GetAuditForTargetParams {
 /// Query and header parameters for `getImmutableAudit`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetImmutableAuditParams {
+    /// Required - absent, the request is 400. Undeclared here until 2026-09-18, so a generated
+    /// client had no way to send the one parameter the route cannot work without.
+    pub tenant_id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

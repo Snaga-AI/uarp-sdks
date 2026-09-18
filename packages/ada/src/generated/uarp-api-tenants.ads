@@ -198,7 +198,7 @@ package UARP.API.Tenants is
    --  Required scopes: tenants:write.
    function Patch
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Patch_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Tenant;
 

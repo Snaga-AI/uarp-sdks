@@ -4103,8 +4103,7 @@ pub struct AppleNativeAuthResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ApplyProgramRequest {
     pub session_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
+    pub start_date: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
 }
@@ -4588,8 +4587,19 @@ pub struct BridgeConnection {
 /// `BridgeDelegateRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BridgeDelegateRequest {
+    /// The bridge agent to hand the task to.
     pub agent_id: String,
-    pub context: serde_json::Map<String, serde_json::Value>,
+    /// The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+    /// This block used to omit it entirely while requiring `context`, which the handler never
+    /// checks — so a body written from the document was refused for a field it was told to send,
+    /// and accepted without the one that is actually needed. Measured 2026-09-18.
+    pub message: String,
+    /// Optional.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
+    /// Optional. Rendered into the message ahead of it when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `BridgeDelegateResponse` model.
@@ -7955,15 +7965,16 @@ pub struct DesignRequest {
     pub updated_at: String,
 }
 
-/// Body for `POST /api/v1/governance/builder/requests`.
+/// Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+/// requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+/// accepted from the body — it comes from the authenticated caller. The block carried no
+/// `required` at all until 2026-09-18.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DesignRequestCreate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub submitted_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_description: Option<String>,
+    pub agent_name: String,
+    pub agent_description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_role: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -11651,7 +11662,7 @@ pub struct GetPublicStateResponse {
     pub short_description: String,
     pub slug: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<serde_json::Map<String, serde_json::Value>>,
     pub tags: Vec<String>,
@@ -17684,6 +17695,34 @@ pub struct PatchMeResponseUser {
     pub avatar_url: Option<String>,
 }
 
+/// A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED
+/// wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+/// one platform and nothing else. Send every link you want to keep, `custom` included.
+///
+/// `social_links` values are filtered, not rejected: a url that does not match
+/// `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+/// the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT
+/// to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+/// working-looking link that goes somewhere else is worse than a missing one, and a client
+/// checking only whether the key came back cannot see it.
+///
+/// Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+/// against what came back — values and lengths, not just which keys are present. No second GET
+/// is needed. See `Tenant.social_links` for the field-by-field shape.
+///
+/// Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+/// left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+/// SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+/// JsonObject)` that could not describe what to send.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PatchTenantRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_links: Option<TenantSocialLinks>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
 /// `PauseCompanyResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PauseCompanyResponse {
@@ -18796,7 +18835,7 @@ pub struct PublicState {
     pub short_description: String,
     pub slug: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<serde_json::Map<String, serde_json::Value>>,
     pub tags: Vec<String>,
@@ -18838,7 +18877,7 @@ pub struct PublicTenant {
     pub agents: Vec<PublicTenantAgent>,
     pub stats: PublicTenantStats,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22489,8 +22528,9 @@ pub struct SubmitFeedbackResponse {
 /// `SubscribeToListingRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubscribeToListingRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stripe_subscription_id: Option<String>,
+    /// Required: the handler answers 403 without one. The block carried no `required` until
+    /// 2026-09-18.
+    pub stripe_subscription_id: String,
 }
 
 /// `SuspendAgentRequest` model.
@@ -23471,22 +23511,6 @@ pub struct Tenant {
     pub custom_domain: Option<TenantCustomDomain>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<TenantBranding>,
-    /// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-    /// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-    /// — send every link you want to keep, `custom` included.
-    ///
-    /// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-    /// dropped and the request still answers 200. Nothing is hidden by this — the response body
-    /// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-    /// is not needed to see what survived. Compare what you sent against what came back; a key
-    /// missing from the answer was refused.
-    ///
-    /// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-    /// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
-    /// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-    /// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-    /// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-    /// measured the filtering and could not find it described anywhere.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

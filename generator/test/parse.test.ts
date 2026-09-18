@@ -509,7 +509,14 @@ test('parses the production document into the expected shape', () => {
   // object and gains eleven described platforms — plus MintLoginNonceResponse
   // for the newly documented `POST /auth/oauth/nonce`, SubjectSweep,
   // DeleteMeResponseErased, InvokeListingAgentResponse and its error type.
-  assert.equal(spec.types.length, 1488);
+  // 1488 -> 1489 on 2026-09-17 (build cc84d0c5, uarp #488): PatchTenantRequest.
+  // The body of `PATCH /tenants/me` stopped being a bare `{"type": "object"}`
+  // and gained `social_links` beside `additionalProperties: true`, so it earns
+  // a named type. Exactly one: `TenantSocialLinks` and its custom item already
+  // existed, hoisted out of the inline schema on `Tenant` in the previous
+  // refresh, and arriving from `components` this time did not rename them.
+  // That is why this refresh is not a break for 0.6.x consumers.
+  assert.equal(spec.types.length, 1489);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

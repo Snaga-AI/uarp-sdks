@@ -891,8 +891,9 @@ public struct AdminAPI: Sendable {
     /// `GET /api/v1/admin/immutable-audit`
     ///
     /// Required scopes: `admin`.
-    public func getImmutableAudit(agentId: String? = nil, event: String? = nil, from: String? = nil, to: String? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> GetImmutableAuditResponse {
+    public func getImmutableAudit(tenantId: String, agentId: String? = nil, event: String? = nil, from: String? = nil, to: String? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> GetImmutableAuditResponse {
         var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "tenant_id", value: tenantId))
         if let agentId {
             query.append(URLQueryItem(name: "agent_id", value: agentId))
         }

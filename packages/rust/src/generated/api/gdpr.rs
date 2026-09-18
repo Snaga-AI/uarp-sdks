@@ -13,6 +13,15 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `dataSubjectAccess`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataSubjectAccessParams {
+    /// Whose records to collect. Required - 422 without it, and 422 over 256 characters. Undeclared
+    /// here until 2026-09-18: the prose named it, the parameter list was empty, so a generated
+    /// client had nothing to pass it with.
+    pub subject_id: String,
+}
+
 /// Data subject access and erasure requests
 #[derive(Debug, Clone)]
 pub struct GDPRApi {
@@ -37,12 +46,12 @@ impl GDPRApi {
     /// lesser role **403** — and writes a `data_subject.access` audit entry.
     ///
     /// `GET /api/v1/data-subject/access`
-    pub async fn data_subject_access(&self) -> Result<models::DataSubjectAccessReport> {
+    pub async fn data_subject_access(&self, params: &DataSubjectAccessParams) -> Result<models::DataSubjectAccessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/data-subject/access".to_string(),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,

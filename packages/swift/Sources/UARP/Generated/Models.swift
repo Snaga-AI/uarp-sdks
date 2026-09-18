@@ -5756,10 +5756,10 @@ public struct AppleNativeAuthResponse: Codable, Hashable, Sendable {
 /// `ApplyProgramRequest` model.
 public struct ApplyProgramRequest: Codable, Hashable, Sendable {
     public var sessionId: String
-    public var startDate: String?
+    public var startDate: String
     public var agentId: String?
 
-    public init(sessionId: String, startDate: String? = nil, agentId: String? = nil) {
+    public init(sessionId: String, startDate: String, agentId: String? = nil) {
         self.sessionId = sessionId
         self.startDate = startDate
         self.agentId = agentId
@@ -6438,16 +6438,29 @@ public struct BridgeConnection: Codable, Hashable, Sendable {
 
 /// `BridgeDelegateRequest` model.
 public struct BridgeDelegateRequest: Codable, Hashable, Sendable {
+    /// The bridge agent to hand the task to.
     public var agentId: String
-    public var context: JSONObject
+    /// The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+    /// This block used to omit it entirely while requiring `context`, which the handler never
+    /// checks — so a body written from the document was refused for a field it was told to send,
+    /// and accepted without the one that is actually needed. Measured 2026-09-18.
+    public var message: String
+    /// Optional.
+    public var priority: String?
+    /// Optional. Rendered into the message ahead of it when present.
+    public var context: JSONObject?
 
-    public init(agentId: String, context: JSONObject) {
+    public init(agentId: String, message: String, priority: String? = nil, context: JSONObject? = nil) {
         self.agentId = agentId
+        self.message = message
+        self.priority = priority
         self.context = context
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
+        case message = "message"
+        case priority = "priority"
         case context = "context"
     }
 }
@@ -11201,17 +11214,20 @@ public struct DesignRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// Body for `POST /api/v1/governance/builder/requests`.
+/// Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+/// requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+/// accepted from the body — it comes from the authenticated caller. The block carried no
+/// `required` at all until 2026-09-18.
 public struct DesignRequestCreate: Codable, Hashable, Sendable {
     public var submittedBy: String?
-    public var agentName: String?
-    public var agentDescription: String?
+    public var agentName: String
+    public var agentDescription: String
     public var agentRole: String?
     public var tools: [String]?
     public var parentAgentId: String?
     public var rationale: String?
 
-    public init(submittedBy: String? = nil, agentName: String? = nil, agentDescription: String? = nil, agentRole: String? = nil, tools: [String]? = nil, parentAgentId: String? = nil, rationale: String? = nil) {
+    public init(submittedBy: String? = nil, agentName: String, agentDescription: String, agentRole: String? = nil, tools: [String]? = nil, parentAgentId: String? = nil, rationale: String? = nil) {
         self.submittedBy = submittedBy
         self.agentName = agentName
         self.agentDescription = agentDescription
@@ -15525,14 +15541,14 @@ public struct GetPublicStateResponse: Codable, Hashable, Sendable {
     public var publishedAt: String?
     public var shortDescription: String
     public var slug: String
-    public var socialLinks: JSONObject?
+    public var socialLinks: TenantSocialLinks?
     public var stats: JSONObject?
     public var tags: [String]
     public var tenantId: String
     /// Only this route joins the state's agents (public.ts); the list does not carry them.
     public var agents: [PublicStateAgent]
 
-    public init(marketplace: JSONObject? = nil, governance: JSONObject? = nil, plan: String? = nil, branding: JSONObject? = nil, category: String, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, shortDescription: String, slug: String, socialLinks: JSONObject? = nil, stats: JSONObject? = nil, tags: [String], tenantId: String, agents: [PublicStateAgent]) {
+    public init(marketplace: JSONObject? = nil, governance: JSONObject? = nil, plan: String? = nil, branding: JSONObject? = nil, category: String, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, shortDescription: String, slug: String, socialLinks: TenantSocialLinks? = nil, stats: JSONObject? = nil, tags: [String], tenantId: String, agents: [PublicStateAgent]) {
         self.marketplace = marketplace
         self.governance = governance
         self.plan = plan
@@ -23683,6 +23699,68 @@ public struct PatchMeResponseUser: Codable, Hashable, Sendable {
     }
 }
 
+/// A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED
+/// wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+/// one platform and nothing else. Send every link you want to keep, `custom` included.
+///
+/// `social_links` values are filtered, not rejected: a url that does not match
+/// `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+/// the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT
+/// to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+/// working-looking link that goes somewhere else is worse than a missing one, and a client
+/// checking only whether the key came back cannot see it.
+///
+/// Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+/// against what came back — values and lengths, not just which keys are present. No second GET
+/// is needed. See `Tenant.social_links` for the field-by-field shape.
+///
+/// Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+/// left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+/// SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+/// JsonObject)` that could not describe what to send.
+public struct PatchTenantRequest: Codable, Hashable, Sendable {
+    public var socialLinks: TenantSocialLinks?
+    /// Properties the server returned that this SDK does not model.
+    public var additionalProperties: [String: JSONValue]
+
+    public init(socialLinks: TenantSocialLinks? = nil, additionalProperties: [String: JSONValue] = [:]) {
+        self.socialLinks = socialLinks
+        self.additionalProperties = additionalProperties
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case socialLinks = "social_links"
+    }
+
+    private struct DynamicKey: CodingKey {
+        let stringValue: String
+        var intValue: Int? { nil }
+        init(stringValue: String) { self.stringValue = stringValue }
+        init?(intValue: Int) { nil }
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        self.socialLinks = try container.decodeIfPresent(TenantSocialLinks.self, forKey: .socialLinks)
+        let dynamic = try decoder.container(keyedBy: DynamicKey.self)
+        let known: Set<String> = ["social_links"]
+        var extra: [String: JSONValue] = [:]
+        for key in dynamic.allKeys where !known.contains(key.stringValue) {
+            extra[key.stringValue] = try dynamic.decode(JSONValue.self, forKey: key)
+        }
+        self.additionalProperties = extra
+    }
+
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.container(keyedBy: CodingKeys.self)
+        try container.encodeIfPresent(socialLinks, forKey: .socialLinks)
+        var dynamic = encoder.container(keyedBy: DynamicKey.self)
+        for (key, value) in additionalProperties {
+            try dynamic.encode(value, forKey: DynamicKey(stringValue: key))
+        }
+    }
+}
+
 /// `PauseCompanyResponse` model.
 public struct PauseCompanyResponse: Codable, Hashable, Sendable {
     public var status: String?
@@ -25365,12 +25443,12 @@ public struct PublicState: Codable, Hashable, Sendable {
     public var publishedAt: String?
     public var shortDescription: String
     public var slug: String
-    public var socialLinks: JSONObject?
+    public var socialLinks: TenantSocialLinks?
     public var stats: JSONObject?
     public var tags: [String]
     public var tenantId: String
 
-    public init(marketplace: JSONObject? = nil, governance: JSONObject? = nil, plan: String? = nil, branding: JSONObject? = nil, category: String, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, shortDescription: String, slug: String, socialLinks: JSONObject? = nil, stats: JSONObject? = nil, tags: [String], tenantId: String) {
+    public init(marketplace: JSONObject? = nil, governance: JSONObject? = nil, plan: String? = nil, branding: JSONObject? = nil, category: String, `description`: String? = nil, logoURL: String? = nil, name: String, publishedAt: String? = nil, shortDescription: String, slug: String, socialLinks: TenantSocialLinks? = nil, stats: JSONObject? = nil, tags: [String], tenantId: String) {
         self.marketplace = marketplace
         self.governance = governance
         self.plan = plan
@@ -25446,11 +25524,11 @@ public struct PublicTenant: Codable, Hashable, Sendable {
     public var agentsCount: Int
     public var agents: [PublicTenantAgent]
     public var stats: PublicTenantStats
-    public var socialLinks: JSONObject?
+    public var socialLinks: TenantSocialLinks?
     public var branding: JSONObject?
     public var publishedAt: String?
 
-    public init(marketplace: JSONObject? = nil, tenantId: String, slug: String, name: String, `description`: String? = nil, logoURL: String? = nil, category: String? = nil, tags: [String], agentsCount: Int, agents: [PublicTenantAgent], stats: PublicTenantStats, socialLinks: JSONObject? = nil, branding: JSONObject? = nil, publishedAt: String? = nil) {
+    public init(marketplace: JSONObject? = nil, tenantId: String, slug: String, name: String, `description`: String? = nil, logoURL: String? = nil, category: String? = nil, tags: [String], agentsCount: Int, agents: [PublicTenantAgent], stats: PublicTenantStats, socialLinks: TenantSocialLinks? = nil, branding: JSONObject? = nil, publishedAt: String? = nil) {
         self.marketplace = marketplace
         self.tenantId = tenantId
         self.slug = slug
@@ -30537,9 +30615,11 @@ public struct SubmitFeedbackResponse: Codable, Hashable, Sendable {
 
 /// `SubscribeToListingRequest` model.
 public struct SubscribeToListingRequest: Codable, Hashable, Sendable {
-    public var stripeSubscriptionId: String?
+    /// Required: the handler answers 403 without one. The block carried no `required` until
+    /// 2026-09-18.
+    public var stripeSubscriptionId: String
 
-    public init(stripeSubscriptionId: String? = nil) {
+    public init(stripeSubscriptionId: String) {
         self.stripeSubscriptionId = stripeSubscriptionId
     }
 
@@ -31589,22 +31669,6 @@ public struct Tenant: Codable, Hashable, Sendable {
     public var logoURL: String?
     public var customDomain: TenantCustomDomain?
     public var branding: TenantBranding?
-    /// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-    /// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-    /// — send every link you want to keep, `custom` included.
-    ///
-    /// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-    /// dropped and the request still answers 200. Nothing is hidden by this — the response body
-    /// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-    /// is not needed to see what survived. Compare what you sent against what came back; a key
-    /// missing from the answer was refused.
-    ///
-    /// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-    /// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
-    /// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-    /// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-    /// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-    /// measured the filtering and could not find it described anywhere.
     public var socialLinks: TenantSocialLinks?
     public var marketplaceListing: JSONObject?
     public var publicAgentId: String?

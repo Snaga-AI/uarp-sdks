@@ -491,9 +491,9 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun getSessionRunFeedback(sessionId: String, runId: String, messageId: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+    public suspend fun getSessionRunFeedback(sessionId: String, runId: String, messageId: String, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
-            if (messageId != null) add("message_id" to messageId)
+            add("message_id" to messageId)
         }
         return client.request<JsonElement>(
             RequestSpec(

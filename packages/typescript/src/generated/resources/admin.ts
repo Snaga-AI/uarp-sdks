@@ -157,6 +157,11 @@ export interface GetAuditForTargetParams {
  * Query and header parameters for `getImmutableAudit`.
  */
 export interface GetImmutableAuditParams {
+  /**
+   * Required - absent, the request is 400. Undeclared here until 2026-09-18, so a generated
+   * client had no way to send the one parameter the route cannot work without.
+   */
+  tenant_id: string;
   agent_id?: string;
   event?: string;
   from?: string;
@@ -1142,11 +1147,11 @@ export class AdminResource extends APIResource {
    *
    * Required scopes: `admin`.
    */
-  getImmutableAudit(params?: GetImmutableAuditParams, options?: RequestOptions): Promise<GetImmutableAuditResponse> {
+  getImmutableAudit(params: GetImmutableAuditParams, options?: RequestOptions): Promise<GetImmutableAuditResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/immutable-audit',
-      query: pick(params, ['agent_id', 'event', 'from', 'to', 'limit']),
+      query: pick(params, ['tenant_id', 'agent_id', 'event', 'from', 'to', 'limit']),
       options,
     });
   }

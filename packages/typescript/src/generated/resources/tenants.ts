@@ -17,6 +17,7 @@ import type {
   ListAPIKeysResponse,
   ListMyTenantsResponse,
   LocateMyAgentResponse,
+  PatchTenantRequest,
   RevokeAPIKeyResponse,
   Tenant,
   UpdateTenantRequest,
@@ -268,7 +269,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `tenants:write`.
    */
-  patch(body: JsonObject, options?: RequestOptions): Promise<Tenant> {
+  patch(body: PatchTenantRequest, options?: RequestOptions): Promise<Tenant> {
     return this._client.request({
       method: 'PATCH',
       path: '/api/v1/tenants/me',

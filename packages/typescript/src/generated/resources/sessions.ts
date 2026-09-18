@@ -71,7 +71,11 @@ export interface ExportSessionParams {
  * Query and header parameters for `getSessionRunFeedback`.
  */
 export interface GetSessionRunFeedbackParams {
-  message_id?: string;
+  /**
+   * Required - the handler answers 400 without it. Declared without `required` until 2026-09-18,
+   * while the DELETE on the same path had it right: the two halves of one feature disagreed.
+   */
+  message_id: string;
 }
 
 /**
@@ -544,7 +548,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  getSessionRunFeedback(sessionId: string, runId: string, params?: GetSessionRunFeedbackParams, options?: RequestOptions): Promise<RunFeedbackList | RunFeedbackOne> {
+  getSessionRunFeedback(sessionId: string, runId: string, params: GetSessionRunFeedbackParams, options?: RequestOptions): Promise<RunFeedbackList | RunFeedbackOne> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/runs/${encodeURIComponent(String(runId))}/feedback`,

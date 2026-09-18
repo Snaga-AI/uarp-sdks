@@ -1055,8 +1055,9 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getImmutableAudit(agentId: String? = null, event: String? = null, from: String? = null, to: String? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): GetImmutableAuditResponse {
+    public suspend fun getImmutableAudit(tenantId: String, agentId: String? = null, event: String? = null, from: String? = null, to: String? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): GetImmutableAuditResponse {
         val query = buildList {
+            add("tenant_id" to tenantId)
             if (agentId != null) add("agent_id" to agentId)
             if (event != null) add("event" to event)
             if (from != null) add("from" to from)

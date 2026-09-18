@@ -4499,7 +4499,6 @@ package UARP.Models is
    --  `ApplyProgramRequest` model.
    type Apply_Program_Request is record
       Session_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Start_Date : Boolean := False;
       Start_Date : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -5036,7 +5035,18 @@ package UARP.Models is
 
    --  `BridgeDelegateRequest` model.
    type Bridge_Delegate_Request is record
+      --  The bridge agent to hand the task to.
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+      --  This block used to omit it entirely while requiring `context`, which the handler never
+      --  checks - so a body written from the document was refused for a field it was told to send,
+      --  and accepted without the one that is actually needed. Measured 2026-09-18.
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Optional.
+      Has_Priority : Boolean := False;
+      Priority : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Optional. Rendered into the message ahead of it when present.
+      Has_Context : Boolean := False;
       Context : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
@@ -8696,13 +8706,14 @@ package UARP.Models is
    package Design_Request_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Design_Request);
 
-   --  Body for `POST /api/v1/governance/builder/requests`.
+   --  Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+   --  requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+   --  accepted from the body - it comes from the authenticated caller. The block carried no
+   --  `required` at all until 2026-09-18.
    type Design_Request_Create is record
       Has_Submitted_By : Boolean := False;
       Submitted_By : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Agent_Name : Boolean := False;
       Agent_Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Agent_Description : Boolean := False;
       Agent_Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Agent_Role : Boolean := False;
       Agent_Role : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -11614,6 +11625,62 @@ package UARP.Models is
    function To_JSON (Model : Get_Public_Featured_Agent_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Public_Featured_Agent_Response;
 
+   --  `TenantSocialLinksCustomItem` model.
+   type Tenant_Social_Links_Custom_Item is record
+      Label : UARP.Types.Text := UARP.Types.Empty_Text;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Tenant_Social_Links_Custom_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links_Custom_Item;
+
+   package Tenant_Social_Links_Custom_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Social_Links_Custom_Item);
+
+   --  REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+   --  tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+   --  - send every link you want to keep, `custom` included.
+   --
+   --  Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+   --  dropped and the request still answers 200. Nothing is hidden by this - the response body
+   --  carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+   --  is not needed to see what survived. Compare what you sent against what came back; a key
+   --  missing from the answer was refused.
+   --
+   --  Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+   --  to 500 and then matches, so it is stored TRUNCATED rather than refused - a different link
+   --  that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+   --  entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+   --  urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+   --  measured the filtering and could not find it described anywhere.
+   type Tenant_Social_Links is record
+      Has_Website : Boolean := False;
+      Website : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Twitter : Boolean := False;
+      Twitter : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Github : Boolean := False;
+      Github : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Linkedin : Boolean := False;
+      Linkedin : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Discord : Boolean := False;
+      Discord : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Telegram : Boolean := False;
+      Telegram : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Youtube : Boolean := False;
+      Youtube : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Instagram : Boolean := False;
+      Instagram : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Facebook : Boolean := False;
+      Facebook : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tiktok : Boolean := False;
+      Tiktok : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Custom : Boolean := False;
+      Custom : UARP.Models.Tenant_Social_Links_Custom_Item_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Tenant_Social_Links) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links;
+
    --  public.ts - keys always present, values may be absent when the index row lacks them.
    type Public_State_Agent is record
       Has_Agent_Id : Boolean := False;
@@ -11655,7 +11722,7 @@ package UARP.Models is
       Short_Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Slug : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Social_Links : Boolean := False;
-      Social_Links : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Social_Links : UARP.Models.Tenant_Social_Links;
       Has_Stats : Boolean := False;
       Stats : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Tags : UARP.Types.Text_Vectors.Vector;
@@ -15308,7 +15375,7 @@ package UARP.Models is
       Short_Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Slug : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Social_Links : Boolean := False;
-      Social_Links : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Social_Links : UARP.Models.Tenant_Social_Links;
       Has_Stats : Boolean := False;
       Stats : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Tags : UARP.Types.Text_Vectors.Vector;
@@ -15377,7 +15444,7 @@ package UARP.Models is
       Agents : UARP.Models.Public_Tenant_Agent_Vectors.Vector;
       Stats : UARP.Models.Public_Tenant_Stats;
       Has_Social_Links : Boolean := False;
-      Social_Links : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Social_Links : UARP.Models.Tenant_Social_Links;
       Has_Branding : Boolean := False;
       Branding : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Published_At : Boolean := False;
@@ -16571,62 +16638,6 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Branding) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Branding;
 
-   --  `TenantSocialLinksCustomItem` model.
-   type Tenant_Social_Links_Custom_Item is record
-      Label : UARP.Types.Text := UARP.Types.Empty_Text;
-      URL : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Tenant_Social_Links_Custom_Item) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links_Custom_Item;
-
-   package Tenant_Social_Links_Custom_Item_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Tenant_Social_Links_Custom_Item);
-
-   --  REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-   --  tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-   --  - send every link you want to keep, `custom` included.
-   --
-   --  Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-   --  dropped and the request still answers 200. Nothing is hidden by this - the response body
-   --  carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-   --  is not needed to see what survived. Compare what you sent against what came back; a key
-   --  missing from the answer was refused.
-   --
-   --  Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-   --  to 500 and then matches, so it is stored TRUNCATED rather than refused - a different link
-   --  that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-   --  entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-   --  urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-   --  measured the filtering and could not find it described anywhere.
-   type Tenant_Social_Links is record
-      Has_Website : Boolean := False;
-      Website : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Twitter : Boolean := False;
-      Twitter : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Github : Boolean := False;
-      Github : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Linkedin : Boolean := False;
-      Linkedin : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Discord : Boolean := False;
-      Discord : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Telegram : Boolean := False;
-      Telegram : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Youtube : Boolean := False;
-      Youtube : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Instagram : Boolean := False;
-      Instagram : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Facebook : Boolean := False;
-      Facebook : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tiktok : Boolean := False;
-      Tiktok : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Custom : Boolean := False;
-      Custom : UARP.Models.Tenant_Social_Links_Custom_Item_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Tenant_Social_Links) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links;
-
    --  `TenantPublicSettings` model.
    type Tenant_Public_Settings is record
       Has_Max_Messages_Per_Session : Boolean := False;
@@ -16695,22 +16706,6 @@ package UARP.Models is
       Custom_Domain : UARP.Models.Tenant_Custom_Domain;
       Has_Branding : Boolean := False;
       Branding : UARP.Models.Tenant_Branding;
-      --  REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
-      --  tenant with that one platform and nothing else, so read-modify-write is the only safe shape
-      --  - send every link you want to keep, `custom` included.
-      --
-      --  Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
-      --  dropped and the request still answers 200. Nothing is hidden by this - the response body
-      --  carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
-      --  is not needed to see what survived. Compare what you sent against what came back; a key
-      --  missing from the answer was refused.
-      --
-      --  Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
-      --  to 500 and then matches, so it is stored TRUNCATED rather than refused - a different link
-      --  that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
-      --  entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
-      --  urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
-      --  measured the filtering and could not find it described anywhere.
       Has_Social_Links : Boolean := False;
       Social_Links : UARP.Models.Tenant_Social_Links;
       Has_Marketplace_Listing : Boolean := False;
@@ -18259,6 +18254,35 @@ package UARP.Models is
 
    function To_JSON (Model : Patch_Me_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Me_Response;
+
+   --  A partial tenant. Fields not named are left alone - except `social_links`, which is REPLACED
+   --  wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+   --  one platform and nothing else. Send every link you want to keep, `custom` included.
+   --
+   --  `social_links` values are filtered, not rejected: a url that does not match
+   --  `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+   --  the pattern, which is the case worth knowing about - a url longer than 500 characters is CUT
+   --  to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+   --  working-looking link that goes somewhere else is worse than a missing one, and a client
+   --  checking only whether the key came back cannot see it.
+   --
+   --  Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+   --  against what came back - values and lengths, not just which keys are present. No second GET
+   --  is needed. See `Tenant.social_links` for the field-by-field shape.
+   --
+   --  Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+   --  left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+   --  SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+   --  JsonObject)` that could not describe what to send.
+   type Patch_Tenant_Request is record
+      Has_Social_Links : Boolean := False;
+      Social_Links : UARP.Models.Tenant_Social_Links;
+      --  Properties the server returned that this SDK does not model.
+      Extra : JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Patch_Tenant_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Tenant_Request;
 
    --  `PauseCompanyResponse` model.
    type Pause_Company_Response is record
@@ -21549,7 +21573,8 @@ package UARP.Models is
 
    --  `SubscribeToListingRequest` model.
    type Subscribe_To_Listing_Request is record
-      Has_Stripe_Subscription_Id : Boolean := False;
+      --  Required: the handler answers 403 without one. The block carried no `required` until
+      --  2026-09-18.
       Stripe_Subscription_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 

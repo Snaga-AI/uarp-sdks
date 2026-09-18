@@ -743,6 +743,7 @@ package body UARP.API.Admin is
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      UARP.Types.Add (Query, "tenant_id", Params.Tenant_Id);
       if Params.Has_Agent_Id then
          UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
       end if;

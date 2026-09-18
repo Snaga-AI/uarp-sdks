@@ -331,9 +331,7 @@ package body UARP.API.Sessions is
    is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
-      if Params.Has_Message_Id then
-         UARP.Types.Add (Query, "message_id", Params.Message_Id);
-      end if;
+      UARP.Types.Add (Query, "message_id", Params.Message_Id);
       return UARP.Client.Call
          (Self,
           "GET",

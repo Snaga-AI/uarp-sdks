@@ -5,10 +5,21 @@
 with UARP.Client;
 with UARP.JSON_Support;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.GDPR is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `dataSubjectAccess`.
+   type Data_Subject_Access_Params is record
+      --  Whose records to collect. Required - 422 without it, and 422 over 256 characters. Undeclared
+      --  here until 2026-09-18: the prose named it, the parameter list was empty, so a generated
+      --  client had nothing to pass it with.
+      Subject_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Data_Subject_Access_Params : constant Data_Subject_Access_Params := (others => <>);
 
    --  Data subject access request
    --
@@ -22,6 +33,7 @@ package UARP.API.GDPR is
    --  GET /api/v1/data-subject/access
    function Data_Subject_Access
      (Self : Client_Type;
+      Params : Data_Subject_Access_Params := No_Data_Subject_Access_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Data_Subject_Access_Report;
 

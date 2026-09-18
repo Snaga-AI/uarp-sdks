@@ -30,11 +30,13 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
      * Creates a company and, with it, a strategist agent that runs the company's review cycle —
      * the strategist's model comes from the platform LLM defaults and creation fails loudly when
      * no default model and endpoint can be resolved, rather than at the first review tick. `name`,
-     * `mission`, `budget` and `config` are required; `spent_usd` is stamped 0 and each strategic
-     * goal is given a server-minted `goal_id`. The tenant is registered with the cron scheduler so
-     * ticks start, and a supplied `workspace_id` must belong to the tenant (422 otherwise) before
-     * it is assigned to the new company. Returns the full company record, 201. Requires the
-     * `companies` write permission and the `agents:write` scope.
+     * `mission` and `budget` are required — `config` is NOT: `CreateCompanySchema` gives it a
+     * default, so a body without it is accepted. This sentence named it required until 2026-09-18,
+     * which would have had a client send a field it does not have to; `spent_usd` is stamped 0 and
+     * each strategic goal is given a server-minted `goal_id`. The tenant is registered with the
+     * cron scheduler so ticks start, and a supplied `workspace_id` must belong to the tenant (422
+     * otherwise) before it is assigned to the new company. Returns the full company record, 201.
+     * Requires the `companies` write permission and the `agents:write` scope.
      *
      * `POST /api/v1/companies`
      *

@@ -31,7 +31,8 @@ package UARP.API.Sessions is
 
    --  Query and header parameters for `getSessionRunFeedback`.
    type Get_Session_Run_Feedback_Params is record
-      Has_Message_Id : Boolean := False;
+      --  Required - the handler answers 400 without it. Declared without `required` until 2026-09-18,
+      --  while the DELETE on the same path had it right: the two halves of one feature disagreed.
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 

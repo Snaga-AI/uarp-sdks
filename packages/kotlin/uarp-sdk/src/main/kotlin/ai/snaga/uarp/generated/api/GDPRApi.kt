@@ -35,11 +35,15 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/data-subject/access`
      */
-    public suspend fun dataSubjectAccess(options: RequestOptions = RequestOptions()): DataSubjectAccessReport {
+    public suspend fun dataSubjectAccess(subjectId: String, options: RequestOptions = RequestOptions()): DataSubjectAccessReport {
+        val query = buildList {
+            add("subject_id" to subjectId)
+        }
         return client.request<DataSubjectAccessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/data-subject/access",
+                query = query,
                 options = options,
             )
         )

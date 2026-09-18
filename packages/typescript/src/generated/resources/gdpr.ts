@@ -2,11 +2,24 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
 import type {
   DataSubjectAccessReport,
   DataSubjectErasureResult,
   JsonObject,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `dataSubjectAccess`.
+ */
+export interface DataSubjectAccessParams {
+  /**
+   * Whose records to collect. Required - 422 without it, and 422 over 256 characters. Undeclared
+   * here until 2026-09-18: the prose named it, the parameter list was empty, so a generated
+   * client had nothing to pass it with.
+   */
+  subject_id: string;
+}
 
 /**
  * Data subject access and erasure requests
@@ -24,10 +37,11 @@ export class GDPRResource extends APIResource {
    *
    * `GET /api/v1/data-subject/access`
    */
-  dataSubjectAccess(options?: RequestOptions): Promise<DataSubjectAccessReport> {
+  dataSubjectAccess(params: DataSubjectAccessParams, options?: RequestOptions): Promise<DataSubjectAccessReport> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/data-subject/access',
+      query: pick(params, ['subject_id']),
       options,
     });
   }

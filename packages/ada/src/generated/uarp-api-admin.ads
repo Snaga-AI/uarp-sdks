@@ -77,6 +77,9 @@ package UARP.API.Admin is
 
    --  Query and header parameters for `getImmutableAudit`.
    type Get_Immutable_Audit_Params is record
+      --  Required - absent, the request is 400. Undeclared here until 2026-09-18, so a generated
+      --  client had no way to send the one parameter the route cannot work without.
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Agent_Id : Boolean := False;
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Event : Boolean := False;
