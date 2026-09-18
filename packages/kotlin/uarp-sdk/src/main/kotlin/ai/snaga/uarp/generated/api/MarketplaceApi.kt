@@ -143,8 +143,8 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `marketplace:invoke`.
      */
-    public suspend fun invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = RequestOptions()): MarketplaceInvocation {
-        return client.request<MarketplaceInvocation>(
+    public suspend fun invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = RequestOptions()): InvokeListingAgentResponse {
+        return client.request<InvokeListingAgentResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/marketplace/listings/${encodePathSegment(listingId)}/invoke",

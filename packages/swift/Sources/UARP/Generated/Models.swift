@@ -1822,9 +1822,12 @@ public struct AdminConfigRetentionConfigRetention: Codable, Hashable, Sendable {
     public var archiveBatchSize: Int
     public var feedTtlDays: Int
     public var artifactTtlDays: Int
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    public var notificationTtlDays: Int?
     public var checkpointTtlHours: Int
 
-    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, checkpointTtlHours: Int) {
+    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, notificationTtlDays: Int? = nil, checkpointTtlHours: Int) {
         self.completedRunTtlDays = completedRunTtlDays
         self.eventTtlDays = eventTtlDays
         self.archiveToSqlite = archiveToSqlite
@@ -1833,6 +1836,7 @@ public struct AdminConfigRetentionConfigRetention: Codable, Hashable, Sendable {
         self.archiveBatchSize = archiveBatchSize
         self.feedTtlDays = feedTtlDays
         self.artifactTtlDays = artifactTtlDays
+        self.notificationTtlDays = notificationTtlDays
         self.checkpointTtlHours = checkpointTtlHours
     }
 
@@ -1845,6 +1849,7 @@ public struct AdminConfigRetentionConfigRetention: Codable, Hashable, Sendable {
         case archiveBatchSize = "archive_batch_size"
         case feedTtlDays = "feed_ttl_days"
         case artifactTtlDays = "artifact_ttl_days"
+        case notificationTtlDays = "notification_ttl_days"
         case checkpointTtlHours = "checkpoint_ttl_hours"
     }
 }
@@ -9329,14 +9334,35 @@ public struct CreateExperimentRequestVariant: Codable, Hashable, Sendable {
 
 /// `CreateGoalRequest` model.
 public struct CreateGoalRequest: Codable, Hashable, Sendable {
+    /// The agent the goal is for.
     public var agentId: String
+    public var title: String
+    public var `description`: String
+    public var rationale: String
+    /// How the goal sits with the constitution — what the later check reads.
+    public var alignmentJustification: String
+    public var expectedImpact: String
+    /// What it is expected to cost. The vote acts on this number.
+    public var resourceEstimateUsd: Double
 
-    public init(agentId: String) {
+    public init(agentId: String, title: String, `description`: String, rationale: String, alignmentJustification: String, expectedImpact: String, resourceEstimateUsd: Double) {
         self.agentId = agentId
+        self.title = title
+        self.`description` = `description`
+        self.rationale = rationale
+        self.alignmentJustification = alignmentJustification
+        self.expectedImpact = expectedImpact
+        self.resourceEstimateUsd = resourceEstimateUsd
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
+        case title = "title"
+        case `description` = "description"
+        case rationale = "rationale"
+        case alignmentJustification = "alignment_justification"
+        case expectedImpact = "expected_impact"
+        case resourceEstimateUsd = "resource_estimate_usd"
     }
 }
 
@@ -9373,14 +9399,36 @@ public struct CreateGuardrailRequest: Codable, Hashable, Sendable {
 
 /// `CreateImprovementProposalRequest` model.
 public struct CreateImprovementProposalRequest: Codable, Hashable, Sendable {
+    /// What kind of change is proposed.
     public var type: String
+    public var title: String
+    public var `description`: String
+    public var rationale: String
+    /// The runs this is a response to — the evidence the review stages judge.
+    public var failedRunIds: [String]
+    /// The change itself, in the shape the proposal type implies.
+    public var changes: JSONObject
+    /// What the agent achieves today, so it can be measured against something.
+    public var baselineSuccessRate: Double
 
-    public init(type: String) {
+    public init(type: String, title: String, `description`: String, rationale: String, failedRunIds: [String], changes: JSONObject, baselineSuccessRate: Double) {
         self.type = type
+        self.title = title
+        self.`description` = `description`
+        self.rationale = rationale
+        self.failedRunIds = failedRunIds
+        self.changes = changes
+        self.baselineSuccessRate = baselineSuccessRate
     }
 
     private enum CodingKeys: String, CodingKey {
         case type = "type"
+        case title = "title"
+        case `description` = "description"
+        case rationale = "rationale"
+        case failedRunIds = "failed_run_ids"
+        case changes = "changes"
+        case baselineSuccessRate = "baseline_success_rate"
     }
 }
 
@@ -10290,13 +10338,23 @@ public struct DataSubjectAccessReport: Codable, Hashable, Sendable {
     public var memory: [String]
     public var files: [String]
     public var feedback: [String]
+    /// Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+    /// their own.
+    public var coreMemory: [String]
     public var runsCount: Int
     public var sessionsCount: Int
     public var memoryCount: Int
+    public var coreMemoryCount: Int
     public var filesCount: Int
     public var feedbackCount: Int
+    /// What this endpoint does NOT return, named rather than left to be assumed: the record
+    /// CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+    /// families that carry no subject identifier at all — knowledge-base documents and workspace
+    /// files.
+    public var notExported: [String]
+    public var swept: SubjectSweep
 
-    public init(subjectId: String, tenantId: String, runs: [String], sessions: [String], memory: [String], files: [String], feedback: [String], runsCount: Int, sessionsCount: Int, memoryCount: Int, filesCount: Int, feedbackCount: Int) {
+    public init(subjectId: String, tenantId: String, runs: [String], sessions: [String], memory: [String], files: [String], feedback: [String], coreMemory: [String], runsCount: Int, sessionsCount: Int, memoryCount: Int, coreMemoryCount: Int, filesCount: Int, feedbackCount: Int, notExported: [String], swept: SubjectSweep) {
         self.subjectId = subjectId
         self.tenantId = tenantId
         self.runs = runs
@@ -10304,11 +10362,15 @@ public struct DataSubjectAccessReport: Codable, Hashable, Sendable {
         self.memory = memory
         self.files = files
         self.feedback = feedback
+        self.coreMemory = coreMemory
         self.runsCount = runsCount
         self.sessionsCount = sessionsCount
         self.memoryCount = memoryCount
+        self.coreMemoryCount = coreMemoryCount
         self.filesCount = filesCount
         self.feedbackCount = feedbackCount
+        self.notExported = notExported
+        self.swept = swept
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -10319,11 +10381,15 @@ public struct DataSubjectAccessReport: Codable, Hashable, Sendable {
         case memory = "memory"
         case files = "files"
         case feedback = "feedback"
+        case coreMemory = "core_memory"
         case runsCount = "runs_count"
         case sessionsCount = "sessions_count"
         case memoryCount = "memory_count"
+        case coreMemoryCount = "core_memory_count"
         case filesCount = "files_count"
         case feedbackCount = "feedback_count"
+        case notExported = "not_exported"
+        case swept = "swept"
     }
 }
 
@@ -10334,17 +10400,27 @@ public struct DataSubjectErasureResult: Codable, Hashable, Sendable {
     public var runsDeleted: Int
     public var sessionsDeleted: Int
     public var memoryDeleted: Int
+    public var coreMemoryDeleted: Int
     public var filesDeleted: Int
     public var feedbackDeleted: Int
+    /// Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+    /// files carry no subject identifier of any kind, so there is nothing to match a subject on and
+    /// no honest way to erase theirs without erasing everyone's — the caller is told, with the
+    /// route to do it by hand.
+    public var notErased: [String]
+    public var swept: SubjectSweep
 
-    public init(erased: Bool, subjectId: String, runsDeleted: Int, sessionsDeleted: Int, memoryDeleted: Int, filesDeleted: Int, feedbackDeleted: Int) {
+    public init(erased: Bool, subjectId: String, runsDeleted: Int, sessionsDeleted: Int, memoryDeleted: Int, coreMemoryDeleted: Int, filesDeleted: Int, feedbackDeleted: Int, notErased: [String], swept: SubjectSweep) {
         self.erased = erased
         self.subjectId = subjectId
         self.runsDeleted = runsDeleted
         self.sessionsDeleted = sessionsDeleted
         self.memoryDeleted = memoryDeleted
+        self.coreMemoryDeleted = coreMemoryDeleted
         self.filesDeleted = filesDeleted
         self.feedbackDeleted = feedbackDeleted
+        self.notErased = notErased
+        self.swept = swept
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -10353,8 +10429,11 @@ public struct DataSubjectErasureResult: Codable, Hashable, Sendable {
         case runsDeleted = "runs_deleted"
         case sessionsDeleted = "sessions_deleted"
         case memoryDeleted = "memory_deleted"
+        case coreMemoryDeleted = "core_memory_deleted"
         case filesDeleted = "files_deleted"
         case feedbackDeleted = "feedback_deleted"
+        case notErased = "not_erased"
+        case swept = "swept"
     }
 }
 
@@ -10695,17 +10774,60 @@ public struct DeleteMeResponse: Codable, Hashable, Sendable {
     public var deleted: Bool
     public var tenants: [DeleteMeResponseTenant]
     public var sessionsRevoked: Int
+    /// What the data sweep actually removed, summed across every membership. Present since
+    /// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+    /// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+    /// deleted nothing.
+    public var erased: DeleteMeResponseErased
+    /// Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+    /// `/data-subject/erasure`.
+    public var notErased: [String]
 
-    public init(deleted: Bool, tenants: [DeleteMeResponseTenant], sessionsRevoked: Int) {
+    public init(deleted: Bool, tenants: [DeleteMeResponseTenant], sessionsRevoked: Int, erased: DeleteMeResponseErased, notErased: [String]) {
         self.deleted = deleted
         self.tenants = tenants
         self.sessionsRevoked = sessionsRevoked
+        self.erased = erased
+        self.notErased = notErased
     }
 
     private enum CodingKeys: String, CodingKey {
         case deleted = "deleted"
         case tenants = "tenants"
         case sessionsRevoked = "sessions_revoked"
+        case erased = "erased"
+        case notErased = "not_erased"
+    }
+}
+
+/// What the data sweep actually removed, summed across every membership. Present since
+/// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+/// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+/// deleted nothing.
+public struct DeleteMeResponseErased: Codable, Hashable, Sendable {
+    public var runs: Int
+    public var sessions: Int
+    public var memory: Int
+    public var coreMemory: Int
+    public var files: Int
+    public var feedback: Int
+
+    public init(runs: Int, sessions: Int, memory: Int, coreMemory: Int, files: Int, feedback: Int) {
+        self.runs = runs
+        self.sessions = sessions
+        self.memory = memory
+        self.coreMemory = coreMemory
+        self.files = files
+        self.feedback = feedback
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case runs = "runs"
+        case sessions = "sessions"
+        case memory = "memory"
+        case coreMemory = "core_memory"
+        case files = "files"
+        case feedback = "feedback"
     }
 }
 
@@ -13284,18 +13406,31 @@ public struct FileArbiterAppealResponseStatus: RawRepresentable, Codable, Hashab
 public struct FileArbiterCaseRequest: Codable, Hashable, Sendable {
     public var filedBy: String
     public var againstAgentId: String
-    public var reason: String?
+    /// Which constitution rules the case alleges were broken. At least one — a case against no rule
+    /// is not arbitrable.
+    public var ruleIds: [String]
+    /// The dispute in the filer's words, and what the reader returns as `description`. There is no
+    /// `reason` field: the handler validates with `.strip()`, so a body written from the old
+    /// version of this block had its text discarded and was then refused 422 for the two fields the
+    /// block never mentioned (measured 2026-09-17).
+    public var `description`: String
+    /// Free-form supporting material. Optional.
+    public var evidence: JSONObject?
 
-    public init(filedBy: String, againstAgentId: String, reason: String? = nil) {
+    public init(filedBy: String, againstAgentId: String, ruleIds: [String], `description`: String, evidence: JSONObject? = nil) {
         self.filedBy = filedBy
         self.againstAgentId = againstAgentId
-        self.reason = reason
+        self.ruleIds = ruleIds
+        self.`description` = `description`
+        self.evidence = evidence
     }
 
     private enum CodingKeys: String, CodingKey {
         case filedBy = "filed_by"
         case againstAgentId = "against_agent_id"
-        case reason = "reason"
+        case ruleIds = "rule_ids"
+        case `description` = "description"
+        case evidence = "evidence"
     }
 }
 
@@ -17507,6 +17642,47 @@ public struct InvokeListingAgentRequest: Codable, Hashable, Sendable {
     }
 }
 
+/// `InvokeListingAgentResponse` model.
+public struct InvokeListingAgentResponse: Codable, Hashable, Sendable {
+    public var error: InvokeListingAgentResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
+
+    public init(error: InvokeListingAgentResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
+    }
+}
+
+/// `InvokeListingAgentResponseError` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct InvokeListingAgentResponseError: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let accepted = InvokeListingAgentResponseError(rawValue: "Accepted")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [InvokeListingAgentResponseError] = [.accepted]
+}
+
 /// `IssueArbiterRulingRequest` model.
 public struct IssueArbiterRulingRequest: Codable, Hashable, Sendable {
     public var decision: String
@@ -21549,6 +21725,24 @@ public struct MfaEnrolment: Codable, Hashable, Sendable {
         case otpauthURL = "otpauth_url"
         case secret = "secret"
         case recoveryCodes = "recovery_codes"
+    }
+}
+
+/// `MintLoginNonceResponse` model.
+public struct MintLoginNonceResponse: Codable, Hashable, Sendable {
+    /// Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+    public var nonce: String
+    /// Seconds the nonce stays valid if unused.
+    public var expiresInS: Int
+
+    public init(nonce: String, expiresInS: Int) {
+        self.nonce = nonce
+        self.expiresInS = expiresInS
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case nonce = "nonce"
+        case expiresInS = "expires_in_s"
     }
 }
 
@@ -25949,7 +26143,11 @@ public struct RegistryPublishRequest: Codable, Hashable, Sendable {
     public var artifact: FilePart
     /// Lowercase hex sha256; verified if provided.
     public var sha256: String?
-    /// Optional JSON-stringified SLSA attestation.
+    /// Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+    /// non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+    /// verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+    /// /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+    /// attestation also carry `attestation_verified: false` — see the version response.
     public var attestation: String?
 
     public init(manifest: String, artifact: FilePart, sha256: String? = nil, attestation: String? = nil) {
@@ -30258,6 +30456,36 @@ public struct StrategicGoalKpisItem: Codable, Hashable, Sendable {
     }
 }
 
+/// What the scan actually looked at, on every access and erasure answer. A count of zero is
+/// otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+/// ever made, and the reason was the matcher rather than the data.
+public struct SubjectSweep: Codable, Hashable, Sendable {
+    /// How many identifiers the subject was matched on — the subject id plus the id of every
+    /// api-key credential that acted for them. Never the identifiers themselves: a key id is a
+    /// credential reference and this payload goes to the requester.
+    public var identifiersMatched: Int
+    /// KV prefixes walked to exhaustion in this tenant.
+    public var prefixesScanned: [String]
+    /// Record fields compared against the identifier set.
+    public var fieldsMatched: [String]
+    /// True when nothing matched, so a zero can be read as a zero.
+    public var noRecordsMatched: Bool
+
+    public init(identifiersMatched: Int, prefixesScanned: [String], fieldsMatched: [String], noRecordsMatched: Bool) {
+        self.identifiersMatched = identifiersMatched
+        self.prefixesScanned = prefixesScanned
+        self.fieldsMatched = fieldsMatched
+        self.noRecordsMatched = noRecordsMatched
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case identifiersMatched = "identifiers_matched"
+        case prefixesScanned = "prefixes_scanned"
+        case fieldsMatched = "fields_matched"
+        case noRecordsMatched = "no_records_matched"
+    }
+}
+
 /// `SubmitFeedbackRequest` model.
 public struct SubmitFeedbackRequest: Codable, Hashable, Sendable {
     /// Clipped at 8000 characters.
@@ -31361,7 +31589,23 @@ public struct Tenant: Codable, Hashable, Sendable {
     public var logoURL: String?
     public var customDomain: TenantCustomDomain?
     public var branding: TenantBranding?
-    public var socialLinks: JSONObject?
+    /// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+    /// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+    /// — send every link you want to keep, `custom` included.
+    ///
+    /// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+    /// dropped and the request still answers 200. Nothing is hidden by this — the response body
+    /// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+    /// is not needed to see what survived. Compare what you sent against what came back; a key
+    /// missing from the answer was refused.
+    ///
+    /// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+    /// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+    /// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+    /// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+    /// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+    /// measured the filtering and could not find it described anywhere.
+    public var socialLinks: TenantSocialLinks?
     public var marketplaceListing: JSONObject?
     public var publicAgentId: String?
     public var publishedAgentIds: [String]?
@@ -31373,7 +31617,7 @@ public struct Tenant: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String
 
-    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotaOverrides? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: JSONObject? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
+    public init(tenantId: String, name: String, slug: String, status: TenantStatus, plan: String? = nil, planId: String? = nil, quotas: TenantQuotas? = nil, quotaOverrides: TenantQuotaOverrides? = nil, settings: JSONObject? = nil, billing: TenantBilling? = nil, billingStatus: TenantBillingStatus? = nil, trial: TenantTrial? = nil, trialEndsAt: String? = nil, trialRecommendedPlan: String? = nil, trialResolved: Bool? = nil, onboardingCompleted: Bool? = nil, isSuperAdmin: Bool? = nil, isPlatformAdmin: Bool? = nil, headAgentId: String? = nil, sharedWorkspaceId: String? = nil, `public`: Bool? = nil, `description`: String? = nil, logoURL: String? = nil, customDomain: TenantCustomDomain? = nil, branding: TenantBranding? = nil, socialLinks: TenantSocialLinks? = nil, marketplaceListing: JSONObject? = nil, publicAgentId: String? = nil, publishedAgentIds: [String]? = nil, publicSettings: TenantPublicSettings? = nil, entitledSpecPackages: [String]? = nil, legalHold: Bool? = nil, suspensionReason: String? = nil, suspendedAt: String? = nil, createdAt: String, updatedAt: String) {
         self.tenantId = tenantId
         self.name = name
         self.slug = slug
@@ -32228,6 +32472,80 @@ public struct TenantQuotas: Codable, Hashable, Sendable {
         case maxMonthlyImages = "max_monthly_images"
         case maxDailyImages = "max_daily_images"
         case maxMonthlyVideos = "max_monthly_videos"
+    }
+}
+
+/// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+/// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+/// — send every link you want to keep, `custom` included.
+///
+/// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+/// dropped and the request still answers 200. Nothing is hidden by this — the response body
+/// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+/// is not needed to see what survived. Compare what you sent against what came back; a key
+/// missing from the answer was refused.
+///
+/// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+/// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+/// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+/// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+/// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+/// measured the filtering and could not find it described anywhere.
+public struct TenantSocialLinks: Codable, Hashable, Sendable {
+    public var website: String?
+    public var twitter: String?
+    public var github: String?
+    public var linkedin: String?
+    public var discord: String?
+    public var telegram: String?
+    public var youtube: String?
+    public var instagram: String?
+    public var facebook: String?
+    public var tiktok: String?
+    public var custom: [TenantSocialLinksCustomItem]?
+
+    public init(website: String? = nil, twitter: String? = nil, github: String? = nil, linkedin: String? = nil, discord: String? = nil, telegram: String? = nil, youtube: String? = nil, instagram: String? = nil, facebook: String? = nil, tiktok: String? = nil, custom: [TenantSocialLinksCustomItem]? = nil) {
+        self.website = website
+        self.twitter = twitter
+        self.github = github
+        self.linkedin = linkedin
+        self.discord = discord
+        self.telegram = telegram
+        self.youtube = youtube
+        self.instagram = instagram
+        self.facebook = facebook
+        self.tiktok = tiktok
+        self.custom = custom
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case website = "website"
+        case twitter = "twitter"
+        case github = "github"
+        case linkedin = "linkedin"
+        case discord = "discord"
+        case telegram = "telegram"
+        case youtube = "youtube"
+        case instagram = "instagram"
+        case facebook = "facebook"
+        case tiktok = "tiktok"
+        case custom = "custom"
+    }
+}
+
+/// `TenantSocialLinksCustomItem` model.
+public struct TenantSocialLinksCustomItem: Codable, Hashable, Sendable {
+    public var label: String
+    public var url: String
+
+    public init(label: String, url: String) {
+        self.label = label
+        self.url = url
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case label = "label"
+        case url = "url"
     }
 }
 
@@ -33833,9 +34151,12 @@ public struct UpdateAdminRetentionConfigResponseRetention: Codable, Hashable, Se
     public var archiveBatchSize: Int
     public var feedTtlDays: Int
     public var artifactTtlDays: Int
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    public var notificationTtlDays: Int?
     public var checkpointTtlHours: Int
 
-    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, checkpointTtlHours: Int) {
+    public init(completedRunTtlDays: Int, eventTtlDays: Int, archiveToSqlite: Bool, auditLogTtlDays: Int, archiveJobIntervalMs: Int, archiveBatchSize: Int, feedTtlDays: Int, artifactTtlDays: Int, notificationTtlDays: Int? = nil, checkpointTtlHours: Int) {
         self.completedRunTtlDays = completedRunTtlDays
         self.eventTtlDays = eventTtlDays
         self.archiveToSqlite = archiveToSqlite
@@ -33844,6 +34165,7 @@ public struct UpdateAdminRetentionConfigResponseRetention: Codable, Hashable, Se
         self.archiveBatchSize = archiveBatchSize
         self.feedTtlDays = feedTtlDays
         self.artifactTtlDays = artifactTtlDays
+        self.notificationTtlDays = notificationTtlDays
         self.checkpointTtlHours = checkpointTtlHours
     }
 
@@ -33856,6 +34178,7 @@ public struct UpdateAdminRetentionConfigResponseRetention: Codable, Hashable, Se
         case archiveBatchSize = "archive_batch_size"
         case feedTtlDays = "feed_ttl_days"
         case artifactTtlDays = "artifact_ttl_days"
+        case notificationTtlDays = "notification_ttl_days"
         case checkpointTtlHours = "checkpoint_ttl_hours"
     }
 }

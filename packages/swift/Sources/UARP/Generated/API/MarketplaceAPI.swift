@@ -112,7 +112,7 @@ public struct MarketplaceAPI: Sendable {
     /// `POST /api/v1/marketplace/listings/{listingId}/invoke`
     ///
     /// Required scopes: `marketplace:invoke`.
-    public func invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = .init()) async throws -> MarketplaceInvocation {
+    public func invokeListingAgent(listingId: String, body: InvokeListingAgentRequest, options: RequestOptions = .init()) async throws -> InvokeListingAgentResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/marketplace/listings/\(encodePathSegment(listingId))/invoke",

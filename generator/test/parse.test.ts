@@ -312,7 +312,17 @@ test('parses the production document into the expected shape', () => {
   // surface arrives whole (#472, stage 1) — nine paths, twelve operations —
   // plus `DELETE /sessions/{id}/branches/{id}` in the same merge, and the two
   // feedback withdrawals of #474/#477 on paths that already existed.
-  assert.equal(ops.length, 723);
+  // 723 -> 734 on 2026-09-16: eleven billing/overage operations and a handler
+  // for `DELETE /governance/permissions/spawn-policy`. This assertion was NOT
+  // updated with it, and four more below went stale in the same two commits.
+  // Not a gap in CI — `npm test --prefix generator` runs this file and would
+  // have caught every one. Those commits were simply never pushed, so no CI
+  // ran on them at all. A local refresh that skips `make test-generator` has
+  // nothing standing behind it, which is the same lesson the 0.5.16 entry
+  // above records and the 1423 entry records again.
+  // 734 -> 735 on 2026-09-17 (build b7e7c64a, uarp #487): `POST
+  // /auth/oauth/nonce`, which the wire had been serving undocumented.
+  assert.equal(ops.length, 735);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -489,7 +499,17 @@ test('parses the production document into the expected shape', () => {
   // surface brings eight named schemas (Drawing, DrawingBrush, DrawingLayer,
   // DrawingMask, DrawingOp, DrawingJournalEntry, DrawingSelectionShape,
   // DrawingStrokePoint) and the objects nested inside them.
-  assert.equal(spec.types.length, 1456);
+  // 1456 -> 1481 on 2026-09-16: the billing/overage, promo, budget,
+  // data-explorer import/export and bridge-specs surfaces, +26 named types
+  // against one dropped. Unrecorded at the time, like the operation count
+  // above: the refresh landed in two commits and the generator suite ran for
+  // neither.
+  // 1481 -> 1488 on 2026-09-17 (build b7e7c64a, uarp #487): TenantSocialLinks
+  // and TenantSocialLinksCustomItem — `Tenant.social_links` stops being a bare
+  // object and gains eleven described platforms — plus MintLoginNonceResponse
+  // for the newly documented `POST /auth/oauth/nonce`, SubjectSweep,
+  // DeleteMeResponseErased, InvokeListingAgentResponse and its error type.
+  assert.equal(spec.types.length, 1488);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
@@ -500,7 +520,10 @@ test('parses the production document into the expected shape', () => {
   assert.equal(spec.scopes.length, 34);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.
-  assert.equal(ops.filter((o) => o.sse).length, 14);
+  // 14 -> 15 on 2026-09-16: `GET /companies/{companyId}/events`. Also
+  // unrecorded at the time — the third of five numbers the same two unpushed
+  // commits left behind.
+  assert.equal(ops.filter((o) => o.sse).length, 15);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was
@@ -516,11 +539,15 @@ test('parses the production document into the expected shape', () => {
   // existed before and was not counted. This count is the proof the change
   // took: an integer `cursor` reads as a filter, a string one as a page.
   // 15 -> 16 on 2026-09-14 (uarp #472): `listSessionDrawings`.
-  assert.equal(ops.filter((o) => o.pagination).length, 16);
+  // 16 -> 17 on 2026-09-16: `listCompanies`. The fourth number the same two
+  // commits left stale.
+  assert.equal(ops.filter((o) => o.pagination).length, 17);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 3);
+  // 3 -> 4 on 2026-09-16: `importDataExplorer`, which takes an upload.
+  // The fifth and last number the same two commits left stale.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 4);
 });
 
 test('every named type reference resolves', () => {

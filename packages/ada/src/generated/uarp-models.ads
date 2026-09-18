@@ -1286,6 +1286,10 @@ package UARP.Models is
       Archive_Batch_Size : UARP.Types.Integer_Value := 0;
       Feed_Ttl_Days : UARP.Types.Integer_Value := 0;
       Artifact_Ttl_Days : UARP.Types.Integer_Value := 0;
+      --  Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+      --  after the setting changes.
+      Has_Notification_Ttl_Days : Boolean := False;
+      Notification_Ttl_Days : UARP.Types.Integer_Value := 0;
       Checkpoint_Ttl_Hours : UARP.Types.Integer_Value := 0;
    end record;
 
@@ -7188,7 +7192,16 @@ package UARP.Models is
 
    --  `CreateGoalRequest` model.
    type Create_Goal_Request is record
+      --  The agent the goal is for.
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rationale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  How the goal sits with the constitution - what the later check reads.
+      Alignment_Justification : UARP.Types.Text := UARP.Types.Empty_Text;
+      Expected_Impact : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  What it is expected to cost. The vote acts on this number.
+      Resource_Estimate_Usd : UARP.Types.Float_Value := 0.0;
    end record;
 
    function To_JSON (Model : Create_Goal_Request) return UARP.JSON_Support.JSON_Value;
@@ -7236,7 +7249,17 @@ package UARP.Models is
 
    --  `CreateImprovementProposalRequest` model.
    type Create_Improvement_Proposal_Request is record
+      --  What kind of change is proposed.
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      Title : UARP.Types.Text := UARP.Types.Empty_Text;
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      Rationale : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The runs this is a response to - the evidence the review stages judge.
+      Failed_Run_Ids : UARP.Types.Text_Vectors.Vector;
+      --  The change itself, in the shape the proposal type implies.
+      Changes : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  What the agent achieves today, so it can be measured against something.
+      Baseline_Success_Rate : UARP.Types.Float_Value := 0.0;
    end record;
 
    function To_JSON (Model : Create_Improvement_Proposal_Request) return UARP.JSON_Support.JSON_Value;
@@ -8080,6 +8103,25 @@ package UARP.Models is
    package Data_Explorer_Namespace_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Data_Explorer_Namespace);
 
+   --  What the scan actually looked at, on every access and erasure answer. A count of zero is
+   --  otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+   --  ever made, and the reason was the matcher rather than the data.
+   type Subject_Sweep is record
+      --  How many identifiers the subject was matched on - the subject id plus the id of every
+      --  api-key credential that acted for them. Never the identifiers themselves: a key id is a
+      --  credential reference and this payload goes to the requester.
+      Identifiers_Matched : UARP.Types.Integer_Value := 0;
+      --  KV prefixes walked to exhaustion in this tenant.
+      Prefixes_Scanned : UARP.Types.Text_Vectors.Vector;
+      --  Record fields compared against the identifier set.
+      Fields_Matched : UARP.Types.Text_Vectors.Vector;
+      --  True when nothing matched, so a zero can be read as a zero.
+      No_Records_Matched : Standard.Boolean := False;
+   end record;
+
+   function To_JSON (Model : Subject_Sweep) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Subject_Sweep;
+
    --  data-subject.ts dataSubjectAccess - ids per store plus their counts; every field always
    --  present.
    type Data_Subject_Access_Report is record
@@ -8090,11 +8132,21 @@ package UARP.Models is
       Memory : UARP.Types.Text_Vectors.Vector;
       Files : UARP.Types.Text_Vectors.Vector;
       Feedback : UARP.Types.Text_Vectors.Vector;
+      --  Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+      --  their own.
+      Core_Memory : UARP.Types.Text_Vectors.Vector;
       Runs_Count : UARP.Types.Integer_Value := 0;
       Sessions_Count : UARP.Types.Integer_Value := 0;
       Memory_Count : UARP.Types.Integer_Value := 0;
+      Core_Memory_Count : UARP.Types.Integer_Value := 0;
       Files_Count : UARP.Types.Integer_Value := 0;
       Feedback_Count : UARP.Types.Integer_Value := 0;
+      --  What this endpoint does NOT return, named rather than left to be assumed: the record
+      --  CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+      --  families that carry no subject identifier at all - knowledge-base documents and workspace
+      --  files.
+      Not_Exported : UARP.Types.Text_Vectors.Vector;
+      Swept : UARP.Models.Subject_Sweep;
    end record;
 
    function To_JSON (Model : Data_Subject_Access_Report) return UARP.JSON_Support.JSON_Value;
@@ -8107,8 +8159,15 @@ package UARP.Models is
       Runs_Deleted : UARP.Types.Integer_Value := 0;
       Sessions_Deleted : UARP.Types.Integer_Value := 0;
       Memory_Deleted : UARP.Types.Integer_Value := 0;
+      Core_Memory_Deleted : UARP.Types.Integer_Value := 0;
       Files_Deleted : UARP.Types.Integer_Value := 0;
       Feedback_Deleted : UARP.Types.Integer_Value := 0;
+      --  Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+      --  files carry no subject identifier of any kind, so there is nothing to match a subject on and
+      --  no honest way to erase theirs without erasing everyone's - the caller is told, with the
+      --  route to do it by hand.
+      Not_Erased : UARP.Types.Text_Vectors.Vector;
+      Swept : UARP.Models.Subject_Sweep;
    end record;
 
    function To_JSON (Model : Data_Subject_Erasure_Result) return UARP.JSON_Support.JSON_Value;
@@ -8355,11 +8414,35 @@ package UARP.Models is
    package Delete_Me_Response_Tenant_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Delete_Me_Response_Tenant);
 
+   --  What the data sweep actually removed, summed across every membership. Present since
+   --  2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+   --  real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+   --  deleted nothing.
+   type Delete_Me_Response_Erased is record
+      Runs : UARP.Types.Integer_Value := 0;
+      Sessions : UARP.Types.Integer_Value := 0;
+      Memory : UARP.Types.Integer_Value := 0;
+      Core_Memory : UARP.Types.Integer_Value := 0;
+      Files : UARP.Types.Integer_Value := 0;
+      Feedback : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Delete_Me_Response_Erased) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Me_Response_Erased;
+
    --  `DeleteMeResponse` model.
    type Delete_Me_Response is record
       Deleted : Standard.Boolean := False;
       Tenants : UARP.Models.Delete_Me_Response_Tenant_Vectors.Vector;
       Sessions_Revoked : UARP.Types.Integer_Value := 0;
+      --  What the data sweep actually removed, summed across every membership. Present since
+      --  2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+      --  real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+      --  deleted nothing.
+      Erased : UARP.Models.Delete_Me_Response_Erased;
+      --  Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+      --  `/data-subject/erasure`.
+      Not_Erased : UARP.Types.Text_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Delete_Me_Response) return UARP.JSON_Support.JSON_Value;
@@ -9700,8 +9783,17 @@ package UARP.Models is
    type File_Arbiter_Case_Request is record
       Filed_By : UARP.Types.Text := UARP.Types.Empty_Text;
       Against_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Reason : Boolean := False;
-      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Which constitution rules the case alleges were broken. At least one - a case against no rule
+      --  is not arbitrable.
+      Rule_Ids : UARP.Types.Text_Vectors.Vector;
+      --  The dispute in the filer's words, and what the reader returns as `description`. There is no
+      --  `reason` field: the handler validates with `.strip()`, so a body written from the old
+      --  version of this block had its text discarded and was then refused 422 for the two fields the
+      --  block never mentioned (measured 2026-09-17).
+      Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Free-form supporting material. Optional.
+      Has_Evidence : Boolean := False;
+      Evidence : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
    end record;
 
    function To_JSON (Model : File_Arbiter_Case_Request) return UARP.JSON_Support.JSON_Value;
@@ -13120,6 +13212,34 @@ package UARP.Models is
    function To_JSON (Model : Invoke_Listing_Agent_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Request;
 
+   --  Values of `InvokeListingAgentResponseError`.
+   --  A value the API introduces later decodes as Invoke_Listing_Agent_Response_Error_Unrecognized
+   --  with the original text kept in Raw.
+   type Invoke_Listing_Agent_Response_Error_Kind is
+     (Invoke_Listing_Agent_Response_Error_Accepted,
+   Invoke_Listing_Agent_Response_Error_Unrecognized);
+
+   type Invoke_Listing_Agent_Response_Error is record
+      Kind : Invoke_Listing_Agent_Response_Error_Kind := Invoke_Listing_Agent_Response_Error_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Invoke_Listing_Agent_Response_Error (Value : String) return Invoke_Listing_Agent_Response_Error;
+   function To_Invoke_Listing_Agent_Response_Error (Kind : Invoke_Listing_Agent_Response_Error_Kind) return Invoke_Listing_Agent_Response_Error;
+   function Image (Model : Invoke_Listing_Agent_Response_Error) return String;
+   function To_JSON (Model : Invoke_Listing_Agent_Response_Error) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Response_Error;
+
+   --  `InvokeListingAgentResponse` model.
+   type Invoke_Listing_Agent_Response is record
+      Error : UARP.Models.Invoke_Listing_Agent_Response_Error;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Invoke_Listing_Agent_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Response;
+
    --  `IssueArbiterRulingRequest` model.
    type Issue_Arbiter_Ruling_Request is record
       Decision : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -16451,6 +16571,62 @@ package UARP.Models is
    function To_JSON (Model : Tenant_Branding) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Branding;
 
+   --  `TenantSocialLinksCustomItem` model.
+   type Tenant_Social_Links_Custom_Item is record
+      Label : UARP.Types.Text := UARP.Types.Empty_Text;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Tenant_Social_Links_Custom_Item) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links_Custom_Item;
+
+   package Tenant_Social_Links_Custom_Item_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Tenant_Social_Links_Custom_Item);
+
+   --  REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+   --  tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+   --  - send every link you want to keep, `custom` included.
+   --
+   --  Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+   --  dropped and the request still answers 200. Nothing is hidden by this - the response body
+   --  carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+   --  is not needed to see what survived. Compare what you sent against what came back; a key
+   --  missing from the answer was refused.
+   --
+   --  Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+   --  to 500 and then matches, so it is stored TRUNCATED rather than refused - a different link
+   --  that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+   --  entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+   --  urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+   --  measured the filtering and could not find it described anywhere.
+   type Tenant_Social_Links is record
+      Has_Website : Boolean := False;
+      Website : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Twitter : Boolean := False;
+      Twitter : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Github : Boolean := False;
+      Github : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Linkedin : Boolean := False;
+      Linkedin : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Discord : Boolean := False;
+      Discord : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Telegram : Boolean := False;
+      Telegram : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Youtube : Boolean := False;
+      Youtube : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Instagram : Boolean := False;
+      Instagram : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Facebook : Boolean := False;
+      Facebook : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tiktok : Boolean := False;
+      Tiktok : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Custom : Boolean := False;
+      Custom : UARP.Models.Tenant_Social_Links_Custom_Item_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Tenant_Social_Links) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Tenant_Social_Links;
+
    --  `TenantPublicSettings` model.
    type Tenant_Public_Settings is record
       Has_Max_Messages_Per_Session : Boolean := False;
@@ -16519,8 +16695,24 @@ package UARP.Models is
       Custom_Domain : UARP.Models.Tenant_Custom_Domain;
       Has_Branding : Boolean := False;
       Branding : UARP.Models.Tenant_Branding;
+      --  REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+      --  tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+      --  - send every link you want to keep, `custom` included.
+      --
+      --  Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+      --  dropped and the request still answers 200. Nothing is hidden by this - the response body
+      --  carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+      --  is not needed to see what survived. Compare what you sent against what came back; a key
+      --  missing from the answer was refused.
+      --
+      --  Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+      --  to 500 and then matches, so it is stored TRUNCATED rather than refused - a different link
+      --  that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+      --  entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+      --  urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+      --  measured the filtering and could not find it described anywhere.
       Has_Social_Links : Boolean := False;
-      Social_Links : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Social_Links : UARP.Models.Tenant_Social_Links;
       Has_Marketplace_Listing : Boolean := False;
       Marketplace_Listing : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Public_Agent_Id : Boolean := False;
@@ -17415,6 +17607,17 @@ package UARP.Models is
 
    function To_JSON (Model : Mfa_Enrolment) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Mfa_Enrolment;
+
+   --  `MintLoginNonceResponse` model.
+   type Mint_Login_Nonce_Response is record
+      --  Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+      Nonce : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Seconds the nonce stays valid if unused.
+      Expires_In_S : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Mint_Login_Nonce_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Mint_Login_Nonce_Response;
 
    --  `MintSSETokenResponse` model.
    type Mint_SSE_Token_Response is record
@@ -19157,7 +19360,11 @@ package UARP.Models is
       --  Lowercase hex sha256; verified if provided.
       Has_Sha256 : Boolean := False;
       Sha256 : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Optional JSON-stringified SLSA attestation.
+      --  Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+      --  non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+      --  verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+      --  /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+      --  attestation also carry `attestation_verified: false` - see the version response.
       Has_Attestation : Boolean := False;
       Attestation : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -22500,6 +22707,10 @@ package UARP.Models is
       Archive_Batch_Size : UARP.Types.Integer_Value := 0;
       Feed_Ttl_Days : UARP.Types.Integer_Value := 0;
       Artifact_Ttl_Days : UARP.Types.Integer_Value := 0;
+      --  Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+      --  after the setting changes.
+      Has_Notification_Ttl_Days : Boolean := False;
+      Notification_Ttl_Days : UARP.Types.Integer_Value := 0;
       Checkpoint_Ttl_Hours : UARP.Types.Integer_Value := 0;
    end record;
 

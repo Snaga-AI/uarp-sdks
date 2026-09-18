@@ -233,6 +233,31 @@ public struct AuthAPI: Sendable {
         ))
     }
 
+    /// Mint a single-use login nonce
+    ///
+    /// Returns a nonce to embed in the next Google One Tap or Apple native sign-in, so the id_token
+    /// that comes back can be tied to THIS attempt. Anonymous by necessity — it is used before
+    /// there is a session — and rate-limited per IP.
+    ///
+    /// A nonce the caller invents is not protection: whoever replays a captured id_token replays
+    /// the nonce with it. Only a nonce this platform issued and has not yet seen used counts, which
+    /// is why it is minted here rather than chosen by the client.
+    ///
+    /// Not required yet. A token that carries no `nonce` claim is accepted exactly as before, so a
+    /// client adopts this on its own schedule; a token that DOES carry one must name an unconsumed
+    /// nonce from this endpoint or the sign-in is refused. Single use: the nonce is consumed when
+    /// the token is verified, so the same token cannot be posted twice.
+    ///
+    /// `POST /api/v1/auth/oauth/nonce`
+    public func mintLoginNonce(options: RequestOptions = .init()) async throws -> MintLoginNonceResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/auth/oauth/nonce",
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Mint a 60-second SSE token scoped to events:read
     ///
     /// Mints a short-lived (60 s) API key carrying only `events:read` scope, for use as the

@@ -672,6 +672,11 @@ export interface AdminConfigRetentionConfigRetention {
   archive_batch_size: number;
   feed_ttl_days: number;
   artifact_ttl_days: number;
+  /**
+   * Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+   * after the setting changes.
+   */
+  notification_ttl_days?: number;
   checkpoint_ttl_hours: number;
 }
 
@@ -3616,7 +3621,22 @@ export interface CreateExperimentRequestVariant {
 }
 
 export interface CreateGoalRequest {
+  /**
+   * The agent the goal is for.
+   */
   agent_id: string;
+  title: string;
+  description: string;
+  rationale: string;
+  /**
+   * How the goal sits with the constitution — what the later check reads.
+   */
+  alignment_justification: string;
+  expected_impact: string;
+  /**
+   * What it is expected to cost. The vote acts on this number.
+   */
+  resource_estimate_usd: number;
 }
 
 export interface CreateGuardrailRequest {
@@ -3636,7 +3656,25 @@ export interface CreateGuardrailRequest {
 }
 
 export interface CreateImprovementProposalRequest {
+  /**
+   * What kind of change is proposed.
+   */
   type: string;
+  title: string;
+  description: string;
+  rationale: string;
+  /**
+   * The runs this is a response to — the evidence the review stages judge.
+   */
+  failed_run_ids: string[];
+  /**
+   * The change itself, in the shape the proposal type implies.
+   */
+  changes: JsonObject;
+  /**
+   * What the agent achieves today, so it can be measured against something.
+   */
+  baseline_success_rate: number;
 }
 
 export interface CreateIntegrationRequest {
@@ -4034,11 +4072,25 @@ export interface DataSubjectAccessReport {
   memory: string[];
   files: string[];
   feedback: string[];
+  /**
+   * Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+   * their own.
+   */
+  core_memory: string[];
   runs_count: number;
   sessions_count: number;
   memory_count: number;
+  core_memory_count: number;
   files_count: number;
   feedback_count: number;
+  /**
+   * What this endpoint does NOT return, named rather than left to be assumed: the record
+   * CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+   * families that carry no subject identifier at all — knowledge-base documents and workspace
+   * files.
+   */
+  not_exported: string[];
+  swept: SubjectSweep;
 }
 
 /**
@@ -4050,8 +4102,17 @@ export interface DataSubjectErasureResult {
   runs_deleted: number;
   sessions_deleted: number;
   memory_deleted: number;
+  core_memory_deleted: number;
   files_deleted: number;
   feedback_deleted: number;
+  /**
+   * Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+   * files carry no subject identifier of any kind, so there is nothing to match a subject on and
+   * no honest way to erase theirs without erasing everyone's — the caller is told, with the
+   * route to do it by hand.
+   */
+  not_erased: string[];
+  swept: SubjectSweep;
 }
 
 export interface DeactivateSafeModeResponse {
@@ -4190,6 +4251,33 @@ export interface DeleteMeResponse {
   deleted: boolean;
   tenants: DeleteMeResponseTenant[];
   sessions_revoked: number;
+  /**
+   * What the data sweep actually removed, summed across every membership. Present since
+   * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+   * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+   * deleted nothing.
+   */
+  erased: DeleteMeResponseErased;
+  /**
+   * Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+   * `/data-subject/erasure`.
+   */
+  not_erased: string[];
+}
+
+/**
+ * What the data sweep actually removed, summed across every membership. Present since
+ * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+ * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+ * deleted nothing.
+ */
+export interface DeleteMeResponseErased {
+  runs: number;
+  sessions: number;
+  memory: number;
+  core_memory: number;
+  files: number;
+  feedback: number;
 }
 
 export interface DeleteMeResponseTenant {
@@ -5138,7 +5226,22 @@ export const FILE_ARBITER_APPEAL_RESPONSE_STATUS_VALUES = ['pending', 'upheld', 
 export interface FileArbiterCaseRequest {
   filed_by: string;
   against_agent_id: string;
-  reason?: string;
+  /**
+   * Which constitution rules the case alleges were broken. At least one — a case against no rule
+   * is not arbitrable.
+   */
+  rule_ids: string[];
+  /**
+   * The dispute in the filer's words, and what the reader returns as `description`. There is no
+   * `reason` field: the handler validates with `.strip()`, so a body written from the old
+   * version of this block had its text discarded and was then refused 422 for the two fields the
+   * block never mentioned (measured 2026-09-17).
+   */
+  description: string;
+  /**
+   * Free-form supporting material. Optional.
+   */
+  evidence?: JsonObject;
 }
 
 export interface FileEntry {
@@ -6785,6 +6888,16 @@ export interface InvokeListingAgentRequest {
   input: JsonObject;
 }
 
+export interface InvokeListingAgentResponse {
+  error: InvokeListingAgentResponseError;
+  message: string;
+  retry_after_seconds: number;
+}
+
+export type InvokeListingAgentResponseError = 'Accepted';
+
+export const INVOKE_LISTING_AGENT_RESPONSE_ERROR_VALUES = ['Accepted'] as const;
+
 export interface IssueArbiterRulingRequest {
   decision: string;
   penalties?: JsonObject[];
@@ -8303,6 +8416,17 @@ export interface MfaEnrolment {
   otpauth_url: string;
   secret: string;
   recovery_codes: string[];
+}
+
+export interface MintLoginNonceResponse {
+  /**
+   * Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+   */
+  nonce: string;
+  /**
+   * Seconds the nonce stays valid if unused.
+   */
+  expires_in_s: number;
 }
 
 export interface MintSSETokenResponse {
@@ -10206,7 +10330,11 @@ export interface RegistryPublishRequest {
    */
   sha256?: string;
   /**
-   * Optional JSON-stringified SLSA attestation.
+   * Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+   * non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+   * verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+   * /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+   * attestation also carry `attestation_verified: false` — see the version response.
    */
   attestation?: string;
 }
@@ -12028,6 +12156,32 @@ export interface StrategicGoalKpisItem {
   current?: string;
 }
 
+/**
+ * What the scan actually looked at, on every access and erasure answer. A count of zero is
+ * otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+ * ever made, and the reason was the matcher rather than the data.
+ */
+export interface SubjectSweep {
+  /**
+   * How many identifiers the subject was matched on — the subject id plus the id of every
+   * api-key credential that acted for them. Never the identifiers themselves: a key id is a
+   * credential reference and this payload goes to the requester.
+   */
+  identifiers_matched: number;
+  /**
+   * KV prefixes walked to exhaustion in this tenant.
+   */
+  prefixes_scanned: string[];
+  /**
+   * Record fields compared against the identifier set.
+   */
+  fields_matched: string[];
+  /**
+   * True when nothing matched, so a zero can be read as a zero.
+   */
+  no_records_matched: boolean;
+}
+
 export interface SubmitFeedbackRequest {
   /**
    * Clipped at 8000 characters.
@@ -12449,7 +12603,25 @@ export interface Tenant {
   logo_url?: string;
   custom_domain?: TenantCustomDomain;
   branding?: TenantBranding;
-  social_links?: JsonObject;
+  /**
+   * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+   * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+   * — send every link you want to keep, `custom` included.
+   *
+   * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+   * dropped and the request still answers 200. Nothing is hidden by this — the response body
+   * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+   * is not needed to see what survived. Compare what you sent against what came back; a key
+   * missing from the answer was refused.
+   *
+   * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+   * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+   * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+   * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+   * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+   * measured the filtering and could not find it described anywhere.
+   */
+  social_links?: TenantSocialLinks;
   marketplace_listing?: JsonObject;
   public_agent_id?: string;
   published_agent_ids?: string[];
@@ -12804,6 +12976,43 @@ export interface TenantQuotas {
   max_monthly_images?: number;
   max_daily_images?: number;
   max_monthly_videos?: number;
+}
+
+/**
+ * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+ * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+ * — send every link you want to keep, `custom` included.
+ *
+ * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+ * dropped and the request still answers 200. Nothing is hidden by this — the response body
+ * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+ * is not needed to see what survived. Compare what you sent against what came back; a key
+ * missing from the answer was refused.
+ *
+ * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+ * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+ * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+ * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+ * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+ * measured the filtering and could not find it described anywhere.
+ */
+export interface TenantSocialLinks {
+  website?: string;
+  twitter?: string;
+  github?: string;
+  linkedin?: string;
+  discord?: string;
+  telegram?: string;
+  youtube?: string;
+  instagram?: string;
+  facebook?: string;
+  tiktok?: string;
+  custom?: TenantSocialLinksCustomItem[];
+}
+
+export interface TenantSocialLinksCustomItem {
+  label: string;
+  url: string;
 }
 
 export type TenantStatus = 'active' | 'suspended' | 'trial' | 'deleted' | 'waitlisted';
@@ -13374,6 +13583,11 @@ export interface UpdateAdminRetentionConfigResponseRetention {
   archive_batch_size: number;
   feed_ttl_days: number;
   artifact_ttl_days: number;
+  /**
+   * Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+   * after the setting changes.
+   */
+  notification_ttl_days?: number;
   checkpoint_ttl_hours: number;
 }
 

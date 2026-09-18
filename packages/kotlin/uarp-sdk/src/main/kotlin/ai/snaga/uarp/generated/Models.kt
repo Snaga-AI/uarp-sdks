@@ -1338,6 +1338,12 @@ public data class AdminConfigRetentionConfigRetention(
     public val feedTtlDays: Long,
     @SerialName("artifact_ttl_days")
     public val artifactTtlDays: Long,
+    /**
+     * Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+     * after the setting changes.
+     */
+    @SerialName("notification_ttl_days")
+    public val notificationTtlDays: Long? = null,
     @SerialName("checkpoint_ttl_hours")
     public val checkpointTtlHours: Long,
 )
@@ -7043,8 +7049,26 @@ public data class CreateExperimentRequestVariant(
  */
 @Serializable
 public data class CreateGoalRequest(
+    /**
+     * The agent the goal is for.
+     */
     @SerialName("agent_id")
     public val agentId: String,
+    public val title: String,
+    public val description: String,
+    public val rationale: String,
+    /**
+     * How the goal sits with the constitution — what the later check reads.
+     */
+    @SerialName("alignment_justification")
+    public val alignmentJustification: String,
+    @SerialName("expected_impact")
+    public val expectedImpact: String,
+    /**
+     * What it is expected to cost. The vote acts on this number.
+     */
+    @SerialName("resource_estimate_usd")
+    public val resourceEstimateUsd: Double,
 )
 
 /**
@@ -7074,7 +7098,27 @@ public data class CreateGuardrailRequest(
  */
 @Serializable
 public data class CreateImprovementProposalRequest(
+    /**
+     * What kind of change is proposed.
+     */
     public val type: String,
+    public val title: String,
+    public val description: String,
+    public val rationale: String,
+    /**
+     * The runs this is a response to — the evidence the review stages judge.
+     */
+    @SerialName("failed_run_ids")
+    public val failedRunIds: List<String>,
+    /**
+     * The change itself, in the shape the proposal type implies.
+     */
+    public val changes: JsonObject,
+    /**
+     * What the agent achieves today, so it can be measured against something.
+     */
+    @SerialName("baseline_success_rate")
+    public val baselineSuccessRate: Double,
 )
 
 /**
@@ -7695,16 +7739,33 @@ public data class DataSubjectAccessReport(
     public val memory: List<String>,
     public val files: List<String>,
     public val feedback: List<String>,
+    /**
+     * Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+     * their own.
+     */
+    @SerialName("core_memory")
+    public val coreMemory: List<String>,
     @SerialName("runs_count")
     public val runsCount: Long,
     @SerialName("sessions_count")
     public val sessionsCount: Long,
     @SerialName("memory_count")
     public val memoryCount: Long,
+    @SerialName("core_memory_count")
+    public val coreMemoryCount: Long,
     @SerialName("files_count")
     public val filesCount: Long,
     @SerialName("feedback_count")
     public val feedbackCount: Long,
+    /**
+     * What this endpoint does NOT return, named rather than left to be assumed: the record
+     * CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+     * families that carry no subject identifier at all — knowledge-base documents and workspace
+     * files.
+     */
+    @SerialName("not_exported")
+    public val notExported: List<String>,
+    public val swept: SubjectSweep,
 )
 
 /**
@@ -7721,10 +7782,21 @@ public data class DataSubjectErasureResult(
     public val sessionsDeleted: Long,
     @SerialName("memory_deleted")
     public val memoryDeleted: Long,
+    @SerialName("core_memory_deleted")
+    public val coreMemoryDeleted: Long,
     @SerialName("files_deleted")
     public val filesDeleted: Long,
     @SerialName("feedback_deleted")
     public val feedbackDeleted: Long,
+    /**
+     * Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+     * files carry no subject identifier of any kind, so there is nothing to match a subject on and
+     * no honest way to erase theirs without erasing everyone's — the caller is told, with the
+     * route to do it by hand.
+     */
+    @SerialName("not_erased")
+    public val notErased: List<String>,
+    public val swept: SubjectSweep,
 )
 
 /**
@@ -7947,6 +8019,36 @@ public data class DeleteMeResponse(
     public val tenants: List<DeleteMeResponseTenant>,
     @SerialName("sessions_revoked")
     public val sessionsRevoked: Long,
+    /**
+     * What the data sweep actually removed, summed across every membership. Present since
+     * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+     * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+     * deleted nothing.
+     */
+    public val erased: DeleteMeResponseErased,
+    /**
+     * Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+     * `/data-subject/erasure`.
+     */
+    @SerialName("not_erased")
+    public val notErased: List<String>,
+)
+
+/**
+ * What the data sweep actually removed, summed across every membership. Present since
+ * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+ * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+ * deleted nothing.
+ */
+@Serializable
+public data class DeleteMeResponseErased(
+    public val runs: Long,
+    public val sessions: Long,
+    public val memory: Long,
+    @SerialName("core_memory")
+    public val coreMemory: Long,
+    public val files: Long,
+    public val feedback: Long,
 )
 
 /**
@@ -9986,7 +10088,23 @@ public data class FileArbiterCaseRequest(
     public val filedBy: String,
     @SerialName("against_agent_id")
     public val againstAgentId: String,
-    public val reason: String? = null,
+    /**
+     * Which constitution rules the case alleges were broken. At least one — a case against no rule
+     * is not arbitrable.
+     */
+    @SerialName("rule_ids")
+    public val ruleIds: List<String>,
+    /**
+     * The dispute in the filer's words, and what the reader returns as `description`. There is no
+     * `reason` field: the handler validates with `.strip()`, so a body written from the old
+     * version of this block had its text discarded and was then refused 422 for the two fields the
+     * block never mentioned (measured 2026-09-17).
+     */
+    public val description: String,
+    /**
+     * Free-form supporting material. Optional.
+     */
+    public val evidence: JsonObject? = null,
 )
 
 /**
@@ -13026,6 +13144,44 @@ public data class InvokeListingAgentRequest(
 )
 
 /**
+ * `InvokeListingAgentResponse` model.
+ */
+@Serializable
+public data class InvokeListingAgentResponse(
+    public val error: InvokeListingAgentResponseError,
+    public val message: String,
+    @SerialName("retry_after_seconds")
+    public val retryAfterSeconds: Long,
+)
+
+/**
+ * `InvokeListingAgentResponseError` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = InvokeListingAgentResponseErrorSerializer::class)
+@JvmInline
+public value class InvokeListingAgentResponseError(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ACCEPTED: InvokeListingAgentResponseError = InvokeListingAgentResponseError("Accepted")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<InvokeListingAgentResponseError> = listOf(ACCEPTED)
+    }
+}
+
+public object InvokeListingAgentResponseErrorSerializer : KSerializer<InvokeListingAgentResponseError> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.InvokeListingAgentResponseError", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: InvokeListingAgentResponseError): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): InvokeListingAgentResponseError = InvokeListingAgentResponseError(decoder.decodeString())
+}
+
+/**
  * `IssueArbiterRulingRequest` model.
  */
 @Serializable
@@ -15844,6 +16000,22 @@ public data class MfaEnrolment(
     public val secret: String,
     @SerialName("recovery_codes")
     public val recoveryCodes: List<String>,
+)
+
+/**
+ * `MintLoginNonceResponse` model.
+ */
+@Serializable
+public data class MintLoginNonceResponse(
+    /**
+     * Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+     */
+    public val nonce: String,
+    /**
+     * Seconds the nonce stays valid if unused.
+     */
+    @SerialName("expires_in_s")
+    public val expiresInS: Long,
 )
 
 /**
@@ -19364,7 +19536,11 @@ public data class RegistryPublishRequest(
      */
     public val sha256: String? = null,
     /**
-     * Optional JSON-stringified SLSA attestation.
+     * Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+     * non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+     * verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+     * /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+     * attestation also carry `attestation_verified: false` — see the version response.
      */
     public val attestation: String? = null,
 )
@@ -22761,6 +22937,37 @@ public data class StrategicGoalKpisItem(
 )
 
 /**
+ * What the scan actually looked at, on every access and erasure answer. A count of zero is
+ * otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+ * ever made, and the reason was the matcher rather than the data.
+ */
+@Serializable
+public data class SubjectSweep(
+    /**
+     * How many identifiers the subject was matched on — the subject id plus the id of every
+     * api-key credential that acted for them. Never the identifiers themselves: a key id is a
+     * credential reference and this payload goes to the requester.
+     */
+    @SerialName("identifiers_matched")
+    public val identifiersMatched: Long,
+    /**
+     * KV prefixes walked to exhaustion in this tenant.
+     */
+    @SerialName("prefixes_scanned")
+    public val prefixesScanned: List<String>,
+    /**
+     * Record fields compared against the identifier set.
+     */
+    @SerialName("fields_matched")
+    public val fieldsMatched: List<String>,
+    /**
+     * True when nothing matched, so a zero can be read as a zero.
+     */
+    @SerialName("no_records_matched")
+    public val noRecordsMatched: Boolean,
+)
+
+/**
  * `SubmitFeedbackRequest` model.
  */
 @Serializable
@@ -23689,8 +23896,26 @@ public data class Tenant(
     @SerialName("custom_domain")
     public val customDomain: TenantCustomDomain? = null,
     public val branding: TenantBranding? = null,
+    /**
+     * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+     * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+     * — send every link you want to keep, `custom` included.
+     *
+     * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+     * dropped and the request still answers 200. Nothing is hidden by this — the response body
+     * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+     * is not needed to see what survived. Compare what you sent against what came back; a key
+     * missing from the answer was refused.
+     *
+     * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+     * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+     * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+     * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+     * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+     * measured the filtering and could not find it described anywhere.
+     */
     @SerialName("social_links")
-    public val socialLinks: JsonObject? = null,
+    public val socialLinks: TenantSocialLinks? = null,
     @SerialName("marketplace_listing")
     public val marketplaceListing: JsonObject? = null,
     @SerialName("public_agent_id")
@@ -24291,6 +24516,48 @@ public data class TenantQuotas(
     public val maxDailyImages: Long? = null,
     @SerialName("max_monthly_videos")
     public val maxMonthlyVideos: Long? = null,
+)
+
+/**
+ * REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+ * tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+ * — send every link you want to keep, `custom` included.
+ *
+ * Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+ * dropped and the request still answers 200. Nothing is hidden by this — the response body
+ * carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+ * is not needed to see what survived. Compare what you sent against what came back; a key
+ * missing from the answer was refused.
+ *
+ * Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+ * to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+ * that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+ * entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+ * urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+ * measured the filtering and could not find it described anywhere.
+ */
+@Serializable
+public data class TenantSocialLinks(
+    public val website: String? = null,
+    public val twitter: String? = null,
+    public val github: String? = null,
+    public val linkedin: String? = null,
+    public val discord: String? = null,
+    public val telegram: String? = null,
+    public val youtube: String? = null,
+    public val instagram: String? = null,
+    public val facebook: String? = null,
+    public val tiktok: String? = null,
+    public val custom: List<TenantSocialLinksCustomItem>? = null,
+)
+
+/**
+ * `TenantSocialLinksCustomItem` model.
+ */
+@Serializable
+public data class TenantSocialLinksCustomItem(
+    public val label: String,
+    public val url: String,
 )
 
 /**
@@ -25389,6 +25656,12 @@ public data class UpdateAdminRetentionConfigResponseRetention(
     public val feedTtlDays: Long,
     @SerialName("artifact_ttl_days")
     public val artifactTtlDays: Long,
+    /**
+     * Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+     * after the setting changes.
+     */
+    @SerialName("notification_ttl_days")
+    public val notificationTtlDays: Long? = null,
     @SerialName("checkpoint_ttl_hours")
     public val checkpointTtlHours: Long,
 )

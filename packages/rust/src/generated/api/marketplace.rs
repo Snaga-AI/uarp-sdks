@@ -179,7 +179,7 @@ impl MarketplaceApi {
     /// `POST /api/v1/marketplace/listings/{listingId}/invoke`
     ///
     /// Required scopes: `marketplace:invoke`.
-    pub async fn invoke_listing_agent(&self, listing_id: &str, body: &models::InvokeListingAgentRequest) -> Result<models::MarketplaceInvocation> {
+    pub async fn invoke_listing_agent(&self, listing_id: &str, body: &models::InvokeListingAgentRequest) -> Result<models::InvokeListingAgentResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,

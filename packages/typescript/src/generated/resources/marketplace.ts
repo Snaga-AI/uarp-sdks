@@ -8,6 +8,7 @@ import type {
   GetListingReviewsResponse,
   GetMarketplaceCategoriesResponse,
   InvokeListingAgentRequest,
+  InvokeListingAgentResponse,
   ListFeaturedSpecsResponse,
   ListSubscriptionsResponse,
   MarketplaceInvocation,
@@ -154,7 +155,7 @@ export class MarketplaceResource extends APIResource {
    *
    * Required scopes: `marketplace:invoke`.
    */
-  invokeListingAgent(listingId: string, body: InvokeListingAgentRequest, options?: RequestOptions): Promise<MarketplaceInvocation> {
+  invokeListingAgent(listingId: string, body: InvokeListingAgentRequest, options?: RequestOptions): Promise<InvokeListingAgentResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/marketplace/listings/${encodeURIComponent(String(listingId))}/invoke`,

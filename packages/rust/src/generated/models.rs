@@ -1289,6 +1289,10 @@ pub struct AdminConfigRetentionConfigRetention {
     pub archive_batch_size: i64,
     pub feed_ttl_days: i64,
     pub artifact_ttl_days: i64,
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notification_ttl_days: Option<i64>,
     pub checkpoint_ttl_hours: i64,
 }
 
@@ -6902,7 +6906,16 @@ pub struct CreateExperimentRequestVariant {
 /// `CreateGoalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateGoalRequest {
+    /// The agent the goal is for.
     pub agent_id: String,
+    pub title: String,
+    pub description: String,
+    pub rationale: String,
+    /// How the goal sits with the constitution — what the later check reads.
+    pub alignment_justification: String,
+    pub expected_impact: String,
+    /// What it is expected to cost. The vote acts on this number.
+    pub resource_estimate_usd: f64,
 }
 
 /// `CreateGuardrailRequest` model.
@@ -6925,7 +6938,17 @@ pub struct CreateGuardrailRequest {
 /// `CreateImprovementProposalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateImprovementProposalRequest {
+    /// What kind of change is proposed.
     pub r#type: String,
+    pub title: String,
+    pub description: String,
+    pub rationale: String,
+    /// The runs this is a response to — the evidence the review stages judge.
+    pub failed_run_ids: Vec<String>,
+    /// The change itself, in the shape the proposal type implies.
+    pub changes: serde_json::Map<String, serde_json::Value>,
+    /// What the agent achieves today, so it can be measured against something.
+    pub baseline_success_rate: f64,
 }
 
 /// `CreateIntegrationRequest` model.
@@ -7492,11 +7515,21 @@ pub struct DataSubjectAccessReport {
     pub memory: Vec<String>,
     pub files: Vec<String>,
     pub feedback: Vec<String>,
+    /// Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+    /// their own.
+    pub core_memory: Vec<String>,
     pub runs_count: i64,
     pub sessions_count: i64,
     pub memory_count: i64,
+    pub core_memory_count: i64,
     pub files_count: i64,
     pub feedback_count: i64,
+    /// What this endpoint does NOT return, named rather than left to be assumed: the record
+    /// CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+    /// families that carry no subject identifier at all — knowledge-base documents and workspace
+    /// files.
+    pub not_exported: Vec<String>,
+    pub swept: SubjectSweep,
 }
 
 /// data-subject.ts dataSubjectErasure — `erased` plus the SubjectErasureCounts spread.
@@ -7507,8 +7540,15 @@ pub struct DataSubjectErasureResult {
     pub runs_deleted: i64,
     pub sessions_deleted: i64,
     pub memory_deleted: i64,
+    pub core_memory_deleted: i64,
     pub files_deleted: i64,
     pub feedback_deleted: i64,
+    /// Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+    /// files carry no subject identifier of any kind, so there is nothing to match a subject on and
+    /// no honest way to erase theirs without erasing everyone's — the caller is told, with the
+    /// route to do it by hand.
+    pub not_erased: Vec<String>,
+    pub swept: SubjectSweep,
 }
 
 /// `DeactivateSafeModeResponse` model.
@@ -7678,6 +7718,28 @@ pub struct DeleteMeResponse {
     pub deleted: bool,
     pub tenants: Vec<DeleteMeResponseTenant>,
     pub sessions_revoked: i64,
+    /// What the data sweep actually removed, summed across every membership. Present since
+    /// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+    /// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+    /// deleted nothing.
+    pub erased: DeleteMeResponseErased,
+    /// Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+    /// `/data-subject/erasure`.
+    pub not_erased: Vec<String>,
+}
+
+/// What the data sweep actually removed, summed across every membership. Present since
+/// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+/// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+/// deleted nothing.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteMeResponseErased {
+    pub runs: i64,
+    pub sessions: i64,
+    pub memory: i64,
+    pub core_memory: i64,
+    pub files: i64,
+    pub feedback: i64,
 }
 
 /// `DeleteMeResponseTenant` model.
@@ -10149,8 +10211,17 @@ impl From<&str> for FileArbiterAppealResponseStatus {
 pub struct FileArbiterCaseRequest {
     pub filed_by: String,
     pub against_agent_id: String,
+    /// Which constitution rules the case alleges were broken. At least one — a case against no rule
+    /// is not arbitrable.
+    pub rule_ids: Vec<String>,
+    /// The dispute in the filer's words, and what the reader returns as `description`. There is no
+    /// `reason` field: the handler validates with `.strip()`, so a body written from the old
+    /// version of this block had its text discarded and was then refused 422 for the two fields the
+    /// block never mentioned (measured 2026-09-17).
+    pub description: String,
+    /// Free-form supporting material. Optional.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
+    pub evidence: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `FileEntry` model.
@@ -13241,6 +13312,50 @@ pub struct InvokeListingAgentRequest {
     pub input: serde_json::Map<String, serde_json::Value>,
 }
 
+/// `InvokeListingAgentResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InvokeListingAgentResponse {
+    pub error: InvokeListingAgentResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
+}
+
+/// `InvokeListingAgentResponseError` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum InvokeListingAgentResponseError {
+    #[default]
+    #[serde(rename = "Accepted")]
+    Accepted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl InvokeListingAgentResponseError {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Accepted => "Accepted",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for InvokeListingAgentResponseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for InvokeListingAgentResponseError {
+    fn from(value: &str) -> Self {
+        match value {
+            "Accepted" => Self::Accepted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `IssueArbiterRulingRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct IssueArbiterRulingRequest {
@@ -15903,6 +16018,15 @@ pub struct MfaEnrolment {
     pub otpauth_url: String,
     pub secret: String,
     pub recovery_codes: Vec<String>,
+}
+
+/// `MintLoginNonceResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MintLoginNonceResponse {
+    /// Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+    pub nonce: String,
+    /// Seconds the nonce stays valid if unused.
+    pub expires_in_s: i64,
 }
 
 /// `MintSSETokenResponse` model.
@@ -19093,7 +19217,11 @@ pub struct RegistryPublishRequest {
     /// Lowercase hex sha256; verified if provided.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
-    /// Optional JSON-stringified SLSA attestation.
+    /// Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+    /// non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+    /// verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+    /// /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+    /// attestation also carry `attestation_verified: false` — see the version response.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attestation: Option<String>,
 }
@@ -22313,6 +22441,23 @@ pub struct StrategicGoalKpisItem {
     pub current: Option<String>,
 }
 
+/// What the scan actually looked at, on every access and erasure answer. A count of zero is
+/// otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+/// ever made, and the reason was the matcher rather than the data.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SubjectSweep {
+    /// How many identifiers the subject was matched on — the subject id plus the id of every
+    /// api-key credential that acted for them. Never the identifiers themselves: a key id is a
+    /// credential reference and this payload goes to the requester.
+    pub identifiers_matched: i64,
+    /// KV prefixes walked to exhaustion in this tenant.
+    pub prefixes_scanned: Vec<String>,
+    /// Record fields compared against the identifier set.
+    pub fields_matched: Vec<String>,
+    /// True when nothing matched, so a zero can be read as a zero.
+    pub no_records_matched: bool,
+}
+
 /// `SubmitFeedbackRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubmitFeedbackRequest {
@@ -23326,8 +23471,24 @@ pub struct Tenant {
     pub custom_domain: Option<TenantCustomDomain>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<TenantBranding>,
+    /// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+    /// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+    /// — send every link you want to keep, `custom` included.
+    ///
+    /// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+    /// dropped and the request still answers 200. Nothing is hidden by this — the response body
+    /// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+    /// is not needed to see what survived. Compare what you sent against what came back; a key
+    /// missing from the answer was refused.
+    ///
+    /// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+    /// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+    /// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+    /// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+    /// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+    /// measured the filtering and could not find it described anywhere.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub marketplace_listing: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -23858,6 +24019,55 @@ pub struct TenantQuotas {
     pub max_daily_images: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_monthly_videos: Option<i64>,
+}
+
+/// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+/// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+/// — send every link you want to keep, `custom` included.
+///
+/// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+/// dropped and the request still answers 200. Nothing is hidden by this — the response body
+/// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+/// is not needed to see what survived. Compare what you sent against what came back; a key
+/// missing from the answer was refused.
+///
+/// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+/// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+/// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+/// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+/// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+/// measured the filtering and could not find it described anywhere.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantSocialLinks {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub twitter: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub linkedin: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discord: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub telegram: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub youtube: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instagram: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facebook: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tiktok: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Vec<TenantSocialLinksCustomItem>>,
+}
+
+/// `TenantSocialLinksCustomItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantSocialLinksCustomItem {
+    pub label: String,
+    pub url: String,
 }
 
 /// `TenantStatus` enumeration.
@@ -24786,6 +24996,10 @@ pub struct UpdateAdminRetentionConfigResponseRetention {
     pub archive_batch_size: i64,
     pub feed_ttl_days: i64,
     pub artifact_ttl_days: i64,
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notification_ttl_days: Option<i64>,
     pub checkpoint_ttl_hours: i64,
 }
 
