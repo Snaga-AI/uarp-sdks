@@ -4828,7 +4828,7 @@ package body UARP.Models is
       JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id_X));
       JS.Set (Result, "event_type", JS.JSON.Create (Model.Event_Type_X));
       JS.Set (Result, "error_message", JS.JSON.Create (Model.Error_Message_X));
-      if Model.Has_Tenant_Id then
+      if Model.Has_Tenant_Id_X then
          JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id_X));
       end if;
       return Result;
@@ -4867,7 +4867,7 @@ package body UARP.Models is
          Result.Error_Message_X := JS.As_Text (JS.Get_Value (Node, "error_message"));
       end if;
       if JS.Present (Node, "tenant_id") then
-         Result.Has_Tenant_Id := True;
+         Result.Has_Tenant_Id_X := True;
          Result.Tenant_Id_X := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
       end if;
       return Result;
@@ -23193,7 +23193,7 @@ package body UARP.Models is
             JS.Set (Result, "errors", Items);
          end;
       end if;
-      if Model.Has_Correlation_Id then
+      if Model.Has_Correlation_Id_X then
          JS.Set (Result, "correlation_id", JS.JSON.Create (Model.Correlation_Id_X));
       end if;
       return Result;
@@ -23233,7 +23233,7 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "correlation_id") then
-         Result.Has_Correlation_Id := True;
+         Result.Has_Correlation_Id_X := True;
          Result.Correlation_Id_X := JS.As_Text (JS.Get_Value (Node, "correlation_id"));
       end if;
       return Result;
@@ -25879,40 +25879,40 @@ package body UARP.Models is
             JS.Set (Result, "runsByDay", Items);
          end;
       end if;
-      if Model.Has_Total_Runs then
+      if Model.Has_Total_Runs_X then
          JS.Set (Result, "total_runs", JS.JSON.Create (Model.Total_Runs_X));
       end if;
-      if Model.Has_Completed_Runs then
+      if Model.Has_Completed_Runs_X then
          JS.Set (Result, "completed_runs", JS.JSON.Create (Model.Completed_Runs_X));
       end if;
-      if Model.Has_Failed_Runs then
+      if Model.Has_Failed_Runs_X then
          JS.Set (Result, "failed_runs", JS.JSON.Create (Model.Failed_Runs_X));
       end if;
-      if Model.Has_Cancelled_Runs then
+      if Model.Has_Cancelled_Runs_X then
          JS.Set (Result, "cancelled_runs", JS.JSON.Create (Model.Cancelled_Runs_X));
       end if;
-      if Model.Has_Guardrail_Blocked_Runs then
+      if Model.Has_Guardrail_Blocked_Runs_X then
          JS.Set (Result, "guardrail_blocked_runs", JS.JSON.Create (Model.Guardrail_Blocked_Runs_X));
       end if;
-      if Model.Has_Error_Rate_Percent then
+      if Model.Has_Error_Rate_Percent_X then
          JS.Set (Result, "error_rate_percent", JS.JSON.Create (Model.Error_Rate_Percent_X));
       end if;
-      if Model.Has_Avg_Steps_Per_Run then
+      if Model.Has_Avg_Steps_Per_Run_X then
          JS.Set (Result, "avg_steps_per_run", JS.JSON.Create (Model.Avg_Steps_Per_Run_X));
       end if;
-      if Model.Has_Avg_Duration_Ms then
+      if Model.Has_Avg_Duration_Ms_X then
          JS.Set (Result, "avg_duration_ms", JS.JSON.Create (Model.Avg_Duration_Ms_X));
       end if;
-      if Model.Has_Avg_Input_Tokens then
+      if Model.Has_Avg_Input_Tokens_X then
          JS.Set (Result, "avg_input_tokens", JS.JSON.Create (Model.Avg_Input_Tokens_X));
       end if;
-      if Model.Has_Avg_Output_Tokens then
+      if Model.Has_Avg_Output_Tokens_X then
          JS.Set (Result, "avg_output_tokens", JS.JSON.Create (Model.Avg_Output_Tokens_X));
       end if;
-      if Model.Has_Avg_Thinking_Tokens then
+      if Model.Has_Avg_Thinking_Tokens_X then
          JS.Set (Result, "avg_thinking_tokens", JS.JSON.Create (Model.Avg_Thinking_Tokens_X));
       end if;
-      if Model.Has_Tool_Breakdown then
+      if Model.Has_Tool_Breakdown_X then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
@@ -25922,7 +25922,7 @@ package body UARP.Models is
             JS.Set (Result, "tool_breakdown", Items);
          end;
       end if;
-      if Model.Has_Top_Error_Messages then
+      if Model.Has_Top_Error_Messages_X then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
@@ -25932,7 +25932,7 @@ package body UARP.Models is
             JS.Set (Result, "top_error_messages", Items);
          end;
       end if;
-      if Model.Has_Runs_By_Day then
+      if Model.Has_Runs_By_Day_X then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
@@ -26023,51 +26023,51 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "total_runs") then
-         Result.Has_Total_Runs := True;
+         Result.Has_Total_Runs_X := True;
          Result.Total_Runs_X := JS.As_Integer (JS.Get_Value (Node, "total_runs"));
       end if;
       if JS.Present (Node, "completed_runs") then
-         Result.Has_Completed_Runs := True;
+         Result.Has_Completed_Runs_X := True;
          Result.Completed_Runs_X := JS.As_Integer (JS.Get_Value (Node, "completed_runs"));
       end if;
       if JS.Present (Node, "failed_runs") then
-         Result.Has_Failed_Runs := True;
+         Result.Has_Failed_Runs_X := True;
          Result.Failed_Runs_X := JS.As_Integer (JS.Get_Value (Node, "failed_runs"));
       end if;
       if JS.Present (Node, "cancelled_runs") then
-         Result.Has_Cancelled_Runs := True;
+         Result.Has_Cancelled_Runs_X := True;
          Result.Cancelled_Runs_X := JS.As_Integer (JS.Get_Value (Node, "cancelled_runs"));
       end if;
       if JS.Present (Node, "guardrail_blocked_runs") then
-         Result.Has_Guardrail_Blocked_Runs := True;
+         Result.Has_Guardrail_Blocked_Runs_X := True;
          Result.Guardrail_Blocked_Runs_X := JS.As_Integer (JS.Get_Value (Node, "guardrail_blocked_runs"));
       end if;
       if JS.Present (Node, "error_rate_percent") then
-         Result.Has_Error_Rate_Percent := True;
+         Result.Has_Error_Rate_Percent_X := True;
          Result.Error_Rate_Percent_X := JS.As_Float (JS.Get_Value (Node, "error_rate_percent"));
       end if;
       if JS.Present (Node, "avg_steps_per_run") then
-         Result.Has_Avg_Steps_Per_Run := True;
+         Result.Has_Avg_Steps_Per_Run_X := True;
          Result.Avg_Steps_Per_Run_X := JS.As_Float (JS.Get_Value (Node, "avg_steps_per_run"));
       end if;
       if JS.Present (Node, "avg_duration_ms") then
-         Result.Has_Avg_Duration_Ms := True;
+         Result.Has_Avg_Duration_Ms_X := True;
          Result.Avg_Duration_Ms_X := JS.As_Float (JS.Get_Value (Node, "avg_duration_ms"));
       end if;
       if JS.Present (Node, "avg_input_tokens") then
-         Result.Has_Avg_Input_Tokens := True;
+         Result.Has_Avg_Input_Tokens_X := True;
          Result.Avg_Input_Tokens_X := JS.As_Float (JS.Get_Value (Node, "avg_input_tokens"));
       end if;
       if JS.Present (Node, "avg_output_tokens") then
-         Result.Has_Avg_Output_Tokens := True;
+         Result.Has_Avg_Output_Tokens_X := True;
          Result.Avg_Output_Tokens_X := JS.As_Float (JS.Get_Value (Node, "avg_output_tokens"));
       end if;
       if JS.Present (Node, "avg_thinking_tokens") then
-         Result.Has_Avg_Thinking_Tokens := True;
+         Result.Has_Avg_Thinking_Tokens_X := True;
          Result.Avg_Thinking_Tokens_X := JS.As_Float (JS.Get_Value (Node, "avg_thinking_tokens"));
       end if;
       if JS.Present (Node, "tool_breakdown") then
-         Result.Has_Tool_Breakdown := True;
+         Result.Has_Tool_Breakdown_X := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "tool_breakdown");
          begin
@@ -26077,7 +26077,7 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "top_error_messages") then
-         Result.Has_Top_Error_Messages := True;
+         Result.Has_Top_Error_Messages_X := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "top_error_messages");
          begin
@@ -26087,7 +26087,7 @@ package body UARP.Models is
          end;
       end if;
       if JS.Present (Node, "runs_by_day") then
-         Result.Has_Runs_By_Day := True;
+         Result.Has_Runs_By_Day_X := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "runs_by_day");
          begin
@@ -50774,7 +50774,7 @@ package body UARP.Models is
       if Model.Has_Mismatch_Detail then
          JS.Set (Result, "mismatchDetail", JS.JSON.Create (Model.Mismatch_Detail));
       end if;
-      if Model.Has_Mismatch_Detail then
+      if Model.Has_Mismatch_Detail_X then
          JS.Set (Result, "mismatch_detail", JS.JSON.Create (Model.Mismatch_Detail_X));
       end if;
       return Result;
@@ -50797,7 +50797,7 @@ package body UARP.Models is
          Result.Mismatch_Detail := JS.As_Text (JS.Get_Value (Node, "mismatchDetail"));
       end if;
       if JS.Present (Node, "mismatch_detail") then
-         Result.Has_Mismatch_Detail := True;
+         Result.Has_Mismatch_Detail_X := True;
          Result.Mismatch_Detail_X := JS.As_Text (JS.Get_Value (Node, "mismatch_detail"));
       end if;
       return Result;
@@ -50812,7 +50812,7 @@ package body UARP.Models is
       if Model.Has_Mismatch_Detail then
          JS.Set (Result, "mismatchDetail", JS.JSON.Create (Model.Mismatch_Detail));
       end if;
-      if Model.Has_Mismatch_Detail then
+      if Model.Has_Mismatch_Detail_X then
          JS.Set (Result, "mismatch_detail", JS.JSON.Create (Model.Mismatch_Detail_X));
       end if;
       return Result;
@@ -50835,7 +50835,7 @@ package body UARP.Models is
          Result.Mismatch_Detail := JS.As_Text (JS.Get_Value (Node, "mismatchDetail"));
       end if;
       if JS.Present (Node, "mismatch_detail") then
-         Result.Has_Mismatch_Detail := True;
+         Result.Has_Mismatch_Detail_X := True;
          Result.Mismatch_Detail_X := JS.As_Text (JS.Get_Value (Node, "mismatch_detail"));
       end if;
       return Result;
@@ -50867,13 +50867,13 @@ package body UARP.Models is
       end if;
       JS.Set (Result, "events_replayed", JS.JSON.Create (Model.Events_Replayed_X));
       JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id_X));
-      if Model.Has_Divergence_Point then
+      if Model.Has_Divergence_Point_X then
          JS.Set (Result, "divergence_point", JS.JSON.Create (Model.Divergence_Point_X));
       end if;
-      if Model.Has_Divergence_Reason then
+      if Model.Has_Divergence_Reason_X then
          JS.Set (Result, "divergence_reason", JS.JSON.Create (Model.Divergence_Reason_X));
       end if;
-      if Model.Has_Step_Comparisons then
+      if Model.Has_Step_Comparisons_X then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
          begin
@@ -50929,15 +50929,15 @@ package body UARP.Models is
          Result.Run_Id_X := JS.As_Text (JS.Get_Value (Node, "run_id"));
       end if;
       if JS.Present (Node, "divergence_point") then
-         Result.Has_Divergence_Point := True;
+         Result.Has_Divergence_Point_X := True;
          Result.Divergence_Point_X := JS.As_Integer (JS.Get_Value (Node, "divergence_point"));
       end if;
       if JS.Present (Node, "divergence_reason") then
-         Result.Has_Divergence_Reason := True;
+         Result.Has_Divergence_Reason_X := True;
          Result.Divergence_Reason_X := JS.As_Text (JS.Get_Value (Node, "divergence_reason"));
       end if;
       if JS.Present (Node, "step_comparisons") then
-         Result.Has_Step_Comparisons := True;
+         Result.Has_Step_Comparisons_X := True;
          declare
             Items : constant JS.JSON_Array := JS.Get_Array (Node, "step_comparisons");
          begin
@@ -52764,7 +52764,7 @@ package body UARP.Models is
       if Model.Has_Match then
          JS.Set (Result, "match", JS.JSON.Create (Model.Match));
       end if;
-      if Model.Has_Line_Number then
+      if Model.Has_Line_Number_X then
          JS.Set (Result, "line_number", JS.JSON.Create (Model.Line_Number_X));
       end if;
       return Result;
@@ -52790,7 +52790,7 @@ package body UARP.Models is
          Result.Match := JS.As_Text (JS.Get_Value (Node, "match"));
       end if;
       if JS.Present (Node, "line_number") then
-         Result.Has_Line_Number := True;
+         Result.Has_Line_Number_X := True;
          Result.Line_Number_X := JS.As_Integer (JS.Get_Value (Node, "line_number"));
       end if;
       return Result;

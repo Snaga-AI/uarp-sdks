@@ -256,15 +256,30 @@ interface Field {
 
 function fieldsOf(type: ObjectType): Field[] {
   const used = new Set<string>();
+  const usedFlags = new Set<string>();
   return type.properties.map((prop) => {
     let base = adaName(prop.wire) || 'Value';
     if (/^[0-9]/.test(base)) base = `N_${base}`;
     let name = adaIdent(base);
     while (used.has(name.toLowerCase())) name += '_X';
     used.add(name.toLowerCase());
+    // The presence flag needs its own collision loop, and NOT `Has_${name}`:
+    // `adaIdent` renames only Ada reserved words, and `Has_` in front of one is
+    // never itself reserved, so a field `Type_K` keeps the readable flag
+    // `Has_Type`. Deriving the flag from the deduplicated field name would
+    // rename every such flag for no reason.
+    //
+    // Without this loop the value fields deduplicate and the flags do not:
+    // `total_runs` beside its deprecated twin `totalRuns` emitted
+    // `Total_Runs`/`Total_Runs_X` next to `Has_Total_Runs` TWICE, which GNAT
+    // refuses — 22 duplicated flags across 7 records, and the Ada build was
+    // the only one of the five targets that noticed.
+    let has = `Has_${base}`;
+    while (usedFlags.has(has.toLowerCase())) has += '_X';
+    usedFlags.add(has.toLowerCase());
     return {
       name,
-      has: `Has_${base}`,
+      has,
       type: adaType(prop.type),
       initialiser: defaultFor(prop.type),
       optional: !prop.required || prop.nullable,
@@ -696,15 +711,20 @@ function paramsType(op: Operation): string {
 
 function paramFields(op: Operation): Field[] {
   const used = new Set<string>();
+  const usedFlags = new Set<string>();
   return paramBag(op).map((param) => {
     let base = adaName(param.wire) || 'Value';
     if (/^[0-9]/.test(base)) base = `N_${base}`;
     let name = adaIdent(base);
     while (used.has(name.toLowerCase())) name += '_X';
     used.add(name.toLowerCase());
+    // Same pairing as `fieldsOf` above, for the same reason.
+    let has = `Has_${base}`;
+    while (usedFlags.has(has.toLowerCase())) has += '_X';
+    usedFlags.add(has.toLowerCase());
     return {
       name,
-      has: `Has_${base}`,
+      has,
       type: paramType(param),
       initialiser: defaultFor(param.type),
       optional: !param.required,

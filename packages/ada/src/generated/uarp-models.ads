@@ -1933,7 +1933,7 @@ package UARP.Models is
       Event_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
       Event_Type_X : UARP.Types.Text := UARP.Types.Empty_Text;
       Error_Message_X : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tenant_Id : Boolean := False;
+      Has_Tenant_Id_X : Boolean := False;
       Tenant_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -9382,7 +9382,7 @@ package UARP.Models is
       Has_Errors : Boolean := False;
       Errors : UARP.Models.Error_Error_Vectors.Vector;
       --  Request ID for tracing
-      Has_Correlation_Id : Boolean := False;
+      Has_Correlation_Id_X : Boolean := False;
       Correlation_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -10469,33 +10469,33 @@ package UARP.Models is
       --  `runs_by_day`.
       Has_Runs_By_Day : Boolean := False;
       Runs_By_Day : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item_Vectors.Vector;
-      Has_Total_Runs : Boolean := False;
+      Has_Total_Runs_X : Boolean := False;
       Total_Runs_X : UARP.Types.Integer_Value := 0;
-      Has_Completed_Runs : Boolean := False;
+      Has_Completed_Runs_X : Boolean := False;
       Completed_Runs_X : UARP.Types.Integer_Value := 0;
-      Has_Failed_Runs : Boolean := False;
+      Has_Failed_Runs_X : Boolean := False;
       Failed_Runs_X : UARP.Types.Integer_Value := 0;
-      Has_Cancelled_Runs : Boolean := False;
+      Has_Cancelled_Runs_X : Boolean := False;
       Cancelled_Runs_X : UARP.Types.Integer_Value := 0;
-      Has_Guardrail_Blocked_Runs : Boolean := False;
+      Has_Guardrail_Blocked_Runs_X : Boolean := False;
       Guardrail_Blocked_Runs_X : UARP.Types.Integer_Value := 0;
-      Has_Error_Rate_Percent : Boolean := False;
+      Has_Error_Rate_Percent_X : Boolean := False;
       Error_Rate_Percent_X : UARP.Types.Float_Value := 0.0;
-      Has_Avg_Steps_Per_Run : Boolean := False;
+      Has_Avg_Steps_Per_Run_X : Boolean := False;
       Avg_Steps_Per_Run_X : UARP.Types.Float_Value := 0.0;
-      Has_Avg_Duration_Ms : Boolean := False;
+      Has_Avg_Duration_Ms_X : Boolean := False;
       Avg_Duration_Ms_X : UARP.Types.Float_Value := 0.0;
-      Has_Avg_Input_Tokens : Boolean := False;
+      Has_Avg_Input_Tokens_X : Boolean := False;
       Avg_Input_Tokens_X : UARP.Types.Float_Value := 0.0;
-      Has_Avg_Output_Tokens : Boolean := False;
+      Has_Avg_Output_Tokens_X : Boolean := False;
       Avg_Output_Tokens_X : UARP.Types.Float_Value := 0.0;
-      Has_Avg_Thinking_Tokens : Boolean := False;
+      Has_Avg_Thinking_Tokens_X : Boolean := False;
       Avg_Thinking_Tokens_X : UARP.Types.Float_Value := 0.0;
-      Has_Tool_Breakdown : Boolean := False;
+      Has_Tool_Breakdown_X : Boolean := False;
       Tool_Breakdown_X : UARP.Models.Tool_Breakdown_Entry_Vectors.Vector;
-      Has_Top_Error_Messages : Boolean := False;
+      Has_Top_Error_Messages_X : Boolean := False;
       Top_Error_Messages_X : UARP.Models.Get_Agent_Activity_Stats_Response_Top_Error_Message2_Vectors.Vector;
-      Has_Runs_By_Day : Boolean := False;
+      Has_Runs_By_Day_X : Boolean := False;
       Runs_By_Day_X : UARP.Models.Get_Agent_Activity_Stats_Response_Runs_By_Day_Item2_Vectors.Vector;
    end record;
 
@@ -19682,7 +19682,7 @@ package UARP.Models is
       --  `mismatch_detail`.
       Has_Mismatch_Detail : Boolean := False;
       Mismatch_Detail : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Mismatch_Detail : Boolean := False;
+      Has_Mismatch_Detail_X : Boolean := False;
       Mismatch_Detail_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -19702,7 +19702,7 @@ package UARP.Models is
       --  `mismatch_detail`.
       Has_Mismatch_Detail : Boolean := False;
       Mismatch_Detail : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Mismatch_Detail : Boolean := False;
+      Has_Mismatch_Detail_X : Boolean := False;
       Mismatch_Detail_X : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -19743,11 +19743,11 @@ package UARP.Models is
       Step_Comparisons : UARP.Models.Replay_Result_Step_Comparison_Vectors.Vector;
       Events_Replayed_X : UARP.Types.Integer_Value := 0;
       Run_Id_X : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Divergence_Point : Boolean := False;
+      Has_Divergence_Point_X : Boolean := False;
       Divergence_Point_X : UARP.Types.Integer_Value := 0;
-      Has_Divergence_Reason : Boolean := False;
+      Has_Divergence_Reason_X : Boolean := False;
       Divergence_Reason_X : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Step_Comparisons : Boolean := False;
+      Has_Step_Comparisons_X : Boolean := False;
       Step_Comparisons_X : UARP.Models.Replay_Result_Step_Comparison2_Vectors.Vector;
    end record;
 
@@ -20597,7 +20597,7 @@ package UARP.Models is
       Line : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Match : Boolean := False;
       Match : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Line_Number : Boolean := False;
+      Has_Line_Number_X : Boolean := False;
       Line_Number_X : UARP.Types.Integer_Value := 0;
    end record;
 
