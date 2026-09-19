@@ -10,15 +10,22 @@ public struct MCPAPI: Sendable {
 
     /// Create MCP server
     ///
-    /// Registers an external MCP server for the tenant; `admin` role only. `name` and `transport`
-    /// are required and the id `__system__` is reserved; `stdio` is refused on production
-    /// deployments unless the host explicitly opts in, and `http`/`streamable_http` require a `url`
-    /// that passes an SSRF check resolving DNS, so a hostname that points at a private or metadata
-    /// address is rejected and a resolution failure fails closed (422). `api_key_ref`, when given,
-    /// must name an `MCP_*` environment variable. Any `env` block is encrypted at rest and dropped
-    /// from the stored plaintext; after persisting, a live session is opened immediately so tools
-    /// surface on the next run, and a failure to connect is non-fatal and reported as
-    /// `connect_error` on the 201 response.
+    /// Registers an external MCP server for the tenant. Tenant owner or developer — `viewer` is
+    /// refused: the server is remote code holding a tenant credential, and building agents is the
+    /// developer's job while reading them is not. `name` and `transport` are required and the id
+    /// `__system__` is reserved; `stdio` is refused on production deployments unless the host
+    /// explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check
+    /// resolving DNS, so a hostname that points at a private or metadata address is rejected and a
+    /// resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*`
+    /// environment variable. For an authenticated `http`/`streamable_http` server put the secret in
+    /// `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never
+    /// returned, and dropped from the stored plaintext. After persisting, a live session is opened
+    /// immediately so tools surface on the next run, and a failure to connect is non-fatal and
+    /// reported as `connect_error` on the 201 response.
+    ///
+    /// Pass `assigned_agent_ids` in the same call to connect it at once — a server installed and
+    /// connected to nobody is inert, and leaving it in that state is how a working configuration
+    /// comes to look broken.
     ///
     /// `POST /api/v1/mcp/servers`
     public func createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = .init()) async throws -> MCPServer {
@@ -61,6 +68,29 @@ public struct MCPAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/mcp/servers/\(encodePathSegment(serverId))",
+            options: options
+        ))
+    }
+
+    /// List the MCP servers connected to an agent
+    ///
+    /// Only servers whose `assigned_agent_ids` includes this agent. Installing a server does not
+    /// connect it: a server nobody is connected to reaches nobody, and this list is empty until
+    /// something is connected.
+    ///
+    /// This answer and the one the agent's run gate uses come from the same predicate,
+    /// deliberately. The integrations surface next door grew two answers to that question — the
+    /// per-agent list filters strictly while the runtime treats an unset list as shared with every
+    /// agent — so a connector an agent really does have reads as "not connected" on the very screen
+    /// meant to show it.
+    ///
+    /// `GET /api/v1/agents/{agentId}/mcp-servers`
+    ///
+    /// Required scopes: `agents:read`.
+    public func listAgentMCPServers(agentId: String, options: RequestOptions = .init()) async throws -> ListAgentMCPServersResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/mcp-servers",
             options: options
         ))
     }
@@ -121,6 +151,36 @@ public struct MCPAPI: Sendable {
         return client.sendStream(RequestSpec(
             method: "GET",
             path: "/api/v1/mcp",
+            options: options
+        ))
+    }
+
+    /// Replace the set of MCP servers connected to an agent
+    ///
+    /// WRITE SEMANTICS: replaces. `server_ids` is the complete set of servers this agent is
+    /// connected to after the call; a server the tenant has but the array omits loses this agent.
+    /// `[]` disconnects everything. There is nothing else in the body to merge.
+    ///
+    /// The replace is scoped to THIS agent: it edits `assigned_agent_ids` on each server by adding
+    /// or removing this one id, so other agents' connections to the same server are untouched
+    /// (handler `handleAgentMcpServersRoute`, routes/mcp.ts).
+    ///
+    /// Naming an id the tenant does not have is refused with 422 and nothing at all is written — a
+    /// silently dropped id would report a connection that was never made.
+    ///
+    /// Servers are INSTALLED tenant-wide (`POST /api/v1/mcp/servers`, which also accepts
+    /// `assigned_agent_ids` so install and connect are one call) and CONNECTED here. Tenant owner
+    /// or developer; each connect and disconnect is audit-logged on its own.
+    ///
+    /// `PUT /api/v1/agents/{agentId}/mcp-servers`
+    ///
+    /// Required scopes: `agents:write`.
+    public func setAgentMCPServers(agentId: String, body: SetAgentMCPServersRequest, options: RequestOptions = .init()) async throws -> SetAgentMCPServersResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/agents/\(encodePathSegment(agentId))/mcp-servers",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

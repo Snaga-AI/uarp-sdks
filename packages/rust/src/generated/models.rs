@@ -6983,8 +6983,16 @@ pub struct CreateMCPServerRequest {
     pub command: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<String>>,
+    /// Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+    /// disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+    /// one sent as the credential.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
     /// Names an environment variable of the API process whose value is sent to this server as a
@@ -13952,6 +13960,15 @@ pub struct ListAgentMailResponse {
     pub total_scanned: i64,
 }
 
+/// `ListAgentMCPServersResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentMCPServersResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub servers: Option<Vec<MCPServer>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+}
+
 /// `ListAgentScorersResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentScorersResponse {
@@ -15749,6 +15766,13 @@ pub struct MCPServer {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
     /// How many env vars are set. The values are never returned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
@@ -15764,6 +15788,64 @@ pub struct MCPServer {
     pub last_synced: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+
+/// How an http / streamable_http server is authenticated. The secret itself travels in `env`
+/// under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+/// not offered: a key in a URL lands in every proxy log on the way.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPServerAuth {
+    pub r#type: MCPServerAuthType,
+    /// Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+    /// not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header: Option<String>,
+    /// Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    /// Key inside `env` holding the secret. Default `MCP_API_KEY`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub env_key: Option<String>,
+}
+
+/// `MCPServerAuthType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPServerAuthType {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "api_key")]
+    APIKey,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPServerAuthType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => "none",
+            Self::APIKey => "api_key",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPServerAuthType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPServerAuthType {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => Self::None,
+            "api_key" => Self::APIKey,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `MCPServerStatus` enumeration.
@@ -15844,6 +15926,13 @@ pub struct MCPServerWithConnectResult {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
     /// How many env vars are set. The values are never returned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
@@ -21591,6 +21680,26 @@ pub struct SetAgentIntegrationsResponseDiff {
     pub assigned: Vec<String>,
     pub unassigned: Vec<String>,
     pub unknown: Vec<String>,
+}
+
+/// `SetAgentMCPServersRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAgentMCPServersRequest {
+    /// The complete set after the call. An empty array disconnects every server from this agent.
+    pub server_ids: Vec<String>,
+}
+
+/// `SetAgentMCPServersResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAgentMCPServersResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    /// Server ids that gained this agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connected: Option<Vec<String>>,
+    /// Server ids that lost it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disconnected: Option<Vec<String>>,
 }
 
 /// `SetAgentPermissionsResponse` model.

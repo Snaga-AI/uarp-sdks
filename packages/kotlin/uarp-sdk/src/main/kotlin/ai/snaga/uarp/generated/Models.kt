@@ -7161,7 +7161,18 @@ public data class CreateMCPServerRequest(
     public val url: String? = null,
     public val command: String? = null,
     public val args: List<String>? = null,
+    /**
+     * Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+     * disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+     * one sent as the credential.
+     */
     public val env: JsonObject? = null,
+    public val auth: MCPServerAuth? = null,
+    /**
+     * Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+     */
+    @SerialName("assigned_agent_ids")
+    public val assignedAgentIds: List<String>? = null,
     public val enabled: Boolean? = null,
     /**
      * Names an environment variable of the API process whose value is sent to this server as a
@@ -13788,6 +13799,15 @@ public data class ListAgentMailResponse(
 )
 
 /**
+ * `ListAgentMCPServersResponse` model.
+ */
+@Serializable
+public data class ListAgentMCPServersResponse(
+    public val servers: List<MCPServer>? = null,
+    public val total: Long? = null,
+)
+
+/**
  * `ListAgentScorersResponse` model.
  */
 @Serializable
@@ -15756,6 +15776,14 @@ public data class MCPServer(
     public val url: String? = null,
     @SerialName("api_key_ref")
     public val apiKeyRef: String? = null,
+    public val auth: MCPServerAuth? = null,
+    /**
+     * Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+     * installing a server does not connect it. Set it with PUT
+     * /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+     */
+    @SerialName("assigned_agent_ids")
+    public val assignedAgentIds: List<String>? = null,
     /**
      * How many env vars are set. The values are never returned.
      */
@@ -15774,6 +15802,58 @@ public data class MCPServer(
     @SerialName("tenant_id")
     public val tenantId: String? = null,
 )
+
+/**
+ * How an http / streamable_http server is authenticated. The secret itself travels in `env`
+ * under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+ * not offered: a key in a URL lands in every proxy log on the way.
+ */
+@Serializable
+public data class MCPServerAuth(
+    public val type: MCPServerAuthType,
+    /**
+     * Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+     * not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+     */
+    public val header: String? = null,
+    /**
+     * Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+     */
+    public val prefix: String? = null,
+    /**
+     * Key inside `env` holding the secret. Default `MCP_API_KEY`.
+     */
+    @SerialName("env_key")
+    public val envKey: String? = null,
+)
+
+/**
+ * `MCPServerAuthType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPServerAuthTypeSerializer::class)
+@JvmInline
+public value class MCPServerAuthType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NONE: MCPServerAuthType = MCPServerAuthType("none")
+        public val API_KEY: MCPServerAuthType = MCPServerAuthType("api_key")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPServerAuthType> = listOf(NONE, API_KEY)
+    }
+}
+
+public object MCPServerAuthTypeSerializer : KSerializer<MCPServerAuthType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPServerAuthType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPServerAuthType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPServerAuthType = MCPServerAuthType(decoder.decodeString())
+}
 
 /**
  * `MCPServerStatus` values.
@@ -15850,6 +15930,14 @@ public data class MCPServerWithConnectResult(
     public val url: String? = null,
     @SerialName("api_key_ref")
     public val apiKeyRef: String? = null,
+    public val auth: MCPServerAuth? = null,
+    /**
+     * Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+     * installing a server does not connect it. Set it with PUT
+     * /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+     */
+    @SerialName("assigned_agent_ids")
+    public val assignedAgentIds: List<String>? = null,
     /**
      * How many env vars are set. The values are never returned.
      */
@@ -22069,6 +22157,35 @@ public data class SetAgentIntegrationsResponseDiff(
     public val assigned: List<String>,
     public val unassigned: List<String>,
     public val unknown: List<String>,
+)
+
+/**
+ * `SetAgentMCPServersRequest` model.
+ */
+@Serializable
+public data class SetAgentMCPServersRequest(
+    /**
+     * The complete set after the call. An empty array disconnects every server from this agent.
+     */
+    @SerialName("server_ids")
+    public val serverIds: List<String>,
+)
+
+/**
+ * `SetAgentMCPServersResponse` model.
+ */
+@Serializable
+public data class SetAgentMCPServersResponse(
+    @SerialName("agent_id")
+    public val agentId: String? = null,
+    /**
+     * Server ids that gained this agent.
+     */
+    public val connected: List<String>? = null,
+    /**
+     * Server ids that lost it.
+     */
+    public val disconnected: List<String>? = null,
 )
 
 /**

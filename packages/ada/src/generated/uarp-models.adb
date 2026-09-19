@@ -18091,6 +18091,77 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Transport is
       (To_MCP_Transport (UARP.Types."+" (JS.As_Text (Node))));
 
+   function To_MCP_Server_Auth_Type (Value : String) return MCP_Server_Auth_Type is
+   begin
+      if Value = "none" then
+         return (Kind => MCP_Server_Auth_Type_None, Raw => UARP.Types."+" (Value));
+      elsif Value = "api_key" then
+         return (Kind => MCP_Server_Auth_Type_API_Key, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Server_Auth_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Server_Auth_Type;
+
+   function To_MCP_Server_Auth_Type (Kind : MCP_Server_Auth_Type_Kind) return MCP_Server_Auth_Type is
+   begin
+      case Kind is
+         when MCP_Server_Auth_Type_None =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("none"));
+         when MCP_Server_Auth_Type_API_Key =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("api_key"));
+         when MCP_Server_Auth_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Server_Auth_Type;
+
+   function Image (Model : MCP_Server_Auth_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Server_Auth_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Server_Auth_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Auth_Type is
+      (To_MCP_Server_Auth_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : MCP_Server_Auth) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      if Model.Has_Header then
+         JS.Set (Result, "header", JS.JSON.Create (Model.Header));
+      end if;
+      if Model.Has_Prefix then
+         JS.Set (Result, "prefix", JS.JSON.Create (Model.Prefix));
+      end if;
+      if Model.Has_Env_Key then
+         JS.Set (Result, "env_key", JS.JSON.Create (Model.Env_Key));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Auth is
+      Result : MCP_Server_Auth;
+   begin
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "header") then
+         Result.Has_Header := True;
+         Result.Header := JS.As_Text (JS.Get_Value (Node, "header"));
+      end if;
+      if JS.Present (Node, "prefix") then
+         Result.Has_Prefix := True;
+         Result.Prefix := JS.As_Text (JS.Get_Value (Node, "prefix"));
+      end if;
+      if JS.Present (Node, "env_key") then
+         Result.Has_Env_Key := True;
+         Result.Env_Key := JS.As_Text (JS.Get_Value (Node, "env_key"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Create_MCP_Server_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -18114,6 +18185,19 @@ package body UARP.Models is
       end if;
       if Model.Has_Env then
          JS.Set (Result, "env", Model.Env);
+      end if;
+      if Model.Has_Auth then
+         JS.Set (Result, "auth", To_JSON (Model.Auth));
+      end if;
+      if Model.Has_Assigned_Agent_Ids then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Assigned_Agent_Ids loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "assigned_agent_ids", Items);
+         end;
       end if;
       if Model.Has_Enabled then
          JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
@@ -18164,6 +18248,20 @@ package body UARP.Models is
       if JS.Present (Node, "env") then
          Result.Has_Env := True;
          Result.Env := JS.Get_Value (Node, "env");
+      end if;
+      if JS.Present (Node, "auth") then
+         Result.Has_Auth := True;
+         Result.Auth := From_JSON (JS.Get_Value (Node, "auth"));
+      end if;
+      if JS.Present (Node, "assigned_agent_ids") then
+         Result.Has_Assigned_Agent_Ids := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "assigned_agent_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Assigned_Agent_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "enabled") then
          Result.Has_Enabled := True;
@@ -34729,6 +34827,247 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_MCP_Server_Status (Value : String) return MCP_Server_Status is
+   begin
+      if Value = "active" then
+         return (Kind => MCP_Server_Status_Active, Raw => UARP.Types."+" (Value));
+      elsif Value = "error" then
+         return (Kind => MCP_Server_Status_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "disabled" then
+         return (Kind => MCP_Server_Status_Disabled, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Server_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Server_Status;
+
+   function To_MCP_Server_Status (Kind : MCP_Server_Status_Kind) return MCP_Server_Status is
+   begin
+      case Kind is
+         when MCP_Server_Status_Active =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("active"));
+         when MCP_Server_Status_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("error"));
+         when MCP_Server_Status_Disabled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("disabled"));
+         when MCP_Server_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Server_Status;
+
+   function Image (Model : MCP_Server_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Server_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Server_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Status is
+      (To_MCP_Server_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : MCP_Server) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "transport", To_JSON (Model.Transport));
+      if Model.Has_Command then
+         JS.Set (Result, "command", JS.JSON.Create (Model.Command));
+      end if;
+      if Model.Has_Args then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Args loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "args", Items);
+         end;
+      end if;
+      if Model.Has_URL then
+         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      end if;
+      if Model.Has_API_Key_Ref then
+         JS.Set (Result, "api_key_ref", JS.JSON.Create (Model.API_Key_Ref));
+      end if;
+      if Model.Has_Auth then
+         JS.Set (Result, "auth", To_JSON (Model.Auth));
+      end if;
+      if Model.Has_Assigned_Agent_Ids then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Assigned_Agent_Ids loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "assigned_agent_ids", Items);
+         end;
+      end if;
+      if Model.Has_Env_Count then
+         JS.Set (Result, "env_count", JS.JSON.Create (Model.Env_Count));
+      end if;
+      if Model.Has_Egress_Allowlist then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Egress_Allowlist loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "egress_allowlist", Items);
+         end;
+      end if;
+      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      if Model.Has_Capabilities then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Capabilities loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "capabilities", Items);
+         end;
+      end if;
+      if Model.Has_Status then
+         JS.Set (Result, "status", To_JSON (Model.Status));
+      end if;
+      if Model.Has_Last_Synced then
+         JS.Set (Result, "last_synced", JS.JSON.Create (Model.Last_Synced));
+      end if;
+      if Model.Has_Tenant_Id then
+         JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server is
+      Result : MCP_Server;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "transport") then
+         Result.Transport := From_JSON (JS.Get_Value (Node, "transport"));
+      end if;
+      if JS.Present (Node, "command") then
+         Result.Has_Command := True;
+         Result.Command := JS.As_Text (JS.Get_Value (Node, "command"));
+      end if;
+      if JS.Present (Node, "args") then
+         Result.Has_Args := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "args");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Args.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "url") then
+         Result.Has_URL := True;
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "api_key_ref") then
+         Result.Has_API_Key_Ref := True;
+         Result.API_Key_Ref := JS.As_Text (JS.Get_Value (Node, "api_key_ref"));
+      end if;
+      if JS.Present (Node, "auth") then
+         Result.Has_Auth := True;
+         Result.Auth := From_JSON (JS.Get_Value (Node, "auth"));
+      end if;
+      if JS.Present (Node, "assigned_agent_ids") then
+         Result.Has_Assigned_Agent_Ids := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "assigned_agent_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Assigned_Agent_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "env_count") then
+         Result.Has_Env_Count := True;
+         Result.Env_Count := JS.As_Integer (JS.Get_Value (Node, "env_count"));
+      end if;
+      if JS.Present (Node, "egress_allowlist") then
+         Result.Has_Egress_Allowlist := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "egress_allowlist");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Egress_Allowlist.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "enabled") then
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "capabilities") then
+         Result.Has_Capabilities := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "capabilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Capabilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Has_Status := True;
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "last_synced") then
+         Result.Has_Last_Synced := True;
+         Result.Last_Synced := JS.As_Text (JS.Get_Value (Node, "last_synced"));
+      end if;
+      if JS.Present (Node, "tenant_id") then
+         Result.Has_Tenant_Id := True;
+         Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Agent_MCP_Servers_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Servers then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Servers loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "servers", Items);
+         end;
+      end if;
+      if Model.Has_Total then
+         JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agent_MCP_Servers_Response is
+      Result : List_Agent_MCP_Servers_Response;
+   begin
+      if JS.Present (Node, "servers") then
+         Result.Has_Servers := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "servers");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Servers.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Has_Total := True;
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : List_Agent_Scorers_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -36622,181 +36961,6 @@ package body UARP.Models is
                Result.Models.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
-      end if;
-      return Result;
-   end From_JSON;
-
-   function To_MCP_Server_Status (Value : String) return MCP_Server_Status is
-   begin
-      if Value = "active" then
-         return (Kind => MCP_Server_Status_Active, Raw => UARP.Types."+" (Value));
-      elsif Value = "error" then
-         return (Kind => MCP_Server_Status_Error, Raw => UARP.Types."+" (Value));
-      elsif Value = "disabled" then
-         return (Kind => MCP_Server_Status_Disabled, Raw => UARP.Types."+" (Value));
-      else
-         return (Kind => MCP_Server_Status_Unrecognized, Raw => UARP.Types."+" (Value));
-      end if;
-   end To_MCP_Server_Status;
-
-   function To_MCP_Server_Status (Kind : MCP_Server_Status_Kind) return MCP_Server_Status is
-   begin
-      case Kind is
-         when MCP_Server_Status_Active =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("active"));
-         when MCP_Server_Status_Error =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("error"));
-         when MCP_Server_Status_Disabled =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("disabled"));
-         when MCP_Server_Status_Unrecognized =>
-            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
-      end case;
-   end To_MCP_Server_Status;
-
-   function Image (Model : MCP_Server_Status) return String is
-      (if UARP.Types.SU.Length (Model.Raw) > 0
-         then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_MCP_Server_Status (Model.Kind).Raw));
-
-   function To_JSON (Model : MCP_Server_Status) return UARP.JSON_Support.JSON_Value is
-      (JS.JSON.Create (Image (Model)));
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Status is
-      (To_MCP_Server_Status (UARP.Types."+" (JS.As_Text (Node))));
-
-   function To_JSON (Model : MCP_Server) return UARP.JSON_Support.JSON_Value is
-      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
-   begin
-      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
-      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
-      JS.Set (Result, "transport", To_JSON (Model.Transport));
-      if Model.Has_Command then
-         JS.Set (Result, "command", JS.JSON.Create (Model.Command));
-      end if;
-      if Model.Has_Args then
-         declare
-            Items : JS.JSON_Array := JS.JSON.Empty_Array;
-         begin
-            for Element of Model.Args loop
-               JS.JSON.Append (Items, JS.JSON.Create (Element));
-            end loop;
-            JS.Set (Result, "args", Items);
-         end;
-      end if;
-      if Model.Has_URL then
-         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
-      end if;
-      if Model.Has_API_Key_Ref then
-         JS.Set (Result, "api_key_ref", JS.JSON.Create (Model.API_Key_Ref));
-      end if;
-      if Model.Has_Env_Count then
-         JS.Set (Result, "env_count", JS.JSON.Create (Model.Env_Count));
-      end if;
-      if Model.Has_Egress_Allowlist then
-         declare
-            Items : JS.JSON_Array := JS.JSON.Empty_Array;
-         begin
-            for Element of Model.Egress_Allowlist loop
-               JS.JSON.Append (Items, To_JSON (Element));
-            end loop;
-            JS.Set (Result, "egress_allowlist", Items);
-         end;
-      end if;
-      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
-      if Model.Has_Capabilities then
-         declare
-            Items : JS.JSON_Array := JS.JSON.Empty_Array;
-         begin
-            for Element of Model.Capabilities loop
-               JS.JSON.Append (Items, JS.JSON.Create (Element));
-            end loop;
-            JS.Set (Result, "capabilities", Items);
-         end;
-      end if;
-      if Model.Has_Status then
-         JS.Set (Result, "status", To_JSON (Model.Status));
-      end if;
-      if Model.Has_Last_Synced then
-         JS.Set (Result, "last_synced", JS.JSON.Create (Model.Last_Synced));
-      end if;
-      if Model.Has_Tenant_Id then
-         JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
-      end if;
-      return Result;
-   end To_JSON;
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server is
-      Result : MCP_Server;
-   begin
-      if JS.Present (Node, "id") then
-         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
-      end if;
-      if JS.Present (Node, "name") then
-         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
-      end if;
-      if JS.Present (Node, "transport") then
-         Result.Transport := From_JSON (JS.Get_Value (Node, "transport"));
-      end if;
-      if JS.Present (Node, "command") then
-         Result.Has_Command := True;
-         Result.Command := JS.As_Text (JS.Get_Value (Node, "command"));
-      end if;
-      if JS.Present (Node, "args") then
-         Result.Has_Args := True;
-         declare
-            Items : constant JS.JSON_Array := JS.Get_Array (Node, "args");
-         begin
-            for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Args.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
-            end loop;
-         end;
-      end if;
-      if JS.Present (Node, "url") then
-         Result.Has_URL := True;
-         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
-      end if;
-      if JS.Present (Node, "api_key_ref") then
-         Result.Has_API_Key_Ref := True;
-         Result.API_Key_Ref := JS.As_Text (JS.Get_Value (Node, "api_key_ref"));
-      end if;
-      if JS.Present (Node, "env_count") then
-         Result.Has_Env_Count := True;
-         Result.Env_Count := JS.As_Integer (JS.Get_Value (Node, "env_count"));
-      end if;
-      if JS.Present (Node, "egress_allowlist") then
-         Result.Has_Egress_Allowlist := True;
-         declare
-            Items : constant JS.JSON_Array := JS.Get_Array (Node, "egress_allowlist");
-         begin
-            for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Egress_Allowlist.Append (From_JSON (JS.JSON.Get (Items, Index)));
-            end loop;
-         end;
-      end if;
-      if JS.Present (Node, "enabled") then
-         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
-      end if;
-      if JS.Present (Node, "capabilities") then
-         Result.Has_Capabilities := True;
-         declare
-            Items : constant JS.JSON_Array := JS.Get_Array (Node, "capabilities");
-         begin
-            for Index in 1 .. JS.JSON.Length (Items) loop
-               Result.Capabilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
-            end loop;
-         end;
-      end if;
-      if JS.Present (Node, "status") then
-         Result.Has_Status := True;
-         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
-      end if;
-      if JS.Present (Node, "last_synced") then
-         Result.Has_Last_Synced := True;
-         Result.Last_Synced := JS.As_Text (JS.Get_Value (Node, "last_synced"));
-      end if;
-      if JS.Present (Node, "tenant_id") then
-         Result.Has_Tenant_Id := True;
-         Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
       end if;
       return Result;
    end From_JSON;
@@ -45151,6 +45315,19 @@ package body UARP.Models is
       if Model.Has_API_Key_Ref then
          JS.Set (Result, "api_key_ref", JS.JSON.Create (Model.API_Key_Ref));
       end if;
+      if Model.Has_Auth then
+         JS.Set (Result, "auth", To_JSON (Model.Auth));
+      end if;
+      if Model.Has_Assigned_Agent_Ids then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Assigned_Agent_Ids loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "assigned_agent_ids", Items);
+         end;
+      end if;
       if Model.Has_Env_Count then
          JS.Set (Result, "env_count", JS.JSON.Create (Model.Env_Count));
       end if;
@@ -45223,6 +45400,20 @@ package body UARP.Models is
       if JS.Present (Node, "api_key_ref") then
          Result.Has_API_Key_Ref := True;
          Result.API_Key_Ref := JS.As_Text (JS.Get_Value (Node, "api_key_ref"));
+      end if;
+      if JS.Present (Node, "auth") then
+         Result.Has_Auth := True;
+         Result.Auth := From_JSON (JS.Get_Value (Node, "auth"));
+      end if;
+      if JS.Present (Node, "assigned_agent_ids") then
+         Result.Has_Assigned_Agent_Ids := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "assigned_agent_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Assigned_Agent_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       if JS.Present (Node, "env_count") then
          Result.Has_Env_Count := True;
@@ -53534,6 +53725,94 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "diff") then
          Result.Diff := From_JSON (JS.Get_Value (Node, "diff"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Set_Agent_MCP_Servers_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Server_Ids loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "server_ids", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Agent_MCP_Servers_Request is
+      Result : Set_Agent_MCP_Servers_Request;
+   begin
+      if JS.Present (Node, "server_ids") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "server_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Server_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Set_Agent_MCP_Servers_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Agent_Id then
+         JS.Set (Result, "agent_id", JS.JSON.Create (Model.Agent_Id));
+      end if;
+      if Model.Has_Connected then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Connected loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "connected", Items);
+         end;
+      end if;
+      if Model.Has_Disconnected then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Disconnected loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "disconnected", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Agent_MCP_Servers_Response is
+      Result : Set_Agent_MCP_Servers_Response;
+   begin
+      if JS.Present (Node, "agent_id") then
+         Result.Has_Agent_Id := True;
+         Result.Agent_Id := JS.As_Text (JS.Get_Value (Node, "agent_id"));
+      end if;
+      if JS.Present (Node, "connected") then
+         Result.Has_Connected := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "connected");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Connected.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "disconnected") then
+         Result.Has_Disconnected := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "disconnected");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Disconnected.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
       end if;
       return Result;
    end From_JSON;

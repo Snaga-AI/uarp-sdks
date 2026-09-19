@@ -7308,6 +7308,45 @@ package UARP.Models is
    function To_JSON (Model : MCP_Transport) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Transport;
 
+   --  Values of `MCPServerAuthType`.
+   --  A value the API introduces later decodes as MCP_Server_Auth_Type_Unrecognized
+   --  with the original text kept in Raw.
+   type MCP_Server_Auth_Type_Kind is
+     (MCP_Server_Auth_Type_None,
+   MCP_Server_Auth_Type_API_Key,
+   MCP_Server_Auth_Type_Unrecognized);
+
+   type MCP_Server_Auth_Type is record
+      Kind : MCP_Server_Auth_Type_Kind := MCP_Server_Auth_Type_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_MCP_Server_Auth_Type (Value : String) return MCP_Server_Auth_Type;
+   function To_MCP_Server_Auth_Type (Kind : MCP_Server_Auth_Type_Kind) return MCP_Server_Auth_Type;
+   function Image (Model : MCP_Server_Auth_Type) return String;
+   function To_JSON (Model : MCP_Server_Auth_Type) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Auth_Type;
+
+   --  How an http / streamable_http server is authenticated. The secret itself travels in `env`
+   --  under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+   --  not offered: a key in a URL lands in every proxy log on the way.
+   type MCP_Server_Auth is record
+      Type_K : UARP.Models.MCP_Server_Auth_Type;
+      --  Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+      --  not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+      Has_Header : Boolean := False;
+      Header : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+      Has_Prefix : Boolean := False;
+      Prefix : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Key inside `env` holding the secret. Default `MCP_API_KEY`.
+      Has_Env_Key : Boolean := False;
+      Env_Key : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : MCP_Server_Auth) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Auth;
+
    --  `CreateMCPServerRequest` model.
    type Create_MCP_Server_Request is record
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7318,8 +7357,16 @@ package UARP.Models is
       Command : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Args : Boolean := False;
       Args : UARP.Types.Text_Vectors.Vector;
+      --  Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+      --  disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+      --  one sent as the credential.
       Has_Env : Boolean := False;
       Env : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      Has_Auth : Boolean := False;
+      Auth : UARP.Models.MCP_Server_Auth;
+      --  Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+      Has_Assigned_Agent_Ids : Boolean := False;
+      Assigned_Agent_Ids : UARP.Types.Text_Vectors.Vector;
       Has_Enabled : Boolean := False;
       Enabled : Standard.Boolean := False;
       --  Names an environment variable of the API process whose value is sent to this server as a
@@ -13784,6 +13831,83 @@ package UARP.Models is
    function To_JSON (Model : List_Agent_Mail_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agent_Mail_Response;
 
+   --  Values of `MCPServerStatus`.
+   --  A value the API introduces later decodes as MCP_Server_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type MCP_Server_Status_Kind is
+     (MCP_Server_Status_Active,
+   MCP_Server_Status_Error,
+   MCP_Server_Status_Disabled,
+   MCP_Server_Status_Unrecognized);
+
+   type MCP_Server_Status is record
+      Kind : MCP_Server_Status_Kind := MCP_Server_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_MCP_Server_Status (Value : String) return MCP_Server_Status;
+   function To_MCP_Server_Status (Kind : MCP_Server_Status_Kind) return MCP_Server_Status;
+   function Image (Model : MCP_Server_Status) return String;
+   function To_JSON (Model : MCP_Server_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Status;
+
+   --  An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
+   --  disclosed.
+   type MCP_Server is record
+      Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Transport : UARP.Models.MCP_Transport;
+      --  stdio only.
+      Has_Command : Boolean := False;
+      Command : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Args : Boolean := False;
+      Args : UARP.Types.Text_Vectors.Vector;
+      --  http / streamable_http only.
+      Has_URL : Boolean := False;
+      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_API_Key_Ref : Boolean := False;
+      API_Key_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Auth : Boolean := False;
+      Auth : UARP.Models.MCP_Server_Auth;
+      --  Agents allowed to use this server's tools. Absent or empty means no agent sees them -
+      --  installing a server does not connect it. Set it with PUT
+      --  /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+      Has_Assigned_Agent_Ids : Boolean := False;
+      Assigned_Agent_Ids : UARP.Types.Text_Vectors.Vector;
+      --  How many env vars are set. The values are never returned.
+      Has_Env_Count : Boolean := False;
+      Env_Count : UARP.Types.Integer_Value := 0;
+      Has_Egress_Allowlist : Boolean := False;
+      Egress_Allowlist : UARP.Models.Egress_Rule_Vectors.Vector;
+      Enabled : Standard.Boolean := False;
+      --  Tool names and resource URIs discovered from the server.
+      Has_Capabilities : Boolean := False;
+      Capabilities : UARP.Types.Text_Vectors.Vector;
+      Has_Status : Boolean := False;
+      Status : UARP.Models.MCP_Server_Status;
+      Has_Last_Synced : Boolean := False;
+      Last_Synced : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Tenant_Id : Boolean := False;
+      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : MCP_Server) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server;
+
+   package MCP_Server_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => MCP_Server);
+
+   --  `ListAgentMCPServersResponse` model.
+   type List_Agent_MCP_Servers_Response is record
+      Has_Servers : Boolean := False;
+      Servers : UARP.Models.MCP_Server_Vectors.Vector;
+      Has_Total : Boolean := False;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Agent_MCP_Servers_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Agent_MCP_Servers_Response;
+
    --  `ListAgentScorersResponse` model.
    type List_Agent_Scorers_Response is record
       Has_Scorers : Boolean := False;
@@ -14388,65 +14512,6 @@ package UARP.Models is
 
    function To_JSON (Model : List_LLM_Models_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_LLM_Models_Response;
-
-   --  Values of `MCPServerStatus`.
-   --  A value the API introduces later decodes as MCP_Server_Status_Unrecognized
-   --  with the original text kept in Raw.
-   type MCP_Server_Status_Kind is
-     (MCP_Server_Status_Active,
-   MCP_Server_Status_Error,
-   MCP_Server_Status_Disabled,
-   MCP_Server_Status_Unrecognized);
-
-   type MCP_Server_Status is record
-      Kind : MCP_Server_Status_Kind := MCP_Server_Status_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_MCP_Server_Status (Value : String) return MCP_Server_Status;
-   function To_MCP_Server_Status (Kind : MCP_Server_Status_Kind) return MCP_Server_Status;
-   function Image (Model : MCP_Server_Status) return String;
-   function To_JSON (Model : MCP_Server_Status) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Status;
-
-   --  An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
-   --  disclosed.
-   type MCP_Server is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Transport : UARP.Models.MCP_Transport;
-      --  stdio only.
-      Has_Command : Boolean := False;
-      Command : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Args : Boolean := False;
-      Args : UARP.Types.Text_Vectors.Vector;
-      --  http / streamable_http only.
-      Has_URL : Boolean := False;
-      URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_API_Key_Ref : Boolean := False;
-      API_Key_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  How many env vars are set. The values are never returned.
-      Has_Env_Count : Boolean := False;
-      Env_Count : UARP.Types.Integer_Value := 0;
-      Has_Egress_Allowlist : Boolean := False;
-      Egress_Allowlist : UARP.Models.Egress_Rule_Vectors.Vector;
-      Enabled : Standard.Boolean := False;
-      --  Tool names and resource URIs discovered from the server.
-      Has_Capabilities : Boolean := False;
-      Capabilities : UARP.Types.Text_Vectors.Vector;
-      Has_Status : Boolean := False;
-      Status : UARP.Models.MCP_Server_Status;
-      Has_Last_Synced : Boolean := False;
-      Last_Synced : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Tenant_Id : Boolean := False;
-      Tenant_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : MCP_Server) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server;
-
-   package MCP_Server_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => MCP_Server);
 
    --  `ListMCPServersResponse` model.
    type List_MCP_Servers_Response is record
@@ -17568,6 +17633,13 @@ package UARP.Models is
       URL : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_API_Key_Ref : Boolean := False;
       API_Key_Ref : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Auth : Boolean := False;
+      Auth : UARP.Models.MCP_Server_Auth;
+      --  Agents allowed to use this server's tools. Absent or empty means no agent sees them -
+      --  installing a server does not connect it. Set it with PUT
+      --  /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+      Has_Assigned_Agent_Ids : Boolean := False;
+      Assigned_Agent_Ids : UARP.Types.Text_Vectors.Vector;
       --  How many env vars are set. The values are never returned.
       Has_Env_Count : Boolean := False;
       Env_Count : UARP.Types.Integer_Value := 0;
@@ -20856,6 +20928,30 @@ package UARP.Models is
 
    function To_JSON (Model : Set_Agent_Integrations_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Agent_Integrations_Response;
+
+   --  `SetAgentMCPServersRequest` model.
+   type Set_Agent_MCP_Servers_Request is record
+      --  The complete set after the call. An empty array disconnects every server from this agent.
+      Server_Ids : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Set_Agent_MCP_Servers_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Agent_MCP_Servers_Request;
+
+   --  `SetAgentMCPServersResponse` model.
+   type Set_Agent_MCP_Servers_Response is record
+      Has_Agent_Id : Boolean := False;
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Server ids that gained this agent.
+      Has_Connected : Boolean := False;
+      Connected : UARP.Types.Text_Vectors.Vector;
+      --  Server ids that lost it.
+      Has_Disconnected : Boolean := False;
+      Disconnected : UARP.Types.Text_Vectors.Vector;
+   end record;
+
+   function To_JSON (Model : Set_Agent_MCP_Servers_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Set_Agent_MCP_Servers_Response;
 
    --  `SetAgentPermissionsResponse` model.
    type Set_Agent_Permissions_Response is record

@@ -51,6 +51,21 @@ package body UARP.API.MCP is
              Options => Options));
    end Get_MCP_Server;
 
+   function List_Agent_MCP_Servers
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Agent_MCP_Servers_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/mcp-servers",
+             Options => Options));
+   end List_Agent_MCP_Servers;
+
    function List_MCP_Servers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -99,6 +114,25 @@ package body UARP.API.MCP is
           Sink,
           Options => Options);
    end MCP_SSE;
+
+   function Set_Agent_MCP_Servers
+     (Self : Client_Type;
+      Agent_Id : String;
+      Payload : UARP.Models.Set_Agent_MCP_Servers_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Agent_MCP_Servers_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/mcp-servers",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Agent_MCP_Servers;
 
    function Test_MCP_Server
      (Self : Client_Type;

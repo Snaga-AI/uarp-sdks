@@ -12470,6 +12470,16 @@
                     "api_key_ref": {
                         "type": "string"
                     },
+                    "auth": {
+                        "$ref": "#/components/schemas/McpServerAuth"
+                    },
+                    "assigned_agent_ids": {
+                        "type": "array",
+                        "items": {
+                            "type": "string"
+                        },
+                        "description": "Agents allowed to use this server's tools. Absent or empty means no agent sees them — installing a server does not connect it. Set it with PUT /api/v1/agents/{agentId}/mcp-servers, or pass it when installing."
+                    },
                     "env_count": {
                         "type": "integer",
                         "description": "How many env vars are set. The values are never returned."
@@ -12511,6 +12521,37 @@
                     "name",
                     "transport",
                     "enabled"
+                ]
+            },
+            "McpServerAuth": {
+                "type": "object",
+                "description": "How an http / streamable_http server is authenticated. The secret itself travels in `env` under `env_key` and is encrypted at rest; it is never returned. Query-string placement is not offered: a key in a URL lands in every proxy log on the way.",
+                "properties": {
+                    "type": {
+                        "type": "string",
+                        "enum": [
+                            "none",
+                            "api_key"
+                        ]
+                    },
+                    "header": {
+                        "type": "string",
+                        "description": "Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).",
+                        "maxLength": 10485760
+                    },
+                    "prefix": {
+                        "type": "string",
+                        "description": "Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.",
+                        "maxLength": 10485760
+                    },
+                    "env_key": {
+                        "type": "string",
+                        "description": "Key inside `env` holding the secret. Default `MCP_API_KEY`.",
+                        "maxLength": 10485760
+                    }
+                },
+                "required": [
+                    "type"
                 ]
             },
             "McpTransport": {
@@ -20345,6 +20386,240 @@
                 ],
                 "x-scopes": [
                     "agents:write"
+                ]
+            }
+        },
+        "/api/v1/agents/{agentId}/mcp-servers": {
+            "parameters": [
+                {
+                    "name": "agentId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "format": "uuid",
+                        "maxLength": 36
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "listAgentMcpServers",
+                "summary": "List the MCP servers connected to an agent",
+                "description": "Only servers whose `assigned_agent_ids` includes this agent. Installing a server does not connect it: a server nobody is connected to reaches nobody, and this list is empty until something is connected.\n\nThis answer and the one the agent's run gate uses come from the same predicate, deliberately. The integrations surface next door grew two answers to that question — the per-agent list filters strictly while the runtime treats an unset list as shared with every agent — so a connector an agent really does have reads as \"not connected\" on the very screen meant to show it.",
+                "tags": [
+                    "MCP"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "The servers this agent is connected to",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "servers": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/McpServer"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "Developer role required",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Agent not found",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "agents:read"
+                ]
+            },
+            "put": {
+                "operationId": "setAgentMcpServers",
+                "summary": "Replace the set of MCP servers connected to an agent",
+                "description": "WRITE SEMANTICS: replaces. `server_ids` is the complete set of servers this agent is connected to after the call; a server the tenant has but the array omits loses this agent. `[]` disconnects everything. There is nothing else in the body to merge.\n\nThe replace is scoped to THIS agent: it edits `assigned_agent_ids` on each server by adding or removing this one id, so other agents' connections to the same server are untouched (handler `handleAgentMcpServersRoute`, routes/mcp.ts).\n\nNaming an id the tenant does not have is refused with 422 and nothing at all is written — a silently dropped id would report a connection that was never made.\n\nServers are INSTALLED tenant-wide (`POST /api/v1/mcp/servers`, which also accepts `assigned_agent_ids` so install and connect are one call) and CONNECTED here. Tenant owner or developer; each connect and disconnect is audit-logged on its own.",
+                "tags": [
+                    "MCP"
+                ],
+                "requestBody": {
+                    "required": true,
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "server_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
+                                        "description": "The complete set after the call. An empty array disconnects every server from this agent.",
+                                        "maxItems": 5242880
+                                    }
+                                },
+                                "required": [
+                                    "server_ids"
+                                ]
+                            }
+                        }
+                    }
+                },
+                "responses": {
+                    "200": {
+                        "description": "What changed",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "agent_id": {
+                                            "type": "string"
+                                        },
+                                        "connected": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Server ids that gained this agent."
+                                        },
+                                        "disconnected": {
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            },
+                                            "description": "Server ids that lost it."
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            },
+                            "X-Idempotency-Replayed": {
+                                "$ref": "#/components/headers/XIdempotencyReplayed"
+                            }
+                        }
+                    },
+                    "202": {
+                        "$ref": "#/components/responses/IdempotencyInFlight"
+                    },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "description": "Developer role required",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Agent not found",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
+                    },
+                    "413": {
+                        "$ref": "#/components/responses/PayloadTooLarge"
+                    },
+                    "422": {
+                        "description": "server_ids is not an array, or names a server the tenant does not have",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "agents:write"
+                ],
+                "parameters": [
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
                 ]
             }
         },
@@ -55731,7 +56006,7 @@
                     "MCP"
                 ],
                 "summary": "Create MCP server",
-                "description": "Registers an external MCP server for the tenant; `admin` role only. `name` and `transport` are required and the id `__system__` is reserved; `stdio` is refused on production deployments unless the host explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check resolving DNS, so a hostname that points at a private or metadata address is rejected and a resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*` environment variable. Any `env` block is encrypted at rest and dropped from the stored plaintext; after persisting, a live session is opened immediately so tools surface on the next run, and a failure to connect is non-fatal and reported as `connect_error` on the 201 response.",
+                "description": "Registers an external MCP server for the tenant. Tenant owner or developer — `viewer` is refused: the server is remote code holding a tenant credential, and building agents is the developer's job while reading them is not. `name` and `transport` are required and the id `__system__` is reserved; `stdio` is refused on production deployments unless the host explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check resolving DNS, so a hostname that points at a private or metadata address is rejected and a resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*` environment variable. For an authenticated `http`/`streamable_http` server put the secret in `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never returned, and dropped from the stored plaintext. After persisting, a live session is opened immediately so tools surface on the next run, and a failure to connect is non-fatal and reported as `connect_error` on the 201 response.\n\nPass `assigned_agent_ids` in the same call to connect it at once — a server installed and connected to nobody is inert, and leaving it in that state is how a working configuration comes to look broken.",
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -55763,7 +56038,20 @@
                                         "maxItems": 5242880
                                     },
                                     "env": {
-                                        "type": "object"
+                                        "type": "object",
+                                        "description": "Secrets for this server. Encrypted at rest and never returned; only `env_count` is disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the one sent as the credential."
+                                    },
+                                    "auth": {
+                                        "$ref": "#/components/schemas/McpServerAuth"
+                                    },
+                                    "assigned_agent_ids": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
+                                        "description": "Agents to connect the server to. Omit or leave empty and no agent sees its tools.",
+                                        "maxItems": 5242880
                                     },
                                     "enabled": {
                                         "type": "boolean"

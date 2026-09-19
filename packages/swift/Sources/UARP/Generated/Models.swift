@@ -9474,7 +9474,13 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
     public var url: String?
     public var command: String?
     public var args: [String]?
+    /// Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+    /// disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+    /// one sent as the credential.
     public var env: JSONObject?
+    public var auth: MCPServerAuth?
+    /// Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+    public var assignedAgentIds: [String]?
     public var enabled: Bool?
     /// Names an environment variable of the API process whose value is sent to this server as a
     /// bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
@@ -9486,13 +9492,15 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
     /// Hosts this server may be reached at, checked with DNS resolution.
     public var egressAllowlist: [String]?
 
-    public init(name: String, transport: MCPTransport, url: String? = nil, command: String? = nil, args: [String]? = nil, env: JSONObject? = nil, enabled: Bool? = nil, apiKeyRef: String? = nil, egressAllowlist: [String]? = nil) {
+    public init(name: String, transport: MCPTransport, url: String? = nil, command: String? = nil, args: [String]? = nil, env: JSONObject? = nil, auth: MCPServerAuth? = nil, assignedAgentIds: [String]? = nil, enabled: Bool? = nil, apiKeyRef: String? = nil, egressAllowlist: [String]? = nil) {
         self.name = name
         self.transport = transport
         self.url = url
         self.command = command
         self.args = args
         self.env = env
+        self.auth = auth
+        self.assignedAgentIds = assignedAgentIds
         self.enabled = enabled
         self.apiKeyRef = apiKeyRef
         self.egressAllowlist = egressAllowlist
@@ -9505,6 +9513,8 @@ public struct CreateMCPServerRequest: Codable, Hashable, Sendable {
         case command = "command"
         case args = "args"
         case env = "env"
+        case auth = "auth"
+        case assignedAgentIds = "assigned_agent_ids"
         case enabled = "enabled"
         case apiKeyRef = "api_key_ref"
         case egressAllowlist = "egress_allowlist"
@@ -18513,6 +18523,22 @@ public struct ListAgentMailResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListAgentMCPServersResponse` model.
+public struct ListAgentMCPServersResponse: Codable, Hashable, Sendable {
+    public var servers: [MCPServer]?
+    public var total: Int?
+
+    public init(servers: [MCPServer]? = nil, total: Int? = nil) {
+        self.servers = servers
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case servers = "servers"
+        case total = "total"
+    }
+}
+
 /// `ListAgentScorersResponse` model.
 public struct ListAgentScorersResponse: Codable, Hashable, Sendable {
     public var scorers: [AgentScorer]?
@@ -21392,6 +21418,11 @@ public struct MCPServer: Codable, Hashable, Sendable {
     /// http / streamable_http only.
     public var url: String?
     public var apiKeyRef: String?
+    public var auth: MCPServerAuth?
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    public var assignedAgentIds: [String]?
     /// How many env vars are set. The values are never returned.
     public var envCount: Int?
     public var egressAllowlist: [EgressRule]?
@@ -21402,7 +21433,7 @@ public struct MCPServer: Codable, Hashable, Sendable {
     public var lastSynced: String?
     public var tenantId: String?
 
-    public init(id: String, name: String, transport: MCPTransport, command: String? = nil, args: [String]? = nil, url: String? = nil, apiKeyRef: String? = nil, envCount: Int? = nil, egressAllowlist: [EgressRule]? = nil, enabled: Bool, capabilities: [String]? = nil, status: MCPServerStatus? = nil, lastSynced: String? = nil, tenantId: String? = nil) {
+    public init(id: String, name: String, transport: MCPTransport, command: String? = nil, args: [String]? = nil, url: String? = nil, apiKeyRef: String? = nil, auth: MCPServerAuth? = nil, assignedAgentIds: [String]? = nil, envCount: Int? = nil, egressAllowlist: [EgressRule]? = nil, enabled: Bool, capabilities: [String]? = nil, status: MCPServerStatus? = nil, lastSynced: String? = nil, tenantId: String? = nil) {
         self.id = id
         self.name = name
         self.transport = transport
@@ -21410,6 +21441,8 @@ public struct MCPServer: Codable, Hashable, Sendable {
         self.args = args
         self.url = url
         self.apiKeyRef = apiKeyRef
+        self.auth = auth
+        self.assignedAgentIds = assignedAgentIds
         self.envCount = envCount
         self.egressAllowlist = egressAllowlist
         self.enabled = enabled
@@ -21427,6 +21460,8 @@ public struct MCPServer: Codable, Hashable, Sendable {
         case args = "args"
         case url = "url"
         case apiKeyRef = "api_key_ref"
+        case auth = "auth"
+        case assignedAgentIds = "assigned_agent_ids"
         case envCount = "env_count"
         case egressAllowlist = "egress_allowlist"
         case enabled = "enabled"
@@ -21435,6 +21470,57 @@ public struct MCPServer: Codable, Hashable, Sendable {
         case lastSynced = "last_synced"
         case tenantId = "tenant_id"
     }
+}
+
+/// How an http / streamable_http server is authenticated. The secret itself travels in `env`
+/// under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+/// not offered: a key in a URL lands in every proxy log on the way.
+public struct MCPServerAuth: Codable, Hashable, Sendable {
+    public var type: MCPServerAuthType
+    /// Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+    /// not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+    public var header: String?
+    /// Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+    public var prefix: String?
+    /// Key inside `env` holding the secret. Default `MCP_API_KEY`.
+    public var envKey: String?
+
+    public init(type: MCPServerAuthType, header: String? = nil, prefix: String? = nil, envKey: String? = nil) {
+        self.type = type
+        self.header = header
+        self.prefix = prefix
+        self.envKey = envKey
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case type = "type"
+        case header = "header"
+        case prefix = "prefix"
+        case envKey = "env_key"
+    }
+}
+
+/// `MCPServerAuthType` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct MCPServerAuthType: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let none = MCPServerAuthType(rawValue: "none")
+    public static let apiKey = MCPServerAuthType(rawValue: "api_key")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [MCPServerAuthType] = [.none, .apiKey]
 }
 
 /// `MCPServerStatus` values.
@@ -21504,6 +21590,11 @@ public struct MCPServerWithConnectResult: Codable, Hashable, Sendable {
     /// http / streamable_http only.
     public var url: String?
     public var apiKeyRef: String?
+    public var auth: MCPServerAuth?
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    public var assignedAgentIds: [String]?
     /// How many env vars are set. The values are never returned.
     public var envCount: Int?
     public var egressAllowlist: [EgressRule]?
@@ -21517,7 +21608,7 @@ public struct MCPServerWithConnectResult: Codable, Hashable, Sendable {
     /// distinguishing 'saved' from 'saved and working', and it arrives on a 200.
     public var connectError: String?
 
-    public init(id: String, name: String, transport: MCPTransport, command: String? = nil, args: [String]? = nil, url: String? = nil, apiKeyRef: String? = nil, envCount: Int? = nil, egressAllowlist: [EgressRule]? = nil, enabled: Bool, capabilities: [String]? = nil, status: MCPServerStatus? = nil, lastSynced: String? = nil, tenantId: String? = nil, connectError: String? = nil) {
+    public init(id: String, name: String, transport: MCPTransport, command: String? = nil, args: [String]? = nil, url: String? = nil, apiKeyRef: String? = nil, auth: MCPServerAuth? = nil, assignedAgentIds: [String]? = nil, envCount: Int? = nil, egressAllowlist: [EgressRule]? = nil, enabled: Bool, capabilities: [String]? = nil, status: MCPServerStatus? = nil, lastSynced: String? = nil, tenantId: String? = nil, connectError: String? = nil) {
         self.id = id
         self.name = name
         self.transport = transport
@@ -21525,6 +21616,8 @@ public struct MCPServerWithConnectResult: Codable, Hashable, Sendable {
         self.args = args
         self.url = url
         self.apiKeyRef = apiKeyRef
+        self.auth = auth
+        self.assignedAgentIds = assignedAgentIds
         self.envCount = envCount
         self.egressAllowlist = egressAllowlist
         self.enabled = enabled
@@ -21543,6 +21636,8 @@ public struct MCPServerWithConnectResult: Codable, Hashable, Sendable {
         case args = "args"
         case url = "url"
         case apiKeyRef = "api_key_ref"
+        case auth = "auth"
+        case assignedAgentIds = "assigned_agent_ids"
         case envCount = "env_count"
         case egressAllowlist = "egress_allowlist"
         case enabled = "enabled"
@@ -29287,6 +29382,41 @@ public struct SetAgentIntegrationsResponseDiff: Codable, Hashable, Sendable {
         case assigned = "assigned"
         case unassigned = "unassigned"
         case unknown = "unknown"
+    }
+}
+
+/// `SetAgentMCPServersRequest` model.
+public struct SetAgentMCPServersRequest: Codable, Hashable, Sendable {
+    /// The complete set after the call. An empty array disconnects every server from this agent.
+    public var serverIds: [String]
+
+    public init(serverIds: [String]) {
+        self.serverIds = serverIds
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case serverIds = "server_ids"
+    }
+}
+
+/// `SetAgentMCPServersResponse` model.
+public struct SetAgentMCPServersResponse: Codable, Hashable, Sendable {
+    public var agentId: String?
+    /// Server ids that gained this agent.
+    public var connected: [String]?
+    /// Server ids that lost it.
+    public var disconnected: [String]?
+
+    public init(agentId: String? = nil, connected: [String]? = nil, disconnected: [String]? = nil) {
+        self.agentId = agentId
+        self.connected = connected
+        self.disconnected = disconnected
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case agentId = "agent_id"
+        case connected = "connected"
+        case disconnected = "disconnected"
     }
 }
 

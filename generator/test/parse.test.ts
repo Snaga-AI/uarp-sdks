@@ -322,7 +322,10 @@ test('parses the production document into the expected shape', () => {
   // above records and the 1423 entry records again.
   // 734 -> 735 on 2026-09-17 (build b7e7c64a, uarp #487): `POST
   // /auth/oauth/nonce`, which the wire had been serving undocumented.
-  assert.equal(ops.length, 735);
+  // 735 -> 737 on 2026-09-18: `GET` and `PUT /agents/{agentId}/mcp-servers`,
+  // the connect surface between an agent and the MCP servers its tenant has
+  // installed. Both arrived described — body, responses and `x-scopes`.
+  assert.equal(ops.length, 737);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -516,7 +519,10 @@ test('parses the production document into the expected shape', () => {
   // existed, hoisted out of the inline schema on `Tenant` in the previous
   // refresh, and arriving from `components` this time did not rename them.
   // That is why this refresh is not a break for 0.6.x consumers.
-  assert.equal(spec.types.length, 1489);
+  // 1489 -> 1494 on 2026-09-18: the two mcp-servers operations bring
+  // ListAgentMCPServersResponse, SetAgentMCPServersRequest,
+  // SetAgentMCPServersResponse and MCPServerAuth with its type enum.
+  assert.equal(spec.types.length, 1494);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

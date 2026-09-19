@@ -3707,7 +3707,17 @@ export interface CreateMCPServerRequest {
   url?: string;
   command?: string;
   args?: string[];
+  /**
+   * Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+   * disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+   * one sent as the credential.
+   */
   env?: JsonObject;
+  auth?: MCPServerAuth;
+  /**
+   * Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+   */
+  assigned_agent_ids?: string[];
   enabled?: boolean;
   /**
    * Names an environment variable of the API process whose value is sent to this server as a
@@ -7233,6 +7243,11 @@ export interface ListAgentMailResponse {
   total_scanned: number;
 }
 
+export interface ListAgentMCPServersResponse {
+  servers?: MCPServer[];
+  total?: number;
+}
+
 export interface ListAgentScorersResponse {
   scorers?: AgentScorer[];
 }
@@ -8293,6 +8308,13 @@ export interface MCPServer {
    */
   url?: string;
   api_key_ref?: string;
+  auth?: MCPServerAuth;
+  /**
+   * Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+   * installing a server does not connect it. Set it with PUT
+   * /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+   */
+  assigned_agent_ids?: string[];
   /**
    * How many env vars are set. The values are never returned.
    */
@@ -8307,6 +8329,32 @@ export interface MCPServer {
   last_synced?: string;
   tenant_id?: string;
 }
+
+/**
+ * How an http / streamable_http server is authenticated. The secret itself travels in `env`
+ * under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+ * not offered: a key in a URL lands in every proxy log on the way.
+ */
+export interface MCPServerAuth {
+  type: MCPServerAuthType;
+  /**
+   * Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+   * not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+   */
+  header?: string;
+  /**
+   * Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+   */
+  prefix?: string;
+  /**
+   * Key inside `env` holding the secret. Default `MCP_API_KEY`.
+   */
+  env_key?: string;
+}
+
+export type MCPServerAuthType = 'none' | 'api_key';
+
+export const MCPSERVER_AUTH_TYPE_VALUES = ['none', 'api_key'] as const;
 
 export type MCPServerStatus = 'active' | 'error' | 'disabled';
 
@@ -8347,6 +8395,13 @@ export interface MCPServerWithConnectResult {
    */
   url?: string;
   api_key_ref?: string;
+  auth?: MCPServerAuth;
+  /**
+   * Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+   * installing a server does not connect it. Set it with PUT
+   * /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+   */
+  assigned_agent_ids?: string[];
   /**
    * How many env vars are set. The values are never returned.
    */
@@ -11664,6 +11719,25 @@ export interface SetAgentIntegrationsResponseDiff {
   assigned: string[];
   unassigned: string[];
   unknown: string[];
+}
+
+export interface SetAgentMCPServersRequest {
+  /**
+   * The complete set after the call. An empty array disconnects every server from this agent.
+   */
+  server_ids: string[];
+}
+
+export interface SetAgentMCPServersResponse {
+  agent_id?: string;
+  /**
+   * Server ids that gained this agent.
+   */
+  connected?: string[];
+  /**
+   * Server ids that lost it.
+   */
+  disconnected?: string[];
 }
 
 export interface SetAgentPermissionsResponse {
