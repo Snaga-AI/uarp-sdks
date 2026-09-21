@@ -71,8 +71,6 @@ package body UARP.API.Billing is
    function Create_Spec_Package_Checkout_Session
      (Self : Client_Type;
       Package_Id : String;
-      Payload : UARP.Models.Create_Spec_Package_Checkout_Session_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Spec_Package_Checkout_Session_Response
    is
@@ -82,8 +80,6 @@ package body UARP.API.Billing is
             (Self,
              "POST",
              "/api/v1/billing/spec-packages/" & UARP.Types.Encode_Path_Segment (Package_Id) & "/checkout-session",
-             Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
              Idempotent => True,
              Options => Options));
    end Create_Spec_Package_Checkout_Session;

@@ -121,30 +121,21 @@ public class BillingApi internal constructor(private val client: UarpClient) {
     }
 
     /**
-     * Start Stripe checkout for a SPEC package
+     * Removed — 410 Gone
      *
-     * Answers a Stripe-hosted URL to redirect to.
-     *
-     * `success_url` and `cancel_url` must be SAME-ORIGIN with the request; anything else is
-     * refused. Both default to the billing settings page, so a caller that has no opinion should
-     * omit them rather than construct one.
-     *
-     * Three refusals worth telling apart. **501** — billing is not configured on this deployment.
-     * Not 502, deliberately: no upstream was contacted, and a 502 sends an operator hunting an
-     * outage when the fix is one admin setting. **400** — the package exists but has no Stripe
-     * price wired, and the message names the admin screen that creates one. **404** — no such
-     * package, or it is archived.
+     * SPEC packages are no longer sold. The route answers 410 for one release so a client still
+     * calling it can tell a withdrawn feature from a wrong URL; it is deleted after that.
      *
      * `POST /api/v1/billing/spec-packages/{packageId}/checkout-session`
      *
      * Required scopes: `billing:read`.
      */
-    public suspend fun createSpecPackageCheckoutSession(packageId: String, body: CreateSpecPackageCheckoutSessionRequest? = null, options: RequestOptions = RequestOptions()): CreateSpecPackageCheckoutSessionResponse {
+    @Deprecated("Deprecated by the API")
+    public suspend fun createSpecPackageCheckoutSession(packageId: String, options: RequestOptions = RequestOptions()): CreateSpecPackageCheckoutSessionResponse {
         return client.request<CreateSpecPackageCheckoutSessionResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/billing/spec-packages/${encodePathSegment(packageId)}/checkout-session",
-                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
                 idempotent = true,
                 options = options,
             )
@@ -372,27 +363,18 @@ public class BillingApi internal constructor(private val client: UarpClient) {
     }
 
     /**
-     * SPEC packages this tenant can see, with entitlement
+     * Removed — always an empty list
      *
-     * The tenant-facing view, and deliberately narrower than the admin one: archived packages are
-     * omitted and **the Stripe price id is never returned** — `checkout_available` is the boolean
-     * derived from whether one is wired.
-     *
-     * `entitlement` is a three-way discriminator a client should branch on rather than infer:
-     * `plan_included` (comes with the tenant's plan tier), `purchased` (bought a la carte),
-     * `available` (not entitled, and buyable). It carries the same values as
-     * `/api/v1/billing/packages` so one card component serves both.
-     *
-     * `program` is the nav entry and pages a package contributes, and is ABSENT for agent-only
-     * packages with no UI — which is what lets a client build the entitlement-gated navigation
-     * from this single call.
-     *
-     * Sorted by `display_order`, then by name.
+     * SPEC packages were withdrawn on 2026-09-21. Every SPEC an agent declares now runs on the
+     * tenant's plan, so there is nothing to list and nothing to buy. The route answers
+     * `{"packages": \[\]}` for one release so a client that still calls it renders an empty
+     * section instead of a 404; it is deleted after that.
      *
      * `GET /api/v1/billing/spec-packages`
      *
      * Required scopes: `billing:read`.
      */
+    @Deprecated("Deprecated by the API")
     public suspend fun listBillingSpecPackages(options: RequestOptions = RequestOptions()): ListBillingSpecPackagesResponse {
         return client.request<ListBillingSpecPackagesResponse>(
             RequestSpec(

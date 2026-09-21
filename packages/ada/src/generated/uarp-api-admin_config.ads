@@ -5,7 +5,6 @@
 with UARP.Client;
 with UARP.JSON_Support;
 with UARP.Models;
-with UARP.Types;
 package UARP.API.Admin_Config is
 
    subtype Client_Type is UARP.Client.Client_Type;
@@ -19,31 +18,6 @@ package UARP.API.Admin_Config is
    end record;
 
    No_Delete_Custom_Plan_Params : constant Delete_Custom_Plan_Params := (others => <>);
-
-   --  Query and header parameters for `updateAdminSpecPackages`.
-   type Update_Admin_Spec_Packages_Params is record
-      --  Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
-      --  not listed still refuse.
-      Has_Confirm_Drop : Boolean := False;
-      Confirm_Drop : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   No_Update_Admin_Spec_Packages_Params : constant Update_Admin_Spec_Packages_Params := (others => <>);
-
-   --  Create the Stripe product and price for a package
-   --
-   --  Creates the product and price in Stripe and persists the resulting price id onto the
-   --  package. Until this has run, the package cannot be bought: `POST
-   --  /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
-   --
-   --  POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price
-   --
-   --  Required scopes: admin.
-   function Create_Admin_Spec_Package_Stripe_Price
-     (Self : Client_Type;
-      Package_Id : String;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Create_Admin_Spec_Package_Stripe_Price_Response;
 
    --  Create Stripe Product+Price for plan
    --
@@ -492,20 +466,6 @@ package UARP.API.Admin_Config is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Smtp_Config;
-
-   --  Every SPEC package, archived ones included
-   --
-   --  The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
-   --  packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
-   --  then by name.
-   --
-   --  GET /api/v1/admin/config/spec-packages
-   --
-   --  Required scopes: admin.
-   function Get_Admin_Spec_Packages
-     (Self : Client_Type;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Spec_Packages_List;
 
    --  Get SSE overrides (heartbeat, polling, reconnect hint)
    --
@@ -1368,33 +1328,6 @@ package UARP.API.Admin_Config is
       Payload : UARP.Models.Update_Admin_Smtp_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Smtp_Config;
-
-   --  Replace the SPEC-package map
-   --
-   --  WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
-   --  the body is DELETED. Two guards exist because of that.
-   --
-   --  **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
-   --  unless the caller opts in per id: `?confirm_drop=<id>[,<id>]`. Tenants may be subscribed
-   --  against that price, so losing it silently is not a save, it is a billing incident. The
-   --  refusal names every id it is protecting.
-   --
-   --  **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
-   --  everywhere downstream, so a key that disagrees with its record orphans the package at the
-   --  next read.
-   --
-   --  `updated_at` is stamped by the server on every record in the payload and is not read from
-   --  the body.
-   --
-   --  PUT /api/v1/admin/config/spec-packages
-   --
-   --  Required scopes: admin.
-   function Update_Admin_Spec_Packages
-     (Self : Client_Type;
-      Payload : UARP.Models.Update_Admin_Spec_Packages_Request;
-      Params : Update_Admin_Spec_Packages_Params := No_Update_Admin_Spec_Packages_Params;
-      Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Admin_Spec_Packages_List;
 
    --  Update SSE overrides
    --

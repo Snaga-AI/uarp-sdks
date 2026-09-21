@@ -2509,140 +2509,6 @@ package UARP.Models is
    function To_JSON (Model : Admin_Smtp_Config) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Smtp_Config;
 
-   --  Values of `SpecPackageIncludedInPlan`.
-   --  A value the API introduces later decodes as Spec_Package_Included_In_Plan_Unrecognized
-   --  with the original text kept in Raw.
-   type Spec_Package_Included_In_Plan_Kind is
-     (Spec_Package_Included_In_Plan_Free,
-   Spec_Package_Included_In_Plan_Starter,
-   Spec_Package_Included_In_Plan_Pro,
-   Spec_Package_Included_In_Plan_Enterprise,
-   Spec_Package_Included_In_Plan_Unrecognized);
-
-   type Spec_Package_Included_In_Plan is record
-      Kind : Spec_Package_Included_In_Plan_Kind := Spec_Package_Included_In_Plan_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Spec_Package_Included_In_Plan (Value : String) return Spec_Package_Included_In_Plan;
-   function To_Spec_Package_Included_In_Plan (Kind : Spec_Package_Included_In_Plan_Kind) return Spec_Package_Included_In_Plan;
-   function Image (Model : Spec_Package_Included_In_Plan) return String;
-   function To_JSON (Model : Spec_Package_Included_In_Plan) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Included_In_Plan;
-
-   package Spec_Package_Included_In_Plan_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package_Included_In_Plan);
-
-   --  Values of `SpecPackagePricingBillingInterval`.
-   --  A value the API introduces later decodes as Spec_Package_Pricing_Billing_Interval_Unrecognized
-   --  with the original text kept in Raw.
-   type Spec_Package_Pricing_Billing_Interval_Kind is
-     (Spec_Package_Pricing_Billing_Interval_Month,
-   Spec_Package_Pricing_Billing_Interval_Year,
-   Spec_Package_Pricing_Billing_Interval_Unrecognized);
-
-   type Spec_Package_Pricing_Billing_Interval is record
-      Kind : Spec_Package_Pricing_Billing_Interval_Kind := Spec_Package_Pricing_Billing_Interval_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Spec_Package_Pricing_Billing_Interval (Value : String) return Spec_Package_Pricing_Billing_Interval;
-   function To_Spec_Package_Pricing_Billing_Interval (Kind : Spec_Package_Pricing_Billing_Interval_Kind) return Spec_Package_Pricing_Billing_Interval;
-   function Image (Model : Spec_Package_Pricing_Billing_Interval) return String;
-   function To_JSON (Model : Spec_Package_Pricing_Billing_Interval) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing_Billing_Interval;
-
-   --  `SpecPackagePricing` model.
-   type Spec_Package_Pricing is record
-      Has_Price_Amount_Cents : Boolean := False;
-      Price_Amount_Cents : UARP.Types.Integer_Value := 0;
-      Has_Price_Currency : Boolean := False;
-      Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Billing_Interval : Boolean := False;
-      Billing_Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
-      --  Never returned by the tenant-facing read. Its presence is what protects the package from a
-      --  silent drop.
-      Has_Stripe_Price_Id : Boolean := False;
-      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Pricing) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Pricing;
-
-   --  `SpecPackageProgramNav` model.
-   type Spec_Package_Program_Nav is record
-      Label : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Icon : Boolean := False;
-      Icon : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program_Nav) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Nav;
-
-   --  `SpecPackageProgramPage` model.
-   type Spec_Package_Program_Page is record
-      Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Title : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Route : Boolean := False;
-      Route : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program_Page) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program_Page;
-
-   package Spec_Package_Program_Page_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package_Program_Page);
-
-   --  `SpecPackageProgram` model.
-   type Spec_Package_Program is record
-      Nav : UARP.Models.Spec_Package_Program_Nav;
-      Pages : UARP.Models.Spec_Package_Program_Page_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Spec_Package_Program) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package_Program;
-
-   --  `SpecPackage` model.
-   type Spec_Package is record
-      --  Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Description : Boolean := False;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-      --  `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
-      --  fails later.
-      Included_Specs : UARP.Types.Text_Vectors.Vector;
-      Has_Included_In_Plans : Boolean := False;
-      Included_In_Plans : UARP.Models.Spec_Package_Included_In_Plan_Vectors.Vector;
-      Has_Pricing : Boolean := False;
-      Pricing : UARP.Models.Spec_Package_Pricing;
-      Has_Display_Order : Boolean := False;
-      Display_Order : UARP.Types.Integer_Value := 0;
-      Has_Archived : Boolean := False;
-      Archived : Standard.Boolean := False;
-      Has_Program : Boolean := False;
-      Program : UARP.Models.Spec_Package_Program;
-      --  Stamped by the server on every write; not read from the body.
-      Has_Updated_At : Boolean := False;
-      Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
-   end record;
-
-   function To_JSON (Model : Spec_Package) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Package;
-
-   package Spec_Package_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => Spec_Package);
-
-   --  Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
-   type Admin_Spec_Packages_List is record
-      Packages : UARP.Models.Spec_Package_Vectors.Vector;
-   end record;
-
-   function To_JSON (Model : Admin_Spec_Packages_List) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Spec_Packages_List;
-
    --  `AdminStripeConfigStripe` model.
    type Admin_Stripe_Config_Stripe is record
       Enabled : Standard.Boolean := False;
@@ -2953,6 +2819,31 @@ package UARP.Models is
    function To_JSON (Model : Agent_Status) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Status;
 
+   --  Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+   --  rendered as-is; the other five are the platform's English, and a client may say them in the
+   --  reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+   --  A value the API introduces later decodes as Agent_Status_Reason_Code_Unrecognized
+   --  with the original text kept in Raw.
+   type Agent_Status_Reason_Code_Kind is
+     (Agent_Status_Reason_Code_Manual,
+   Agent_Status_Reason_Code_Proposal_Passed,
+   Agent_Status_Reason_Code_Arbiter_Ruling,
+   Agent_Status_Reason_Code_Arbiter_Penalty,
+   Agent_Status_Reason_Code_Constitutional_Penalty,
+   Agent_Status_Reason_Code_Plan_Downgrade,
+   Agent_Status_Reason_Code_Unrecognized);
+
+   type Agent_Status_Reason_Code is record
+      Kind : Agent_Status_Reason_Code_Kind := Agent_Status_Reason_Code_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Agent_Status_Reason_Code (Value : String) return Agent_Status_Reason_Code;
+   function To_Agent_Status_Reason_Code (Kind : Agent_Status_Reason_Code_Kind) return Agent_Status_Reason_Code;
+   function Image (Model : Agent_Status_Reason_Code) return String;
+   function To_JSON (Model : Agent_Status_Reason_Code) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Agent_Status_Reason_Code;
+
    --  Values of `AgentAutonomyLevel`.
    --  A value the API introduces later decodes as Agent_Autonomy_Level_Unrecognized
    --  with the original text kept in Raw.
@@ -3215,8 +3106,20 @@ package UARP.Models is
       Status : UARP.Models.Agent_Status;
       Has_Status_Changed_At : Boolean := False;
       Status_Changed_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the agent is in this status, as a sentence. One field with six writers - a person, an
+      --  operator, four governance paths and a plan downgrade - so its language is whichever the
+      --  writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
       Has_Status_Reason : Boolean := False;
       Status_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+      --  rendered as-is; the other five are the platform's English, and a client may say them in the
+      --  reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+      Has_Status_Reason_Code : Boolean := False;
+      Status_Reason_Code : UARP.Models.Agent_Status_Reason_Code;
+      --  The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+      --  for `manual`.
+      Has_Status_Reason_Details : Boolean := False;
+      Status_Reason_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Autonomy : Boolean := False;
       Autonomy : UARP.Models.Agent_Autonomy;
       --  Per-tool trust, overriding the agent's default approval policy.
@@ -6813,19 +6716,6 @@ package UARP.Models is
    function To_JSON (Model : Create_Admin_Provider_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Provider_Response;
 
-   --  `CreateAdminSpecPackageStripePriceResponse` model.
-   type Create_Admin_Spec_Package_Stripe_Price_Response is record
-      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Stripe_Price_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Stripe_Product_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Amount_Cents : UARP.Types.Integer_Value := 0;
-      Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
-   end record;
-
-   function To_JSON (Model : Create_Admin_Spec_Package_Stripe_Price_Response) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Spec_Package_Stripe_Price_Response;
-
    --  `CreateAgentBookmarkRequest` model.
    type Create_Agent_Bookmark_Request is record
       Message_Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -7408,13 +7298,32 @@ package UARP.Models is
    function To_JSON (Model : Create_My_Tenant_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_My_Tenant_Response;
 
+   --  Values of `CreatePlanStripePriceRequestInterval`.
+   --  A value the API introduces later decodes as Create_Plan_Stripe_Price_Request_Interval_Unrecognized
+   --  with the original text kept in Raw.
+   type Create_Plan_Stripe_Price_Request_Interval_Kind is
+     (Create_Plan_Stripe_Price_Request_Interval_Month,
+   Create_Plan_Stripe_Price_Request_Interval_Year,
+   Create_Plan_Stripe_Price_Request_Interval_Unrecognized);
+
+   type Create_Plan_Stripe_Price_Request_Interval is record
+      Kind : Create_Plan_Stripe_Price_Request_Interval_Kind := Create_Plan_Stripe_Price_Request_Interval_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Create_Plan_Stripe_Price_Request_Interval (Value : String) return Create_Plan_Stripe_Price_Request_Interval;
+   function To_Create_Plan_Stripe_Price_Request_Interval (Kind : Create_Plan_Stripe_Price_Request_Interval_Kind) return Create_Plan_Stripe_Price_Request_Interval;
+   function Image (Model : Create_Plan_Stripe_Price_Request_Interval) return String;
+   function To_JSON (Model : Create_Plan_Stripe_Price_Request_Interval) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Plan_Stripe_Price_Request_Interval;
+
    --  `CreatePlanStripePriceRequest` model.
    type Create_Plan_Stripe_Price_Request is record
       Amount_Cents : UARP.Types.Integer_Value := 0;
       Has_Currency : Boolean := False;
       Currency : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Interval : Boolean := False;
-      Interval : UARP.Models.Spec_Package_Pricing_Billing_Interval;
+      Interval : UARP.Models.Create_Plan_Stripe_Price_Request_Interval;
       Has_Product_Name : Boolean := False;
       Product_Name : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
@@ -7883,32 +7792,29 @@ package UARP.Models is
    function To_JSON (Model : Create_Session_Todo_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Session_Todo_Request;
 
-   --  `CreateSpecPackageCheckoutSessionRequest` model.
-   type Create_Spec_Package_Checkout_Session_Request is record
-      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
-      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-      --  Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-      Has_Success_URL : Boolean := False;
-      Success_URL : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-      --  resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-      --  web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-      --  the app's own scheme - `snaga://...`, the same test the OAuth callback uses
-      --  (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-      --  Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-      Has_Cancel_URL : Boolean := False;
-      Cancel_URL : UARP.Types.Text := UARP.Types.Empty_Text;
+   --  Values of `InvokeListingAgentResponseError`.
+   --  A value the API introduces later decodes as Invoke_Listing_Agent_Response_Error_Unrecognized
+   --  with the original text kept in Raw.
+   type Invoke_Listing_Agent_Response_Error_Kind is
+     (Invoke_Listing_Agent_Response_Error_Accepted,
+   Invoke_Listing_Agent_Response_Error_Unrecognized);
+
+   type Invoke_Listing_Agent_Response_Error is record
+      Kind : Invoke_Listing_Agent_Response_Error_Kind := Invoke_Listing_Agent_Response_Error_Unrecognized;
+      Raw  : Text := Empty_Text;
    end record;
 
-   function To_JSON (Model : Create_Spec_Package_Checkout_Session_Request) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Spec_Package_Checkout_Session_Request;
+   function To_Invoke_Listing_Agent_Response_Error (Value : String) return Invoke_Listing_Agent_Response_Error;
+   function To_Invoke_Listing_Agent_Response_Error (Kind : Invoke_Listing_Agent_Response_Error_Kind) return Invoke_Listing_Agent_Response_Error;
+   function Image (Model : Invoke_Listing_Agent_Response_Error) return String;
+   function To_JSON (Model : Invoke_Listing_Agent_Response_Error) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Response_Error;
 
    --  `CreateSpecPackageCheckoutSessionResponse` model.
    type Create_Spec_Package_Checkout_Session_Response is record
-      URL : UARP.Types.Text := UARP.Types.Empty_Text;
+      Error : UARP.Models.Invoke_Listing_Agent_Response_Error;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+      Retry_After_Seconds : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Create_Spec_Package_Checkout_Session_Response) return UARP.JSON_Support.JSON_Value;
@@ -7978,6 +7884,27 @@ package UARP.Models is
 
    function To_JSON (Model : Create_Workspace_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Workspace_Request;
+
+   --  Values of `CustomPlanBasePlan`.
+   --  A value the API introduces later decodes as Custom_Plan_Base_Plan_Unrecognized
+   --  with the original text kept in Raw.
+   type Custom_Plan_Base_Plan_Kind is
+     (Custom_Plan_Base_Plan_Free,
+   Custom_Plan_Base_Plan_Starter,
+   Custom_Plan_Base_Plan_Pro,
+   Custom_Plan_Base_Plan_Enterprise,
+   Custom_Plan_Base_Plan_Unrecognized);
+
+   type Custom_Plan_Base_Plan is record
+      Kind : Custom_Plan_Base_Plan_Kind := Custom_Plan_Base_Plan_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Custom_Plan_Base_Plan (Value : String) return Custom_Plan_Base_Plan;
+   function To_Custom_Plan_Base_Plan (Kind : Custom_Plan_Base_Plan_Kind) return Custom_Plan_Base_Plan;
+   function Image (Model : Custom_Plan_Base_Plan) return String;
+   function To_JSON (Model : Custom_Plan_Base_Plan) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Custom_Plan_Base_Plan;
 
    --  `TenantQuotas` model.
    type Tenant_Quotas is record
@@ -8080,7 +8007,7 @@ package UARP.Models is
       --  Pairs the plan with a promo program. Absent when unset.
       Has_Program : Boolean := False;
       Program : UARP.Types.Text := UARP.Types.Empty_Text;
-      Base_Plan : UARP.Models.Spec_Package_Included_In_Plan;
+      Base_Plan : UARP.Models.Custom_Plan_Base_Plan;
       Price_Amount_Cents : UARP.Types.Integer_Value := 0;
       Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Absent when unset.
@@ -8109,7 +8036,7 @@ package UARP.Models is
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Program : Boolean := False;
       Program : UARP.Types.Text := UARP.Types.Empty_Text;
-      Base_Plan : UARP.Models.Spec_Package_Included_In_Plan;
+      Base_Plan : UARP.Models.Custom_Plan_Base_Plan;
       Price_Amount_Cents : UARP.Types.Integer_Value := 0;
       Has_Price_Currency : Boolean := False;
       Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -9272,6 +9199,7 @@ package UARP.Models is
    Error_Code_Billing_Cancelled,
    Error_Code_Billing_Disputed,
    Error_Code_Billing_Past_Due,
+   Error_Code_Budget_Exceeded,
    Error_Code_Checksum_Mismatch,
    Error_Code_Configuration_Error,
    Error_Code_Event_Store_Error,
@@ -9282,6 +9210,8 @@ package UARP.Models is
    Error_Code_Invalid_Share_List,
    Error_Code_Invalid_Share_Target,
    Error_Code_LLM_Error,
+   Error_Code_Max_Duration_Exceeded,
+   Error_Code_Max_Tokens_Exceeded,
    Error_Code_Migration_Conflict,
    Error_Code_Mission_Already_Running,
    Error_Code_Mission_Concurrency_Limit,
@@ -9307,6 +9237,7 @@ package UARP.Models is
    Error_Code_Share_List_Conflict,
    Error_Code_Size_Limit,
    Error_Code_Spec_Not_Found,
+   Error_Code_Task_Graph_Failed,
    Error_Code_Team_Abort,
    Error_Code_Validation_Error,
    Error_Code_Version_Conflict,
@@ -9320,9 +9251,23 @@ package UARP.Models is
    Error_Code_Incomplete_Record,
    Error_Code_Inert_Policy_Field,
    Error_Code_Inert_Public_Config_Field,
+   Error_Code_Kb_Chunk_Limit,
+   Error_Code_Kb_Document_Body_Invalid,
+   Error_Code_Kb_Document_Too_Large,
+   Error_Code_Kb_Storage_Limit,
+   Error_Code_Kb_Text_Extraction_Failed,
    Error_Code_Limit_Reached,
+   Error_Code_Plan_Upgrade_Required,
+   Error_Code_Provider_Auth_Failed,
+   Error_Code_Provider_Circuit_Open,
+   Error_Code_Provider_Not_Configured,
+   Error_Code_Provider_Rate_Limited,
    Error_Code_Quota_Exceeded_X,
    Error_Code_Rate_Limited,
+   Error_Code_Resource_Limit_Reached,
+   Error_Code_Run_Input_Timeout,
+   Error_Code_Run_Never_Claimed,
+   Error_Code_Run_Orphaned_Restart,
    Error_Code_Run_Quota_Exceeded,
    Error_Code_Unrecognized);
 
@@ -12165,8 +12110,22 @@ package UARP.Models is
       Output : UARP.Models.Run_Output;
       Has_Metrics : Boolean := False;
       Metrics : UARP.Models.Run_Metrics;
+      --  The sentence a person reads. English on every deployment - nothing here varies by
+      --  `Accept-Language` - so branch on `error_code`, not on this.
       Has_Error : Boolean := False;
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+      --  Absent when the failure carries nothing a client can branch on - which is deliberate: a code
+      --  meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+      --  that a client had to regex-test `error`.
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+      --  `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+      --  Never a provider id - this reaches a screen, and the product does not name the model it
+      --  picked.
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Started_At : Boolean := False;
       Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -13326,24 +13285,6 @@ package UARP.Models is
    function To_JSON (Model : Invoke_Listing_Agent_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Request;
 
-   --  Values of `InvokeListingAgentResponseError`.
-   --  A value the API introduces later decodes as Invoke_Listing_Agent_Response_Error_Unrecognized
-   --  with the original text kept in Raw.
-   type Invoke_Listing_Agent_Response_Error_Kind is
-     (Invoke_Listing_Agent_Response_Error_Accepted,
-   Invoke_Listing_Agent_Response_Error_Unrecognized);
-
-   type Invoke_Listing_Agent_Response_Error is record
-      Kind : Invoke_Listing_Agent_Response_Error_Kind := Invoke_Listing_Agent_Response_Error_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_Invoke_Listing_Agent_Response_Error (Value : String) return Invoke_Listing_Agent_Response_Error;
-   function To_Invoke_Listing_Agent_Response_Error (Kind : Invoke_Listing_Agent_Response_Error_Kind) return Invoke_Listing_Agent_Response_Error;
-   function Image (Model : Invoke_Listing_Agent_Response_Error) return String;
-   function To_JSON (Model : Invoke_Listing_Agent_Response_Error) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invoke_Listing_Agent_Response_Error;
-
    --  `InvokeListingAgentResponse` model.
    type Invoke_Listing_Agent_Response is record
       Error : UARP.Models.Invoke_Listing_Agent_Response_Error;
@@ -14200,54 +14141,9 @@ package UARP.Models is
    function To_JSON (Model : List_Billing_Plans_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Billing_Plans_Response;
 
-   --  Values of `ListBillingSpecPackagesResponsePackageEntitlement`.
-   --  A value the API introduces later decodes as List_Billing_Spec_Packages_Response_Package_Entitlement_Unrecognized
-   --  with the original text kept in Raw.
-   type List_Billing_Spec_Packages_Response_Package_Entitlement_Kind is
-     (List_Billing_Spec_Packages_Response_Package_Entitlement_Plan_Included,
-   List_Billing_Spec_Packages_Response_Package_Entitlement_Purchased,
-   List_Billing_Spec_Packages_Response_Package_Entitlement_Available,
-   List_Billing_Spec_Packages_Response_Package_Entitlement_Unrecognized);
-
-   type List_Billing_Spec_Packages_Response_Package_Entitlement is record
-      Kind : List_Billing_Spec_Packages_Response_Package_Entitlement_Kind := List_Billing_Spec_Packages_Response_Package_Entitlement_Unrecognized;
-      Raw  : Text := Empty_Text;
-   end record;
-
-   function To_List_Billing_Spec_Packages_Response_Package_Entitlement (Value : String) return List_Billing_Spec_Packages_Response_Package_Entitlement;
-   function To_List_Billing_Spec_Packages_Response_Package_Entitlement (Kind : List_Billing_Spec_Packages_Response_Package_Entitlement_Kind) return List_Billing_Spec_Packages_Response_Package_Entitlement;
-   function Image (Model : List_Billing_Spec_Packages_Response_Package_Entitlement) return String;
-   function To_JSON (Model : List_Billing_Spec_Packages_Response_Package_Entitlement) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Billing_Spec_Packages_Response_Package_Entitlement;
-
-   --  `ListBillingSpecPackagesResponsePackage` model.
-   type List_Billing_Spec_Packages_Response_Package is record
-      Package_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Name : UARP.Types.Text := UARP.Types.Empty_Text;
-      Description : UARP.Types.Text := UARP.Types.Empty_Text;
-      Category : UARP.Types.Text := UARP.Types.Empty_Text;
-      Included_Specs : UARP.Types.Text_Vectors.Vector;
-      Included_In_Plans : UARP.Types.Text_Vectors.Vector;
-      Has_Program : Boolean := False;
-      Program : UARP.Models.Spec_Package_Program;
-      Has_Price_Amount_Cents : Boolean := False;
-      Price_Amount_Cents : UARP.Types.Integer_Value := 0;
-      Has_Price_Currency : Boolean := False;
-      Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  A Stripe price is wired. False means checkout will refuse with 400.
-      Checkout_Available : Standard.Boolean := False;
-      Entitlement : UARP.Models.List_Billing_Spec_Packages_Response_Package_Entitlement;
-   end record;
-
-   function To_JSON (Model : List_Billing_Spec_Packages_Response_Package) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Billing_Spec_Packages_Response_Package;
-
-   package List_Billing_Spec_Packages_Response_Package_Vectors is new Ada.Containers.Vectors
-     (Index_Type => Positive, Element_Type => List_Billing_Spec_Packages_Response_Package);
-
    --  `ListBillingSpecPackagesResponse` model.
    type List_Billing_Spec_Packages_Response is record
-      Packages : UARP.Models.List_Billing_Spec_Packages_Response_Package_Vectors.Vector;
+      Packages : UARP.JSON_Support.JSON_Value;
    end record;
 
    function To_JSON (Model : List_Billing_Spec_Packages_Response) return UARP.JSON_Support.JSON_Value;
@@ -15638,8 +15534,22 @@ package UARP.Models is
       Output : UARP.Models.Run_Output;
       Has_Metrics : Boolean := False;
       Metrics : UARP.Models.Run_Metrics;
+      --  The sentence a person reads. English on every deployment - nothing here varies by
+      --  `Accept-Language` - so branch on `error_code`, not on this.
       Has_Error : Boolean := False;
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+      --  Absent when the failure carries nothing a client can branch on - which is deliberate: a code
+      --  meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+      --  that a client had to regex-test `error`.
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+      --  `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+      --  Never a provider id - this reaches a screen, and the product does not name the model it
+      --  picked.
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Started_At : Boolean := False;
       Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -20639,7 +20549,6 @@ package UARP.Models is
       --  How many starter SPECs the build ships. `added + skipped` reaching this is the completion
       --  signal.
       Total_Starter : UARP.Types.Integer_Value := 0;
-      Entitlement_Updated : Standard.Boolean := False;
       --  Absent when nothing failed.
       Has_Errors : Boolean := False;
       Errors : UARP.Models.Seed_Starter_Specs_Response_Error_Vectors.Vector;
@@ -21410,6 +21319,72 @@ package UARP.Models is
    function To_JSON (Model : Spawn_Policy_Update) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spawn_Policy_Update;
 
+   --  Values of `SpecToolCatalogSpecStatus`.
+   --  A value the API introduces later decodes as Spec_Tool_Catalog_Spec_Status_Unrecognized
+   --  with the original text kept in Raw.
+   type Spec_Tool_Catalog_Spec_Status_Kind is
+     (Spec_Tool_Catalog_Spec_Status_Ready,
+   Spec_Tool_Catalog_Spec_Status_Needs_Connection,
+   Spec_Tool_Catalog_Spec_Status_Unrecognized);
+
+   type Spec_Tool_Catalog_Spec_Status is record
+      Kind : Spec_Tool_Catalog_Spec_Status_Kind := Spec_Tool_Catalog_Spec_Status_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Spec_Tool_Catalog_Spec_Status (Value : String) return Spec_Tool_Catalog_Spec_Status;
+   function To_Spec_Tool_Catalog_Spec_Status (Kind : Spec_Tool_Catalog_Spec_Status_Kind) return Spec_Tool_Catalog_Spec_Status;
+   function Image (Model : Spec_Tool_Catalog_Spec_Status) return String;
+   function To_JSON (Model : Spec_Tool_Catalog_Spec_Status) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Spec_Status;
+
+   --  Values of `SpecToolCatalogSpecRequiresMode`.
+   --  A value the API introduces later decodes as Spec_Tool_Catalog_Spec_Requires_Mode_Unrecognized
+   --  with the original text kept in Raw.
+   type Spec_Tool_Catalog_Spec_Requires_Mode_Kind is
+     (Spec_Tool_Catalog_Spec_Requires_Mode_Integration,
+   Spec_Tool_Catalog_Spec_Requires_Mode_Unrecognized);
+
+   type Spec_Tool_Catalog_Spec_Requires_Mode is record
+      Kind : Spec_Tool_Catalog_Spec_Requires_Mode_Kind := Spec_Tool_Catalog_Spec_Requires_Mode_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Spec_Tool_Catalog_Spec_Requires_Mode (Value : String) return Spec_Tool_Catalog_Spec_Requires_Mode;
+   function To_Spec_Tool_Catalog_Spec_Requires_Mode (Kind : Spec_Tool_Catalog_Spec_Requires_Mode_Kind) return Spec_Tool_Catalog_Spec_Requires_Mode;
+   function Image (Model : Spec_Tool_Catalog_Spec_Requires_Mode) return String;
+   function To_JSON (Model : Spec_Tool_Catalog_Spec_Requires_Mode) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Spec_Requires_Mode;
+
+   --  `SpecToolCatalogSpecRequires` model.
+   type Spec_Tool_Catalog_Spec_Requires is record
+      Has_Mode : Boolean := False;
+      Mode : UARP.Models.Spec_Tool_Catalog_Spec_Requires_Mode;
+      Has_Connector : Boolean := False;
+      Connector : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Spec_Tool_Catalog_Spec_Requires) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Spec_Requires;
+
+   --  `SpecToolCatalogSpec` model.
+   type Spec_Tool_Catalog_Spec is record
+      Spec_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      Status : UARP.Models.Spec_Tool_Catalog_Spec_Status;
+      Has_Requires : Boolean := False;
+      Requires : UARP.Models.Spec_Tool_Catalog_Spec_Requires;
+      Has_Action : Boolean := False;
+      Action : UARP.Types.Text := UARP.Types.Empty_Text;
+      Tools_Total : UARP.Types.Float_Value := 0.0;
+      Tools_Waiting : UARP.Types.Float_Value := 0.0;
+   end record;
+
+   function To_JSON (Model : Spec_Tool_Catalog_Spec) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Spec;
+
+   package Spec_Tool_Catalog_Spec_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Spec_Tool_Catalog_Spec);
+
    --  Values of `SpecToolCatalogDrawingCanvas`.
    --  A value the API introduces later decodes as Spec_Tool_Catalog_Drawing_Canvas_Unrecognized
    --  with the original text kept in Raw.
@@ -21455,6 +21430,20 @@ package UARP.Models is
    --  than failing the call.
    type Spec_Tool_Catalog is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Which of the agent's installed SPECs are waiting on a connection. `status` is
+      --  `needs_connection` when the SPEC declares tools routed through a connector (manifest
+      --  `delivered_by = { mode = "integration", connector = ... }`) that this agent cannot currently
+      --  see an ACTIVE connection of - visibility, not ownership: the assignment rule is
+      --  `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+      --  when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+      --  for one fact.
+      --
+      --  `ready` means NO UNMET CONNECTOR REQUIREMENT - not that every tool dispatches. A full
+      --  verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+      --  that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+      --  wrong than absent.
+      Has_Specs : Boolean := False;
+      Specs : UARP.Models.Spec_Tool_Catalog_Spec_Vectors.Vector;
       --  The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md ?5.1) - today
       --  only `drawing`. Always present: empty means no drawing canvas, absence means an older
       --  server, and a client must not confuse the two.
@@ -22955,15 +22944,6 @@ package UARP.Models is
    function To_JSON (Model : Update_Admin_Smtp_Config_Request) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Smtp_Config_Request;
 
-   --  `UpdateAdminSpecPackagesRequest` model.
-   type Update_Admin_Spec_Packages_Request is record
-      --  Keyed by `package_id`.
-      Packages : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
-   end record;
-
-   function To_JSON (Model : Update_Admin_Spec_Packages_Request) return UARP.JSON_Support.JSON_Value;
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Spec_Packages_Request;
-
    --  `UpdateAdminSSEConfigResponseSSE` model.
    type Update_Admin_SSE_Config_Response_SSE is record
       Heartbeat_Interval_Ms : UARP.Types.Integer_Value := 0;
@@ -23899,6 +23879,49 @@ package UARP.Models is
    function To_JSON (Model : Usage_Quota_Limits) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Usage_Quota_Limits;
 
+   --  Values of `UsageQuotaCounterKind`.
+   --  A value the API introduces later decodes as Usage_Quota_Counter_Kind_Unrecognized
+   --  with the original text kept in Raw.
+   type Usage_Quota_Counter_Kind_Kind is
+     (Usage_Quota_Counter_Kind_Runs,
+   Usage_Quota_Counter_Kind_Tokens,
+   Usage_Quota_Counter_Kind_Tokens_Daily,
+   Usage_Quota_Counter_Kind_Tool_Calls,
+   Usage_Quota_Counter_Kind_Agents,
+   Usage_Quota_Counter_Kind_Teams,
+   Usage_Quota_Counter_Kind_Knowledge_Bases,
+   Usage_Quota_Counter_Kind_Workspaces,
+   Usage_Quota_Counter_Kind_Unrecognized);
+
+   type Usage_Quota_Counter_Kind is record
+      Kind : Usage_Quota_Counter_Kind_Kind := Usage_Quota_Counter_Kind_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Usage_Quota_Counter_Kind (Value : String) return Usage_Quota_Counter_Kind;
+   function To_Usage_Quota_Counter_Kind (Kind : Usage_Quota_Counter_Kind_Kind) return Usage_Quota_Counter_Kind;
+   function Image (Model : Usage_Quota_Counter_Kind) return String;
+   function To_JSON (Model : Usage_Quota_Counter_Kind) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Usage_Quota_Counter_Kind;
+
+   --  `UsageQuotaCounter` model.
+   type Usage_Quota_Counter is record
+      Kind : UARP.Models.Usage_Quota_Counter_Kind;
+      Used : UARP.Types.Float_Value := 0.0;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Float_Value := 0.0;
+      Has_Period : Boolean := False;
+      Period : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Resets_At : Boolean := False;
+      Resets_At : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Usage_Quota_Counter) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Usage_Quota_Counter;
+
+   package Usage_Quota_Counter_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Usage_Quota_Counter);
+
    --  api/lib/resource-usage.ts TenantResourceUsage.
    type Usage_Quota_Resource_Usage is record
       Agents : UARP.Models.Resource_Usage_Entry;
@@ -23923,6 +23946,14 @@ package UARP.Models is
       Daily : UARP.Models.Usage_Quota_Daily;
       Resets_At : UARP.Models.Usage_Quota_Resets_At;
       Limits : UARP.Models.Usage_Quota_Limits;
+      --  Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+      --  resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+      --  exactly as they were - this is the shape a meter renders without doing the join itself (four
+      --  client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+      --  of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+      --  midnight.
+      Has_Counters : Boolean := False;
+      Counters : UARP.Models.Usage_Quota_Counter_Vectors.Vector;
       --  api/lib/resource-usage.ts TenantResourceUsage.
       Resource_Usage : UARP.Models.Usage_Quota_Resource_Usage;
    end record;

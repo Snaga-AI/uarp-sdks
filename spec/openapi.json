@@ -1246,6 +1246,62 @@
                             "max_workspaces"
                         ]
                     },
+                    "counters": {
+                        "type": "array",
+                        "description": "Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period, resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay exactly as they were — this is the shape a meter renders without doing the join itself (four client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as \"0 of 0\". `period`/`resets_at` are null for standing counts like agents, which do not reset at midnight.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "kind",
+                                "used",
+                                "limit",
+                                "period",
+                                "resets_at"
+                            ],
+                            "properties": {
+                                "kind": {
+                                    "type": "string",
+                                    "enum": [
+                                        "runs",
+                                        "tokens",
+                                        "tokens_daily",
+                                        "tool_calls",
+                                        "agents",
+                                        "teams",
+                                        "knowledge_bases",
+                                        "workspaces"
+                                    ]
+                                },
+                                "used": {
+                                    "type": "number"
+                                },
+                                "limit": {
+                                    "type": [
+                                        "number",
+                                        "null"
+                                    ]
+                                },
+                                "period": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "enum": [
+                                        "month",
+                                        "day",
+                                        null
+                                    ]
+                                },
+                                "resets_at": {
+                                    "type": [
+                                        "string",
+                                        "null"
+                                    ],
+                                    "format": "date-time"
+                                }
+                            }
+                        }
+                    },
                     "resource_usage": {
                         "type": "object",
                         "description": "api/lib/resource-usage.ts TenantResourceUsage.",
@@ -2812,21 +2868,6 @@
                             "webhook_base_url": {
                                 "type": "string"
                             }
-                        }
-                    }
-                },
-                "description": "Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape."
-            },
-            "AdminSpecPackagesList": {
-                "type": "object",
-                "required": [
-                    "packages"
-                ],
-                "properties": {
-                    "packages": {
-                        "type": "array",
-                        "items": {
-                            "$ref": "#/components/schemas/SpecPackage"
                         }
                     }
                 },
@@ -5348,6 +5389,7 @@
                             "BILLING_CANCELLED",
                             "BILLING_DISPUTED",
                             "BILLING_PAST_DUE",
+                            "BUDGET_EXCEEDED",
                             "CHECKSUM_MISMATCH",
                             "CONFIGURATION_ERROR",
                             "EVENT_STORE_ERROR",
@@ -5358,6 +5400,8 @@
                             "INVALID_SHARE_LIST",
                             "INVALID_SHARE_TARGET",
                             "LLM_ERROR",
+                            "MAX_DURATION_EXCEEDED",
+                            "MAX_TOKENS_EXCEEDED",
                             "MIGRATION_CONFLICT",
                             "MISSION_ALREADY_RUNNING",
                             "MISSION_CONCURRENCY_LIMIT",
@@ -5383,6 +5427,7 @@
                             "SHARE_LIST_CONFLICT",
                             "SIZE_LIMIT",
                             "SPEC_NOT_FOUND",
+                            "TASK_GRAPH_FAILED",
                             "TEAM_ABORT",
                             "VALIDATION_ERROR",
                             "VERSION_CONFLICT",
@@ -5396,9 +5441,23 @@
                             "incomplete_record",
                             "inert_policy_field",
                             "inert_public_config_field",
+                            "kb_chunk_limit",
+                            "kb_document_body_invalid",
+                            "kb_document_too_large",
+                            "kb_storage_limit",
+                            "kb_text_extraction_failed",
                             "limit_reached",
+                            "plan_upgrade_required",
+                            "provider_auth_failed",
+                            "provider_circuit_open",
+                            "provider_not_configured",
+                            "provider_rate_limited",
                             "quota_exceeded",
                             "rate_limited",
+                            "resource_limit_reached",
+                            "run_input_timeout",
+                            "run_never_claimed",
+                            "run_orphaned_restart",
                             "run_quota_exceeded"
                         ],
                         "description": "What a client should DO about this, as a value it can switch on — `detail` is for the person reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the document and the wire cannot drift apart. Two casings are on the wire and both are load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the hand-written limit refusals, and clients match on each exactly. Absent when the refusal has no machine-readable class."
@@ -6267,7 +6326,25 @@
                         "format": "date-time"
                     },
                     "status_reason": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Why the agent is in this status, as a sentence. One field with six writers — a person, an operator, four governance paths and a plan downgrade — so its language is whichever the writer used, and every reader sees that one. Branch on `status_reason_code`; render this."
+                    },
+                    "status_reason_code": {
+                        "type": "string",
+                        "enum": [
+                            "manual",
+                            "proposal_passed",
+                            "arbiter_ruling",
+                            "arbiter_penalty",
+                            "constitutional_penalty",
+                            "plan_downgrade"
+                        ],
+                        "description": "Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be rendered as-is; the other five are the platform's English, and a client may say them in the reader's language using `status_reason_details` for the identifier. Added 2026-09-21."
+                    },
+                    "status_reason_details": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent for `manual`."
                     },
                     "autonomy": {
                         "type": "object",
@@ -6496,7 +6573,17 @@
                         "type": [
                             "string",
                             "null"
-                        ]
+                        ],
+                        "description": "The sentence a person reads. English on every deployment — nothing here varies by `Accept-Language` — so branch on `error_code`, not on this."
+                    },
+                    "error_code": {
+                        "type": "string",
+                        "description": "Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum). Absent when the failure carries nothing a client can branch on — which is deliberate: a code meaning \"something went wrong\" would be worse than none. Populated since 2026-09-21; before that a client had to regex-test `error`."
+                    },
+                    "error_details": {
+                        "type": "object",
+                        "additionalProperties": true,
+                        "description": "Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`, `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`. Never a provider id — this reaches a screen, and the product does not name the model it picked."
                     },
                     "created_at": {
                         "type": "string",
@@ -13960,156 +14047,6 @@
                     }
                 }
             },
-            "SpecPackage": {
-                "type": "object",
-                "required": [
-                    "package_id",
-                    "name",
-                    "category",
-                    "included_specs"
-                ],
-                "properties": {
-                    "package_id": {
-                        "type": "string",
-                        "description": "Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.",
-                        "maxLength": 10485760
-                    },
-                    "name": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 120
-                    },
-                    "description": {
-                        "type": "string",
-                        "maxLength": 2000,
-                        "default": ""
-                    },
-                    "category": {
-                        "type": "string",
-                        "minLength": 1,
-                        "maxLength": 64
-                    },
-                    "included_specs": {
-                        "type": "array",
-                        "maxItems": 500,
-                        "items": {
-                            "type": "string",
-                            "minLength": 1,
-                            "maxLength": 256
-                        },
-                        "description": "SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and fails later."
-                    },
-                    "included_in_plans": {
-                        "type": "array",
-                        "items": {
-                            "type": "string",
-                            "enum": [
-                                "free",
-                                "starter",
-                                "pro",
-                                "enterprise"
-                            ]
-                        },
-                        "maxItems": 5242880
-                    },
-                    "pricing": {
-                        "type": "object",
-                        "properties": {
-                            "price_amount_cents": {
-                                "type": "integer",
-                                "minimum": 0,
-                                "maximum": 100000000
-                            },
-                            "price_currency": {
-                                "type": "string",
-                                "minLength": 3,
-                                "maxLength": 3
-                            },
-                            "billing_interval": {
-                                "type": "string",
-                                "enum": [
-                                    "month",
-                                    "year"
-                                ]
-                            },
-                            "stripe_price_id": {
-                                "type": "string",
-                                "description": "Never returned by the tenant-facing read. Its presence is what protects the package from a silent drop.",
-                                "maxLength": 10485760
-                            }
-                        }
-                    },
-                    "display_order": {
-                        "type": "integer"
-                    },
-                    "archived": {
-                        "type": "boolean"
-                    },
-                    "program": {
-                        "$ref": "#/components/schemas/SpecPackageProgram"
-                    },
-                    "updated_at": {
-                        "type": "string",
-                        "format": "date-time",
-                        "description": "Stamped by the server on every write; not read from the body.",
-                        "maxLength": 10485760
-                    }
-                }
-            },
-            "SpecPackageProgram": {
-                "type": "object",
-                "required": [
-                    "nav",
-                    "pages"
-                ],
-                "properties": {
-                    "nav": {
-                        "type": "object",
-                        "required": [
-                            "label"
-                        ],
-                        "properties": {
-                            "label": {
-                                "type": "string",
-                                "minLength": 1,
-                                "maxLength": 64
-                            },
-                            "icon": {
-                                "type": "string",
-                                "maxLength": 64
-                            }
-                        }
-                    },
-                    "pages": {
-                        "type": "array",
-                        "minItems": 1,
-                        "maxItems": 50,
-                        "items": {
-                            "type": "object",
-                            "required": [
-                                "id",
-                                "title"
-                            ],
-                            "properties": {
-                                "id": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 64
-                                },
-                                "title": {
-                                    "type": "string",
-                                    "minLength": 1,
-                                    "maxLength": 120
-                                },
-                                "route": {
-                                    "type": "string",
-                                    "maxLength": 512
-                                }
-                            }
-                        }
-                    }
-                }
-            },
             "RegistrySpecFeatureState": {
                 "type": "object",
                 "required": [
@@ -17936,6 +17873,54 @@
                 "properties": {
                     "agent_id": {
                         "type": "string"
+                    },
+                    "specs": {
+                        "type": "array",
+                        "description": "Which of the agent's installed SPECs are waiting on a connection. `status` is `needs_connection` when the SPEC declares tools routed through a connector (manifest `delivered_by = { mode = \"integration\", connector = … }`) that this agent cannot currently see an ACTIVE connection of — visibility, not ownership: the assignment rule is `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies for one fact.\n\n`ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC that cannot be resolved is reported `ready` rather than badged, because a badge is worse wrong than absent.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "spec_id",
+                                "status",
+                                "tools_total",
+                                "tools_waiting"
+                            ],
+                            "properties": {
+                                "spec_id": {
+                                    "type": "string"
+                                },
+                                "status": {
+                                    "type": "string",
+                                    "enum": [
+                                        "ready",
+                                        "needs_connection"
+                                    ]
+                                },
+                                "requires": {
+                                    "type": "object",
+                                    "properties": {
+                                        "mode": {
+                                            "type": "string",
+                                            "enum": [
+                                                "integration"
+                                            ]
+                                        },
+                                        "connector": {
+                                            "type": "string"
+                                        }
+                                    }
+                                },
+                                "action": {
+                                    "type": "string"
+                                },
+                                "tools_total": {
+                                    "type": "number"
+                                },
+                                "tools_waiting": {
+                                    "type": "number"
+                                }
+                            }
+                        }
                     },
                     "drawings": {
                         "type": "array",
@@ -51393,7 +51378,7 @@
                     "Knowledge"
                 ],
                 "summary": "Ingest document into knowledge base",
-                "description": "Ingests one document: send exactly one of `file_id` (an already-uploaded file, whose text is extracted server-side) or `content` (inline text), with an optional `filename`; sending both or neither is 400, and a file no text can be extracted from is 422. Inline content counts against the tenant's storage quota (403 when full) while a file was already charged at upload; oversized text answers 413, as does a chunk count the base's own `chunk_size`/`chunk_overlap` would blow up. The text is chunked with the base's settings and embedded when the deployment has an embeddings backend — otherwise the document is stored keyword-only, which the response reports as `embedding_status`. Answers 201 with the document id and `chunks_created`. The base must exist (404).",
+                "description": "Ingests one document: send exactly one of `file_id` (an already-uploaded file, whose text is extracted server-side) or `content` (inline text), with an optional `filename`; sending both or neither is 400, and a file no text can be extracted from is 422. Inline content counts against the tenant's storage quota (403 when full) while a file was already charged at upload; oversized text answers 413, as does a chunk count the base's own `chunk_size`/`chunk_overlap` would blow up. The text is chunked with the base's settings and embedded when the deployment has an embeddings backend — otherwise the document is stored keyword-only, which the response reports as `embedding_status`. Answers 201 with the document id and `chunks_created`. The base must exist (404).\n\nEvery refusal on this route carries a machine-readable `code` beside the sentence, and the numbers as FIELDS rather than only inside the prose — nothing on this platform honours `Accept-Language`, so a client that renders `detail` is rendering English. `kb_document_body_invalid` (400) adds `reason` (`both` | `missing` | `empty_content`) and `fields`. `NOT_FOUND` (404) adds `resource` (`file` | `file_data`) and `file_id`. `kb_text_extraction_failed` (422) adds `filename` and `mime_type`. `kb_document_too_large` (413) adds `chars`, `limit` and `source` (`content` | `extracted_text`). `kb_chunk_limit` (413) adds `limit`, `chunk_size` and `chunk_overlap`. `kb_storage_limit` (403) adds `current_bytes`, `incoming_bytes`, `limit` and `plan` — and is the code that separates a full tenant from a forbidden knowledge base, which both answered `FORBIDDEN` until 2026-09-21.",
                 "parameters": [
                     {
                         "name": "kbId",
@@ -67992,289 +67977,18 @@
                 ]
             }
         },
-        "/api/v1/admin/config/spec-packages": {
-            "get": {
-                "operationId": "getAdminSpecPackages",
-                "tags": [
-                    "Admin Config"
-                ],
-                "summary": "Every SPEC package, archived ones included",
-                "description": "The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`, then by name.",
-                "responses": {
-                    "200": {
-                        "description": "All packages.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AdminSpecPackagesList"
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            }
-                        }
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthorized"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "429": {
-                        "$ref": "#/components/responses/TooManyRequests"
-                    },
-                    "500": {
-                        "$ref": "#/components/responses/InternalServerError"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "x-scopes": [
-                    "admin"
-                ]
-            },
-            "put": {
-                "operationId": "updateAdminSpecPackages",
-                "tags": [
-                    "Admin Config"
-                ],
-                "summary": "Replace the SPEC-package map",
-                "description": "WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from the body is DELETED. Two guards exist because of that.\n\n**A drop that would remove a package with a wired `stripe_price_id` is refused with 422** unless the caller opts in per id: `?confirm_drop=<id>[,<id>]`. Tenants may be subscribed against that price, so losing it silently is not a save, it is a billing incident. The refusal names every id it is protecting.\n\n**Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id everywhere downstream, so a key that disagrees with its record orphans the package at the next read.\n\n`updated_at` is stamped by the server on every record in the payload and is not read from the body.",
-                "parameters": [
-                    {
-                        "name": "confirm_drop",
-                        "in": "query",
-                        "required": false,
-                        "schema": {
-                            "type": "string",
-                            "maxLength": 65536
-                        },
-                        "description": "Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids not listed still refuse."
-                    },
-                    {
-                        "$ref": "#/components/parameters/IdempotencyKey"
-                    }
-                ],
-                "requestBody": {
-                    "required": true,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "required": [
-                                    "packages"
-                                ],
-                                "properties": {
-                                    "packages": {
-                                        "type": "object",
-                                        "description": "Keyed by `package_id`.",
-                                        "additionalProperties": {
-                                            "$ref": "#/components/schemas/SpecPackage"
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "The map as stored.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/AdminSpecPackagesList"
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            },
-                            "X-Idempotency-Replayed": {
-                                "$ref": "#/components/headers/XIdempotencyReplayed"
-                            }
-                        }
-                    },
-                    "202": {
-                        "$ref": "#/components/responses/IdempotencyInFlight"
-                    },
-                    "400": {
-                        "$ref": "#/components/responses/BadRequest"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthorized"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "411": {
-                        "$ref": "#/components/responses/LengthRequired"
-                    },
-                    "413": {
-                        "$ref": "#/components/responses/PayloadTooLarge"
-                    },
-                    "422": {
-                        "description": "A map key disagrees with its `package_id`, or the save would drop a package with a wired Stripe price without `confirm_drop`."
-                    },
-                    "429": {
-                        "$ref": "#/components/responses/TooManyRequests"
-                    },
-                    "500": {
-                        "$ref": "#/components/responses/InternalServerError"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "x-scopes": [
-                    "admin"
-                ]
-            }
-        },
-        "/api/v1/admin/config/spec-packages/{packageId}/stripe-price": {
-            "parameters": [
-                {
-                    "name": "packageId",
-                    "in": "path",
-                    "required": true,
-                    "schema": {
-                        "type": "string",
-                        "maxLength": 65536
-                    }
-                }
-            ],
-            "post": {
-                "operationId": "createAdminSpecPackageStripePrice",
-                "tags": [
-                    "Admin Config"
-                ],
-                "summary": "Create the Stripe product and price for a package",
-                "description": "Creates the product and price in Stripe and persists the resulting price id onto the package. Until this has run, the package cannot be bought: `POST /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.",
-                "responses": {
-                    "200": {
-                        "description": "The price was created and stored.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "properties": {
-                                        "package_id": {
-                                            "type": "string"
-                                        },
-                                        "stripe_price_id": {
-                                            "type": "string"
-                                        },
-                                        "stripe_product_id": {
-                                            "type": "string"
-                                        },
-                                        "amount_cents": {
-                                            "type": "integer"
-                                        },
-                                        "currency": {
-                                            "type": "string"
-                                        },
-                                        "interval": {
-                                            "type": "string",
-                                            "enum": [
-                                                "month",
-                                                "year"
-                                            ]
-                                        }
-                                    },
-                                    "required": [
-                                        "package_id",
-                                        "stripe_price_id",
-                                        "stripe_product_id",
-                                        "amount_cents",
-                                        "currency",
-                                        "interval"
-                                    ]
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            },
-                            "X-Idempotency-Replayed": {
-                                "$ref": "#/components/headers/XIdempotencyReplayed"
-                            }
-                        }
-                    },
-                    "202": {
-                        "$ref": "#/components/responses/IdempotencyInFlight"
-                    },
-                    "401": {
-                        "$ref": "#/components/responses/Unauthorized"
-                    },
-                    "403": {
-                        "$ref": "#/components/responses/Forbidden"
-                    },
-                    "404": {
-                        "description": "No such package."
-                    },
-                    "413": {
-                        "$ref": "#/components/responses/PayloadTooLarge"
-                    },
-                    "429": {
-                        "$ref": "#/components/responses/TooManyRequests"
-                    },
-                    "500": {
-                        "$ref": "#/components/responses/InternalServerError"
-                    }
-                },
-                "security": [
-                    {
-                        "bearerAuth": []
-                    }
-                ],
-                "x-scopes": [
-                    "admin"
-                ],
-                "parameters": [
-                    {
-                        "$ref": "#/components/parameters/IdempotencyKey"
-                    }
-                ]
-            }
-        },
         "/api/v1/billing/spec-packages": {
             "get": {
                 "operationId": "listBillingSpecPackages",
                 "tags": [
                     "Billing"
                 ],
-                "summary": "SPEC packages this tenant can see, with entitlement",
-                "description": "The tenant-facing view, and deliberately narrower than the admin one: archived packages are omitted and **the Stripe price id is never returned** — `checkout_available` is the boolean derived from whether one is wired.\n\n`entitlement` is a three-way discriminator a client should branch on rather than infer: `plan_included` (comes with the tenant's plan tier), `purchased` (bought a la carte), `available` (not entitled, and buyable). It carries the same values as `/api/v1/billing/packages` so one card component serves both.\n\n`program` is the nav entry and pages a package contributes, and is ABSENT for agent-only packages with no UI — which is what lets a client build the entitlement-gated navigation from this single call.\n\nSorted by `display_order`, then by name.",
+                "deprecated": true,
+                "summary": "Removed — always an empty list",
+                "description": "SPEC packages were withdrawn on 2026-09-21. Every SPEC an agent declares now runs on the tenant's plan, so there is nothing to list and nothing to buy. The route answers `{\"packages\": []}` for one release so a client that still calls it renders an empty section instead of a 404; it is deleted after that.",
                 "responses": {
                     "200": {
-                        "description": "Visible packages with entitlement state.",
+                        "description": "Always empty.",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -68286,65 +68000,9 @@
                                         "packages": {
                                             "type": "array",
                                             "items": {
-                                                "type": "object",
-                                                "required": [
-                                                    "package_id",
-                                                    "name",
-                                                    "description",
-                                                    "category",
-                                                    "included_specs",
-                                                    "included_in_plans",
-                                                    "checkout_available",
-                                                    "entitlement"
-                                                ],
-                                                "properties": {
-                                                    "package_id": {
-                                                        "type": "string"
-                                                    },
-                                                    "name": {
-                                                        "type": "string"
-                                                    },
-                                                    "description": {
-                                                        "type": "string"
-                                                    },
-                                                    "category": {
-                                                        "type": "string"
-                                                    },
-                                                    "included_specs": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "included_in_plans": {
-                                                        "type": "array",
-                                                        "items": {
-                                                            "type": "string"
-                                                        }
-                                                    },
-                                                    "program": {
-                                                        "$ref": "#/components/schemas/SpecPackageProgram"
-                                                    },
-                                                    "price_amount_cents": {
-                                                        "type": "integer"
-                                                    },
-                                                    "price_currency": {
-                                                        "type": "string"
-                                                    },
-                                                    "checkout_available": {
-                                                        "type": "boolean",
-                                                        "description": "A Stripe price is wired. False means checkout will refuse with 400."
-                                                    },
-                                                    "entitlement": {
-                                                        "type": "string",
-                                                        "enum": [
-                                                            "plan_included",
-                                                            "purchased",
-                                                            "available"
-                                                        ]
-                                                    }
-                                                }
-                                            }
+                                                "type": "object"
+                                            },
+                                            "maxItems": 0
                                         }
                                     }
                                 }
@@ -68386,84 +68044,31 @@
             }
         },
         "/api/v1/billing/spec-packages/{packageId}/checkout-session": {
-            "parameters": [
-                {
-                    "name": "packageId",
-                    "in": "path",
-                    "required": true,
-                    "schema": {
-                        "type": "string",
-                        "maxLength": 65536
-                    }
-                }
-            ],
             "post": {
                 "operationId": "createSpecPackageCheckoutSession",
                 "tags": [
                     "Billing"
                 ],
-                "summary": "Start Stripe checkout for a SPEC package",
-                "description": "Answers a Stripe-hosted URL to redirect to.\n\n`success_url` and `cancel_url` must be SAME-ORIGIN with the request; anything else is refused. Both default to the billing settings page, so a caller that has no opinion should omit them rather than construct one.\n\nThree refusals worth telling apart. **501** — billing is not configured on this deployment. Not 502, deliberately: no upstream was contacted, and a 502 sends an operator hunting an outage when the fix is one admin setting. **400** — the package exists but has no Stripe price wired, and the message names the admin screen that creates one. **404** — no such package, or it is archived.",
-                "requestBody": {
-                    "required": false,
-                    "content": {
-                        "application/json": {
-                            "schema": {
-                                "type": "object",
-                                "properties": {
-                                    "success_url": {
-                                        "type": "string",
-                                        "description": "Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path, resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or the app's own scheme — `snaga://…`, the same test the OAuth callback uses (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422. Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.",
-                                        "maxLength": 10485760
-                                    },
-                                    "cancel_url": {
-                                        "type": "string",
-                                        "description": "Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path, resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or the app's own scheme — `snaga://…`, the same test the OAuth callback uses (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422. Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.",
-                                        "maxLength": 10485760
-                                    }
-                                }
-                            }
-                        }
-                    }
-                },
-                "responses": {
-                    "200": {
-                        "description": "The Stripe checkout URL.",
-                        "content": {
-                            "application/json": {
-                                "schema": {
-                                    "type": "object",
-                                    "required": [
-                                        "url"
-                                    ],
-                                    "properties": {
-                                        "url": {
-                                            "type": "string"
-                                        }
-                                    }
-                                }
-                            }
-                        },
-                        "headers": {
-                            "X-RateLimit-Limit": {
-                                "$ref": "#/components/headers/XRateLimitLimit"
-                            },
-                            "X-RateLimit-Remaining": {
-                                "$ref": "#/components/headers/XRateLimitRemaining"
-                            },
-                            "X-RateLimit-Reset": {
-                                "$ref": "#/components/headers/XRateLimitReset"
-                            },
-                            "X-Idempotency-Replayed": {
-                                "$ref": "#/components/headers/XIdempotencyReplayed"
-                            }
+                "deprecated": true,
+                "summary": "Removed — 410 Gone",
+                "description": "SPEC packages are no longer sold. The route answers 410 for one release so a client still calling it can tell a withdrawn feature from a wrong URL; it is deleted after that.",
+                "parameters": [
+                    {
+                        "name": "packageId",
+                        "in": "path",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "maxLength": 65536
                         }
                     },
+                    {
+                        "$ref": "#/components/parameters/IdempotencyKey"
+                    }
+                ],
+                "responses": {
                     "202": {
                         "$ref": "#/components/responses/IdempotencyInFlight"
-                    },
-                    "400": {
-                        "description": "No Stripe price wired for this package, or a redirect URL was not same-origin."
                     },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
@@ -68472,32 +68077,19 @@
                         "$ref": "#/components/responses/Forbidden"
                     },
                     "404": {
-                        "description": "No such package, or it is archived."
+                        "$ref": "#/components/responses/NotFound"
                     },
-                    "411": {
-                        "$ref": "#/components/responses/LengthRequired"
+                    "410": {
+                        "description": "SPEC packages are no longer sold."
                     },
                     "413": {
                         "$ref": "#/components/responses/PayloadTooLarge"
-                    },
-                    "422": {
-                        "description": "Validation Error",
-                        "content": {
-                            "application/problem+json": {
-                                "schema": {
-                                    "$ref": "#/components/schemas/Error"
-                                }
-                            }
-                        }
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
                     },
                     "500": {
                         "$ref": "#/components/responses/InternalServerError"
-                    },
-                    "501": {
-                        "description": "Billing is not configured on this deployment."
                     }
                 },
                 "security": [
@@ -68507,11 +68099,6 @@
                 ],
                 "x-scopes": [
                     "billing:read"
-                ],
-                "parameters": [
-                    {
-                        "$ref": "#/components/parameters/IdempotencyKey"
-                    }
                 ]
             }
         },
@@ -79490,8 +79077,7 @@
                                     "required": [
                                         "added",
                                         "skipped",
-                                        "total_starter",
-                                        "entitlement_updated"
+                                        "total_starter"
                                     ],
                                     "properties": {
                                         "added": {
@@ -79505,9 +79091,6 @@
                                         "total_starter": {
                                             "type": "integer",
                                             "description": "How many starter SPECs the build ships. `added + skipped` reaching this is the completion signal."
-                                        },
-                                        "entitlement_updated": {
-                                            "type": "boolean"
                                         },
                                         "errors": {
                                             "type": "array",
@@ -88360,7 +87943,7 @@
                 "tags": [
                     "Agents"
                 ],
-                "description": "What the builder needs to render a tool result: for each tool the agent can actually call, the SPEC that owns it and the view to render its output with.\n\nOnly tools the agent is entitled to are listed — the same filter the runtime applies — so the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will not parse is skipped, not fatal: one broken view must not take the catalog down.",
+                "description": "What the builder needs to render a tool result: for each tool the agent can actually call, the SPEC that owns it and the view to render its output with.\n\nOnly tools the agent can actually call are listed — the same filter the runtime applies, which since 2026-09-21 means the agent's declared, enabled SPECs — so the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will not parse is skipped, not fatal: one broken view must not take the catalog down.",
                 "parameters": [
                     {
                         "name": "agentId",

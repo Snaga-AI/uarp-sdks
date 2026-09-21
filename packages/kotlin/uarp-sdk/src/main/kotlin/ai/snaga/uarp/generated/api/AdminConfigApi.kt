@@ -24,28 +24,6 @@ import kotlinx.serialization.json.JsonObject
  */
 public class AdminConfigApi internal constructor(private val client: UarpClient) {
     /**
-     * Create the Stripe product and price for a package
-     *
-     * Creates the product and price in Stripe and persists the resulting price id onto the
-     * package. Until this has run, the package cannot be bought: `POST
-     * /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
-     *
-     * `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
-     *
-     * Required scopes: `admin`.
-     */
-    public suspend fun createAdminSpecPackageStripePrice(packageId: String, options: RequestOptions = RequestOptions()): CreateAdminSpecPackageStripePriceResponse {
-        return client.request<CreateAdminSpecPackageStripePriceResponse>(
-            RequestSpec(
-                method = "POST",
-                path = "/api/v1/admin/config/spec-packages/${encodePathSegment(packageId)}/stripe-price",
-                idempotent = true,
-                options = options,
-            )
-        )
-    }
-
-    /**
      * Create Stripe Product+Price for plan
      *
      * Creates a Stripe Product and recurring Price in the configured Stripe account and stores the
@@ -694,27 +672,6 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/config/smtp",
-                options = options,
-            )
-        )
-    }
-
-    /**
-     * Every SPEC package, archived ones included
-     *
-     * The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
-     * packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
-     * then by name.
-     *
-     * `GET /api/v1/admin/config/spec-packages`
-     *
-     * Required scopes: `admin`.
-     */
-    public suspend fun getAdminSpecPackages(options: RequestOptions = RequestOptions()): AdminSpecPackagesList {
-        return client.request<AdminSpecPackagesList>(
-            RequestSpec(
-                method = "GET",
-                path = "/api/v1/admin/config/spec-packages",
                 options = options,
             )
         )
@@ -1940,44 +1897,6 @@ public class AdminConfigApi internal constructor(private val client: UarpClient)
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/smtp",
-                body = Body.Json(uarpJson.encodeToString(body)),
-                idempotent = true,
-                options = options,
-            )
-        )
-    }
-
-    /**
-     * Replace the SPEC-package map
-     *
-     * WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
-     * the body is DELETED. Two guards exist because of that.
-     *
-     * **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
-     * unless the caller opts in per id: `?confirm_drop=<id>\[,<id>\]`. Tenants may be subscribed
-     * against that price, so losing it silently is not a save, it is a billing incident. The
-     * refusal names every id it is protecting.
-     *
-     * **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
-     * everywhere downstream, so a key that disagrees with its record orphans the package at the
-     * next read.
-     *
-     * `updated_at` is stamped by the server on every record in the payload and is not read from
-     * the body.
-     *
-     * `PUT /api/v1/admin/config/spec-packages`
-     *
-     * Required scopes: `admin`.
-     */
-    public suspend fun updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, confirmDrop: String? = null, options: RequestOptions = RequestOptions()): AdminSpecPackagesList {
-        val query = buildList {
-            if (confirmDrop != null) add("confirm_drop" to confirmDrop)
-        }
-        return client.request<AdminSpecPackagesList>(
-            RequestSpec(
-                method = "PUT",
-                path = "/api/v1/admin/config/spec-packages",
-                query = query,
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,

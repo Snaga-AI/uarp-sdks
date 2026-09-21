@@ -2533,14 +2533,6 @@ public object AdminSmtpConfigSourceSerializer : KSerializer<AdminSmtpConfigSourc
 }
 
 /**
- * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
- */
-@Serializable
-public data class AdminSpecPackagesList(
-    public val packages: List<SpecPackage>,
-)
-
-/**
  * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
  * their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
  */
@@ -2675,8 +2667,26 @@ public data class Agent(
     public val status: AgentStatus? = null,
     @SerialName("status_changed_at")
     public val statusChangedAt: String? = null,
+    /**
+     * Why the agent is in this status, as a sentence. One field with six writers — a person, an
+     * operator, four governance paths and a plan downgrade — so its language is whichever the
+     * writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
+     */
     @SerialName("status_reason")
     public val statusReason: String? = null,
+    /**
+     * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+     * rendered as-is; the other five are the platform's English, and a client may say them in the
+     * reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+     */
+    @SerialName("status_reason_code")
+    public val statusReasonCode: AgentStatusReasonCode? = null,
+    /**
+     * The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+     * for `manual`.
+     */
+    @SerialName("status_reason_details")
+    public val statusReasonDetails: JsonObject? = null,
     public val autonomy: AgentAutonomy? = null,
     /**
      * Per-tool trust, overriding the agent's default approval policy.
@@ -3581,6 +3591,40 @@ public object AgentStatusSerializer : KSerializer<AgentStatus> {
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentStatus", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: AgentStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AgentStatus = AgentStatus(decoder.decodeString())
+}
+
+/**
+ * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+ * rendered as-is; the other five are the platform's English, and a client may say them in the
+ * reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = AgentStatusReasonCodeSerializer::class)
+@JvmInline
+public value class AgentStatusReasonCode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MANUAL: AgentStatusReasonCode = AgentStatusReasonCode("manual")
+        public val PROPOSAL_PASSED: AgentStatusReasonCode = AgentStatusReasonCode("proposal_passed")
+        public val ARBITER_RULING: AgentStatusReasonCode = AgentStatusReasonCode("arbiter_ruling")
+        public val ARBITER_PENALTY: AgentStatusReasonCode = AgentStatusReasonCode("arbiter_penalty")
+        public val CONSTITUTIONAL_PENALTY: AgentStatusReasonCode = AgentStatusReasonCode("constitutional_penalty")
+        public val PLAN_DOWNGRADE: AgentStatusReasonCode = AgentStatusReasonCode("plan_downgrade")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<AgentStatusReasonCode> = listOf(MANUAL, PROPOSAL_PASSED, ARBITER_RULING, ARBITER_PENALTY, CONSTITUTIONAL_PENALTY, PLAN_DOWNGRADE)
+    }
+}
+
+public object AgentStatusReasonCodeSerializer : KSerializer<AgentStatusReasonCode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.AgentStatusReasonCode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: AgentStatusReasonCode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): AgentStatusReasonCode = AgentStatusReasonCode(decoder.decodeString())
 }
 
 /**
@@ -6736,23 +6780,6 @@ public data class CreateAdminProviderResponseDefaultCapabilities(
 )
 
 /**
- * `CreateAdminSpecPackageStripePriceResponse` model.
- */
-@Serializable
-public data class CreateAdminSpecPackageStripePriceResponse(
-    @SerialName("package_id")
-    public val packageId: String,
-    @SerialName("stripe_price_id")
-    public val stripePriceId: String,
-    @SerialName("stripe_product_id")
-    public val stripeProductId: String,
-    @SerialName("amount_cents")
-    public val amountCents: Long,
-    public val currency: String,
-    public val interval: SpecPackagePricingBillingInterval,
-)
-
-/**
  * `CreateAgentBookmarkRequest` model.
  */
 @Serializable
@@ -7223,10 +7250,38 @@ public data class CreatePlanStripePriceRequest(
     @SerialName("amount_cents")
     public val amountCents: Long,
     public val currency: String? = null,
-    public val interval: SpecPackagePricingBillingInterval? = null,
+    public val interval: CreatePlanStripePriceRequestInterval? = null,
     @SerialName("product_name")
     public val productName: String? = null,
 )
+
+/**
+ * `CreatePlanStripePriceRequestInterval` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CreatePlanStripePriceRequestIntervalSerializer::class)
+@JvmInline
+public value class CreatePlanStripePriceRequestInterval(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MONTH: CreatePlanStripePriceRequestInterval = CreatePlanStripePriceRequestInterval("month")
+        public val YEAR: CreatePlanStripePriceRequestInterval = CreatePlanStripePriceRequestInterval("year")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CreatePlanStripePriceRequestInterval> = listOf(MONTH, YEAR)
+    }
+}
+
+public object CreatePlanStripePriceRequestIntervalSerializer : KSerializer<CreatePlanStripePriceRequestInterval> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CreatePlanStripePriceRequestInterval", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CreatePlanStripePriceRequestInterval): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CreatePlanStripePriceRequestInterval = CreatePlanStripePriceRequestInterval(decoder.decodeString())
+}
 
 /**
  * `CreatePlanStripePriceResponse` model.
@@ -7569,38 +7624,14 @@ public data class CreateSessionTodoRequest(
 )
 
 /**
- * `CreateSpecPackageCheckoutSessionRequest` model.
- */
-@Serializable
-public data class CreateSpecPackageCheckoutSessionRequest(
-    /**
-     * Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-     * resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-     * web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-     * the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-     * (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-     * Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-     */
-    @SerialName("success_url")
-    public val successURL: String? = null,
-    /**
-     * Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-     * resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-     * web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-     * the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-     * (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-     * Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-     */
-    @SerialName("cancel_url")
-    public val cancelURL: String? = null,
-)
-
-/**
  * `CreateSpecPackageCheckoutSessionResponse` model.
  */
 @Serializable
 public data class CreateSpecPackageCheckoutSessionResponse(
-    public val url: String,
+    public val error: InvokeListingAgentResponseError,
+    public val message: String,
+    @SerialName("retry_after_seconds")
+    public val retryAfterSeconds: Long,
 )
 
 /**
@@ -7650,7 +7681,7 @@ public data class CustomPlan(
      */
     public val program: String? = null,
     @SerialName("base_plan")
-    public val basePlan: SpecPackageIncludedInPlan,
+    public val basePlan: CustomPlanBasePlan,
     @SerialName("price_amount_cents")
     public val priceAmountCents: Long,
     @SerialName("price_currency")
@@ -7671,6 +7702,36 @@ public data class CustomPlan(
 )
 
 /**
+ * `CustomPlanBasePlan` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = CustomPlanBasePlanSerializer::class)
+@JvmInline
+public value class CustomPlanBasePlan(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FREE: CustomPlanBasePlan = CustomPlanBasePlan("free")
+        public val STARTER: CustomPlanBasePlan = CustomPlanBasePlan("starter")
+        public val PRO: CustomPlanBasePlan = CustomPlanBasePlan("pro")
+        public val ENTERPRISE: CustomPlanBasePlan = CustomPlanBasePlan("enterprise")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<CustomPlanBasePlan> = listOf(FREE, STARTER, PRO, ENTERPRISE)
+    }
+}
+
+public object CustomPlanBasePlanSerializer : KSerializer<CustomPlanBasePlan> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.CustomPlanBasePlan", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: CustomPlanBasePlan): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): CustomPlanBasePlan = CustomPlanBasePlan(decoder.decodeString())
+}
+
+/**
  * `CustomPlanInput` model.
  */
 @Serializable
@@ -7679,7 +7740,7 @@ public data class CustomPlanInput(
     public val description: String? = null,
     public val program: String? = null,
     @SerialName("base_plan")
-    public val basePlan: SpecPackageIncludedInPlan,
+    public val basePlan: CustomPlanBasePlan,
     @SerialName("price_amount_cents")
     public val priceAmountCents: Long,
     @SerialName("price_currency")
@@ -9443,6 +9504,7 @@ public value class ErrorCode(public val value: String) {
         public val BILLING_CANCELLED: ErrorCode = ErrorCode("BILLING_CANCELLED")
         public val BILLING_DISPUTED: ErrorCode = ErrorCode("BILLING_DISPUTED")
         public val BILLING_PAST_DUE: ErrorCode = ErrorCode("BILLING_PAST_DUE")
+        public val BUDGET_EXCEEDED: ErrorCode = ErrorCode("BUDGET_EXCEEDED")
         public val CHECKSUM_MISMATCH: ErrorCode = ErrorCode("CHECKSUM_MISMATCH")
         public val CONFIGURATION_ERROR: ErrorCode = ErrorCode("CONFIGURATION_ERROR")
         public val EVENT_STORE_ERROR: ErrorCode = ErrorCode("EVENT_STORE_ERROR")
@@ -9453,6 +9515,8 @@ public value class ErrorCode(public val value: String) {
         public val INVALID_SHARE_LIST: ErrorCode = ErrorCode("INVALID_SHARE_LIST")
         public val INVALID_SHARE_TARGET: ErrorCode = ErrorCode("INVALID_SHARE_TARGET")
         public val LLM_ERROR: ErrorCode = ErrorCode("LLM_ERROR")
+        public val MAX_DURATION_EXCEEDED: ErrorCode = ErrorCode("MAX_DURATION_EXCEEDED")
+        public val MAX_TOKENS_EXCEEDED: ErrorCode = ErrorCode("MAX_TOKENS_EXCEEDED")
         public val MIGRATION_CONFLICT: ErrorCode = ErrorCode("MIGRATION_CONFLICT")
         public val MISSION_ALREADY_RUNNING: ErrorCode = ErrorCode("MISSION_ALREADY_RUNNING")
         public val MISSION_CONCURRENCY_LIMIT: ErrorCode = ErrorCode("MISSION_CONCURRENCY_LIMIT")
@@ -9478,6 +9542,7 @@ public value class ErrorCode(public val value: String) {
         public val SHARE_LIST_CONFLICT: ErrorCode = ErrorCode("SHARE_LIST_CONFLICT")
         public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
         public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
+        public val TASK_GRAPH_FAILED: ErrorCode = ErrorCode("TASK_GRAPH_FAILED")
         public val TEAM_ABORT: ErrorCode = ErrorCode("TEAM_ABORT")
         public val VALIDATION_ERROR: ErrorCode = ErrorCode("VALIDATION_ERROR")
         public val VERSION_CONFLICT: ErrorCode = ErrorCode("VERSION_CONFLICT")
@@ -9491,13 +9556,27 @@ public value class ErrorCode(public val value: String) {
         public val INCOMPLETE_RECORD: ErrorCode = ErrorCode("incomplete_record")
         public val INERT_POLICY_FIELD: ErrorCode = ErrorCode("inert_policy_field")
         public val INERT_PUBLIC_CONFIG_FIELD: ErrorCode = ErrorCode("inert_public_config_field")
+        public val KB_CHUNK_LIMIT: ErrorCode = ErrorCode("kb_chunk_limit")
+        public val KB_DOCUMENT_BODY_INVALID: ErrorCode = ErrorCode("kb_document_body_invalid")
+        public val KB_DOCUMENT_TOO_LARGE: ErrorCode = ErrorCode("kb_document_too_large")
+        public val KB_STORAGE_LIMIT: ErrorCode = ErrorCode("kb_storage_limit")
+        public val KB_TEXT_EXTRACTION_FAILED: ErrorCode = ErrorCode("kb_text_extraction_failed")
         public val LIMIT_REACHED: ErrorCode = ErrorCode("limit_reached")
+        public val PLAN_UPGRADE_REQUIRED: ErrorCode = ErrorCode("plan_upgrade_required")
+        public val PROVIDER_AUTH_FAILED: ErrorCode = ErrorCode("provider_auth_failed")
+        public val PROVIDER_CIRCUIT_OPEN: ErrorCode = ErrorCode("provider_circuit_open")
+        public val PROVIDER_NOT_CONFIGURED: ErrorCode = ErrorCode("provider_not_configured")
+        public val PROVIDER_RATE_LIMITED: ErrorCode = ErrorCode("provider_rate_limited")
         public val QUOTA_EXCEEDED_: ErrorCode = ErrorCode("quota_exceeded")
         public val RATE_LIMITED: ErrorCode = ErrorCode("rate_limited")
+        public val RESOURCE_LIMIT_REACHED: ErrorCode = ErrorCode("resource_limit_reached")
+        public val RUN_INPUT_TIMEOUT: ErrorCode = ErrorCode("run_input_timeout")
+        public val RUN_NEVER_CLAIMED: ErrorCode = ErrorCode("run_never_claimed")
+        public val RUN_ORPHANED_RESTART: ErrorCode = ErrorCode("run_orphaned_restart")
         public val RUN_QUOTA_EXCEEDED: ErrorCode = ErrorCode("run_quota_exceeded")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, LIMIT_REACHED, QUOTA_EXCEEDED_, RATE_LIMITED, RUN_QUOTA_EXCEEDED)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, PLAN_UPGRADE_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED)
     }
 }
 
@@ -11836,7 +11915,27 @@ public data class GetRunResponse(
      */
     public val output: RunOutput? = null,
     public val metrics: RunMetrics? = null,
+    /**
+     * The sentence a person reads. English on every deployment — nothing here varies by
+     * `Accept-Language` — so branch on `error_code`, not on this.
+     */
     public val error: String? = null,
+    /**
+     * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+     * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+     * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+     * that a client had to regex-test `error`.
+     */
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    /**
+     * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+     * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+     * Never a provider id — this reaches a screen, and the product does not name the model it
+     * picked.
+     */
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -14050,64 +14149,8 @@ public data class ListBillingPlansResponsePlan(
  */
 @Serializable
 public data class ListBillingSpecPackagesResponse(
-    public val packages: List<ListBillingSpecPackagesResponsePackage>,
+    public val packages: List<JsonObject>,
 )
-
-/**
- * `ListBillingSpecPackagesResponsePackage` model.
- */
-@Serializable
-public data class ListBillingSpecPackagesResponsePackage(
-    @SerialName("package_id")
-    public val packageId: String,
-    public val name: String,
-    public val description: String,
-    public val category: String,
-    @SerialName("included_specs")
-    public val includedSpecs: List<String>,
-    @SerialName("included_in_plans")
-    public val includedInPlans: List<String>,
-    public val program: SpecPackageProgram? = null,
-    @SerialName("price_amount_cents")
-    public val priceAmountCents: Long? = null,
-    @SerialName("price_currency")
-    public val priceCurrency: String? = null,
-    /**
-     * A Stripe price is wired. False means checkout will refuse with 400.
-     */
-    @SerialName("checkout_available")
-    public val checkoutAvailable: Boolean,
-    public val entitlement: ListBillingSpecPackagesResponsePackageEntitlement,
-)
-
-/**
- * `ListBillingSpecPackagesResponsePackageEntitlement` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = ListBillingSpecPackagesResponsePackageEntitlementSerializer::class)
-@JvmInline
-public value class ListBillingSpecPackagesResponsePackageEntitlement(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val PLAN_INCLUDED: ListBillingSpecPackagesResponsePackageEntitlement = ListBillingSpecPackagesResponsePackageEntitlement("plan_included")
-        public val PURCHASED: ListBillingSpecPackagesResponsePackageEntitlement = ListBillingSpecPackagesResponsePackageEntitlement("purchased")
-        public val AVAILABLE: ListBillingSpecPackagesResponsePackageEntitlement = ListBillingSpecPackagesResponsePackageEntitlement("available")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<ListBillingSpecPackagesResponsePackageEntitlement> = listOf(PLAN_INCLUDED, PURCHASED, AVAILABLE)
-    }
-}
-
-public object ListBillingSpecPackagesResponsePackageEntitlementSerializer : KSerializer<ListBillingSpecPackagesResponsePackageEntitlement> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListBillingSpecPackagesResponsePackageEntitlement", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: ListBillingSpecPackagesResponsePackageEntitlement): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): ListBillingSpecPackagesResponsePackageEntitlement = ListBillingSpecPackagesResponsePackageEntitlement(decoder.decodeString())
-}
 
 /**
  * `ListBuilderRequestsResponse` model.
@@ -20561,7 +20604,27 @@ public data class Run(
      */
     public val output: RunOutput? = null,
     public val metrics: RunMetrics? = null,
+    /**
+     * The sentence a person reads. English on every deployment — nothing here varies by
+     * `Accept-Language` — so branch on `error_code`, not on this.
+     */
     public val error: String? = null,
+    /**
+     * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+     * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+     * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+     * that a client had to regex-test `error`.
+     */
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    /**
+     * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+     * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+     * Never a provider id — this reaches a screen, and the product does not name the model it
+     * picked.
+     */
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -21764,8 +21827,6 @@ public data class SeedStarterSpecsResponse(
      */
     @SerialName("total_starter")
     public val totalStarter: Long,
-    @SerialName("entitlement_updated")
-    public val entitlementUpdated: Boolean,
     /**
      * Absent when nothing failed.
      */
@@ -22721,145 +22782,6 @@ public data class SpawnPolicyUpdate(
 )
 
 /**
- * `SpecPackage` model.
- */
-@Serializable
-public data class SpecPackage(
-    /**
-     * Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-     */
-    @SerialName("package_id")
-    public val packageId: String,
-    public val name: String,
-    public val description: String? = null,
-    public val category: String,
-    /**
-     * SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-     * `@scope/name\[@version\]` shape at run time, so a malformed ref is accepted by this write
-     * and fails later.
-     */
-    @SerialName("included_specs")
-    public val includedSpecs: List<String>,
-    @SerialName("included_in_plans")
-    public val includedInPlans: List<SpecPackageIncludedInPlan>? = null,
-    public val pricing: SpecPackagePricing? = null,
-    @SerialName("display_order")
-    public val displayOrder: Long? = null,
-    public val archived: Boolean? = null,
-    public val program: SpecPackageProgram? = null,
-    /**
-     * Stamped by the server on every write; not read from the body.
-     */
-    @SerialName("updated_at")
-    public val updatedAt: String? = null,
-)
-
-/**
- * `SpecPackageIncludedInPlan` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = SpecPackageIncludedInPlanSerializer::class)
-@JvmInline
-public value class SpecPackageIncludedInPlan(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val FREE: SpecPackageIncludedInPlan = SpecPackageIncludedInPlan("free")
-        public val STARTER: SpecPackageIncludedInPlan = SpecPackageIncludedInPlan("starter")
-        public val PRO: SpecPackageIncludedInPlan = SpecPackageIncludedInPlan("pro")
-        public val ENTERPRISE: SpecPackageIncludedInPlan = SpecPackageIncludedInPlan("enterprise")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<SpecPackageIncludedInPlan> = listOf(FREE, STARTER, PRO, ENTERPRISE)
-    }
-}
-
-public object SpecPackageIncludedInPlanSerializer : KSerializer<SpecPackageIncludedInPlan> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecPackageIncludedInPlan", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: SpecPackageIncludedInPlan): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): SpecPackageIncludedInPlan = SpecPackageIncludedInPlan(decoder.decodeString())
-}
-
-/**
- * `SpecPackagePricing` model.
- */
-@Serializable
-public data class SpecPackagePricing(
-    @SerialName("price_amount_cents")
-    public val priceAmountCents: Long? = null,
-    @SerialName("price_currency")
-    public val priceCurrency: String? = null,
-    @SerialName("billing_interval")
-    public val billingInterval: SpecPackagePricingBillingInterval? = null,
-    /**
-     * Never returned by the tenant-facing read. Its presence is what protects the package from a
-     * silent drop.
-     */
-    @SerialName("stripe_price_id")
-    public val stripePriceId: String? = null,
-)
-
-/**
- * `SpecPackagePricingBillingInterval` values.
- */
-///
-/**
- * Values the API adds later decode unchanged, so a new server-side case never breaks an
- * existing client.
- */
-@Serializable(with = SpecPackagePricingBillingIntervalSerializer::class)
-@JvmInline
-public value class SpecPackagePricingBillingInterval(public val value: String) {
-    override fun toString(): String = value
-
-    public companion object {
-        public val MONTH: SpecPackagePricingBillingInterval = SpecPackagePricingBillingInterval("month")
-        public val YEAR: SpecPackagePricingBillingInterval = SpecPackagePricingBillingInterval("year")
-
-        /** Every value the spec declared at generation time. */
-        public val knownValues: List<SpecPackagePricingBillingInterval> = listOf(MONTH, YEAR)
-    }
-}
-
-public object SpecPackagePricingBillingIntervalSerializer : KSerializer<SpecPackagePricingBillingInterval> {
-    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecPackagePricingBillingInterval", PrimitiveKind.STRING)
-    override fun serialize(encoder: Encoder, value: SpecPackagePricingBillingInterval): Unit = encoder.encodeString(value.value)
-    override fun deserialize(decoder: Decoder): SpecPackagePricingBillingInterval = SpecPackagePricingBillingInterval(decoder.decodeString())
-}
-
-/**
- * `SpecPackageProgram` model.
- */
-@Serializable
-public data class SpecPackageProgram(
-    public val nav: SpecPackageProgramNav,
-    public val pages: List<SpecPackageProgramPage>,
-)
-
-/**
- * `SpecPackageProgramNav` model.
- */
-@Serializable
-public data class SpecPackageProgramNav(
-    public val label: String,
-    public val icon: String? = null,
-)
-
-/**
- * `SpecPackageProgramPage` model.
- */
-@Serializable
-public data class SpecPackageProgramPage(
-    public val id: String,
-    public val title: String,
-    public val route: String? = null,
-)
-
-/**
  * Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
  * the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
  * than failing the call.
@@ -22868,6 +22790,21 @@ public data class SpecPackageProgramPage(
 public data class SpecToolCatalog(
     @SerialName("agent_id")
     public val agentId: String,
+    /**
+     * Which of the agent's installed SPECs are waiting on a connection. `status` is
+     * `needs_connection` when the SPEC declares tools routed through a connector (manifest
+     * `delivered_by = { mode = "integration", connector = … }`) that this agent cannot currently
+     * see an ACTIVE connection of — visibility, not ownership: the assignment rule is
+     * `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+     * when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+     * for one fact.
+     *
+     * `ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full
+     * verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+     * that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+     * wrong than absent.
+     */
+    public val specs: List<SpecToolCatalogSpec>? = null,
     /**
      * The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
      * only `drawing`. Always present: empty means no drawing canvas, absence means an older
@@ -22916,6 +22853,86 @@ public object SpecToolCatalogDrawingCanvasSerializer : KSerializer<SpecToolCatal
     override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecToolCatalogDrawingCanvas", PrimitiveKind.STRING)
     override fun serialize(encoder: Encoder, value: SpecToolCatalogDrawingCanvas): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SpecToolCatalogDrawingCanvas = SpecToolCatalogDrawingCanvas(decoder.decodeString())
+}
+
+/**
+ * `SpecToolCatalogSpec` model.
+ */
+@Serializable
+public data class SpecToolCatalogSpec(
+    @SerialName("spec_id")
+    public val specId: String,
+    public val status: SpecToolCatalogSpecStatus,
+    public val requires: SpecToolCatalogSpecRequires? = null,
+    public val action: String? = null,
+    @SerialName("tools_total")
+    public val toolsTotal: Double,
+    @SerialName("tools_waiting")
+    public val toolsWaiting: Double,
+)
+
+/**
+ * `SpecToolCatalogSpecRequires` model.
+ */
+@Serializable
+public data class SpecToolCatalogSpecRequires(
+    public val mode: SpecToolCatalogSpecRequiresMode? = null,
+    public val connector: String? = null,
+)
+
+/**
+ * `SpecToolCatalogSpecRequiresMode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SpecToolCatalogSpecRequiresModeSerializer::class)
+@JvmInline
+public value class SpecToolCatalogSpecRequiresMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INTEGRATION: SpecToolCatalogSpecRequiresMode = SpecToolCatalogSpecRequiresMode("integration")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SpecToolCatalogSpecRequiresMode> = listOf(INTEGRATION)
+    }
+}
+
+public object SpecToolCatalogSpecRequiresModeSerializer : KSerializer<SpecToolCatalogSpecRequiresMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecToolCatalogSpecRequiresMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SpecToolCatalogSpecRequiresMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SpecToolCatalogSpecRequiresMode = SpecToolCatalogSpecRequiresMode(decoder.decodeString())
+}
+
+/**
+ * `SpecToolCatalogSpecStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = SpecToolCatalogSpecStatusSerializer::class)
+@JvmInline
+public value class SpecToolCatalogSpecStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val READY: SpecToolCatalogSpecStatus = SpecToolCatalogSpecStatus("ready")
+        public val NEEDS_CONNECTION: SpecToolCatalogSpecStatus = SpecToolCatalogSpecStatus("needs_connection")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<SpecToolCatalogSpecStatus> = listOf(READY, NEEDS_CONNECTION)
+    }
+}
+
+public object SpecToolCatalogSpecStatusSerializer : KSerializer<SpecToolCatalogSpecStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.SpecToolCatalogSpecStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: SpecToolCatalogSpecStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): SpecToolCatalogSpecStatus = SpecToolCatalogSpecStatus(decoder.decodeString())
 }
 
 /**
@@ -25980,17 +25997,6 @@ public data class UpdateAdminSmtpConfigRequest(
 )
 
 /**
- * `UpdateAdminSpecPackagesRequest` model.
- */
-@Serializable
-public data class UpdateAdminSpecPackagesRequest(
-    /**
-     * Keyed by `package_id`.
-     */
-    public val packages: Map<String, SpecPackage>,
-)
-
-/**
  * `UpdateAdminSSEConfigResponse` model.
  */
 @Serializable
@@ -26988,11 +26994,67 @@ public data class UsageQuota(
     public val resetsAt: UsageQuotaResetsAt,
     public val limits: UsageQuotaLimits,
     /**
+     * Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+     * resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+     * exactly as they were — this is the shape a meter renders without doing the join itself (four
+     * client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+     * of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+     * midnight.
+     */
+    public val counters: List<UsageQuotaCounter>? = null,
+    /**
      * api/lib/resource-usage.ts TenantResourceUsage.
      */
     @SerialName("resource_usage")
     public val resourceUsage: UsageQuotaResourceUsage,
 )
+
+/**
+ * `UsageQuotaCounter` model.
+ */
+@Serializable
+public data class UsageQuotaCounter(
+    public val kind: UsageQuotaCounterKind,
+    public val used: Double,
+    public val limit: Double? = null,
+    public val period: String? = null,
+    @SerialName("resets_at")
+    public val resetsAt: String? = null,
+)
+
+/**
+ * `UsageQuotaCounterKind` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = UsageQuotaCounterKindSerializer::class)
+@JvmInline
+public value class UsageQuotaCounterKind(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUNS: UsageQuotaCounterKind = UsageQuotaCounterKind("runs")
+        public val TOKENS: UsageQuotaCounterKind = UsageQuotaCounterKind("tokens")
+        public val TOKENS_DAILY: UsageQuotaCounterKind = UsageQuotaCounterKind("tokens_daily")
+        public val TOOL_CALLS: UsageQuotaCounterKind = UsageQuotaCounterKind("tool_calls")
+        public val AGENTS: UsageQuotaCounterKind = UsageQuotaCounterKind("agents")
+        public val TEAMS: UsageQuotaCounterKind = UsageQuotaCounterKind("teams")
+        public val KNOWLEDGE_BASES: UsageQuotaCounterKind = UsageQuotaCounterKind("knowledge_bases")
+        public val WORKSPACES: UsageQuotaCounterKind = UsageQuotaCounterKind("workspaces")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<UsageQuotaCounterKind> = listOf(RUNS, TOKENS, TOKENS_DAILY, TOOL_CALLS, AGENTS, TEAMS, KNOWLEDGE_BASES, WORKSPACES)
+    }
+}
+
+public object UsageQuotaCounterKindSerializer : KSerializer<UsageQuotaCounterKind> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.UsageQuotaCounterKind", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: UsageQuotaCounterKind): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): UsageQuotaCounterKind = UsageQuotaCounterKind(decoder.decodeString())
+}
 
 /**
  * `UsageQuotaDaily` model.

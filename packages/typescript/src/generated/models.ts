@@ -1356,13 +1356,6 @@ export type AdminSmtpConfigSource = 'kv' | 'env' | 'none';
 export const ADMIN_SMTP_CONFIG_SOURCE_VALUES = ['kv', 'env', 'none'] as const;
 
 /**
- * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
- */
-export interface AdminSpecPackagesList {
-  packages: SpecPackage[];
-}
-
-/**
  * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
  * their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
  */
@@ -1468,7 +1461,23 @@ export interface Agent {
    */
   status?: AgentStatus;
   status_changed_at?: string;
+  /**
+   * Why the agent is in this status, as a sentence. One field with six writers — a person, an
+   * operator, four governance paths and a plan downgrade — so its language is whichever the
+   * writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
+   */
   status_reason?: string;
+  /**
+   * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+   * rendered as-is; the other five are the platform's English, and a client may say them in the
+   * reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+   */
+  status_reason_code?: AgentStatusReasonCode;
+  /**
+   * The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+   * for `manual`.
+   */
+  status_reason_details?: JsonObject;
   autonomy?: AgentAutonomy;
   /**
    * Per-tool trust, overriding the agent's default approval policy.
@@ -1898,6 +1907,15 @@ export const AGENT_SPEC_PERMISSIONS_GRANTED_ITEM_GRANTED_BY_VALUES = ['wizard', 
 export type AgentStatus = 'active' | 'suspended' | 'terminated' | 'deposed';
 
 export const AGENT_STATUS_VALUES = ['active', 'suspended', 'terminated', 'deposed'] as const;
+
+/**
+ * Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+ * rendered as-is; the other five are the platform's English, and a client may say them in the
+ * reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+ */
+export type AgentStatusReasonCode = 'manual' | 'proposal_passed' | 'arbiter_ruling' | 'arbiter_penalty' | 'constitutional_penalty' | 'plan_downgrade';
+
+export const AGENT_STATUS_REASON_CODE_VALUES = ['manual', 'proposal_passed', 'arbiter_ruling', 'arbiter_penalty', 'constitutional_penalty', 'plan_downgrade'] as const;
 
 export interface AgentSummary {
   agent_id: string;
@@ -3455,15 +3473,6 @@ export interface CreateAdminProviderResponseDefaultCapabilities {
   max_output_tokens?: number;
 }
 
-export interface CreateAdminSpecPackageStripePriceResponse {
-  package_id: string;
-  stripe_price_id: string;
-  stripe_product_id: string;
-  amount_cents: number;
-  currency: string;
-  interval: SpecPackagePricingBillingInterval;
-}
-
 export interface CreateAgentBookmarkRequest {
   message_id: string;
   kind: AgentBookmarkKind;
@@ -3757,9 +3766,13 @@ export interface CreatePlanStripePriceRequest {
   /**
    * @default "month"
    */
-  interval?: SpecPackagePricingBillingInterval;
+  interval?: CreatePlanStripePriceRequestInterval;
   product_name?: string;
 }
+
+export type CreatePlanStripePriceRequestInterval = 'month' | 'year';
+
+export const CREATE_PLAN_STRIPE_PRICE_REQUEST_INTERVAL_VALUES = ['month', 'year'] as const;
 
 export interface CreatePlanStripePriceResponse {
   plan_id?: string;
@@ -3968,29 +3981,10 @@ export interface CreateSessionTodoRequest {
   status?: string;
 }
 
-export interface CreateSpecPackageCheckoutSessionRequest {
-  /**
-   * Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-   * resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-   * web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-   * the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-   * (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-   * Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-   */
-  success_url?: string;
-  /**
-   * Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-   * resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-   * web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-   * the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-   * (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-   * Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-   */
-  cancel_url?: string;
-}
-
 export interface CreateSpecPackageCheckoutSessionResponse {
-  url: string;
+  error: InvokeListingAgentResponseError;
+  message: string;
+  retry_after_seconds: number;
 }
 
 export interface CreateVotingProposalRequest {
@@ -4022,7 +4016,7 @@ export interface CustomPlan {
    * Pairs the plan with a promo program. Absent when unset.
    */
   program?: string;
-  base_plan: SpecPackageIncludedInPlan;
+  base_plan: CustomPlanBasePlan;
   price_amount_cents: number;
   price_currency: string;
   /**
@@ -4037,11 +4031,15 @@ export interface CustomPlan {
   updated_at: string;
 }
 
+export type CustomPlanBasePlan = 'free' | 'starter' | 'pro' | 'enterprise';
+
+export const CUSTOM_PLAN_BASE_PLAN_VALUES = ['free', 'starter', 'pro', 'enterprise'] as const;
+
 export interface CustomPlanInput {
   name: string;
   description?: string;
   program?: string;
-  base_plan: SpecPackageIncludedInPlan;
+  base_plan: CustomPlanBasePlan;
   price_amount_cents: number;
   /**
    * @default "usd"
@@ -5008,9 +5006,9 @@ export interface Error {
  * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
  * no machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'limit_reached' | 'quota_exceeded' | 'rate_limited' | 'run_quota_exceeded';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'limit_reached', 'quota_exceeded', 'rate_limited', 'run_quota_exceeded'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -6215,7 +6213,25 @@ export interface GetRunResponse {
    */
   output?: RunOutput | null;
   metrics?: RunMetrics;
+  /**
+   * The sentence a person reads. English on every deployment — nothing here varies by
+   * `Accept-Language` — so branch on `error_code`, not on this.
+   */
   error?: string | null;
+  /**
+   * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+   * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+   * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+   * that a client had to regex-test `error`.
+   */
+  error_code?: string;
+  /**
+   * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+   * Never a provider id — this reaches a screen, and the product does not name the model it
+   * picked.
+   */
+  error_details?: JsonObject;
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -7372,29 +7388,8 @@ export interface ListBillingPlansResponsePlan {
 }
 
 export interface ListBillingSpecPackagesResponse {
-  packages: ListBillingSpecPackagesResponsePackage[];
+  packages: JsonObject[];
 }
-
-export interface ListBillingSpecPackagesResponsePackage {
-  package_id: string;
-  name: string;
-  description: string;
-  category: string;
-  included_specs: string[];
-  included_in_plans: string[];
-  program?: SpecPackageProgram;
-  price_amount_cents?: number;
-  price_currency?: string;
-  /**
-   * A Stripe price is wired. False means checkout will refuse with 400.
-   */
-  checkout_available: boolean;
-  entitlement: ListBillingSpecPackagesResponsePackageEntitlement;
-}
-
-export type ListBillingSpecPackagesResponsePackageEntitlement = 'plan_included' | 'purchased' | 'available';
-
-export const LIST_BILLING_SPEC_PACKAGES_RESPONSE_PACKAGE_ENTITLEMENT_VALUES = ['plan_included', 'purchased', 'available'] as const;
 
 export interface ListBuilderRequestsResponse {
   requests: DesignRequest[];
@@ -10889,7 +10884,25 @@ export interface Run {
    */
   output?: RunOutput | null;
   metrics?: RunMetrics;
+  /**
+   * The sentence a person reads. English on every deployment — nothing here varies by
+   * `Accept-Language` — so branch on `error_code`, not on this.
+   */
   error?: string | null;
+  /**
+   * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+   * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+   * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+   * that a client had to regex-test `error`.
+   */
+  error_code?: string;
+  /**
+   * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+   * Never a provider id — this reaches a screen, and the product does not name the model it
+   * picked.
+   */
+  error_details?: JsonObject;
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -11497,7 +11510,6 @@ export interface SeedStarterSpecsResponse {
    * signal.
    */
   total_starter: number;
-  entitlement_updated: boolean;
   /**
    * Absent when nothing failed.
    */
@@ -12066,69 +12078,6 @@ export interface SpawnPolicyUpdate {
   max_children_per_agent: number;
 }
 
-export interface SpecPackage {
-  /**
-   * Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-   */
-  package_id: string;
-  name: string;
-  /**
-   * @default ""
-   */
-  description?: string;
-  category: string;
-  /**
-   * SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-   * `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
-   * fails later.
-   */
-  included_specs: string[];
-  included_in_plans?: SpecPackageIncludedInPlan[];
-  pricing?: SpecPackagePricing;
-  display_order?: number;
-  archived?: boolean;
-  program?: SpecPackageProgram;
-  /**
-   * Stamped by the server on every write; not read from the body.
-   */
-  updated_at?: string;
-}
-
-export type SpecPackageIncludedInPlan = 'free' | 'starter' | 'pro' | 'enterprise';
-
-export const SPEC_PACKAGE_INCLUDED_IN_PLAN_VALUES = ['free', 'starter', 'pro', 'enterprise'] as const;
-
-export interface SpecPackagePricing {
-  price_amount_cents?: number;
-  price_currency?: string;
-  billing_interval?: SpecPackagePricingBillingInterval;
-  /**
-   * Never returned by the tenant-facing read. Its presence is what protects the package from a
-   * silent drop.
-   */
-  stripe_price_id?: string;
-}
-
-export type SpecPackagePricingBillingInterval = 'month' | 'year';
-
-export const SPEC_PACKAGE_PRICING_BILLING_INTERVAL_VALUES = ['month', 'year'] as const;
-
-export interface SpecPackageProgram {
-  nav: SpecPackageProgramNav;
-  pages: SpecPackageProgramPage[];
-}
-
-export interface SpecPackageProgramNav {
-  label: string;
-  icon?: string;
-}
-
-export interface SpecPackageProgramPage {
-  id: string;
-  title: string;
-  route?: string;
-}
-
 /**
  * Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
  * the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
@@ -12136,6 +12085,21 @@ export interface SpecPackageProgramPage {
  */
 export interface SpecToolCatalog {
   agent_id: string;
+  /**
+   * Which of the agent's installed SPECs are waiting on a connection. `status` is
+   * `needs_connection` when the SPEC declares tools routed through a connector (manifest
+   * `delivered_by = { mode = "integration", connector = … }`) that this agent cannot currently
+   * see an ACTIVE connection of — visibility, not ownership: the assignment rule is
+   * `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+   * when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+   * for one fact.
+   *
+   * `ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full
+   * verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+   * that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+   * wrong than absent.
+   */
+  specs?: SpecToolCatalogSpec[];
   /**
    * The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
    * only `drawing`. Always present: empty means no drawing canvas, absence means an older
@@ -12157,6 +12121,28 @@ export interface SpecToolCatalogDrawing {
 export type SpecToolCatalogDrawingCanvas = 'drawing';
 
 export const SPEC_TOOL_CATALOG_DRAWING_CANVAS_VALUES = ['drawing'] as const;
+
+export interface SpecToolCatalogSpec {
+  spec_id: string;
+  status: SpecToolCatalogSpecStatus;
+  requires?: SpecToolCatalogSpecRequires;
+  action?: string;
+  tools_total: number;
+  tools_waiting: number;
+}
+
+export interface SpecToolCatalogSpecRequires {
+  mode?: SpecToolCatalogSpecRequiresMode;
+  connector?: string;
+}
+
+export type SpecToolCatalogSpecRequiresMode = 'integration';
+
+export const SPEC_TOOL_CATALOG_SPEC_REQUIRES_MODE_VALUES = ['integration'] as const;
+
+export type SpecToolCatalogSpecStatus = 'ready' | 'needs_connection';
+
+export const SPEC_TOOL_CATALOG_SPEC_STATUS_VALUES = ['ready', 'needs_connection'] as const;
 
 export interface StartMissionRequest {
   /**
@@ -13753,13 +13739,6 @@ export interface UpdateAdminSmtpConfigRequest {
   from_name?: string;
 }
 
-export interface UpdateAdminSpecPackagesRequest {
-  /**
-   * Keyed by `package_id`.
-   */
-  packages: Record<string, SpecPackage>;
-}
-
 export interface UpdateAdminSSEConfigResponse {
   sse: UpdateAdminSSEConfigResponseSSE;
   updated: boolean;
@@ -14324,10 +14303,31 @@ export interface UsageQuota {
   resets_at: UsageQuotaResetsAt;
   limits: UsageQuotaLimits;
   /**
+   * Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+   * resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+   * exactly as they were — this is the shape a meter renders without doing the join itself (four
+   * client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+   * of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+   * midnight.
+   */
+  counters?: UsageQuotaCounter[];
+  /**
    * api/lib/resource-usage.ts TenantResourceUsage.
    */
   resource_usage: UsageQuotaResourceUsage;
 }
+
+export interface UsageQuotaCounter {
+  kind: UsageQuotaCounterKind;
+  used: number;
+  limit: number | null;
+  period: string | null;
+  resets_at: string | null;
+}
+
+export type UsageQuotaCounterKind = 'runs' | 'tokens' | 'tokens_daily' | 'tool_calls' | 'agents' | 'teams' | 'knowledge_bases' | 'workspaces';
+
+export const USAGE_QUOTA_COUNTER_KIND_VALUES = ['runs', 'tokens', 'tokens_daily', 'tool_calls', 'agents', 'teams', 'knowledge_bases', 'workspaces'] as const;
 
 export interface UsageQuotaDaily {
   used: number;

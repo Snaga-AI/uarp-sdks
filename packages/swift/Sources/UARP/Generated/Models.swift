@@ -3522,19 +3522,6 @@ public struct AdminSmtpConfigSource: RawRepresentable, Codable, Hashable, Sendab
     public static let knownValues: [AdminSmtpConfigSource] = [.kv, .env, .none]
 }
 
-/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
-public struct AdminSpecPackagesList: Codable, Hashable, Sendable {
-    public var packages: [SpecPackage]
-
-    public init(packages: [SpecPackage]) {
-        self.packages = packages
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packages = "packages"
-    }
-}
-
 /// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
 /// their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
 public struct AdminStripeConfig: Codable, Hashable, Sendable {
@@ -3661,7 +3648,17 @@ public struct Agent: Codable, Hashable, Sendable {
     /// Governance state, distinct from a run's status.
     public var status: AgentStatus?
     public var statusChangedAt: String?
+    /// Why the agent is in this status, as a sentence. One field with six writers — a person, an
+    /// operator, four governance paths and a plan downgrade — so its language is whichever the
+    /// writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
     public var statusReason: String?
+    /// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+    /// rendered as-is; the other five are the platform's English, and a client may say them in the
+    /// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+    public var statusReasonCode: AgentStatusReasonCode?
+    /// The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+    /// for `manual`.
+    public var statusReasonDetails: JSONObject?
     public var autonomy: AgentAutonomy?
     /// Per-tool trust, overriding the agent's default approval policy.
     public var toolOverrides: [AgentToolOverride]?
@@ -3695,7 +3692,7 @@ public struct Agent: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String?
 
-    public init(specs: [AgentSpec]? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
+    public init(specs: [AgentSpec]? = nil, autoApproveTools: [String]? = nil, commandRelationships: AgentCommandRelationships? = nil, accessControl: AgentAccessControl? = nil, metadata: AgentMetadata? = nil, agentId: String, tenantId: String, name: String, `description`: String? = nil, version: String? = nil, model: AgentModelConfig, prompts: AgentPrompts? = nil, mcp: JSONObject? = nil, policies: JSONObject? = nil, thinking: JSONObject? = nil, effortPolicy: JSONObject? = nil, resourceLimits: JSONObject? = nil, memory: JSONObject? = nil, guardrails: JSONObject? = nil, approvalRequiredTools: [String]? = nil, builtInTools: [String]? = nil, imageGeneration: JSONObject? = nil, knowledgeBaseId: String? = nil, knowledgeBaseIds: [String]? = nil, visibility: AgentUpdateVisibility? = nil, status: AgentStatus? = nil, statusChangedAt: String? = nil, statusReason: String? = nil, statusReasonCode: AgentStatusReasonCode? = nil, statusReasonDetails: JSONObject? = nil, autonomy: AgentAutonomy? = nil, toolOverrides: [AgentToolOverride]? = nil, publicConfig: AgentPublicConfig? = nil, bridge: AgentBridgeState? = nil, fallbackModel: JSONObject? = nil, executionMode: AgentExecutionMode? = nil, workerReuse: Bool? = nil, schedule: JSONObject? = nil, a2a: JSONObject? = nil, riskClassification: JSONObject? = nil, workspaceId: String? = nil, contextStrategy: AgentContextStrategy? = nil, contextWindowSize: Int? = nil, createdAt: String, updatedAt: String? = nil) {
         self.specs = specs
         self.autoApproveTools = autoApproveTools
         self.commandRelationships = commandRelationships
@@ -3724,6 +3721,8 @@ public struct Agent: Codable, Hashable, Sendable {
         self.status = status
         self.statusChangedAt = statusChangedAt
         self.statusReason = statusReason
+        self.statusReasonCode = statusReasonCode
+        self.statusReasonDetails = statusReasonDetails
         self.autonomy = autonomy
         self.toolOverrides = toolOverrides
         self.publicConfig = publicConfig
@@ -3770,6 +3769,8 @@ public struct Agent: Codable, Hashable, Sendable {
         case status = "status"
         case statusChangedAt = "status_changed_at"
         case statusReason = "status_reason"
+        case statusReasonCode = "status_reason_code"
+        case statusReasonDetails = "status_reason_details"
         case autonomy = "autonomy"
         case toolOverrides = "tool_overrides"
         case publicConfig = "public_config"
@@ -4810,6 +4811,35 @@ public struct AgentStatus: RawRepresentable, Codable, Hashable, Sendable, Expres
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [AgentStatus] = [.active, .suspended, .terminated, .deposed]
+}
+
+/// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+/// rendered as-is; the other five are the platform's English, and a client may say them in the
+/// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct AgentStatusReasonCode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let manual = AgentStatusReasonCode(rawValue: "manual")
+    public static let proposalPassed = AgentStatusReasonCode(rawValue: "proposal_passed")
+    public static let arbiterRuling = AgentStatusReasonCode(rawValue: "arbiter_ruling")
+    public static let arbiterPenalty = AgentStatusReasonCode(rawValue: "arbiter_penalty")
+    public static let constitutionalPenalty = AgentStatusReasonCode(rawValue: "constitutional_penalty")
+    public static let planDowngrade = AgentStatusReasonCode(rawValue: "plan_downgrade")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [AgentStatusReasonCode] = [.manual, .proposalPassed, .arbiterRuling, .arbiterPenalty, .constitutionalPenalty, .planDowngrade]
 }
 
 /// `AgentSummary` model.
@@ -8886,34 +8916,6 @@ public struct CreateAdminProviderResponseDefaultCapabilities: Codable, Hashable,
     }
 }
 
-/// `CreateAdminSpecPackageStripePriceResponse` model.
-public struct CreateAdminSpecPackageStripePriceResponse: Codable, Hashable, Sendable {
-    public var packageId: String
-    public var stripePriceId: String
-    public var stripeProductId: String
-    public var amountCents: Int
-    public var currency: String
-    public var interval: SpecPackagePricingBillingInterval
-
-    public init(packageId: String, stripePriceId: String, stripeProductId: String, amountCents: Int, currency: String, interval: SpecPackagePricingBillingInterval) {
-        self.packageId = packageId
-        self.stripePriceId = stripePriceId
-        self.stripeProductId = stripeProductId
-        self.amountCents = amountCents
-        self.currency = currency
-        self.interval = interval
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packageId = "package_id"
-        case stripePriceId = "stripe_price_id"
-        case stripeProductId = "stripe_product_id"
-        case amountCents = "amount_cents"
-        case currency = "currency"
-        case interval = "interval"
-    }
-}
-
 /// `CreateAgentBookmarkRequest` model.
 public struct CreateAgentBookmarkRequest: Codable, Hashable, Sendable {
     public var messageId: String
@@ -9569,10 +9571,10 @@ public struct CreateMyTenantResponse: Codable, Hashable, Sendable {
 public struct CreatePlanStripePriceRequest: Codable, Hashable, Sendable {
     public var amountCents: Int
     public var currency: String?
-    public var interval: SpecPackagePricingBillingInterval?
+    public var interval: CreatePlanStripePriceRequestInterval?
     public var productName: String?
 
-    public init(amountCents: Int, currency: String? = nil, interval: SpecPackagePricingBillingInterval? = nil, productName: String? = nil) {
+    public init(amountCents: Int, currency: String? = nil, interval: CreatePlanStripePriceRequestInterval? = nil, productName: String? = nil) {
         self.amountCents = amountCents
         self.currency = currency
         self.interval = interval
@@ -9585,6 +9587,29 @@ public struct CreatePlanStripePriceRequest: Codable, Hashable, Sendable {
         case interval = "interval"
         case productName = "product_name"
     }
+}
+
+/// `CreatePlanStripePriceRequestInterval` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct CreatePlanStripePriceRequestInterval: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let month = CreatePlanStripePriceRequestInterval(rawValue: "month")
+    public static let year = CreatePlanStripePriceRequestInterval(rawValue: "year")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [CreatePlanStripePriceRequestInterval] = [.month, .year]
 }
 
 /// `CreatePlanStripePriceResponse` model.
@@ -10090,44 +10115,22 @@ public struct CreateSessionTodoRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `CreateSpecPackageCheckoutSessionRequest` model.
-public struct CreateSpecPackageCheckoutSessionRequest: Codable, Hashable, Sendable {
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-    /// the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-    public var successURL: String?
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (https://snaga.ai on production); an absolute URL on one of those two origins; or
-    /// the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-    public var cancelURL: String?
-
-    public init(successURL: String? = nil, cancelURL: String? = nil) {
-        self.successURL = successURL
-        self.cancelURL = cancelURL
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case successURL = "success_url"
-        case cancelURL = "cancel_url"
-    }
-}
-
 /// `CreateSpecPackageCheckoutSessionResponse` model.
 public struct CreateSpecPackageCheckoutSessionResponse: Codable, Hashable, Sendable {
-    public var url: String
+    public var error: InvokeListingAgentResponseError
+    public var message: String
+    public var retryAfterSeconds: Int
 
-    public init(url: String) {
-        self.url = url
+    public init(error: InvokeListingAgentResponseError, message: String, retryAfterSeconds: Int) {
+        self.error = error
+        self.message = message
+        self.retryAfterSeconds = retryAfterSeconds
     }
 
     private enum CodingKeys: String, CodingKey {
-        case url = "url"
+        case error = "error"
+        case message = "message"
+        case retryAfterSeconds = "retry_after_seconds"
     }
 }
 
@@ -10188,7 +10191,7 @@ public struct CustomPlan: Codable, Hashable, Sendable {
     public var `description`: String?
     /// Pairs the plan with a promo program. Absent when unset.
     public var program: String?
-    public var basePlan: SpecPackageIncludedInPlan
+    public var basePlan: CustomPlanBasePlan
     public var priceAmountCents: Int
     public var priceCurrency: String
     /// Absent when unset.
@@ -10200,7 +10203,7 @@ public struct CustomPlan: Codable, Hashable, Sendable {
     public var createdAt: String
     public var updatedAt: String
 
-    public init(id: String, name: String, `description`: String? = nil, program: String? = nil, basePlan: SpecPackageIncludedInPlan, priceAmountCents: Int, priceCurrency: String, stripePriceId: String? = nil, quotas: TenantQuotas? = nil, llm: PlanLLMLimits? = nil, visibility: CustomPlanVisibility, active: Bool, createdAt: String, updatedAt: String) {
+    public init(id: String, name: String, `description`: String? = nil, program: String? = nil, basePlan: CustomPlanBasePlan, priceAmountCents: Int, priceCurrency: String, stripePriceId: String? = nil, quotas: TenantQuotas? = nil, llm: PlanLLMLimits? = nil, visibility: CustomPlanVisibility, active: Bool, createdAt: String, updatedAt: String) {
         self.id = id
         self.name = name
         self.`description` = `description`
@@ -10235,12 +10238,37 @@ public struct CustomPlan: Codable, Hashable, Sendable {
     }
 }
 
+/// `CustomPlanBasePlan` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct CustomPlanBasePlan: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let free = CustomPlanBasePlan(rawValue: "free")
+    public static let starter = CustomPlanBasePlan(rawValue: "starter")
+    public static let pro = CustomPlanBasePlan(rawValue: "pro")
+    public static let enterprise = CustomPlanBasePlan(rawValue: "enterprise")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [CustomPlanBasePlan] = [.free, .starter, .pro, .enterprise]
+}
+
 /// `CustomPlanInput` model.
 public struct CustomPlanInput: Codable, Hashable, Sendable {
     public var name: String
     public var `description`: String?
     public var program: String?
-    public var basePlan: SpecPackageIncludedInPlan
+    public var basePlan: CustomPlanBasePlan
     public var priceAmountCents: Int
     public var priceCurrency: String?
     public var stripePriceId: String?
@@ -10252,7 +10280,7 @@ public struct CustomPlanInput: Codable, Hashable, Sendable {
     /// write.
     public var active: Bool?
 
-    public init(name: String, `description`: String? = nil, program: String? = nil, basePlan: SpecPackageIncludedInPlan, priceAmountCents: Int, priceCurrency: String? = nil, stripePriceId: String? = nil, quotas: TenantQuotas? = nil, llm: PlanLLMLimits? = nil, visibility: CustomPlanVisibility? = nil, active: Bool? = nil) {
+    public init(name: String, `description`: String? = nil, program: String? = nil, basePlan: CustomPlanBasePlan, priceAmountCents: Int, priceCurrency: String? = nil, stripePriceId: String? = nil, quotas: TenantQuotas? = nil, llm: PlanLLMLimits? = nil, visibility: CustomPlanVisibility? = nil, active: Bool? = nil) {
         self.name = name
         self.`description` = `description`
         self.program = program
@@ -12623,6 +12651,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let billingCancelled = ErrorCode(rawValue: "BILLING_CANCELLED")
     public static let billingDisputed = ErrorCode(rawValue: "BILLING_DISPUTED")
     public static let billingPastDue = ErrorCode(rawValue: "BILLING_PAST_DUE")
+    public static let budgetExceeded = ErrorCode(rawValue: "BUDGET_EXCEEDED")
     public static let checksumMismatch = ErrorCode(rawValue: "CHECKSUM_MISMATCH")
     public static let configurationError = ErrorCode(rawValue: "CONFIGURATION_ERROR")
     public static let eventStoreError = ErrorCode(rawValue: "EVENT_STORE_ERROR")
@@ -12633,6 +12662,8 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let invalidShareList = ErrorCode(rawValue: "INVALID_SHARE_LIST")
     public static let invalidShareTarget = ErrorCode(rawValue: "INVALID_SHARE_TARGET")
     public static let llmError = ErrorCode(rawValue: "LLM_ERROR")
+    public static let maxDurationExceeded = ErrorCode(rawValue: "MAX_DURATION_EXCEEDED")
+    public static let maxTokensExceeded = ErrorCode(rawValue: "MAX_TOKENS_EXCEEDED")
     public static let migrationConflict = ErrorCode(rawValue: "MIGRATION_CONFLICT")
     public static let missionAlreadyRunning = ErrorCode(rawValue: "MISSION_ALREADY_RUNNING")
     public static let missionConcurrencyLimit = ErrorCode(rawValue: "MISSION_CONCURRENCY_LIMIT")
@@ -12658,6 +12689,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let shareListConflict = ErrorCode(rawValue: "SHARE_LIST_CONFLICT")
     public static let sizeLimit = ErrorCode(rawValue: "SIZE_LIMIT")
     public static let specNotFound = ErrorCode(rawValue: "SPEC_NOT_FOUND")
+    public static let taskGraphFailed = ErrorCode(rawValue: "TASK_GRAPH_FAILED")
     public static let teamAbort = ErrorCode(rawValue: "TEAM_ABORT")
     public static let validationError = ErrorCode(rawValue: "VALIDATION_ERROR")
     public static let versionConflict = ErrorCode(rawValue: "VERSION_CONFLICT")
@@ -12671,13 +12703,27 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let incompleteRecord = ErrorCode(rawValue: "incomplete_record")
     public static let inertPolicyField = ErrorCode(rawValue: "inert_policy_field")
     public static let inertPublicConfigField = ErrorCode(rawValue: "inert_public_config_field")
+    public static let kbChunkLimit = ErrorCode(rawValue: "kb_chunk_limit")
+    public static let kbDocumentBodyInvalid = ErrorCode(rawValue: "kb_document_body_invalid")
+    public static let kbDocumentTooLarge = ErrorCode(rawValue: "kb_document_too_large")
+    public static let kbStorageLimit = ErrorCode(rawValue: "kb_storage_limit")
+    public static let kbTextExtractionFailed = ErrorCode(rawValue: "kb_text_extraction_failed")
     public static let limitReached = ErrorCode(rawValue: "limit_reached")
+    public static let planUpgradeRequired = ErrorCode(rawValue: "plan_upgrade_required")
+    public static let providerAuthFailed = ErrorCode(rawValue: "provider_auth_failed")
+    public static let providerCircuitOpen = ErrorCode(rawValue: "provider_circuit_open")
+    public static let providerNotConfigured = ErrorCode(rawValue: "provider_not_configured")
+    public static let providerRateLimited = ErrorCode(rawValue: "provider_rate_limited")
     public static let quotaExceeded_ = ErrorCode(rawValue: "quota_exceeded")
     public static let rateLimited = ErrorCode(rawValue: "rate_limited")
+    public static let resourceLimitReached = ErrorCode(rawValue: "resource_limit_reached")
+    public static let runInputTimeout = ErrorCode(rawValue: "run_input_timeout")
+    public static let runNeverClaimed = ErrorCode(rawValue: "run_never_claimed")
+    public static let runOrphanedRestart = ErrorCode(rawValue: "run_orphaned_restart")
     public static let runQuotaExceeded = ErrorCode(rawValue: "run_quota_exceeded")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .limitReached, .quotaExceeded_, .rateLimited, .runQuotaExceeded]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .taskGraphFailed, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .planUpgradeRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded]
 }
 
 /// `ErrorError` model.
@@ -15884,7 +15930,19 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// to every client.
     public var output: RunOutput?
     public var metrics: RunMetrics?
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     public var error: String?
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    public var errorCode: String?
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    public var errorDetails: JSONObject?
     public var createdAt: String
     public var startedAt: String?
     public var completedAt: String?
@@ -15919,7 +15977,7 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// running.
     public var pendingInput: GetRunResponsePendingInput?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -15930,6 +15988,8 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
         self.output = output
         self.metrics = metrics
         self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
         self.createdAt = createdAt
         self.startedAt = startedAt
         self.completedAt = completedAt
@@ -15954,6 +16014,8 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
         case output = "output"
         case metrics = "metrics"
         case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
         case createdAt = "created_at"
         case startedAt = "started_at"
         case completedAt = "completed_at"
@@ -18880,83 +18942,15 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
 
 /// `ListBillingSpecPackagesResponse` model.
 public struct ListBillingSpecPackagesResponse: Codable, Hashable, Sendable {
-    public var packages: [ListBillingSpecPackagesResponsePackage]
+    public var packages: [JSONObject]
 
-    public init(packages: [ListBillingSpecPackagesResponsePackage]) {
+    public init(packages: [JSONObject]) {
         self.packages = packages
     }
 
     private enum CodingKeys: String, CodingKey {
         case packages = "packages"
     }
-}
-
-/// `ListBillingSpecPackagesResponsePackage` model.
-public struct ListBillingSpecPackagesResponsePackage: Codable, Hashable, Sendable {
-    public var packageId: String
-    public var name: String
-    public var `description`: String
-    public var category: String
-    public var includedSpecs: [String]
-    public var includedInPlans: [String]
-    public var program: SpecPackageProgram?
-    public var priceAmountCents: Int?
-    public var priceCurrency: String?
-    /// A Stripe price is wired. False means checkout will refuse with 400.
-    public var checkoutAvailable: Bool
-    public var entitlement: ListBillingSpecPackagesResponsePackageEntitlement
-
-    public init(packageId: String, name: String, `description`: String, category: String, includedSpecs: [String], includedInPlans: [String], program: SpecPackageProgram? = nil, priceAmountCents: Int? = nil, priceCurrency: String? = nil, checkoutAvailable: Bool, entitlement: ListBillingSpecPackagesResponsePackageEntitlement) {
-        self.packageId = packageId
-        self.name = name
-        self.`description` = `description`
-        self.category = category
-        self.includedSpecs = includedSpecs
-        self.includedInPlans = includedInPlans
-        self.program = program
-        self.priceAmountCents = priceAmountCents
-        self.priceCurrency = priceCurrency
-        self.checkoutAvailable = checkoutAvailable
-        self.entitlement = entitlement
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packageId = "package_id"
-        case name = "name"
-        case `description` = "description"
-        case category = "category"
-        case includedSpecs = "included_specs"
-        case includedInPlans = "included_in_plans"
-        case program = "program"
-        case priceAmountCents = "price_amount_cents"
-        case priceCurrency = "price_currency"
-        case checkoutAvailable = "checkout_available"
-        case entitlement = "entitlement"
-    }
-}
-
-/// `ListBillingSpecPackagesResponsePackageEntitlement` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct ListBillingSpecPackagesResponsePackageEntitlement: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let planIncluded = ListBillingSpecPackagesResponsePackageEntitlement(rawValue: "plan_included")
-    public static let purchased = ListBillingSpecPackagesResponsePackageEntitlement(rawValue: "purchased")
-    public static let available = ListBillingSpecPackagesResponsePackageEntitlement(rawValue: "available")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [ListBillingSpecPackagesResponsePackageEntitlement] = [.planIncluded, .purchased, .available]
 }
 
 /// `ListBuilderRequestsResponse` model.
@@ -27458,7 +27452,19 @@ public struct Run: Codable, Hashable, Sendable {
     /// to every client.
     public var output: RunOutput?
     public var metrics: RunMetrics?
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     public var error: String?
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    public var errorCode: String?
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    public var errorDetails: JSONObject?
     public var createdAt: String
     public var startedAt: String?
     public var completedAt: String?
@@ -27473,7 +27479,7 @@ public struct Run: Codable, Hashable, Sendable {
     /// Resource limits for the run
     public var resourceLimits: RunResourceLimits?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -27484,6 +27490,8 @@ public struct Run: Codable, Hashable, Sendable {
         self.output = output
         self.metrics = metrics
         self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
         self.createdAt = createdAt
         self.startedAt = startedAt
         self.completedAt = completedAt
@@ -27505,6 +27513,8 @@ public struct Run: Codable, Hashable, Sendable {
         case output = "output"
         case metrics = "metrics"
         case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
         case createdAt = "created_at"
         case startedAt = "started_at"
         case completedAt = "completed_at"
@@ -28820,15 +28830,13 @@ public struct SeedStarterSpecsResponse: Codable, Hashable, Sendable {
     /// How many starter SPECs the build ships. `added + skipped` reaching this is the completion
     /// signal.
     public var totalStarter: Int
-    public var entitlementUpdated: Bool
     /// Absent when nothing failed.
     public var errors: [SeedStarterSpecsResponseError]?
 
-    public init(added: Int, skipped: Int, totalStarter: Int, entitlementUpdated: Bool, errors: [SeedStarterSpecsResponseError]? = nil) {
+    public init(added: Int, skipped: Int, totalStarter: Int, errors: [SeedStarterSpecsResponseError]? = nil) {
         self.added = added
         self.skipped = skipped
         self.totalStarter = totalStarter
-        self.entitlementUpdated = entitlementUpdated
         self.errors = errors
     }
 
@@ -28836,7 +28844,6 @@ public struct SeedStarterSpecsResponse: Codable, Hashable, Sendable {
         case added = "added"
         case skipped = "skipped"
         case totalStarter = "total_starter"
-        case entitlementUpdated = "entitlement_updated"
         case errors = "errors"
     }
 }
@@ -30152,182 +30159,24 @@ public struct SpawnPolicyUpdate: Codable, Hashable, Sendable {
     }
 }
 
-/// `SpecPackage` model.
-public struct SpecPackage: Codable, Hashable, Sendable {
-    /// Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-    public var packageId: String
-    public var name: String
-    public var `description`: String?
-    public var category: String
-    /// SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-    /// `@scope/name[@version]` shape at run time, so a malformed ref is accepted by this write and
-    /// fails later.
-    public var includedSpecs: [String]
-    public var includedInPlans: [SpecPackageIncludedInPlan]?
-    public var pricing: SpecPackagePricing?
-    public var displayOrder: Int?
-    public var archived: Bool?
-    public var program: SpecPackageProgram?
-    /// Stamped by the server on every write; not read from the body.
-    public var updatedAt: String?
-
-    public init(packageId: String, name: String, `description`: String? = nil, category: String, includedSpecs: [String], includedInPlans: [SpecPackageIncludedInPlan]? = nil, pricing: SpecPackagePricing? = nil, displayOrder: Int? = nil, archived: Bool? = nil, program: SpecPackageProgram? = nil, updatedAt: String? = nil) {
-        self.packageId = packageId
-        self.name = name
-        self.`description` = `description`
-        self.category = category
-        self.includedSpecs = includedSpecs
-        self.includedInPlans = includedInPlans
-        self.pricing = pricing
-        self.displayOrder = displayOrder
-        self.archived = archived
-        self.program = program
-        self.updatedAt = updatedAt
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packageId = "package_id"
-        case name = "name"
-        case `description` = "description"
-        case category = "category"
-        case includedSpecs = "included_specs"
-        case includedInPlans = "included_in_plans"
-        case pricing = "pricing"
-        case displayOrder = "display_order"
-        case archived = "archived"
-        case program = "program"
-        case updatedAt = "updated_at"
-    }
-}
-
-/// `SpecPackageIncludedInPlan` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct SpecPackageIncludedInPlan: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let free = SpecPackageIncludedInPlan(rawValue: "free")
-    public static let starter = SpecPackageIncludedInPlan(rawValue: "starter")
-    public static let pro = SpecPackageIncludedInPlan(rawValue: "pro")
-    public static let enterprise = SpecPackageIncludedInPlan(rawValue: "enterprise")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [SpecPackageIncludedInPlan] = [.free, .starter, .pro, .enterprise]
-}
-
-/// `SpecPackagePricing` model.
-public struct SpecPackagePricing: Codable, Hashable, Sendable {
-    public var priceAmountCents: Int?
-    public var priceCurrency: String?
-    public var billingInterval: SpecPackagePricingBillingInterval?
-    /// Never returned by the tenant-facing read. Its presence is what protects the package from a
-    /// silent drop.
-    public var stripePriceId: String?
-
-    public init(priceAmountCents: Int? = nil, priceCurrency: String? = nil, billingInterval: SpecPackagePricingBillingInterval? = nil, stripePriceId: String? = nil) {
-        self.priceAmountCents = priceAmountCents
-        self.priceCurrency = priceCurrency
-        self.billingInterval = billingInterval
-        self.stripePriceId = stripePriceId
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case priceAmountCents = "price_amount_cents"
-        case priceCurrency = "price_currency"
-        case billingInterval = "billing_interval"
-        case stripePriceId = "stripe_price_id"
-    }
-}
-
-/// `SpecPackagePricingBillingInterval` values.
-///
-/// Values the API adds later decode into this type unchanged, so a new
-/// server-side case never breaks an existing client.
-public struct SpecPackagePricingBillingInterval: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
-    public let rawValue: String
-    public init(rawValue: String) { self.rawValue = rawValue }
-    public init(stringLiteral value: String) { self.rawValue = value }
-    public init(from decoder: Decoder) throws {
-        self.rawValue = try decoder.singleValueContainer().decode(String.self)
-    }
-    public func encode(to encoder: Encoder) throws {
-        var container = encoder.singleValueContainer()
-        try container.encode(rawValue)
-    }
-
-    public static let month = SpecPackagePricingBillingInterval(rawValue: "month")
-    public static let year = SpecPackagePricingBillingInterval(rawValue: "year")
-
-    /// Every value the spec declared at generation time.
-    public static let knownValues: [SpecPackagePricingBillingInterval] = [.month, .year]
-}
-
-/// `SpecPackageProgram` model.
-public struct SpecPackageProgram: Codable, Hashable, Sendable {
-    public var nav: SpecPackageProgramNav
-    public var pages: [SpecPackageProgramPage]
-
-    public init(nav: SpecPackageProgramNav, pages: [SpecPackageProgramPage]) {
-        self.nav = nav
-        self.pages = pages
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case nav = "nav"
-        case pages = "pages"
-    }
-}
-
-/// `SpecPackageProgramNav` model.
-public struct SpecPackageProgramNav: Codable, Hashable, Sendable {
-    public var label: String
-    public var icon: String?
-
-    public init(label: String, icon: String? = nil) {
-        self.label = label
-        self.icon = icon
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case label = "label"
-        case icon = "icon"
-    }
-}
-
-/// `SpecPackageProgramPage` model.
-public struct SpecPackageProgramPage: Codable, Hashable, Sendable {
-    public var id: String
-    public var title: String
-    public var route: String?
-
-    public init(id: String, title: String, route: String? = nil) {
-        self.id = id
-        self.title = title
-        self.route = route
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case id = "id"
-        case title = "title"
-        case route = "route"
-    }
-}
-
 /// Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
 /// the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
 /// than failing the call.
 public struct SpecToolCatalog: Codable, Hashable, Sendable {
     public var agentId: String
+    /// Which of the agent's installed SPECs are waiting on a connection. `status` is
+    /// `needs_connection` when the SPEC declares tools routed through a connector (manifest
+    /// `delivered_by = { mode = "integration", connector = … }`) that this agent cannot currently
+    /// see an ACTIVE connection of — visibility, not ownership: the assignment rule is
+    /// `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+    /// when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+    /// for one fact.
+    ///
+    /// `ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full
+    /// verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+    /// that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+    /// wrong than absent.
+    public var specs: [SpecToolCatalogSpec]?
     /// The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
     /// only `drawing`. Always present: empty means no drawing canvas, absence means an older
     /// server, and a client must not confuse the two.
@@ -30336,14 +30185,16 @@ public struct SpecToolCatalog: Codable, Hashable, Sendable {
     /// aliases map onto their base tool's view.
     public var tools: [String: Value2]
 
-    public init(agentId: String, drawings: [SpecToolCatalogDrawing], tools: [String: Value2]) {
+    public init(agentId: String, specs: [SpecToolCatalogSpec]? = nil, drawings: [SpecToolCatalogDrawing], tools: [String: Value2]) {
         self.agentId = agentId
+        self.specs = specs
         self.drawings = drawings
         self.tools = tools
     }
 
     private enum CodingKeys: String, CodingKey {
         case agentId = "agent_id"
+        case specs = "specs"
         case drawings = "drawings"
         case tools = "tools"
     }
@@ -30385,6 +30236,95 @@ public struct SpecToolCatalogDrawingCanvas: RawRepresentable, Codable, Hashable,
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [SpecToolCatalogDrawingCanvas] = [.drawing]
+}
+
+/// `SpecToolCatalogSpec` model.
+public struct SpecToolCatalogSpec: Codable, Hashable, Sendable {
+    public var specId: String
+    public var status: SpecToolCatalogSpecStatus
+    public var requires: SpecToolCatalogSpecRequires?
+    public var action: String?
+    public var toolsTotal: Double
+    public var toolsWaiting: Double
+
+    public init(specId: String, status: SpecToolCatalogSpecStatus, requires: SpecToolCatalogSpecRequires? = nil, action: String? = nil, toolsTotal: Double, toolsWaiting: Double) {
+        self.specId = specId
+        self.status = status
+        self.requires = requires
+        self.action = action
+        self.toolsTotal = toolsTotal
+        self.toolsWaiting = toolsWaiting
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case specId = "spec_id"
+        case status = "status"
+        case requires = "requires"
+        case action = "action"
+        case toolsTotal = "tools_total"
+        case toolsWaiting = "tools_waiting"
+    }
+}
+
+/// `SpecToolCatalogSpecRequires` model.
+public struct SpecToolCatalogSpecRequires: Codable, Hashable, Sendable {
+    public var mode: SpecToolCatalogSpecRequiresMode?
+    public var connector: String?
+
+    public init(mode: SpecToolCatalogSpecRequiresMode? = nil, connector: String? = nil) {
+        self.mode = mode
+        self.connector = connector
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case mode = "mode"
+        case connector = "connector"
+    }
+}
+
+/// `SpecToolCatalogSpecRequiresMode` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct SpecToolCatalogSpecRequiresMode: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let integration = SpecToolCatalogSpecRequiresMode(rawValue: "integration")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [SpecToolCatalogSpecRequiresMode] = [.integration]
+}
+
+/// `SpecToolCatalogSpecStatus` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct SpecToolCatalogSpecStatus: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let ready = SpecToolCatalogSpecStatus(rawValue: "ready")
+    public static let needsConnection = SpecToolCatalogSpecStatus(rawValue: "needs_connection")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [SpecToolCatalogSpecStatus] = [.ready, .needsConnection]
 }
 
 /// `StartMissionRequest` model.
@@ -34538,20 +34478,6 @@ public struct UpdateAdminSmtpConfigRequest: Codable, Hashable, Sendable {
     }
 }
 
-/// `UpdateAdminSpecPackagesRequest` model.
-public struct UpdateAdminSpecPackagesRequest: Codable, Hashable, Sendable {
-    /// Keyed by `package_id`.
-    public var packages: [String: SpecPackage]
-
-    public init(packages: [String: SpecPackage]) {
-        self.packages = packages
-    }
-
-    private enum CodingKeys: String, CodingKey {
-        case packages = "packages"
-    }
-}
-
 /// `UpdateAdminSSEConfigResponse` model.
 public struct UpdateAdminSSEConfigResponse: Codable, Hashable, Sendable {
     public var sse: UpdateAdminSSEConfigResponseSSE
@@ -35985,10 +35911,17 @@ public struct UsageQuota: Codable, Hashable, Sendable {
     public var daily: UsageQuotaDaily
     public var resetsAt: UsageQuotaResetsAt
     public var limits: UsageQuotaLimits
+    /// Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+    /// resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+    /// exactly as they were — this is the shape a meter renders without doing the join itself (four
+    /// client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+    /// of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+    /// midnight.
+    public var counters: [UsageQuotaCounter]?
     /// api/lib/resource-usage.ts TenantResourceUsage.
     public var resourceUsage: UsageQuotaResourceUsage
 
-    public init(plan: String, allowed: Bool, reason: String? = nil, usage: UsageQuotaUsage, daily: UsageQuotaDaily, resetsAt: UsageQuotaResetsAt, limits: UsageQuotaLimits, resourceUsage: UsageQuotaResourceUsage) {
+    public init(plan: String, allowed: Bool, reason: String? = nil, usage: UsageQuotaUsage, daily: UsageQuotaDaily, resetsAt: UsageQuotaResetsAt, limits: UsageQuotaLimits, counters: [UsageQuotaCounter]? = nil, resourceUsage: UsageQuotaResourceUsage) {
         self.plan = plan
         self.allowed = allowed
         self.reason = reason
@@ -35996,6 +35929,7 @@ public struct UsageQuota: Codable, Hashable, Sendable {
         self.daily = daily
         self.resetsAt = resetsAt
         self.limits = limits
+        self.counters = counters
         self.resourceUsage = resourceUsage
     }
 
@@ -36007,8 +35941,63 @@ public struct UsageQuota: Codable, Hashable, Sendable {
         case daily = "daily"
         case resetsAt = "resets_at"
         case limits = "limits"
+        case counters = "counters"
         case resourceUsage = "resource_usage"
     }
+}
+
+/// `UsageQuotaCounter` model.
+public struct UsageQuotaCounter: Codable, Hashable, Sendable {
+    public var kind: UsageQuotaCounterKind
+    public var used: Double
+    public var limit: Double?
+    public var period: String?
+    public var resetsAt: String?
+
+    public init(kind: UsageQuotaCounterKind, used: Double, limit: Double? = nil, period: String? = nil, resetsAt: String? = nil) {
+        self.kind = kind
+        self.used = used
+        self.limit = limit
+        self.period = period
+        self.resetsAt = resetsAt
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case kind = "kind"
+        case used = "used"
+        case limit = "limit"
+        case period = "period"
+        case resetsAt = "resets_at"
+    }
+}
+
+/// `UsageQuotaCounterKind` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct UsageQuotaCounterKind: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let runs = UsageQuotaCounterKind(rawValue: "runs")
+    public static let tokens = UsageQuotaCounterKind(rawValue: "tokens")
+    public static let tokensDaily = UsageQuotaCounterKind(rawValue: "tokens_daily")
+    public static let toolCalls = UsageQuotaCounterKind(rawValue: "tool_calls")
+    public static let agents = UsageQuotaCounterKind(rawValue: "agents")
+    public static let teams = UsageQuotaCounterKind(rawValue: "teams")
+    public static let knowledgeBases = UsageQuotaCounterKind(rawValue: "knowledge_bases")
+    public static let workspaces = UsageQuotaCounterKind(rawValue: "workspaces")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [UsageQuotaCounterKind] = [.runs, .tokens, .tokensDaily, .toolCalls, .agents, .teams, .knowledgeBases, .workspaces]
 }
 
 /// `UsageQuotaDaily` model.

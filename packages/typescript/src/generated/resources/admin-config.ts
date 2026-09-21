@@ -34,9 +34,7 @@ import type {
   AdminRateLimitsConfig,
   AdminRegistrationConfig,
   AdminSmtpConfig,
-  AdminSpecPackagesList,
   AdminStripeConfig,
-  CreateAdminSpecPackageStripePriceResponse,
   CreatePlanStripePriceRequest,
   CreatePlanStripePriceResponse,
   CustomPlanInput,
@@ -95,7 +93,6 @@ import type {
   UpdateAdminServerConfigResponse,
   UpdateAdminSetupStateRequest,
   UpdateAdminSmtpConfigRequest,
-  UpdateAdminSpecPackagesRequest,
   UpdateAdminStripeConfigRequest,
   UpdateAdminStripeConfigResponse,
   UpdateAdminToolOverridesRequest,
@@ -126,40 +123,9 @@ export interface DeleteCustomPlanParams {
 }
 
 /**
- * Query and header parameters for `updateAdminSpecPackages`.
- */
-export interface UpdateAdminSpecPackagesParams {
-  /**
-   * Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
-   * not listed still refuse.
-   */
-  confirm_drop?: string;
-}
-
-/**
  * Platform configuration: pricing, plans, feature flags, rate limits, runtime
  */
 export class AdminConfigResource extends APIResource {
-  /**
-   * Create the Stripe product and price for a package
-   *
-   * Creates the product and price in Stripe and persists the resulting price id onto the
-   * package. Until this has run, the package cannot be bought: `POST
-   * /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
-   *
-   * `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
-   *
-   * Required scopes: `admin`.
-   */
-  createAdminSpecPackageStripePrice(packageId: string, options?: RequestOptions): Promise<CreateAdminSpecPackageStripePriceResponse> {
-    return this._client.request({
-      method: 'POST',
-      path: `/api/v1/admin/config/spec-packages/${encodeURIComponent(String(packageId))}/stripe-price`,
-      idempotent: true,
-      options,
-    });
-  }
-
   /**
    * Create Stripe Product+Price for plan
    *
@@ -749,25 +715,6 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/admin/config/smtp',
-      options,
-    });
-  }
-
-  /**
-   * Every SPEC package, archived ones included
-   *
-   * The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
-   * packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
-   * then by name.
-   *
-   * `GET /api/v1/admin/config/spec-packages`
-   *
-   * Required scopes: `admin`.
-   */
-  getAdminSpecPackages(options?: RequestOptions): Promise<AdminSpecPackagesList> {
-    return this._client.request({
-      method: 'GET',
-      path: '/api/v1/admin/config/spec-packages',
       options,
     });
   }
@@ -1897,39 +1844,6 @@ export class AdminConfigResource extends APIResource {
     return this._client.request({
       method: 'PUT',
       path: '/api/v1/admin/config/smtp',
-      body,
-      idempotent: true,
-      options,
-    });
-  }
-
-  /**
-   * Replace the SPEC-package map
-   *
-   * WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
-   * the body is DELETED. Two guards exist because of that.
-   *
-   * **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
-   * unless the caller opts in per id: `?confirm_drop=<id>[,<id>]`. Tenants may be subscribed
-   * against that price, so losing it silently is not a save, it is a billing incident. The
-   * refusal names every id it is protecting.
-   *
-   * **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
-   * everywhere downstream, so a key that disagrees with its record orphans the package at the
-   * next read.
-   *
-   * `updated_at` is stamped by the server on every record in the payload and is not read from
-   * the body.
-   *
-   * `PUT /api/v1/admin/config/spec-packages`
-   *
-   * Required scopes: `admin`.
-   */
-  updateAdminSpecPackages(body: UpdateAdminSpecPackagesRequest, params?: UpdateAdminSpecPackagesParams, options?: RequestOptions): Promise<AdminSpecPackagesList> {
-    return this._client.request({
-      method: 'PUT',
-      path: '/api/v1/admin/config/spec-packages',
-      query: pick(params, ['confirm_drop']),
       body,
       idempotent: true,
       options,

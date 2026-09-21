@@ -21,15 +21,6 @@ pub struct DeleteCustomPlanParams {
     pub force: Option<models::ExportDataExplorerIncludeSensitive>,
 }
 
-/// Query and header parameters for `updateAdminSpecPackages`.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UpdateAdminSpecPackagesParams {
-    /// Comma-separated package ids the caller intends to delete despite a wired Stripe price. Ids
-    /// not listed still refuse.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub confirm_drop: Option<String>,
-}
-
 /// Platform configuration: pricing, plans, feature flags, rate limits, runtime
 #[derive(Debug, Clone)]
 pub struct AdminConfigApi {
@@ -44,28 +35,6 @@ impl Client {
 }
 
 impl AdminConfigApi {
-    /// Create the Stripe product and price for a package
-    ///
-    /// Creates the product and price in Stripe and persists the resulting price id onto the
-    /// package. Until this has run, the package cannot be bought: `POST
-    /// /api/v1/billing/spec-packages/{packageId}/checkout-session` answers 400 and says so.
-    ///
-    /// `POST /api/v1/admin/config/spec-packages/{packageId}/stripe-price`
-    ///
-    /// Required scopes: `admin`.
-    pub async fn create_admin_spec_package_stripe_price(&self, package_id: &str) -> Result<models::CreateAdminSpecPackageStripePriceResponse> {
-        self.client
-            .request_json(Request {
-                method: Method::POST,
-                path: format!("/api/v1/admin/config/spec-packages/{}/stripe-price", encode_path(package_id)),
-                query: NO_QUERY,
-                body: NO_BODY,
-                headers: Vec::new(),
-                idempotent: true,
-            })
-            .await
-    }
-
     /// Create Stripe Product+Price for plan
     ///
     /// Creates a Stripe Product and recurring Price in the configured Stripe account and stores the
@@ -732,28 +701,6 @@ impl AdminConfigApi {
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/admin/config/smtp".to_string(),
-                query: NO_QUERY,
-                body: NO_BODY,
-                headers: Vec::new(),
-                idempotent: false,
-            })
-            .await
-    }
-
-    /// Every SPEC package, archived ones included
-    ///
-    /// The operator's view: unlike the tenant-facing `/api/v1/billing/spec-packages`, archived
-    /// packages are present and the Stripe price id is NOT redacted. Sorted by `display_order`,
-    /// then by name.
-    ///
-    /// `GET /api/v1/admin/config/spec-packages`
-    ///
-    /// Required scopes: `admin`.
-    pub async fn get_admin_spec_packages(&self) -> Result<models::AdminSpecPackagesList> {
-        self.client
-            .request_json(Request {
-                method: Method::GET,
-                path: "/api/v1/admin/config/spec-packages".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -1970,39 +1917,6 @@ impl AdminConfigApi {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/smtp".to_string(),
                 query: NO_QUERY,
-                body: Some(body),
-                headers: Vec::new(),
-                idempotent: true,
-            })
-            .await
-    }
-
-    /// Replace the SPEC-package map
-    ///
-    /// WRITE SEMANTICS: replaces. The map given becomes the whole map, so a package omitted from
-    /// the body is DELETED. Two guards exist because of that.
-    ///
-    /// **A drop that would remove a package with a wired `stripe_price_id` is refused with 422**
-    /// unless the caller opts in per id: `?confirm_drop=\<id\>\[,\<id\>\]`. Tenants may be
-    /// subscribed against that price, so losing it silently is not a save, it is a billing
-    /// incident. The refusal names every id it is protecting.
-    ///
-    /// **Each map KEY must equal its record's `package_id`**, or 422. The map is keyed by id
-    /// everywhere downstream, so a key that disagrees with its record orphans the package at the
-    /// next read.
-    ///
-    /// `updated_at` is stamped by the server on every record in the payload and is not read from
-    /// the body.
-    ///
-    /// `PUT /api/v1/admin/config/spec-packages`
-    ///
-    /// Required scopes: `admin`.
-    pub async fn update_admin_spec_packages(&self, body: &models::UpdateAdminSpecPackagesRequest, params: &UpdateAdminSpecPackagesParams) -> Result<models::AdminSpecPackagesList> {
-        self.client
-            .request_json(Request {
-                method: Method::PUT,
-                path: "/api/v1/admin/config/spec-packages".to_string(),
-                query: Some(params),
                 body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,

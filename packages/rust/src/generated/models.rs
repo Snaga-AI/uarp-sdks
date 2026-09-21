@@ -2339,12 +2339,6 @@ impl From<&str> for AdminSmtpConfigSource {
     }
 }
 
-/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AdminSpecPackagesList {
-    pub packages: Vec<SpecPackage>,
-}
-
 /// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
 /// their last four characters or empty (admin-config.ts getEffectiveStripeAdminConfig).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -2450,8 +2444,20 @@ pub struct Agent {
     pub status: Option<AgentStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_changed_at: Option<String>,
+    /// Why the agent is in this status, as a sentence. One field with six writers — a person, an
+    /// operator, four governance paths and a plan downgrade — so its language is whichever the
+    /// writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
+    /// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+    /// rendered as-is; the other five are the platform's English, and a client may say them in the
+    /// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_reason_code: Option<AgentStatusReasonCode>,
+    /// The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+    /// for `manual`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_reason_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub autonomy: Option<AgentAutonomy>,
     /// Per-tool trust, overriding the agent's default approval policy.
@@ -3316,6 +3322,64 @@ impl From<&str> for AgentStatus {
             "suspended" => Self::Suspended,
             "terminated" => Self::Terminated,
             "deposed" => Self::Deposed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+/// rendered as-is; the other five are the platform's English, and a client may say them in the
+/// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentStatusReasonCode {
+    #[default]
+    #[serde(rename = "manual")]
+    Manual,
+    #[serde(rename = "proposal_passed")]
+    ProposalPassed,
+    #[serde(rename = "arbiter_ruling")]
+    ArbiterRuling,
+    #[serde(rename = "arbiter_penalty")]
+    ArbiterPenalty,
+    #[serde(rename = "constitutional_penalty")]
+    ConstitutionalPenalty,
+    #[serde(rename = "plan_downgrade")]
+    PlanDowngrade,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentStatusReasonCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Manual => "manual",
+            Self::ProposalPassed => "proposal_passed",
+            Self::ArbiterRuling => "arbiter_ruling",
+            Self::ArbiterPenalty => "arbiter_penalty",
+            Self::ConstitutionalPenalty => "constitutional_penalty",
+            Self::PlanDowngrade => "plan_downgrade",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentStatusReasonCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentStatusReasonCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "manual" => Self::Manual,
+            "proposal_passed" => Self::ProposalPassed,
+            "arbiter_ruling" => Self::ArbiterRuling,
+            "arbiter_penalty" => Self::ArbiterPenalty,
+            "constitutional_penalty" => Self::ConstitutionalPenalty,
+            "plan_downgrade" => Self::PlanDowngrade,
             other => Self::Other(other.to_string()),
         }
     }
@@ -6606,17 +6670,6 @@ pub struct CreateAdminProviderResponseDefaultCapabilities {
     pub max_output_tokens: Option<i64>,
 }
 
-/// `CreateAdminSpecPackageStripePriceResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CreateAdminSpecPackageStripePriceResponse {
-    pub package_id: String,
-    pub stripe_price_id: String,
-    pub stripe_product_id: String,
-    pub amount_cents: i64,
-    pub currency: String,
-    pub interval: SpecPackagePricingBillingInterval,
-}
-
 /// `CreateAgentBookmarkRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAgentBookmarkRequest {
@@ -7036,9 +7089,49 @@ pub struct CreatePlanStripePriceRequest {
     pub currency: Option<String>,
     /// Server default: `"month"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<SpecPackagePricingBillingInterval>,
+    pub interval: Option<CreatePlanStripePriceRequestInterval>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+}
+
+/// `CreatePlanStripePriceRequestInterval` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreatePlanStripePriceRequestInterval {
+    #[default]
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreatePlanStripePriceRequestInterval {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Month => "month",
+            Self::Year => "year",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreatePlanStripePriceRequestInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreatePlanStripePriceRequestInterval {
+    fn from(value: &str) -> Self {
+        match value {
+            "month" => Self::Month,
+            "year" => Self::Year,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreatePlanStripePriceResponse` model.
@@ -7354,31 +7447,12 @@ pub struct CreateSessionTodoRequest {
     pub status: Option<String>,
 }
 
-/// `CreateSpecPackageCheckoutSessionRequest` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CreateSpecPackageCheckoutSessionRequest {
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (<https://snaga.ai> on production); an absolute URL on one of those two origins;
-    /// or the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub success_url: Option<String>,
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (<https://snaga.ai> on production); an absolute URL on one of those two origins;
-    /// or the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cancel_url: Option<String>,
-}
-
 /// `CreateSpecPackageCheckoutSessionResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateSpecPackageCheckoutSessionResponse {
-    pub url: String,
+    pub error: InvokeListingAgentResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
 }
 
 /// `CreateVotingProposalRequest` model.
@@ -7415,7 +7489,7 @@ pub struct CustomPlan {
     /// Pairs the plan with a promo program. Absent when unset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub program: Option<String>,
-    pub base_plan: SpecPackageIncludedInPlan,
+    pub base_plan: CustomPlanBasePlan,
     pub price_amount_cents: i64,
     pub price_currency: String,
     /// Absent when unset.
@@ -7431,6 +7505,54 @@ pub struct CustomPlan {
     pub updated_at: String,
 }
 
+/// `CustomPlanBasePlan` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CustomPlanBasePlan {
+    #[default]
+    #[serde(rename = "free")]
+    Free,
+    #[serde(rename = "starter")]
+    Starter,
+    #[serde(rename = "pro")]
+    Pro,
+    #[serde(rename = "enterprise")]
+    Enterprise,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CustomPlanBasePlan {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Free => "free",
+            Self::Starter => "starter",
+            Self::Pro => "pro",
+            Self::Enterprise => "enterprise",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CustomPlanBasePlan {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CustomPlanBasePlan {
+    fn from(value: &str) -> Self {
+        match value {
+            "free" => Self::Free,
+            "starter" => Self::Starter,
+            "pro" => Self::Pro,
+            "enterprise" => Self::Enterprise,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `CustomPlanInput` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CustomPlanInput {
@@ -7439,7 +7561,7 @@ pub struct CustomPlanInput {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub program: Option<String>,
-    pub base_plan: SpecPackageIncludedInPlan,
+    pub base_plan: CustomPlanBasePlan,
     pub price_amount_cents: i64,
     /// Server default: `"usd"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9229,6 +9351,8 @@ pub enum ErrorCode {
     BillingDisputed,
     #[serde(rename = "BILLING_PAST_DUE")]
     BillingPastDue,
+    #[serde(rename = "BUDGET_EXCEEDED")]
+    BudgetExceeded,
     #[serde(rename = "CHECKSUM_MISMATCH")]
     ChecksumMismatch,
     #[serde(rename = "CONFIGURATION_ERROR")]
@@ -9249,6 +9373,10 @@ pub enum ErrorCode {
     InvalidShareTarget,
     #[serde(rename = "LLM_ERROR")]
     LLMError,
+    #[serde(rename = "MAX_DURATION_EXCEEDED")]
+    MaxDurationExceeded,
+    #[serde(rename = "MAX_TOKENS_EXCEEDED")]
+    MaxTokensExceeded,
     #[serde(rename = "MIGRATION_CONFLICT")]
     MigrationConflict,
     #[serde(rename = "MISSION_ALREADY_RUNNING")]
@@ -9299,6 +9427,8 @@ pub enum ErrorCode {
     SizeLimit,
     #[serde(rename = "SPEC_NOT_FOUND")]
     SpecNotFound,
+    #[serde(rename = "TASK_GRAPH_FAILED")]
+    TaskGraphFailed,
     #[serde(rename = "TEAM_ABORT")]
     TeamAbort,
     #[serde(rename = "VALIDATION_ERROR")]
@@ -9325,12 +9455,40 @@ pub enum ErrorCode {
     InertPolicyField,
     #[serde(rename = "inert_public_config_field")]
     InertPublicConfigField,
+    #[serde(rename = "kb_chunk_limit")]
+    KbChunkLimit,
+    #[serde(rename = "kb_document_body_invalid")]
+    KbDocumentBodyInvalid,
+    #[serde(rename = "kb_document_too_large")]
+    KbDocumentTooLarge,
+    #[serde(rename = "kb_storage_limit")]
+    KbStorageLimit,
+    #[serde(rename = "kb_text_extraction_failed")]
+    KbTextExtractionFailed,
     #[serde(rename = "limit_reached")]
     LimitReached,
+    #[serde(rename = "plan_upgrade_required")]
+    PlanUpgradeRequired,
+    #[serde(rename = "provider_auth_failed")]
+    ProviderAuthFailed,
+    #[serde(rename = "provider_circuit_open")]
+    ProviderCircuitOpen,
+    #[serde(rename = "provider_not_configured")]
+    ProviderNotConfigured,
+    #[serde(rename = "provider_rate_limited")]
+    ProviderRateLimited,
     #[serde(rename = "quota_exceeded")]
     QuotaExceeded2,
     #[serde(rename = "rate_limited")]
     RateLimited,
+    #[serde(rename = "resource_limit_reached")]
+    ResourceLimitReached,
+    #[serde(rename = "run_input_timeout")]
+    RunInputTimeout,
+    #[serde(rename = "run_never_claimed")]
+    RunNeverClaimed,
+    #[serde(rename = "run_orphaned_restart")]
+    RunOrphanedRestart,
     #[serde(rename = "run_quota_exceeded")]
     RunQuotaExceeded,
     /// A value the API introduced after this SDK was generated.
@@ -9348,6 +9506,7 @@ impl ErrorCode {
             Self::BillingCancelled => "BILLING_CANCELLED",
             Self::BillingDisputed => "BILLING_DISPUTED",
             Self::BillingPastDue => "BILLING_PAST_DUE",
+            Self::BudgetExceeded => "BUDGET_EXCEEDED",
             Self::ChecksumMismatch => "CHECKSUM_MISMATCH",
             Self::ConfigurationError => "CONFIGURATION_ERROR",
             Self::EventStoreError => "EVENT_STORE_ERROR",
@@ -9358,6 +9517,8 @@ impl ErrorCode {
             Self::InvalidShareList => "INVALID_SHARE_LIST",
             Self::InvalidShareTarget => "INVALID_SHARE_TARGET",
             Self::LLMError => "LLM_ERROR",
+            Self::MaxDurationExceeded => "MAX_DURATION_EXCEEDED",
+            Self::MaxTokensExceeded => "MAX_TOKENS_EXCEEDED",
             Self::MigrationConflict => "MIGRATION_CONFLICT",
             Self::MissionAlreadyRunning => "MISSION_ALREADY_RUNNING",
             Self::MissionConcurrencyLimit => "MISSION_CONCURRENCY_LIMIT",
@@ -9383,6 +9544,7 @@ impl ErrorCode {
             Self::ShareListConflict => "SHARE_LIST_CONFLICT",
             Self::SizeLimit => "SIZE_LIMIT",
             Self::SpecNotFound => "SPEC_NOT_FOUND",
+            Self::TaskGraphFailed => "TASK_GRAPH_FAILED",
             Self::TeamAbort => "TEAM_ABORT",
             Self::ValidationError => "VALIDATION_ERROR",
             Self::VersionConflict => "VERSION_CONFLICT",
@@ -9396,9 +9558,23 @@ impl ErrorCode {
             Self::IncompleteRecord => "incomplete_record",
             Self::InertPolicyField => "inert_policy_field",
             Self::InertPublicConfigField => "inert_public_config_field",
+            Self::KbChunkLimit => "kb_chunk_limit",
+            Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
+            Self::KbDocumentTooLarge => "kb_document_too_large",
+            Self::KbStorageLimit => "kb_storage_limit",
+            Self::KbTextExtractionFailed => "kb_text_extraction_failed",
             Self::LimitReached => "limit_reached",
+            Self::PlanUpgradeRequired => "plan_upgrade_required",
+            Self::ProviderAuthFailed => "provider_auth_failed",
+            Self::ProviderCircuitOpen => "provider_circuit_open",
+            Self::ProviderNotConfigured => "provider_not_configured",
+            Self::ProviderRateLimited => "provider_rate_limited",
             Self::QuotaExceeded2 => "quota_exceeded",
             Self::RateLimited => "rate_limited",
+            Self::ResourceLimitReached => "resource_limit_reached",
+            Self::RunInputTimeout => "run_input_timeout",
+            Self::RunNeverClaimed => "run_never_claimed",
+            Self::RunOrphanedRestart => "run_orphaned_restart",
             Self::RunQuotaExceeded => "run_quota_exceeded",
             Self::Other(value) => value.as_str(),
         }
@@ -9420,6 +9596,7 @@ impl From<&str> for ErrorCode {
             "BILLING_CANCELLED" => Self::BillingCancelled,
             "BILLING_DISPUTED" => Self::BillingDisputed,
             "BILLING_PAST_DUE" => Self::BillingPastDue,
+            "BUDGET_EXCEEDED" => Self::BudgetExceeded,
             "CHECKSUM_MISMATCH" => Self::ChecksumMismatch,
             "CONFIGURATION_ERROR" => Self::ConfigurationError,
             "EVENT_STORE_ERROR" => Self::EventStoreError,
@@ -9430,6 +9607,8 @@ impl From<&str> for ErrorCode {
             "INVALID_SHARE_LIST" => Self::InvalidShareList,
             "INVALID_SHARE_TARGET" => Self::InvalidShareTarget,
             "LLM_ERROR" => Self::LLMError,
+            "MAX_DURATION_EXCEEDED" => Self::MaxDurationExceeded,
+            "MAX_TOKENS_EXCEEDED" => Self::MaxTokensExceeded,
             "MIGRATION_CONFLICT" => Self::MigrationConflict,
             "MISSION_ALREADY_RUNNING" => Self::MissionAlreadyRunning,
             "MISSION_CONCURRENCY_LIMIT" => Self::MissionConcurrencyLimit,
@@ -9455,6 +9634,7 @@ impl From<&str> for ErrorCode {
             "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
             "SIZE_LIMIT" => Self::SizeLimit,
             "SPEC_NOT_FOUND" => Self::SpecNotFound,
+            "TASK_GRAPH_FAILED" => Self::TaskGraphFailed,
             "TEAM_ABORT" => Self::TeamAbort,
             "VALIDATION_ERROR" => Self::ValidationError,
             "VERSION_CONFLICT" => Self::VersionConflict,
@@ -9468,9 +9648,23 @@ impl From<&str> for ErrorCode {
             "incomplete_record" => Self::IncompleteRecord,
             "inert_policy_field" => Self::InertPolicyField,
             "inert_public_config_field" => Self::InertPublicConfigField,
+            "kb_chunk_limit" => Self::KbChunkLimit,
+            "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
+            "kb_document_too_large" => Self::KbDocumentTooLarge,
+            "kb_storage_limit" => Self::KbStorageLimit,
+            "kb_text_extraction_failed" => Self::KbTextExtractionFailed,
             "limit_reached" => Self::LimitReached,
+            "plan_upgrade_required" => Self::PlanUpgradeRequired,
+            "provider_auth_failed" => Self::ProviderAuthFailed,
+            "provider_circuit_open" => Self::ProviderCircuitOpen,
+            "provider_not_configured" => Self::ProviderNotConfigured,
+            "provider_rate_limited" => Self::ProviderRateLimited,
             "quota_exceeded" => Self::QuotaExceeded2,
             "rate_limited" => Self::RateLimited,
+            "resource_limit_reached" => Self::ResourceLimitReached,
+            "run_input_timeout" => Self::RunInputTimeout,
+            "run_never_claimed" => Self::RunNeverClaimed,
+            "run_orphaned_restart" => Self::RunOrphanedRestart,
             "run_quota_exceeded" => Self::RunQuotaExceeded,
             other => Self::Other(other.to_string()),
         }
@@ -11915,8 +12109,22 @@ pub struct GetRunResponse {
     pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -14206,71 +14414,7 @@ pub struct ListBillingPlansResponsePlan {
 /// `ListBillingSpecPackagesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListBillingSpecPackagesResponse {
-    pub packages: Vec<ListBillingSpecPackagesResponsePackage>,
-}
-
-/// `ListBillingSpecPackagesResponsePackage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct ListBillingSpecPackagesResponsePackage {
-    pub package_id: String,
-    pub name: String,
-    pub description: String,
-    pub category: String,
-    pub included_specs: Vec<String>,
-    pub included_in_plans: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub program: Option<SpecPackageProgram>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_amount_cents: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_currency: Option<String>,
-    /// A Stripe price is wired. False means checkout will refuse with 400.
-    pub checkout_available: bool,
-    pub entitlement: ListBillingSpecPackagesResponsePackageEntitlement,
-}
-
-/// `ListBillingSpecPackagesResponsePackageEntitlement` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ListBillingSpecPackagesResponsePackageEntitlement {
-    #[default]
-    #[serde(rename = "plan_included")]
-    PlanIncluded,
-    #[serde(rename = "purchased")]
-    Purchased,
-    #[serde(rename = "available")]
-    Available,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl ListBillingSpecPackagesResponsePackageEntitlement {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::PlanIncluded => "plan_included",
-            Self::Purchased => "purchased",
-            Self::Available => "available",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for ListBillingSpecPackagesResponsePackageEntitlement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for ListBillingSpecPackagesResponsePackageEntitlement {
-    fn from(value: &str) -> Self {
-        match value {
-            "plan_included" => Self::PlanIncluded,
-            "purchased" => Self::Purchased,
-            "available" => Self::Available,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub packages: Vec<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `ListBuilderRequestsResponse` model.
@@ -20173,8 +20317,22 @@ pub struct Run {
     pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -21333,7 +21491,6 @@ pub struct SeedStarterSpecsResponse {
     /// How many starter SPECs the build ships. `added + skipped` reaching this is the completion
     /// signal.
     pub total_starter: i64,
-    pub entitlement_updated: bool,
     /// Absent when nothing failed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<SeedStarterSpecsResponseError>>,
@@ -22143,168 +22300,26 @@ pub struct SpawnPolicyUpdate {
     pub max_children_per_agent: i64,
 }
 
-/// `SpecPackage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackage {
-    /// Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-    pub package_id: String,
-    pub name: String,
-    /// Server default: `""`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub category: String,
-    /// SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-    /// `@scope/name\[@version\]` shape at run time, so a malformed ref is accepted by this write
-    /// and fails later.
-    pub included_specs: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub included_in_plans: Option<Vec<SpecPackageIncludedInPlan>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pricing: Option<SpecPackagePricing>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display_order: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub archived: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub program: Option<SpecPackageProgram>,
-    /// Stamped by the server on every write; not read from the body.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
-}
-
-/// `SpecPackageIncludedInPlan` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SpecPackageIncludedInPlan {
-    #[default]
-    #[serde(rename = "free")]
-    Free,
-    #[serde(rename = "starter")]
-    Starter,
-    #[serde(rename = "pro")]
-    Pro,
-    #[serde(rename = "enterprise")]
-    Enterprise,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SpecPackageIncludedInPlan {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Free => "free",
-            Self::Starter => "starter",
-            Self::Pro => "pro",
-            Self::Enterprise => "enterprise",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SpecPackageIncludedInPlan {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SpecPackageIncludedInPlan {
-    fn from(value: &str) -> Self {
-        match value {
-            "free" => Self::Free,
-            "starter" => Self::Starter,
-            "pro" => Self::Pro,
-            "enterprise" => Self::Enterprise,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `SpecPackagePricing` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackagePricing {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_amount_cents: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_currency: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub billing_interval: Option<SpecPackagePricingBillingInterval>,
-    /// Never returned by the tenant-facing read. Its presence is what protects the package from a
-    /// silent drop.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stripe_price_id: Option<String>,
-}
-
-/// `SpecPackagePricingBillingInterval` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SpecPackagePricingBillingInterval {
-    #[default]
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SpecPackagePricingBillingInterval {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Month => "month",
-            Self::Year => "year",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SpecPackagePricingBillingInterval {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SpecPackagePricingBillingInterval {
-    fn from(value: &str) -> Self {
-        match value {
-            "month" => Self::Month,
-            "year" => Self::Year,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `SpecPackageProgram` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgram {
-    pub nav: SpecPackageProgramNav,
-    pub pages: Vec<SpecPackageProgramPage>,
-}
-
-/// `SpecPackageProgramNav` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgramNav {
-    pub label: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-}
-
-/// `SpecPackageProgramPage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgramPage {
-    pub id: String,
-    pub title: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub route: Option<String>,
-}
-
 /// Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
 /// the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
 /// than failing the call.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SpecToolCatalog {
     pub agent_id: String,
+    /// Which of the agent's installed SPECs are waiting on a connection. `status` is
+    /// `needs_connection` when the SPEC declares tools routed through a connector (manifest
+    /// `delivered_by = { mode = "integration", connector = … }`) that this agent cannot currently
+    /// see an ACTIVE connection of — visibility, not ownership: the assignment rule is
+    /// `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+    /// when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+    /// for one fact.
+    ///
+    /// `ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full
+    /// verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+    /// that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+    /// wrong than absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<SpecToolCatalogSpec>>,
     /// The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
     /// only `drawing`. Always present: empty means no drawing canvas, absence means an older
     /// server, and a client must not confuse the two.
@@ -22352,6 +22367,104 @@ impl From<&str> for SpecToolCatalogDrawingCanvas {
     fn from(value: &str) -> Self {
         match value {
             "drawing" => Self::Drawing,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `SpecToolCatalogSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogSpec {
+    pub spec_id: String,
+    pub status: SpecToolCatalogSpecStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires: Option<SpecToolCatalogSpecRequires>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    pub tools_total: f64,
+    pub tools_waiting: f64,
+}
+
+/// `SpecToolCatalogSpecRequires` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogSpecRequires {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<SpecToolCatalogSpecRequiresMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector: Option<String>,
+}
+
+/// `SpecToolCatalogSpecRequiresMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SpecToolCatalogSpecRequiresMode {
+    #[default]
+    #[serde(rename = "integration")]
+    Integration,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SpecToolCatalogSpecRequiresMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Integration => "integration",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SpecToolCatalogSpecRequiresMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SpecToolCatalogSpecRequiresMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "integration" => Self::Integration,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `SpecToolCatalogSpecStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SpecToolCatalogSpecStatus {
+    #[default]
+    #[serde(rename = "ready")]
+    Ready,
+    #[serde(rename = "needs_connection")]
+    NeedsConnection,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SpecToolCatalogSpecStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ready => "ready",
+            Self::NeedsConnection => "needs_connection",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SpecToolCatalogSpecStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SpecToolCatalogSpecStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ready" => Self::Ready,
+            "needs_connection" => Self::NeedsConnection,
             other => Self::Other(other.to_string()),
         }
     }
@@ -25277,13 +25390,6 @@ pub struct UpdateAdminSmtpConfigRequest {
     pub from_name: Option<String>,
 }
 
-/// `UpdateAdminSpecPackagesRequest` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UpdateAdminSpecPackagesRequest {
-    /// Keyed by `package_id`.
-    pub packages: HashMap<String, SpecPackage>,
-}
-
 /// `UpdateAdminSSEConfigResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminSSEConfigResponse {
@@ -26109,8 +26215,93 @@ pub struct UsageQuota {
     pub daily: UsageQuotaDaily,
     pub resets_at: UsageQuotaResetsAt,
     pub limits: UsageQuotaLimits,
+    /// Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+    /// resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+    /// exactly as they were — this is the shape a meter renders without doing the join itself (four
+    /// client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+    /// of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+    /// midnight.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub counters: Option<Vec<UsageQuotaCounter>>,
     /// api/lib/resource-usage.ts TenantResourceUsage.
     pub resource_usage: UsageQuotaResourceUsage,
+}
+
+/// `UsageQuotaCounter` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaCounter {
+    pub kind: UsageQuotaCounterKind,
+    pub used: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    #[serde(default)]
+    pub period: Option<String>,
+    #[serde(default)]
+    pub resets_at: Option<String>,
+}
+
+/// `UsageQuotaCounterKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum UsageQuotaCounterKind {
+    #[default]
+    #[serde(rename = "runs")]
+    Runs,
+    #[serde(rename = "tokens")]
+    Tokens,
+    #[serde(rename = "tokens_daily")]
+    TokensDaily,
+    #[serde(rename = "tool_calls")]
+    ToolCalls,
+    #[serde(rename = "agents")]
+    Agents,
+    #[serde(rename = "teams")]
+    Teams,
+    #[serde(rename = "knowledge_bases")]
+    KnowledgeBases,
+    #[serde(rename = "workspaces")]
+    Workspaces,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl UsageQuotaCounterKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Runs => "runs",
+            Self::Tokens => "tokens",
+            Self::TokensDaily => "tokens_daily",
+            Self::ToolCalls => "tool_calls",
+            Self::Agents => "agents",
+            Self::Teams => "teams",
+            Self::KnowledgeBases => "knowledge_bases",
+            Self::Workspaces => "workspaces",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for UsageQuotaCounterKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for UsageQuotaCounterKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "runs" => Self::Runs,
+            "tokens" => Self::Tokens,
+            "tokens_daily" => Self::TokensDaily,
+            "tool_calls" => Self::ToolCalls,
+            "agents" => Self::Agents,
+            "teams" => Self::Teams,
+            "knowledge_bases" => Self::KnowledgeBases,
+            "workspaces" => Self::Workspaces,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `UsageQuotaDaily` model.

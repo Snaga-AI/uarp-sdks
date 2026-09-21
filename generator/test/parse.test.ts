@@ -325,7 +325,16 @@ test('parses the production document into the expected shape', () => {
   // 735 -> 737 on 2026-09-18: `GET` and `PUT /agents/{agentId}/mcp-servers`,
   // the connect surface between an agent and the MCP servers its tenant has
   // installed. Both arrived described — body, responses and `x-scopes`.
-  assert.equal(ops.length, 737);
+  // 737 -> 734 on 2026-09-21: the SPEC-package admin surface is withdrawn
+  // (uarp f058b582) — `GET` and `PUT /admin/config/spec-packages` and the
+  // `stripe-price` POST beside them. The second shrink this count has
+  // recorded, and the first that had to argue with `update-spec.sh`: its
+  // guard refuses a smaller document, which is right, and its advice was to
+  // "pass the right url", which could only have re-vendored a stale one.
+  // `/billing/spec-packages` is NOT in this three — the withdrawal left the
+  // list answering `[]` and the checkout answering 410, both deprecated, for
+  // clients that still call them.
+  assert.equal(ops.length, 734);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -522,7 +531,18 @@ test('parses the production document into the expected shape', () => {
   // 1489 -> 1494 on 2026-09-18: the two mcp-servers operations bring
   // ListAgentMCPServersResponse, SetAgentMCPServersRequest,
   // SetAgentMCPServersResponse and MCPServerAuth with its type enum.
-  assert.equal(spec.types.length, 1494);
+  // 1494 -> 1490 on 2026-09-21: thirteen names leave with the SPEC-package
+  // withdrawal (SpecPackage and its pricing/program/plan family, the two admin
+  // request-response types, and the two the billing list carried), nine
+  // arrive — SpecToolCatalogSpec with its `requires` block and its
+  // `ready|needs_connection` status, UsageQuotaCounter and its kind,
+  // AgentStatusReasonCode, CreatePlanStripePriceRequestInterval,
+  // CustomPlanBasePlan. Net four.
+  // The name that matters here is in neither list, because it only grew:
+  // `ErrorCode` goes from 58 values to 76, and `Run` gains `error_code` and
+  // `error_details`. Until this refresh no generated client could read why a
+  // run failed except by regex over an English sentence.
+  assert.equal(spec.types.length, 1490);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

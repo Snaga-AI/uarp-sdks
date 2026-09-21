@@ -101,6 +101,18 @@ public struct KnowledgeAPI: Sendable {
     /// keyword-only, which the response reports as `embedding_status`. Answers 201 with the
     /// document id and `chunks_created`. The base must exist (404).
     ///
+    /// Every refusal on this route carries a machine-readable `code` beside the sentence, and the
+    /// numbers as FIELDS rather than only inside the prose — nothing on this platform honours
+    /// `Accept-Language`, so a client that renders `detail` is rendering English.
+    /// `kb_document_body_invalid` (400) adds `reason` (`both` | `missing` | `empty_content`) and
+    /// `fields`. `NOT_FOUND` (404) adds `resource` (`file` | `file_data`) and `file_id`.
+    /// `kb_text_extraction_failed` (422) adds `filename` and `mime_type`. `kb_document_too_large`
+    /// (413) adds `chars`, `limit` and `source` (`content` | `extracted_text`). `kb_chunk_limit`
+    /// (413) adds `limit`, `chunk_size` and `chunk_overlap`. `kb_storage_limit` (403) adds
+    /// `current_bytes`, `incoming_bytes`, `limit` and `plan` — and is the code that separates a
+    /// full tenant from a forbidden knowledge base, which both answered `FORBIDDEN` until
+    /// 2026-09-21.
+    ///
     /// `POST /api/v1/knowledge-bases/{kbId}/documents`
     ///
     /// Required scopes: `memory:write`.

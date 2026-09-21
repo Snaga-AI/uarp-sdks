@@ -477,9 +477,10 @@ export class AgentsResource extends APIResource {
    * What the builder needs to render a tool result: for each tool the agent can actually call,
    * the SPEC that owns it and the view to render its output with.
    *
-   * Only tools the agent is entitled to are listed — the same filter the runtime applies — so
-   * the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
-   * not parse is skipped, not fatal: one broken view must not take the catalog down.
+   * Only tools the agent can actually call are listed — the same filter the runtime applies,
+   * which since 2026-09-21 means the agent's declared, enabled SPECs — so the UI cannot offer a
+   * view for a tool that will never fire. A stored view whose JSON will not parse is skipped,
+   * not fatal: one broken view must not take the catalog down.
    *
    * `GET /api/v1/agents/{agentId}/spec-catalog`
    *
