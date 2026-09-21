@@ -8,6 +8,8 @@
  * wrong before, in exactly the way that reads perfectly well.
  */
 
+import { VERSION } from 'uarp-sdk';
+
 export const LANGUAGES = [
   { id: 'ts', name: 'TypeScript', registry: 'npm' },
   { id: 'rust', name: 'Rust', registry: 'crates.io' },
@@ -20,16 +22,44 @@ export type LanguageId = (typeof LANGUAGES)[number]['id'];
 
 export type Samples = Record<LanguageId, string>;
 
+/**
+ * The version the install lines quote.
+ *
+ * Read from the package this page is built against rather than typed here, so
+ * a release cannot leave the documentation behind: the four registries all
+ * carry the same number, and `VERSION` is that number. Measured 2026-09-21 —
+ * npm, crates.io and Maven Central all serve 0.6.0.
+ */
+const PUBLISHED = VERSION;
+
+/**
+ * Swift is quoted separately, and BEHIND, because SwiftPM is not a registry we
+ * publish to — it is a git mirror, and the mirror is stuck. Newest tag on
+ * Snaga-AI/uarp-swift is 0.5.13, pushed 2026-08-21; 0.5.15, 0.5.21, 0.5.24 and
+ * 0.6.0 never arrived, because `SWIFT_MIRROR_TOKEN` expired and the release
+ * job now fails on it rather than skipping. Measured against the mirror's tags
+ * on 2026-09-21, not taken from the release notes.
+ *
+ * So `from: "${PUBLISHED}"` would be a line that cannot resolve. This one can.
+ * Raise it when the mirror catches up, and not before — a snippet a person
+ * cannot run is worse than a snippet that gives them an older SDK.
+ */
+const SWIFT_MIRROR = '0.5.13';
+
 /** The install line, and what it needs. */
 export const INSTALL: Record<LanguageId, { command: string; shell: boolean; needs: string }> = {
   ts: { command: 'npm install uarp-sdk', shell: true, needs: 'Node 18+' },
   rust: { command: 'cargo add uarp-sdk tokio --features tokio/macros,tokio/rt-multi-thread', shell: true, needs: 'Rust 1.88+' },
   swift: {
-    command: '.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.6")',
+    command: `.package(url: "https://github.com/Snaga-AI/uarp-swift", from: "${SWIFT_MIRROR}")`,
     shell: false,
     needs: 'Swift 5.9+, macOS 12 / iOS 15',
   },
-  kotlin: { command: 'implementation("ai.snaga:uarp-sdk:0.5.6")', shell: false, needs: 'Kotlin 2.2+, JVM 11+, Android 21+' },
+  kotlin: {
+    command: `implementation("ai.snaga:uarp-sdk:${PUBLISHED}")`,
+    shell: false,
+    needs: 'Kotlin 2.2+, JVM 11+, Android 21+',
+  },
   ada: { command: 'alr with uarp_sdk', shell: true, needs: 'GNAT 2022, libcurl' },
 };
 
