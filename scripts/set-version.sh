@@ -53,16 +53,47 @@ edit "s/^  \"version\": \".*\"/  \"version\": \"$version\"/" generator/package.j
 # so an anchored line-pattern rewrites every dependency in the tree to the SDK
 # version while looking exactly like a version bump. Two keys are addressed by
 # path instead; nothing else in the file is touched.
-node -e '
-  const fs = require("fs");
-  const f = "packages/typescript/package-lock.json";
-  const d = JSON.parse(fs.readFileSync(f, "utf8"));
-  d.version = process.argv[1];
-  if (d.packages && d.packages[""]) d.packages[""].version = process.argv[1];
-  fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");
-' "$version"
+#
+# BOTH lockfiles, not one. `generator/package.json` is bumped six lines above
+# and its lockfile was not, so it drifted exactly as the TypeScript one used
+# to: on 2026-09-22 `generator/package-lock.json` still read 0.6.0 while its
+# package.json read 0.7.0, and the 0.6.0 release had to be corrected by hand.
+# A loop, so a third package cannot be added and forgotten.
+for lock in packages/typescript/package-lock.json generator/package-lock.json; do
+    node -e '
+      const fs = require("fs");
+      const f = process.argv[2];
+      const d = JSON.parse(fs.readFileSync(f, "utf8"));
+      d.version = process.argv[1];
+      if (d.packages && d.packages[""]) d.packages[""].version = process.argv[1];
+      fs.writeFileSync(f, JSON.stringify(d, null, 2) + "\n");
+    ' "$version" "$lock"
+done
 edit "s/^version = \".*\"/version = \"$version\"/" packages/rust/Cargo.toml
 edit "s/^    version = \".*\"/    version = \"$version\"/" packages/kotlin/build.gradle.kts
+
+# Cargo.lock carries the crate's OWN version beside those of 42 dependencies.
+# `cargo` would do this, but then setting a version would need a Rust
+# toolchain, so the block is edited in place: find the `[[package]]` whose name
+# is uarp-sdk and rewrite only the `version` line inside THAT block. An
+# anchored `^version = ` pattern would hit every dependency in the file, which
+# is the same trap the lockfile comment above describes.
+python3 - "$version" <<'CARGOLOCK'
+import re, sys
+version = sys.argv[1]
+path = "packages/rust/Cargo.lock"
+src = open(path).read()
+blocks = src.split("[[package]]")
+out, touched = [blocks[0]], 0
+for b in blocks[1:]:
+    if re.search(r'^name = "uarp-sdk"$', b, re.M):
+        b, n = re.subn(r'^version = ".*"$', 'version = "%s"' % version, b, count=1, flags=re.M)
+        touched += n
+    out.append(b)
+if touched != 1:
+    sys.exit("Cargo.lock: expected exactly one uarp-sdk version line, rewrote %d" % touched)
+open(path, "w").write("[[package]]".join(out))
+CARGOLOCK
 
 for crate in packages/ada/alire.toml packages/ada/tests/alire.toml packages/ada/examples/alire.toml; do
     edit "s/^version = \".*\"/version = \"$version\"/" "$crate"
@@ -73,6 +104,16 @@ edit "s/SDK_Version : constant String := \".*\"/SDK_Version : constant String :=
     packages/ada/src/uarp.ads
 
 node generator/src/index.ts >/dev/null
+
+# The goldens bake SDK_VERSION into their expected output, in four languages.
+# Regenerating the SDKs does not touch them, so a bump leaves the generator
+# suite RED — 48 of 114 on 2026-09-22, and 40 of 100 at the first v0.6.0 tag,
+# which published NOTHING because every language job died before its publish
+# step. The tag is the worst place to find this out; do it here.
+(cd generator && npm run test:update-golden >/dev/null 2>&1) || {
+    echo "golden refresh failed - run 'make update-golden' and read the diff" >&2
+    exit 1
+}
 
 echo "set to $version:"
 grep -h "\"version\"" packages/typescript/package.json | head -1
