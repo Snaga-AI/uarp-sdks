@@ -6,6 +6,118 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.7.0 — 2026-09-22
+
+Build `34cc8169`, canonical digest `0ed418c24110c039` — sorted keys, no
+whitespace, which is what `check-spec-freshness.sh` compares and what the
+release refuses to proceed without. Against 0.6.0, the last release published
+to any registry: 535 → 543 paths, 723 → 734 operations (+14, −3), 352 → 352
+schemas (+3, −3).
+
+**The minor moves, and that is the point.** A caret under 1.0 does not cross
+the minor, so `^0.6.0` admits 0.6.1 automatically and refuses 0.7.0. This
+release removes exported names and adds required request fields; on a patch
+those would have arrived in builds nobody touched, and the first anyone heard
+of it would have been a red compile. The number is the announcement.
+
+### Removed — three operations and eighteen exported names
+
+The SPEC-package surface is withdrawn on the platform (uarp `f058b582`), so
+it leaves the clients:
+
+- `GET` and `PUT /admin/config/spec-packages`, and
+  `POST /admin/config/spec-packages/{packageId}/stripe-price`.
+- Eighteen names disappear from the TypeScript models (1679 exports → 1720,
+  with these gone): `SpecPackage`, `SpecPackagePricing`,
+  `SpecPackagePricingBillingInterval`, `SpecPackageIncludedInPlan`,
+  `SpecPackageProgram`, `SpecPackageProgramNav`, `SpecPackageProgramPage`,
+  `AdminSpecPackagesList`, `UpdateAdminSpecPackagesRequest`,
+  `CreateAdminSpecPackageStripePriceResponse`,
+  `CreateSpecPackageCheckoutSessionRequest`,
+  `ListBillingSpecPackagesResponsePackage` and its `…Entitlement`,
+  `DeleteCustomPlanForce`, and the four `*_VALUES` consts of those enums.
+
+`GET /billing/spec-packages` and its checkout do NOT leave: the withdrawal
+left the list answering `[]` and the checkout answering 410, both marked
+deprecated, and both stay generated for clients that still call them.
+
+### Changed — six operations now require body fields they did not
+
+Breaking for any call site that compiled without them:
+
+| Operation | Newly required |
+|---|---|
+| `POST /governance/goals` | `title`, `description`, `rationale`, `expected_impact`, `alignment_justification`, `resource_estimate_usd` |
+| `POST /governance/improvement/{agentId}` | `title`, `description`, `rationale`, `changes`, `baseline_success_rate`, `failed_run_ids` |
+| `POST /governance/arbiter/cases` | `description`, `rule_ids` |
+| `POST /bridge/delegate` | `message` |
+| `POST /marketplace/listings/{listingId}/subscribe` | `stripe_subscription_id` |
+| `POST /programs/{programId}/apply` | `start_date` |
+
+The first three were unusable in 0.6.0 rather than merely under-declared:
+`CreateGoalRequest` shipped with one field beside a doc comment naming seven,
+so no client generated from that document could form a valid request. They
+compile differently here because they now describe what the handler actually
+demands.
+
+### Added — a failed run says why, in a field
+
+- `Run.error_code` and `Run.error_details`, and the same pair on
+  `TenantOverviewRunsRecentItem` — the thinner shape the fleet board reads.
+  `error_code` is absent when the failure carries nothing to branch on, which
+  is deliberate; `error_details` carries what the code cannot
+  (`retry_after_ms`, `quota_exhausted`, `stale_seconds`).
+- `ErrorCode` and `ERROR_CODE_VALUES`, 76 values. **New, not widened**: 0.6.0
+  declared no `code` on `Error` at all, in the tag or in the published
+  tarball, so there was nothing for a client to branch on.
+
+Until this release no generated client could learn why a run failed except by
+matching English in `error` — a sentence with no `Accept-Language` behind it.
+
+### Added — the rest of the surface
+
+- `SpecToolCatalogSpec` with `tools_waiting` and
+  `status: 'ready' | 'needs_connection'`: an installed SPEC that is waiting on
+  a connection says so instead of vanishing.
+- `UsageQuotaCounter` and its eight kinds (`runs`, `tokens`, `tokens_daily`,
+  `tool_calls`, `agents`, `teams`, `knowledge_bases`, `workspaces`).
+- `GET|PUT /agents/{agentId}/mcp-servers` with `McpServerAuth` — the connect
+  surface between an agent and the MCP servers its tenant has installed.
+- Billing: `GET|PUT|DELETE /billing/budget`, `GET|PUT /billing/overage`,
+  `GET /billing/promo`, `POST /billing/promo/redeem`.
+- `GET /admin/data-explorer/export`, `POST /admin/data-explorer/import`,
+  `POST /auth/oauth/nonce` (served undocumented until uarp #487),
+  `GET /bridge/agent-specs`, `GET /companies/{companyId}/events`.
+- `SubjectSweep`, `TenantSocialLinks`.
+
+### Fixed — the tooling that made the last cut cost two attempts
+
+- `scripts/update-spec.sh` gains `--allow-shrink "<reason>"`. Its guard
+  correctly refuses a document smaller than the vendored copy, but its advice
+  on refusal was to pass a different url, which cannot work: the guard weighs
+  whatever is fetched, so the only url that satisfies it is a document stale
+  enough to still carry the withdrawn surface. The override requires a reason
+  and NAMES what leaves — paths, operations and schemas, each listed.
+- `scripts/set-version.sh` now moves three things it silently left behind:
+  `generator/package-lock.json`, the crate's own version in
+  `packages/rust/Cargo.lock`, and the generator goldens, which bake
+  `SDK_VERSION` in four languages. That last one is why the first `v0.6.0` tag
+  published nothing — 40 of 100 generator tests red at the tag, every language
+  job dead before its publish step. Measured again here: 48 of 114 red
+  immediately after the bump, before the refresh.
+- `scripts/check-prose-schema.ts` reports 0 divergences over all 734
+  operations.
+
+### Known
+
+- The SwiftPM mirror is stuck at 0.5.13 (2026-08-21) because
+  `SWIFT_MIRROR_TOKEN` expired; 0.5.15, 0.5.21, 0.5.24 and 0.6.0 never reached
+  it. Swift consumers do not get this release until that token is reissued —
+  this is not something the tag can fix.
+- `examples/react-landing` still asks for `uarp-sdk: ^0.6.0`. It cannot ask
+  for `^0.7.0` before 0.7.0 exists on npm, so that bump follows the publish
+  rather than preceding it.
+
 ## 0.6.0 — 2026-09-14
 
 `spec/openapi.json` is `https://api.snaga.ai/api/v1/openapi.json` normalised
