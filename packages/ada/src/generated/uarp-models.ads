@@ -21967,8 +21967,19 @@ package UARP.Models is
       Cost_Usd : UARP.Types.Float_Value := 0.0;
       Has_Duration_Ms : Boolean := False;
       Duration_Ms : UARP.Types.Integer_Value := 0;
+      --  The sentence a person reads, English on every deployment. Branch on `error_code`.
       Has_Error : Boolean := False;
       Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The failed run's code, passed through from the run record - a value from the `Error`
+      --  schema's `code` enum. Absent when the failure carries nothing to branch on. This board is
+      --  the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to
+      --  say by matching English in `error`.
+      Has_Error_Code : Boolean := False;
+      Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Numbers the code cannot carry - `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
+      --  `Run.error_details`.
+      Has_Error_Details : Boolean := False;
+      Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       --  Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
       --  the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
       --  client supplied at run creation and has never been stored on production (measured 2026-09-10

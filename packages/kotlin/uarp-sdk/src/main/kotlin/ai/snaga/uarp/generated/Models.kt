@@ -24552,7 +24552,24 @@ public data class TenantOverviewRunsRecentItem(
     public val costUsd: Double? = null,
     @SerialName("duration_ms")
     public val durationMs: Long? = null,
+    /**
+     * The sentence a person reads, English on every deployment. Branch on `error_code`.
+     */
     public val error: String? = null,
+    /**
+     * The failed run's code, passed through from the run record — a value from the `Error`
+     * schema's `code` enum. Absent when the failure carries nothing to branch on. This board is
+     * the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to
+     * say by matching English in `error`.
+     */
+    @SerialName("error_code")
+    public val errorCode: String? = null,
+    /**
+     * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
+     * `Run.error_details`.
+     */
+    @SerialName("error_details")
+    public val errorDetails: JsonObject? = null,
     /**
      * Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
      * the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a

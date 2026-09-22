@@ -32341,14 +32341,23 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
     public var createdAt: String?
     public var costUsd: Double?
     public var durationMs: Int?
+    /// The sentence a person reads, English on every deployment. Branch on `error_code`.
     public var error: String?
+    /// The failed run's code, passed through from the run record — a value from the `Error`
+    /// schema's `code` enum. Absent when the failure carries nothing to branch on. This board is
+    /// the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to
+    /// say by matching English in `error`.
+    public var errorCode: String?
+    /// Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
+    /// `Run.error_details`.
+    public var errorDetails: JSONObject?
     /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
     /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
     /// client supplied at run creation and has never been stored on production (measured 2026-09-10
     /// over 8605 run records: absent 7738, bridge 867, async 0).
     public var executionMode: RunExecutionMode?
 
-    public init(runId: String, agentId: String, status: String, createdAt: String? = nil, costUsd: Double? = nil, durationMs: Int? = nil, error: String? = nil, executionMode: RunExecutionMode? = nil) {
+    public init(runId: String, agentId: String, status: String, createdAt: String? = nil, costUsd: Double? = nil, durationMs: Int? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, executionMode: RunExecutionMode? = nil) {
         self.runId = runId
         self.agentId = agentId
         self.status = status
@@ -32356,6 +32365,8 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
         self.costUsd = costUsd
         self.durationMs = durationMs
         self.error = error
+        self.errorCode = errorCode
+        self.errorDetails = errorDetails
         self.executionMode = executionMode
     }
 
@@ -32367,6 +32378,8 @@ public struct TenantOverviewRunsRecentItem: Codable, Hashable, Sendable {
         case costUsd = "cost_usd"
         case durationMs = "duration_ms"
         case error = "error"
+        case errorCode = "error_code"
+        case errorDetails = "error_details"
         case executionMode = "execution_mode"
     }
 }

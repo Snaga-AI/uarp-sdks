@@ -56141,6 +56141,12 @@ package body UARP.Models is
       if Model.Has_Error then
          JS.Set (Result, "error", JS.JSON.Create (Model.Error));
       end if;
+      if Model.Has_Error_Code then
+         JS.Set (Result, "error_code", JS.JSON.Create (Model.Error_Code));
+      end if;
+      if Model.Has_Error_Details then
+         JS.Set (Result, "error_details", Model.Error_Details);
+      end if;
       if Model.Has_Execution_Mode then
          JS.Set (Result, "execution_mode", To_JSON (Model.Execution_Mode));
       end if;
@@ -56174,6 +56180,14 @@ package body UARP.Models is
       if JS.Present (Node, "error") then
          Result.Has_Error := True;
          Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "error_code") then
+         Result.Has_Error_Code := True;
+         Result.Error_Code := JS.As_Text (JS.Get_Value (Node, "error_code"));
+      end if;
+      if JS.Present (Node, "error_details") then
+         Result.Has_Error_Details := True;
+         Result.Error_Details := JS.Get_Value (Node, "error_details");
       end if;
       if JS.Present (Node, "execution_mode") then
          Result.Has_Execution_Mode := True;

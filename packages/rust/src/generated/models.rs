@@ -24132,8 +24132,19 @@ pub struct TenantOverviewRunsRecentItem {
     pub cost_usd: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i64>,
+    /// The sentence a person reads, English on every deployment. Branch on `error_code`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// The failed run's code, passed through from the run record — a value from the `Error`
+    /// schema's `code` enum. Absent when the failure carries nothing to branch on. This board is
+    /// the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to
+    /// say by matching English in `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
+    /// `Run.error_details`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
     /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
     /// client supplied at run creation and has never been stored on production (measured 2026-09-10

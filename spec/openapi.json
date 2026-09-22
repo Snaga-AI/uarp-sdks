@@ -16549,7 +16549,17 @@
                                             "type": "integer"
                                         },
                                         "error": {
-                                            "type": "string"
+                                            "type": "string",
+                                            "description": "The sentence a person reads, English on every deployment. Branch on `error_code`."
+                                        },
+                                        "error_code": {
+                                            "type": "string",
+                                            "description": "The failed run's code, passed through from the run record — a value from the `Error` schema's `code` enum. Absent when the failure carries nothing to branch on. This board is the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to say by matching English in `error`."
+                                        },
+                                        "error_details": {
+                                            "type": "object",
+                                            "additionalProperties": true,
+                                            "description": "Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See `Run.error_details`."
                                         },
                                         "execution_mode": {
                                             "type": "string",
