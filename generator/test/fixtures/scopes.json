@@ -1,0 +1,62 @@
+{
+  "openapi": "3.1.0",
+  "info": { "title": "Scopes", "version": "1.0.0" },
+  "servers": [{ "url": "https://api.test" }],
+  "security": [{ "bearerAuth": [] }],
+  "paths": {
+    "/agents": {
+      "get": {
+        "operationId": "listAgents",
+        "summary": "List agents",
+        "tags": ["Agents"],
+        "x-scopes": ["agents:read"],
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      },
+      "post": {
+        "operationId": "createAgent",
+        "summary": "Create an agent",
+        "tags": ["Agents"],
+        "security": [{ "bearerAuth": ["agents:write"] }],
+        "responses": {
+          "201": {
+            "description": "Created",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    },
+    "/health": {
+      "get": {
+        "operationId": "health",
+        "summary": "Health",
+        "tags": ["Health"],
+        "security": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": { "application/json": { "schema": { "type": "object" } } }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "x-scopes": {
+          "agents:read": "Read agents.",
+          "agents:write": "Write agents.",
+          "billing:read": "Read billing."
+        }
+      }
+    }
+  }
+}

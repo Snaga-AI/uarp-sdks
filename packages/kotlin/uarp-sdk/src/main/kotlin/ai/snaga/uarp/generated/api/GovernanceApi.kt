@@ -46,6 +46,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Veto
      *
+     * Records an ambassador veto against a target named by `target_type` and `target_id`, with a
+     * reason; admin or founder only (403). The issuer is the authenticated tenant and is never
+     * taken from the body, and that identity must itself be a registered ambassador carrying
+     * `can_veto` — otherwise the store refuses the veto. The veto is appended to the immutable
+     * ledger. It is a record: this endpoint does not itself change the state of whatever was
+     * vetoed. 201.
+     *
      * `POST /api/v1/governance/ambassador/veto`
      */
     public suspend fun ambassadorVeto(body: AmbassadorVetoRequest, options: RequestOptions = RequestOptions()): VetoRecord {
@@ -62,6 +69,14 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Amend constitution
+     *
+     * Applies a single amendment to the constitution; admin or founder only (403). `rule_id` and
+     * `action` are required (400) and `action` must be exactly `add`, `modify` or `remove` (422) —
+     * an unlisted verb used to bump the version and append an amendment while doing nothing. A
+     * founder amends on direct authority; an admin acts as a delegated voting source and must
+     * supply `proposal_id` as authorisation proof (400 without it). The amendment is mirrored into
+     * the immutable ledger by the store and the enforcement cache is invalidated; the amended
+     * constitution is returned.
      *
      * `POST /api/v1/governance/constitution/amend`
      */
@@ -80,6 +95,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Bootstrap first ambassador
      *
+     * Registers the tenant's founder ambassador, the identity every later veto is checked against;
+     * admin or founder only (403). The body is optional: `founder_id` and `name` override,
+     * otherwise the platform founder configuration is consulted, then the deployment's founder
+     * environment variables, and finally the tenant id itself is used — so the call cannot fail
+     * for want of an identity. The bootstrap is appended to the immutable ledger and the created
+     * ambassador is returned with 201.
+     *
      * `POST /api/v1/governance/ambassador/ambassadors/bootstrap`
      */
     public suspend fun bootstrapAmbassador(options: RequestOptions = RequestOptions()): Ambassador {
@@ -95,6 +117,14 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Cast ballot
+     *
+     * Casts one ballot. The voter is the authenticated caller unless the body names an `agent_id`,
+     * which must name an agent of this tenant (400 otherwise) — without that check one caller
+     * could mint as many voters as it liked. `vote` must be `approve`, `reject` or `abstain`,
+     * `weight` must be a finite number in (0, 1\], `reasoning` at most 4000 and `signature` at
+     * most 1024 characters, each refused 400. The ballot is keyed by voter, so a second ballot
+     * from the same voter replaces the first rather than adding one. The proposal must still be
+     * `open` and before its deadline (422 otherwise). The cast is appended to the ledger; 201.
      *
      * `POST /api/v1/governance/voting/proposals/{proposalId}/ballot`
      */
@@ -113,6 +143,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Check for deadlock
      *
+     * Reports constitutional deadlock: every pair where a `requirement` rule's `obligated_action`
+     * is exactly what a `prohibition` rule forbids, with a recommendation to activate safe mode
+     * when any exist. Read-only, and the request body is not read. 404 when the tenant has no
+     * STORED constitution — the virtual genesis view that `GET /governance/constitution` serves is
+     * not substituted here, so a tenant that has never written one cannot run this check.
+     *
      * `POST /api/v1/governance/emergency/deadlock-check`
      */
     public suspend fun checkDeadlock(options: RequestOptions = RequestOptions()): DeadlockReport {
@@ -128,6 +164,15 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Check governance compliance
+     *
+     * Evaluates a proposed action against the tenant's constitution and answers whether it is
+     * allowed, which rules were checked, the violations found and the penalties they carry.
+     * `agent_id` and `action` are required (400); `run_id`, `team_id`, `role` and `metadata`
+     * narrow which rules apply. The evaluation is read-only — no violation record is written by
+     * this path. Everything is allowed when governance is disabled on the deployment or the tenant
+     * has no constitution, and everything is blocked by a synthetic `emergency-safe-mode` rule
+     * while emergency mode is active; a `permission` rule overrides a prohibition only at strictly
+     * higher priority and never overrides an immutable genesis rule.
      *
      * `POST /api/v1/governance/check`
      */
@@ -146,6 +191,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Check spawn permission
      *
+     * Asks whether `parent_agent_id` may spawn a child carrying `child_permissions`, and answers
+     * `allowed` with a reason when it is not. Read-only — nothing is stored and no agent is
+     * created. The gate refuses when the parent has no permission set, when its `can_spawn` is
+     * false, and when the resulting depth would exceed the policy's `max_depth`. The body is
+     * passed to the gate unvalidated, so a missing field arrives as undefined rather than as a
+     * validation error.
+     *
      * `POST /api/v1/governance/permissions/check-spawn`
      */
     public suspend fun checkSpawnPermission(body: CheckSpawnPermissionRequest, options: RequestOptions = RequestOptions()): PermissionCheckResult {
@@ -162,6 +214,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Create request
+     *
+     * Submits a request from an agent to the tenant's ambassadors, stored with status `pending`.
+     * Unlike the other mutations on this sub-handler there is no admin gate — any caller the
+     * governance router admits may file one. The body's `from_agent_id`, `type`, `subject` and
+     * `body` are passed to the store without validation, so a missing field is stored as undefined
+     * rather than refused. 201 with the created request.
      *
      * `POST /api/v1/governance/ambassador/requests`
      */
@@ -180,6 +238,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Create design request
      *
+     * Submits a design request for a new agent; admin or founder only — every non-GET on this
+     * sub-handler is refused 403 otherwise. `agent_name` and `agent_description` are required;
+     * role, model, tools, parent and rationale are optional because they are settled at approval.
+     * `submitted_by` is stamped from the authenticated caller and is not accepted from the body —
+     * the field naming who asked must not be supplied by whoever is asking. 201 with the stored
+     * request.
+     *
      * `POST /api/v1/governance/builder/requests`
      */
     public suspend fun createBuilderRequest(body: DesignRequestCreate, options: RequestOptions = RequestOptions()): DesignRequest {
@@ -196,6 +261,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Create goal
+     *
+     * Proposes a goal for an agent; admin or founder only — every non-GET on this sub-handler is
+     * refused 403 otherwise. `agent_id`, `title`, `description`, `rationale`,
+     * `alignment_justification`, `expected_impact` and `resource_estimate_usd` are all required
+     * (422): the justification and the cost estimate are the substance the later constitution
+     * check and vote act on. 201 with the stored goal.
      *
      * `POST /api/v1/governance/goals`
      */
@@ -214,6 +285,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Create improvement proposal
      *
+     * Proposes a change to an agent — a prompt edit, a tool addition or removal, a model change,
+     * parameter tuning or a new skill. `type`, `title`, `description`, `rationale`,
+     * `failed_run_ids`, `changes` and `baseline_success_rate` are all required (422), because the
+     * evidence is what the later review stages judge. The store assigns the proposal's version; it
+     * opens at status `proposed`, from which only `arbiter_review` or `rejected` are reachable.
+     * The creation is appended to the immutable ledger. 201.
+     *
      * `POST /api/v1/governance/improvement/{agentId}`
      */
     public suspend fun createImprovementProposal(agentId: String, body: CreateImprovementProposalRequest, options: RequestOptions = RequestOptions()): ImprovementProposal {
@@ -230,6 +308,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Create proposal
+     *
+     * Opens a governance proposal. `proposed_by` is taken from the authenticated caller — the user
+     * behind the credential, else the credential, else the tenant — and a value sent in the body
+     * is accepted and ignored, because a proposal that names its own proposer names nobody.
+     * `quorum` may not be set below 0.6 (422) and defaults to 0.6; `deadline_hours` defaults to 48
+     * and fixes the deadline past which ballots are refused. The proposal opens in `open` status
+     * and the creation is appended to the immutable ledger. 201.
      *
      * `POST /api/v1/governance/voting/proposals`
      */
@@ -266,6 +351,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Delete spawn policy
      *
+     * Removes the tenant's stored spawn policy, so `GET /governance/permissions/spawn-policy`
+     * answers the platform default again (`max_depth` 5 and the other defaults in
+     * governance/permission-gate.ts). Admin or founder only — any other role is refused 403.
+     * Idempotent: deleting when no override is stored is also 200 `{ok: true}`. Recorded in the
+     * governance ledger as `governance.permissions.spawn_policy_deleted`. Documented since the
+     * contract's first cut, the route had no handler until 2026-09-16 and answered 404.
+     *
      * `DELETE /api/v1/governance/permissions/spawn-policy`
      */
     public suspend fun deleteSpawnPolicy(options: RequestOptions = RequestOptions()): DeleteSpawnPolicyResponse {
@@ -281,6 +373,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * File appeal
+     *
+     * Files an appeal against a case. `filed_by` may be supplied for a delegated filing, but falls
+     * back to the authenticated user and then to the tenant, so the stored record always names a
+     * filer — it used to be written as undefined and vanish from the response. `reason` is passed
+     * through unvalidated. The appeal is appended to the immutable ledger and returned with 201.
      *
      * `POST /api/v1/governance/arbiter/cases/{caseId}/appeal`
      */
@@ -319,6 +416,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get agent obligations
      *
+     * Lists the constitution's `requirement` rules that apply to one agent: those scoped
+     * `all_agents`, and those scoped `agent` whose targets name it. Team- and role-scoped rules
+     * are deliberately omitted because this read has no run context to resolve them against. Each
+     * rule carries the same `advisory` flag the constitution read uses, so a requirement no code
+     * path can raise does not appear as a live obligation. A tenant with no stored constitution
+     * answers an empty list, not 404.
+     *
      * `GET /api/v1/governance/obligations/{agentId}`
      */
     public suspend fun getAgentObligations(agentId: String, options: RequestOptions = RequestOptions()): GetAgentObligationsResponse {
@@ -333,6 +437,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get agent permissions
+     *
+     * Returns the agent's stored permission set — allowed tools and roles, resource permissions,
+     * per-run budget ceiling, spawn depth and the `can_spawn` / `can_self_modify` flags. 404 when
+     * the agent has no permission set at all, which is a different thing from a set whose flags
+     * are all false.
      *
      * `GET /api/v1/governance/permissions/{agentId}`
      */
@@ -349,6 +458,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get agent violations
      *
+     * Returns the constitution violations recorded against one agent, up to 100, with a `count`.
+     * An agent with a clean record answers an empty list rather than 404 — nothing here
+     * distinguishes an unknown agent from an unviolating one.
+     *
      * `GET /api/v1/governance/violations/{agentId}`
      */
     public suspend fun getAgentViolations(agentId: String, options: RequestOptions = RequestOptions()): GetAgentViolationsResponse {
@@ -363,6 +476,8 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get ambassador
+     *
+     * Returns one ambassador record. 404 when the tenant has no ambassador with that id.
      *
      * `GET /api/v1/governance/ambassador/ambassadors/{ambassadorId}`
      */
@@ -379,6 +494,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get case
      *
+     * Returns one arbitration case — who filed it, against which agent, the rules cited, the
+     * evidence and the assigned arbiter. 404 when the tenant has no such case.
+     *
      * `GET /api/v1/governance/arbiter/cases/{caseId}`
      */
     public suspend fun getArbiterCase(caseId: String, options: RequestOptions = RequestOptions()): ArbiterCase {
@@ -393,6 +511,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get arbiter registry
+     *
+     * Returns the tenant's arbiter registry — the agent ids eligible to arbitrate, the panel size,
+     * the ruling deadline and the maximum number of appeals. This is the set `POST /arbiter/cases`
+     * draws an assignee from.
      *
      * `GET /api/v1/governance/arbiter/registry`
      */
@@ -409,6 +531,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get design request
      *
+     * Returns one design request with the proposed agent's name, description and optional role,
+     * model, tools and rationale, plus its current status and whoever the flow recorded as
+     * submitter. 404 when the tenant has no such request. Reads on this sub-handler are open to
+     * any caller the governance router admits; only the mutations are gated to admin or founder.
+     *
      * `GET /api/v1/governance/builder/requests/{requestId}`
      */
     public suspend fun getBuilderRequest(requestId: String, options: RequestOptions = RequestOptions()): DesignRequest {
@@ -423,6 +550,14 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get constitution
+     *
+     * Returns the tenant's constitution. Strictly side-effect-free: when no document has been
+     * stored the response is a virtual view of the platform genesis rules with `version: 0` and
+     * `virtual: true`, and nothing is written — an earlier self-heal bootstrapped the document on
+     * read and bypassed the ledger doing it. Every rule carries an `advisory` flag saying whether
+     * any code path can actually raise it, so a rule nothing enforces does not read as a live
+     * constraint. Governance sub-systems answer 501 when the deployment has governance switched
+     * off.
      *
      * `GET /api/v1/governance/constitution`
      */
@@ -439,6 +574,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get emergency state
      *
+     * Returns the tenant's emergency state. With nothing stored the answer is `{mode: "normal"}`
+     * rather than 404; a stored state also carries the reason, who activated it and the deadline.
+     * While the mode is anything but normal, `POST /governance/check` blocks every action against
+     * a synthetic `emergency-safe-mode` rule, so this read says whether the tenant's agents can
+     * act at all.
+     *
      * `GET /api/v1/governance/emergency/state`
      */
     public suspend fun getEmergencyState(options: RequestOptions = RequestOptions()): EmergencyState {
@@ -453,6 +594,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get goal
+     *
+     * Returns one governance goal with the agent it belongs to, its rationale, alignment
+     * justification, expected impact and resource estimate, and its current status. 404 when the
+     * tenant has no goal with that id. Reads here are open to any caller the governance router
+     * admits; only the mutations are gated to admin or founder.
      *
      * `GET /api/v1/governance/goals/{goalId}`
      */
@@ -507,6 +653,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get proposal
      *
+     * Returns one improvement proposal by agent and version number; the version segment must be
+     * digits or the path does not match this branch. 404 when no proposal exists at that version.
+     *
      * `GET /api/v1/governance/improvement/{agentId}/{version}`
      */
     public suspend fun getImprovementProposal(agentId: String, version: String, options: RequestOptions = RequestOptions()): ImprovementProposal {
@@ -521,6 +670,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get permission lineage
+     *
+     * Returns the agent's spawn lineage — the chain of ancestors and the depth the spawn gate
+     * computes from it. 404 when no lineage record exists, which is the case for an agent that was
+     * not created through the spawn path.
      *
      * `GET /api/v1/governance/permissions/{agentId}/lineage`
      */
@@ -537,6 +690,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get root agent
      *
+     * Returns `{root_agent_id}` — the agent designated to act under the emergency protocol. The
+     * value is null when none has been set; this is not a 404.
+     *
      * `GET /api/v1/governance/emergency/root-agent`
      */
     public suspend fun getRootAgent(options: RequestOptions = RequestOptions()): GetRootAgentResponse {
@@ -551,6 +707,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Get root attestation
+     *
+     * Returns the stored root attestation — the root agent id, the founder id, the founder's
+     * signature and the constitution hash it was made over. 404 when no attestation has been
+     * written.
      *
      * `GET /api/v1/governance/emergency/root-attestation`
      */
@@ -567,6 +727,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get spawn policy
      *
+     * Returns the tenant's spawn policy — maximum depth, child budget ratio, allowed roles, the
+     * depth above which approval is required, and the per-agent child cap. Platform defaults are
+     * merged UNDER the stored record, so a policy saved before a field existed still answers
+     * complete and a stored zero or empty list still wins; the tenant id is answered for the
+     * tenant that asked. Never 404: an unconfigured tenant gets the defaults.
+     *
      * `GET /api/v1/governance/permissions/spawn-policy`
      */
     public suspend fun getSpawnPolicy(options: RequestOptions = RequestOptions()): SpawnPolicy {
@@ -582,6 +748,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Get proposal
      *
+     * Returns one proposal with its type, quorum, status and deadline. 404 when the tenant has no
+     * such proposal.
+     *
      * `GET /api/v1/governance/voting/proposals/{proposalId}`
      */
     public suspend fun getVotingProposal(proposalId: String, options: RequestOptions = RequestOptions()): VotingProposal {
@@ -596,6 +765,15 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Issue ruling
+     *
+     * Enacts a ruling on an open case; admin or founder only (403) — arbiters are agents, so the
+     * authority that enacts a ruling is the operator. `arbiter_id` must be present AND equal the
+     * case's assigned arbiter (403); omitting it used to skip the check entirely. The case must
+     * exist (404). `case_id` comes from the URL and `ruled_at` from the server clock, neither from
+     * the body, so a ruling cannot be back-dated or filed against a different case than the one
+     * addressed. Any `penalties` are applied to the named agents after the ruling is stored — a
+     * penalty that fails is logged and does not fail the request — and the ruling is appended to
+     * the immutable ledger. `{ok: true}`.
      *
      * `POST /api/v1/governance/arbiter/cases/{caseId}/ruling`
      */
@@ -613,6 +791,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * List requests
+     *
+     * Lists ambassador requests for the tenant, optionally narrowed by a `status` query parameter
+     * of `pending`, `acknowledged` or `resolved`. An unrecognised status is passed through to the
+     * store rather than refused.
      *
      * `GET /api/v1/governance/ambassador/requests`
      */
@@ -633,6 +815,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List ambassadors
      *
+     * Lists the tenant's human ambassadors as a bare array — id, name, role and the three
+     * permission flags. No paging and no filter.
+     *
      * `GET /api/v1/governance/ambassador/ambassadors`
      */
     public suspend fun listAmbassadors(options: RequestOptions = RequestOptions()): List<Ambassador> {
@@ -647,6 +832,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * List vetoes
+     *
+     * Lists the tenant's veto records, up to 50, unpaged and unfiltered. Each record names who
+     * issued it, the target type and id it was issued against, and the reason. These are records
+     * of vetoes, not the effect of one — nothing here reflects whether the target was actually
+     * stopped.
      *
      * `GET /api/v1/governance/ambassador/vetoes`
      */
@@ -663,6 +853,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List cases
      *
+     * Lists the tenant's arbitration cases with their assigned arbiter and status. No paging, no
+     * filter.
+     *
      * `GET /api/v1/governance/arbiter/cases`
      */
     public suspend fun listArbiterCases(options: RequestOptions = RequestOptions()): ListArbiterCasesResponse {
@@ -677,6 +870,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * List ballots
+     *
+     * Returns the ballots cast on one proposal, up to 500, unpaged. A proposal that does not exist
+     * answers an empty list rather than 404, so an empty array here does not by itself mean nobody
+     * voted.
      *
      * `GET /api/v1/governance/voting/proposals/{proposalId}/ballots`
      */
@@ -693,6 +890,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List design requests
      *
+     * Lists the tenant's agent design requests — the builder flow's queue of proposed agents and
+     * their statuses. Reads are open to any caller the governance router admits; only the
+     * mutations on this sub-handler are gated.
+     *
      * `GET /api/v1/governance/builder/requests`
      */
     public suspend fun listBuilderRequests(options: RequestOptions = RequestOptions()): ListBuilderRequestsResponse {
@@ -707,6 +908,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * List goals
+     *
+     * Lists the tenant's governance goals, optionally narrowed to one agent with the `agent_id`
+     * query parameter. Reads are open to any caller the governance router admits; the mutations on
+     * this sub-handler are not.
      *
      * `GET /api/v1/governance/goals`
      */
@@ -727,6 +932,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List improvement proposals
      *
+     * Lists one agent's self-improvement proposals as a bare array, each with its version and
+     * status. No paging, no status filter.
+     *
      * `GET /api/v1/governance/improvement/{agentId}`
      */
     public suspend fun listImprovementProposals(agentId: String, options: RequestOptions = RequestOptions()): List<ImprovementProposal> {
@@ -742,6 +950,9 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * List proposals
      *
+     * Lists the tenant's governance proposals, up to 50. There is no paging, no status filter and
+     * no ordering parameter — the prefix is read as stored.
+     *
      * `GET /api/v1/governance/voting/proposals`
      */
     public suspend fun listVotingProposals(options: RequestOptions = RequestOptions()): ListVotingProposalsResponse {
@@ -756,6 +967,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Register ambassador
+     *
+     * Registers a human ambassador; admin or founder only (403). `ambassador_id` is required
+     * (400); a `role` outside `founder`, `ambassador` and `observer` is silently normalised to
+     * `observer` rather than refused, and the three permission flags default by role — `can_veto`
+     * and `can_propose` only for a founder, `can_audit` for everyone — unless the body sets them
+     * as booleans. The reply is `{ok: true}` with 201, not the stored record. Registering the same
+     * id again overwrites it.
      *
      * `POST /api/v1/governance/ambassador/ambassadors`
      */
@@ -774,6 +992,17 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Replace constitution
      *
+     * Replaces the tenant's constitution rules, and who may call it depends on whether one exists:
+     * provisioning the FIRST document is open to the tenant's own owner or admin, while replacing
+     * a stored one is founder-only — an admin must instead go through `POST /constitution/amend`
+     * with a passed proposal, so the same request that succeeded at genesis is 403 afterwards. A
+     * replay that would change nothing is answered from storage without a write, because the store
+     * always bumps the version and a bump carrying no amendment is exactly the audit-trail-free
+     * edit governance forbids. `rules` must be an array (400); immutable rules are preserved
+     * verbatim and an attempt to alter one is 400. Every accepted change is recorded as a typed
+     * amendment, appended to the immutable ledger, and the enforcement cache is invalidated at
+     * once.
+     *
      * `PUT /api/v1/governance/constitution`
      */
     public suspend fun replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = RequestOptions()): ConstitutionDocument {
@@ -790,6 +1019,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Resolve request
+     *
+     * Closes an ambassador request: admin or founder only (403), because resolving one is an
+     * adjudication and any tenant member could otherwise close it with text of their choosing.
+     * Sets the status to `resolved`, stores `body.response` on the record and stamps
+     * `resolved_at`. 404 when the request does not exist. Calling it again on an already-resolved
+     * request overwrites the response and the timestamp.
      *
      * `POST /api/v1/governance/ambassador/requests/{requestId}/resolve`
      */
@@ -831,6 +1066,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Set arbiter registry
      *
+     * WRITE SEMANTICS: replaces. Admin or founder only (403). The store spreads the body into a
+     * fresh record without reading the stored one, so every field — `arbiter_agent_ids`,
+     * `panel_size`, `ruling_deadline_hours` and `max_appeals` — must be present or the write is
+     * refused 422 naming what is missing; an omitted field would otherwise be gone rather than
+     * kept. `tenant_id` is stamped by the server and `updated_at` by the store. The reply is `{ok:
+     * true}`.
+     *
      * `PUT /api/v1/governance/arbiter/registry`
      */
     public suspend fun setArbiterRegistry(body: JsonObject, options: RequestOptions = RequestOptions()): SetArbiterRegistryResponse {
@@ -847,6 +1089,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Set root agent
+     *
+     * Designates the emergency root agent; admin or founder only (403). `agent_id` must be a
+     * non-empty string (422) — the value is stored verbatim and nothing else validates it, so junk
+     * here disables the emergency root path until the next valid write; the agent's existence is
+     * not checked. Writing the same id again leaves the same state.
      *
      * `PUT /api/v1/governance/emergency/root-agent`
      */
@@ -886,6 +1133,14 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Set spawn policy
      *
+     * WRITE SEMANTICS: replaces. Admin or founder only (403). Because the store writes the body
+     * without reading what is there, every field — `child_budget_ratio`, `max_depth`,
+     * `allowed_roles`, `require_approval_above_depth` and `max_children_per_agent` — must be
+     * present or the write is refused 422 naming the ones missing; a partial body used to delete
+     * the fields it omitted with a 200 and no warning. `tenant_id` is stamped by the server rather
+     * than taken from the caller. The change is appended to the immutable ledger; the reply is
+     * `{ok: true}`, not the stored policy.
+     *
      * `PUT /api/v1/governance/permissions/spawn-policy`
      */
     public suspend fun setSpawnPolicy(body: SpawnPolicyUpdate, options: RequestOptions = RequestOptions()): SetSpawnPolicyResponse {
@@ -903,6 +1158,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Tally votes
      *
+     * Computes the tally and, when the proposal passed, executes it (constitution amendment,
+     * permission change, agent termination). Admin or founder only since 2026-09-16; any member
+     * could call it before.
+     *
      * `POST /api/v1/governance/voting/proposals/{proposalId}/tally`
      */
     public suspend fun tallyVotes(proposalId: String, options: RequestOptions = RequestOptions()): VoteResult {
@@ -918,6 +1177,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Update request status
+     *
+     * Moves a design request to a new status; admin or founder only (403). `status` must be one of
+     * `pending`, `voting`, `approved`, `rejected` or `spawned` (422) — an unchecked value used to
+     * set the status to undefined, which no screen and no filter matches. There is no transition
+     * check, so any of the five may follow any other. `proposal_id` and `spawned_agent_id` ride
+     * along into the record and are deliberately not stripped, since they carry the authorisation
+     * for the move.
      *
      * `PUT /api/v1/governance/builder/requests/{requestId}/status`
      */
@@ -935,6 +1201,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Update goal status
+     *
+     * Moves a goal to a new status; admin or founder only (403). `status` must come from the
+     * seven-value vocabulary — `proposed`, `checking`, `voting`, `approved`, `rejected`, `active`,
+     * `completed` — and anything else is 422, where an unchecked string used to be stored
+     * verbatim. There is no transition check between them. `proposal_id` and
+     * `constitution_check_passed` are carried through to the record as the update's authorisation
+     * proof rather than stripped.
      *
      * `PUT /api/v1/governance/goals/{goalId}/status`
      */
@@ -979,6 +1252,15 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
     /**
      * Verify ledger integrity
      *
+     * Recomputes each entry's hash and its link to the previous one and reports `valid`,
+     * `entries_checked` and, on failure, the first bad sequence number with what went wrong — a
+     * missing entry, a broken `prev_hash` chain or a hash that no longer matches its content.
+     * Admin or founder only (403). When both `from` and `to` are given the window is validated
+     * exactly as the ledger read validates it — positive integers, ordered, at most 1000 apart,
+     * else 400 — because a coerced bound used to report a clean chain it had not looked at; with
+     * one bound or none the chain's own end supplies the rest and the whole chain is walked. The
+     * chain is global rather than per-tenant, so this verifies platform-wide integrity.
+     *
      * `GET /api/v1/governance/ledger/verify`
      */
     public suspend fun verifyGovernanceLedger(from: String? = null, to: String? = null, options: RequestOptions = RequestOptions()): LedgerIntegrity {
@@ -998,6 +1280,13 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
 
     /**
      * Veto proposal
+     *
+     * Overrules a proposal: admin or founder only (403). The proposal's status is set to `vetoed`
+     * regardless of the votes cast, and a vetoed result is recorded alongside it; the veto is
+     * appended to the immutable ledger. An optional `founder_id` must be a non-empty string of at
+     * most 256 characters (400) and only names the actor being logged — the tenant is what is
+     * recorded as the vetoer either way. An unknown proposal is 404. Repeating the call leaves the
+     * same state.
      *
      * `POST /api/v1/governance/voting/proposals/{proposalId}/veto`
      */

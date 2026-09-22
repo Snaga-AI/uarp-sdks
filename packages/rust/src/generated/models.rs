@@ -1289,6 +1289,10 @@ pub struct AdminConfigRetentionConfigRetention {
     pub archive_batch_size: i64,
     pub feed_ttl_days: i64,
     pub artifact_ttl_days: i64,
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notification_ttl_days: Option<i64>,
     pub checkpoint_ttl_hours: i64,
 }
 
@@ -1378,10 +1382,8 @@ pub struct AdminConfigToolSecurityConfig {
 /// `AdminConfigToolSecurityConfigToolSecurity` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminConfigToolSecurityConfigToolSecurity {
-    pub default_egress_policy: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub egress_allowlist_per_tenant: Option<Vec<String>>,
-    pub ssrf_deny_private_ranges: bool,
     pub default_tool_timeout_ms: i64,
     pub default_tool_max_payload_bytes: i64,
     pub default_tool_max_concurrency: i64,
@@ -1751,17 +1753,35 @@ pub struct AdminListWebhookDLQResponse {
 /// `AdminListWebhookDLQResponseEntry` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminListWebhookDLQResponseEntry {
+    /// Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
     #[serde(rename = "eventId")]
     pub event_id: String,
+    /// Deprecated spelling of `event_type` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `event_type`.
     #[serde(rename = "eventType")]
     pub event_type: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub payload: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Deprecated spelling of `error_message` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `error_message`.
     #[serde(rename = "errorMessage")]
     pub error_message: String,
     pub timestamp: String,
+    /// Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
     #[serde(rename = "tenantId", default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+    #[serde(rename = "event_id")]
+    pub event_id_: String,
+    #[serde(rename = "event_type")]
+    pub event_type_: String,
+    #[serde(rename = "error_message")]
+    pub error_message_: String,
+    #[serde(rename = "tenant_id", default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id_: Option<String>,
 }
 
 /// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. The stored catalogue or,
@@ -2212,10 +2232,14 @@ pub struct AdminRegistrationConfigWaitlistItem {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminReplayWebhookDLQResponse {
     pub success: bool,
+    /// Deprecated spelling of `event_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `event_id`.
     #[serde(rename = "eventId")]
     pub event_id: String,
     pub action: String,
     pub message: String,
+    #[serde(rename = "event_id")]
+    pub event_id_: String,
 }
 
 /// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
@@ -2313,12 +2337,6 @@ impl From<&str> for AdminSmtpConfigSource {
             other => Self::Other(other.to_string()),
         }
     }
-}
-
-/// Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct AdminSpecPackagesList {
-    pub packages: Vec<SpecPackage>,
 }
 
 /// bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. Secrets are redacted to
@@ -2426,8 +2444,20 @@ pub struct Agent {
     pub status: Option<AgentStatus>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_changed_at: Option<String>,
+    /// Why the agent is in this status, as a sentence. One field with six writers — a person, an
+    /// operator, four governance paths and a plan downgrade — so its language is whichever the
+    /// writer used, and every reader sees that one. Branch on `status_reason_code`; render this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status_reason: Option<String>,
+    /// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+    /// rendered as-is; the other five are the platform's English, and a client may say them in the
+    /// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_reason_code: Option<AgentStatusReasonCode>,
+    /// The identifier the platform's sentence quotes: `case_id`, `proposal_id`, `rule_id`. Absent
+    /// for `manual`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status_reason_details: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub autonomy: Option<AgentAutonomy>,
     /// Per-tool trust, overriding the agent's default approval policy.
@@ -3297,6 +3327,64 @@ impl From<&str> for AgentStatus {
     }
 }
 
+/// Who wrote `status_reason`. `manual` means the sentence is the caller's own and should be
+/// rendered as-is; the other five are the platform's English, and a client may say them in the
+/// reader's language using `status_reason_details` for the identifier. Added 2026-09-21.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum AgentStatusReasonCode {
+    #[default]
+    #[serde(rename = "manual")]
+    Manual,
+    #[serde(rename = "proposal_passed")]
+    ProposalPassed,
+    #[serde(rename = "arbiter_ruling")]
+    ArbiterRuling,
+    #[serde(rename = "arbiter_penalty")]
+    ArbiterPenalty,
+    #[serde(rename = "constitutional_penalty")]
+    ConstitutionalPenalty,
+    #[serde(rename = "plan_downgrade")]
+    PlanDowngrade,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl AgentStatusReasonCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Manual => "manual",
+            Self::ProposalPassed => "proposal_passed",
+            Self::ArbiterRuling => "arbiter_ruling",
+            Self::ArbiterPenalty => "arbiter_penalty",
+            Self::ConstitutionalPenalty => "constitutional_penalty",
+            Self::PlanDowngrade => "plan_downgrade",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for AgentStatusReasonCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for AgentStatusReasonCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "manual" => Self::Manual,
+            "proposal_passed" => Self::ProposalPassed,
+            "arbiter_ruling" => Self::ArbiterRuling,
+            "arbiter_penalty" => Self::ArbiterPenalty,
+            "constitutional_penalty" => Self::ConstitutionalPenalty,
+            "plan_downgrade" => Self::PlanDowngrade,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `AgentSummary` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AgentSummary {
@@ -4079,8 +4167,7 @@ pub struct AppleNativeAuthResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ApplyProgramRequest {
     pub session_id: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub start_date: Option<String>,
+    pub start_date: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_id: Option<String>,
 }
@@ -4564,8 +4651,19 @@ pub struct BridgeConnection {
 /// `BridgeDelegateRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct BridgeDelegateRequest {
+    /// The bridge agent to hand the task to.
     pub agent_id: String,
-    pub context: serde_json::Map<String, serde_json::Value>,
+    /// The task itself. Required: the handler answers 400 when either this or agent_id is missing.
+    /// This block used to omit it entirely while requiring `context`, which the handler never
+    /// checks — so a body written from the document was refused for a field it was told to send,
+    /// and accepted without the one that is actually needed. Measured 2026-09-18.
+    pub message: String,
+    /// Optional.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub priority: Option<String>,
+    /// Optional. Rendered into the message ahead of it when present.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub context: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `BridgeDelegateResponse` model.
@@ -5091,11 +5189,17 @@ pub struct CancelSquadRunResponse {
     pub cancelled: bool,
     pub team_run_id: String,
     /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    /// Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_count`.
     #[serde(rename = "cancelledCount")]
     pub cancelled_count: i64,
     /// False when no orchestration loop was in flight in this process — the run had already
     /// settled, or it belongs to another replica.
     pub orchestrator_stopped: bool,
+    /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    #[serde(rename = "cancelled_count")]
+    pub cancelled_count_: i64,
 }
 
 /// `CancelTeamRunResponse` model.
@@ -5104,11 +5208,17 @@ pub struct CancelTeamRunResponse {
     pub cancelled: bool,
     pub team_run_id: String,
     /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    /// Deprecated spelling of `cancelled_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_count`.
     #[serde(rename = "cancelledCount")]
     pub cancelled_count: i64,
     /// False when no orchestration loop was in flight in this process — the run had already
     /// settled, or it belongs to another replica.
     pub orchestrator_stopped: bool,
+    /// Child runs actually stopped. Zero is normal for a run whose children had already finished.
+    #[serde(rename = "cancelled_count")]
+    pub cancelled_count_: i64,
 }
 
 /// visual-builder.ts CanvasEdge.
@@ -5217,7 +5327,8 @@ pub struct CanvasWorkflowStep {
 pub struct CastBallotRequest {
     pub agent_id: String,
     pub vote: String,
-    /// Voting weight; 0 \< w ≤ 100.
+    /// Voting weight; 0 \< w ≤ 1 (the same cap the cast_vote tool applies; 100 was accepted until
+    /// 2026-09-16).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub weight: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -5235,6 +5346,7 @@ pub struct ChatCompletionRequest {
     pub messages: Vec<ChatCompletionRequestMessage>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub temperature: Option<f64>,
+    /// Values below 1 are clamped, not refused.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<i64>,
     /// Server default: `false`.
@@ -5469,6 +5581,15 @@ pub struct CheckGovernanceRequest {
 pub struct CheckSpawnPermissionRequest {
     pub parent_agent_id: String,
     pub child_permissions: PermissionSet,
+}
+
+/// `ClearBillingBudgetResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ClearBillingBudgetResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `CloseSessionResponse` model.
@@ -6549,17 +6670,6 @@ pub struct CreateAdminProviderResponseDefaultCapabilities {
     pub max_output_tokens: Option<i64>,
 }
 
-/// `CreateAdminSpecPackageStripePriceResponse` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CreateAdminSpecPackageStripePriceResponse {
-    pub package_id: String,
-    pub stripe_price_id: String,
-    pub stripe_product_id: String,
-    pub amount_cents: i64,
-    pub currency: String,
-    pub interval: SpecPackagePricingBillingInterval,
-}
-
 /// `CreateAgentBookmarkRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAgentBookmarkRequest {
@@ -6859,7 +6969,16 @@ pub struct CreateExperimentRequestVariant {
 /// `CreateGoalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateGoalRequest {
+    /// The agent the goal is for.
     pub agent_id: String,
+    pub title: String,
+    pub description: String,
+    pub rationale: String,
+    /// How the goal sits with the constitution — what the later check reads.
+    pub alignment_justification: String,
+    pub expected_impact: String,
+    /// What it is expected to cost. The vote acts on this number.
+    pub resource_estimate_usd: f64,
 }
 
 /// `CreateGuardrailRequest` model.
@@ -6882,7 +7001,17 @@ pub struct CreateGuardrailRequest {
 /// `CreateImprovementProposalRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateImprovementProposalRequest {
+    /// What kind of change is proposed.
     pub r#type: String,
+    pub title: String,
+    pub description: String,
+    pub rationale: String,
+    /// The runs this is a response to — the evidence the review stages judge.
+    pub failed_run_ids: Vec<String>,
+    /// The change itself, in the shape the proposal type implies.
+    pub changes: serde_json::Map<String, serde_json::Value>,
+    /// What the agent achieves today, so it can be measured against something.
+    pub baseline_success_rate: f64,
 }
 
 /// `CreateIntegrationRequest` model.
@@ -6907,10 +7036,29 @@ pub struct CreateMCPServerRequest {
     pub command: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub args: Option<Vec<String>>,
+    /// Secrets for this server. Encrypted at rest and never returned; only `env_count` is
+    /// disclosed. For an http server the key named by `auth.env_key` (default `MCP_API_KEY`) is the
+    /// one sent as the credential.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents to connect the server to. Omit or leave empty and no agent sees its tools.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub enabled: Option<bool>,
+    /// Names an environment variable of the API process whose value is sent to this server as a
+    /// bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+    /// boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+    /// tenant admin registering `{url: \<their server\>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+    /// mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+    /// never echoed back; only the ref is stored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_ref: Option<String>,
+    /// Hosts this server may be reached at, checked with DNS resolution.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub egress_allowlist: Option<Vec<String>>,
 }
 
 /// `CreateMyTenantRequest` model.
@@ -6941,9 +7089,49 @@ pub struct CreatePlanStripePriceRequest {
     pub currency: Option<String>,
     /// Server default: `"month"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub interval: Option<SpecPackagePricingBillingInterval>,
+    pub interval: Option<CreatePlanStripePriceRequestInterval>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub product_name: Option<String>,
+}
+
+/// `CreatePlanStripePriceRequestInterval` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CreatePlanStripePriceRequestInterval {
+    #[default]
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CreatePlanStripePriceRequestInterval {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Month => "month",
+            Self::Year => "year",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CreatePlanStripePriceRequestInterval {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CreatePlanStripePriceRequestInterval {
+    fn from(value: &str) -> Self {
+        match value {
+            "month" => Self::Month,
+            "year" => Self::Year,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `CreatePlanStripePriceResponse` model.
@@ -7259,31 +7447,12 @@ pub struct CreateSessionTodoRequest {
     pub status: Option<String>,
 }
 
-/// `CreateSpecPackageCheckoutSessionRequest` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct CreateSpecPackageCheckoutSessionRequest {
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (<https://snaga.ai> on production); an absolute URL on one of those two origins;
-    /// or the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: `/browser/settings/billing?spec_package={packageId}` on that origin.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub success_url: Option<String>,
-    /// Where to send the customer afterwards (billing.ts resolveReturnTarget, since #457): a path,
-    /// resolved against the caller's origin (`Origin`, then `Referer`) or, without one, the public
-    /// web origin (<https://snaga.ai> on production); an absolute URL on one of those two origins;
-    /// or the app's own scheme — `snaga://…`, the same test the OAuth callback uses
-    /// (isMobileReturnTo), which is what the iOS and Android apps send. Anything else is 422.
-    /// Absent or empty: the billing settings page (`/browser/settings/billing`) on that origin.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub cancel_url: Option<String>,
-}
-
 /// `CreateSpecPackageCheckoutSessionResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateSpecPackageCheckoutSessionResponse {
-    pub url: String,
+    pub error: InvokeListingAgentResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
 }
 
 /// `CreateVotingProposalRequest` model.
@@ -7320,7 +7489,7 @@ pub struct CustomPlan {
     /// Pairs the plan with a promo program. Absent when unset.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub program: Option<String>,
-    pub base_plan: SpecPackageIncludedInPlan,
+    pub base_plan: CustomPlanBasePlan,
     pub price_amount_cents: i64,
     pub price_currency: String,
     /// Absent when unset.
@@ -7336,6 +7505,54 @@ pub struct CustomPlan {
     pub updated_at: String,
 }
 
+/// `CustomPlanBasePlan` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum CustomPlanBasePlan {
+    #[default]
+    #[serde(rename = "free")]
+    Free,
+    #[serde(rename = "starter")]
+    Starter,
+    #[serde(rename = "pro")]
+    Pro,
+    #[serde(rename = "enterprise")]
+    Enterprise,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl CustomPlanBasePlan {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Free => "free",
+            Self::Starter => "starter",
+            Self::Pro => "pro",
+            Self::Enterprise => "enterprise",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for CustomPlanBasePlan {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for CustomPlanBasePlan {
+    fn from(value: &str) -> Self {
+        match value {
+            "free" => Self::Free,
+            "starter" => Self::Starter,
+            "pro" => Self::Pro,
+            "enterprise" => Self::Enterprise,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `CustomPlanInput` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CustomPlanInput {
@@ -7344,7 +7561,7 @@ pub struct CustomPlanInput {
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub program: Option<String>,
-    pub base_plan: SpecPackageIncludedInPlan,
+    pub base_plan: CustomPlanBasePlan,
     pub price_amount_cents: i64,
     /// Server default: `"usd"`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -7438,11 +7655,21 @@ pub struct DataSubjectAccessReport {
     pub memory: Vec<String>,
     pub files: Vec<String>,
     pub feedback: Vec<String>,
+    /// Core-memory labels, when the subject is an agent. A human subject has no core-memory rows of
+    /// their own.
+    pub core_memory: Vec<String>,
     pub runs_count: i64,
     pub sessions_count: i64,
     pub memory_count: i64,
+    pub core_memory_count: i64,
     pub files_count: i64,
     pub feedback_count: i64,
+    /// What this endpoint does NOT return, named rather than left to be assumed: the record
+    /// CONTENTS (each list is identifiers, to be fetched through the per-record routes), and the
+    /// families that carry no subject identifier at all — knowledge-base documents and workspace
+    /// files.
+    pub not_exported: Vec<String>,
+    pub swept: SubjectSweep,
 }
 
 /// data-subject.ts dataSubjectErasure — `erased` plus the SubjectErasureCounts spread.
@@ -7453,8 +7680,15 @@ pub struct DataSubjectErasureResult {
     pub runs_deleted: i64,
     pub sessions_deleted: i64,
     pub memory_deleted: i64,
+    pub core_memory_deleted: i64,
     pub files_deleted: i64,
     pub feedback_deleted: i64,
+    /// Record families this sweep did not touch, and why. Knowledge-base documents and workspace
+    /// files carry no subject identifier of any kind, so there is nothing to match a subject on and
+    /// no honest way to erase theirs without erasing everyone's — the caller is told, with the
+    /// route to do it by hand.
+    pub not_erased: Vec<String>,
+    pub swept: SubjectSweep,
 }
 
 /// `DeactivateSafeModeResponse` model.
@@ -7470,17 +7704,34 @@ pub struct DeactivateSafeModeResponse {
 /// the wire.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeadlockReport {
+    /// Deprecated spelling of `has_deadlock` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `has_deadlock`.
     #[serde(rename = "hasDeadlock")]
     pub has_deadlock: bool,
+    /// Deprecated spelling of `conflicting_rules` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `conflicting_rules`.
     #[serde(rename = "conflictingRules")]
     pub conflicting_rules: Vec<DeadlockReportConflictingRule>,
     pub recommendation: String,
     pub checked_at: String,
+    #[serde(rename = "has_deadlock")]
+    pub has_deadlock_: bool,
+    #[serde(rename = "conflicting_rules")]
+    pub conflicting_rules_: Vec<DeadlockReportConflictingRule2>,
 }
 
 /// `DeadlockReportConflictingRule` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeadlockReportConflictingRule {
+    pub prohibition: String,
+    pub requirement: String,
+}
+
+/// `DeadlockReportConflictingRule2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeadlockReportConflictingRule2 {
     pub prohibition: String,
     pub requirement: String,
 }
@@ -7539,42 +7790,6 @@ pub struct DeleteAgentResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteAllAgentBookmarksResponse {
     pub removed: i64,
-}
-
-/// `DeleteCustomPlanForce` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum DeleteCustomPlanForce {
-    #[default]
-    #[serde(rename = "1")]
-    V1,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl DeleteCustomPlanForce {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::V1 => "1",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for DeleteCustomPlanForce {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for DeleteCustomPlanForce {
-    fn from(value: &str) -> Self {
-        match value {
-            "1" => Self::V1,
-            other => Self::Other(other.to_string()),
-        }
-    }
 }
 
 /// `DeleteCustomPlanResponse` model.
@@ -7643,6 +7858,28 @@ pub struct DeleteMeResponse {
     pub deleted: bool,
     pub tenants: Vec<DeleteMeResponseTenant>,
     pub sessions_revoked: i64,
+    /// What the data sweep actually removed, summed across every membership. Present since
+    /// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+    /// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+    /// deleted nothing.
+    pub erased: DeleteMeResponseErased,
+    /// Record families the sweep cannot reach, named rather than left to be assumed. Same list as
+    /// `/data-subject/erasure`.
+    pub not_erased: Vec<String>,
+}
+
+/// What the data sweep actually removed, summed across every membership. Present since
+/// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
+/// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
+/// deleted nothing.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeleteMeResponseErased {
+    pub runs: i64,
+    pub sessions: i64,
+    pub memory: i64,
+    pub core_memory: i64,
+    pub files: i64,
+    pub feedback: i64,
 }
 
 /// `DeleteMeResponseTenant` model.
@@ -7654,9 +7891,13 @@ pub struct DeleteMeResponseTenant {
 /// `DeleteModelPricingOverrideResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DeleteModelPricingOverrideResponse {
+    /// Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
     #[serde(rename = "modelRef")]
     pub model_ref: String,
     pub deleted: bool,
+    #[serde(rename = "model_ref")]
+    pub model_ref_: String,
 }
 
 /// `DeleteNotificationResponse` model.
@@ -7854,15 +8095,16 @@ pub struct DesignRequest {
     pub updated_at: String,
 }
 
-/// Body for `POST /api/v1/governance/builder/requests`.
+/// Body for `POST /api/v1/governance/builder/requests`. What `DesignRequestSubmitSchema`
+/// requires: `agent_name` and `agent_description`, neither optional. `submitted_by` is NOT
+/// accepted from the body — it comes from the authenticated caller. The block carried no
+/// `required` at all until 2026-09-18.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct DesignRequestCreate {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub submitted_by: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_name: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_description: Option<String>,
+    pub agent_name: String,
+    pub agent_description: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent_role: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8400,6 +8642,7 @@ pub struct DrawingOp {
     pub fit: Option<DrawingOpFit>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub layer: Option<DrawingLayer>,
+    /// Values below 0 are clamped, not refused.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub index: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -8927,11 +9170,21 @@ pub struct EmptyWorkspaceTrashResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EndpointRateLimit {
     pub pattern: String,
+    /// Deprecated spelling of `max_requests` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `max_requests`.
     #[serde(rename = "maxRequests")]
     pub max_requests: i64,
+    /// Deprecated spelling of `window_sec` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `window_sec`.
     #[serde(rename = "windowSec")]
     pub window_sec: i64,
     pub source: GuardrailConfigItemSource,
+    #[serde(rename = "max_requests")]
+    pub max_requests_: i64,
+    #[serde(rename = "window_sec")]
+    pub window_sec_: i64,
 }
 
 /// `EnforcementResult` model.
@@ -8939,15 +9192,32 @@ pub struct EndpointRateLimit {
 pub struct EnforcementResult {
     /// False when any matched rule carries a blocking penalty.
     pub allowed: bool,
+    /// Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `check_result`.
     #[serde(rename = "checkResult")]
     pub check_result: EnforcementResultCheckResult,
     /// What the matched rules call for. Empty when nothing matched.
     pub penalties: Vec<EnforcementResultPenalty>,
+    #[serde(rename = "check_result")]
+    pub check_result_: EnforcementResultCheckResult2,
 }
 
-/// `EnforcementResultCheckResult` model.
+/// Deprecated spelling of `check_result` — the same value, kept for the compatibility window
+/// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+/// `check_result`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResultCheckResult {
+    pub allowed: bool,
+    /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
+    pub checked_rules: Vec<String>,
+    pub violations: Vec<ConstitutionViolation>,
+    pub checked_at: String,
+}
+
+/// `EnforcementResultCheckResult2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct EnforcementResultCheckResult2 {
     pub allowed: bool,
     /// Rule ids actually evaluated. Empty means no rule applied — never that nothing was checked.
     pub checked_rules: Vec<String>,
@@ -8958,9 +9228,13 @@ pub struct EnforcementResultCheckResult {
 /// `EnforcementResultPenalty` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct EnforcementResultPenalty {
+    /// Deprecated spelling of `rule_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `rule_id`.
     #[serde(rename = "ruleId")]
     pub rule_id: String,
     pub penalty: ConstitutionRulePenalty,
+    #[serde(rename = "rule_id")]
+    pub rule_id_: String,
 }
 
 /// `EnrolMfaRequest` model.
@@ -9020,7 +9294,8 @@ impl From<&str> for EnrolMfaRequestAlgorithm {
     }
 }
 
-/// RFC 9457 problem+json style error; correlationId for request tracing.
+/// RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
+/// tracing — `correlationId` is the same value for the compatibility window.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Error {
     pub r#type: String,
@@ -9034,12 +9309,366 @@ pub struct Error {
     /// `title`. On a 500 it is the fixed sentence the sanitizer allows; 501–504 carry the handler's
     /// own operator guidance.
     pub detail: String,
-    /// Request ID for tracing
+    /// What a client should DO about this, as a value it can switch on — `detail` is for the person
+    /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+    /// document and the wire cannot drift apart. Two casings are on the wire and both are
+    /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+    /// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+    /// no machine-readable class.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<ErrorCode>,
+    /// Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
+    /// the compatibility window and removed in the next breaking release (the one that moves
+    /// `X-API-Version`). Read `correlation_id`.
     #[serde(rename = "correlationId", default, skip_serializing_if = "Option::is_none")]
     pub correlation_id: Option<String>,
     /// Field-level validation errors (present on 422 responses)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<ErrorError>>,
+    /// Request ID for tracing
+    #[serde(rename = "correlation_id", default, skip_serializing_if = "Option::is_none")]
+    pub correlation_id_: Option<String>,
+}
+
+/// What a client should DO about this, as a value it can switch on — `detail` is for the person
+/// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
+/// document and the wire cannot drift apart. Two casings are on the wire and both are
+/// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
+/// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
+/// no machine-readable class.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ErrorCode {
+    #[default]
+    #[serde(rename = "AAR_NOT_AVAILABLE")]
+    AarNotAvailable,
+    #[serde(rename = "ARTIFACT_INTEGRITY_ERROR")]
+    ArtifactIntegrityError,
+    #[serde(rename = "AUTH_ERROR")]
+    AuthError,
+    #[serde(rename = "BILLING_CANCELLED")]
+    BillingCancelled,
+    #[serde(rename = "BILLING_DISPUTED")]
+    BillingDisputed,
+    #[serde(rename = "BILLING_PAST_DUE")]
+    BillingPastDue,
+    #[serde(rename = "BUDGET_EXCEEDED")]
+    BudgetExceeded,
+    #[serde(rename = "CHECKSUM_MISMATCH")]
+    ChecksumMismatch,
+    #[serde(rename = "CONFIGURATION_ERROR")]
+    ConfigurationError,
+    #[serde(rename = "EVENT_STORE_ERROR")]
+    EventStoreError,
+    #[serde(rename = "EXTERNAL_SERVICE_ERROR")]
+    ExternalServiceError,
+    #[serde(rename = "FORBIDDEN")]
+    Forbidden,
+    #[serde(rename = "GUARDRAIL_VIOLATION")]
+    GuardrailViolation,
+    #[serde(rename = "INVALID_QUERY")]
+    InvalidQuery,
+    #[serde(rename = "INVALID_SHARE_LIST")]
+    InvalidShareList,
+    #[serde(rename = "INVALID_SHARE_TARGET")]
+    InvalidShareTarget,
+    #[serde(rename = "LLM_ERROR")]
+    LLMError,
+    #[serde(rename = "MAX_DURATION_EXCEEDED")]
+    MaxDurationExceeded,
+    #[serde(rename = "MAX_TOKENS_EXCEEDED")]
+    MaxTokensExceeded,
+    #[serde(rename = "MIGRATION_CONFLICT")]
+    MigrationConflict,
+    #[serde(rename = "MISSION_ALREADY_RUNNING")]
+    MissionAlreadyRunning,
+    #[serde(rename = "MISSION_CONCURRENCY_LIMIT")]
+    MissionConcurrencyLimit,
+    #[serde(rename = "MISSION_NOT_FOUND")]
+    MissionNotFound,
+    #[serde(rename = "MISSION_NOT_RUNNABLE")]
+    MissionNotRunnable,
+    #[serde(rename = "MISSION_NOT_RUNNING")]
+    MissionNotRunning,
+    #[serde(rename = "MISSION_ROUTE_NOT_FOUND")]
+    MissionRouteNotFound,
+    #[serde(rename = "NOT_FOUND")]
+    NotFound,
+    #[serde(rename = "NOT_YANKED")]
+    NotYanked,
+    #[serde(rename = "PAYLOAD_TOO_LARGE")]
+    PayloadTooLarge,
+    #[serde(rename = "PERSISTENCE_ERROR")]
+    PersistenceError,
+    #[serde(rename = "PLANNER_OUTPUT_INVALID")]
+    PlannerOutputInvalid,
+    #[serde(rename = "PLANNER_REFUSED")]
+    PlannerRefused,
+    #[serde(rename = "PRECONDITION_FAILED")]
+    PreconditionFailed,
+    #[serde(rename = "PRIVATE_NOT_SHARED")]
+    PrivateNotShared,
+    #[serde(rename = "PROMO_REDEMPTION_FAILED")]
+    PromoRedemptionFailed,
+    #[serde(rename = "QUOTA_EXCEEDED")]
+    QuotaExceeded,
+    #[serde(rename = "RATE_LIMIT_EXCEEDED")]
+    RateLimitExceeded,
+    #[serde(rename = "RESERVED_SCOPE")]
+    ReservedScope,
+    #[serde(rename = "RUN_CANCELLED")]
+    RunCancelled,
+    #[serde(rename = "SCOPE_MISMATCH")]
+    ScopeMismatch,
+    #[serde(rename = "SCOPE_TAKEN")]
+    ScopeTaken,
+    #[serde(rename = "SHARE_LIST_CONFLICT")]
+    ShareListConflict,
+    #[serde(rename = "SIZE_LIMIT")]
+    SizeLimit,
+    #[serde(rename = "SPEC_NOT_FOUND")]
+    SpecNotFound,
+    #[serde(rename = "TASK_GRAPH_FAILED")]
+    TaskGraphFailed,
+    #[serde(rename = "TEAM_ABORT")]
+    TeamAbort,
+    #[serde(rename = "VALIDATION_ERROR")]
+    ValidationError,
+    #[serde(rename = "VERSION_CONFLICT")]
+    VersionConflict,
+    #[serde(rename = "VERSION_NOT_FOUND")]
+    VersionNotFound,
+    #[serde(rename = "WORKSPACE_STORAGE_LIMIT")]
+    WorkspaceStorageLimit,
+    #[serde(rename = "YANK_CONFLICT")]
+    YankConflict,
+    #[serde(rename = "agent_not_found")]
+    AgentNotFound,
+    #[serde(rename = "already_bootstrapped")]
+    AlreadyBootstrapped,
+    #[serde(rename = "billing_not_configured")]
+    BillingNotConfigured,
+    #[serde(rename = "governance_not_enabled")]
+    GovernanceNotEnabled,
+    #[serde(rename = "incomplete_record")]
+    IncompleteRecord,
+    #[serde(rename = "inert_policy_field")]
+    InertPolicyField,
+    #[serde(rename = "inert_public_config_field")]
+    InertPublicConfigField,
+    #[serde(rename = "kb_chunk_limit")]
+    KbChunkLimit,
+    #[serde(rename = "kb_document_body_invalid")]
+    KbDocumentBodyInvalid,
+    #[serde(rename = "kb_document_too_large")]
+    KbDocumentTooLarge,
+    #[serde(rename = "kb_storage_limit")]
+    KbStorageLimit,
+    #[serde(rename = "kb_text_extraction_failed")]
+    KbTextExtractionFailed,
+    #[serde(rename = "limit_reached")]
+    LimitReached,
+    #[serde(rename = "plan_upgrade_required")]
+    PlanUpgradeRequired,
+    #[serde(rename = "provider_auth_failed")]
+    ProviderAuthFailed,
+    #[serde(rename = "provider_circuit_open")]
+    ProviderCircuitOpen,
+    #[serde(rename = "provider_not_configured")]
+    ProviderNotConfigured,
+    #[serde(rename = "provider_rate_limited")]
+    ProviderRateLimited,
+    #[serde(rename = "quota_exceeded")]
+    QuotaExceeded2,
+    #[serde(rename = "rate_limited")]
+    RateLimited,
+    #[serde(rename = "resource_limit_reached")]
+    ResourceLimitReached,
+    #[serde(rename = "run_input_timeout")]
+    RunInputTimeout,
+    #[serde(rename = "run_never_claimed")]
+    RunNeverClaimed,
+    #[serde(rename = "run_orphaned_restart")]
+    RunOrphanedRestart,
+    #[serde(rename = "run_quota_exceeded")]
+    RunQuotaExceeded,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ErrorCode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AarNotAvailable => "AAR_NOT_AVAILABLE",
+            Self::ArtifactIntegrityError => "ARTIFACT_INTEGRITY_ERROR",
+            Self::AuthError => "AUTH_ERROR",
+            Self::BillingCancelled => "BILLING_CANCELLED",
+            Self::BillingDisputed => "BILLING_DISPUTED",
+            Self::BillingPastDue => "BILLING_PAST_DUE",
+            Self::BudgetExceeded => "BUDGET_EXCEEDED",
+            Self::ChecksumMismatch => "CHECKSUM_MISMATCH",
+            Self::ConfigurationError => "CONFIGURATION_ERROR",
+            Self::EventStoreError => "EVENT_STORE_ERROR",
+            Self::ExternalServiceError => "EXTERNAL_SERVICE_ERROR",
+            Self::Forbidden => "FORBIDDEN",
+            Self::GuardrailViolation => "GUARDRAIL_VIOLATION",
+            Self::InvalidQuery => "INVALID_QUERY",
+            Self::InvalidShareList => "INVALID_SHARE_LIST",
+            Self::InvalidShareTarget => "INVALID_SHARE_TARGET",
+            Self::LLMError => "LLM_ERROR",
+            Self::MaxDurationExceeded => "MAX_DURATION_EXCEEDED",
+            Self::MaxTokensExceeded => "MAX_TOKENS_EXCEEDED",
+            Self::MigrationConflict => "MIGRATION_CONFLICT",
+            Self::MissionAlreadyRunning => "MISSION_ALREADY_RUNNING",
+            Self::MissionConcurrencyLimit => "MISSION_CONCURRENCY_LIMIT",
+            Self::MissionNotFound => "MISSION_NOT_FOUND",
+            Self::MissionNotRunnable => "MISSION_NOT_RUNNABLE",
+            Self::MissionNotRunning => "MISSION_NOT_RUNNING",
+            Self::MissionRouteNotFound => "MISSION_ROUTE_NOT_FOUND",
+            Self::NotFound => "NOT_FOUND",
+            Self::NotYanked => "NOT_YANKED",
+            Self::PayloadTooLarge => "PAYLOAD_TOO_LARGE",
+            Self::PersistenceError => "PERSISTENCE_ERROR",
+            Self::PlannerOutputInvalid => "PLANNER_OUTPUT_INVALID",
+            Self::PlannerRefused => "PLANNER_REFUSED",
+            Self::PreconditionFailed => "PRECONDITION_FAILED",
+            Self::PrivateNotShared => "PRIVATE_NOT_SHARED",
+            Self::PromoRedemptionFailed => "PROMO_REDEMPTION_FAILED",
+            Self::QuotaExceeded => "QUOTA_EXCEEDED",
+            Self::RateLimitExceeded => "RATE_LIMIT_EXCEEDED",
+            Self::ReservedScope => "RESERVED_SCOPE",
+            Self::RunCancelled => "RUN_CANCELLED",
+            Self::ScopeMismatch => "SCOPE_MISMATCH",
+            Self::ScopeTaken => "SCOPE_TAKEN",
+            Self::ShareListConflict => "SHARE_LIST_CONFLICT",
+            Self::SizeLimit => "SIZE_LIMIT",
+            Self::SpecNotFound => "SPEC_NOT_FOUND",
+            Self::TaskGraphFailed => "TASK_GRAPH_FAILED",
+            Self::TeamAbort => "TEAM_ABORT",
+            Self::ValidationError => "VALIDATION_ERROR",
+            Self::VersionConflict => "VERSION_CONFLICT",
+            Self::VersionNotFound => "VERSION_NOT_FOUND",
+            Self::WorkspaceStorageLimit => "WORKSPACE_STORAGE_LIMIT",
+            Self::YankConflict => "YANK_CONFLICT",
+            Self::AgentNotFound => "agent_not_found",
+            Self::AlreadyBootstrapped => "already_bootstrapped",
+            Self::BillingNotConfigured => "billing_not_configured",
+            Self::GovernanceNotEnabled => "governance_not_enabled",
+            Self::IncompleteRecord => "incomplete_record",
+            Self::InertPolicyField => "inert_policy_field",
+            Self::InertPublicConfigField => "inert_public_config_field",
+            Self::KbChunkLimit => "kb_chunk_limit",
+            Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
+            Self::KbDocumentTooLarge => "kb_document_too_large",
+            Self::KbStorageLimit => "kb_storage_limit",
+            Self::KbTextExtractionFailed => "kb_text_extraction_failed",
+            Self::LimitReached => "limit_reached",
+            Self::PlanUpgradeRequired => "plan_upgrade_required",
+            Self::ProviderAuthFailed => "provider_auth_failed",
+            Self::ProviderCircuitOpen => "provider_circuit_open",
+            Self::ProviderNotConfigured => "provider_not_configured",
+            Self::ProviderRateLimited => "provider_rate_limited",
+            Self::QuotaExceeded2 => "quota_exceeded",
+            Self::RateLimited => "rate_limited",
+            Self::ResourceLimitReached => "resource_limit_reached",
+            Self::RunInputTimeout => "run_input_timeout",
+            Self::RunNeverClaimed => "run_never_claimed",
+            Self::RunOrphanedRestart => "run_orphaned_restart",
+            Self::RunQuotaExceeded => "run_quota_exceeded",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ErrorCode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ErrorCode {
+    fn from(value: &str) -> Self {
+        match value {
+            "AAR_NOT_AVAILABLE" => Self::AarNotAvailable,
+            "ARTIFACT_INTEGRITY_ERROR" => Self::ArtifactIntegrityError,
+            "AUTH_ERROR" => Self::AuthError,
+            "BILLING_CANCELLED" => Self::BillingCancelled,
+            "BILLING_DISPUTED" => Self::BillingDisputed,
+            "BILLING_PAST_DUE" => Self::BillingPastDue,
+            "BUDGET_EXCEEDED" => Self::BudgetExceeded,
+            "CHECKSUM_MISMATCH" => Self::ChecksumMismatch,
+            "CONFIGURATION_ERROR" => Self::ConfigurationError,
+            "EVENT_STORE_ERROR" => Self::EventStoreError,
+            "EXTERNAL_SERVICE_ERROR" => Self::ExternalServiceError,
+            "FORBIDDEN" => Self::Forbidden,
+            "GUARDRAIL_VIOLATION" => Self::GuardrailViolation,
+            "INVALID_QUERY" => Self::InvalidQuery,
+            "INVALID_SHARE_LIST" => Self::InvalidShareList,
+            "INVALID_SHARE_TARGET" => Self::InvalidShareTarget,
+            "LLM_ERROR" => Self::LLMError,
+            "MAX_DURATION_EXCEEDED" => Self::MaxDurationExceeded,
+            "MAX_TOKENS_EXCEEDED" => Self::MaxTokensExceeded,
+            "MIGRATION_CONFLICT" => Self::MigrationConflict,
+            "MISSION_ALREADY_RUNNING" => Self::MissionAlreadyRunning,
+            "MISSION_CONCURRENCY_LIMIT" => Self::MissionConcurrencyLimit,
+            "MISSION_NOT_FOUND" => Self::MissionNotFound,
+            "MISSION_NOT_RUNNABLE" => Self::MissionNotRunnable,
+            "MISSION_NOT_RUNNING" => Self::MissionNotRunning,
+            "MISSION_ROUTE_NOT_FOUND" => Self::MissionRouteNotFound,
+            "NOT_FOUND" => Self::NotFound,
+            "NOT_YANKED" => Self::NotYanked,
+            "PAYLOAD_TOO_LARGE" => Self::PayloadTooLarge,
+            "PERSISTENCE_ERROR" => Self::PersistenceError,
+            "PLANNER_OUTPUT_INVALID" => Self::PlannerOutputInvalid,
+            "PLANNER_REFUSED" => Self::PlannerRefused,
+            "PRECONDITION_FAILED" => Self::PreconditionFailed,
+            "PRIVATE_NOT_SHARED" => Self::PrivateNotShared,
+            "PROMO_REDEMPTION_FAILED" => Self::PromoRedemptionFailed,
+            "QUOTA_EXCEEDED" => Self::QuotaExceeded,
+            "RATE_LIMIT_EXCEEDED" => Self::RateLimitExceeded,
+            "RESERVED_SCOPE" => Self::ReservedScope,
+            "RUN_CANCELLED" => Self::RunCancelled,
+            "SCOPE_MISMATCH" => Self::ScopeMismatch,
+            "SCOPE_TAKEN" => Self::ScopeTaken,
+            "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
+            "SIZE_LIMIT" => Self::SizeLimit,
+            "SPEC_NOT_FOUND" => Self::SpecNotFound,
+            "TASK_GRAPH_FAILED" => Self::TaskGraphFailed,
+            "TEAM_ABORT" => Self::TeamAbort,
+            "VALIDATION_ERROR" => Self::ValidationError,
+            "VERSION_CONFLICT" => Self::VersionConflict,
+            "VERSION_NOT_FOUND" => Self::VersionNotFound,
+            "WORKSPACE_STORAGE_LIMIT" => Self::WorkspaceStorageLimit,
+            "YANK_CONFLICT" => Self::YankConflict,
+            "agent_not_found" => Self::AgentNotFound,
+            "already_bootstrapped" => Self::AlreadyBootstrapped,
+            "billing_not_configured" => Self::BillingNotConfigured,
+            "governance_not_enabled" => Self::GovernanceNotEnabled,
+            "incomplete_record" => Self::IncompleteRecord,
+            "inert_policy_field" => Self::InertPolicyField,
+            "inert_public_config_field" => Self::InertPublicConfigField,
+            "kb_chunk_limit" => Self::KbChunkLimit,
+            "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
+            "kb_document_too_large" => Self::KbDocumentTooLarge,
+            "kb_storage_limit" => Self::KbStorageLimit,
+            "kb_text_extraction_failed" => Self::KbTextExtractionFailed,
+            "limit_reached" => Self::LimitReached,
+            "plan_upgrade_required" => Self::PlanUpgradeRequired,
+            "provider_auth_failed" => Self::ProviderAuthFailed,
+            "provider_circuit_open" => Self::ProviderCircuitOpen,
+            "provider_not_configured" => Self::ProviderNotConfigured,
+            "provider_rate_limited" => Self::ProviderRateLimited,
+            "quota_exceeded" => Self::QuotaExceeded2,
+            "rate_limited" => Self::RateLimited,
+            "resource_limit_reached" => Self::ResourceLimitReached,
+            "run_input_timeout" => Self::RunInputTimeout,
+            "run_never_claimed" => Self::RunNeverClaimed,
+            "run_orphaned_restart" => Self::RunOrphanedRestart,
+            "run_quota_exceeded" => Self::RunQuotaExceeded,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `ErrorError` model.
@@ -9450,6 +10079,42 @@ pub struct ExportAdminConfigResponse {
     pub sections: serde_json::Map<String, serde_json::Value>,
 }
 
+/// `ExportDataExplorerIncludeSensitive` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ExportDataExplorerIncludeSensitive {
+    #[default]
+    #[serde(rename = "1")]
+    V1,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ExportDataExplorerIncludeSensitive {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::V1 => "1",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ExportDataExplorerIncludeSensitive {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ExportDataExplorerIncludeSensitive {
+    fn from(value: &str) -> Self {
+        match value {
+            "1" => Self::V1,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `ExportMyAccountFormat` enumeration.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum ExportMyAccountFormat {
@@ -9759,8 +10424,17 @@ impl From<&str> for FileArbiterAppealResponseStatus {
 pub struct FileArbiterCaseRequest {
     pub filed_by: String,
     pub against_agent_id: String,
+    /// Which constitution rules the case alleges were broken. At least one — a case against no rule
+    /// is not arbitrable.
+    pub rule_ids: Vec<String>,
+    /// The dispute in the filer's words, and what the reader returns as `description`. There is no
+    /// `reason` field: the handler validates with `.strip()`, so a body written from the old
+    /// version of this block had its text discarded and was then refused 422 for the two fields the
+    /// block never mentioned (measured 2026-09-17).
+    pub description: String,
+    /// Free-form supporting material. Optional.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
+    pub evidence: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `FileEntry` model.
@@ -10226,34 +10900,104 @@ pub struct GetAdminTraceResponseRun {
 /// `GetAgentActivityStatsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAgentActivityStatsResponse {
+    /// Deprecated spelling of `total_runs` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `total_runs`.
     #[serde(rename = "totalRuns", default, skip_serializing_if = "Option::is_none")]
     pub total_runs: Option<i64>,
+    /// Deprecated spelling of `completed_runs` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `completed_runs`.
     #[serde(rename = "completedRuns", default, skip_serializing_if = "Option::is_none")]
     pub completed_runs: Option<i64>,
+    /// Deprecated spelling of `failed_runs` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `failed_runs`.
     #[serde(rename = "failedRuns", default, skip_serializing_if = "Option::is_none")]
     pub failed_runs: Option<i64>,
+    /// Deprecated spelling of `cancelled_runs` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `cancelled_runs`.
     #[serde(rename = "cancelledRuns", default, skip_serializing_if = "Option::is_none")]
     pub cancelled_runs: Option<i64>,
+    /// Deprecated spelling of `guardrail_blocked_runs` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `guardrail_blocked_runs`.
     #[serde(rename = "guardrailBlockedRuns", default, skip_serializing_if = "Option::is_none")]
     pub guardrail_blocked_runs: Option<i64>,
+    /// Deprecated spelling of `error_rate_percent` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `error_rate_percent`.
     #[serde(rename = "errorRatePercent", default, skip_serializing_if = "Option::is_none")]
     pub error_rate_percent: Option<f64>,
+    /// Deprecated spelling of `avg_steps_per_run` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_steps_per_run`.
     #[serde(rename = "avgStepsPerRun", default, skip_serializing_if = "Option::is_none")]
     pub avg_steps_per_run: Option<f64>,
+    /// Deprecated spelling of `avg_duration_ms` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_duration_ms`.
     #[serde(rename = "avgDurationMs", default, skip_serializing_if = "Option::is_none")]
     pub avg_duration_ms: Option<f64>,
+    /// Deprecated spelling of `avg_input_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_input_tokens`.
     #[serde(rename = "avgInputTokens", default, skip_serializing_if = "Option::is_none")]
     pub avg_input_tokens: Option<f64>,
+    /// Deprecated spelling of `avg_output_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_output_tokens`.
     #[serde(rename = "avgOutputTokens", default, skip_serializing_if = "Option::is_none")]
     pub avg_output_tokens: Option<f64>,
+    /// Deprecated spelling of `avg_thinking_tokens` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `avg_thinking_tokens`.
     #[serde(rename = "avgThinkingTokens", default, skip_serializing_if = "Option::is_none")]
     pub avg_thinking_tokens: Option<f64>,
+    /// Deprecated spelling of `tool_breakdown` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `tool_breakdown`.
     #[serde(rename = "toolBreakdown", default, skip_serializing_if = "Option::is_none")]
     pub tool_breakdown: Option<Vec<ToolBreakdownEntry>>,
+    /// Deprecated spelling of `top_error_messages` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `top_error_messages`.
     #[serde(rename = "topErrorMessages", default, skip_serializing_if = "Option::is_none")]
     pub top_error_messages: Option<Vec<GetAgentActivityStatsResponseTopErrorMessage>>,
+    /// Deprecated spelling of `runs_by_day` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `runs_by_day`.
     #[serde(rename = "runsByDay", default, skip_serializing_if = "Option::is_none")]
     pub runs_by_day: Option<Vec<GetAgentActivityStatsResponseRunsByDayItem>>,
+    #[serde(rename = "total_runs", default, skip_serializing_if = "Option::is_none")]
+    pub total_runs_: Option<i64>,
+    #[serde(rename = "completed_runs", default, skip_serializing_if = "Option::is_none")]
+    pub completed_runs_: Option<i64>,
+    #[serde(rename = "failed_runs", default, skip_serializing_if = "Option::is_none")]
+    pub failed_runs_: Option<i64>,
+    #[serde(rename = "cancelled_runs", default, skip_serializing_if = "Option::is_none")]
+    pub cancelled_runs_: Option<i64>,
+    #[serde(rename = "guardrail_blocked_runs", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_blocked_runs_: Option<i64>,
+    #[serde(rename = "error_rate_percent", default, skip_serializing_if = "Option::is_none")]
+    pub error_rate_percent_: Option<f64>,
+    #[serde(rename = "avg_steps_per_run", default, skip_serializing_if = "Option::is_none")]
+    pub avg_steps_per_run_: Option<f64>,
+    #[serde(rename = "avg_duration_ms", default, skip_serializing_if = "Option::is_none")]
+    pub avg_duration_ms_: Option<f64>,
+    #[serde(rename = "avg_input_tokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_input_tokens_: Option<f64>,
+    #[serde(rename = "avg_output_tokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_output_tokens_: Option<f64>,
+    #[serde(rename = "avg_thinking_tokens", default, skip_serializing_if = "Option::is_none")]
+    pub avg_thinking_tokens_: Option<f64>,
+    #[serde(rename = "tool_breakdown", default, skip_serializing_if = "Option::is_none")]
+    pub tool_breakdown_: Option<Vec<ToolBreakdownEntry>>,
+    #[serde(rename = "top_error_messages", default, skip_serializing_if = "Option::is_none")]
+    pub top_error_messages_: Option<Vec<GetAgentActivityStatsResponseTopErrorMessage2>>,
+    #[serde(rename = "runs_by_day", default, skip_serializing_if = "Option::is_none")]
+    pub runs_by_day_: Option<Vec<GetAgentActivityStatsResponseRunsByDayItem2>>,
 }
 
 /// `GetAgentActivityStatsResponseRunsByDayItem` model.
@@ -10269,9 +11013,31 @@ pub struct GetAgentActivityStatsResponseRunsByDayItem {
     pub failed: Option<i64>,
 }
 
+/// `GetAgentActivityStatsResponseRunsByDayItem2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentActivityStatsResponseRunsByDayItem2 {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub day: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub completed: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub failed: Option<i64>,
+}
+
 /// `GetAgentActivityStatsResponseTopErrorMessage` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetAgentActivityStatsResponseTopErrorMessage {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub count: Option<i64>,
+}
+
+/// `GetAgentActivityStatsResponseTopErrorMessage2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentActivityStatsResponseTopErrorMessage2 {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10424,6 +11190,84 @@ pub struct GetAppleAppSiteAssociationResponseWebcredentials {
     pub apps: Option<Vec<String>>,
 }
 
+/// `GetBillingBudgetResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetBillingBudgetResponse {
+    pub configured: bool,
+    #[serde(default)]
+    pub budget: Option<GetBillingBudgetResponseBudget>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `GetBillingBudgetResponseBudget` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetBillingBudgetResponseBudget {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit_usd: Option<f64>,
+    /// Fraction, not percent: 0.8 alerts at 80%.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub soft_threshold: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hard_threshold: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<GetBillingBudgetResponseBudgetPeriod>,
+}
+
+/// `GetBillingBudgetResponseBudgetPeriod` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum GetBillingBudgetResponseBudgetPeriod {
+    #[default]
+    #[serde(rename = "monthly")]
+    Monthly,
+    #[serde(rename = "weekly")]
+    Weekly,
+    #[serde(rename = "daily")]
+    Daily,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl GetBillingBudgetResponseBudgetPeriod {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Monthly => "monthly",
+            Self::Weekly => "weekly",
+            Self::Daily => "daily",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for GetBillingBudgetResponseBudgetPeriod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for GetBillingBudgetResponseBudgetPeriod {
+    fn from(value: &str) -> Self {
+        match value {
+            "monthly" => Self::Monthly,
+            "weekly" => Self::Weekly,
+            "daily" => Self::Daily,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `GetBillingOverageResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetBillingOverageResponse {
+    pub enabled: bool,
+    /// Always true: overage cannot be enabled without a spend cap.
+    pub requires_cap: bool,
+    pub cap_configured: bool,
+    pub metered_to_stripe: bool,
+}
+
 /// `GetBillingTrialResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetBillingTrialResponse {
@@ -10437,6 +11281,29 @@ pub struct GetBillingTrialResponse {
     pub recommended_plan: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub signals: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `GetBridgeAgentSpecsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetBridgeAgentSpecsResponse {
+    pub agent_id: String,
+    /// SHA-256 over the list
+    pub revision: String,
+    pub specs: Vec<GetBridgeAgentSpecsResponseSpec>,
+}
+
+/// `GetBridgeAgentSpecsResponseSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetBridgeAgentSpecsResponseSpec {
+    pub spec_id: String,
+    pub version: String,
+    pub enabled: bool,
+    /// null when the registry has no row for the SPEC; the reconciler skips it
+    #[serde(default)]
+    pub runtime_scope: Option<String>,
+    pub permissions_granted: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_allowlist: Option<Vec<String>>,
 }
 
 /// `GetBridgeTaskApprovalResponse` model.
@@ -10913,6 +11780,55 @@ impl From<&str> for GetMyHeadAgentTemplateResponseTierTierRequiredPlan {
     }
 }
 
+/// `GetPromoStateResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPromoStateResponse {
+    #[serde(default)]
+    pub applied_code: Option<GetPromoStateResponseAppliedCode>,
+    pub bonus_tokens_balance: i64,
+    /// Codes this tenant OWNS (it is the referrer), with their reward totals. Empty for everyone
+    /// else.
+    pub owned_codes: Vec<GetPromoStateResponseOwnedCode>,
+}
+
+/// `GetPromoStateResponseAppliedCode` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPromoStateResponseAppliedCode {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub redeemed_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discount_percent: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rewarded: Option<bool>,
+}
+
+/// `GetPromoStateResponseOwnedCode` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPromoStateResponseOwnedCode {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub program: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub active: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uses: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_uses: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reward_tokens_per_subscription: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub subscriber_bonus_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discount_percent: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total_rewarded_tokens: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub rewarded_subscriptions: Option<i64>,
+}
+
 /// `GetPublicBlogPostResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetPublicBlogPostResponse {
@@ -10948,7 +11864,7 @@ pub struct GetPublicStateResponse {
     pub short_description: String,
     pub slug: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<serde_json::Map<String, serde_json::Value>>,
     pub tags: Vec<String>,
@@ -11193,8 +12109,22 @@ pub struct GetRunResponse {
     pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -11415,6 +12345,9 @@ pub struct GetTenantUsageResponse {
 pub struct GetUnreadCountResponse {
     pub count: i64,
     pub unread_count: i64,
+    /// Deprecated spelling of `unread_count` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `unread_count`.
     #[serde(rename = "unreadCount")]
     pub unread_count_: i64,
 }
@@ -12085,6 +13018,25 @@ pub struct ImportAgentMemoryResponse {
     pub duplicates: i64,
 }
 
+/// `ImportDataExplorerRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ImportDataExplorerRequest {
+    pub file: FilePart,
+}
+
+/// `ImportDataExplorerResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ImportDataExplorerResponse {
+    pub success: bool,
+    pub imported: i64,
+    pub skipped: i64,
+    /// Rows refused because the read path would refuse them too — sensitive keys, and anything
+    /// under the `__keys__` namespace auth authenticates against.
+    pub refused_sensitive: i64,
+    pub errors: Vec<String>,
+    pub total_lines: i64,
+}
+
 /// Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting →
 /// sandbox_testing → approved → applied | rejected at any step).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -12587,6 +13539,50 @@ pub struct InvokeListingAgentRequest {
     pub input: serde_json::Map<String, serde_json::Value>,
 }
 
+/// `InvokeListingAgentResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InvokeListingAgentResponse {
+    pub error: InvokeListingAgentResponseError,
+    pub message: String,
+    pub retry_after_seconds: i64,
+}
+
+/// `InvokeListingAgentResponseError` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum InvokeListingAgentResponseError {
+    #[default]
+    #[serde(rename = "Accepted")]
+    Accepted,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl InvokeListingAgentResponseError {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Accepted => "Accepted",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for InvokeListingAgentResponseError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for InvokeListingAgentResponseError {
+    fn from(value: &str) -> Self {
+        match value {
+            "Accepted" => Self::Accepted,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `IssueArbiterRulingRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct IssueArbiterRulingRequest {
@@ -12668,6 +13664,9 @@ pub struct KnowledgeBase {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// The embedding model recorded on the base: what the caller sent at create, or the
+    /// deployment's model; rewritten to the model actually used on every reindex
+    /// (knowledge-bases.ts:688).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub embedding_model: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -12707,6 +13706,12 @@ pub struct KnowledgeBaseCreate {
     pub name: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// Informational only — not a choice. The deployment has one embedding model, set by the
+    /// super-admin in `PUT /admin/config/agent-memory`; ingest and search always use it, and `POST
+    /// /knowledge-bases/{id}/reindex` overwrites this field with the model actually used. A string
+    /// sent here is stored and echoed by GET until the first reindex, then replaced. `PUT
+    /// /knowledge-bases/{id}` ignores it. Clients should send nothing (knowledge-bases.ts:395,
+    /// :688).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub embedding_model: Option<String>,
 }
@@ -13163,6 +14168,15 @@ pub struct ListAgentMailResponse {
     pub total_scanned: i64,
 }
 
+/// `ListAgentMCPServersResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentMCPServersResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub servers: Option<Vec<MCPServer>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub total: Option<i64>,
+}
+
 /// `ListAgentScorersResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListAgentScorersResponse {
@@ -13400,71 +14414,7 @@ pub struct ListBillingPlansResponsePlan {
 /// `ListBillingSpecPackagesResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListBillingSpecPackagesResponse {
-    pub packages: Vec<ListBillingSpecPackagesResponsePackage>,
-}
-
-/// `ListBillingSpecPackagesResponsePackage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct ListBillingSpecPackagesResponsePackage {
-    pub package_id: String,
-    pub name: String,
-    pub description: String,
-    pub category: String,
-    pub included_specs: Vec<String>,
-    pub included_in_plans: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub program: Option<SpecPackageProgram>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_amount_cents: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_currency: Option<String>,
-    /// A Stripe price is wired. False means checkout will refuse with 400.
-    pub checkout_available: bool,
-    pub entitlement: ListBillingSpecPackagesResponsePackageEntitlement,
-}
-
-/// `ListBillingSpecPackagesResponsePackageEntitlement` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum ListBillingSpecPackagesResponsePackageEntitlement {
-    #[default]
-    #[serde(rename = "plan_included")]
-    PlanIncluded,
-    #[serde(rename = "purchased")]
-    Purchased,
-    #[serde(rename = "available")]
-    Available,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl ListBillingSpecPackagesResponsePackageEntitlement {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::PlanIncluded => "plan_included",
-            Self::Purchased => "purchased",
-            Self::Available => "available",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for ListBillingSpecPackagesResponsePackageEntitlement {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for ListBillingSpecPackagesResponsePackageEntitlement {
-    fn from(value: &str) -> Self {
-        match value {
-            "plan_included" => Self::PlanIncluded,
-            "purchased" => Self::Purchased,
-            "available" => Self::Available,
-            other => Self::Other(other.to_string()),
-        }
-    }
+    pub packages: Vec<serde_json::Map<String, serde_json::Value>>,
 }
 
 /// `ListBuilderRequestsResponse` model.
@@ -13477,11 +14427,10 @@ pub struct ListBuilderRequestsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListCompaniesResponse {
     pub items: Vec<Company>,
-    /// Legacy alias for `items`. Will be removed in API v1.x.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub companies: Option<Vec<Company>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub total: Option<i64>,
+    /// Opaque cursor for the next page; null on the last page.
+    #[serde(default)]
+    pub cursor: Option<String>,
+    pub has_more: bool,
 }
 
 /// `ListContentReportsResponse` model.
@@ -14961,6 +15910,13 @@ pub struct MCPServer {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
     /// How many env vars are set. The values are never returned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
@@ -14976,6 +15932,64 @@ pub struct MCPServer {
     pub last_synced: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tenant_id: Option<String>,
+}
+
+/// How an http / streamable_http server is authenticated. The secret itself travels in `env`
+/// under `env_key` and is encrypted at rest; it is never returned. Query-string placement is
+/// not offered: a key in a URL lands in every proxy log on the way.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPServerAuth {
+    pub r#type: MCPServerAuthType,
+    /// Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
+    /// not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub header: Option<String>,
+    /// Value prefix. Defaults to `Bearer ` for `Authorization`, empty for any other header.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub prefix: Option<String>,
+    /// Key inside `env` holding the secret. Default `MCP_API_KEY`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub env_key: Option<String>,
+}
+
+/// `MCPServerAuthType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPServerAuthType {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "api_key")]
+    APIKey,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPServerAuthType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => "none",
+            Self::APIKey => "api_key",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPServerAuthType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPServerAuthType {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => Self::None,
+            "api_key" => Self::APIKey,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `MCPServerStatus` enumeration.
@@ -15056,6 +16070,13 @@ pub struct MCPServerWithConnectResult {
     pub url: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub api_key_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auth: Option<MCPServerAuth>,
+    /// Agents allowed to use this server's tools. Absent or empty means no agent sees them —
+    /// installing a server does not connect it. Set it with PUT
+    /// /api/v1/agents/{agentId}/mcp-servers, or pass it when installing.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assigned_agent_ids: Option<Vec<String>>,
     /// How many env vars are set. The values are never returned.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub env_count: Option<i64>,
@@ -15241,6 +16262,15 @@ pub struct MfaEnrolment {
     pub otpauth_url: String,
     pub secret: String,
     pub recovery_codes: Vec<String>,
+}
+
+/// `MintLoginNonceResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MintLoginNonceResponse {
+    /// Embed verbatim as the OIDC `nonce` of the next sign-in attempt.
+    pub nonce: String,
+    /// Seconds the nonce stays valid if unused.
+    pub expires_in_s: i64,
 }
 
 /// `MintSSETokenResponse` model.
@@ -16898,6 +17928,34 @@ pub struct PatchMeResponseUser {
     pub avatar_url: Option<String>,
 }
 
+/// A partial tenant. Fields not named are left alone — except `social_links`, which is REPLACED
+/// wholesale rather than merged, so a PATCH carrying one platform leaves the tenant with that
+/// one platform and nothing else. Send every link you want to keep, `custom` included.
+///
+/// `social_links` values are filtered, not rejected: a url that does not match
+/// `^https?://.{3,500}$` is dropped and the request still answers 200. Length is applied BEFORE
+/// the pattern, which is the case worth knowing about — a url longer than 500 characters is CUT
+/// to 500 and the cut value then matches, so it is STORED TRUNCATED rather than refused. A
+/// working-looking link that goes somewhere else is worse than a missing one, and a client
+/// checking only whether the key came back cannot see it.
+///
+/// Nothing here is hidden: the response is the tenant AS STORED, so compare what you sent
+/// against what came back — values and lengths, not just which keys are present. No second GET
+/// is needed. See `Tenant.social_links` for the field-by-field shape.
+///
+/// Documented 2026-09-18. The 2026-09-17 pass wrote this onto the Tenant RESPONSE schema and
+/// left the request body an untyped `object`: right words, wrong end of the call. Caught by the
+/// SDK lane, whose generator produced a typed `Tenant.social_links` beside a `patch(body:
+/// JsonObject)` that could not describe what to send.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PatchTenantRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub social_links: Option<TenantSocialLinks>,
+    /// Any additional properties the server returned.
+    #[serde(flatten)]
+    pub extra: HashMap<String, serde_json::Value>,
+}
+
 /// `PauseCompanyResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PauseCompanyResponse {
@@ -18010,7 +19068,7 @@ pub struct PublicState {
     pub short_description: String,
     pub slug: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub stats: Option<serde_json::Map<String, serde_json::Value>>,
     pub tags: Vec<String>,
@@ -18052,7 +19110,7 @@ pub struct PublicTenant {
     pub agents: Vec<PublicTenantAgent>,
     pub stats: PublicTenantStats,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18165,6 +19223,22 @@ pub struct ReadinessReport {
     pub status: String,
     pub timestamp: String,
     pub components: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `RedeemPromoCodeRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RedeemPromoCodeRequest {
+    pub code: String,
+}
+
+/// `RedeemPromoCodeResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RedeemPromoCodeResponse {
+    pub redeemed: bool,
+    pub code: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discount_percent: Option<f64>,
+    pub subscriber_bonus_tokens: i64,
 }
 
 /// `RegisterAmbassadorRequest` model.
@@ -18415,7 +19489,11 @@ pub struct RegistryPublishRequest {
     /// Lowercase hex sha256; verified if provided.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub sha256: Option<String>,
-    /// Optional JSON-stringified SLSA attestation.
+    /// Optional JSON-stringified SLSA provenance envelope. Shape-checked on publish (object with
+    /// non-empty `predicate_type`, `signature`, `public_key` and an object `predicate`) and NOT
+    /// verified: artifact signing is off by default (`spec_registry.signing_mode`), `GET
+    /// /registry/keys` answers 501, and the loader's signature gate is skipped. Reads that carry an
+    /// attestation also carry `attestation_verified: false` — see the version response.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub attestation: Option<String>,
 }
@@ -18581,17 +19659,41 @@ pub struct ReplaceConstitutionRequest {
 pub struct ReplayResult {
     pub deterministic: bool,
     pub verified: ReplayResultVerified,
+    /// Deprecated spelling of `events_replayed` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `events_replayed`.
     #[serde(rename = "eventsReplayed")]
     pub events_replayed: i64,
+    /// Deprecated spelling of `run_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `run_id`.
     #[serde(rename = "runId")]
     pub run_id: String,
     pub mode: ReplayResultMode,
+    /// Deprecated spelling of `divergence_point` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `divergence_point`.
     #[serde(rename = "divergencePoint", default, skip_serializing_if = "Option::is_none")]
     pub divergence_point: Option<i64>,
+    /// Deprecated spelling of `divergence_reason` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `divergence_reason`.
     #[serde(rename = "divergenceReason", default, skip_serializing_if = "Option::is_none")]
     pub divergence_reason: Option<String>,
+    /// Deprecated spelling of `step_comparisons` — the same value, kept for the compatibility
+    /// window and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `step_comparisons`.
     #[serde(rename = "stepComparisons", default, skip_serializing_if = "Option::is_none")]
     pub step_comparisons: Option<Vec<ReplayResultStepComparison>>,
+    #[serde(rename = "events_replayed")]
+    pub events_replayed_: i64,
+    #[serde(rename = "run_id")]
+    pub run_id_: String,
+    #[serde(rename = "divergence_point", default, skip_serializing_if = "Option::is_none")]
+    pub divergence_point_: Option<i64>,
+    #[serde(rename = "divergence_reason", default, skip_serializing_if = "Option::is_none")]
+    pub divergence_reason_: Option<String>,
+    #[serde(rename = "step_comparisons", default, skip_serializing_if = "Option::is_none")]
+    pub step_comparisons_: Option<Vec<ReplayResultStepComparison2>>,
 }
 
 /// `ReplayResultMode` enumeration.
@@ -18640,8 +19742,28 @@ pub struct ReplayResultStepComparison {
     pub seq: i64,
     pub r#type: String,
     pub matches: bool,
+    /// Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `mismatch_detail`.
     #[serde(rename = "mismatchDetail", default, skip_serializing_if = "Option::is_none")]
     pub mismatch_detail: Option<String>,
+    #[serde(rename = "mismatch_detail", default, skip_serializing_if = "Option::is_none")]
+    pub mismatch_detail_: Option<String>,
+}
+
+/// `ReplayResultStepComparison2` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReplayResultStepComparison2 {
+    pub seq: i64,
+    pub r#type: String,
+    pub matches: bool,
+    /// Deprecated spelling of `mismatch_detail` — the same value, kept for the compatibility window
+    /// and removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `mismatch_detail`.
+    #[serde(rename = "mismatchDetail", default, skip_serializing_if = "Option::is_none")]
+    pub mismatch_detail: Option<String>,
+    #[serde(rename = "mismatch_detail", default, skip_serializing_if = "Option::is_none")]
+    pub mismatch_detail_: Option<String>,
 }
 
 /// `ReplayResultVerified` enumeration.
@@ -19195,8 +20317,22 @@ pub struct Run {
     pub output: Option<RunOutput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metrics: Option<RunMetrics>,
+    /// The sentence a person reads. English on every deployment — nothing here varies by
+    /// `Accept-Language` — so branch on `error_code`, not on this.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
+    /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
+    /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
+    /// that a client had to regex-test `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
+    /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
+    /// Never a provider id — this reaches a screen, and the product does not name the model it
+    /// picked.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -20332,12 +21468,17 @@ pub struct SearchWorkspaceFilesResponse {
 pub struct SearchWorkspaceFilesResponseResult {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub path: Option<String>,
+    /// Deprecated spelling of `line_number` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `line_number`.
     #[serde(rename = "lineNumber", default, skip_serializing_if = "Option::is_none")]
     pub line_number: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub line: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#match: Option<String>,
+    #[serde(rename = "line_number", default, skip_serializing_if = "Option::is_none")]
+    pub line_number_: Option<i64>,
 }
 
 /// `SeedStarterSpecsResponse` model.
@@ -20350,7 +21491,6 @@ pub struct SeedStarterSpecsResponse {
     /// How many starter SPECs the build ships. `added + skipped` reaching this is the completion
     /// signal.
     pub total_starter: i64,
-    pub entitlement_updated: bool,
     /// Absent when nothing failed.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub errors: Option<Vec<SeedStarterSpecsResponseError>>,
@@ -20699,6 +21839,26 @@ pub struct SetAgentIntegrationsResponseDiff {
     pub unknown: Vec<String>,
 }
 
+/// `SetAgentMCPServersRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAgentMCPServersRequest {
+    /// The complete set after the call. An empty array disconnects every server from this agent.
+    pub server_ids: Vec<String>,
+}
+
+/// `SetAgentMCPServersResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetAgentMCPServersResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_id: Option<String>,
+    /// Server ids that gained this agent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connected: Option<Vec<String>>,
+    /// Server ids that lost it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub disconnected: Option<Vec<String>>,
+}
+
 /// `SetAgentPermissionsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetAgentPermissionsResponse {
@@ -20733,6 +21893,45 @@ pub struct SetAgentTrafficResponse {
 pub struct SetArbiterRegistryResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ok: Option<bool>,
+}
+
+/// `SetBillingBudgetRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetBillingBudgetRequest {
+    pub limit_usd: f64,
+    /// Server default: `0.8`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub soft_threshold: Option<f64>,
+    /// Server default: `1`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub hard_threshold: Option<f64>,
+    /// Server default: `"monthly"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub period: Option<GetBillingBudgetResponseBudgetPeriod>,
+}
+
+/// `SetBillingBudgetResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetBillingBudgetResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub configured: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub budget: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `SetBillingOverageRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetBillingOverageRequest {
+    pub enabled: bool,
+}
+
+/// `SetBillingOverageResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SetBillingOverageResponse {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cap: Option<bool>,
 }
 
 /// `SetDataExplorerValueRequest` model.
@@ -20856,6 +22055,8 @@ pub struct SetModelPricingOverrideRequest {
 /// `SetModelPricingOverrideResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SetModelPricingOverrideResponse {
+    /// Deprecated spelling of `model_ref` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `model_ref`.
     #[serde(rename = "modelRef")]
     pub model_ref: String,
     pub input_per_million: f64,
@@ -20863,6 +22064,8 @@ pub struct SetModelPricingOverrideResponse {
     /// Absent when not set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cached_input_per_million: Option<f64>,
+    #[serde(rename = "model_ref")]
+    pub model_ref_: String,
 }
 
 /// `SetRateLimitsResponse` model.
@@ -21097,168 +22300,26 @@ pub struct SpawnPolicyUpdate {
     pub max_children_per_agent: i64,
 }
 
-/// `SpecPackage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackage {
-    /// Lowercase alphanumeric and hyphens, 1-64 characters. Also the map key.
-    pub package_id: String,
-    pub name: String,
-    /// Server default: `""`.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    pub category: String,
-    /// SPEC refs. Only non-emptiness is checked here; the registry resolver enforces the
-    /// `@scope/name\[@version\]` shape at run time, so a malformed ref is accepted by this write
-    /// and fails later.
-    pub included_specs: Vec<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub included_in_plans: Option<Vec<SpecPackageIncludedInPlan>>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub pricing: Option<SpecPackagePricing>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub display_order: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub archived: Option<bool>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub program: Option<SpecPackageProgram>,
-    /// Stamped by the server on every write; not read from the body.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub updated_at: Option<String>,
-}
-
-/// `SpecPackageIncludedInPlan` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SpecPackageIncludedInPlan {
-    #[default]
-    #[serde(rename = "free")]
-    Free,
-    #[serde(rename = "starter")]
-    Starter,
-    #[serde(rename = "pro")]
-    Pro,
-    #[serde(rename = "enterprise")]
-    Enterprise,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SpecPackageIncludedInPlan {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Free => "free",
-            Self::Starter => "starter",
-            Self::Pro => "pro",
-            Self::Enterprise => "enterprise",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SpecPackageIncludedInPlan {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SpecPackageIncludedInPlan {
-    fn from(value: &str) -> Self {
-        match value {
-            "free" => Self::Free,
-            "starter" => Self::Starter,
-            "pro" => Self::Pro,
-            "enterprise" => Self::Enterprise,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `SpecPackagePricing` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackagePricing {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_amount_cents: Option<i64>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub price_currency: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub billing_interval: Option<SpecPackagePricingBillingInterval>,
-    /// Never returned by the tenant-facing read. Its presence is what protects the package from a
-    /// silent drop.
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stripe_price_id: Option<String>,
-}
-
-/// `SpecPackagePricingBillingInterval` enumeration.
-#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
-pub enum SpecPackagePricingBillingInterval {
-    #[default]
-    #[serde(rename = "month")]
-    Month,
-    #[serde(rename = "year")]
-    Year,
-    /// A value the API introduced after this SDK was generated.
-    #[serde(untagged)]
-    Other(String),
-}
-
-impl SpecPackagePricingBillingInterval {
-    /// The value as it appears on the wire.
-    pub fn as_str(&self) -> &str {
-        match self {
-            Self::Month => "month",
-            Self::Year => "year",
-            Self::Other(value) => value.as_str(),
-        }
-    }
-}
-
-impl std::fmt::Display for SpecPackagePricingBillingInterval {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(self.as_str())
-    }
-}
-
-impl From<&str> for SpecPackagePricingBillingInterval {
-    fn from(value: &str) -> Self {
-        match value {
-            "month" => Self::Month,
-            "year" => Self::Year,
-            other => Self::Other(other.to_string()),
-        }
-    }
-}
-
-/// `SpecPackageProgram` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgram {
-    pub nav: SpecPackageProgramNav,
-    pub pages: Vec<SpecPackageProgramPage>,
-}
-
-/// `SpecPackageProgramNav` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgramNav {
-    pub label: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub icon: Option<String>,
-}
-
-/// `SpecPackageProgramPage` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct SpecPackageProgramPage {
-    pub id: String,
-    pub title: String,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub route: Option<String>,
-}
-
 /// Which SPEC output view renders each tool's result, for the builder UI. Keyed by tool name;
 /// the first view claiming a tool wins, and a view whose JSON will not parse is skipped rather
 /// than failing the call.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SpecToolCatalog {
     pub agent_id: String,
+    /// Which of the agent's installed SPECs are waiting on a connection. `status` is
+    /// `needs_connection` when the SPEC declares tools routed through a connector (manifest
+    /// `delivered_by = { mode = "integration", connector = … }`) that this agent cannot currently
+    /// see an ACTIVE connection of — visibility, not ownership: the assignment rule is
+    /// `canAgentUseIntegration`. `action` is the runtime's own sentence, the same one a run injects
+    /// when the SPEC's tools resolve to nothing, so a badge and a run cannot teach two vocabularies
+    /// for one fact.
+    ///
+    /// `ready` means NO UNMET CONNECTOR REQUIREMENT — not that every tool dispatches. A full
+    /// verdict needs the bundle's SDK export names, which only the runtime's loader has. A SPEC
+    /// that cannot be resolved is reported `ready` rather than badged, because a badge is worse
+    /// wrong than absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub specs: Option<Vec<SpecToolCatalogSpec>>,
     /// The canvases this agent's SPECs put their output on (docs/DESIGNER-CANVAS.md §5.1) — today
     /// only `drawing`. Always present: empty means no drawing canvas, absence means an older
     /// server, and a client must not confuse the two.
@@ -21306,6 +22367,104 @@ impl From<&str> for SpecToolCatalogDrawingCanvas {
     fn from(value: &str) -> Self {
         match value {
             "drawing" => Self::Drawing,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `SpecToolCatalogSpec` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogSpec {
+    pub spec_id: String,
+    pub status: SpecToolCatalogSpecStatus,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires: Option<SpecToolCatalogSpecRequires>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub action: Option<String>,
+    pub tools_total: f64,
+    pub tools_waiting: f64,
+}
+
+/// `SpecToolCatalogSpecRequires` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogSpecRequires {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub mode: Option<SpecToolCatalogSpecRequiresMode>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connector: Option<String>,
+}
+
+/// `SpecToolCatalogSpecRequiresMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SpecToolCatalogSpecRequiresMode {
+    #[default]
+    #[serde(rename = "integration")]
+    Integration,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SpecToolCatalogSpecRequiresMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Integration => "integration",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SpecToolCatalogSpecRequiresMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SpecToolCatalogSpecRequiresMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "integration" => Self::Integration,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `SpecToolCatalogSpecStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum SpecToolCatalogSpecStatus {
+    #[default]
+    #[serde(rename = "ready")]
+    Ready,
+    #[serde(rename = "needs_connection")]
+    NeedsConnection,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl SpecToolCatalogSpecStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ready => "ready",
+            Self::NeedsConnection => "needs_connection",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for SpecToolCatalogSpecStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for SpecToolCatalogSpecStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "ready" => Self::Ready,
+            "needs_connection" => Self::NeedsConnection,
             other => Self::Other(other.to_string()),
         }
     }
@@ -21543,6 +22702,23 @@ pub struct StrategicGoalKpisItem {
     pub current: Option<String>,
 }
 
+/// What the scan actually looked at, on every access and erasure answer. A count of zero is
+/// otherwise unreadable: until 2026-09-16 every one of these counts was zero on every request
+/// ever made, and the reason was the matcher rather than the data.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SubjectSweep {
+    /// How many identifiers the subject was matched on — the subject id plus the id of every
+    /// api-key credential that acted for them. Never the identifiers themselves: a key id is a
+    /// credential reference and this payload goes to the requester.
+    pub identifiers_matched: i64,
+    /// KV prefixes walked to exhaustion in this tenant.
+    pub prefixes_scanned: Vec<String>,
+    /// Record fields compared against the identifier set.
+    pub fields_matched: Vec<String>,
+    /// True when nothing matched, so a zero can be read as a zero.
+    pub no_records_matched: bool,
+}
+
 /// `SubmitFeedbackRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubmitFeedbackRequest {
@@ -21574,8 +22750,9 @@ pub struct SubmitFeedbackResponse {
 /// `SubscribeToListingRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SubscribeToListingRequest {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub stripe_subscription_id: Option<String>,
+    /// Required: the handler answers 403 without one. The block carried no `required` until
+    /// 2026-09-18.
+    pub stripe_subscription_id: String,
 }
 
 /// `SuspendAgentRequest` model.
@@ -21627,7 +22804,9 @@ pub struct SwitchTenantResponse {
 pub struct SyncProviderModelsResponse {
     /// New catalogue entries.
     pub added: i64,
-    /// Ids of the added entries; capped.
+    /// Ids of the added entries; capped. Deprecated spelling of `added_ids` — the same value, kept
+    /// for the compatibility window and removed in the next breaking release (the one that moves
+    /// `X-API-Version`). Read `added_ids`.
     #[serde(rename = "addedIds")]
     pub added_ids: Vec<String>,
     /// Catalogue size after the merge.
@@ -21637,6 +22816,9 @@ pub struct SyncProviderModelsResponse {
     /// Present when the run was scoped to one provider, as it is here.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub provider: Option<String>,
+    /// Ids of the added entries; capped.
+    #[serde(rename = "added_ids")]
+    pub added_ids_: Vec<String>,
 }
 
 /// Multi-agent collaboration unit (tenant-scoped).
@@ -22552,7 +23734,7 @@ pub struct Tenant {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub branding: Option<TenantBranding>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub social_links: Option<serde_json::Map<String, serde_json::Value>>,
+    pub social_links: Option<TenantSocialLinks>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub marketplace_listing: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -22950,8 +24132,19 @@ pub struct TenantOverviewRunsRecentItem {
     pub cost_usd: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub duration_ms: Option<i64>,
+    /// The sentence a person reads, English on every deployment. Branch on `error_code`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error: Option<String>,
+    /// The failed run's code, passed through from the run record — a value from the `Error`
+    /// schema's `code` enum. Absent when the failure carries nothing to branch on. This board is
+    /// the only surface that renders a failed run's cause, and until 2026-09-21 it chose what to
+    /// say by matching English in `error`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_code: Option<String>,
+    /// Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
+    /// `Run.error_details`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
     /// Passed through from the run record. Absent for platform-dispatched cloud runs; `bridge` is
     /// the only value the platform writes (run-dispatch.ts, bridge.ts); `async` only echoes what a
     /// client supplied at run creation and has never been stored on production (measured 2026-09-10
@@ -23083,6 +24276,55 @@ pub struct TenantQuotas {
     pub max_daily_images: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_monthly_videos: Option<i64>,
+}
+
+/// REPLACES the stored object; it is not merged. A PATCH carrying one platform leaves the
+/// tenant with that one platform and nothing else, so read-modify-write is the only safe shape
+/// — send every link you want to keep, `custom` included.
+///
+/// Values are filtered, not rejected: a URL that does not match `^https?://.{3,500}$` is
+/// dropped and the request still answers 200. Nothing is hidden by this — the response body
+/// carries the tenant as STORED, so the saved `social_links` is in the answer and a second GET
+/// is not needed to see what survived. Compare what you sent against what came back; a key
+/// missing from the answer was refused.
+///
+/// Length is applied BEFORE the pattern, which matters: a url longer than 500 characters is CUT
+/// to 500 and then matches, so it is stored TRUNCATED rather than refused — a different link
+/// that still looks like one. Compare lengths too, not just presence. `custom` takes at most 5
+/// entries, each with a label and a url; labels are stripped of angle brackets and cut to 50,
+/// urls to 500, on the same before-validation order. Documented 2026-09-17 after the web lane
+/// measured the filtering and could not find it described anywhere.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantSocialLinks {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub twitter: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub github: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub linkedin: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub discord: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub telegram: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub youtube: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instagram: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub facebook: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tiktok: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom: Option<Vec<TenantSocialLinksCustomItem>>,
+}
+
+/// `TenantSocialLinksCustomItem` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct TenantSocialLinksCustomItem {
+    pub label: String,
+    pub url: String,
 }
 
 /// `TenantStatus` enumeration.
@@ -23567,8 +24809,13 @@ pub struct UnsuspendUserResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateACPSessionResponse {
     pub saved: bool,
+    /// Deprecated spelling of `session_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read
+    /// `session_id`.
     #[serde(rename = "sessionId")]
     pub session_id: String,
+    #[serde(rename = "session_id")]
+    pub session_id_: String,
 }
 
 /// `UpdateAdminAgentMemoryConfigResponse` model.
@@ -24006,6 +25253,10 @@ pub struct UpdateAdminRetentionConfigResponseRetention {
     pub archive_batch_size: i64,
     pub feed_ttl_days: i64,
     pub artifact_ttl_days: i64,
+    /// Notification retention in days. 0 (the default) means no expiry. Applies to rows written
+    /// after the setting changes.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notification_ttl_days: Option<i64>,
     pub checkpoint_ttl_hours: i64,
 }
 
@@ -24150,13 +25401,6 @@ pub struct UpdateAdminSmtpConfigRequest {
     pub from_name: Option<String>,
 }
 
-/// `UpdateAdminSpecPackagesRequest` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct UpdateAdminSpecPackagesRequest {
-    /// Keyed by `package_id`.
-    pub packages: HashMap<String, SpecPackage>,
-}
-
 /// `UpdateAdminSSEConfigResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminSSEConfigResponse {
@@ -24290,10 +25534,8 @@ pub struct UpdateAdminToolSecurityConfigResponse {
 /// `UpdateAdminToolSecurityConfigResponseToolSecurity` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminToolSecurityConfigResponseToolSecurity {
-    pub default_egress_policy: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub egress_allowlist_per_tenant: Option<Vec<String>>,
-    pub ssrf_deny_private_ranges: bool,
     pub default_tool_timeout_ms: i64,
     pub default_tool_max_payload_bytes: i64,
     pub default_tool_max_concurrency: i64,
@@ -24382,6 +25624,7 @@ pub struct UpdateBuilderRequestStatusRequest {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateCoreMemoryBlockRequest {
     pub content: String,
+    /// Values outside 1..32000 are clamped to the range, not refused.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_tokens: Option<i64>,
 }
@@ -24477,6 +25720,38 @@ pub struct UpdateMarkupConfigResponse {
 pub struct UpdateMarkupConfigResponseMarkup {
     pub platform_markup_percent: f64,
     pub model_markup_overrides: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `UpdateMCPServerRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateMCPServerRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub command: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub args: Option<Vec<String>>,
+    /// Re-encrypted on write. `{}` clears it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub env: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub capabilities: Option<serde_json::Map<String, serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<MCPServerStatus>,
+    /// Names an environment variable of the API process whose value is sent to this server as a
+    /// bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
+    /// boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
+    /// tenant admin registering `{url: \<their server\>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
+    /// mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
+    /// never echoed back; only the ref is stored.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub api_key_ref: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub egress_allowlist: Option<Vec<String>>,
 }
 
 /// At least one editable field.
@@ -24631,6 +25906,13 @@ pub struct UpdateSessionAnnotationRequest {
 /// `UpdateSessionRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateSessionRequest {
+    /// MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
+    /// it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
+    /// `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
+    /// Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
+    /// most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
+    /// request is refused with 422 and a `detail` naming the number reached. Remove keys you no
+    /// longer need; this is a label bag, not content.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
     /// Per-conversation model override. Send null to clear (revert to agent default), or {
@@ -24944,8 +26226,93 @@ pub struct UsageQuota {
     pub daily: UsageQuotaDaily,
     pub resets_at: UsageQuotaResetsAt,
     pub limits: UsageQuotaLimits,
+    /// Every plan-capped counter in one list, joined server-side: `{kind, used, limit, period,
+    /// resets_at}`. The same facts as `usage`, `limits`, `daily` and `resource_usage`, which stay
+    /// exactly as they were — this is the shape a meter renders without doing the join itself (four
+    /// client surfaces were doing it). `limit: null` means unlimited; a sentinel would render as "0
+    /// of 0". `period`/`resets_at` are null for standing counts like agents, which do not reset at
+    /// midnight.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub counters: Option<Vec<UsageQuotaCounter>>,
     /// api/lib/resource-usage.ts TenantResourceUsage.
     pub resource_usage: UsageQuotaResourceUsage,
+}
+
+/// `UsageQuotaCounter` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UsageQuotaCounter {
+    pub kind: UsageQuotaCounterKind,
+    pub used: f64,
+    #[serde(default)]
+    pub limit: Option<f64>,
+    #[serde(default)]
+    pub period: Option<String>,
+    #[serde(default)]
+    pub resets_at: Option<String>,
+}
+
+/// `UsageQuotaCounterKind` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum UsageQuotaCounterKind {
+    #[default]
+    #[serde(rename = "runs")]
+    Runs,
+    #[serde(rename = "tokens")]
+    Tokens,
+    #[serde(rename = "tokens_daily")]
+    TokensDaily,
+    #[serde(rename = "tool_calls")]
+    ToolCalls,
+    #[serde(rename = "agents")]
+    Agents,
+    #[serde(rename = "teams")]
+    Teams,
+    #[serde(rename = "knowledge_bases")]
+    KnowledgeBases,
+    #[serde(rename = "workspaces")]
+    Workspaces,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl UsageQuotaCounterKind {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Runs => "runs",
+            Self::Tokens => "tokens",
+            Self::TokensDaily => "tokens_daily",
+            Self::ToolCalls => "tool_calls",
+            Self::Agents => "agents",
+            Self::Teams => "teams",
+            Self::KnowledgeBases => "knowledge_bases",
+            Self::Workspaces => "workspaces",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for UsageQuotaCounterKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for UsageQuotaCounterKind {
+    fn from(value: &str) -> Self {
+        match value {
+            "runs" => Self::Runs,
+            "tokens" => Self::Tokens,
+            "tokens_daily" => Self::TokensDaily,
+            "tool_calls" => Self::ToolCalls,
+            "agents" => Self::Agents,
+            "teams" => Self::Teams,
+            "knowledge_bases" => Self::KnowledgeBases,
+            "workspaces" => Self::Workspaces,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `UsageQuotaDaily` model.

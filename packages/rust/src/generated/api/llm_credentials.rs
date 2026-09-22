@@ -29,6 +29,11 @@ impl Client {
 impl LLMCredentialsApi {
     /// Remove stored API key for an LLM provider
     ///
+    /// Removes the calling user's stored key for the provider and the tenant-level fallback copy
+    /// that PUT creates, then clears the provider's cached model catalogues. Idempotent: deleting a
+    /// provider with no stored key still answers 200 with `deleted: true`, while an unknown
+    /// provider id is 400. Writes an `llm_credentials.deleted` audit entry. Super-admin only.
+    ///
     /// `DELETE /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
@@ -46,6 +51,13 @@ impl LLMCredentialsApi {
     }
 
     /// List LLM providers with configured status for current user
+    ///
+    /// Lists every registered provider the platform admin has not disabled, each with whether a key
+    /// resolves for this caller, at which level (`configured_level` is `user`, `tenant`, `shared`
+    /// or `platform`) and a masked `key_hint`. Providers that need no API key report a null level.
+    /// Despite the resource name the whole `/llm-credentials` surface is super-admin only: the
+    /// handler calls `requireSuperAdmin` before every method, so an ordinary user cannot bring or
+    /// read a key here.
     ///
     /// `GET /api/v1/llm-credentials/providers`
     ///
@@ -65,6 +77,15 @@ impl LLMCredentialsApi {
 
     /// Set or update API key for an LLM provider
     ///
+    /// Stores `api_key` for the named provider against the calling user and, unless the effective
+    /// `shared` flag is `false`, mirrors it to a tenant-level row so runs that cannot resolve a
+    /// user id still find it. `shared: false` keeps the key out of that pooled tier and removes an
+    /// existing mirror when it still holds this key; when the body omits `shared` the flag stored
+    /// on the personal record is carried forward. A key shorter than 10 or longer than 500
+    /// characters is 400 and an unknown provider id is 400; on success both cached `/v1/models`
+    /// catalogues for the provider are dropped and an `llm_credentials.set` audit entry is written.
+    /// Super-admin only.
+    ///
     /// `PUT /api/v1/llm-credentials/{provider}`
     ///
     /// Required scopes: `agents:write`.
@@ -82,6 +103,13 @@ impl LLMCredentialsApi {
     }
 
     /// Test configured API key for an LLM provider
+    ///
+    /// Resolves the key the runtime would use for this provider (user, then tenant, shared and
+    /// platform) and calls the provider's own `/v1/models` with it under a 10-second timeout. The
+    /// outcome is reported in the body's `success` and `message`, so a missing key, a rejected key
+    /// and an unreachable endpoint all answer 200 rather than an HTTP error; a provider with no
+    /// configured endpoint reports success and says nothing was tested. Nothing is written.
+    /// Super-admin only.
     ///
     /// `POST /api/v1/llm-credentials/{provider}/test`
     ///

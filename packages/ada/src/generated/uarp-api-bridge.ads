@@ -24,6 +24,14 @@ package UARP.API.Bridge is
 
    No_Bridge_Poll_Params : constant Bridge_Poll_Params := (others => <>);
 
+   --  Query and header parameters for `getBridgeAgentSpecs`.
+   type Get_Bridge_Agent_Specs_Params is record
+      --  Bridge agent id (execution_mode = bridge)
+      Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Bridge_Agent_Specs_Params : constant Get_Bridge_Agent_Specs_Params := (others => <>);
+
    --  Query and header parameters for `getBridgeTaskApproval`.
    type Get_Bridge_Task_Approval_Params is record
       Has_Approval_Id : Boolean := False;
@@ -34,7 +42,19 @@ package UARP.API.Bridge is
 
    --  Delegate task to bridge agent
    --
+   --  Hands a task from the head agent to a specific bridge machine. `agent_id` and `message` are
+   --  required (400); the tenant must have a head agent configured (403), the target agent must
+   --  exist (404) and its `execution_mode` must be `bridge` (400). Creates a run in `running`
+   --  state, enqueues a task whose source is `head_agent` - which the bridge auto-approves - with
+   --  any `context` object rendered into the message ahead of it, emits `run.started` for SSE
+   --  subscribers, and returns the task and run ids with `status` either `enqueued` or
+   --  `queued_offline` depending on whether the machine is currently connected; an offline machine
+   --  picks the task up when it reconnects. Not idempotent. Requires the `runs` write permission
+   --  and the `runs:create` scope.
+   --
    --  POST /api/v1/bridge/delegate
+   --
+   --  Required scopes: runs:create.
    function Bridge_Delegate
      (Self : Client_Type;
       Payload : UARP.Models.Bridge_Delegate_Request;
@@ -43,7 +63,18 @@ package UARP.API.Bridge is
 
    --  Deregister bridge agent
    --
+   --  Records the clean shutdown of a bridge machine. The body must carry `machine_id`, or an
+   --  `agent_id` the server resolves to one, else 400. The connection is marked offline and
+   --  flagged as cleanly deregistered - that flag is what stops the WebSocket close that follows
+   --  from failing the machine's still-in-flight runs - then removed from the agent's machine
+   --  index, and the agent itself is set inactive. Answers `{status: "offline"}` whether or not a
+   --  connection record existed, so it is idempotent. Requires the `agents` write permission and
+   --  the `agents:write` scope; a browser session token is accepted here, unlike the machine-only
+   --  bridge endpoints.
+   --
    --  POST /api/v1/bridge/deregister
+   --
+   --  Required scopes: agents:write.
    function Bridge_Deregister
      (Self : Client_Type;
       Payload : UARP.Models.Bridge_Deregister_Request;
@@ -56,6 +87,8 @@ package UARP.API.Bridge is
    --  intentional** - drives the client to re-register rather than reusing a stale identity.
    --
    --  POST /api/v1/bridge/heartbeat
+   --
+   --  Required scopes: agents:write.
    function Bridge_Heartbeat
      (Self : Client_Type;
       Payload : UARP.Models.Bridge_Heartbeat_Request;
@@ -68,6 +101,8 @@ package UARP.API.Bridge is
    --  pending, or 204 No Content on timeout (client should re-poll immediately).
    --
    --  GET /api/v1/bridge/poll
+   --
+   --  Required scopes: runs:read.
    function Bridge_Poll
      (Self : Client_Type;
       Params : Bridge_Poll_Params := No_Bridge_Poll_Params;
@@ -77,10 +112,14 @@ package UARP.API.Bridge is
    --  Register bridge agent (Snaga CLI handshake)
    --
    --  Registers a long-lived bridge agent for the calling tenant. Returns 201 on first
-   --  registration, 200 on reconnect of an existing machine_id. Tenant-scoped only - no scope
-   --  enforcement.
+   --  registration, 200 on reconnect of an existing machine_id. Requires `agents:write` and role
+   --  `developer` or above - registering a machine creates and rewrites an agent record, so it is
+   --  a write like any other (2026-09-15; until then this surface enforced no scope or role at
+   --  all).
    --
    --  POST /api/v1/bridge/register
+   --
+   --  Required scopes: agents:write.
    function Bridge_Register
      (Self : Client_Type;
       Payload : UARP.Models.Bridge_Register_Request;
@@ -89,7 +128,16 @@ package UARP.API.Bridge is
 
    --  Get bridge connection status
    --
+   --  Returns up to 50 bridge connection records for the tenant, each with its status recomputed
+   --  from the age of its last heartbeat - online, stale or offline - rather than from the value
+   --  last written, so a machine that stopped reporting shows as offline without anything having
+   --  updated it. The response also carries the server's bridge protocol version, the capabilities
+   --  it speaks, and whether the head-agent delegations it issues are signed. Requires the
+   --  `agents` read permission and the `agents:read` scope.
+   --
    --  GET /api/v1/bridge/status
+   --
+   --  Required scopes: agents:read.
    function Bridge_Status
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -107,9 +155,36 @@ package UARP.API.Bridge is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.JSON_Support.JSON_Value;
 
+   --  Desired SPEC list for a bridge agent
+   --
+   --  The SPECs a local bridge agent is expected to have installed, annotated with each SPEC's
+   --  runtime scope so the spec-sync reconciler can decide what to install. `revision` changes
+   --  whenever the list changes; the same value rides on heartbeat and poll acks as
+   --  `specs_revision`.
+   --
+   --  GET /api/v1/bridge/agent-specs
+   --
+   --  Required scopes: agents:read.
+   function Get_Bridge_Agent_Specs
+     (Self : Client_Type;
+      Params : Get_Bridge_Agent_Specs_Params := No_Get_Bridge_Agent_Specs_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Bridge_Agent_Specs_Response;
+
    --  Get approval status
    --
+   --  Long-poll for the human decision on an approval the bridge previously requested.
+   --  Machine-to-machine only - a browser session token is refused 403 - and requires the `runs`
+   --  read permission and the `runs:read` scope. `approval_id` is a required query parameter
+   --  (400), and the task must exist with a real bridge agent behind it (404), because the
+   --  existence of an approval is itself the secret. The handler polls for up to ten seconds at
+   --  one-second intervals and answers with the decision, HMAC-signed over approval id, task id
+   --  and outcome when a signing key is configured so a strict bridge can trust it; when nothing
+   --  arrives inside the window it answers 204 and the client polls again.
+   --
    --  GET /api/v1/bridge/tasks/{taskId}/approval
+   --
+   --  Required scopes: runs:read.
    function Get_Bridge_Task_Approval
      (Self : Client_Type;
       Task_Id : String;
@@ -119,7 +194,15 @@ package UARP.API.Bridge is
 
    --  List bridge agents
    --
+   --  Lists every bridge machine registered for the tenant, including stale and offline ones, as a
+   --  bare JSON array - agent id, machine id and name, capabilities, working directory,
+   --  heartbeat-derived status, and the daemon's own counters when it reports them.
+   --  Attribution-only connections are omitted because they never poll for work, so delegating to
+   --  one would never run. Requires the `agents` read permission and the `agents:read` scope.
+   --
    --  GET /api/v1/bridge/agents
+   --
+   --  Required scopes: agents:read.
    function List_Bridge_Agents
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -127,7 +210,20 @@ package UARP.API.Bridge is
 
    --  Push task events
    --
+   --  Machine-to-machine only: a browser session token is refused 403 here, and the credential
+   --  must additionally carry the `runs` write permission and the `runs:create` scope. Accepts one
+   --  event or an array of them, up to 1 MB (413 beyond); the task must exist and its agent must
+   --  be a real bridge agent, otherwise 404 - without that check any tenant member could forge
+   --  progress on someone else's task. Events are de-duplicated for ten minutes by `event_id` (or
+   --  by type, timestamp and content when none is sent), stored for seven days, and mapped onto
+   --  the run's event stream so SSE subscribers see them. When the run is already terminal or its
+   --  accumulated output has passed the runaway character cap, the reply is `{received: 0, abort:
+   --  true}` and nothing is persisted - this is the only place the server can halt a client in a
+   --  loop.
+   --
    --  POST /api/v1/bridge/tasks/{taskId}/events
+   --
+   --  Required scopes: runs:create.
    function Push_Bridge_Task_Events
      (Self : Client_Type;
       Task_Id : String;
@@ -137,7 +233,18 @@ package UARP.API.Bridge is
 
    --  Update agent capabilities
    --
+   --  Accepts a capability report from a bridge daemon and applies it to every connection record
+   --  registered for that agent, so a multi-machine agent stays consistent. `capabilities` is
+   --  required (400); `working_directory` and `hostname` overwrite when present and keep their
+   --  stored values when absent. An optional `installed_specs` block records the outcome of local
+   --  spec sync (bounded to 100 entries, each truncated) and an optional `stats` block records the
+   --  daemon's own counters - a report that omits either keeps what was stored rather than
+   --  clearing it. Answers `{status: "ok"}` even when no connection matched. Requires the `agents`
+   --  write permission and the `agents:write` scope.
+   --
    --  POST /api/v1/bridge/agents/{agentId}/capability
+   --
+   --  Required scopes: agents:write.
    function Update_Bridge_Agent_Capability
      (Self : Client_Type;
       Agent_Id : String;

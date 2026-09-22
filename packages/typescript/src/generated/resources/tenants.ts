@@ -17,6 +17,7 @@ import type {
   ListAPIKeysResponse,
   ListMyTenantsResponse,
   LocateMyAgentResponse,
+  PatchTenantRequest,
   RevokeAPIKeyResponse,
   Tenant,
   UpdateTenantRequest,
@@ -58,6 +59,16 @@ export class TenantsResource extends APIResource {
 
   /**
    * Create a new API key
+   *
+   * Mints a new API key for the caller's tenant and returns `raw_key` exactly once. `name` is
+   * required (a non-empty string of at most 200 characters) and `scopes`, when given, must be an
+   * array of at most 100 strings of at most 100 characters each; omitting it grants a
+   * twelve-scope default covering agents, runs, sessions, notifications, memory and files. The
+   * authority a key can carry is capped by the caller: only an owner may request the wildcard
+   * `*`, and a `role:<r>` scope may only be granted for a role the caller already holds
+   * (**403**); a caller without `*` may not grant scopes it does not itself hold (**422**). The
+   * key is bound to the caller's `user_id`, so it shows up only in that user's own listing, and
+   * an `api_key.created` audit entry is written.
    *
    * `POST /api/v1/tenants/me/keys`
    *
@@ -197,6 +208,13 @@ export class TenantsResource extends APIResource {
   /**
    * List API keys
    *
+   * Lists this tenant's API keys without ever returning a key hash or the raw secret. The
+   * `["api_key"]` prefix also holds the device-session keys minted by OTP and OAuth login, so
+   * the listing pages the whole prefix and then filters: a caller sees keys bound to their own
+   * `user_id` plus legacy keys that carry no owner at all. Each row carries a `kind` of
+   * `session` or `api_key` so a client can tell a sign-in from a deliberately created
+   * credential. Requires the `api_keys:read` permission and scope.
+   *
    * `GET /api/v1/tenants/me/keys`
    *
    * Required scopes: `api_keys:read`.
@@ -251,7 +269,7 @@ export class TenantsResource extends APIResource {
    *
    * Required scopes: `tenants:write`.
    */
-  patch(body: JsonObject, options?: RequestOptions): Promise<Tenant> {
+  patch(body: PatchTenantRequest, options?: RequestOptions): Promise<Tenant> {
     return this._client.request({
       method: 'PATCH',
       path: '/api/v1/tenants/me',
@@ -284,6 +302,19 @@ export class TenantsResource extends APIResource {
   /**
    * Update current tenant settings
    *
+   * Updates the caller's own tenant record — name, slug, description, logo, branding, public
+   * visibility, `public_agent_id`, `published_agent_ids`, `public_settings`, `head_agent_id`,
+   * `shared_workspace_id` and a merge into `settings`. Owner role and the `tenants:write` scope
+   * are required; `legal_hold`, `suspended`, `max_concurrent_runs_override`, `default_model` and
+   * `default_provider` are stripped from `settings` before the write, and a set `legal_hold`
+   * cannot be cleared here (**403**). Pointer fields are validated against records this tenant
+   * owns — an unknown agent, workspace or file answers **404**, an invalid slug or an over-long
+   * `published_agent_ids` (more than 50) answers **422**, and a slug already held by another
+   * public tenant answers **409**. The write is a CAS update on the tenant record; it also drops
+   * the effective-plan cache, re-syncs or removes the `__public__` tenant and marketplace index
+   * rows for the slug, may auto-publish the named public agent and enrol the tenant in the
+   * marketplace, and writes a `tenant.updated` audit entry.
+   *
    * `PUT /api/v1/tenants/me`
    *
    * Required scopes: `tenants:write`.
@@ -300,6 +331,16 @@ export class TenantsResource extends APIResource {
 
   /**
    * Verify domain
+   *
+   * Forces an immediate DNS re-check of the tenant's configured custom domain: it resolves the
+   * CNAME against the expected target and, failing that, compares A records with the target's
+   * own, then records the outcome on the tenant as `dns.state` `verified` or `failed` with
+   * `last_checked_at` and, on failure, a `last_error` naming what the records actually point at.
+   * On success it also flips `cert.state` to `provisioning`, writes the `domain_map` entry that
+   * authorises Caddy to issue a certificate for the name, and kicks off certificate provisioning
+   * in the background — so the response returns before the certificate exists; poll `GET
+   * /tenants/me/domain/health` for the rest. Requires the owner role, the `tenants:write` scope
+   * and a `pro` plan or above; a tenant with no domain configured answers **404**.
    *
    * `POST /api/v1/tenants/me/domain/verify`
    *

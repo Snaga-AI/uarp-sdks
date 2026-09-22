@@ -10,6 +10,17 @@ public struct BootstrapAPI: Sendable {
 
     /// Bootstrap the platform (first-time setup)
     ///
+    /// Creates the platform's very first tenant on the `enterprise` plan and mints its owner API
+    /// key, returning the raw key once and never again. Runs under a distributed lock; if any
+    /// tenant already exists every caller gets **409** `already_bootstrapped` and only a caller
+    /// presenting the correct key also learns the existing `tenant_id`. When auth is enabled the
+    /// request must carry the `UARP_BOOTSTRAP_KEY` as a Bearer token (**401** otherwise, **500** if
+    /// that key is unset or left at `changeme`); an explicitly supplied `tenant_slug` is validated
+    /// strictly and rejected with **422**, while the default slug is derived from the configured
+    /// super-admin email. Side effects: writes the tenant and registry rows, links the super-admin
+    /// email, claims `super_admin_tenant_id` only if unclaimed, registers the tenant for cron,
+    /// kicks off Stripe bootstrap, and writes a `tenant.created` audit entry.
+    ///
     /// `POST /api/v1/bootstrap`
     public func bootstrap(body: BootstrapRequest? = nil, options: RequestOptions = .init()) async throws -> BootstrapResponse {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }

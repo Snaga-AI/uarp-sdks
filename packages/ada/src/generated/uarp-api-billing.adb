@@ -16,6 +16,21 @@ package body UARP.API.Billing is
              Options => Options));
    end Check_Quota;
 
+   function Clear_Billing_Budget
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Clear_Billing_Budget_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "DELETE",
+             "/api/v1/billing/budget",
+             Idempotent => True,
+             Options => Options));
+   end Clear_Billing_Budget;
+
    function Create_Billing_Portal_Session
      (Self : Client_Type;
       Payload : UARP.Models.Create_Billing_Portal_Session_Request;
@@ -56,8 +71,6 @@ package body UARP.API.Billing is
    function Create_Spec_Package_Checkout_Session
      (Self : Client_Type;
       Package_Id : String;
-      Payload : UARP.Models.Create_Spec_Package_Checkout_Session_Request;
-      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Spec_Package_Checkout_Session_Response
    is
@@ -67,11 +80,37 @@ package body UARP.API.Billing is
             (Self,
              "POST",
              "/api/v1/billing/spec-packages/" & UARP.Types.Encode_Path_Segment (Package_Id) & "/checkout-session",
-             Payload => UARP.Models.To_JSON (Payload),
-             Has_Payload => Include_Payload,
              Idempotent => True,
              Options => Options));
    end Create_Spec_Package_Checkout_Session;
+
+   function Get_Billing_Budget
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Billing_Budget_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/billing/budget",
+             Options => Options));
+   end Get_Billing_Budget;
+
+   function Get_Billing_Overage
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Billing_Overage_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/billing/overage",
+             Options => Options));
+   end Get_Billing_Overage;
 
    function Get_Billing_Trial
      (Self : Client_Type;
@@ -100,6 +139,20 @@ package body UARP.API.Billing is
              "/api/v1/usage/media",
              Options => Options));
    end Get_Media_Usage;
+
+   function Get_Promo_State
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Promo_State_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/billing/promo",
+             Options => Options));
+   end Get_Promo_State;
 
    function Get_Usage
      (Self : Client_Type;
@@ -196,4 +249,58 @@ package body UARP.API.Billing is
              "/api/v1/billing/spec-packages",
              Options => Options));
    end List_Billing_Spec_Packages;
+
+   function Redeem_Promo_Code
+     (Self : Client_Type;
+      Payload : UARP.Models.Redeem_Promo_Code_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Redeem_Promo_Code_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/billing/promo/redeem",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Redeem_Promo_Code;
+
+   function Set_Billing_Budget
+     (Self : Client_Type;
+      Payload : UARP.Models.Set_Billing_Budget_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Billing_Budget_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/billing/budget",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Billing_Budget;
+
+   function Set_Billing_Overage
+     (Self : Client_Type;
+      Payload : UARP.Models.Set_Billing_Overage_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Set_Billing_Overage_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/billing/overage",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Set_Billing_Overage;
 end UARP.API.Billing;

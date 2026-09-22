@@ -71,6 +71,8 @@ package UARP.API.Drawings is
    --  never 403: the status does not reveal whether the id exists.
    --
    --  POST /api/v1/drawings/{drawingId}/ops
+   --
+   --  Required scopes: drawing:write.
    function Append_Drawing_Ops
      (Self : Client_Type;
       Drawing_Id : String;
@@ -88,6 +90,8 @@ package UARP.API.Drawings is
    --  404 - never 403: the status does not reveal whether the id exists.
    --
    --  POST /api/v1/drawings/{drawingId}/masks
+   --
+   --  Required scopes: drawing:write.
    function Create_Drawing_Mask
      (Self : Client_Type;
       Drawing_Id : String;
@@ -103,7 +107,7 @@ package UARP.API.Drawings is
    --
    --  POST /api/v1/sessions/{sessionId}/drawings
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: drawing:write, sessions:write.
    function Create_Session_Drawing
      (Self : Client_Type;
       Session_Id : String;
@@ -123,6 +127,8 @@ package UARP.API.Drawings is
    --  reveal whether the id exists.
    --
    --  DELETE /api/v1/drawings/{drawingId}
+   --
+   --  Required scopes: drawing:write.
    function Delete
      (Self : Client_Type;
       Drawing_Id : String;
@@ -138,6 +144,8 @@ package UARP.API.Drawings is
    --  whether the id exists.
    --
    --  GET /api/v1/drawings/{drawingId}
+   --
+   --  Required scopes: drawing:read.
    function Get
      (Self : Client_Type;
       Drawing_Id : String;
@@ -151,6 +159,8 @@ package UARP.API.Drawings is
    --  reveal whether the id exists.
    --
    --  GET /api/v1/drawings/{drawingId}/masks/{maskId}
+   --
+   --  Required scopes: drawing:read.
    function Get_Drawing_Mask
      (Self : Client_Type;
       Drawing_Id : String;
@@ -165,6 +175,8 @@ package UARP.API.Drawings is
    --  does not reveal whether the id exists.
    --
    --  GET /api/v1/drawings/{drawingId}/masks/{maskId}/content
+   --
+   --  Required scopes: drawing:read.
    function Get_Drawing_Mask_Content
      (Self : Client_Type;
       Drawing_Id : String;
@@ -180,6 +192,8 @@ package UARP.API.Drawings is
    --  does not reveal whether the id exists.
    --
    --  GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}
+   --
+   --  Required scopes: drawing:read.
    function Get_Drawing_Tile
      (Self : Client_Type;
       Drawing_Id : String;
@@ -200,6 +214,8 @@ package UARP.API.Drawings is
    --  reveal whether the id exists.
    --
    --  GET /api/v1/drawings/{drawingId}/ops
+   --
+   --  Required scopes: drawing:read.
    function List_Drawing_Ops
      (Self : Client_Type;
       Drawing_Id : String;
@@ -214,7 +230,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/sessions/{sessionId}/drawings
    --
-   --  Required scopes: sessions:read.
+   --  Required scopes: drawing:read, sessions:read.
    function List_Session_Drawings
      (Self : Client_Type;
       Session_Id : String;
@@ -242,6 +258,8 @@ package UARP.API.Drawings is
    --  exists.
    --
    --  GET /api/v1/drawings/{drawingId}/render
+   --
+   --  Required scopes: drawing:read.
    function Render_Drawing
      (Self : Client_Type;
       Drawing_Id : String;

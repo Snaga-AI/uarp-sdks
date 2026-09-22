@@ -106,6 +106,18 @@ impl PublicApi {
 
     /// Create public session
     ///
+    /// Opens an anonymous chat session against the public agent named by `agent_id` and returns the
+    /// session id, a signed session token (also set as an HttpOnly cookie) and the agent's name,
+    /// greeting and description; the session lives two hours and its public lookup 24 hours. Repeat
+    /// POSTs from the same IP, agent and browser fingerprint within three seconds return the
+    /// existing session with **200** rather than minting a new one, but only for a caller who
+    /// already holds that session's token, so two visitors behind one address never share a
+    /// conversation — a deliberate new chat sends `fresh: true` to bypass the dedup and always get
+    /// **201**. `agent_id` is required (**400**) and an agent that is not public is **404**. Per-IP
+    /// session creation is capped at 300 an hour and concurrent sessions per agent at 100 (both
+    /// **429**, both waived for the configured landing hero agent), on top of the router's
+    /// 30-creations-per-minute per-IP limit.
+    ///
     /// `POST /api/v1/public/sessions`
     pub async fn create_public_session(&self, body: &models::CreatePublicSessionRequest) -> Result<models::CreatePublicSessionResponse> {
         self.client
@@ -268,6 +280,14 @@ impl PublicApi {
 
     /// Get public agent card
     ///
+    /// Returns the anonymous-facing card for one agent: name, description, icon, the
+    /// owner-configured greeting, a human sentence counting its available tools, its enabled SPECs
+    /// by id and short name, the admin-chosen avatar and genome taken from the live agent record
+    /// rather than the public index, and the owning tenant's slug and name so a client can build
+    /// its own way back to the right storefront. An agent that does not exist or is not public
+    /// answers **404** — the two are not distinguished. Anonymous; soft-disabled SPECs are
+    /// excluded, and the model reference is deliberately not disclosed.
+    ///
     /// `GET /api/v1/public/agents/{agentId}`
     pub async fn get_public_agent_card(&self, agent_id: &str) -> Result<models::PublicAgentCard> {
         self.client
@@ -322,6 +342,12 @@ impl PublicApi {
 
     /// Get the public featured agent for the landing-page hero
     ///
+    /// Returns the agent the platform operator has pinned to the landing hero, chosen in the admin
+    /// landing configuration. Always **200**: `agent` is `null` when nothing is configured or when
+    /// the configured agent is no longer public, which is the case the landing page falls back to a
+    /// static mock for. The card carries the agent's id, name, description, icon and greeting only
+    /// — the model reference is deliberately withheld on this anonymous surface. Anonymous.
+    ///
     /// `GET /api/v1/public/landing/featured-agent`
     pub async fn get_public_featured_agent(&self) -> Result<models::GetPublicFeaturedAgentResponse> {
         self.client
@@ -337,6 +363,14 @@ impl PublicApi {
     }
 
     /// Get public file content
+    ///
+    /// Serves the bytes of a file published to the public file index, resolving the owning tenant
+    /// from that index. Only images are served: a file whose MIME type is not `image/*` answers
+    /// **403**, and a file absent from the index, missing from the artifact store, or holding no
+    /// bytes answers **404**. SVG is served as an `attachment` while every other image type is
+    /// `inline`, because an SVG executes script in this origin when rendered. Responses carry the
+    /// content's sha256 as an `ETag` and `Cache-Control: public, max-age=86400, immutable`, a
+    /// matching `If-None-Match` answers **304**, and no authentication is required.
     ///
     /// `GET /api/v1/public/files/{fileId}/content`
     pub async fn get_public_file_content(&self, file_id: &str) -> Result<bytes::Bytes> {
@@ -354,6 +388,14 @@ impl PublicApi {
 
     /// Get public session
     ///
+    /// Returns the transcript of an anonymous session to the holder of its token: the agent's name,
+    /// greeting and description, every non-compacted message with its stable `message_id`, `role`,
+    /// `content`, timestamp and originating `run_id`, the message count and how many messages
+    /// remain against the per-session cap, and the session status. The transcript stays readable
+    /// after the session's own expiry — expiry is enforced on the write path, not here — but an
+    /// agent that has since been made private or had its public surface disabled answers **410**. A
+    /// missing or invalid token is **401**, an unknown session **404**.
+    ///
     /// `GET /api/v1/public/sessions/{sessionId}`
     pub async fn get_public_session(&self, session_id: &str) -> Result<models::PublicSessionView> {
         self.client
@@ -370,6 +412,13 @@ impl PublicApi {
 
     /// Get public state detail
     ///
+    /// Returns one public storefront by slug: the tenant's profile and branding, its full
+    /// marketplace listing, its public agents, the tenant's plan, and a governance summary carrying
+    /// the number of rules in its constitution. The path parameter is the tenant slug. A slug with
+    /// no public profile, or one whose profile exists but was never published to the marketplace,
+    /// answers **404** — the two cases are distinguished by the detail text. Anonymous, drawing on
+    /// the shared 120-per-minute public-read bucket.
+    ///
     /// `GET /api/v1/public/states/{stateId}`
     pub async fn get_public_state(&self, state_id: &str) -> Result<models::GetPublicStateResponse> {
         self.client
@@ -385,6 +434,15 @@ impl PublicApi {
     }
 
     /// Get public tenant profile
+    ///
+    /// Returns one tenant's public profile by slug: name, description, logo, branding, custom
+    /// domain, social links, its marketplace listing when published, and the agents it shows. An
+    /// agent appears only if it is both present in the public agent index (that is, its
+    /// `public_config` is enabled) and — when the tenant has defined `published_agent_ids` — named
+    /// in that allow-list; an undefined allow-list means every public-capable agent is shown.
+    /// `primary_agent_id` is returned only when the tenant's chosen public agent passes those same
+    /// gates, so the page never auto-greets with an agent missing from its own grid. An unknown
+    /// slug answers **404**; anonymous.
     ///
     /// `GET /api/v1/public/tenants/{slug}`
     pub async fn get_public_tenant_profile(&self, slug: &str) -> Result<models::PublicTenant> {
@@ -494,6 +552,15 @@ impl PublicApi {
 
     /// List public plans
     ///
+    /// Lists the plans as the landing page shows them: for each built-in plan the merged name and
+    /// price (falling back to the platform bootstrap price so the page never renders a null), the
+    /// queue tier the plan buys, `effective_concurrent_runs` clamped to the live platform ceiling
+    /// so the page cannot promise more width than the scheduler will run, the reset period, the
+    /// quota set including the monthly image and video allowances, and the overage terms priced per
+    /// million tokens at the configured default model's billed rate. Active custom catalog plans
+    /// marked public are appended, ordered by price; hidden and inactive definitions never appear.
+    /// Anonymous, drawing on the shared 120-per-minute public-read bucket.
+    ///
     /// `GET /api/v1/public/plans`
     pub async fn list_public_plans(&self) -> Result<models::ListPublicPlansResponse> {
         self.client
@@ -510,6 +577,12 @@ impl PublicApi {
 
     /// List public states
     ///
+    /// Lists the published tenant storefronts in the public marketplace, each with its slug, name,
+    /// description, logo, category, tags, social links, branding and aggregate stats. `category`
+    /// filters, `sort` orders by `recent` (the default, newest `published_at` first), `rating` or
+    /// `popular`, and `limit` caps the page at 50 by default and 100 at most. Anonymous, and capped
+    /// at 30 requests per minute per IP because each call reads and sorts the whole listing table.
+    ///
     /// `GET /api/v1/public/states`
     pub async fn list_public_states(&self) -> Result<models::ListPublicStatesResponse> {
         self.client
@@ -525,6 +598,15 @@ impl PublicApi {
     }
 
     /// List public tenants
+    ///
+    /// Lists the public tenant directory — every tenant with a public profile, its published agents
+    /// and its marketplace listing row. `category` and `search` filter (search matches name and
+    /// description, case-insensitively), `sort` orders by `recent`, `popular`, `rating` or
+    /// `agents`, and `limit` caps the page at 50 by default and 100 at most. Paging is by opaque
+    /// `cursor`; the response carries `items`, the next `cursor` or null, `has_more` and the
+    /// filtered `total`. The directory is built by a fan-out over the public index and cached
+    /// process-wide for a short window, and the response is sent anonymously with `Cache-Control:
+    /// public, max-age=60`.
     ///
     /// `GET /api/v1/public/tenants`
     pub async fn list_public_tenants(&self, params: &ListPublicTenantsParams) -> Result<models::ListPublicTenantsResponse> {
@@ -565,6 +647,15 @@ impl PublicApi {
 
     /// Domain lookup
     ///
+    /// Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
+    /// arriving on a vanity host can be routed to the right public profile; the `domain` query
+    /// parameter is required and must look like a hostname of at most 253 characters (**400**).
+    /// Only a domain whose tenant record still reads `verified` is disclosed; anything else is
+    /// **404**. On an index miss the handler walks the tenant registry once and rebuilds the
+    /// missing `domain_map` row when it finds a matching verified record, so the next call takes
+    /// the fast path. Anonymous, and capped at 20 requests per minute per IP because a miss fans
+    /// out across the registry.
+    ///
     /// `GET /api/v1/public/domain-lookup`
     pub async fn public_domain_lookup(&self, params: &PublicDomainLookupParams) -> Result<models::PublicDomainLookupResponse> {
         self.client
@@ -600,6 +691,16 @@ impl PublicApi {
 
     /// Respond to public HITL
     ///
+    /// Supplies the visitor's answer to an agent that has paused for input, storing `response` and
+    /// flipping the session's latest run from `awaiting_input` back to `queued` and scheduling it;
+    /// the flip is a CAS, so of two concurrent calls only one wins and the loser gets **409**,
+    /// which is also the answer when the latest run is not awaiting input or was not created on the
+    /// public path. A missing or invalid token is **401**, as is a token whose tenant and agent
+    /// disagree with the session lookup; an unknown session or no run at all is **404**, and an
+    /// empty `response` **400**. The per-session message cap, the global anonymous gate and the
+    /// landing agent's daily ceiling are charged only to the winner of the flip, each **429** with
+    /// the run rolled back to `awaiting_input`. Appends a `run.input_received` event.
+    ///
     /// `POST /api/v1/public/sessions/{sessionId}/respond`
     pub async fn respond_to_public_hitl(&self, session_id: &str, body: &models::RespondToPublicHitlRequest) -> Result<models::RespondToPublicHitlResponse> {
         self.client
@@ -615,6 +716,17 @@ impl PublicApi {
     }
 
     /// Send public message
+    ///
+    /// Appends a visitor message to an anonymous session and schedules a run, answering **202**
+    /// with the new `run_id` and the messages remaining; subscribe to the session's SSE stream for
+    /// the output. `content` is required and capped at 10 000 characters (**400**), and because the
+    /// session runs one run at a time, sending while a run is still active answers **409**. Several
+    /// ceilings apply before anything is scheduled, each **429**: the per-session message cap
+    /// (default 50), a per-session rate of six messages a minute, the owner tenant's run and token
+    /// quota, a global anonymous-throughput gate, and — for the configured landing hero agent,
+    /// which is exempt from the per-session cap — a per-visitor daily message ceiling. An expired
+    /// session answers **401** and a closed one **404**; the message count is claimed by CAS before
+    /// the run is scheduled, and a run that loses that race is deleted rather than left orphaned.
     ///
     /// `POST /api/v1/public/sessions/{sessionId}/messages`
     pub async fn send_public_message(&self, session_id: &str, body: &models::SendPublicMessageRequest) -> Result<models::SendPublicMessageResponse> {
@@ -634,8 +746,11 @@ impl PublicApi {
     ///
     /// Snapshots the last 60 user/assistant turns of the session into a share record that
     /// `getPublicSharedChat` serves for a limited time, and returns its token. No body. A session
-    /// with no turns yet is 400 `Nothing to share yet`. Forms measured through the router with a
-    /// seeded session (public-served-forms_test.ts, 2026-09-10).
+    /// with no turns yet is 400 `Nothing to share yet`. Sharing the SAME conversation again returns
+    /// the token that already exists rather than a second copy, so a repeated press or a client
+    /// retry is free and never counts against the ceiling; a session may publish 20 DISTINCT
+    /// snapshots, after which further ones are 429. Forms measured through the router with a seeded
+    /// session (public-served-forms_test.ts, 2026-09-10).
     ///
     /// `POST /api/v1/public/sessions/{sessionId}/share`
     pub async fn share_public_session(&self, session_id: &str) -> Result<models::SharePublicSessionResponse> {
@@ -672,6 +787,15 @@ impl PublicApi {
     }
 
     /// SSE stream for public session
+    ///
+    /// Server-Sent Events for an anonymous session: the run events of every run in the session,
+    /// each with an id of `\<runId\>:\<seq\>`, so a client can resume by sending the last one as
+    /// `Last-Event-ID`. The session token is required (**401** when absent) and is verified inside
+    /// the stream — an invalid token arrives as an `error` event on an otherwise open stream rather
+    /// than an HTTP status. Each open stream takes a slot against the platform's concurrent-SSE
+    /// ceiling, keyed by public session rather than tenant, and exceeding it answers **429**.
+    /// Anonymous, and limited to 240 requests per minute per IP by the router so reconnect storms
+    /// do not trip the ordinary public cap.
     ///
     /// `GET /api/v1/public/sessions/{sessionId}/events`
     ///

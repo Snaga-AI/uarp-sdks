@@ -16,6 +16,15 @@ export class GuardrailsResource extends APIResource {
   /**
    * Register a custom guardrail
    *
+   * Registers a webhook the platform will call to screen agent traffic. `name`, a valid
+   * `webhook_url` and `phase` (`input`, `output` or `both`) are required; `action` defaults to
+   * `block` and `timeout_ms` to 5000, and an optional `secret` is used to sign the call. The URL
+   * is screened for SSRF with DNS resolution and the admin denylist before anything is stored —
+   * a URL that fails answers 400 — and the URL is re-validated at every delivery, because DNS
+   * can change afterwards. On success the config is persisted and the guardrail is registered on
+   * the live runner, taking effect without a restart. Requires `guardrails:write`; answers 201
+   * with the stored config.
+   *
    * `POST /api/v1/guardrails`
    *
    * Required scopes: `guardrails:write`.
@@ -33,6 +42,12 @@ export class GuardrailsResource extends APIResource {
   /**
    * Delete a guardrail
    *
+   * Removes a custom guardrail's stored configuration, so it is not registered on the next
+   * start. The record must exist — 404 otherwise — and requires delete permission plus the
+   * `guardrails:write` scope. There are no sub-paths under a guardrail id: a trailing segment is
+   * refused with 404 before the record is even read, so a malformed path can never delete the
+   * guardrail.
+   *
    * `DELETE /api/v1/guardrails/{guardrailId}`
    *
    * Required scopes: `guardrails:write`.
@@ -48,6 +63,10 @@ export class GuardrailsResource extends APIResource {
 
   /**
    * List guardrails
+   *
+   * Lists up to 100 custom webhook guardrails registered for the tenant, each with its `phase`,
+   * `action`, timeout and webhook URL. Requires the `guardrails:read` scope and read permission
+   * on guardrails. Built-in platform guardrails are not part of this list.
    *
    * `GET /api/v1/guardrails`
    *

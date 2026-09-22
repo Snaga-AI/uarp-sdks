@@ -424,7 +424,14 @@ class Parser {
     const { response, sse, errorStatuses } = this.#response(raw.responses ?? {}, opName);
     const pagination = this.#pagination(response, queryParams);
 
+    // Scopes live in `x-scopes` on the operation since the contract's CTR-10
+    // decision (2026-09-10): the spec reads scope strings only on an `oauth2`
+    // scheme, and these are API keys on an `http` scheme, so the `security`
+    // entries carry `[]` and the strings sit beside them. A document that
+    // still lists them under `security` is read the old way.
     const scopes = new Set<string>();
+    const x = raw['x-scopes'];
+    if (Array.isArray(x)) for (const s of x) scopes.add(String(s));
     for (const requirement of (raw.security ?? this.#doc.security ?? []) as Json[]) {
       for (const list of Object.values<string[]>(requirement)) for (const s of list ?? []) scopes.add(s);
     }
@@ -606,9 +613,20 @@ class Parser {
 
   #scopeCatalogue(): string[] {
     const scopes = new Set<string>();
+    // The scheme's own catalogue (`bearerAuth.x-scopes: {scope: description}`
+    // or a list) comes first; the operations' scopes are unioned in so a scope
+    // an operation requires is never missing from the generated constant.
+    for (const scheme of Object.values<Json>(this.#doc.components?.securitySchemes ?? {})) {
+      const x = scheme?.['x-scopes'];
+      if (Array.isArray(x)) for (const s of x) scopes.add(String(s));
+      else if (x && typeof x === 'object') for (const s of Object.keys(x)) scopes.add(s);
+    }
     for (const item of Object.values<Json>(this.#doc.paths ?? {})) {
       for (const method of HTTP_METHODS) {
-        for (const req of (item[method]?.security ?? []) as Json[]) {
+        const op = item[method];
+        if (!op) continue;
+        if (Array.isArray(op['x-scopes'])) for (const s of op['x-scopes']) scopes.add(String(s));
+        for (const req of (op.security ?? []) as Json[]) {
           for (const list of Object.values<string[]>(req)) for (const s of list ?? []) scopes.add(s);
         }
       }

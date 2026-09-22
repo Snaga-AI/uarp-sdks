@@ -21,6 +21,8 @@ public val SCOPES: List<String> = listOf(
     "api_keys:write",
     "billing:read",
     "billing:write",
+    "drawing:read",
+    "drawing:write",
     "evaluations:read",
     "evaluations:write",
     "events:read",

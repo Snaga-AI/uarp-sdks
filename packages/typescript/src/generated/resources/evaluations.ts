@@ -23,6 +23,14 @@ export class EvaluationsResource extends APIResource {
   /**
    * Create custom webhook scorer
    *
+   * Registers a custom scorer for this agent and returns it with `201`. Only `config.type:
+   * "webhook"` is accepted; `config.url` is validated at registration against a DNS-aware SSRF
+   * guard — public scheme, no private or link-local address, resolution must succeed, and the
+   * admin-configured webhook denylist applies — and a URL that fails is refused `422`. The gate
+   * exists because the evaluator round-trips the scorer's `score` and `reason` back into the
+   * eval results, which would otherwise carry whatever an internal endpoint returned.
+   * `config.timeout_ms` bounds each call.
+   *
    * `POST /api/v1/agents/{agentId}/scorers`
    *
    * Required scopes: `evaluations:write`.
@@ -39,6 +47,11 @@ export class EvaluationsResource extends APIResource {
 
   /**
    * Create an evaluation dataset
+   *
+   * Creates a named evaluation dataset for the agent from the `cases` in the body — at least one
+   * is required — and returns it with `201`, each case stamped with a generated id. Requires the
+   * `evaluations:write` scope and the `evaluations.write` permission. Datasets are the input
+   * `POST /api/v1/agents/{agentId}/evaluations` runs against; creating one executes nothing.
    *
    * `POST /api/v1/agents/{agentId}/datasets`
    *
@@ -76,6 +89,9 @@ export class EvaluationsResource extends APIResource {
   /**
    * Get evaluation dataset details
    *
+   * Returns one evaluation dataset with its cases, or `404` when this agent has no dataset with
+   * that id.
+   *
    * `GET /api/v1/agents/{agentId}/datasets/{datasetId}`
    *
    * Required scopes: `evaluations:read`.
@@ -90,6 +106,9 @@ export class EvaluationsResource extends APIResource {
 
   /**
    * Get evaluation run results
+   *
+   * Returns one evaluation run with its per-case results and scores, or `404` when this agent
+   * has no eval run with that id.
    *
    * `GET /api/v1/agents/{agentId}/evaluations/{evalRunId}`
    *
@@ -106,6 +125,10 @@ export class EvaluationsResource extends APIResource {
   /**
    * Get experiment details
    *
+   * Returns an A/B experiment — its variants and their per-variant results — or `404` when no
+   * experiment with that id exists. The lookup is by tenant and experiment id; the `agentId` in
+   * the path is not part of the key, so it selects the route rather than narrowing the result.
+   *
    * `GET /api/v1/agents/{agentId}/experiments/{experimentId}`
    *
    * Required scopes: `evaluations:read`.
@@ -120,6 +143,10 @@ export class EvaluationsResource extends APIResource {
 
   /**
    * List custom evaluation scorers
+   *
+   * Lists the custom scorers registered for this agent, with `total`. These are the extra
+   * scorers `POST /api/v1/agents/{agentId}/evaluations` can be asked to apply by name alongside
+   * the built-in ones.
    *
    * `GET /api/v1/agents/{agentId}/scorers`
    *
@@ -136,6 +163,9 @@ export class EvaluationsResource extends APIResource {
   /**
    * List evaluation datasets for an agent
    *
+   * Lists the evaluation datasets belonging to this agent, with `total`. No filtering or paging
+   * — the whole set comes back. Requires the `evaluations:read` scope.
+   *
    * `GET /api/v1/agents/{agentId}/datasets`
    *
    * Required scopes: `evaluations:read`.
@@ -151,6 +181,10 @@ export class EvaluationsResource extends APIResource {
   /**
    * List evaluation runs for an agent
    *
+   * Lists this agent's evaluation runs as `eval_runs`, with `total`. No filtering or paging.
+   * Each entry carries the run's aggregate outcome; the per-case detail is in the single-run
+   * read.
+   *
    * `GET /api/v1/agents/{agentId}/evaluations`
    *
    * Required scopes: `evaluations:read`.
@@ -165,6 +199,15 @@ export class EvaluationsResource extends APIResource {
 
   /**
    * Run an evaluation suite against an agent
+   *
+   * Starts an evaluation of the agent against the dataset named by `dataset_id` and returns the
+   * eval run with `201`. This executes the agent once per case, so it passes the same quota gate
+   * a normal run does — monthly run quota, budget and payment state — and is refused `429` when
+   * it does not pass, before any case executes. `scorers` names the scorers to apply, custom
+   * ones included, and `auto_rollback_on_regression` lets the evaluator roll the agent back to
+   * its previous version when the suite regresses — an automated write to the agent with no
+   * human in the loop. Results are read back through `GET
+   * /api/v1/agents/{agentId}/evaluations/{evalRunId}`.
    *
    * `POST /api/v1/agents/{agentId}/evaluations`
    *

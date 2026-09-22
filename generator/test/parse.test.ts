@@ -241,6 +241,22 @@ test('marks mutating /api/v1 requests idempotent', () => {
   assert.equal(operation(spec, 'listAgents').idempotent, false);
 });
 
+// -------------------------------------------------------------------- scopes
+
+test('reads scopes from x-scopes on the operation and the scheme, and still from security', () => {
+  // CTR-10 (2026-09-10): the served document names an operation's scopes in
+  // `x-scopes` and leaves `security: [{bearerAuth: []}]`, because an `http`
+  // scheme carries no scope strings under the specification. A document that
+  // still puts them under `security` reads the same as before.
+  const spec = fixture('scopes');
+  assert.deepEqual(operation(spec, 'listAgents').scopes, ['agents:read']);
+  assert.deepEqual(operation(spec, 'createAgent').scopes, ['agents:write']);
+  assert.deepEqual(operation(spec, 'health').scopes, []);
+  // The catalogue is the scheme's `x-scopes` keys — a scope no operation
+  // requires is still a scope a key can carry.
+  assert.deepEqual(spec.scopes, ['agents:read', 'agents:write', 'billing:read']);
+});
+
 // ----------------------------------------------------------------- streaming
 
 test('recognises event streams and leaves transport headers alone', () => {
@@ -296,7 +312,29 @@ test('parses the production document into the expected shape', () => {
   // surface arrives whole (#472, stage 1) — nine paths, twelve operations —
   // plus `DELETE /sessions/{id}/branches/{id}` in the same merge, and the two
   // feedback withdrawals of #474/#477 on paths that already existed.
-  assert.equal(ops.length, 723);
+  // 723 -> 734 on 2026-09-16: eleven billing/overage operations and a handler
+  // for `DELETE /governance/permissions/spawn-policy`. This assertion was NOT
+  // updated with it, and four more below went stale in the same two commits.
+  // Not a gap in CI — `npm test --prefix generator` runs this file and would
+  // have caught every one. Those commits were simply never pushed, so no CI
+  // ran on them at all. A local refresh that skips `make test-generator` has
+  // nothing standing behind it, which is the same lesson the 0.5.16 entry
+  // above records and the 1423 entry records again.
+  // 734 -> 735 on 2026-09-17 (build b7e7c64a, uarp #487): `POST
+  // /auth/oauth/nonce`, which the wire had been serving undocumented.
+  // 735 -> 737 on 2026-09-18: `GET` and `PUT /agents/{agentId}/mcp-servers`,
+  // the connect surface between an agent and the MCP servers its tenant has
+  // installed. Both arrived described — body, responses and `x-scopes`.
+  // 737 -> 734 on 2026-09-21: the SPEC-package admin surface is withdrawn
+  // (uarp f058b582) — `GET` and `PUT /admin/config/spec-packages` and the
+  // `stripe-price` POST beside them. The second shrink this count has
+  // recorded, and the first that had to argue with `update-spec.sh`: its
+  // guard refuses a smaller document, which is right, and its advice was to
+  // "pass the right url", which could only have re-vendored a stale one.
+  // `/billing/spec-packages` is NOT in this three — the withdrawal left the
+  // list answering `[]` and the checkout answering 410, both deprecated, for
+  // clients that still call them.
+  assert.equal(ops.length, 734);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -473,15 +511,52 @@ test('parses the production document into the expected shape', () => {
   // surface brings eight named schemas (Drawing, DrawingBrush, DrawingLayer,
   // DrawingMask, DrawingOp, DrawingJournalEntry, DrawingSelectionShape,
   // DrawingStrokePoint) and the objects nested inside them.
-  assert.equal(spec.types.length, 1456);
+  // 1456 -> 1481 on 2026-09-16: the billing/overage, promo, budget,
+  // data-explorer import/export and bridge-specs surfaces, +26 named types
+  // against one dropped. Unrecorded at the time, like the operation count
+  // above: the refresh landed in two commits and the generator suite ran for
+  // neither.
+  // 1481 -> 1488 on 2026-09-17 (build b7e7c64a, uarp #487): TenantSocialLinks
+  // and TenantSocialLinksCustomItem — `Tenant.social_links` stops being a bare
+  // object and gains eleven described platforms — plus MintLoginNonceResponse
+  // for the newly documented `POST /auth/oauth/nonce`, SubjectSweep,
+  // DeleteMeResponseErased, InvokeListingAgentResponse and its error type.
+  // 1488 -> 1489 on 2026-09-17 (build cc84d0c5, uarp #488): PatchTenantRequest.
+  // The body of `PATCH /tenants/me` stopped being a bare `{"type": "object"}`
+  // and gained `social_links` beside `additionalProperties: true`, so it earns
+  // a named type. Exactly one: `TenantSocialLinks` and its custom item already
+  // existed, hoisted out of the inline schema on `Tenant` in the previous
+  // refresh, and arriving from `components` this time did not rename them.
+  // That is why this refresh is not a break for 0.6.x consumers.
+  // 1489 -> 1494 on 2026-09-18: the two mcp-servers operations bring
+  // ListAgentMCPServersResponse, SetAgentMCPServersRequest,
+  // SetAgentMCPServersResponse and MCPServerAuth with its type enum.
+  // 1494 -> 1490 on 2026-09-21: thirteen names leave with the SPEC-package
+  // withdrawal (SpecPackage and its pricing/program/plan family, the two admin
+  // request-response types, and the two the billing list carried), nine
+  // arrive — SpecToolCatalogSpec with its `requires` block and its
+  // `ready|needs_connection` status, UsageQuotaCounter and its kind,
+  // AgentStatusReasonCode, CreatePlanStripePriceRequestInterval,
+  // CustomPlanBasePlan. Net four.
+  // The name that matters here is in neither list, because it only grew:
+  // `ErrorCode` goes from 58 values to 76, and `Run` gains `error_code` and
+  // `error_details`. Until this refresh no generated client could read why a
+  // run failed except by regex over an English sentence.
+  assert.equal(spec.types.length, 1490);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
   // not a count change — the old spelling stays a server-side alias).
-  assert.equal(spec.scopes.length, 32);
+  // 32 -> 34 on 2026-09-16: the catalogue is read from the scheme's
+  // `x-scopes` (CTR-10) and it names `drawing:read`/`drawing:write`, which the
+  // drawings operations already required under `x-scopes`.
+  assert.equal(spec.scopes.length, 34);
   // 11 -> 15: mission events, squad chat, squad run events, training-job events.
   // 15 -> 14 on 2026-09-10 (0.5.18): the training-job events stream is gone.
-  assert.equal(ops.filter((o) => o.sse).length, 14);
+  // 14 -> 15 on 2026-09-16: `GET /companies/{companyId}/events`. Also
+  // unrecorded at the time — the third of five numbers the same two unpushed
+  // commits left behind.
+  assert.equal(ops.filter((o) => o.sse).length, 15);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was
@@ -497,11 +572,15 @@ test('parses the production document into the expected shape', () => {
   // existed before and was not counted. This count is the proof the change
   // took: an integer `cursor` reads as a filter, a string one as a page.
   // 15 -> 16 on 2026-09-14 (uarp #472): `listSessionDrawings`.
-  assert.equal(ops.filter((o) => o.pagination).length, 16);
+  // 16 -> 17 on 2026-09-16: `listCompanies`. The fourth number the same two
+  // commits left stale.
+  assert.equal(ops.filter((o) => o.pagination).length, 17);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 3);
+  // 3 -> 4 on 2026-09-16: `importDataExplorer`, which takes an upload.
+  // The fifth and last number the same two commits left stale.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 4);
 });
 
 test('every named type reference resolves', () => {

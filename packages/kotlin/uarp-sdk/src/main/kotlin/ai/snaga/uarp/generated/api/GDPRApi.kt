@@ -26,13 +26,24 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
     /**
      * Data subject access request
      *
+     * Collects every record in the caller's tenant tagged with the `subject_id` given as a query
+     * parameter and returns their ids by family — runs, sessions, memory entries, files and
+     * message feedback — plus a count for each. Each family is scanned to exhaustion with a
+     * cursor, so the answer is not truncated. `subject_id` is required and at most 256 characters
+     * (**422**). Requires an authenticated caller with the `admin` role — anonymous is **401**, a
+     * lesser role **403** — and writes a `data_subject.access` audit entry.
+     *
      * `GET /api/v1/data-subject/access`
      */
-    public suspend fun dataSubjectAccess(options: RequestOptions = RequestOptions()): DataSubjectAccessReport {
+    public suspend fun dataSubjectAccess(subjectId: String, options: RequestOptions = RequestOptions()): DataSubjectAccessReport {
+        val query = buildList {
+            add("subject_id" to subjectId)
+        }
         return client.request<DataSubjectAccessReport>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/data-subject/access",
+                query = query,
                 options = options,
             )
         )
@@ -40,6 +51,15 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
 
     /**
      * Data subject erasure request
+     *
+     * Deletes every run, session, memory entry, core-memory row, stored file (bytes and chunks,
+     * through the artifact store) and message feedback in the tenant tagged with
+     * `body.subject_id`, returning a per-family deleted count plus `not_erased` — the families
+     * this sweep cannot reach because they carry no subject tag (knowledge-base documents and
+     * workspace files), with the route to delete them by hand. Irreversible, and refused with
+     * **423** while the tenant is under legal hold or suspended. Requires the `admin` role
+     * (**403**, or **401** when unauthenticated), and `subject_id` must be a string of at most 256
+     * characters (**422**). Writes a `data_subject.erasure` audit entry.
      *
      * `POST /api/v1/data-subject/erasure`
      */

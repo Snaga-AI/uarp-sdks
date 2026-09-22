@@ -10,6 +10,13 @@ public struct BillingAPI: Sendable {
 
     /// Check tenant quota status
     ///
+    /// Reports the tenant's quota position: the effective `plan`, the monthly token and run check
+    /// from the usage tracker, raw `usage`, the `daily` token share with its `resets_at`, the day
+    /// and month reset moments, a `limits` mirror of the plan scalars, and `resource_usage` — the
+    /// canonical `{count, limit, over_by}` per resource for agents, teams, knowledge bases and
+    /// workspaces. `resource_usage` is what a client should read for a resource's limit; `limits`
+    /// exists for older consumers. Gated on the `billing:read` permission and scope.
+    ///
     /// `GET /api/v1/usage/quota`
     ///
     /// Required scopes: `billing:read`.
@@ -17,6 +24,25 @@ public struct BillingAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/usage/quota",
+            options: options
+        ))
+    }
+
+    /// Remove this tenant's spend cap
+    ///
+    /// Removes the tenant's spend cap, after which run starts are no longer gated by a dollar
+    /// ceiling. Refused with **409** while metered overage is enabled, since dropping the cap under
+    /// overage would leave the invoice unbounded — disable overage first. Requires the
+    /// `billing:write` permission and scope.
+    ///
+    /// `DELETE /api/v1/billing/budget`
+    ///
+    /// Required scopes: `billing:write`.
+    public func clearBillingBudget(options: RequestOptions = .init()) async throws -> ClearBillingBudgetResponse {
+        return try await client.send(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/billing/budget",
+            idempotent: true,
             options: options
         ))
     }
@@ -42,6 +68,15 @@ public struct BillingAPI: Sendable {
 
     /// Create Stripe checkout session
     ///
+    /// Creates a Stripe Checkout session for `plan_id` and returns its `url`; the optional
+    /// `success_url` and `cancel_url` are resolved against the request's own origin and default to
+    /// the billing settings page. Before calling Stripe the handler checks the plan has a price
+    /// wired — an unknown or missing `plan_id`, a plan with no price, an archived product or a
+    /// price Stripe no longer recognises all answer **400** with a message naming what to fix,
+    /// while a deployment with no billing configured answers **501** and an unexpected Stripe fault
+    /// **502**. Side effects: creates the Stripe session and records a `checkout_started` analytics
+    /// event. Requires the `billing:write` permission and scope.
+    ///
     /// `POST /api/v1/billing/checkout-session`
     ///
     /// Required scopes: `billing:read`.
@@ -55,35 +90,69 @@ public struct BillingAPI: Sendable {
         ))
     }
 
-    /// Start Stripe checkout for a SPEC package
+    /// Removed — 410 Gone
     ///
-    /// Answers a Stripe-hosted URL to redirect to.
-    ///
-    /// `success_url` and `cancel_url` must be SAME-ORIGIN with the request; anything else is
-    /// refused. Both default to the billing settings page, so a caller that has no opinion should
-    /// omit them rather than construct one.
-    ///
-    /// Three refusals worth telling apart. **501** — billing is not configured on this deployment.
-    /// Not 502, deliberately: no upstream was contacted, and a 502 sends an operator hunting an
-    /// outage when the fix is one admin setting. **400** — the package exists but has no Stripe
-    /// price wired, and the message names the admin screen that creates one. **404** — no such
-    /// package, or it is archived.
+    /// SPEC packages are no longer sold. The route answers 410 for one release so a client still
+    /// calling it can tell a withdrawn feature from a wrong URL; it is deleted after that.
     ///
     /// `POST /api/v1/billing/spec-packages/{packageId}/checkout-session`
     ///
     /// Required scopes: `billing:read`.
-    public func createSpecPackageCheckoutSession(packageId: String, body: CreateSpecPackageCheckoutSessionRequest? = nil, options: RequestOptions = .init()) async throws -> CreateSpecPackageCheckoutSessionResponse {
-        let encodedBody: RequestBody? = try body.map { try client.encode($0) }
+    @available(*, deprecated)
+    public func createSpecPackageCheckoutSession(packageId: String, options: RequestOptions = .init()) async throws -> CreateSpecPackageCheckoutSessionResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/billing/spec-packages/\(encodePathSegment(packageId))/checkout-session",
-            body: encodedBody,
             idempotent: true,
             options: options
         ))
     }
 
+    /// Read this tenant's spend cap and its current status
+    ///
+    /// Reads the tenant's spend cap. When none is configured the response is `{configured: false}`
+    /// with null `budget` and `status`; otherwise it returns the stored config (limit, soft and
+    /// hard thresholds as fractions, period) together with the live status from the budget manager
+    /// — the same ceiling that gates every run start. Requires the `billing:read` permission and
+    /// scope.
+    ///
+    /// `GET /api/v1/billing/budget`
+    ///
+    /// Required scopes: `billing:read`.
+    public func getBillingBudget(options: RequestOptions = .init()) async throws -> GetBillingBudgetResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/billing/budget",
+            options: options
+        ))
+    }
+
+    /// Read metered-overage state
+    ///
+    /// Reports whether metered overage is enabled for the tenant, that a spend cap is required for
+    /// it (`requires_cap` is always true), whether a cap is currently configured, and whether a
+    /// Stripe metered item has been provisioned for the subscription. Requires the `billing:read`
+    /// permission and scope.
+    ///
+    /// `GET /api/v1/billing/overage`
+    ///
+    /// Required scopes: `billing:read`.
+    public func getBillingOverage(options: RequestOptions = .init()) async throws -> GetBillingOverageResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/billing/overage",
+            options: options
+        ))
+    }
+
     /// Trial window and a live usage-based plan recommendation
+    ///
+    /// Reports whether the tenant's trial is still running — `status` is `trial` and
+    /// `trial_ends_at` is in the future — with the end date and whole days left, and, while it is
+    /// active, a live plan recommendation computed from the tenant's actual usage and agent count.
+    /// The recommendation is advisory: nothing here changes a plan or charges anything, and if the
+    /// computation fails the stored recommendation (or `null`) is returned instead. Requires the
+    /// `billing:read` permission and scope.
     ///
     /// `GET /api/v1/billing/trial`
     ///
@@ -98,6 +167,10 @@ public struct BillingAPI: Sendable {
 
     /// Image and video generation usage against plan quotas
     ///
+    /// Reports image and video generation counts for the current month, and the current day for
+    /// images, against the effective plan's media quotas; a `null` limit means the plan sets none.
+    /// Read-only and gated on the `billing:read` permission and scope.
+    ///
     /// `GET /api/v1/usage/media`
     ///
     /// Required scopes: `billing:read`.
@@ -109,7 +182,34 @@ public struct BillingAPI: Sendable {
         ))
     }
 
+    /// This tenant's promo state: applied code, bonus tokens, owned codes
+    ///
+    /// Returns this tenant's promo state: the code it has redeemed with the redemption date,
+    /// discount percent and whether the referrer has been rewarded; its current bonus-token balance
+    /// computed against the plan's monthly token quota; and, for a tenant that owns promo codes,
+    /// each owned code with its usage count, caps, reward settings and the totals actually rewarded
+    /// so far. Requires the `billing:read` permission and scope.
+    ///
+    /// `GET /api/v1/billing/promo`
+    ///
+    /// Required scopes: `billing:read`.
+    public func getPromoState(options: RequestOptions = .init()) async throws -> GetPromoStateResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/billing/promo",
+            options: options
+        ))
+    }
+
     /// Get current tenant usage
+    ///
+    /// Returns the tenant's token, run and cost totals for the current period, or for the `period`
+    /// given as a query parameter, alongside the effective `plan`, the period length in days, the
+    /// count of bridge tasks completed in that period, and a `margin_summary` derived from the
+    /// configured platform markup. `?agent_id=` switches to a single agent's usage over the last
+    /// `days` (default 30, capped at 90) and returns nothing else; `?breakdown=model` adds a
+    /// per-model array with per-model margin. Read-only — any method other than GET answers **405**
+    /// — and gated on the `billing:read` permission and scope.
     ///
     /// `GET /api/v1/usage`
     ///
@@ -128,6 +228,13 @@ public struct BillingAPI: Sendable {
     }
 
     /// Get usage analytics over time
+    ///
+    /// Returns a daily series for one `metric` — `runs`, `tokens` or `cost`, defaulting to `runs` —
+    /// over the last `days` (default 14, clamped to 90), optionally narrowed to one `agent_id`,
+    /// along with the effective `plan`. An unrecognised `metric` is refused with **400** rather
+    /// than silently defaulting, because returning the runs series under a label the caller asked
+    /// to be cost would be the wrong data; a malformed `days` falls back to the default. Gated on
+    /// the `billing:read` permission and scope.
     ///
     /// `GET /api/v1/usage/timeseries`
     ///
@@ -173,6 +280,12 @@ public struct BillingAPI: Sendable {
 
     /// List available billing plans
     ///
+    /// Lists the four built-in billing plans with the admin's name and price overrides merged in,
+    /// the per-plan limits taken from the same merged quotas the platform enforces, a `current`
+    /// flag marking the caller's effective plan, and `checkout_available` — false for `free` and
+    /// for any plan with no Stripe price wired, which is what a client should read before offering
+    /// the upgrade button. Requires the `billing:read` permission and scope.
+    ///
     /// `GET /api/v1/billing/plans`
     ///
     /// Required scopes: `billing:read`.
@@ -184,30 +297,80 @@ public struct BillingAPI: Sendable {
         ))
     }
 
-    /// SPEC packages this tenant can see, with entitlement
+    /// Removed — always an empty list
     ///
-    /// The tenant-facing view, and deliberately narrower than the admin one: archived packages are
-    /// omitted and **the Stripe price id is never returned** — `checkout_available` is the boolean
-    /// derived from whether one is wired.
-    ///
-    /// `entitlement` is a three-way discriminator a client should branch on rather than infer:
-    /// `plan_included` (comes with the tenant's plan tier), `purchased` (bought a la carte),
-    /// `available` (not entitled, and buyable). It carries the same values as
-    /// `/api/v1/billing/packages` so one card component serves both.
-    ///
-    /// `program` is the nav entry and pages a package contributes, and is ABSENT for agent-only
-    /// packages with no UI — which is what lets a client build the entitlement-gated navigation
-    /// from this single call.
-    ///
-    /// Sorted by `display_order`, then by name.
+    /// SPEC packages were withdrawn on 2026-09-21. Every SPEC an agent declares now runs on the
+    /// tenant's plan, so there is nothing to list and nothing to buy. The route answers
+    /// `{"packages": []}` for one release so a client that still calls it renders an empty section
+    /// instead of a 404; it is deleted after that.
     ///
     /// `GET /api/v1/billing/spec-packages`
     ///
     /// Required scopes: `billing:read`.
+    @available(*, deprecated)
     public func listBillingSpecPackages(options: RequestOptions = .init()) async throws -> ListBillingSpecPackagesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/billing/spec-packages",
+            options: options
+        ))
+    }
+
+    /// Redeem a promo code for this tenant
+    ///
+    /// Applies the promo `code` in the body to this tenant, granting the code's subscriber bonus
+    /// tokens and any discount percent it carries. A code that cannot be redeemed — unknown,
+    /// inactive, exhausted, or already redeemed by this tenant — comes back as a problem response
+    /// with the code `PROMO_REDEMPTION_FAILED`, whose HTTP status is chosen by the redemption
+    /// result and whose detail names the reason. Requires the `billing:write` permission and scope.
+    ///
+    /// `POST /api/v1/billing/promo/redeem`
+    ///
+    /// Required scopes: `billing:read`.
+    public func redeemPromoCode(body: RedeemPromoCodeRequest, options: RequestOptions = .init()) async throws -> RedeemPromoCodeResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/billing/promo/redeem",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Set this tenant's spend cap
+    ///
+    /// WRITE SEMANTICS: replaces. A body that omits `soft_threshold` resets it to 0.8,
+    /// `hard_threshold` to 1.0 and `period` to `monthly` — the handler builds a whole config from
+    /// the body and defaults, it does not read the stored one.
+    ///
+    /// `PUT /api/v1/billing/budget`
+    ///
+    /// Required scopes: `billing:write`.
+    public func setBillingBudget(body: SetBillingBudgetRequest, options: RequestOptions = .init()) async throws -> SetBillingBudgetResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/billing/budget",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Turn metered overage on or off
+    ///
+    /// WRITE SEMANTICS: mixed — the write touches only `billing.overage_enabled` on the tenant
+    /// record (a CAS update), and every other field of that record keeps its stored value. Enabling
+    /// is refused (422) on the free plan and without a spend cap.
+    ///
+    /// `PUT /api/v1/billing/overage`
+    ///
+    /// Required scopes: `billing:write`.
+    public func setBillingOverage(body: SetBillingOverageRequest, options: RequestOptions = .init()) async throws -> SetBillingOverageResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/billing/overage",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }

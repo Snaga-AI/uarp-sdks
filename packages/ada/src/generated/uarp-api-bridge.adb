@@ -129,6 +129,24 @@ package body UARP.API.Bridge is
           Options => Options);
    end Bridge_Web_Socket;
 
+   function Get_Bridge_Agent_Specs
+     (Self : Client_Type;
+      Params : Get_Bridge_Agent_Specs_Params := No_Get_Bridge_Agent_Specs_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Bridge_Agent_Specs_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "agent_id", Params.Agent_Id);
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/bridge/agent-specs",
+             Query => Query,
+             Options => Options));
+   end Get_Bridge_Agent_Specs;
+
    function Get_Bridge_Task_Approval
      (Self : Client_Type;
       Task_Id : String;

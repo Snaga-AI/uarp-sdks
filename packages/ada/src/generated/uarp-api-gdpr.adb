@@ -4,15 +4,19 @@ package body UARP.API.GDPR is
 
    function Data_Subject_Access
      (Self : Client_Type;
+      Params : Data_Subject_Access_Params := No_Data_Subject_Access_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Data_Subject_Access_Report
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      UARP.Types.Add (Query, "subject_id", Params.Subject_Id);
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/data-subject/access",
+             Query => Query,
              Options => Options));
    end Data_Subject_Access;
 

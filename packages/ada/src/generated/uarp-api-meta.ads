@@ -38,6 +38,15 @@ package UARP.API.Meta is
 
    --  Client-side config
    --
+   --  Returns the runtime configuration CLI and bridge clients read instead of hardcoding it: the
+   --  full model pricing table from the configured provider, bridge timing (heartbeat interval,
+   --  poll and approval timeouts), execution limits (tool, shell and HTTP timeouts, maximum file,
+   --  response and shell-output sizes), and `dangerous_tool_prefixes` - the tool-name prefixes
+   --  whose remote invocation must be confirmed. That list is the union of the platform's own set
+   --  and the CLI's built-in fallback, so a client that replaces its list with this one never ends
+   --  up with fewer guards than it shipped with. Tenant-independent; requires an authenticated
+   --  caller but reads nothing tenant-specific.
+   --
    --  GET /api/v1/client-config
    function Get_Client_Config
      (Self : Client_Type;
@@ -45,6 +54,10 @@ package UARP.API.Meta is
       return UARP.Models.Get_Client_Config_Response;
 
    --  Get OpenAPI spec
+   --
+   --  Serves this document - the hand-maintained OpenAPI literal compiled into the server - as
+   --  JSON. It is listed as a public path in the auth middleware and bypasses the tenant check and
+   --  per-tenant rate limiting, so it answers without credentials.
    --
    --  GET /api/v1/openapi.json
    function Get_Open_API_Spec
@@ -54,6 +67,14 @@ package UARP.API.Meta is
 
    --  Get public landing page statistics
    --
+   --  Returns the platform-wide counters the landing page shows: agents deployed, configured LLM
+   --  providers, tool calls today, registered users, and all-time tokens, runs and sessions.
+   --  Normally these are single-key reads of maintained counters; the first request after the
+   --  counters are introduced claims a create-if-absent backfill marker with a ten-minute TTL and
+   --  runs a one-off cross-tenant scan, while concurrent callers skip the scan and serve the
+   --  fast-path numbers. Anonymous, and capped at 10 requests per minute per IP because the
+   --  backfill path is a read-amplification vector.
+   --
    --  GET /api/v1/public/landing-stats
    function Get_Public_Landing_Stats
      (Self : Client_Type;
@@ -61,6 +82,15 @@ package UARP.API.Meta is
       return UARP.Models.Landing_Stats;
 
    --  Search across agents, sessions, runs
+   --
+   --  Searches the caller's tenant for agents, runs, sessions, files, images, projects and memory
+   --  entries whose name, description, id prefix or body contains `q`, and returns a flat list of
+   --  hits each carrying a `type`, `title`, `subtitle`, `href` and `icon`. `type` narrows the
+   --  search to one family (default `all`) and `limit` caps the result count at 20 by default and
+   --  50 at most; a `q` shorter than two characters returns an empty list rather than an error.
+   --  Matching is a case-insensitive substring scan over bounded KV pages, not an index, and a
+   --  memory hit is excerpted around the match. Requires the `search:read` scope; any method other
+   --  than GET answers **405**.
    --
    --  GET /api/v1/search
    --

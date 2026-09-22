@@ -52,6 +52,11 @@ public class NotificationsApi internal constructor(private val client: UarpClien
     /**
      * Purge a single notification
      *
+     * Purges a single notification and its per-user index row. Requires the `notifications:write`
+     * scope on top of the read scope every notifications call needs. An id that does not exist is
+     * a silent no-op that still answers 200 `{ok: true}`, so the call is idempotent and its
+     * response says nothing about whether a record was there.
+     *
      * `DELETE /api/v1/notifications/{notifId}`
      *
      * Required scopes: `notifications:write`.
@@ -69,6 +74,11 @@ public class NotificationsApi internal constructor(private val client: UarpClien
 
     /**
      * Remove a target
+     *
+     * Removes a configured delivery target, so notifications stop being fanned out to that email
+     * address, webhook, browser or device. Requires `notifications:write`. The delete is
+     * unconditional — no existence check — so it is idempotent and answers 200 `{ok: true}`
+     * whether or not the id was there. Existing notification records are untouched.
      *
      * `DELETE /api/v1/notifications/targets/{targetId}`
      *
@@ -109,6 +119,11 @@ public class NotificationsApi internal constructor(private val client: UarpClien
     /**
      * Get unread notification count
      *
+     * Counts the unread notifications this caller can see — tenant-wide ones plus those addressed
+     * to the caller's own key — by scanning the tenant-wide index, the same set the list endpoint
+     * reads, so the count and the list cannot disagree. The same number is returned under three
+     * names (`count`, `unread_count`, `unreadCount`) for older clients.
+     *
      * `GET /api/v1/notifications/unread`
      *
      * Required scopes: `notifications:read`.
@@ -125,6 +140,13 @@ public class NotificationsApi internal constructor(private val client: UarpClien
 
     /**
      * List notifications
+     *
+     * Lists the tenant's notifications newest first. `limit` is clamped to 1..100 and falls back
+     * to 20 for anything non-numeric or empty; `unread=true` returns only unread ones,
+     * over-fetching internally so a page full of read rows does not come back empty while the
+     * unread count says otherwise. There is no cursor and no by-id read — this collection path
+     * answers only for the exact path, and any single-segment suffix under `/notifications` is 404
+     * rather than this list.
      *
      * `GET /api/v1/notifications`
      *
@@ -167,6 +189,12 @@ public class NotificationsApi internal constructor(private val client: UarpClien
     /**
      * Mark all notifications as read
      *
+     * Marks every unread notification visible to this caller — tenant-wide ones and the caller's
+     * own; other people's personal notifications are left alone — as read, writing both the record
+     * and its per-user mirror. Requires `notifications:write`. `marked` counts the rows that
+     * actually changed, so rows that were already read or whose write failed are not included, and
+     * a second call answers 0.
+     *
      * `PUT /api/v1/notifications/read-all`
      *
      * Required scopes: `notifications:write`.
@@ -184,6 +212,11 @@ public class NotificationsApi internal constructor(private val client: UarpClien
 
     /**
      * Mark notification as read
+     *
+     * Marks one notification read, writing the flag to both the tenant-wide record and the
+     * per-user mirror when the notification is addressed to a user. Requires
+     * `notifications:write`. An id that does not exist is a silent no-op answering 200 `{ok:
+     * true}`, and re-marking an already-read notification is harmless — the call is idempotent.
      *
      * `PUT /api/v1/notifications/{notifId}/read`
      *

@@ -198,6 +198,21 @@ package body UARP.API.Auth is
              Options => Options));
    end Logout;
 
+   function Mint_Login_Nonce
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Mint_Login_Nonce_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/auth/oauth/nonce",
+             Idempotent => True,
+             Options => Options));
+   end Mint_Login_Nonce;
+
    function Mint_SSE_Token
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)

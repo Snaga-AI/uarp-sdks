@@ -12,7 +12,7 @@ package UARP.Meta is
    Default_Base_URL : constant String := "https://api.snaga.ai";
 
    --  Number of scopes the security scheme defines.
-   Scope_Count : constant := 32;
+   Scope_Count : constant := 34;
 
    type Scope_Index is range 1 .. Scope_Count;
    type Scope_Names is array (Scope_Index) of access constant String;
@@ -25,30 +25,32 @@ package UARP.Meta is
    Scope_6 : aliased constant String := "api_keys:write";
    Scope_7 : aliased constant String := "billing:read";
    Scope_8 : aliased constant String := "billing:write";
-   Scope_9 : aliased constant String := "evaluations:read";
-   Scope_10 : aliased constant String := "evaluations:write";
-   Scope_11 : aliased constant String := "events:read";
-   Scope_12 : aliased constant String := "files:read";
-   Scope_13 : aliased constant String := "files:write";
-   Scope_14 : aliased constant String := "guardrails:read";
-   Scope_15 : aliased constant String := "guardrails:write";
-   Scope_16 : aliased constant String := "marketplace:invoke";
-   Scope_17 : aliased constant String := "marketplace:read";
-   Scope_18 : aliased constant String := "marketplace:write";
-   Scope_19 : aliased constant String := "memory:read";
-   Scope_20 : aliased constant String := "memory:write";
-   Scope_21 : aliased constant String := "notifications:read";
-   Scope_22 : aliased constant String := "notifications:write";
-   Scope_23 : aliased constant String := "runs:create";
-   Scope_24 : aliased constant String := "runs:read";
-   Scope_25 : aliased constant String := "search:read";
-   Scope_26 : aliased constant String := "sessions:read";
-   Scope_27 : aliased constant String := "sessions:write";
-   Scope_28 : aliased constant String := "tenants:write";
-   Scope_29 : aliased constant String := "users:read";
-   Scope_30 : aliased constant String := "users:write";
-   Scope_31 : aliased constant String := "webhooks:read";
-   Scope_32 : aliased constant String := "webhooks:write";
+   Scope_9 : aliased constant String := "drawing:read";
+   Scope_10 : aliased constant String := "drawing:write";
+   Scope_11 : aliased constant String := "evaluations:read";
+   Scope_12 : aliased constant String := "evaluations:write";
+   Scope_13 : aliased constant String := "events:read";
+   Scope_14 : aliased constant String := "files:read";
+   Scope_15 : aliased constant String := "files:write";
+   Scope_16 : aliased constant String := "guardrails:read";
+   Scope_17 : aliased constant String := "guardrails:write";
+   Scope_18 : aliased constant String := "marketplace:invoke";
+   Scope_19 : aliased constant String := "marketplace:read";
+   Scope_20 : aliased constant String := "marketplace:write";
+   Scope_21 : aliased constant String := "memory:read";
+   Scope_22 : aliased constant String := "memory:write";
+   Scope_23 : aliased constant String := "notifications:read";
+   Scope_24 : aliased constant String := "notifications:write";
+   Scope_25 : aliased constant String := "runs:create";
+   Scope_26 : aliased constant String := "runs:read";
+   Scope_27 : aliased constant String := "search:read";
+   Scope_28 : aliased constant String := "sessions:read";
+   Scope_29 : aliased constant String := "sessions:write";
+   Scope_30 : aliased constant String := "tenants:write";
+   Scope_31 : aliased constant String := "users:read";
+   Scope_32 : aliased constant String := "users:write";
+   Scope_33 : aliased constant String := "webhooks:read";
+   Scope_34 : aliased constant String := "webhooks:write";
 
    --  Every scope named by the UARP security scheme.
    Scopes : constant Scope_Names :=
@@ -83,6 +85,8 @@ package UARP.Meta is
     Scope_29'Access,
     Scope_30'Access,
     Scope_31'Access,
-    Scope_32'Access);
+    Scope_32'Access,
+    Scope_33'Access,
+    Scope_34'Access);
 
 end UARP.Meta;

@@ -13,6 +13,15 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `dataSubjectAccess`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DataSubjectAccessParams {
+    /// Whose records to collect. Required - 422 without it, and 422 over 256 characters. Undeclared
+    /// here until 2026-09-18: the prose named it, the parameter list was empty, so a generated
+    /// client had nothing to pass it with.
+    pub subject_id: String,
+}
+
 /// Data subject access and erasure requests
 #[derive(Debug, Clone)]
 pub struct GDPRApi {
@@ -29,13 +38,20 @@ impl Client {
 impl GDPRApi {
     /// Data subject access request
     ///
+    /// Collects every record in the caller's tenant tagged with the `subject_id` given as a query
+    /// parameter and returns their ids by family — runs, sessions, memory entries, files and
+    /// message feedback — plus a count for each. Each family is scanned to exhaustion with a
+    /// cursor, so the answer is not truncated. `subject_id` is required and at most 256 characters
+    /// (**422**). Requires an authenticated caller with the `admin` role — anonymous is **401**, a
+    /// lesser role **403** — and writes a `data_subject.access` audit entry.
+    ///
     /// `GET /api/v1/data-subject/access`
-    pub async fn data_subject_access(&self) -> Result<models::DataSubjectAccessReport> {
+    pub async fn data_subject_access(&self, params: &DataSubjectAccessParams) -> Result<models::DataSubjectAccessReport> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/data-subject/access".to_string(),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -44,6 +60,15 @@ impl GDPRApi {
     }
 
     /// Data subject erasure request
+    ///
+    /// Deletes every run, session, memory entry, core-memory row, stored file (bytes and chunks,
+    /// through the artifact store) and message feedback in the tenant tagged with
+    /// `body.subject_id`, returning a per-family deleted count plus `not_erased` — the families
+    /// this sweep cannot reach because they carry no subject tag (knowledge-base documents and
+    /// workspace files), with the route to delete them by hand. Irreversible, and refused with
+    /// **423** while the tenant is under legal hold or suspended. Requires the `admin` role
+    /// (**403**, or **401** when unauthenticated), and `subject_id` must be a string of at most 256
+    /// characters (**422**). Writes a `data_subject.erasure` audit entry.
     ///
     /// `POST /api/v1/data-subject/erasure`
     pub async fn data_subject_erasure(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::DataSubjectErasureResult> {

@@ -10,7 +10,19 @@ public struct BridgeAPI: Sendable {
 
     /// Delegate task to bridge agent
     ///
+    /// Hands a task from the head agent to a specific bridge machine. `agent_id` and `message` are
+    /// required (400); the tenant must have a head agent configured (403), the target agent must
+    /// exist (404) and its `execution_mode` must be `bridge` (400). Creates a run in `running`
+    /// state, enqueues a task whose source is `head_agent` — which the bridge auto-approves — with
+    /// any `context` object rendered into the message ahead of it, emits `run.started` for SSE
+    /// subscribers, and returns the task and run ids with `status` either `enqueued` or
+    /// `queued_offline` depending on whether the machine is currently connected; an offline machine
+    /// picks the task up when it reconnects. Not idempotent. Requires the `runs` write permission
+    /// and the `runs:create` scope.
+    ///
     /// `POST /api/v1/bridge/delegate`
+    ///
+    /// Required scopes: `runs:create`.
     public func bridgeDelegate(body: BridgeDelegateRequest, options: RequestOptions = .init()) async throws -> BridgeDelegateResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -23,7 +35,18 @@ public struct BridgeAPI: Sendable {
 
     /// Deregister bridge agent
     ///
+    /// Records the clean shutdown of a bridge machine. The body must carry `machine_id`, or an
+    /// `agent_id` the server resolves to one, else 400. The connection is marked offline and
+    /// flagged as cleanly deregistered — that flag is what stops the WebSocket close that follows
+    /// from failing the machine's still-in-flight runs — then removed from the agent's machine
+    /// index, and the agent itself is set inactive. Answers `{status: "offline"}` whether or not a
+    /// connection record existed, so it is idempotent. Requires the `agents` write permission and
+    /// the `agents:write` scope; a browser session token is accepted here, unlike the machine-only
+    /// bridge endpoints.
+    ///
     /// `POST /api/v1/bridge/deregister`
+    ///
+    /// Required scopes: `agents:write`.
     public func bridgeDeregister(body: BridgeDeregisterRequest, options: RequestOptions = .init()) async throws -> BridgeDeregisterResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -40,6 +63,8 @@ public struct BridgeAPI: Sendable {
     /// intentional** — drives the client to re-register rather than reusing a stale identity.
     ///
     /// `POST /api/v1/bridge/heartbeat`
+    ///
+    /// Required scopes: `agents:write`.
     public func bridgeHeartbeat(body: BridgeHeartbeatRequest, options: RequestOptions = .init()) async throws -> BridgeHeartbeatResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -56,6 +81,8 @@ public struct BridgeAPI: Sendable {
     /// pending, or 204 No Content on timeout (client should re-poll immediately).
     ///
     /// `GET /api/v1/bridge/poll`
+    ///
+    /// Required scopes: `runs:read`.
     public func bridgePoll(agentId: String? = nil, machineId: String? = nil, timeout: Int? = nil, options: RequestOptions = .init()) async throws -> BridgePollResponse {
         var query: [URLQueryItem] = []
         if let agentId {
@@ -78,10 +105,14 @@ public struct BridgeAPI: Sendable {
     /// Register bridge agent (Snaga CLI handshake)
     ///
     /// Registers a long-lived bridge agent for the calling tenant. Returns 201 on first
-    /// registration, 200 on reconnect of an existing machine_id. Tenant-scoped only — no scope
-    /// enforcement.
+    /// registration, 200 on reconnect of an existing machine_id. Requires `agents:write` and role
+    /// `developer` or above — registering a machine creates and rewrites an agent record, so it is
+    /// a write like any other (2026-09-15; until then this surface enforced no scope or role at
+    /// all).
     ///
     /// `POST /api/v1/bridge/register`
+    ///
+    /// Required scopes: `agents:write`.
     public func bridgeRegister(body: BridgeRegisterRequest, options: RequestOptions = .init()) async throws -> BridgeRegisterResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -94,7 +125,16 @@ public struct BridgeAPI: Sendable {
 
     /// Get bridge connection status
     ///
+    /// Returns up to 50 bridge connection records for the tenant, each with its status recomputed
+    /// from the age of its last heartbeat — online, stale or offline — rather than from the value
+    /// last written, so a machine that stopped reporting shows as offline without anything having
+    /// updated it. The response also carries the server's bridge protocol version, the capabilities
+    /// it speaks, and whether the head-agent delegations it issues are signed. Requires the
+    /// `agents` read permission and the `agents:read` scope.
+    ///
     /// `GET /api/v1/bridge/status`
+    ///
+    /// Required scopes: `agents:read`.
     public func bridgeStatus(options: RequestOptions = .init()) async throws -> BridgeStatusResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -118,9 +158,41 @@ public struct BridgeAPI: Sendable {
         ))
     }
 
+    /// Desired SPEC list for a bridge agent
+    ///
+    /// The SPECs a local bridge agent is expected to have installed, annotated with each SPEC's
+    /// runtime scope so the spec-sync reconciler can decide what to install. `revision` changes
+    /// whenever the list changes; the same value rides on heartbeat and poll acks as
+    /// `specs_revision`.
+    ///
+    /// `GET /api/v1/bridge/agent-specs`
+    ///
+    /// Required scopes: `agents:read`.
+    public func getBridgeAgentSpecs(agentId: String, options: RequestOptions = .init()) async throws -> GetBridgeAgentSpecsResponse {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "agent_id", value: agentId))
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/bridge/agent-specs",
+            query: query,
+            options: options
+        ))
+    }
+
     /// Get approval status
     ///
+    /// Long-poll for the human decision on an approval the bridge previously requested.
+    /// Machine-to-machine only — a browser session token is refused 403 — and requires the `runs`
+    /// read permission and the `runs:read` scope. `approval_id` is a required query parameter
+    /// (400), and the task must exist with a real bridge agent behind it (404), because the
+    /// existence of an approval is itself the secret. The handler polls for up to ten seconds at
+    /// one-second intervals and answers with the decision, HMAC-signed over approval id, task id
+    /// and outcome when a signing key is configured so a strict bridge can trust it; when nothing
+    /// arrives inside the window it answers 204 and the client polls again.
+    ///
     /// `GET /api/v1/bridge/tasks/{taskId}/approval`
+    ///
+    /// Required scopes: `runs:read`.
     public func getBridgeTaskApproval(taskId: String, approvalId: String? = nil, options: RequestOptions = .init()) async throws -> GetBridgeTaskApprovalResponse {
         var query: [URLQueryItem] = []
         if let approvalId {
@@ -136,7 +208,15 @@ public struct BridgeAPI: Sendable {
 
     /// List bridge agents
     ///
+    /// Lists every bridge machine registered for the tenant, including stale and offline ones, as a
+    /// bare JSON array — agent id, machine id and name, capabilities, working directory,
+    /// heartbeat-derived status, and the daemon's own counters when it reports them.
+    /// Attribution-only connections are omitted because they never poll for work, so delegating to
+    /// one would never run. Requires the `agents` read permission and the `agents:read` scope.
+    ///
     /// `GET /api/v1/bridge/agents`
+    ///
+    /// Required scopes: `agents:read`.
     public func listBridgeAgents(options: RequestOptions = .init()) async throws -> [BridgeAgentSummary] {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -147,7 +227,20 @@ public struct BridgeAPI: Sendable {
 
     /// Push task events
     ///
+    /// Machine-to-machine only: a browser session token is refused 403 here, and the credential
+    /// must additionally carry the `runs` write permission and the `runs:create` scope. Accepts one
+    /// event or an array of them, up to 1 MB (413 beyond); the task must exist and its agent must
+    /// be a real bridge agent, otherwise 404 — without that check any tenant member could forge
+    /// progress on someone else's task. Events are de-duplicated for ten minutes by `event_id` (or
+    /// by type, timestamp and content when none is sent), stored for seven days, and mapped onto
+    /// the run's event stream so SSE subscribers see them. When the run is already terminal or its
+    /// accumulated output has passed the runaway character cap, the reply is `{received: 0, abort:
+    /// true}` and nothing is persisted — this is the only place the server can halt a client in a
+    /// loop.
+    ///
     /// `POST /api/v1/bridge/tasks/{taskId}/events`
+    ///
+    /// Required scopes: `runs:create`.
     public func pushBridgeTaskEvents(taskId: String, body: JSONValue, options: RequestOptions = .init()) async throws -> PushBridgeTaskEventsResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -160,7 +253,18 @@ public struct BridgeAPI: Sendable {
 
     /// Update agent capabilities
     ///
+    /// Accepts a capability report from a bridge daemon and applies it to every connection record
+    /// registered for that agent, so a multi-machine agent stays consistent. `capabilities` is
+    /// required (400); `working_directory` and `hostname` overwrite when present and keep their
+    /// stored values when absent. An optional `installed_specs` block records the outcome of local
+    /// spec sync (bounded to 100 entries, each truncated) and an optional `stats` block records the
+    /// daemon's own counters — a report that omits either keeps what was stored rather than
+    /// clearing it. Answers `{status: "ok"}` even when no connection matched. Requires the `agents`
+    /// write permission and the `agents:write` scope.
+    ///
     /// `POST /api/v1/bridge/agents/{agentId}/capability`
+    ///
+    /// Required scopes: `agents:write`.
     public func updateBridgeAgentCapability(agentId: String, body: UpdateBridgeAgentCapabilityRequest, options: RequestOptions = .init()) async throws -> UpdateBridgeAgentCapabilityResponse {
         return try await client.send(RequestSpec(
             method: "POST",

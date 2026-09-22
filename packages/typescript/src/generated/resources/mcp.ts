@@ -8,12 +8,15 @@ import type {
   CreateMCPServerRequest,
   DeleteMCPServerResponse,
   JSONRpcResponse,
-  JsonObject,
+  ListAgentMCPServersResponse,
   ListMCPServersResponse,
   MCPServer,
   MCPServerTestResult,
   MCPServerWithConnectResult,
   McpjsonRpcRequest,
+  SetAgentMCPServersRequest,
+  SetAgentMCPServersResponse,
+  UpdateMCPServerRequest,
 } from '../models.js';
 
 /**
@@ -33,6 +36,23 @@ export class MCPResource extends APIResource {
   /**
    * Create MCP server
    *
+   * Registers an external MCP server for the tenant. Tenant owner or developer — `viewer` is
+   * refused: the server is remote code holding a tenant credential, and building agents is the
+   * developer's job while reading them is not. `name` and `transport` are required and the id
+   * `__system__` is reserved; `stdio` is refused on production deployments unless the host
+   * explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check
+   * resolving DNS, so a hostname that points at a private or metadata address is rejected and a
+   * resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*`
+   * environment variable. For an authenticated `http`/`streamable_http` server put the secret in
+   * `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never
+   * returned, and dropped from the stored plaintext. After persisting, a live session is opened
+   * immediately so tools surface on the next run, and a failure to connect is non-fatal and
+   * reported as `connect_error` on the 201 response.
+   *
+   * Pass `assigned_agent_ids` in the same call to connect it at once — a server installed and
+   * connected to nobody is inert, and leaving it in that state is how a working configuration
+   * comes to look broken.
+   *
    * `POST /api/v1/mcp/servers`
    */
   createMCPServer(body: CreateMCPServerRequest, options?: RequestOptions): Promise<MCPServer> {
@@ -48,6 +68,13 @@ export class MCPResource extends APIResource {
   /**
    * Delete MCP server
    *
+   * Unregisters an MCP server; `admin` role only. The live session is disconnected first and the
+   * stored record deleted afterwards, so a failure leaves an orphan record rather than an orphan
+   * subprocess or socket. Agents that name this server in their own `mcp.servers` list are NOT
+   * rewritten — instead the response reports how many carry a now-stale reference and up to 50
+   * of their ids, as a blast-radius preview; the count can be short if the scan hits its cap,
+   * which is logged. 200 whether or not the server existed.
+   *
    * `DELETE /api/v1/mcp/servers/{serverId}`
    */
   deleteMCPServer(serverId: string, options?: RequestOptions): Promise<DeleteMCPServerResponse> {
@@ -62,6 +89,10 @@ export class MCPResource extends APIResource {
   /**
    * Get MCP server
    *
+   * Returns one registered MCP server; `admin` role only, like the rest of this route. The
+   * record is sanitised the same way the list is — secrets are replaced by an `env_count` and
+   * never returned. 404 when the tenant has no such server.
+   *
    * `GET /api/v1/mcp/servers/{serverId}`
    */
   getMCPServer(serverId: string, options?: RequestOptions): Promise<MCPServer> {
@@ -73,7 +104,38 @@ export class MCPResource extends APIResource {
   }
 
   /**
+   * List the MCP servers connected to an agent
+   *
+   * Only servers whose `assigned_agent_ids` includes this agent. Installing a server does not
+   * connect it: a server nobody is connected to reaches nobody, and this list is empty until
+   * something is connected.
+   *
+   * This answer and the one the agent's run gate uses come from the same predicate,
+   * deliberately. The integrations surface next door grew two answers to that question — the
+   * per-agent list filters strictly while the runtime treats an unset list as shared with every
+   * agent — so a connector an agent really does have reads as "not connected" on the very screen
+   * meant to show it.
+   *
+   * `GET /api/v1/agents/{agentId}/mcp-servers`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listAgentMCPServers(agentId: string, options?: RequestOptions): Promise<ListAgentMCPServersResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/mcp-servers`,
+      options,
+    });
+  }
+
+  /**
    * List MCP servers
+   *
+   * Lists the tenant's registered external MCP servers, up to 200. Every method on this route
+   * requires the `admin` role: registering a server hands every agent in the tenant a foreign
+   * tool surface and, with stdio, a subprocess on the API host. Each record is sanitised before
+   * it leaves — `env` and `env_encrypted` are replaced by an `env_count` so a UI can say how
+   * many secrets are configured without receiving any of them.
    *
    * `GET /api/v1/mcp/servers`
    */
@@ -108,6 +170,16 @@ export class MCPResource extends APIResource {
   /**
    * MCP SSE transport (Server-Sent Events)
    *
+   * The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
+   * MCP client (POST carries JSON-RPC; this GET is the transport's other half). Requires the
+   * `agents` read permission and the `agents:read` scope, and a refusal is returned inside a
+   * JSON-RPC error envelope — code -32001 with status 401 or 403 — rather than the platform's
+   * problem document, because an MCP client cannot parse the latter. The backend is scoped to
+   * the agent named by the `X-UARP-Agent-Id` header, falling back to the tenant's head agent;
+   * with neither the answer is 400 with JSON-RPC code -32600. Each request is served by a
+   * freshly built stateless transport with JSON responses enabled, so no `Mcp-Session-Id` is
+   * issued and no state carries between requests.
+   *
    * `GET /api/v1/mcp`
    *
    * Returns a server-sent event stream; iterate it with `for await`.
@@ -116,6 +188,38 @@ export class MCPResource extends APIResource {
     return this._client.stream({
       method: 'GET',
       path: '/api/v1/mcp',
+      options,
+    });
+  }
+
+  /**
+   * Replace the set of MCP servers connected to an agent
+   *
+   * WRITE SEMANTICS: replaces. `server_ids` is the complete set of servers this agent is
+   * connected to after the call; a server the tenant has but the array omits loses this agent.
+   * `[]` disconnects everything. There is nothing else in the body to merge.
+   *
+   * The replace is scoped to THIS agent: it edits `assigned_agent_ids` on each server by adding
+   * or removing this one id, so other agents' connections to the same server are untouched
+   * (handler `handleAgentMcpServersRoute`, routes/mcp.ts).
+   *
+   * Naming an id the tenant does not have is refused with 422 and nothing at all is written — a
+   * silently dropped id would report a connection that was never made.
+   *
+   * Servers are INSTALLED tenant-wide (`POST /api/v1/mcp/servers`, which also accepts
+   * `assigned_agent_ids` so install and connect are one call) and CONNECTED here. Tenant owner
+   * or developer; each connect and disconnect is audit-logged on its own.
+   *
+   * `PUT /api/v1/agents/{agentId}/mcp-servers`
+   *
+   * Required scopes: `agents:write`.
+   */
+  setAgentMCPServers(agentId: string, body: SetAgentMCPServersRequest, options?: RequestOptions): Promise<SetAgentMCPServersResponse> {
+    return this._client.request({
+      method: 'PUT',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/mcp-servers`,
+      body,
+      idempotent: true,
       options,
     });
   }
@@ -143,9 +247,15 @@ export class MCPResource extends APIResource {
   /**
    * Update MCP server
    *
+   * WRITE SEMANTICS: merges. A field the body omits keeps its stored value; the handler takes
+   * the fields below BY NAME rather than spreading the body, so a key it does not list is
+   * ignored rather than written. `id`, `tenant_id` and `transport` are immutable, and
+   * `env_encrypted` / `last_synced` are the handler's own and are refused from the wire. `env:
+   * {}` explicitly clears the stored environment.
+   *
    * `PATCH /api/v1/mcp/servers/{serverId}`
    */
-  updateMCPServer(serverId: string, body: JsonObject, options?: RequestOptions): Promise<MCPServerWithConnectResult> {
+  updateMCPServer(serverId: string, body: UpdateMCPServerRequest, options?: RequestOptions): Promise<MCPServerWithConnectResult> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}`,

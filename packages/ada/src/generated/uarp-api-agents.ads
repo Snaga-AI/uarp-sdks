@@ -91,6 +91,10 @@ package UARP.API.Agents is
 
    --  Activate agent
    --
+   --  Returns a suspended agent to `active` and clears its `status_reason`. `409` when the agent
+   --  is in any state other than `suspended`, and `409` on a lost CAS against a concurrent write.
+   --  Returns the sanitised agent.
+   --
    --  POST /api/v1/agents/{agentId}/activate
    --
    --  Required scopes: agents:write.
@@ -101,6 +105,18 @@ package UARP.API.Agents is
       return UARP.Models.Agent;
 
    --  Create an agent
+   --
+   --  Creates an agent in the caller's tenant and returns it with `201`. The plan's agent cap is
+   --  enforced twice - a fast count that excludes bridge agents, then an atomic slot claim inside
+   --  a per-tenant lock - and a tenant at the cap is refused `403`; a super-admin tenant bypasses
+   --  both. `model`, `fallback_model` and `prompts.system` in the body are ignored: every agent is
+   --  born on the platform default model and a neutral system prompt, and
+   --  `built_in_tools`/`skills` are stripped by the schema (tools come from installed SPECs). Each
+   --  MCP server with an `http` transport has its URL checked against a DNS-aware SSRF guard and
+   --  the list against `max_mcp_servers`; on success the handler also writes version 1, creates
+   --  the agent's Ed25519 identity, registers any inline `schedule` with the cron scheduler, and -
+   --  when the agent is created public - the cross-tenant discovery index. The response withholds
+   --  `model.provider`, `model.model_ref`, `model.endpoint_url` and `fallback_model`.
    --
    --  POST /api/v1/agents
    --
@@ -134,6 +150,12 @@ package UARP.API.Agents is
 
    --  Create or update FRIA report
    --
+   --  Creates or replaces the agent's Fundamental Rights Impact Assessment. The agent must already
+   --  carry a risk classification of `limited` or `high`, otherwise the request is refused `422` -
+   --  a FRIA is only required at those levels. The stored report is replaced whole (there is no
+   --  partial update) and stamped with the current time as `assessed_at` and the agent's current
+   --  risk level; the write is audit-logged as `agent.fria_updated`.
+   --
    --  POST /api/v1/agents/{agentId}/fria
    --
    --  Required scopes: agents:write.
@@ -145,6 +167,13 @@ package UARP.API.Agents is
       return UARP.Models.Fria_Report;
 
    --  Create a version snapshot of an agent
+   --
+   --  Snapshots the agent's CURRENT stored configuration as a new numbered version and returns it
+   --  with `201`. The version number comes from a per-agent counter incremented under CAS, so
+   --  concurrent calls cannot mint the same number. Unlike the automatic snapshots that
+   --  `PUT`/`PATCH` take, this endpoint enforces the plan's version quota hard and answers `403`
+   --  when the history is full - it exists so the caller knows whether the snapshot landed. The
+   --  embedded `config` is sanitised the same way `GET /api/v1/agents/{agentId}` is.
    --
    --  POST /api/v1/agents/{agentId}/versions
    --
@@ -158,6 +187,14 @@ package UARP.API.Agents is
 
    --  Delete an agent
    --
+   --  Deletes the agent and everything keyed to it. Refused `423` while the tenant is under legal
+   --  hold, `403` for the tenant's head agent, and `409` for an agent that is published and
+   --  serving a public chat - unpublish it first. The agent record is removed inside the request
+   --  and the cascade over the tenant's sessions, runs and events runs in the background, guarded
+   --  against a second concurrent cascade by a 24-hour tombstone, so a repeated call is a cheap
+   --  `404`; the attempt is audit-logged before the cascade starts so an interrupted sweep still
+   --  leaves a trail. Irreversible.
+   --
    --  DELETE /api/v1/agents/{agentId}
    --
    --  Required scopes: agents:write.
@@ -168,6 +205,11 @@ package UARP.API.Agents is
       return UARP.Models.Delete_Agent_Response;
 
    --  Unpin one message
+   --
+   --  Removes one bookmarked message from this agent's bookmark list. `404` when that message is
+   --  not bookmarked - unlike the clear-all form, this one checks the record exists first, so a
+   --  repeated call reports the absence rather than succeeding twice. The message itself is
+   --  untouched; only the bookmark is deleted.
    --
    --  DELETE /api/v1/agents/{agentId}/bookmarks/{messageId}
    --
@@ -181,6 +223,10 @@ package UARP.API.Agents is
 
    --  Delete agent identity
    --
+   --  Deletes the agent's stored keypair and answers `204`. Idempotent: it does not check that an
+   --  identity existed, so a repeat call succeeds the same way. The agent keeps running; it simply
+   --  has no signing identity until one is created again.
+   --
    --  DELETE /api/v1/agents/{agentId}/identity
    --
    --  Required scopes: agents:write.
@@ -190,6 +236,10 @@ package UARP.API.Agents is
       Options : Request_Options := UARP.Client.Default_Options);
 
    --  Unpin every message of an agent
+   --
+   --  Removes every bookmarked message for this agent and returns `{removed}` - the number
+   --  actually deleted. It sweeps one listing page of up to 1000 bookmarks, so an agent with more
+   --  than that needs repeated calls. Idempotent: a second call answers `{removed: 0}`.
    --
    --  DELETE /api/v1/agents/{agentId}/bookmarks
    --
@@ -202,6 +252,17 @@ package UARP.API.Agents is
 
    --  Get an agent
    --
+   --  Returns one agent, `404` when no such agent exists in the tenant. A record still carrying
+   --  the legacy `built_in_tools`/`skills` fields is migrated into `specs[]` on read and written
+   --  back under CAS, so the shape settles after the first fetch. For an agent with
+   --  `execution_mode: "bridge"` a `bridge` block is added from the live connection records
+   --  (online machine count, platforms, working directories, latest heartbeat and the machines'
+   --  `installed_specs` report); the enrichment is best-effort and its absence is not an error.
+   --  `model.provider`, `model.model_ref`, `model.endpoint_url` and `fallback_model` are withheld
+   --  - only `model.capabilities` travels - and `status` is filled in as `active` when the stored
+   --  record has none. Any unrecognised sub-path under the agent answers `404` instead of being
+   --  served this record.
+   --
    --  GET /api/v1/agents/{agentId}
    --
    --  Required scopes: agents:read.
@@ -212,6 +273,14 @@ package UARP.API.Agents is
       return UARP.Models.Agent;
 
    --  Get agent activity stats
+   --
+   --  Aggregates the agent's per-run activity logs into run counts by outcome, error rate,
+   --  averages for steps, duration and tokens, a tool breakdown, the most frequent error messages
+   --  and a per-day series. `days` selects the window - default 30, clamped to 1..90. These
+   --  figures come from the on-disk activity log rather than the run records, so when the platform
+   --  is running without `logging.agent_activity_dir` configured the endpoint answers `200` with
+   --  an all-zero object instead of an error; a zero here can mean "not recorded" as well as "no
+   --  runs".
    --
    --  GET /api/v1/agents/{agentId}/activity-stats
    --
@@ -225,6 +294,12 @@ package UARP.API.Agents is
 
    --  Get agent capability manifest
    --
+   --  Returns the agent's capability manifest, which the team router reads when it decides what to
+   --  delegate. An agent with no stored manifest is not a `404`: one is generated from its current
+   --  configuration and returned without being persisted, so the first read after `PUT` and the
+   --  first read before it differ in origin but not in shape. `404` only when the agent itself
+   --  does not exist.
+   --
    --  GET /api/v1/agents/{agentId}/capabilities
    --
    --  Required scopes: agents:read.
@@ -235,6 +310,10 @@ package UARP.API.Agents is
       return UARP.Models.Agent_Capabilities;
 
    --  Get Fundamental Rights Impact Assessment
+   --
+   --  Returns the agent's Fundamental Rights Impact Assessment. `404` both when the agent does not
+   --  exist and when it has no FRIA report yet - an absent assessment is not served as an empty
+   --  one, so a client never has to tell two shapes apart.
    --
    --  GET /api/v1/agents/{agentId}/fria
    --
@@ -247,6 +326,11 @@ package UARP.API.Agents is
 
    --  Get agent identity (public key)
    --
+   --  Returns the agent's public cryptographic identity - the Ed25519 public key and its metadata;
+   --  the private half never leaves the identity store. `404` when the agent has no identity,
+   --  which is the state of every agent created while `UARP_IDENTITY_ENCRYPTION_KEY` was not
+   --  configured.
+   --
    --  GET /api/v1/agents/{agentId}/identity
    --
    --  Required scopes: agents:read.
@@ -257,6 +341,10 @@ package UARP.API.Agents is
       return UARP.Models.Get_Agent_Identity_Response;
 
    --  Read the EU AI Act risk classification
+   --
+   --  Returns the agent's EU AI Act risk classification alone - not the agent record. `404` when
+   --  the agent does not exist, and `404` with a pointer to the `PATCH` when the agent exists but
+   --  has never been classified.
    --
    --  GET /api/v1/agents/{agentId}/risk-classification
    --
@@ -272,9 +360,10 @@ package UARP.API.Agents is
    --  What the builder needs to render a tool result: for each tool the agent can actually call,
    --  the SPEC that owns it and the view to render its output with.
    --
-   --  Only tools the agent is entitled to are listed - the same filter the runtime applies - so
-   --  the UI cannot offer a view for a tool that will never fire. A stored view whose JSON will
-   --  not parse is skipped, not fatal: one broken view must not take the catalog down.
+   --  Only tools the agent can actually call are listed - the same filter the runtime applies,
+   --  which since 2026-09-21 means the agent's declared, enabled SPECs - so the UI cannot offer a
+   --  view for a tool that will never fire. A stored view whose JSON will not parse is skipped,
+   --  not fatal: one broken view must not take the catalog down.
    --
    --  GET /api/v1/agents/{agentId}/spec-catalog
    --
@@ -286,6 +375,10 @@ package UARP.API.Agents is
       return UARP.Models.Spec_Tool_Catalog;
 
    --  Get EU AI Act Annex IV system card
+   --
+   --  Generates the EU AI Act Annex IV system card for the agent from its stored configuration;
+   --  `404` when the agent does not exist. `format=markdown` returns the same card rendered as
+   --  `text/markdown` instead of JSON. Read-only - nothing is stored.
    --
    --  GET /api/v1/agents/{agentId}/system-card
    --
@@ -299,6 +392,10 @@ package UARP.API.Agents is
 
    --  Get traffic split configuration
    --
+   --  Returns the agent's traffic split across versions. An agent with no split configured is not
+   --  a `404`: the response is `{agent_id, entries: [], updated_at: null}`, which the runtime
+   --  reads as "always use the latest version".
+   --
    --  GET /api/v1/agents/{agentId}/traffic
    --
    --  Required scopes: agents:read.
@@ -309,6 +406,13 @@ package UARP.API.Agents is
       return UARP.Models.Get_Agent_Traffic_Response;
 
    --  Diff between two agent versions
+   --
+   --  Compares two version snapshots of the agent and returns the top-level keys that differ, each
+   --  as `{from, to}`, plus `changed_fields`. `compare_to` names the other version and defaults to
+   --  `versionNum - 1`. `404` when either version is missing from the history. The comparison is
+   --  made on the SANITISED snapshots, so fields withheld from `GET /api/v1/agents/{agentId}` -
+   --  provider, model reference, endpoint, fallback model - are not republished by a diff that
+   --  happens to span a change to them.
    --
    --  GET /api/v1/agents/{agentId}/versions/{versionNum}/diff
    --
@@ -322,6 +426,15 @@ package UARP.API.Agents is
       return UARP.Models.Get_Agent_Version_Diff_Response;
 
    --  List all agents
+   --
+   --  Lists the tenant's agents newest first. `limit` defaults to 20 and is capped at 100,
+   --  `cursor` is the opaque continuation from the previous page, and `has_more` says whether more
+   --  remain. Bridge agents whose machine is not currently connected are omitted unless
+   --  `include_offline=true`, and attribution-only shells are dropped entirely; because those
+   --  filters run after the KV read, the page is refilled round by round until `limit` VISIBLE
+   --  rows are collected, bounded at 500 scanned rows and 20 rounds - when a bound stops the scan
+   --  early `has_more` stays true rather than claiming completeness. Bridge rows are enriched with
+   --  the live machine's capabilities instead of the summary frozen into the record at enrolment.
    --
    --  GET /api/v1/agents
    --
@@ -440,6 +553,13 @@ package UARP.API.Agents is
 
    --  Rollback an agent to a previous version
    --
+   --  Restores the configuration stored in the version named by `version` over the live agent
+   --  record, and returns that version record. `404` when the agent has no such version. The write
+   --  is a CAS against the agent as it was read, so a concurrent modification answers `409` rather
+   --  than overwriting it. The agent's genome (its `metadata` appearance fields) is deliberately
+   --  NOT rolled back - the live one is carried onto the restored config, so a rollback changes
+   --  what the agent does and not what it looks like.
+   --
    --  POST /api/v1/agents/{agentId}/rollback
    --
    --  Required scopes: agents:write.
@@ -452,6 +572,10 @@ package UARP.API.Agents is
 
    --  Rotate agent identity
    --
+   --  Generates a new Ed25519 keypair for the agent, replacing the stored one, and returns the new
+   --  public identity. `404` when the agent has no identity to rotate - rotation does not create
+   --  one. Anything that pinned the previous public key stops verifying after this call.
+   --
    --  POST /api/v1/agents/{agentId}/identity/rotate
    --
    --  Required scopes: agents:write.
@@ -462,6 +586,11 @@ package UARP.API.Agents is
       return UARP.Models.Rotate_Agent_Identity_Response;
 
    --  Set agent capabilities
+   --
+   --  Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
+   --  the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
+   --  and `permissions` are read from the body - anything else is stripped. Returns `{status,
+   --  agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
    --
    --  PUT /api/v1/agents/{agentId}/capabilities
    --
@@ -475,6 +604,12 @@ package UARP.API.Agents is
 
    --  Set traffic split configuration
    --
+   --  Replaces the agent's traffic split with the `entries` in the body - between 1 and 20
+   --  `{version, weight}` pairs whose weights must sum to 100; a set that does not sum to 100 is
+   --  refused and nothing is stored. The split is what the runtime draws against when it resolves
+   --  which version a new run executes, using a cryptographically-secure weighted draw. The agent
+   --  record itself is untouched.
+   --
    --  PUT /api/v1/agents/{agentId}/traffic
    --
    --  Required scopes: agents:write.
@@ -486,6 +621,12 @@ package UARP.API.Agents is
       return UARP.Models.Set_Agent_Traffic_Response;
 
    --  Suspend agent
+   --
+   --  Moves an agent from `active` to `suspended`, which stops it accepting new runs. `409` when
+   --  the agent is in any other state, and `409` again when a concurrent write lands between the
+   --  read and the CAS - two competing suspends, or a suspend racing an activate, cannot both
+   --  succeed. An optional `reason` in the body is stored as `status_reason`; `status_changed_at`
+   --  and `updated_at` are stamped. Returns the sanitised agent.
    --
    --  POST /api/v1/agents/{agentId}/suspend
    --
@@ -500,6 +641,13 @@ package UARP.API.Agents is
 
    --  Terminate/delete agent
    --
+   --  Permanently destroys the agent and everything keyed to it: the full cascade runs inside the
+   --  request and the record is deleted. Requires the `agents.delete` permission; refused `423`
+   --  while the tenant is under legal hold and `403` for the tenant's head agent. Unlike `DELETE
+   --  /api/v1/agents/{agentId}` it does NOT refuse a published agent - the cascade clears the
+   --  tenant's public pointers as part of the teardown, which is the difference between the two
+   --  routes. Irreversible, and audit-logged before and after the cascade.
+   --
    --  POST /api/v1/agents/{agentId}/terminate
    --
    --  Required scopes: agents:write.
@@ -510,6 +658,16 @@ package UARP.API.Agents is
       return UARP.Models.Terminate_Agent_Response;
 
    --  Update an agent
+   --
+   --  WRITE SEMANTICS: merges - this method and `PATCH` share one handler, so the note on `PATCH
+   --  /api/v1/agents/{agentId}` applies here unchanged. `model`, `fallback_model` and
+   --  `prompts.system` in the body are ignored, `@platform/core` and `@platform/essentials` cannot
+   --  be dropped from `specs[]` (`422`), the `platform_control` capability cannot be newly granted
+   --  and `execution_mode` cannot be moved to or from `bridge` (`403`), and a `workspace_id` must
+   --  belong to this tenant. The agent is snapshotted as a new version before the write and again
+   --  after it, so one update appends two entries to the version list; the version quota is
+   --  informational here and a full history only skips the snapshot rather than failing the
+   --  update. The record is written under CAS, so a concurrent update answers `409`.
    --
    --  PUT /api/v1/agents/{agentId}
    --
@@ -522,6 +680,16 @@ package UARP.API.Agents is
       return UARP.Models.Agent;
 
    --  Update EU AI Act risk classification (admin only)
+   --
+   --  Sets the agent's EU AI Act risk classification. Beyond the `agents:write` scope this
+   --  requires the caller to hold the `admin` ROLE - classification is a tenant-policy act, not a
+   --  developer-level config change. The classification is replaced whole: `level`,
+   --  `annex_iii_category`, `justification`, `assessor`, `assessed_at` (defaulted to now when
+   --  omitted) and `review_due_at` are taken from the body, so a field omitted here is cleared
+   --  rather than kept. The write is a CAS against the agent record - `409` when a concurrent
+   --  update lands first, which is what stops an ordinary agent save clobbering the compliance
+   --  trail - and it is audit-logged. The response is the whole sanitised agent, not just the
+   --  classification.
    --
    --  PATCH /api/v1/agents/{agentId}/risk-classification
    --

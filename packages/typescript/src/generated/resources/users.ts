@@ -55,6 +55,16 @@ export class UsersResource extends APIResource {
   /**
    * Delete user
    *
+   * Deletes a member and cascades: their notifications are removed, every stored LLM provider
+   * credential of theirs is deleted, and every API key they own — including live login sessions
+   * — is revoked on both the tenant record and the hash-indexed record the auth middleware
+   * reads, after which the user row, their invites and the email index go and the membership and
+   * user-status caches are dropped so a request racing the delete cannot pass on a stale probe.
+   * Irreversible. The owner cannot be deleted (**403** — transfer ownership first), an unknown
+   * user is **404**, a caller who has enrolled in MFA must have verified it recently or gets an
+   * MFA challenge, and the `admin` role plus the `users:write` scope are required. Writes
+   * `user.deleted` and one `api_key.revoked` audit entry per revoked key.
+   *
    * `DELETE /api/v1/users/{userId}`
    *
    * Required scopes: `users:write`.
@@ -70,6 +80,10 @@ export class UsersResource extends APIResource {
 
   /**
    * Revoke a pending user invite
+   *
+   * Revokes a pending invitation so its link stops working, returning the revoked invite. An id
+   * that does not exist in this tenant answers **404**. Requires the `admin` role and the
+   * `users:write` scope; writes an `invite.revoked` audit entry.
    *
    * `DELETE /api/v1/users/invites/{inviteId}`
    *
@@ -88,6 +102,9 @@ export class UsersResource extends APIResource {
   /**
    * Get user
    *
+   * Returns one user of the caller's tenant by id. A `userId` that does not exist in this tenant
+   * answers **404**. Requires the `users:read` scope.
+   *
    * `GET /api/v1/users/{userId}`
    *
    * Required scopes: `users:read`.
@@ -102,6 +119,14 @@ export class UsersResource extends APIResource {
 
   /**
    * Invite user
+   *
+   * Creates a pending invitation for `email` at the given `role` and emails the invite link. The
+   * address is normalised to lower case before the duplicate checks, and the request is refused
+   * with **409** when it already belongs to a member of this tenant or when a still-valid
+   * pending invite for it exists — resend or revoke that one instead. The response carries the
+   * invite as an admin sees it plus `email_sent`, which is `false` when mail delivery is not
+   * configured; the invite is created either way. Requires the `admin` role and the
+   * `users:write` scope; writes an `invite.created` audit entry.
    *
    * `POST /api/v1/users/invites`
    *
@@ -120,6 +145,10 @@ export class UsersResource extends APIResource {
   /**
    * List users
    *
+   * Lists every user of the caller's tenant. The array is returned twice — as the canonical
+   * `items` and as the legacy `users` key — with `total` as its length. Requires the
+   * `users:read` scope; no role beyond that is checked.
+   *
    * `GET /api/v1/users`
    *
    * Required scopes: `users:read`.
@@ -135,6 +164,11 @@ export class UsersResource extends APIResource {
   /**
    * List invites
    *
+   * Lists this tenant's invitations — every row, including accepted, revoked and expired ones,
+   * under the canonical `items` key and the legacy `invites` alias. `total` is deliberately not
+   * the row count but the number of invites that are still pending and not yet expired, so a
+   * sidebar badge built on it clears once invitees join. Requires the `users:read` scope.
+   *
    * `GET /api/v1/users/invites`
    *
    * Required scopes: `users:read`.
@@ -149,6 +183,11 @@ export class UsersResource extends APIResource {
 
   /**
    * Resend the invite email
+   *
+   * Refreshes an invitation's expiry and sends the invite email again, returning the invite and
+   * `email_sent`. The store enforces a cooldown between resends: too soon after the last one
+   * answers **429**. Requires the `admin` role and the `users:write` scope; writes an
+   * `invite.resent` audit entry.
    *
    * `POST /api/v1/users/invites/{inviteId}/resend`
    *
@@ -166,6 +205,14 @@ export class UsersResource extends APIResource {
   /**
    * Set user role
    *
+   * Changes a member's role and re-scopes their live session keys to match, since the role
+   * travels on the credential rather than on the user row — without that the change would be
+   * cosmetic. The `owner` role cannot be granted here and an existing owner's role cannot be
+   * changed at all; both answer **403** and point at `POST /users/{userId}/transfer-ownership`.
+   * An unknown user is **404** and a role outside the accepted enum fails body validation.
+   * Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
+   * entry.
+   *
    * `PUT /api/v1/users/{userId}/role`
    *
    * Required scopes: `users:write`.
@@ -182,6 +229,11 @@ export class UsersResource extends APIResource {
 
   /**
    * Suspend user
+   *
+   * Suspends a member and invalidates the cached user-status probe so the block takes effect on
+   * the next request rather than after the cache expires. An owner cannot be suspended (**403**
+   * — transfer ownership first) and an unknown user is **404**. Requires the `admin` role and
+   * the `users:write` scope; writes a `user.suspended` audit entry.
    *
    * `PUT /api/v1/users/{userId}/suspend`
    *
@@ -217,6 +269,11 @@ export class UsersResource extends APIResource {
 
   /**
    * Reverse a suspension and restore the user
+   *
+   * Lifts a suspension and invalidates the cached user-status probe so access is restored on the
+   * next request. An unknown user answers **404**; the call is otherwise idempotent — a user who
+   * is not suspended is simply left active. Requires the `admin` role and the `users:write`
+   * scope; writes a `user.unsuspended` audit entry.
    *
    * `PUT /api/v1/users/{userId}/unsuspend`
    *

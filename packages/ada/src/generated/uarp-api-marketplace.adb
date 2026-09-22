@@ -123,7 +123,7 @@ package body UARP.API.Marketplace is
       Listing_Id : String;
       Payload : UARP.Models.Invoke_Listing_Agent_Request;
       Options : Request_Options := UARP.Client.Default_Options)
-      return UARP.Models.Marketplace_Invocation
+      return UARP.Models.Invoke_Listing_Agent_Response
    is
    begin
       return UARP.Models.From_JSON
