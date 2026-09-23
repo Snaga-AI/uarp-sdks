@@ -9486,6 +9486,8 @@ pub enum ErrorCode {
     KbDocumentBodyInvalid,
     #[serde(rename = "kb_document_too_large")]
     KbDocumentTooLarge,
+    #[serde(rename = "kb_embedding_failed")]
+    KbEmbeddingFailed,
     #[serde(rename = "kb_storage_limit")]
     KbStorageLimit,
     #[serde(rename = "kb_text_extraction_failed")]
@@ -9587,6 +9589,7 @@ impl ErrorCode {
             Self::KbChunkLimit => "kb_chunk_limit",
             Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
             Self::KbDocumentTooLarge => "kb_document_too_large",
+            Self::KbEmbeddingFailed => "kb_embedding_failed",
             Self::KbStorageLimit => "kb_storage_limit",
             Self::KbTextExtractionFailed => "kb_text_extraction_failed",
             Self::LimitReached => "limit_reached",
@@ -9678,6 +9681,7 @@ impl From<&str> for ErrorCode {
             "kb_chunk_limit" => Self::KbChunkLimit,
             "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
             "kb_document_too_large" => Self::KbDocumentTooLarge,
+            "kb_embedding_failed" => Self::KbEmbeddingFailed,
             "kb_storage_limit" => Self::KbStorageLimit,
             "kb_text_extraction_failed" => Self::KbTextExtractionFailed,
             "limit_reached" => Self::LimitReached,
@@ -14552,6 +14556,13 @@ pub struct ListEvalRunsResponse {
     pub total: i64,
 }
 
+/// `ListExperimentsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListExperimentsResponse {
+    pub experiments: Vec<Experiment>,
+    pub total: i64,
+}
+
 /// `ListFeaturedSpecsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListFeaturedSpecsResponse {
@@ -18088,6 +18099,11 @@ pub struct PermissionSet {
     pub allowed_roles: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_permissions: Option<Vec<ResourcePermission>>,
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_budget_per_run_usd: Option<f64>,
     pub max_spawn_depth: i64,
@@ -18120,6 +18136,11 @@ pub struct PermissionSetUpdate {
     /// not merge).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_permissions: Option<Vec<ResourcePermission>>,
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_budget_per_run_usd: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

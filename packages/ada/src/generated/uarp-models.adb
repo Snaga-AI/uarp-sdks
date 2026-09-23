@@ -22818,6 +22818,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Kb_Document_Body_Invalid, Raw => UARP.Types."+" (Value));
       elsif Value = "kb_document_too_large" then
          return (Kind => Error_Code_Kb_Document_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "kb_embedding_failed" then
+         return (Kind => Error_Code_Kb_Embedding_Failed, Raw => UARP.Types."+" (Value));
       elsif Value = "kb_storage_limit" then
          return (Kind => Error_Code_Kb_Storage_Limit, Raw => UARP.Types."+" (Value));
       elsif Value = "kb_text_extraction_failed" then
@@ -22980,6 +22982,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("kb_document_body_invalid"));
          when Error_Code_Kb_Document_Too_Large =>
             return (Kind => Kind, Raw => UARP.Types."+" ("kb_document_too_large"));
+         when Error_Code_Kb_Embedding_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("kb_embedding_failed"));
          when Error_Code_Kb_Storage_Limit =>
             return (Kind => Kind, Raw => UARP.Types."+" ("kb_storage_limit"));
          when Error_Code_Kb_Text_Extraction_Failed =>
@@ -36263,6 +36267,39 @@ package body UARP.Models is
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
                Result.Eval_Runs.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Experiments_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Experiments loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "experiments", Items);
+      end;
+      JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Experiments_Response is
+      Result : List_Experiments_Response;
+   begin
+      if JS.Present (Node, "experiments") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "experiments");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Experiments.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
       end if;

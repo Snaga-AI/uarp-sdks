@@ -338,7 +338,9 @@ test('parses the production document into the expected shape', () => {
   // /agents/{agentId}/memory/core`, the list beside the per-label block
   // routes. Found by the release job refusing the v0.7.0 tag, not by a
   // refresh: the platform deployed between the regeneration and the tag.
-  assert.equal(ops.length, 735);
+  // 735 -> 736 the same day (build 5732283f): `GET
+  // /agents/{agentId}/experiments`, deployed while that refresh sat in CI.
+  assert.equal(ops.length, 736);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -551,7 +553,9 @@ test('parses the production document into the expected shape', () => {
   // Input for the body `POST /runs/{runId}/resume` now accepts, and RunApproval
   // with its decision enum plus GetRunResponseApproval for `Run.approvals`.
   // `ErrorCode` grows again, 76 -> 77, by `approval_rejected`.
-  assert.equal(spec.types.length, 1496);
+  // 1496 -> 1497 the same day (build 5732283f): ListExperimentsResponse.
+  // `ErrorCode` 77 -> 78 by `kb_embedding_failed`.
+  assert.equal(spec.types.length, 1497);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

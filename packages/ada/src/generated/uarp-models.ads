@@ -5760,6 +5760,11 @@ package UARP.Models is
       Allowed_Roles : UARP.Types.Text_Vectors.Vector;
       Has_Resource_Permissions : Boolean := False;
       Resource_Permissions : UARP.Models.Resource_Permission_Vectors.Vector;
+      --  Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+      --  child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+      --  this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+      --  with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+      --  "resource_limits". 0 means no cap from this field.
       Has_Max_Budget_Per_Run_Usd : Boolean := False;
       Max_Budget_Per_Run_Usd : UARP.Types.Float_Value := 0.0;
       Max_Spawn_Depth : UARP.Types.Integer_Value := 0;
@@ -9281,6 +9286,7 @@ package UARP.Models is
    Error_Code_Kb_Chunk_Limit,
    Error_Code_Kb_Document_Body_Invalid,
    Error_Code_Kb_Document_Too_Large,
+   Error_Code_Kb_Embedding_Failed,
    Error_Code_Kb_Storage_Limit,
    Error_Code_Kb_Text_Extraction_Failed,
    Error_Code_Limit_Reached,
@@ -9607,6 +9613,9 @@ package UARP.Models is
 
    function To_JSON (Model : Experiment) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Experiment;
+
+   package Experiment_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Experiment);
 
    --  `ExportAdminConfigResponse` model.
    type Export_Admin_Config_Response is record
@@ -14336,6 +14345,15 @@ package UARP.Models is
    function To_JSON (Model : List_Eval_Runs_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Eval_Runs_Response;
 
+   --  `ListExperimentsResponse` model.
+   type List_Experiments_Response is record
+      Experiments : UARP.Models.Experiment_Vectors.Vector;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Experiments_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Experiments_Response;
+
    --  `ListFeaturedSpecsResponse` model.
    type List_Featured_Specs_Response is record
       Featured : UARP.Types.Text_Vectors.Vector;
@@ -18452,6 +18470,11 @@ package UARP.Models is
       --  not merge).
       Has_Resource_Permissions : Boolean := False;
       Resource_Permissions : UARP.Models.Resource_Permission_Vectors.Vector;
+      --  Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+      --  child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+      --  this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+      --  with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+      --  "resource_limits". 0 means no cap from this field.
       Has_Max_Budget_Per_Run_Usd : Boolean := False;
       Max_Budget_Per_Run_Usd : UARP.Types.Float_Value := 0.0;
       Has_Max_Spawn_Depth : Boolean := False;

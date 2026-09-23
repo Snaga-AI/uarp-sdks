@@ -13,6 +13,7 @@ import type {
   ListAgentScorersResponse,
   ListDatasetsResponse,
   ListEvalRunsResponse,
+  ListExperimentsResponse,
   RunEvaluationRequest,
 } from '../models.js';
 
@@ -193,6 +194,24 @@ export class EvaluationsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/evaluations`,
+      options,
+    });
+  }
+
+  /**
+   * List an agent's evaluation experiments
+   *
+   * This agent's experiments, newest first (at most 100). Added 2026-09-23: before it an
+   * experiment could only be read back by an id the client had kept.
+   *
+   * `GET /api/v1/agents/{agentId}/experiments`
+   *
+   * Required scopes: `evaluations:read`.
+   */
+  listExperiments(agentId: string, options?: RequestOptions): Promise<ListExperimentsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/experiments`,
       options,
     });
   }

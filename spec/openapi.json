@@ -5450,6 +5450,7 @@
                             "kb_chunk_limit",
                             "kb_document_body_invalid",
                             "kb_document_too_large",
+                            "kb_embedding_failed",
                             "kb_storage_limit",
                             "kb_text_extraction_failed",
                             "limit_reached",
@@ -10802,7 +10803,8 @@
                         "maxItems": 5242880
                     },
                     "max_budget_per_run_usd": {
-                        "type": "number"
+                        "type": "number",
+                        "description": "Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned child's budget may not exceed. The run's effective cost ceiling is the smaller positive of this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails with error_code BUDGET_EXCEEDED and error_details.cap_source \"permission_set\" or \"resource_limits\". 0 means no cap from this field."
                     },
                     "max_spawn_depth": {
                         "type": "integer"
@@ -10895,7 +10897,8 @@
                         "maxItems": 5242880
                     },
                     "max_budget_per_run_usd": {
-                        "type": "number"
+                        "type": "number",
+                        "description": "Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned child's budget may not exceed. The run's effective cost ceiling is the smaller positive of this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails with error_code BUDGET_EXCEEDED and error_details.cap_source \"permission_set\" or \"resource_limits\". 0 means no cap from this field."
                     },
                     "max_spawn_depth": {
                         "type": "integer"
@@ -26068,6 +26071,75 @@
                     }
                 }
             ],
+            "get": {
+                "operationId": "listExperiments",
+                "summary": "List an agent's evaluation experiments",
+                "description": "This agent's experiments, newest first (at most 100). Added 2026-09-23: before it an experiment could only be read back by an id the client had kept.",
+                "tags": [
+                    "Evaluations"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Experiments",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "experiments",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "experiments": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Experiment"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "evaluations:read"
+                ]
+            },
             "post": {
                 "operationId": "createExperiment",
                 "summary": "Create an evaluation experiment",
@@ -54256,7 +54328,7 @@
                     "Teams"
                 ],
                 "summary": "Get specific team run",
-                "description": "Reports the state of one squad run. The parent run has no stored status: it is derived on every read from its child runs — `completed` when all finished, `failed` when some failed and none completed or is still going, `partial_failure` when both, `running`, `cancelled`, otherwise `pending` — which means the derivation also corrects runs that finished long ago. Timeouts and guardrail blocks count as failures. Each child is listed with its agent, status, output, metrics and, when it failed, its error; a `failed` verdict also carries the first child error as `error`. 404 when the team is unknown, and 404 when no run with that id exists on this team — `pending` is reserved for a run that exists and has not spawned a child yet, never for an unknown id.",
+                "description": "Reports the state of one squad run. The parent run has no stored status: it is derived on every read from its child runs — `completed` when all finished, `failed` when some failed and none completed or is still going, `partial_failure` when both, `running`, `cancelled`, otherwise `pending` — which means the derivation also corrects runs that finished long ago. Timeouts and guardrail blocks count as failures. Each child is listed with its agent, status, output, metrics and, when it failed, its error; a `failed` verdict also carries the first child error as `error`. When the derivation would say `pending` but no child is queued or running and the run has settled (its chat turn is saved), the settled outcome is reported instead: `completed`, `failed` with the orchestration's error, or `cancelled` when an operator stopped it. Settling withdraws children still in `awaiting_approval` or `awaiting_input`, because nothing would read their result: they become `cancelled` with an `error` beginning `Withdrawn`, and they are listed but do not count toward the verdict. 404 when the team is unknown, and 404 when no run with that id exists on this team — `pending` is reserved for a run that exists and has not settled, never for an unknown id.",
                 "parameters": [
                     {
                         "name": "teamId",

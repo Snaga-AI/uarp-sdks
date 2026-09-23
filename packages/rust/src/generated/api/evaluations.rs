@@ -225,6 +225,27 @@ impl EvaluationsApi {
             .await
     }
 
+    /// List an agent's evaluation experiments
+    ///
+    /// This agent's experiments, newest first (at most 100). Added 2026-09-23: before it an
+    /// experiment could only be read back by an id the client had kept.
+    ///
+    /// `GET /api/v1/agents/{agentId}/experiments`
+    ///
+    /// Required scopes: `evaluations:read`.
+    pub async fn list_experiments(&self, agent_id: &str) -> Result<models::ListExperimentsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/agents/{}/experiments", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Run an evaluation suite against an agent
     ///
     /// Starts an evaluation of the agent against the dataset named by `dataset_id` and returns the

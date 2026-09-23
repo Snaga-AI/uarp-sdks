@@ -5044,9 +5044,9 @@ export interface Error {
  * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
  * no machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -7521,6 +7521,11 @@ export interface ListEvalRunsResponse {
   total: number;
 }
 
+export interface ListExperimentsResponse {
+  experiments: Experiment[];
+  total: number;
+}
+
 export interface ListFeaturedSpecsResponse {
   featured: string[];
 }
@@ -9498,6 +9503,13 @@ export interface PermissionSet {
   allowed_tools: string[];
   allowed_roles?: string[];
   resource_permissions?: ResourcePermission[];
+  /**
+   * Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+   * child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+   * this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+   * with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+   * "resource_limits". 0 means no cap from this field.
+   */
   max_budget_per_run_usd?: number;
   max_spawn_depth: number;
   can_spawn: boolean;
@@ -9529,6 +9541,13 @@ export interface PermissionSetUpdate {
    * not merge).
    */
   resource_permissions?: ResourcePermission[];
+  /**
+   * Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+   * child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+   * this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+   * with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+   * "resource_limits". 0 means no cap from this field.
+   */
   max_budget_per_run_usd?: number;
   max_spawn_depth?: number;
   can_spawn?: boolean;

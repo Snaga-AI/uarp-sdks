@@ -9596,6 +9596,7 @@ public value class ErrorCode(public val value: String) {
         public val KB_CHUNK_LIMIT: ErrorCode = ErrorCode("kb_chunk_limit")
         public val KB_DOCUMENT_BODY_INVALID: ErrorCode = ErrorCode("kb_document_body_invalid")
         public val KB_DOCUMENT_TOO_LARGE: ErrorCode = ErrorCode("kb_document_too_large")
+        public val KB_EMBEDDING_FAILED: ErrorCode = ErrorCode("kb_embedding_failed")
         public val KB_STORAGE_LIMIT: ErrorCode = ErrorCode("kb_storage_limit")
         public val KB_TEXT_EXTRACTION_FAILED: ErrorCode = ErrorCode("kb_text_extraction_failed")
         public val LIMIT_REACHED: ErrorCode = ErrorCode("limit_reached")
@@ -9613,7 +9614,7 @@ public value class ErrorCode(public val value: String) {
         public val RUN_QUOTA_EXCEEDED: ErrorCode = ErrorCode("run_quota_exceeded")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, PLAN_UPGRADE_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, PLAN_UPGRADE_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED)
     }
 }
 
@@ -14333,6 +14334,15 @@ public data class ListEvalRunsResponse(
 )
 
 /**
+ * `ListExperimentsResponse` model.
+ */
+@Serializable
+public data class ListExperimentsResponse(
+    public val experiments: List<Experiment>,
+    public val total: Long,
+)
+
+/**
  * `ListFeaturedSpecsResponse` model.
  */
 @Serializable
@@ -18180,6 +18190,13 @@ public data class PermissionSet(
     public val allowedRoles: List<String>? = null,
     @SerialName("resource_permissions")
     public val resourcePermissions: List<ResourcePermission>? = null,
+    /**
+     * Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+     * child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+     * this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+     * with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+     * "resource_limits". 0 means no cap from this field.
+     */
     @SerialName("max_budget_per_run_usd")
     public val maxBudgetPerRunUsd: Double? = null,
     @SerialName("max_spawn_depth")
@@ -18222,6 +18239,13 @@ public data class PermissionSetUpdate(
      */
     @SerialName("resource_permissions")
     public val resourcePermissions: List<ResourcePermission>? = null,
+    /**
+     * Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+     * child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+     * this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+     * with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+     * "resource_limits". 0 means no cap from this field.
+     */
     @SerialName("max_budget_per_run_usd")
     public val maxBudgetPerRunUsd: Double? = null,
     @SerialName("max_spawn_depth")

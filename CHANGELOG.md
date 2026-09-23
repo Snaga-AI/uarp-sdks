@@ -8,16 +8,17 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.7.0 — 2026-09-23
 
-Build `3a9d4c08`, canonical digest `e4b9f5149deb99ed` — sorted keys, no
+Build `5732283f`, canonical digest `f0b65e58f448b3ca` — sorted keys, no
 whitespace, which is what `check-spec-freshness.sh` compares and what the
 release refuses to proceed without. Against 0.6.0, the last release published
-to any registry: 535 → 544 paths, 723 → 735 operations (+15, −3), 352 → 352
+to any registry: 535 → 544 paths, 723 → 736 operations (+16, −3), 352 → 352
 schemas (+3, −3).
 
 The first `v0.7.0` tag, on 2026-09-22 at build `34cc8169`, published nothing:
 the platform deployed `3a9d4c08` between the regeneration and the tag, and the
 release job refused the stale document in its first step, before any registry
-was touched. This entry describes the second cut.
+was touched. `5732283f` followed while that refresh was in CI. This entry
+describes the second cut.
 
 **The minor moves, and that is the point.** A caret under 1.0 does not cross
 the minor, so `^0.6.0` admits 0.6.1 automatically and refuses 0.7.0. This
@@ -78,8 +79,9 @@ demands.
   `error_code` is absent when the failure carries nothing to branch on, which
   is deliberate; `error_details` carries what the code cannot
   (`retry_after_ms`, `quota_exhausted`, `stale_seconds`).
-- `ErrorCode` and `ERROR_CODE_VALUES`, 77 values — `approval_rejected` is the
-  newest, for a run that stopped because a person refused its tool call. **New, not widened**: 0.6.0
+- `ErrorCode` and `ERROR_CODE_VALUES`, 78 values — among the newest,
+  `approval_rejected` for a run that stopped because a person refused its tool
+  call, and `kb_embedding_failed`. **New, not widened**: 0.6.0
   declared no `code` on `Error` at all, in the tag or in the published
   tarball, so there was nothing for a client to branch on.
 
@@ -103,6 +105,8 @@ matching English in `error` — a sentence with no `Accept-Language` behind it.
 - `SubjectSweep`, `TenantSocialLinks`.
 - `GET /agents/{agentId}/memory/core` and `ListCoreMemoryBlocksResponse` —
   every core memory block of an agent in one call, beside the per-label routes.
+- `GET /agents/{agentId}/experiments` and `ListExperimentsResponse` — an
+  agent's evaluation experiments, newest first.
 - `Run.approvals` (`RunApproval`, decision `'approved' | 'rejected'`): each
   human decision on a tool approval the run waited for, oldest first. Absent
   on runs from before 2026-09-22, when nothing was recorded.
@@ -129,7 +133,7 @@ matching English in `error` — a sentence with no `Accept-Language` behind it.
   published nothing — 40 of 100 generator tests red at the tag, every language
   job dead before its publish step. Measured again here: 48 of 114 red
   immediately after the bump, before the refresh.
-- `scripts/check-prose-schema.ts` reports 0 divergences over all 735
+- `scripts/check-prose-schema.ts` reports 0 divergences over all 736
   operations.
 
 ### Known

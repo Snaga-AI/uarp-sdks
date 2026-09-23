@@ -12734,6 +12734,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let kbChunkLimit = ErrorCode(rawValue: "kb_chunk_limit")
     public static let kbDocumentBodyInvalid = ErrorCode(rawValue: "kb_document_body_invalid")
     public static let kbDocumentTooLarge = ErrorCode(rawValue: "kb_document_too_large")
+    public static let kbEmbeddingFailed = ErrorCode(rawValue: "kb_embedding_failed")
     public static let kbStorageLimit = ErrorCode(rawValue: "kb_storage_limit")
     public static let kbTextExtractionFailed = ErrorCode(rawValue: "kb_text_extraction_failed")
     public static let limitReached = ErrorCode(rawValue: "limit_reached")
@@ -12751,7 +12752,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let runQuotaExceeded = ErrorCode(rawValue: "run_quota_exceeded")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .taskGraphFailed, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .planUpgradeRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .taskGraphFailed, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .planUpgradeRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded]
 }
 
 /// `ErrorError` model.
@@ -19194,6 +19195,22 @@ public struct ListEvalRunsResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ListExperimentsResponse` model.
+public struct ListExperimentsResponse: Codable, Hashable, Sendable {
+    public var experiments: [Experiment]
+    public var total: Int
+
+    public init(experiments: [Experiment], total: Int) {
+        self.experiments = experiments
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case experiments = "experiments"
+        case total = "total"
+    }
+}
+
 /// `ListFeaturedSpecsResponse` model.
 public struct ListFeaturedSpecsResponse: Codable, Hashable, Sendable {
     public var featured: [String]
@@ -24053,6 +24070,11 @@ public struct PermissionSet: Codable, Hashable, Sendable {
     public var allowedTools: [String]
     public var allowedRoles: [String]?
     public var resourcePermissions: [ResourcePermission]?
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     public var maxBudgetPerRunUsd: Double?
     public var maxSpawnDepth: Int
     public var canSpawn: Bool
@@ -24106,6 +24128,11 @@ public struct PermissionSetUpdate: Codable, Hashable, Sendable {
     /// Sending this field REPLACES the stored list (the handler stores the array as sent, it does
     /// not merge).
     public var resourcePermissions: [ResourcePermission]?
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     public var maxBudgetPerRunUsd: Double?
     public var maxSpawnDepth: Int?
     public var canSpawn: Bool?
