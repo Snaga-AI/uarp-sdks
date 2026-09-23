@@ -185,10 +185,19 @@ jobs:
       # versions, and dropping them would break everyone already pinned to one.
       - name: Copy the package into the mirror
         env:
-          TOKEN: ${{ secrets.SWIFT_MIRROR_TOKEN }}
+          SSH_KEY: ${{ secrets.SWIFT_MIRROR_SSH_KEY }}
           VERSION: ${{ needs.verify.outputs.version }}
         run: |
           set -euo pipefail
+          # A deploy key on Snaga-AI/uarp-swift (read-write), not a personal
+          # token. Until 2026-09-23 this used SWIFT_MIRROR_TOKEN, a fine-grained
+          # PAT, and it failed for every release from 0.5.15 to 0.7.0: the
+          # token expired once, and the three replacements issued in one day
+          # were all refused with 403 because the organisation restricts
+          # fine-grained tokens — a policy nothing on the token page shows.
+          # A deploy key belongs to the repository, expires never, and its
+          # only permission is the one this job needs. 0.7.0 reached the
+          # mirror by hand while that was being found out.
           # A missing token used to warn and `exit 0`. That made this job GREEN
           # while publishing nothing, and it stayed green through 0.3.0, 0.4.0,
           # 0.5.0 and 0.5.1 — four releases in which Swift consumers got no
@@ -198,16 +207,26 @@ jobs:
           #
           # A release that cannot publish one of its five packages is a failed
           # release. Say so.
-          if [ -z "${TOKEN}" ]; then
-            echo "::error::SWIFT_MIRROR_TOKEN is not set, so Snaga-AI/uarp-swift cannot be updated and Swift consumers would silently stay on the previous version. See PUBLISHING.md."
+          if [ -z "${SSH_KEY}" ]; then
+            echo "::error::SWIFT_MIRROR_SSH_KEY is not set, so Snaga-AI/uarp-swift cannot be updated and Swift consumers would silently stay on the previous version. See PUBLISHING.md."
             exit 1
           fi
-          remote="https://x-access-token:${TOKEN}@github.com/Snaga-AI/uarp-swift.git"
+          key="$(mktemp)"
+          printf '%s\n' "${SSH_KEY}" > "$key"
+          chmod 600 "$key"
+          export GIT_SSH_COMMAND="ssh -i $key -o IdentitiesOnly=yes -o StrictHostKeyChecking=accept-new"
+          remote="git@github.com:Snaga-AI/uarp-swift.git"
           # Fail with the reason rather than falling back to an empty repo: a
-          # 403 here means the token cannot write to the mirror, and silently
+          # refusal here means the key cannot reach the mirror, and silently
           # re-creating the history would drop every published tag.
           if ! git clone --quiet "$remote" mirror; then
-            echo "::error::could not clone Snaga-AI/uarp-swift with SWIFT_MIRROR_TOKEN. If this is a 403, the token lacks write access to the repository (a fine-grained PAT needs Contents: write on Snaga-AI/uarp-swift, and organisation approval)."
+            echo "::error::could not clone Snaga-AI/uarp-swift with SWIFT_MIRROR_SSH_KEY. The secret must hold the private half of a read-write deploy key registered on that repository; deploy keys must be enabled in the organisation's settings."
+            exit 1
+          fi
+          # Prove the key can WRITE before touching anything: a read-only key
+          # clones fine and only fails at the push, after the work is done.
+          if ! git -C mirror push --dry-run --quiet "$remote" HEAD:refs/heads/main; then
+            echo "::error::the deploy key can read Snaga-AI/uarp-swift but not write to it. Re-register it with write access."
             exit 1
           fi
 
@@ -285,8 +304,8 @@ jobs:
 
   github-release:
     name: GitHub release
-    # Not gated on `swift-mirror`: that job fails whenever SWIFT_MIRROR_TOKEN
-    # cannot write to the mirror, and it did for every release from 0.5.4 to
+    # Not gated on `swift-mirror`: that job fails whenever the mirror
+    # credential cannot write to the mirror, and it did for every release from 0.5.4 to
     # 0.5.12 — so no GitHub release was created for any of them, and the
     # Alire tarball (built and uploaded as an artifact by `ada`) never
     # reached a release page the community index could point at. Nine

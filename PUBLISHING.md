@@ -86,12 +86,28 @@ A released version can never be deleted or replaced. Upload with
 `publishingType=USER_MANAGED` first if you want validation without publication;
 the release script uses `AUTOMATIC`.
 
-### SwiftPM — minutes, plus a token
+### SwiftPM — minutes, plus a deploy key
 
 Create `Snaga-AI/uarp-swift` (empty, public, no README — the mirror overwrites
-everything). Store a token with `contents: write` on that repository as
-`SWIFT_MIRROR_TOKEN`; a fine-grained token scoped to the one repository is
-enough.
+everything). Give it a read-write deploy key and store the private half as
+`SWIFT_MIRROR_SSH_KEY`:
+
+    ssh-keygen -t ed25519 -N "" -C "uarp-sdks release -> uarp-swift mirror" -f mirror_key
+    gh repo deploy-key add mirror_key.pub --repo Snaga-AI/uarp-swift --title "uarp-sdks release (write)" --allow-write
+    gh secret set SWIFT_MIRROR_SSH_KEY --repo Snaga-AI/uarp-sdks < mirror_key
+    rm mirror_key mirror_key.pub
+
+Deploy keys must be enabled for the organisation (Snaga-AI → Settings →
+Deploy keys); until 2026-09-23 they were not, and `gh repo deploy-key add`
+answers `Deploy keys are disabled for this repository` while they are off.
+
+Not a personal access token. The job used one, `SWIFT_MIRROR_TOKEN`, from
+0.3.0 to 0.7.0 and it failed for every release from 0.5.15 on: first because
+it expired, then because the organisation restricts fine-grained tokens, and
+three freshly issued ones in a row were refused with 403 on push — an
+organisation policy that no token page shows, so each looked correctly
+configured. A deploy key belongs to the repository, never expires, and holds
+exactly the one permission this job needs.
 
 Optionally submit the mirror to the [Swift Package
 Index](https://swiftpackageindex.com/add-a-package) so it becomes findable.
@@ -148,5 +164,6 @@ git push origin main --tags
 
 The tag starts the workflow. Two steps do not finish on their own: Alire, where
 the tarball from the run goes into an index pull request, and the Swift mirror,
-which is skipped with a warning while `SWIFT_MIRROR_TOKEN` is unset — a release
-that ignores that warning leaves Swift consumers on the previous version.
+which fails the run while `SWIFT_MIRROR_SSH_KEY` is unset or cannot write to
+`Snaga-AI/uarp-swift` — a release that ignores that failure leaves Swift
+consumers on the previous version.
