@@ -167,9 +167,9 @@ footer { border-top: 1px solid var(--rule); padding-top: 1.5rem; color: var(--fa
       and every model is present in every language, and they were checked against each other
       and against the live API before release.</p>
     <div class="grid">
-      <div class="cell"><span class="n">557</span><span class="k">operations, in all five</span></div>
-      <div class="cell"><span class="n">603</span><span class="k">typed models</span></div>
-      <div class="cell"><span class="n">11</span><span class="k">event streams</span></div>
+      <div class="cell"><span class="n">736</span><span class="k">operations, in all five</span></div>
+      <div class="cell"><span class="n">1498</span><span class="k">named types</span></div>
+      <div class="cell"><span class="n">15</span><span class="k">event streams</span></div>
       <div class="cell"><span class="n">14</span><span class="k">paginated endpoints</span></div>
     </div>
     <div class="scroll">
@@ -310,7 +310,7 @@ Page   : constant UARP.Models.List_Agents_Response :=
 }</code></pre>
 
     <h3>Streaming</h3>
-    <p>The eleven SSE endpoints return a native async type that reopens with
+    <p>The SSE endpoints return a native async type that reopens with
       <code>Last-Event-ID</code> when a connection drops. A connection that delivered at least one
       event earns a fresh reconnect budget, so a flapping server cannot spin the loop.</p>
 <pre><code>for await (const event of client.runs.streamRunEvents(runId)) {
@@ -354,8 +354,8 @@ Page   : constant UARP.Models.List_Agents_Response :=
 
     <div class="caveat">
       <strong>Swift event streams are Apple-only.</strong>
-      <p>The package builds on Linux and all 557 request/response operations work there, but the
-        eleven streaming endpoints do not: <code>URLSession.bytes</code> is missing from
+      <p>The package builds on Linux and every request/response operation works there, but the
+        streaming endpoints do not: <code>URLSession.bytes</code> is missing from
         swift-corelibs-foundation, and every other way of reading a response on that platform
         buffers it to completion — which never happens on a stream that stays open. Calling one on
         Linux throws <code>UARPError.stream</code> with that explanation.</p>

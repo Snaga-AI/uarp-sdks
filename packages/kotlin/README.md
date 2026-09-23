@@ -1,7 +1,7 @@
 # ai.snaga:uarp-sdk
 
 Kotlin client for the **UARP — Universal Agent Runtime Platform** API, built for
-Android and any JVM. Full coverage of all 557 endpoints, coroutines throughout,
+Android and any JVM. Every operation the API describes, coroutines throughout,
 OkHttp + kotlinx.serialization.
 
 ```kotlin
@@ -48,7 +48,8 @@ through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
 scopes that does its job.
 
 Resource groups are extension properties: `client.agents`, `client.runs`,
-`client.sessions`, … 43 in all, in `ai.snaga.uarp.api`. Every call is a
+`client.sessions`, … one for each tag in the API description, in
+`ai.snaga.uarp.api`. Every call is a
 `suspend` function, so call them from a coroutine (`viewModelScope`,
 `lifecycleScope`, …).
 
@@ -58,15 +59,23 @@ SSE endpoints return a cold `Flow<ServerEvent>` that reconnects with
 `Last-Event-ID`:
 
 ```kotlin
-// The text arrives as `payload.delta`; the rest of the envelope is
+// The reply's text is `payload.delta` on chunks whose `payload.chunk_type` is
+// "content"; "thinking" and "tool_call" chunks carry the model's reasoning
+// and tool calls, which are not the answer. The rest of the envelope is
 // platform bookkeeping.
 @Serializable data class Chunk(val payload: Payload) {
-    @Serializable data class Payload(val delta: String)
+    @Serializable data class Payload(
+        @SerialName("chunk_type") val chunkType: String = "content",
+        val delta: String,
+    )
 }
 
 client.runs.streamRunEvents(runId)
     .onEach { event ->
-        if (event.event == "llm.chunk") append(event.decode<Chunk>().payload.delta)
+        if (event.event == "llm.chunk") {
+            val payload = event.decode<Chunk>().payload
+            if (payload.chunkType == "content") append(payload.delta)
+        }
     }
     .takeWhile { it.event != "run.completed" }
     .flowOn(Dispatchers.IO)
@@ -171,4 +180,4 @@ writes only when they carry an idempotency key, which every mutating
 ```
 
 Files under `uarp-sdk/src/main/kotlin/ai/snaga/uarp/generated/` come from
-`generator/` in the repository root; edit the emitter, not the output.
+`generator/` in [Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks); edit the emitter, not the output.

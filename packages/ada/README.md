@@ -1,7 +1,7 @@
 # uarp_sdk (Ada)
 
 Ada 2022 client for the **UARP — Universal Agent Runtime Platform** API. Full
-coverage of all 557 endpoints, HTTP over libcurl, JSON via GNATCOLL.
+coverage of every operation the API describes, HTTP over libcurl, JSON via GNATCOLL.
 
 ```toml
 # alire.toml
@@ -55,7 +55,8 @@ through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
 scopes that does its job.
 
 Operations live in one child package per API tag: `UARP.API.Agents`,
-`UARP.API.Runs`, `UARP.API.Sessions`, … 43 in all. Models and their JSON
+`UARP.API.Runs`, `UARP.API.Sessions`, … one for each tag in the API
+description. Models and their JSON
 conversions are in `UARP.Models`.
 
 ## Records and optional fields
@@ -99,8 +100,11 @@ is
    Name : constant String := UARP.Types.SU.To_String (Event.Name);
 begin
    if Name = "llm.chunk" then
-      --  Event.Data is the whole JSON envelope; the text of the reply is at
-      --  `payload.delta` inside it. Printed raw here to keep the example short.
+      --  Event.Data is the whole JSON envelope. The text of the reply is
+      --  `payload.delta` on chunks whose `payload.chunk_type` is "content";
+      --  "thinking" and "tool_call" chunks are reasoning and tool calls, not
+      --  the answer. Printed raw here to keep the example short — a real
+      --  client parses the envelope and keeps only "content".
       Self.Chunks := Self.Chunks + 1;
       Ada.Text_IO.Put (UARP.Types.SU.To_String (Event.Data));
    end if;
@@ -236,5 +240,5 @@ cd tests && alr build  # the suite
 cd examples && alr build && alr run quickstart
 ```
 
-Files under `src/generated/` come from `generator/` in the repository root;
+Files under `src/generated/` come from `generator/` in [Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks);
 edit the emitter, not the output.

@@ -1,7 +1,7 @@
 # uarp-sdk
 
 Async Rust client for the **UARP — Universal Agent Runtime Platform** API.
-Full coverage of all 557 endpoints, built on `reqwest`, `serde` and `tokio`.
+Every operation the API describes, built on `reqwest`, `serde` and `tokio`.
 
 ```toml
 [dependencies]
@@ -19,7 +19,7 @@ use uarp_sdk::models::CreateAgentRequest;
 
 #[tokio::main]
 async fn main() -> Result<(), uarp_sdk::Error> {
-    let client = uarp_sdk::Client::from_env()?;   // UARP_API_KEY, UARP_BASE_URL
+    let client = uarp_sdk::Client::from_env()?;   // UARP_API_KEY (or SNAGA_API_KEY), UARP_BASE_URL
 
     let agent = client
         .agents()
@@ -40,7 +40,8 @@ scopes that does its job.
 
 `Client` is cheap to clone — every clone shares one connection pool. Resource
 groups are accessor methods: `client.agents()`, `client.runs()`,
-`client.sessions()`, … 43 in all, each in `uarp_sdk::api`.
+`client.sessions()`, … one for each tag in the API description,
+each in `uarp_sdk::api`.
 
 ## Streaming
 
@@ -56,11 +57,13 @@ let mut events = std::pin::pin!(runs.stream_run_events(&run_id, &params));
 
 while let Some(event) = events.next().await {
     let event = event?;
-    // The text arrives as `payload.delta`; the rest of the envelope is
-    // platform bookkeeping.
+    // The reply's text is `payload.delta` on chunks whose `payload.chunk_type`
+    // is "content"; "thinking" and "tool_call" chunks carry the model's
+    // reasoning and tool calls, which are not the answer.
     if event.event == "llm.chunk" {
         let chunk = event.json::<serde_json::Value>()?;
-        if let Some(delta) = chunk["payload"]["delta"].as_str() {
+        let kind = chunk["payload"]["chunk_type"].as_str().unwrap_or("content");
+        if let ("content", Some(delta)) = (kind, chunk["payload"]["delta"].as_str()) {
             print!("{delta}");
         }
     }
@@ -127,7 +130,7 @@ let client = uarp_sdk::Client::builder()
 
 ### Per-call overrides
 
-Rust has no default arguments, so rather than an options parameter on all 557
+Rust has no default arguments, so rather than an options parameter on every
 methods the overrides ride on a cheap clone of the client — the connection pool
 is shared:
 
@@ -176,5 +179,5 @@ cargo clippy --all-targets
 cargo run --example quickstart
 ```
 
-Files under `src/generated/` come from `generator/` in the repository root;
+Files under `src/generated/` come from `generator/` in [Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks);
 edit the emitter, not the output.

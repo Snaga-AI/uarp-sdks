@@ -24,7 +24,7 @@ const AREAS = [
   {
     to: '/docs/reference',
     title: 'Reference',
-    body: 'Every one of the 557 operations across 43 resource groups, generated from the TypeScript SDK so it cannot drift from the wire.',
+    body: 'Every one of the 736 operations across 49 resource groups, generated from the TypeScript SDK so it cannot drift from the wire.',
   },
   {
     to: '/docs/wire',

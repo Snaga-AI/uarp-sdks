@@ -11,9 +11,9 @@ Client libraries for the **UARP — Universal Agent Runtime Platform** API
 | Kotlin / Android | `packages/kotlin` | `ai.snaga:uarp-sdk` (Maven) | Kotlin 2.2+, JVM 11+, Android 21+ |
 | Ada | `packages/ada` | `uarp_sdk` (Alire) | GNAT 2022, libcurl |
 
-Every SDK covers the **whole** API surface: 557 operations across 43 resource
-groups, 603 models, 11 server-sent-event streams and the cursor-paginated
-endpoints — plus the platform's auth, idempotency and retry semantics.
+Every SDK covers the **whole** API surface — at 0.7.0, 736 operations across 49
+resource groups, 1498 named types, 15 server-sent-event streams and the
+cursor-paginated endpoints — plus the platform's auth, idempotency and retry semantics.
 
 ## What each SDK gives you
 
