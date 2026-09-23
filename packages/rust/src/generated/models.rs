@@ -3712,10 +3712,14 @@ pub struct AgentVersion {
     /// agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`,
     /// `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration
     /// kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
-    /// (agent-factory + discovery)`, `Rollback to version N` (N = the version rolled back to),
-    /// `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is
-    /// a count, the second is one of errors, ratings or feedback — words, not a number). A reason
-    /// code beside the prose is the owner's decision (DEC 11).
+    /// (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
+    /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
+    /// provider healed to the platform default`, `Core memory enabled`, `Tool trust override
+    /// updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
+    /// to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
+    /// analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
+    /// ratings or feedback — words, not a number). A reason code beside the prose is the owner's
+    /// decision (DEC 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog: Option<String>,
     pub created_at: String,

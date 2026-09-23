@@ -8,7 +8,7 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.7.0 — 2026-09-23
 
-Build `c5694dc0`, canonical digest `b546ec9b1296e236` — sorted keys, no
+Build `f9f433ee`, canonical digest `9de209f5e0d40b51` — sorted keys, no
 whitespace, which is what `check-spec-freshness.sh` compares and what the
 release refuses to proceed without. Against 0.6.0, the last release published
 to any registry: 535 → 544 paths, 723 → 736 operations (+16, −3), 352 → 352
@@ -17,8 +17,8 @@ schemas (+3, −3).
 The first `v0.7.0` tag, on 2026-09-22 at build `34cc8169`, published nothing:
 the platform deployed `3a9d4c08` between the regeneration and the tag, and the
 release job refused the stale document in its first step, before any registry
-was touched. `5732283f` and `c5694dc0` followed while the refresh was in CI. This entry
-describes the second cut.
+was touched. `5732283f`, `c5694dc0` and `f9f433ee` followed while the refresh
+was in CI. This entry describes the second cut.
 
 **The minor moves, and that is the point.** A caret under 1.0 does not cross
 the minor, so `^0.6.0` admits 0.6.1 automatically and refuses 0.7.0. This
