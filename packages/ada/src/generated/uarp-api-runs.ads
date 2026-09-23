@@ -372,7 +372,10 @@ package UARP.API.Runs is
    --  Suspends a run that is currently executing, leaving it at `paused` until `POST
    --  /api/v1/runs/{runId}/resume`. `404` when the run does not exist and `409` when it is in any
    --  status other than `running`; the transition is a CAS, so losing the race to a concurrent
-   --  write is also `409`. A `run.checkpoint` event with reason `manual_pause` is appended.
+   --  write is also `409`. A `run.checkpoint` event with reason `manual_pause` is appended. The
+   --  run stops at its next step boundary (a step already in flight finishes first) and emits
+   --  `run.paused`; if that in-flight step produced the final answer, the answer is held and the
+   --  run stays `paused` instead of completing.
    --
    --  POST /api/v1/runs/{runId}/pause
    --
@@ -389,10 +392,12 @@ package UARP.API.Runs is
    --  when the run does not exist and `409` unless its status is `awaiting_approval`. The
    --  rejection - with `reason`, defaulted when absent - is stored as the run's approval signal,
    --  the run is transitioned to `failed` under CAS (a lost race is `409`, and nothing is mirrored
-   --  outward in that case), a `run.failed` event marked `rejected` is appended and the pending
-   --  approval notifications are retired. For a run executing on a local bridge the decision is
-   --  also written into the bridge's slot so the prompt there is torn down. This ends the run; it
-   --  is not a way to decline one tool and continue.
+   --  outward in that case) with `error` set to the reason and `error_code` set to
+   --  `approval_rejected`, a `run.failed` event marked `rejected` and carrying the same
+   --  `error_code` is appended, and the pending approval notifications are retired. For a run
+   --  executing on a local bridge the decision is also written into the bridge's slot so the
+   --  prompt there is torn down. This ends the run; it is not a way to decline one tool and
+   --  continue.
    --
    --  POST /api/v1/runs/{runId}/reject
    --
@@ -444,10 +449,14 @@ package UARP.API.Runs is
    --
    --  Returns a paused run to the queue and reschedules it, answering `202`. `404` when the run
    --  does not exist and `409` when it is not `paused`, including when a concurrent write wins the
-   --  CAS. An optional `input` object in the body is stored on the run's metadata as
-   --  `_resume_input` for the runtime to pick up; a `run.started` event records that this was a
-   --  resume. The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not
-   --  that it has restarted.
+   --  CAS. The body is optional: a bare POST with no body resumes the run (until 2026-09-22 that
+   --  answered `422 _body: Required`). An optional `input` object in the body is stored on the
+   --  run's metadata as `_resume_input` for the runtime to pick up, and a string `input.note` (or
+   --  `input.message`) reaches the model as a user turn. A run paused while its last step was
+   --  already producing the final answer holds that answer, and a resume without a note releases
+   --  it without calling the model again; a `run.started` event records that this was a resume.
+   --  The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not that it
+   --  has restarted.
    --
    --  POST /api/v1/runs/{runId}/resume
    --
@@ -455,6 +464,8 @@ package UARP.API.Runs is
    function Resume
      (Self : Client_Type;
       Run_Id : String;
+      Payload : UARP.Models.Resume_Run_Request;
+      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Resume_Run_Response;
 

@@ -387,8 +387,12 @@ package UARP.Models is
       Objective_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The objective's status when the mission ended.
       Final_Status : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Retries spent on this objective before it settled.
+      --  Retries spent on this objective before it settled - read from the objective record, so it
+      --  agrees with `GET /missions/{missionId}/objectives`.
       Strikes_Used : UARP.Types.Integer_Value := 0;
+      --  The objective record's `abort_reason`, copied. Absent when it has none.
+      Has_Abort_Reason : Boolean := False;
+      Abort_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Final_Agent_Id : Boolean := False;
       Final_Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Final_Model : Boolean := False;
@@ -407,7 +411,9 @@ package UARP.Models is
    package Aar_Objective_Outcome_Vectors is new Ada.Containers.Vectors
      (Index_Type => Positive, Element_Type => Aar_Objective_Outcome);
 
-   --  Values of `AarRootCauseCategory`.
+   --  Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+   --  `exhausted_strikes_<n>` ? `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+   --  ? `external_error`. Branch on `code` for the precise reason.
    --  A value the API introduces later decodes as Aar_Root_Cause_Category_Unrecognized
    --  with the original text kept in Raw.
    type Aar_Root_Cause_Category_Kind is
@@ -437,8 +443,15 @@ package UARP.Models is
    --  `AarRootCause` model.
    type Aar_Root_Cause is record
       Objective_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+      --  `exhausted_strikes_<n>` ? `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+      --  ? `external_error`. Branch on `code` for the precise reason.
       Category : UARP.Models.Aar_Root_Cause_Category;
       Details : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent
+      --  when the objective recorded none.
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    function To_JSON (Model : Aar_Root_Cause) return UARP.JSON_Support.JSON_Value;
@@ -3665,6 +3678,10 @@ package UARP.Models is
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+      --  Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+      --  keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+      --  set `public_config.system_prompt`.
       Has_Prompts : Boolean := False;
       Prompts : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Model : Boolean := False;
@@ -3721,10 +3738,14 @@ package UARP.Models is
       --  agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`,
       --  `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration
       --  kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
-      --  (agent-factory + discovery)`, `Rollback to version N` (N = the version rolled back to),
-      --  `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is
-      --  a count, the second is one of errors, ratings or feedback - words, not a number). A reason
-      --  code beside the prose is the owner's decision (DEC 11).
+      --  (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
+      --  canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
+      --  provider healed to the platform default`, `Core memory enabled`, `Tool trust override
+      --  updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
+      --  to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
+      --  analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
+      --  ratings or feedback - words, not a number). A reason code beside the prose is the owner's
+      --  decision (DEC 11).
       Has_Changelog : Boolean := False;
       Changelog : UARP.Types.Text := UARP.Types.Empty_Text;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -5743,6 +5764,11 @@ package UARP.Models is
       Allowed_Roles : UARP.Types.Text_Vectors.Vector;
       Has_Resource_Permissions : Boolean := False;
       Resource_Permissions : UARP.Models.Resource_Permission_Vectors.Vector;
+      --  Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+      --  child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+      --  this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+      --  with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+      --  "resource_limits". 0 means no cap from this field.
       Has_Max_Budget_Per_Run_Usd : Boolean := False;
       Max_Budget_Per_Run_Usd : UARP.Types.Float_Value := 0.0;
       Max_Spawn_Depth : UARP.Types.Integer_Value := 0;
@@ -6614,6 +6640,9 @@ package UARP.Models is
    function To_JSON (Model : Core_Memory_Block) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Core_Memory_Block;
 
+   package Core_Memory_Block_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Core_Memory_Block);
+
    --  bytes, Web super-admin, tenant Snaga Or..., 2026-09-10T22:38:17Z;
    --  billing/cost-reconciliation.ts ReconciliationResult - `truncated` and `details` conditional.
    type Cost_Reconciliation_Result is record
@@ -6637,10 +6666,8 @@ package UARP.Models is
 
    --  `CreateA2ATaskRequestMessage` model.
    type Create_A2A_Task_Request_Message is record
-      Has_Role : Boolean := False;
-      Role : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Parts : Boolean := False;
-      Parts : UARP.JSON_Support.JSON_Value;
+      Role : UARP.Models.Drawing_Journal_Entry_Author_Kind;
+      Parts : UARP.Models.A2A_Part_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Create_A2A_Task_Request_Message) return UARP.JSON_Support.JSON_Value;
@@ -6652,6 +6679,10 @@ package UARP.Models is
    --  `CreateA2ATaskRequest` model.
    type Create_A2A_Task_Request is record
       Agent_Id : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  At least one `user` message must carry input: a text part with non-empty `text`, a `data`
+      --  part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route).
+      --  Anything else is refused with **422** before a task or run exists (schemas/mod.ts
+      --  A2AMessagesSchema).
       Messages : UARP.Models.Create_A2A_Task_Request_Message_Vectors.Vector;
       Has_Metadata : Boolean := False;
       Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
@@ -6805,6 +6836,10 @@ package UARP.Models is
       Model : UARP.Models.Agent_Model_Config_Input;
       Has_Description : Boolean := False;
       Description : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+      --  Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+      --  keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+      --  set `public_config.system_prompt`.
       Has_Prompts : Boolean := False;
       Prompts : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Thinking : Boolean := False;
@@ -9246,6 +9281,7 @@ package UARP.Models is
    Error_Code_Yank_Conflict,
    Error_Code_Agent_Not_Found,
    Error_Code_Already_Bootstrapped,
+   Error_Code_Approval_Rejected,
    Error_Code_Billing_Not_Configured,
    Error_Code_Governance_Not_Enabled,
    Error_Code_Incomplete_Record,
@@ -9254,6 +9290,7 @@ package UARP.Models is
    Error_Code_Kb_Chunk_Limit,
    Error_Code_Kb_Document_Body_Invalid,
    Error_Code_Kb_Document_Too_Large,
+   Error_Code_Kb_Embedding_Failed,
    Error_Code_Kb_Storage_Limit,
    Error_Code_Kb_Text_Extraction_Failed,
    Error_Code_Limit_Reached,
@@ -9580,6 +9617,9 @@ package UARP.Models is
 
    function To_JSON (Model : Experiment) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Experiment;
+
+   package Experiment_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Experiment);
 
    --  `ExportAdminConfigResponse` model.
    type Export_Admin_Config_Response is record
@@ -10903,8 +10943,16 @@ package UARP.Models is
       Decision_Points : UARP.Models.Objective_Decision_Point_Vectors.Vector;
       Has_Deadline : Boolean := False;
       Deadline : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
+      --  `dependency_failed`, or `verifier_error` - the verifier could not reach a verdict (its judge
+      --  errored or kept answering in an unparseable shape), which is the platform failing, not the
+      --  agent's work; no strike is charged for it and the agent is not re-run.
       Has_Abort_Reason : Boolean := False;
       Abort_Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Strikes the mission executor spent on this objective, written when it settles. Absent on
+      --  objectives that never ran under a mission and on those settled before 2026-09-22.
+      Has_Strikes_Used : Boolean := False;
+      Strikes_Used : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : Objective) return UARP.JSON_Support.JSON_Value;
@@ -12031,6 +12079,45 @@ package UARP.Models is
    function To_JSON (Model : Run_Metrics) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Metrics;
 
+   --  Values of `RunApprovalDecision`.
+   --  A value the API introduces later decodes as Run_Approval_Decision_Unrecognized
+   --  with the original text kept in Raw.
+   type Run_Approval_Decision_Kind is
+     (Run_Approval_Decision_Approved,
+   Run_Approval_Decision_Rejected,
+   Run_Approval_Decision_Unrecognized);
+
+   type Run_Approval_Decision is record
+      Kind : Run_Approval_Decision_Kind := Run_Approval_Decision_Unrecognized;
+      Raw  : Text := Empty_Text;
+   end record;
+
+   function To_Run_Approval_Decision (Value : String) return Run_Approval_Decision;
+   function To_Run_Approval_Decision (Kind : Run_Approval_Decision_Kind) return Run_Approval_Decision;
+   function Image (Model : Run_Approval_Decision) return String;
+   function To_JSON (Model : Run_Approval_Decision) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Approval_Decision;
+
+   --  `GetRunResponseApproval` model.
+   type Get_Run_Response_Approval is record
+      Decision : UARP.Models.Run_Approval_Decision;
+      --  Tools the run was waiting on when the decision was made.
+      Tools : UARP.Types.Text_Vectors.Vector;
+      Decided_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  User id of the person who decided; the credential id when no person stands behind it.
+      Has_Decided_By : Boolean := False;
+      Decided_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The reviewer's reason, on a rejection.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Get_Run_Response_Approval) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Run_Response_Approval;
+
+   package Get_Run_Response_Approval_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Get_Run_Response_Approval);
+
    --  Resource limits for the run
    type Get_Run_Response_Resource_Limits is record
       Has_Max_Duration_Ms : Boolean := False;
@@ -12117,7 +12204,9 @@ package UARP.Models is
       --  Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
       --  Absent when the failure carries nothing a client can branch on - which is deliberate: a code
       --  meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-      --  that a client had to regex-test `error`.
+      --  that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+      --  person refused the tool call the run was waiting on - `status` is still `failed`, and
+      --  `error` is the reviewer's own reason.
       Has_Error_Code : Boolean := False;
       Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
@@ -12126,6 +12215,11 @@ package UARP.Models is
       --  picked.
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Every human decision on a tool approval this run waited for, oldest first. Absent when the
+      --  run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+      --  trace on the run.
+      Has_Approvals : Boolean := False;
+      Approvals : UARP.Models.Get_Run_Response_Approval_Vectors.Vector;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Started_At : Boolean := False;
       Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -13047,6 +13141,18 @@ package UARP.Models is
    function To_JSON (Model : Inbox_Item_Kind) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Kind;
 
+   --  `InboxItemTool` model.
+   type Inbox_Item_Tool is record
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Inbox_Item_Tool) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Tool;
+
+   package Inbox_Item_Tool_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Inbox_Item_Tool);
+
    --  One run waiting on a person, with what it is actually asking rather than just its status.
    type Inbox_Item is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -13066,6 +13172,11 @@ package UARP.Models is
       Detail : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The agent's own choices, for `input` items. Empty otherwise.
       Options : UARP.Types.Text_Vectors.Vector;
+      --  `approval` items: each tool the run waits on, once, with how many calls named it - the facts
+      --  behind `summary` (which is English prose), for a client that says them in its own language.
+      --  Absent on other kinds. Since 2026-09-23.
+      Has_Tools : Boolean := False;
+      Tools : UARP.Models.Inbox_Item_Tool_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Inbox_Item) return UARP.JSON_Support.JSON_Value;
@@ -13113,6 +13224,8 @@ package UARP.Models is
       --  Override stored filename; defaults to file metadata or `created-doc.md`.
       Has_Filename : Boolean := False;
       Filename : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Stored on every chunk, before the tags ingest always adds (`document`, the filename,
+      --  `chunk:i/n`); a tag in both is kept once.
       Has_Tags : Boolean := False;
       Tags : UARP.Types.Text_Vectors.Vector;
       Has_Chunk_Size : Boolean := False;
@@ -14180,6 +14293,17 @@ package UARP.Models is
    function To_JSON (Model : List_Content_Reports_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Content_Reports_Response;
 
+   --  `ListCoreMemoryBlocksResponse` model.
+   type List_Core_Memory_Blocks_Response is record
+      --  Whether the runtime injects these blocks (`core_memory.enabled`).
+      Enabled : Standard.Boolean := False;
+      Blocks : UARP.Models.Core_Memory_Block_Vectors.Vector;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Core_Memory_Blocks_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Core_Memory_Blocks_Response;
+
    --  `ListCustomPlansResponse` model.
    type List_Custom_Plans_Response is record
       Plans : UARP.Models.Custom_Plan_Vectors.Vector;
@@ -14241,6 +14365,15 @@ package UARP.Models is
 
    function To_JSON (Model : List_Eval_Runs_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Eval_Runs_Response;
+
+   --  `ListExperimentsResponse` model.
+   type List_Experiments_Response is record
+      Experiments : UARP.Models.Experiment_Vectors.Vector;
+      Total : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : List_Experiments_Response) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Experiments_Response;
 
    --  `ListFeaturedSpecsResponse` model.
    type List_Featured_Specs_Response is record
@@ -15493,6 +15626,26 @@ package UARP.Models is
    function To_JSON (Model : List_Runs_Order) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Runs_Order;
 
+   --  `RunApproval` model.
+   type Run_Approval is record
+      Decision : UARP.Models.Run_Approval_Decision;
+      --  Tools the run was waiting on when the decision was made.
+      Tools : UARP.Types.Text_Vectors.Vector;
+      Decided_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  User id of the person who decided; the credential id when no person stands behind it.
+      Has_Decided_By : Boolean := False;
+      Decided_By : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  The reviewer's reason, on a rejection.
+      Has_Reason : Boolean := False;
+      Reason : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Run_Approval) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Approval;
+
+   package Run_Approval_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Run_Approval);
+
    --  Resource limits for the run
    type Run_Resource_Limits is record
       Has_Max_Duration_Ms : Boolean := False;
@@ -15541,7 +15694,9 @@ package UARP.Models is
       --  Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
       --  Absent when the failure carries nothing a client can branch on - which is deliberate: a code
       --  meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-      --  that a client had to regex-test `error`.
+      --  that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+      --  person refused the tool call the run was waiting on - `status` is still `failed`, and
+      --  `error` is the reviewer's own reason.
       Has_Error_Code : Boolean := False;
       Error_Code : UARP.Types.Text := UARP.Types.Empty_Text;
       --  Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
@@ -15550,6 +15705,11 @@ package UARP.Models is
       --  picked.
       Has_Error_Details : Boolean := False;
       Error_Details : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  Every human decision on a tool approval this run waited for, oldest first. Absent when the
+      --  run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+      --  trace on the run.
+      Has_Approvals : Boolean := False;
+      Approvals : UARP.Models.Run_Approval_Vectors.Vector;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Started_At : Boolean := False;
       Started_At : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -17682,6 +17842,15 @@ package UARP.Models is
       Classification : UARP.Models.Mission_Start_Response_Classification;
       Has_Plan : Boolean := False;
       Plan : UARP.Models.Planned_Mission;
+      --  Whether this request also started executing the mission. `true` when planning put it in
+      --  `executing` (the plan needed no authorization) and a walk began - progress then arrives on
+      --  `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it
+      --  is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST
+      --  /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays
+      --  `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported
+      --  `executing` and dispatched nothing until a separate `POST /run`.
+      Has_Run_Started : Boolean := False;
+      Run_Started : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Mission_Start_Response) return UARP.JSON_Support.JSON_Value;
@@ -18322,6 +18491,11 @@ package UARP.Models is
       --  not merge).
       Has_Resource_Permissions : Boolean := False;
       Resource_Permissions : UARP.Models.Resource_Permission_Vectors.Vector;
+      --  Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+      --  child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+      --  this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+      --  with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+      --  "resource_limits". 0 means no cap from this field.
       Has_Max_Budget_Per_Run_Usd : Boolean := False;
       Max_Budget_Per_Run_Usd : UARP.Types.Float_Value := 0.0;
       Has_Max_Spawn_Depth : Boolean := False;
@@ -19815,6 +19989,32 @@ package UARP.Models is
 
    function To_JSON (Model : Resume_Mission_Response) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Resume_Mission_Response;
+
+   --  Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+   --  as a user turn when the run continues.
+   type Resume_Run_Request_Input is record
+      Has_Note : Boolean := False;
+      Note : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Message : Boolean := False;
+      Message : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   function To_JSON (Model : Resume_Run_Request_Input) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Resume_Run_Request_Input;
+
+   --  `ResumeRunRequest` model.
+   type Resume_Run_Request is record
+      --  Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+      --  as a user turn when the run continues.
+      Has_Input : Boolean := False;
+      Input : UARP.Models.Resume_Run_Request_Input;
+      --  Accepted and ignored; kept so existing callers are not refused.
+      Has_Response : Boolean := False;
+      Response : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.Null_Value;
+   end record;
+
+   function To_JSON (Model : Resume_Run_Request) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Resume_Run_Request;
 
    --  `ResumeRunResponse` model.
    type Resume_Run_Response is record

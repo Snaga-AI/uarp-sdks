@@ -103,6 +103,21 @@ package body UARP.API.Memory is
              Options => Options));
    end Ingest_Memory;
 
+   function List_Core_Memory_Blocks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Core_Memory_Blocks_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/core",
+             Options => Options));
+   end List_Core_Memory_Blocks;
+
    function List_Memories
      (Self : Client_Type;
       Agent_Id : String;

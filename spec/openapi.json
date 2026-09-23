@@ -3842,23 +3842,28 @@
                         ]
                     },
                     "text": {
-                        "type": "string"
+                        "type": "string",
+                        "maxLength": 10485760
                     },
                     "file": {
                         "type": "object",
                         "properties": {
                             "name": {
-                                "type": "string"
+                                "type": "string",
+                                "maxLength": 10485760
                             },
                             "mime_type": {
-                                "type": "string"
+                                "type": "string",
+                                "maxLength": 10485760
                             },
                             "data": {
                                 "type": "string",
-                                "description": "Inline base64."
+                                "description": "Inline base64.",
+                                "maxLength": 10485760
                             },
                             "uri": {
-                                "type": "string"
+                                "type": "string",
+                                "maxLength": 10485760
                             }
                         },
                         "required": [
@@ -5436,6 +5441,7 @@
                             "YANK_CONFLICT",
                             "agent_not_found",
                             "already_bootstrapped",
+                            "approval_rejected",
                             "billing_not_configured",
                             "governance_not_enabled",
                             "incomplete_record",
@@ -5444,6 +5450,7 @@
                             "kb_chunk_limit",
                             "kb_document_body_invalid",
                             "kb_document_too_large",
+                            "kb_embedding_failed",
                             "kb_storage_limit",
                             "kb_text_extraction_failed",
                             "limit_reached",
@@ -5752,7 +5759,8 @@
                     },
                     "prompts": {
                         "type": "object",
-                        "additionalProperties": true
+                        "additionalProperties": true,
+                        "description": "`prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses, set `public_config.system_prompt`."
                     },
                     "model": {
                         "$ref": "#/components/schemas/AgentModelConfigInput"
@@ -6578,12 +6586,52 @@
                     },
                     "error_code": {
                         "type": "string",
-                        "description": "Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum). Absent when the failure carries nothing a client can branch on — which is deliberate: a code meaning \"something went wrong\" would be worse than none. Populated since 2026-09-21; before that a client had to regex-test `error`."
+                        "description": "Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum). Absent when the failure carries nothing a client can branch on — which is deliberate: a code meaning \"something went wrong\" would be worse than none. Populated since 2026-09-21; before that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a person refused the tool call the run was waiting on — `status` is still `failed`, and `error` is the reviewer's own reason."
                     },
                     "error_details": {
                         "type": "object",
                         "additionalProperties": true,
                         "description": "Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`, `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`. Never a provider id — this reaches a screen, and the product does not name the model it picked."
+                    },
+                    "approvals": {
+                        "type": "array",
+                        "description": "Every human decision on a tool approval this run waited for, oldest first. Absent when the run never waited for one. Recorded since 2026-09-22; before that an approved call left no trace on the run.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "decision",
+                                "tools",
+                                "decided_at"
+                            ],
+                            "properties": {
+                                "decision": {
+                                    "type": "string",
+                                    "enum": [
+                                        "approved",
+                                        "rejected"
+                                    ]
+                                },
+                                "tools": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    },
+                                    "description": "Tools the run was waiting on when the decision was made."
+                                },
+                                "decided_at": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                },
+                                "decided_by": {
+                                    "type": "string",
+                                    "description": "User id of the person who decided; the credential id when no person stands behind it."
+                                },
+                                "reason": {
+                                    "type": "string",
+                                    "description": "The reviewer's reason, on a rejection."
+                                }
+                            }
+                        }
                     },
                     "created_at": {
                         "type": "string",
@@ -8505,7 +8553,7 @@
                             "string",
                             "null"
                         ],
-                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
+                        "description": "Free text when a client sent one with POST /agents/{agentId}/versions. The SERVER writes these fixed values of its own on the versions it mints — known values a client may match on, and therefore part of the contract (a test keeps this list equal to the literals in the code): `Initial version`, `Initial version (auto-created)`, `Initial version (created by agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`, `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model provider healed to the platform default`, `Core memory enabled`, `Tool trust override updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the version rolled back to), `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is a count, the second is one of errors, ratings or feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC 11)."
                     },
                     "created_at": {
                         "type": "string",
@@ -10755,7 +10803,8 @@
                         "maxItems": 5242880
                     },
                     "max_budget_per_run_usd": {
-                        "type": "number"
+                        "type": "number",
+                        "description": "Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned child's budget may not exceed. The run's effective cost ceiling is the smaller positive of this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails with error_code BUDGET_EXCEEDED and error_details.cap_source \"permission_set\" or \"resource_limits\". 0 means no cap from this field."
                     },
                     "max_spawn_depth": {
                         "type": "integer"
@@ -10848,7 +10897,8 @@
                         "maxItems": 5242880
                     },
                     "max_budget_per_run_usd": {
-                        "type": "number"
+                        "type": "number",
+                        "description": "Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned child's budget may not exceed. The run's effective cost ceiling is the smaller positive of this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails with error_code BUDGET_EXCEEDED and error_details.cap_source \"permission_set\" or \"resource_limits\". 0 means no cap from this field."
                     },
                     "max_spawn_depth": {
                         "type": "integer"
@@ -15945,7 +15995,12 @@
                         "format": "date-time"
                     },
                     "abort_reason": {
-                        "type": "string"
+                        "type": "string",
+                        "description": "Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`, `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge errored or kept answering in an unparseable shape), which is the platform failing, not the agent's work; no strike is charged for it and the agent is not re-run."
+                    },
+                    "strikes_used": {
+                        "type": "integer",
+                        "description": "Strikes the mission executor spent on this objective, written when it settles. Absent on objectives that never ran under a mission and on those settled before 2026-09-22."
                     }
                 }
             },
@@ -15999,7 +16054,11 @@
                     },
                     "strikes_used": {
                         "type": "integer",
-                        "description": "Retries spent on this objective before it settled."
+                        "description": "Retries spent on this objective before it settled — read from the objective record, so it agrees with `GET /missions/{missionId}/objectives`."
+                    },
+                    "abort_reason": {
+                        "type": "string",
+                        "description": "The objective record's `abort_reason`, copied. Absent when it has none."
                     },
                     "final_agent_id": {
                         "type": "string"
@@ -16043,10 +16102,15 @@
                             "external_error",
                             "max_duration_exceeded",
                             "unknown"
-                        ]
+                        ],
+                        "description": "Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error` → `external_error`. Branch on `code` for the precise reason."
                     },
                     "details": {
                         "type": "string"
+                    },
+                    "code": {
+                        "type": "string",
+                        "description": "The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent when the objective recorded none."
                     }
                 }
             },
@@ -16324,6 +16388,10 @@
                     },
                     "plan": {
                         "$ref": "#/components/schemas/PlannedMission"
+                    },
+                    "run_started": {
+                        "type": "boolean",
+                        "description": "Whether this request also started executing the mission. `true` when planning put it in `executing` (the plan needed no authorization) and a walk began — progress then arrives on `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported `executing` and dispatched nothing until a separate `POST /run`."
                     }
                 }
             },
@@ -16743,6 +16811,26 @@
                             "type": "string"
                         },
                         "description": "The agent's own choices, for `input` items. Empty otherwise."
+                    },
+                    "tools": {
+                        "type": "array",
+                        "description": "`approval` items: each tool the run waits on, once, with how many calls named it — the facts behind `summary` (which is English prose), for a client that says them in its own language. Absent on other kinds. Since 2026-09-23.",
+                        "items": {
+                            "type": "object",
+                            "required": [
+                                "name",
+                                "count"
+                            ],
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "count": {
+                                    "type": "integer",
+                                    "minimum": 1
+                                }
+                            }
+                        }
                     }
                 }
             },
@@ -19347,7 +19435,8 @@
                                         "maxLength": 10485760
                                     },
                                     "prompts": {
-                                        "type": "object"
+                                        "type": "object",
+                                        "description": "`prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses, set `public_config.system_prompt`."
                                     },
                                     "thinking": {
                                         "type": "object"
@@ -23977,7 +24066,7 @@
             "post": {
                 "operationId": "pauseRun",
                 "summary": "Pause a run",
-                "description": "Suspends a run that is currently executing, leaving it at `paused` until `POST /api/v1/runs/{runId}/resume`. `404` when the run does not exist and `409` when it is in any status other than `running`; the transition is a CAS, so losing the race to a concurrent write is also `409`. A `run.checkpoint` event with reason `manual_pause` is appended.",
+                "description": "Suspends a run that is currently executing, leaving it at `paused` until `POST /api/v1/runs/{runId}/resume`. `404` when the run does not exist and `409` when it is in any status other than `running`; the transition is a CAS, so losing the race to a concurrent write is also `409`. A `run.checkpoint` event with reason `manual_pause` is appended. The run stops at its next step boundary (a step already in flight finishes first) and emits `run.paused`; if that in-flight step produced the final answer, the answer is held and the run stays `paused` instead of completing.",
                 "tags": [
                     "Runs"
                 ],
@@ -24078,7 +24167,7 @@
             "post": {
                 "operationId": "resumeRun",
                 "summary": "Resume a run",
-                "description": "Returns a paused run to the queue and reschedules it, answering `202`. `404` when the run does not exist and `409` when it is not `paused`, including when a concurrent write wins the CAS. An optional `input` object in the body is stored on the run's metadata as `_resume_input` for the runtime to pick up; a `run.started` event records that this was a resume. The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not that it has restarted.",
+                "description": "Returns a paused run to the queue and reschedules it, answering `202`. `404` when the run does not exist and `409` when it is not `paused`, including when a concurrent write wins the CAS. The body is optional: a bare POST with no body resumes the run (until 2026-09-22 that answered `422 _body: Required`). An optional `input` object in the body is stored on the run's metadata as `_resume_input` for the runtime to pick up, and a string `input.note` (or `input.message`) reaches the model as a user turn. A run paused while its last step was already producing the final answer holds that answer, and a resume without a note releases it without calling the model again; a `run.started` event records that this was a resume. The rescheduling is fire-and-forget, so the `202` means the run was re-queued, not that it has restarted.",
                 "tags": [
                     "Runs"
                 ],
@@ -24096,6 +24185,36 @@
                         }
                     }
                 ],
+                "requestBody": {
+                    "required": false,
+                    "description": "Optional. Omit it to resume with nothing to add.",
+                    "content": {
+                        "application/json": {
+                            "schema": {
+                                "type": "object",
+                                "properties": {
+                                    "input": {
+                                        "type": "object",
+                                        "description": "Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model as a user turn when the run continues.",
+                                        "properties": {
+                                            "note": {
+                                                "type": "string",
+                                                "maxLength": 10485760
+                                            },
+                                            "message": {
+                                                "type": "string",
+                                                "maxLength": 10485760
+                                            }
+                                        }
+                                    },
+                                    "response": {
+                                        "description": "Accepted and ignored; kept so existing callers are not refused."
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
                 "responses": {
                     "202": {
                         "description": "Accepted — the run continues asynchronously (runs.ts resumeRun answers 202, not 200)",
@@ -24133,6 +24252,9 @@
                             }
                         }
                     },
+                    "400": {
+                        "$ref": "#/components/responses/BadRequest"
+                    },
                     "401": {
                         "$ref": "#/components/responses/Unauthorized"
                     },
@@ -24141,6 +24263,9 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "411": {
+                        "$ref": "#/components/responses/LengthRequired"
                     },
                     "413": {
                         "$ref": "#/components/responses/PayloadTooLarge"
@@ -25169,9 +25294,10 @@
                                         "type": "array",
                                         "items": {
                                             "type": "string",
-                                            "maxLength": 10485760
+                                            "maxLength": 64
                                         },
-                                        "maxItems": 5242880
+                                        "maxItems": 20,
+                                        "description": "Stored on every chunk, before the tags ingest always adds (`document`, the filename, `chunk:i/n`); a tag in both is kept once."
                                     },
                                     "chunk_size": {
                                         "type": "integer",
@@ -25594,6 +25720,93 @@
                 ]
             }
         },
+        "/api/v1/agents/{agentId}/memory/core": {
+            "parameters": [
+                {
+                    "name": "agentId",
+                    "in": "path",
+                    "required": true,
+                    "schema": {
+                        "type": "string",
+                        "maxLength": 65536
+                    }
+                }
+            ],
+            "get": {
+                "operationId": "listCoreMemoryBlocks",
+                "summary": "List core memory blocks",
+                "description": "Every core memory block stored for the agent, whatever its label. `enabled` is the agent's `core_memory.enabled`: the runtime injects blocks into the system prompt only when it is true, so a block listed under `enabled: false` is stored but not seen by any run. `404` when the agent does not exist.",
+                "tags": [
+                    "Memory"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Core memory blocks",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "properties": {
+                                        "enabled": {
+                                            "type": "boolean",
+                                            "description": "Whether the runtime injects these blocks (`core_memory.enabled`)."
+                                        },
+                                        "blocks": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/CoreMemoryBlock"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    },
+                                    "required": [
+                                        "enabled",
+                                        "blocks",
+                                        "total"
+                                    ]
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "description": "Agent not found"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "memory:read"
+                ]
+            }
+        },
         "/api/v1/agents/{agentId}/memory/core/{label}": {
             "parameters": [
                 {
@@ -25672,7 +25885,7 @@
             "put": {
                 "operationId": "updateCoreMemoryBlock",
                 "summary": "Update a core memory block",
-                "description": "Creates or replaces the agent's core memory block with this label; `content` is required (`400` otherwise) and replaces the block's text whole. `max_tokens` is a per-block ceiling defaulting to 1000 and is CLAMPED to the platform's aggregate core-memory budget — a block larger than the whole budget could never be injected into a prompt, so the request is not allowed to raise its own limit. Content that exceeds the resulting ceiling is rejected by the store rather than silently truncated.",
+                "description": "Creates or replaces the agent's core memory block with this label; `content` is required (`400` otherwise) and replaces the block's text whole. `max_tokens` is a per-block ceiling defaulting to 1000 and is CLAMPED to the platform's aggregate core-memory budget — a block larger than the whole budget could never be injected into a prompt, so the request is not allowed to raise its own limit. Content that exceeds the resulting ceiling is rejected by the store rather than silently truncated. Writing a block also makes it one the runtime injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks` when it is not declared there yet (while fewer than 10 are declared). `404` when the agent does not exist.",
                 "tags": [
                     "Memory"
                 ],
@@ -25739,7 +25952,10 @@
                         "$ref": "#/components/responses/Forbidden"
                     },
                     "404": {
-                        "description": "Block not found"
+                        "description": "Agent not found"
+                    },
+                    "409": {
+                        "description": "The agent record changed while the block was being registered in its config; the block is stored and repeating the same PUT completes it"
                     },
                     "411": {
                         "$ref": "#/components/responses/LengthRequired"
@@ -25875,6 +26091,75 @@
                     }
                 }
             ],
+            "get": {
+                "operationId": "listExperiments",
+                "summary": "List an agent's evaluation experiments",
+                "description": "This agent's experiments, newest first (at most 100). Added 2026-09-23: before it an experiment could only be read back by an id the client had kept.",
+                "tags": [
+                    "Evaluations"
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Experiments",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "type": "object",
+                                    "required": [
+                                        "experiments",
+                                        "total"
+                                    ],
+                                    "properties": {
+                                        "experiments": {
+                                            "type": "array",
+                                            "items": {
+                                                "$ref": "#/components/schemas/Experiment"
+                                            }
+                                        },
+                                        "total": {
+                                            "type": "integer"
+                                        }
+                                    }
+                                }
+                            }
+                        },
+                        "headers": {
+                            "X-RateLimit-Limit": {
+                                "$ref": "#/components/headers/XRateLimitLimit"
+                            },
+                            "X-RateLimit-Remaining": {
+                                "$ref": "#/components/headers/XRateLimitRemaining"
+                            },
+                            "X-RateLimit-Reset": {
+                                "$ref": "#/components/headers/XRateLimitReset"
+                            }
+                        }
+                    },
+                    "401": {
+                        "$ref": "#/components/responses/Unauthorized"
+                    },
+                    "403": {
+                        "$ref": "#/components/responses/Forbidden"
+                    },
+                    "404": {
+                        "$ref": "#/components/responses/NotFound"
+                    },
+                    "429": {
+                        "$ref": "#/components/responses/TooManyRequests"
+                    },
+                    "500": {
+                        "$ref": "#/components/responses/InternalServerError"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ],
+                "x-scopes": [
+                    "evaluations:read"
+                ]
+            },
             "post": {
                 "operationId": "createExperiment",
                 "summary": "Create an evaluation experiment",
@@ -29622,21 +29907,31 @@
                                     },
                                     "messages": {
                                         "type": "array",
+                                        "minItems": 1,
+                                        "description": "At least one `user` message must carry input: a text part with non-empty `text`, a `data` part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route). Anything else is refused with **422** before a task or run exists (schemas/mod.ts A2AMessagesSchema).",
                                         "items": {
                                             "type": "object",
                                             "properties": {
                                                 "role": {
                                                     "type": "string",
-                                                    "maxLength": 10485760
+                                                    "enum": [
+                                                        "user",
+                                                        "agent"
+                                                    ]
                                                 },
                                                 "parts": {
                                                     "type": "array",
+                                                    "minItems": 1,
                                                     "items": {
-                                                        "type": "object"
+                                                        "$ref": "#/components/schemas/A2APart"
                                                     },
                                                     "maxItems": 5242880
                                                 }
-                                            }
+                                            },
+                                            "required": [
+                                                "role",
+                                                "parts"
+                                            ]
                                         },
                                         "maxItems": 5242880
                                     },
@@ -29699,7 +29994,7 @@
                         "$ref": "#/components/responses/PayloadTooLarge"
                     },
                     "422": {
-                        "description": "Validation Error",
+                        "description": "Validation Error — `messages` is not a usable A2A message list. `errors[]` names each field (`messages.0.parts`, …); nothing is created and no run is charged.",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -31142,7 +31437,7 @@
             "post": {
                 "operationId": "rejectRun",
                 "summary": "Reject a pending tool call (HITL)",
-                "description": "Refuses a tool call the run is waiting on, requiring the `runs.approve` permission. `404` when the run does not exist and `409` unless its status is `awaiting_approval`. The rejection — with `reason`, defaulted when absent — is stored as the run's approval signal, the run is transitioned to `failed` under CAS (a lost race is `409`, and nothing is mirrored outward in that case), a `run.failed` event marked `rejected` is appended and the pending approval notifications are retired. For a run executing on a local bridge the decision is also written into the bridge's slot so the prompt there is torn down. This ends the run; it is not a way to decline one tool and continue.",
+                "description": "Refuses a tool call the run is waiting on, requiring the `runs.approve` permission. `404` when the run does not exist and `409` unless its status is `awaiting_approval`. The rejection — with `reason`, defaulted when absent — is stored as the run's approval signal, the run is transitioned to `failed` under CAS (a lost race is `409`, and nothing is mirrored outward in that case) with `error` set to the reason and `error_code` set to `approval_rejected`, a `run.failed` event marked `rejected` and carrying the same `error_code` is appended, and the pending approval notifications are retired. For a run executing on a local bridge the decision is also written into the bridge's slot so the prompt there is torn down. This ends the run; it is not a way to decline one tool and continue.",
                 "tags": [
                     "Runs"
                 ],
@@ -37983,7 +38278,7 @@
                     "Workspaces"
                 ],
                 "summary": "List files in workspace directory",
-                "description": "Lists one directory of the workspace: `path` selects the directory (the root when omitted) and `recursive=true` walks the whole subtree instead of one level. Returns `directories` and a `files` array projected to `file_id`, `path`, `filename`, `mime_type`, `size_bytes`, `created_at`, `updated_at` and `etag` — the `etag` is what a conditional write sends back as `If-Match`. Cross-tenant resolution applies; a workspace the caller cannot resolve answers 200 with an empty listing rather than 404.",
+                "description": "Lists one directory of the workspace: `path` selects the directory (the root when omitted) and `recursive=true` walks the whole subtree instead of one level. Returns `directories` and a `files` array projected to `file_id`, `path`, `filename`, `mime_type`, `size_bytes`, `created_at`, `updated_at` and `etag` — the `etag` is what a conditional write sends back as `If-Match`. Cross-tenant resolution applies; a workspace that does not exist, or that the caller cannot resolve, answers **404** — an empty listing always means an existing, empty directory.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -39354,7 +39649,7 @@
                     "Workspaces"
                 ],
                 "summary": "Prior versions of a file",
-                "description": "Every earlier version kept for `path`, newest first; the current content is not in the list. `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a version's bytes with `getWorkspaceFileHistoryContent`.",
+                "description": "Every earlier version kept for `path`, newest first; the current content is not in the list. `versions` is empty for a file that has never been overwritten (measured 2026-09-10); a workspace that does not exist answers **404**. Read a version's bytes with `getWorkspaceFileHistoryContent`.",
                 "parameters": [
                     {
                         "name": "workspaceId",
@@ -41513,7 +41808,7 @@
                     "A2A"
                 ],
                 "summary": "A2A JSON-RPC 2.0 endpoint",
-                "description": "Handles `tasks/send`, `tasks/sendSubscribe`, `tasks/get`, `tasks/cancel`, `tasks/pushNotification/set`, `tasks/pushNotification/get` via JSON-RPC 2.0.\n\n**Scope dispatch is dynamic per JSON-RPC method**: read-style methods (`tasks/get`, `tasks/pushNotification/get`) require `agents:read`; write-style (`tasks/send`, `tasks/sendSubscribe`, `tasks/cancel`, `tasks/pushNotification/set`) require `agents:write`. The static `bearerAuth: [agents:write]` declared here is the *strictest* scope; an `agents:read`-only key works for the read methods but the spec cannot express the per-method conditional.",
+                "description": "Handles `tasks/send`, `tasks/sendSubscribe`, `tasks/get`, `tasks/cancel`, `tasks/pushNotification/set`, `tasks/pushNotification/get` via JSON-RPC 2.0.\n\n**Scope dispatch is dynamic per JSON-RPC method**: read-style methods (`tasks/get`, `tasks/pushNotification/get`) require `agents:read`; write-style (`tasks/send`, `tasks/sendSubscribe`, `tasks/cancel`, `tasks/pushNotification/set`) require `agents:write`. The static `bearerAuth: [agents:write]` declared here is the *strictest* scope; an `agents:read`-only key works for the read methods but the spec cannot express the per-method conditional.\n\n`tasks/send` and `tasks/sendSubscribe` validate `params.messages` exactly as `POST /a2a/tasks` does (each message needs `role` and a non-empty `parts` array, and at least one user part must carry input); a refused list answers JSON-RPC error `-32602` with the field list in `error.data.errors`, and nothing is created.",
                 "security": [
                     {
                         "bearerAuth": []
@@ -50324,7 +50619,7 @@
                     "Workspaces"
                 ],
                 "summary": "Search files in workspace",
-                "description": "Searches the text content of the workspace's files for `q`. An empty `q` answers an empty result set rather than matching everything. `glob` filters candidate paths and `regex=true` treats `q` as a regular expression — one screened first for catastrophic backtracking and refused with 400 if unsafe, or if it does not compile. The search is bounded rather than exhaustive: at most 500 paths considered, 100 files read and 300 matches returned, and only text MIME types are opened, so a missing hit may mean the bound was reached. Each result carries the path, line number, the whole line and the matched text. Cross-tenant resolution applies; an unresolvable workspace answers an empty result set.",
+                "description": "Searches the text content of the workspace's files for `q`. An empty `q` answers an empty result set rather than matching everything. `glob` filters candidate paths and `regex=true` treats `q` as a regular expression — one screened first for catastrophic backtracking and refused with 400 if unsafe, or if it does not compile. The search is bounded rather than exhaustive: at most 500 paths considered, 100 files read and 300 matches returned, and only text MIME types are opened, so a missing hit may mean the bound was reached. Each result carries the path, line number, the whole line and the matched text. Cross-tenant resolution applies; a workspace that does not exist, or that the caller cannot resolve, answers **404**.",
                 "parameters": [
                     {
                         "name": "workspaceId",
@@ -54053,7 +54348,7 @@
                     "Teams"
                 ],
                 "summary": "Get specific team run",
-                "description": "Reports the state of one squad run. The parent run has no stored status: it is derived on every read from its child runs — `completed` when all finished, `failed` when some failed and none completed or is still going, `partial_failure` when both, `running`, `cancelled`, otherwise `pending` — which means the derivation also corrects runs that finished long ago. Timeouts and guardrail blocks count as failures. Each child is listed with its agent, status, output, metrics and, when it failed, its error; a `failed` verdict also carries the first child error as `error`. 404 when the team is unknown.",
+                "description": "Reports the state of one squad run. The parent run has no stored status: it is derived on every read from its child runs — `completed` when all finished, `failed` when some failed and none completed or is still going, `partial_failure` when both, `running`, `cancelled`, otherwise `pending` — which means the derivation also corrects runs that finished long ago. Timeouts and guardrail blocks count as failures. Each child is listed with its agent, status, output, metrics and, when it failed, its error; a `failed` verdict also carries the first child error as `error`. When the derivation would say `pending` but no child is queued or running and the run has settled (its chat turn is saved), the settled outcome is reported instead: `completed`, `failed` with the orchestration's error, or `cancelled` when an operator stopped it. Settling withdraws children still in `awaiting_approval` or `awaiting_input`, because nothing would read their result: they become `cancelled` with an `error` beginning `Withdrawn`, and they are listed but do not count toward the verdict. 404 when the team is unknown, and 404 when no run with that id exists on this team — `pending` is reserved for a run that exists and has not settled, never for an unknown id.",
                 "parameters": [
                     {
                         "name": "teamId",
@@ -54104,7 +54399,14 @@
                         "$ref": "#/components/responses/Forbidden"
                     },
                     "404": {
-                        "$ref": "#/components/responses/NotFound"
+                        "description": "The team is unknown, or no run with that id exists on it. An unknown id is never reported as `pending`.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
@@ -58702,7 +59004,7 @@
                         "$ref": "#/components/responses/NotFound"
                     },
                     "410": {
-                        "description": "The session's TTL has passed. The conversation is still readable; it cannot be added to. `detail` is the same bare fact as on the 401: \"This conversation has expired.\"",
+                        "description": "The session's TTL has passed. The conversation is still readable; it cannot be added to. `detail` is the same bare fact as on the 401: \"This conversation has expired.\" Also **410**, with `detail` \"Agent is no longer publicly available\", when the agent has been made private or had its public surface disabled since the session opened — the same answer GET on the session gives (it was 404 \"Agent no longer public\" here before 2026-09-22).",
                         "content": {
                             "application/problem+json": {
                                 "schema": {
@@ -59249,6 +59551,16 @@
                     "404": {
                         "$ref": "#/components/responses/NotFound"
                     },
+                    "410": {
+                        "description": "The agent has been made private or had its public surface disabled since the session opened; no link is minted. `detail` is \"Agent is no longer publicly available\", as on GET for the same session.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
+                    },
                     "413": {
                         "$ref": "#/components/responses/PayloadTooLarge"
                     },
@@ -59372,6 +59684,16 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "410": {
+                        "description": "The agent has been made private or had its public surface disabled since the session opened; nothing is stored. `detail` is \"Agent is no longer publicly available\", as on every other route of the session.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "413": {
                         "description": "Image must be 8 MB or smaller",
@@ -59618,6 +59940,16 @@
                     },
                     "404": {
                         "$ref": "#/components/responses/NotFound"
+                    },
+                    "410": {
+                        "description": "The agent has been made private or had its public surface disabled since the session opened; the run is not resumed. `detail` is \"Agent is no longer publicly available\", as on every other route of the session.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "411": {
                         "$ref": "#/components/responses/LengthRequired"
@@ -84036,7 +84368,7 @@
             "post": {
                 "operationId": "authorizeMission",
                 "summary": "Pass the authorization gate",
-                "description": "Moves a mission held at `awaiting_authorization` on to `executing`. It does not start the walk — call `/run` after this.\n\nMEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When either is off the route answers **404** with a plain body — deliberately the same answer as a mission that does not exist, so an opted-out tenant cannot discover the surface.",
+                "description": "Moves a mission held at `awaiting_authorization` on to `executing` and starts the walk, as creation does when no authorization is needed — `executing` means running. The response adds `run_started` (false when the tenant is at its mission concurrency limit; `/run` then starts it later). Since 2026-09-23; before, this route did not start the walk and the mission sat in `executing` until an explicit `/run`, which still works and answers that a walk is already running.\n\nMEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When either is off the route answers **404** with a plain body — deliberately the same answer as a mission that does not exist, so an opted-out tenant cannot discover the surface.",
                 "tags": [
                     "Missions"
                 ],
@@ -86355,7 +86687,14 @@
                         "$ref": "#/components/responses/Forbidden"
                     },
                     "404": {
-                        "$ref": "#/components/responses/NotFound"
+                        "description": "The squad is unknown, or no run with that id exists on it. An unknown id is never reported as `pending`.",
+                        "content": {
+                            "application/problem+json": {
+                                "schema": {
+                                    "$ref": "#/components/schemas/Error"
+                                }
+                            }
+                        }
                     },
                     "429": {
                         "$ref": "#/components/responses/TooManyRequests"
@@ -86473,7 +86812,7 @@
                 "tags": [
                     "Squads"
                 ],
-                "description": "Stops the orchestration loop first, then every non-terminal child run, and releases the chat state so the canvas does not stay locked on a run that was just killed.\n\nOrder matters and is not an implementation detail: killing children while the loop is still running makes it spawn more — two fresh child runs were measured within two minutes of a “successful” cancel.\n\n`cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the server sends.\n\n`/api/v1/squads/*` is the canonical surface; `/api/v1/teams/*` is the same handler under the older noun.",
+                "description": "Stops the orchestration loop first, then every non-terminal child run, and releases the chat state so the canvas does not stay locked on a run that was just killed.\n\nOrder matters and is not an implementation detail: killing children while the loop is still running makes it spawn more — two fresh child runs were measured within two minutes of a “successful” cancel.\n\n`cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the server sends.\n\n**404** when no run with that id exists on this squad — an unknown id, the nil UUID, a single-agent run id or another squad's run — checked before anything is stopped; it used to answer `{cancelled: true}` for any id.\n\n`/api/v1/squads/*` is the canonical surface; `/api/v1/teams/*` is the same handler under the older noun.",
                 "parameters": [
                     {
                         "name": "squadId",
@@ -86585,7 +86924,7 @@
                 "tags": [
                     "Teams"
                 ],
-                "description": "Stops the orchestration loop first, then every non-terminal child run, and releases the chat state so the canvas does not stay locked on a run that was just killed.\n\nOrder matters and is not an implementation detail: killing children while the loop is still running makes it spawn more — two fresh child runs were measured within two minutes of a “successful” cancel.\n\n`cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the server sends.\n\n**Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler under the older noun.",
+                "description": "Stops the orchestration loop first, then every non-terminal child run, and releases the chat state so the canvas does not stay locked on a run that was just killed.\n\nOrder matters and is not an implementation detail: killing children while the loop is still running makes it spawn more — two fresh child runs were measured within two minutes of a “successful” cancel.\n\n`cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the server sends.\n\n**404** when no run with that id exists on this squad — an unknown id, the nil UUID, a single-agent run id or another squad's run — checked before anything is stopped; it used to answer `{cancelled: true}` for any id.\n\n**Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler under the older noun.",
                 "parameters": [
                     {
                         "name": "teamId",

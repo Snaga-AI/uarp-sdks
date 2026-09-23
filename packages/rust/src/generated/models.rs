@@ -472,8 +472,12 @@ pub struct AarObjectiveOutcome {
     pub objective_id: String,
     /// The objective's status when the mission ended.
     pub final_status: String,
-    /// Retries spent on this objective before it settled.
+    /// Retries spent on this objective before it settled — read from the objective record, so it
+    /// agrees with `GET /missions/{missionId}/objectives`.
     pub strikes_used: i64,
+    /// The objective record's `abort_reason`, copied. Absent when it has none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub abort_reason: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub final_agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -551,11 +555,20 @@ impl From<&str> for AarPhaseRecordPhase {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AarRootCause {
     pub objective_id: String,
+    /// Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+    /// `exhausted_strikes_\<n\>` → `max_duration_exceeded`; `dependency_failed` and
+    /// `verifier_error` → `external_error`. Branch on `code` for the precise reason.
     pub category: AarRootCauseCategory,
     pub details: String,
+    /// The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent
+    /// when the objective recorded none.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
 }
 
-/// `AarRootCauseCategory` enumeration.
+/// Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+/// `exhausted_strikes_\<n\>` → `max_duration_exceeded`; `dependency_failed` and
+/// `verifier_error` → `external_error`. Branch on `code` for the precise reason.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum AarRootCauseCategory {
     #[default]
@@ -3564,6 +3577,10 @@ pub struct AgentUpdate {
     pub name: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+    /// Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+    /// keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+    /// set `public_config.system_prompt`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompts: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -3695,10 +3712,14 @@ pub struct AgentVersion {
     /// agent factory)`, `Auto-versioned before update`, `Auto-versioned after update`,
     /// `Auto-versioned after update (retry)`, `Updated by agent factory`, `Head Agent orchestration
     /// kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
-    /// (agent-factory + discovery)`, `Rollback to version N` (N = the version rolled back to),
-    /// `Self-improvement: N changes based on N analysis` (the self-improvement loop: the first N is
-    /// a count, the second is one of errors, ratings or feedback — words, not a number). A reason
-    /// code beside the prose is the owner's decision (DEC 11).
+    /// (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
+    /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
+    /// provider healed to the platform default`, `Core memory enabled`, `Tool trust override
+    /// updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
+    /// to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
+    /// analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
+    /// ratings or feedback — words, not a number). A reason code beside the prose is the owner's
+    /// decision (DEC 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog: Option<String>,
     pub created_at: String,
@@ -6608,6 +6629,10 @@ pub struct CostReconciliationResult {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateA2ATaskRequest {
     pub agent_id: String,
+    /// At least one `user` message must carry input: a text part with non-empty `text`, a `data`
+    /// part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route).
+    /// Anything else is refused with **422** before a task or run exists (schemas/mod.ts
+    /// A2AMessagesSchema).
     pub messages: Vec<CreateA2ATaskRequestMessage>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
@@ -6616,10 +6641,8 @@ pub struct CreateA2ATaskRequest {
 /// `CreateA2ATaskRequestMessage` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateA2ATaskRequestMessage {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub role: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub parts: Option<Vec<serde_json::Map<String, serde_json::Value>>>,
+    pub role: DrawingJournalEntryAuthorKind,
+    pub parts: Vec<A2APart>,
 }
 
 /// `CreateAdminBlogPostRequest` model.
@@ -6709,6 +6732,10 @@ pub struct CreateAgentRequest {
     pub model: Option<AgentModelConfigInput>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
+    /// `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+    /// Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+    /// keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+    /// set `public_config.system_prompt`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub prompts: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9445,6 +9472,8 @@ pub enum ErrorCode {
     AgentNotFound,
     #[serde(rename = "already_bootstrapped")]
     AlreadyBootstrapped,
+    #[serde(rename = "approval_rejected")]
+    ApprovalRejected,
     #[serde(rename = "billing_not_configured")]
     BillingNotConfigured,
     #[serde(rename = "governance_not_enabled")]
@@ -9461,6 +9490,8 @@ pub enum ErrorCode {
     KbDocumentBodyInvalid,
     #[serde(rename = "kb_document_too_large")]
     KbDocumentTooLarge,
+    #[serde(rename = "kb_embedding_failed")]
+    KbEmbeddingFailed,
     #[serde(rename = "kb_storage_limit")]
     KbStorageLimit,
     #[serde(rename = "kb_text_extraction_failed")]
@@ -9553,6 +9584,7 @@ impl ErrorCode {
             Self::YankConflict => "YANK_CONFLICT",
             Self::AgentNotFound => "agent_not_found",
             Self::AlreadyBootstrapped => "already_bootstrapped",
+            Self::ApprovalRejected => "approval_rejected",
             Self::BillingNotConfigured => "billing_not_configured",
             Self::GovernanceNotEnabled => "governance_not_enabled",
             Self::IncompleteRecord => "incomplete_record",
@@ -9561,6 +9593,7 @@ impl ErrorCode {
             Self::KbChunkLimit => "kb_chunk_limit",
             Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
             Self::KbDocumentTooLarge => "kb_document_too_large",
+            Self::KbEmbeddingFailed => "kb_embedding_failed",
             Self::KbStorageLimit => "kb_storage_limit",
             Self::KbTextExtractionFailed => "kb_text_extraction_failed",
             Self::LimitReached => "limit_reached",
@@ -9643,6 +9676,7 @@ impl From<&str> for ErrorCode {
             "YANK_CONFLICT" => Self::YankConflict,
             "agent_not_found" => Self::AgentNotFound,
             "already_bootstrapped" => Self::AlreadyBootstrapped,
+            "approval_rejected" => Self::ApprovalRejected,
             "billing_not_configured" => Self::BillingNotConfigured,
             "governance_not_enabled" => Self::GovernanceNotEnabled,
             "incomplete_record" => Self::IncompleteRecord,
@@ -9651,6 +9685,7 @@ impl From<&str> for ErrorCode {
             "kb_chunk_limit" => Self::KbChunkLimit,
             "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
             "kb_document_too_large" => Self::KbDocumentTooLarge,
+            "kb_embedding_failed" => Self::KbEmbeddingFailed,
             "kb_storage_limit" => Self::KbStorageLimit,
             "kb_text_extraction_failed" => Self::KbTextExtractionFailed,
             "limit_reached" => Self::LimitReached,
@@ -12116,7 +12151,9 @@ pub struct GetRunResponse {
     /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
     /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
     /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-    /// that a client had to regex-test `error`.
+    /// that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+    /// person refused the tool call the run was waiting on — `status` is still `failed`, and
+    /// `error` is the reviewer's own reason.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
@@ -12125,6 +12162,11 @@ pub struct GetRunResponse {
     /// picked.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
+    /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+    /// trace on the run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approvals: Option<Vec<GetRunResponseApproval>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -12168,6 +12210,21 @@ pub struct GetRunResponse {
     /// running.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pending_input: Option<GetRunResponsePendingInput>,
+}
+
+/// `GetRunResponseApproval` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetRunResponseApproval {
+    pub decision: RunApprovalDecision,
+    /// Tools the run was waiting on when the decision was made.
+    pub tools: Vec<String>,
+    pub decided_at: String,
+    /// User id of the person who decided; the credential id when no person stands behind it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decided_by: Option<String>,
+    /// The reviewer's reason, on a rejection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
 }
 
 /// The question the run is blocked on, taken from the most recent `run.awaiting_input` event
@@ -13212,6 +13269,11 @@ pub struct InboxItem {
     pub detail: String,
     /// The agent's own choices, for `input` items. Empty otherwise.
     pub options: Vec<String>,
+    /// `approval` items: each tool the run waits on, once, with how many calls named it — the facts
+    /// behind `summary` (which is English prose), for a client that says them in its own language.
+    /// Absent on other kinds. Since 2026-09-23.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<InboxItemTool>>,
 }
 
 /// `InboxItemKind` enumeration.
@@ -13262,6 +13324,13 @@ impl From<&str> for InboxItemKind {
     }
 }
 
+/// `InboxItemTool` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InboxItemTool {
+    pub name: String,
+    pub count: i64,
+}
+
 /// `IngestKbDocumentRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct IngestKbDocumentRequest {
@@ -13298,6 +13367,8 @@ pub struct IngestMemoryRequest {
     /// Override stored filename; defaults to file metadata or `created-doc.md`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub filename: Option<String>,
+    /// Stored on every chunk, before the tags ingest always adds (`document`, the filename,
+    /// `chunk:i/n`); a tag in both is kept once.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub tags: Option<Vec<String>>,
     /// Server default: `600`.
@@ -14442,6 +14513,15 @@ pub struct ListContentReportsResponse {
     pub has_more: bool,
 }
 
+/// `ListCoreMemoryBlocksResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListCoreMemoryBlocksResponse {
+    /// Whether the runtime injects these blocks (`core_memory.enabled`).
+    pub enabled: bool,
+    pub blocks: Vec<CoreMemoryBlock>,
+    pub total: i64,
+}
+
 /// `ListCustomPlansResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListCustomPlansResponse {
@@ -14489,6 +14569,13 @@ pub struct ListDrawingOpsResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListEvalRunsResponse {
     pub eval_runs: Vec<EvalRun>,
+    pub total: i64,
+}
+
+/// `ListExperimentsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListExperimentsResponse {
+    pub experiments: Vec<Experiment>,
     pub total: i64,
 }
 
@@ -16439,6 +16526,15 @@ pub struct MissionStartResponse {
     pub classification: MissionStartResponseClassification,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub plan: Option<PlannedMission>,
+    /// Whether this request also started executing the mission. `true` when planning put it in
+    /// `executing` (the plan needed no authorization) and a walk began — progress then arrives on
+    /// `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it
+    /// is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST
+    /// /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays
+    /// `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported
+    /// `executing` and dispatched nothing until a separate `POST /run`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub run_started: Option<bool>,
 }
 
 /// The intake decision. A `quick_reply` mission is recorded but is not mission work.
@@ -17547,8 +17643,16 @@ pub struct Objective {
     pub decision_points: Option<Vec<ObjectiveDecisionPoint>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub deadline: Option<String>,
+    /// Why the executor stopped on this objective: `exhausted_strikes_\<n\>`, `budget_exhausted`,
+    /// `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
+    /// errored or kept answering in an unparseable shape), which is the platform failing, not the
+    /// agent's work; no strike is charged for it and the agent is not re-run.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub abort_reason: Option<String>,
+    /// Strikes the mission executor spent on this objective, written when it settles. Absent on
+    /// objectives that never ran under a mission and on those settled before 2026-09-22.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub strikes_used: Option<i64>,
 }
 
 /// Per-objective ceiling and what has been spent against it. The executor stops an objective
@@ -18011,6 +18115,11 @@ pub struct PermissionSet {
     pub allowed_roles: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_permissions: Option<Vec<ResourcePermission>>,
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_budget_per_run_usd: Option<f64>,
     pub max_spawn_depth: i64,
@@ -18043,6 +18152,11 @@ pub struct PermissionSetUpdate {
     /// not merge).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_permissions: Option<Vec<ResourcePermission>>,
+    /// Hard cap (USD) on the cost of each of this agent's own runs, and the ceiling a spawned
+    /// child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
+    /// this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
+    /// with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
+    /// "resource_limits". 0 means no cap from this field.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub max_budget_per_run_usd: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -20100,6 +20214,28 @@ pub struct ResumeMissionResponse {
     pub mission: Mission,
 }
 
+/// `ResumeRunRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResumeRunRequest {
+    /// Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+    /// as a user turn when the run continues.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub input: Option<ResumeRunRequestInput>,
+    /// Accepted and ignored; kept so existing callers are not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response: Option<serde_json::Value>,
+}
+
+/// Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+/// as a user turn when the run continues.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ResumeRunRequestInput {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub message: Option<String>,
+}
+
 /// `ResumeRunResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ResumeRunResponse {
@@ -20324,7 +20460,9 @@ pub struct Run {
     /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
     /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
     /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-    /// that a client had to regex-test `error`.
+    /// that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+    /// person refused the tool call the run was waiting on — `status` is still `failed`, and
+    /// `error` is the reviewer's own reason.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_code: Option<String>,
     /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
@@ -20333,6 +20471,11 @@ pub struct Run {
     /// picked.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub error_details: Option<serde_json::Map<String, serde_json::Value>>,
+    /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
+    /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+    /// trace on the run.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approvals: Option<Vec<RunApproval>>,
     pub created_at: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub started_at: Option<String>,
@@ -20353,6 +20496,61 @@ pub struct Run {
     /// Resource limits for the run
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub resource_limits: Option<RunResourceLimits>,
+}
+
+/// `RunApproval` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunApproval {
+    pub decision: RunApprovalDecision,
+    /// Tools the run was waiting on when the decision was made.
+    pub tools: Vec<String>,
+    pub decided_at: String,
+    /// User id of the person who decided; the credential id when no person stands behind it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub decided_by: Option<String>,
+    /// The reviewer's reason, on a rejection.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub reason: Option<String>,
+}
+
+/// `RunApprovalDecision` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunApprovalDecision {
+    #[default]
+    #[serde(rename = "approved")]
+    Approved,
+    #[serde(rename = "rejected")]
+    Rejected,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunApprovalDecision {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Approved => "approved",
+            Self::Rejected => "rejected",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunApprovalDecision {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunApprovalDecision {
+    fn from(value: &str) -> Self {
+        match value {
+            "approved" => Self::Approved,
+            "rejected" => Self::Rejected,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// The body is optional and carries at most a `response` for the agent. An unknown field is

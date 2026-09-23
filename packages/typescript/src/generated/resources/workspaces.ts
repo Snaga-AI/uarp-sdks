@@ -416,8 +416,9 @@ export class WorkspacesResource extends APIResource {
    * Prior versions of a file
    *
    * Every earlier version kept for `path`, newest first; the current content is not in the list.
-   * `versions` is empty for a file that has never been overwritten (measured 2026-09-10). Read a
-   * version's bytes with `getWorkspaceFileHistoryContent`.
+   * `versions` is empty for a file that has never been overwritten (measured 2026-09-10); a
+   * workspace that does not exist answers **404**. Read a version's bytes with
+   * `getWorkspaceFileHistoryContent`.
    *
    * `GET /api/v1/workspaces/{workspaceId}/files/history`
    *
@@ -439,8 +440,9 @@ export class WorkspacesResource extends APIResource {
    * and `recursive=true` walks the whole subtree instead of one level. Returns `directories` and
    * a `files` array projected to `file_id`, `path`, `filename`, `mime_type`, `size_bytes`,
    * `created_at`, `updated_at` and `etag` — the `etag` is what a conditional write sends back as
-   * `If-Match`. Cross-tenant resolution applies; a workspace the caller cannot resolve answers
-   * 200 with an empty listing rather than 404.
+   * `If-Match`. Cross-tenant resolution applies; a workspace that does not exist, or that the
+   * caller cannot resolve, answers **404** — an empty listing always means an existing, empty
+   * directory.
    *
    * `GET /api/v1/workspaces/{workspaceId}/files`
    *
@@ -594,7 +596,8 @@ export class WorkspacesResource extends APIResource {
    * exhaustive: at most 500 paths considered, 100 files read and 300 matches returned, and only
    * text MIME types are opened, so a missing hit may mean the bound was reached. Each result
    * carries the path, line number, the whole line and the matched text. Cross-tenant resolution
-   * applies; an unresolvable workspace answers an empty result set.
+   * applies; a workspace that does not exist, or that the caller cannot resolve, answers
+   * **404**.
    *
    * `GET /api/v1/workspaces/{workspaceId}/search`
    *

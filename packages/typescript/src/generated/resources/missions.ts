@@ -65,8 +65,12 @@ export class MissionsResource extends APIResource {
   /**
    * Pass the authorization gate
    *
-   * Moves a mission held at `awaiting_authorization` on to `executing`. It does not start the
-   * walk — call `/run` after this.
+   * Moves a mission held at `awaiting_authorization` on to `executing` and starts the walk, as
+   * creation does when no authorization is needed — `executing` means running. The response adds
+   * `run_started` (false when the tenant is at its mission concurrency limit; `/run` then starts
+   * it later). Since 2026-09-23; before, this route did not start the walk and the mission sat
+   * in `executing` until an explicit `/run`, which still works and answers that a walk is
+   * already running.
    *
    * MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
    * either is off the route answers **404** with a plain body — deliberately the same answer as

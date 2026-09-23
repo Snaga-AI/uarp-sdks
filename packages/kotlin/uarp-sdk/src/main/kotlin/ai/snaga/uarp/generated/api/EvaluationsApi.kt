@@ -219,6 +219,26 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
     }
 
     /**
+     * List an agent's evaluation experiments
+     *
+     * This agent's experiments, newest first (at most 100). Added 2026-09-23: before it an
+     * experiment could only be read back by an id the client had kept.
+     *
+     * `GET /api/v1/agents/{agentId}/experiments`
+     *
+     * Required scopes: `evaluations:read`.
+     */
+    public suspend fun listExperiments(agentId: String, options: RequestOptions = RequestOptions()): ListExperimentsResponse {
+        return client.request<ListExperimentsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/agents/${encodePathSegment(agentId)}/experiments",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Run an evaluation suite against an agent
      *
      * Starts an evaluation of the agent against the dataset named by `dataset_id` and returns the

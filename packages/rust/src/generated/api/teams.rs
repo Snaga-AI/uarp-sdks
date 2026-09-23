@@ -113,6 +113,10 @@ impl TeamsApi {
     /// `cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the
     /// server sends.
     ///
+    /// **404** when no run with that id exists on this squad — an unknown id, the nil UUID, a
+    /// single-agent run id or another squad's run — checked before anything is stopped; it used to
+    /// answer `{cancelled: true}` for any id.
+    ///
     /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/cancel`.** The same handler
     /// under the older noun.
     ///
@@ -334,7 +338,14 @@ impl TeamsApi {
     /// otherwise `pending` — which means the derivation also corrects runs that finished long ago.
     /// Timeouts and guardrail blocks count as failures. Each child is listed with its agent,
     /// status, output, metrics and, when it failed, its error; a `failed` verdict also carries the
-    /// first child error as `error`. 404 when the team is unknown.
+    /// first child error as `error`. When the derivation would say `pending` but no child is queued
+    /// or running and the run has settled (its chat turn is saved), the settled outcome is reported
+    /// instead: `completed`, `failed` with the orchestration's error, or `cancelled` when an
+    /// operator stopped it. Settling withdraws children still in `awaiting_approval` or
+    /// `awaiting_input`, because nothing would read their result: they become `cancelled` with an
+    /// `error` beginning `Withdrawn`, and they are listed but do not count toward the verdict. 404
+    /// when the team is unknown, and 404 when no run with that id exists on this team — `pending`
+    /// is reserved for a run that exists and has not settled, never for an unknown id.
     ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
     ///
