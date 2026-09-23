@@ -134,18 +134,17 @@ function CallingBody(): ReactElement {
         so explicitly.
       </p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t border-rule-soft pt-4 text-sm text-ink-soft">
-        <dt className="font-medium text-ink">557 operations</dt>
+        <dt className="font-medium text-ink">736 operations</dt>
         <dd>
-          across 412 paths and 43 resource groups. 314 are the ordinary five —
-          list, create, read, update, delete — on 56 resources; the other 243 are nested
-          collections and named actions like <Term>cancel</Term>, <Term>approve</Term> and{' '}
-          <Term>rollback</Term>.
+          across 544 paths and 49 resource groups, counted at 0.7.0. Beside the ordinary
+          list, create, read, update and delete are nested collections and named actions
+          like <Term>cancel</Term>, <Term>approve</Term> and <Term>rollback</Term>.
         </dd>
-        <dt className="font-medium text-ink">114 of them admin</dt>
+        <dt className="font-medium text-ink">163 of them admin</dt>
         <dd>
           the two admin groups, which the{' '}
           <a className="text-accent underline underline-offset-2" href="https://snaga.ai/docs">API reference</a>{' '}
-          leaves out — that is why it counts around 440 where this page counts 557. The SDKs
+          leaves out — that is why it counts fewer than this page does. The SDKs
           generate all of them; you only ever see the group you call.
         </dd>
         <dt className="font-medium text-ink">603 models</dt>
@@ -193,7 +192,7 @@ function StreamingBody(): ReactElement {
   return (
     <>
       <p className="text-ink-soft">
-        The eleven server-sent-event endpoints return an async iterable that reopens with{' '}
+        The server-sent-event endpoints return an async iterable that reopens with{' '}
         <Term>Last-Event-ID</Term> when a connection drops. A
         connection that delivered at least one event earns a fresh reconnect budget, so a
         flapping server cannot spin the loop.

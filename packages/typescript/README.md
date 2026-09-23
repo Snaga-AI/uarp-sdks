@@ -1,7 +1,7 @@
 # uarp-sdk
 
 TypeScript/Node client for the **UARP — Universal Agent Runtime Platform** API.
-Full coverage of all 557 endpoints, no runtime dependencies, ESM only.
+Every operation the API describes, no runtime dependencies, ESM only.
 
 ```sh
 npm install uarp-sdk
@@ -53,23 +53,25 @@ Give each key the narrowest set of scopes that does its job; the catalogue is in
 the `bearerAuth` description of the OpenAPI document.
 
 Resources hang off the client by tag: `client.agents`, `client.runs`,
-`client.sessions`, `client.memory`, `client.teams`, … 43 in all. Editor
+`client.sessions`, `client.memory`, `client.teams`, … one for each tag in the API
+description. Editor
 completion is the fastest way to browse them.
 
 ## Streaming
 
-The 11 SSE endpoints return an `EventStream`, an async iterable that reconnects
+SSE endpoints return an `EventStream`, an async iterable that reconnects
 with `Last-Event-ID` when a connection drops:
 
 ```ts
 const stream = client.runs.streamRunEvents(runId);
 
 for await (const event of stream) {
-  // The text arrives as `payload.delta`; the rest of the envelope is
-  // platform bookkeeping.
+  // The reply's text is `payload.delta` on chunks whose `payload.chunk_type`
+  // is 'content'; 'thinking' and 'tool_call' chunks carry the model's
+  // reasoning and tool calls, which are not the answer.
   if (event.event === 'llm.chunk') {
-    const { payload } = event.json<{ payload: { delta: string } }>();
-    process.stdout.write(payload.delta);
+    const { payload } = event.json<{ payload: { chunk_type?: string; delta: string } }>();
+    if ((payload.chunk_type ?? 'content') === 'content') process.stdout.write(payload.delta);
   }
   if (event.event === 'run.completed') break;   // leaving the loop closes the request
 }
@@ -188,5 +190,5 @@ npm test             # build, then node --test
 npm run typecheck    # sources and examples
 ```
 
-Files under `src/generated/` come from `generator/` in the repository root;
+Files under `src/generated/` come from `generator/` in [Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks);
 edit the emitter, not the output.

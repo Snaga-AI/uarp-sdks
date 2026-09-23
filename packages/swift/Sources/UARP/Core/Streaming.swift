@@ -152,7 +152,7 @@ public struct EventStream: AsyncSequence, Sendable {
         //  swift-corelibs-foundation does not implement `URLSession.bytes(for:)`,
         //  and every other way of reading a response there buffers it to the end
         //  — which never arrives on a stream that stays open. The rest of the
-        //  SDK works on Linux; only the eleven event-stream endpoints do not.
+        //  SDK works on Linux; only the event-stream endpoints do not.
         throw UARPError.stream(
             "event streams need URLSession.bytes, which swift-corelibs-foundation does not provide; "
                 + "this SDK can stream on Apple platforms only"

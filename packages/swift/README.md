@@ -1,28 +1,26 @@
 # UARPSDK (Swift)
 
-Swift client for the **UARP — Universal Agent Runtime Platform** API. Full
-coverage of all 557 endpoints, `async`/`await` throughout, no dependencies
+Swift client for the **UARP — Universal Agent Runtime Platform** API. Every
+operation the API describes, `async`/`await` throughout, no dependencies
 beyond Foundation.
 
 ```swift
 // Package.swift
 dependencies: [
-    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.5.1"),
+    .package(url: "https://github.com/Snaga-AI/uarp-swift", from: "0.7.0"),
 ],
 targets: [
     .target(name: "App", dependencies: [.product(name: "UARPSDK", package: "uarp-swift")]),
 ]
 ```
 
-macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+, Swift 5.9+.
-
-
 ## Platforms
 
-Built for Apple platforms: macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+.
+Built for Apple platforms: macOS 12+, iOS 15+, tvOS 15+, watchOS 8+, visionOS 1+,
+with Swift 5.9+.
 
-The package also builds on Linux and every one of the 557 request/response
-operations works there. The eleven event-stream endpoints do not:
+The package also builds on Linux and every request/response operation works
+there. The event-stream endpoints do not:
 `URLSession.bytes(for:)` is missing from swift-corelibs-foundation, and every
 other way of reading a response on that platform buffers it to completion, which
 never happens on a stream that stays open. Calling one on Linux throws
@@ -33,7 +31,7 @@ never happens on a stream that stays open. Calling one on Linux throws
 ```swift
 import UARPSDK
 
-let client = try UARPClient.fromEnvironment()   // UARP_API_KEY, UARP_BASE_URL
+let client = try UARPClient.fromEnvironment()   // UARP_API_KEY (or SNAGA_API_KEY), UARP_BASE_URL
 // or: UARPClient(apiKey: "uarp_...")
 
 // The platform selects the model itself, so a create is just a name.
@@ -49,7 +47,8 @@ through `POST /api/v1/tenants/me/keys`. Give each one the narrowest set of
 scopes that does its job.
 
 Resource groups are computed properties on the client: `client.agents`,
-`client.runs`, `client.sessions`, … 43 in all. Parameters are flattened into
+`client.runs`, `client.sessions`, … one for each tag in the
+API description. Parameters are flattened into
 labelled arguments with `nil` defaults, so only what you set is sent.
 
 ## Streaming
@@ -58,16 +57,19 @@ SSE endpoints return an `EventStream`, an `AsyncSequence` that reconnects with
 `Last-Event-ID`:
 
 ```swift
-// The text arrives as `payload.delta`; the rest of the envelope is
+// The reply's text is `payload.delta` on chunks whose `payload.chunk_type` is
+// "content"; "thinking" and "tool_call" chunks carry the model's reasoning
+// and tool calls, which are not the answer. The rest of the envelope is
 // platform bookkeeping.
 struct Chunk: Decodable {
-    struct Payload: Decodable { let delta: String }
+    struct Payload: Decodable { let chunk_type: String?; let delta: String }
     let payload: Payload
 }
 
 for try await event in client.runs.streamRunEvents(runId: id) {
     if event.event == "llm.chunk" {
-        print(try event.json(as: Chunk.self).payload.delta, terminator: "")
+        let payload = try event.json(as: Chunk.self).payload
+        if (payload.chunk_type ?? "content") == "content" { print(payload.delta, terminator: "") }
     }
     if event.event == "run.completed" { break }   // leaving the loop cancels the request
 }
@@ -161,5 +163,9 @@ swift test
 swift run uarp-example
 ```
 
-Files under `Sources/UARP/Generated/` come from `generator/` in the repository
-root; edit the emitter, not the output.
+Files under `Sources/UARP/Generated/` come from `generator/` in [Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks);
+edit the emitter, not the output.
+
+`Snaga-AI/uarp-swift` is a mirror of `packages/swift` in that repository,
+rewritten on every release. Issues and pull requests belong in
+[Snaga-AI/uarp-sdks](https://github.com/Snaga-AI/uarp-sdks); a change made in the mirror is overwritten by the next one.
