@@ -13033,6 +13033,12 @@ public data class InboxItem(
      * The agent's own choices, for `input` items. Empty otherwise.
      */
     public val options: List<String>,
+    /**
+     * `approval` items: each tool the run waits on, once, with how many calls named it — the facts
+     * behind `summary` (which is English prose), for a client that says them in its own language.
+     * Absent on other kinds. Since 2026-09-23.
+     */
+    public val tools: List<InboxItemTool>? = null,
 )
 
 /**
@@ -13064,6 +13070,15 @@ public object InboxItemKindSerializer : KSerializer<InboxItemKind> {
     override fun serialize(encoder: Encoder, value: InboxItemKind): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): InboxItemKind = InboxItemKind(decoder.decodeString())
 }
+
+/**
+ * `InboxItemTool` model.
+ */
+@Serializable
+public data class InboxItemTool(
+    public val name: String,
+    public val count: Long,
+)
 
 /**
  * `IngestKbDocumentRequest` model.

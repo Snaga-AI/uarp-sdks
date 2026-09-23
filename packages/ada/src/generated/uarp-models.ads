@@ -13137,6 +13137,18 @@ package UARP.Models is
    function To_JSON (Model : Inbox_Item_Kind) return UARP.JSON_Support.JSON_Value;
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Kind;
 
+   --  `InboxItemTool` model.
+   type Inbox_Item_Tool is record
+      Name : UARP.Types.Text := UARP.Types.Empty_Text;
+      Count : UARP.Types.Integer_Value := 0;
+   end record;
+
+   function To_JSON (Model : Inbox_Item_Tool) return UARP.JSON_Support.JSON_Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Tool;
+
+   package Inbox_Item_Tool_Vectors is new Ada.Containers.Vectors
+     (Index_Type => Positive, Element_Type => Inbox_Item_Tool);
+
    --  One run waiting on a person, with what it is actually asking rather than just its status.
    type Inbox_Item is record
       Id : UARP.Types.Text := UARP.Types.Empty_Text;
@@ -13156,6 +13168,11 @@ package UARP.Models is
       Detail : UARP.Types.Text := UARP.Types.Empty_Text;
       --  The agent's own choices, for `input` items. Empty otherwise.
       Options : UARP.Types.Text_Vectors.Vector;
+      --  `approval` items: each tool the run waits on, once, with how many calls named it - the facts
+      --  behind `summary` (which is English prose), for a client that says them in its own language.
+      --  Absent on other kinds. Since 2026-09-23.
+      Has_Tools : Boolean := False;
+      Tools : UARP.Models.Inbox_Item_Tool_Vectors.Vector;
    end record;
 
    function To_JSON (Model : Inbox_Item) return UARP.JSON_Support.JSON_Value;

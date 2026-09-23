@@ -32968,6 +32968,26 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Kind is
       (To_Inbox_Item_Kind (UARP.Types."+" (JS.As_Text (Node))));
 
+   function To_JSON (Model : Inbox_Item_Tool) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "count", JS.JSON.Create (Model.Count));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Inbox_Item_Tool is
+      Result : Inbox_Item_Tool;
+   begin
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "count") then
+         Result.Count := JS.As_Integer (JS.Get_Value (Node, "count"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Inbox_Item) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -32993,6 +33013,16 @@ package body UARP.Models is
          end loop;
          JS.Set (Result, "options", Items);
       end;
+      if Model.Has_Tools then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Tools loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "tools", Items);
+         end;
+      end if;
       return Result;
    end To_JSON;
 
@@ -33037,6 +33067,16 @@ package body UARP.Models is
          begin
             for Index in 1 .. JS.JSON.Length (Items) loop
                Result.Options.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "tools") then
+         Result.Has_Tools := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tools");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tools.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
       end if;

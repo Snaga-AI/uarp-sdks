@@ -17361,8 +17361,12 @@ public struct InboxItem: Codable, Hashable, Sendable {
     public var detail: String
     /// The agent's own choices, for `input` items. Empty otherwise.
     public var options: [String]
+    /// `approval` items: each tool the run waits on, once, with how many calls named it — the facts
+    /// behind `summary` (which is English prose), for a client that says them in its own language.
+    /// Absent on other kinds. Since 2026-09-23.
+    public var tools: [InboxItemTool]?
 
-    public init(id: String, kind: InboxItemKind, runId: String, agentId: String, agentName: String, sessionId: String? = nil, status: String, createdAt: String? = nil, summary: String, detail: String, options: [String]) {
+    public init(id: String, kind: InboxItemKind, runId: String, agentId: String, agentName: String, sessionId: String? = nil, status: String, createdAt: String? = nil, summary: String, detail: String, options: [String], tools: [InboxItemTool]? = nil) {
         self.id = id
         self.kind = kind
         self.runId = runId
@@ -17374,6 +17378,7 @@ public struct InboxItem: Codable, Hashable, Sendable {
         self.summary = summary
         self.detail = detail
         self.options = options
+        self.tools = tools
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -17388,6 +17393,7 @@ public struct InboxItem: Codable, Hashable, Sendable {
         case summary = "summary"
         case detail = "detail"
         case options = "options"
+        case tools = "tools"
     }
 }
 
@@ -17414,6 +17420,22 @@ public struct InboxItemKind: RawRepresentable, Codable, Hashable, Sendable, Expr
 
     /// Every value the spec declared at generation time.
     public static let knownValues: [InboxItemKind] = [.approval, .input, .paused, .failed]
+}
+
+/// `InboxItemTool` model.
+public struct InboxItemTool: Codable, Hashable, Sendable {
+    public var name: String
+    public var count: Int
+
+    public init(name: String, count: Int) {
+        self.name = name
+        self.count = count
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case name = "name"
+        case count = "count"
+    }
 }
 
 /// `IngestKbDocumentRequest` model.

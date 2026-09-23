@@ -8,7 +8,7 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.7.0 — 2026-09-23
 
-Build `5732283f`, canonical digest `f0b65e58f448b3ca` — sorted keys, no
+Build `c5694dc0`, canonical digest `b546ec9b1296e236` — sorted keys, no
 whitespace, which is what `check-spec-freshness.sh` compares and what the
 release refuses to proceed without. Against 0.6.0, the last release published
 to any registry: 535 → 544 paths, 723 → 736 operations (+16, −3), 352 → 352
@@ -17,7 +17,7 @@ schemas (+3, −3).
 The first `v0.7.0` tag, on 2026-09-22 at build `34cc8169`, published nothing:
 the platform deployed `3a9d4c08` between the regeneration and the tag, and the
 release job refused the stale document in its first step, before any registry
-was touched. `5732283f` followed while that refresh was in CI. This entry
+was touched. `5732283f` and `c5694dc0` followed while the refresh was in CI. This entry
 describes the second cut.
 
 **The minor moves, and that is the point.** A caret under 1.0 does not cross
@@ -107,6 +107,8 @@ matching English in `error` — a sentence with no `Accept-Language` behind it.
   every core memory block of an agent in one call, beside the per-label routes.
 - `GET /agents/{agentId}/experiments` and `ListExperimentsResponse` — an
   agent's evaluation experiments, newest first.
+- `InboxItem.tools` (`InboxItemTool`): an `approval` row names each tool the
+  run waits on, with how many calls named it, as data rather than prose.
 - `Run.approvals` (`RunApproval`, decision `'approved' | 'rejected'`): each
   human decision on a tool approval the run waited for, oldest first. Absent
   on runs from before 2026-09-22, when nothing was recorded.

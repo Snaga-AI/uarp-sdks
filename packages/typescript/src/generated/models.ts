@@ -6828,11 +6828,22 @@ export interface InboxItem {
    * The agent's own choices, for `input` items. Empty otherwise.
    */
   options: string[];
+  /**
+   * `approval` items: each tool the run waits on, once, with how many calls named it — the facts
+   * behind `summary` (which is English prose), for a client that says them in its own language.
+   * Absent on other kinds. Since 2026-09-23.
+   */
+  tools?: InboxItemTool[];
 }
 
 export type InboxItemKind = 'approval' | 'input' | 'paused' | 'failed';
 
 export const INBOX_ITEM_KIND_VALUES = ['approval', 'input', 'paused', 'failed'] as const;
+
+export interface InboxItemTool {
+  name: string;
+  count: number;
+}
 
 export interface IngestKbDocumentRequest {
   file_id?: string;

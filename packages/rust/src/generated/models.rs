@@ -13265,6 +13265,11 @@ pub struct InboxItem {
     pub detail: String,
     /// The agent's own choices, for `input` items. Empty otherwise.
     pub options: Vec<String>,
+    /// `approval` items: each tool the run waits on, once, with how many calls named it — the facts
+    /// behind `summary` (which is English prose), for a client that says them in its own language.
+    /// Absent on other kinds. Since 2026-09-23.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<InboxItemTool>>,
 }
 
 /// `InboxItemKind` enumeration.
@@ -13313,6 +13318,13 @@ impl From<&str> for InboxItemKind {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `InboxItemTool` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InboxItemTool {
+    pub name: String,
+    pub count: i64,
 }
 
 /// `IngestKbDocumentRequest` model.

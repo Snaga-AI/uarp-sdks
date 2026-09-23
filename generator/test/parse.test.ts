@@ -555,7 +555,10 @@ test('parses the production document into the expected shape', () => {
   // `ErrorCode` grows again, 76 -> 77, by `approval_rejected`.
   // 1496 -> 1497 the same day (build 5732283f): ListExperimentsResponse.
   // `ErrorCode` 77 -> 78 by `kb_embedding_failed`.
-  assert.equal(spec.types.length, 1497);
+  // 1497 -> 1498 (build c5694dc0, uarp #498): InboxItemTool — approval rows
+  // in the inbox carry the tools they wait on as data. The third deploy to
+  // land while this release was in CI.
+  assert.equal(spec.types.length, 1498);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
