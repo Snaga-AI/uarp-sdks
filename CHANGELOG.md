@@ -6,13 +6,18 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## 0.7.0 — 2026-09-22
+## 0.7.0 — 2026-09-23
 
-Build `34cc8169`, canonical digest `0ed418c24110c039` — sorted keys, no
+Build `3a9d4c08`, canonical digest `e4b9f5149deb99ed` — sorted keys, no
 whitespace, which is what `check-spec-freshness.sh` compares and what the
 release refuses to proceed without. Against 0.6.0, the last release published
-to any registry: 535 → 543 paths, 723 → 734 operations (+14, −3), 352 → 352
+to any registry: 535 → 544 paths, 723 → 735 operations (+15, −3), 352 → 352
 schemas (+3, −3).
+
+The first `v0.7.0` tag, on 2026-09-22 at build `34cc8169`, published nothing:
+the platform deployed `3a9d4c08` between the regeneration and the tag, and the
+release job refused the stale document in its first step, before any registry
+was touched. This entry describes the second cut.
 
 **The minor moves, and that is the point.** A caret under 1.0 does not cross
 the minor, so `^0.6.0` admits 0.6.1 automatically and refuses 0.7.0. This
@@ -54,6 +59,12 @@ Breaking for any call site that compiled without them:
 | `POST /marketplace/listings/{listingId}/subscribe` | `stripe_subscription_id` |
 | `POST /programs/{programId}/apply` | `start_date` |
 
+`POST /a2a/tasks` tightens without a new top-level field: each entry of
+`messages` now requires `role` (`'user' | 'agent'`, no longer any string) and
+a non-empty `parts` typed as `A2APart[]` rather than bare objects, and the
+list itself needs at least one entry. The handler refused all of these with
+422 already; the types now say so before the request is sent.
+
 The first three were unusable in 0.6.0 rather than merely under-declared:
 `CreateGoalRequest` shipped with one field beside a doc comment naming seven,
 so no client generated from that document could form a valid request. They
@@ -67,7 +78,8 @@ demands.
   `error_code` is absent when the failure carries nothing to branch on, which
   is deliberate; `error_details` carries what the code cannot
   (`retry_after_ms`, `quota_exhausted`, `stale_seconds`).
-- `ErrorCode` and `ERROR_CODE_VALUES`, 76 values. **New, not widened**: 0.6.0
+- `ErrorCode` and `ERROR_CODE_VALUES`, 77 values — `approval_rejected` is the
+  newest, for a run that stopped because a person refused its tool call. **New, not widened**: 0.6.0
   declared no `code` on `Error` at all, in the tag or in the published
   tarball, so there was nothing for a client to branch on.
 
@@ -89,6 +101,18 @@ matching English in `error` — a sentence with no `Accept-Language` behind it.
   `POST /auth/oauth/nonce` (served undocumented until uarp #487),
   `GET /bridge/agent-specs`, `GET /companies/{companyId}/events`.
 - `SubjectSweep`, `TenantSocialLinks`.
+- `GET /agents/{agentId}/memory/core` and `ListCoreMemoryBlocksResponse` —
+  every core memory block of an agent in one call, beside the per-label routes.
+- `Run.approvals` (`RunApproval`, decision `'approved' | 'rejected'`): each
+  human decision on a tool approval the run waited for, oldest first. Absent
+  on runs from before 2026-09-22, when nothing was recorded.
+- `POST /runs/{runId}/resume` takes an optional `ResumeRunRequest`; a string
+  `input.note` is handed to the model as a user turn when the run continues.
+- `Objective.strikes_used` and `abort_reason`, `AARRootCause.code`,
+  `AARObjectiveOutcome.abort_reason`, `MissionStartResponse.run_started`.
+- `PUT /agents/{agentId}/memory/core/{label}` documents `409`, and the public
+  session upload, respond and share routes document `410` for an agent made
+  private after the session opened.
 
 ### Fixed — the tooling that made the last cut cost two attempts
 
@@ -105,7 +129,7 @@ matching English in `error` — a sentence with no `Accept-Language` behind it.
   published nothing — 40 of 100 generator tests red at the tag, every language
   job dead before its publish step. Measured again here: 48 of 114 red
   immediately after the bump, before the refresh.
-- `scripts/check-prose-schema.ts` reports 0 divergences over all 734
+- `scripts/check-prose-schema.ts` reports 0 divergences over all 735
   operations.
 
 ### Known

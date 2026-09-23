@@ -47,6 +47,11 @@ export class A2AResource extends APIResource {
    * `agents:read`-only key works for the read methods but the spec cannot express the per-method
    * conditional.
    *
+   * `tasks/send` and `tasks/sendSubscribe` validate `params.messages` exactly as `POST
+   * /a2a/tasks` does (each message needs `role` and a non-empty `parts` array, and at least one
+   * user part must carry input); a refused list answers JSON-RPC error `-32602` with the field
+   * list in `error.data.errors`, and nothing is created.
+   *
    * `POST /api/v1/a2a`
    *
    * Required scopes: `agents:write`.

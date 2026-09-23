@@ -418,10 +418,16 @@ public data class AarObjectiveOutcome(
     @SerialName("final_status")
     public val finalStatus: String,
     /**
-     * Retries spent on this objective before it settled.
+     * Retries spent on this objective before it settled — read from the objective record, so it
+     * agrees with `GET /missions/{missionId}/objectives`.
      */
     @SerialName("strikes_used")
     public val strikesUsed: Long,
+    /**
+     * The objective record's `abort_reason`, copied. Absent when it has none.
+     */
+    @SerialName("abort_reason")
+    public val abortReason: String? = null,
     @SerialName("final_agent_id")
     public val finalAgentId: String? = null,
     @SerialName("final_model")
@@ -488,12 +494,24 @@ public object AarPhaseRecordPhaseSerializer : KSerializer<AarPhaseRecordPhase> {
 public data class AarRootCause(
     @SerialName("objective_id")
     public val objectiveId: String,
+    /**
+     * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+     * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+     * → `external_error`. Branch on `code` for the precise reason.
+     */
     public val category: AarRootCauseCategory,
     public val details: String,
+    /**
+     * The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent
+     * when the objective recorded none.
+     */
+    public val code: String? = null,
 )
 
 /**
- * `AarRootCauseCategory` values.
+ * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+ * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+ * → `external_error`. Branch on `code` for the precise reason.
  */
 ///
 /**
@@ -3769,6 +3787,12 @@ public data class AgentToolOverrideUpdate(
 public data class AgentUpdate(
     public val name: String? = null,
     public val description: String? = null,
+    /**
+     * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+     * Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+     * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+     * set `public_config.system_prompt`.
+     */
     public val prompts: JsonObject? = null,
     public val model: AgentModelConfigInput? = null,
     /**
@@ -6707,6 +6731,12 @@ public data class CostReconciliationResult(
 public data class CreateA2ATaskRequest(
     @SerialName("agent_id")
     public val agentId: String,
+    /**
+     * At least one `user` message must carry input: a text part with non-empty `text`, a `data`
+     * part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route).
+     * Anything else is refused with **422** before a task or run exists (schemas/mod.ts
+     * A2AMessagesSchema).
+     */
     public val messages: List<CreateA2ATaskRequestMessage>,
     public val metadata: JsonObject? = null,
 )
@@ -6716,8 +6746,8 @@ public data class CreateA2ATaskRequest(
  */
 @Serializable
 public data class CreateA2ATaskRequestMessage(
-    public val role: String? = null,
-    public val parts: List<JsonObject>? = null,
+    public val role: DrawingJournalEntryAuthorKind,
+    public val parts: List<A2APart>,
 )
 
 /**
@@ -6830,6 +6860,12 @@ public data class CreateAgentRequest(
     public val name: String,
     public val model: AgentModelConfigInput? = null,
     public val description: String? = null,
+    /**
+     * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+     * Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+     * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+     * set `public_config.system_prompt`.
+     */
     public val prompts: JsonObject? = null,
     public val thinking: JsonObject? = null,
     /**
@@ -9551,6 +9587,7 @@ public value class ErrorCode(public val value: String) {
         public val YANK_CONFLICT: ErrorCode = ErrorCode("YANK_CONFLICT")
         public val AGENT_NOT_FOUND: ErrorCode = ErrorCode("agent_not_found")
         public val ALREADY_BOOTSTRAPPED: ErrorCode = ErrorCode("already_bootstrapped")
+        public val APPROVAL_REJECTED: ErrorCode = ErrorCode("approval_rejected")
         public val BILLING_NOT_CONFIGURED: ErrorCode = ErrorCode("billing_not_configured")
         public val GOVERNANCE_NOT_ENABLED: ErrorCode = ErrorCode("governance_not_enabled")
         public val INCOMPLETE_RECORD: ErrorCode = ErrorCode("incomplete_record")
@@ -9576,7 +9613,7 @@ public value class ErrorCode(public val value: String) {
         public val RUN_QUOTA_EXCEEDED: ErrorCode = ErrorCode("run_quota_exceeded")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, PLAN_UPGRADE_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONFIGURATION_ERROR, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FORBIDDEN, GUARDRAIL_VIOLATION, INVALID_QUERY, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_FOUND, NOT_YANKED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, RESERVED_SCOPE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, VALIDATION_ERROR, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, YANK_CONFLICT, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, PLAN_UPGRADE_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED)
     }
 }
 
@@ -11924,7 +11961,9 @@ public data class GetRunResponse(
      * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
      * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
      * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-     * that a client had to regex-test `error`.
+     * that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+     * person refused the tool call the run was waiting on — `status` is still `failed`, and
+     * `error` is the reviewer's own reason.
      */
     @SerialName("error_code")
     public val errorCode: String? = null,
@@ -11936,6 +11975,12 @@ public data class GetRunResponse(
      */
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
+    /**
+     * Every human decision on a tool approval this run waited for, oldest first. Absent when the
+     * run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+     * trace on the run.
+     */
+    public val approvals: List<GetRunResponseApproval>? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -11994,6 +12039,29 @@ public data class GetRunResponse(
      */
     @SerialName("pending_input")
     public val pendingInput: GetRunResponsePendingInput? = null,
+)
+
+/**
+ * `GetRunResponseApproval` model.
+ */
+@Serializable
+public data class GetRunResponseApproval(
+    public val decision: RunApprovalDecision,
+    /**
+     * Tools the run was waiting on when the decision was made.
+     */
+    public val tools: List<String>,
+    @SerialName("decided_at")
+    public val decidedAt: String,
+    /**
+     * User id of the person who decided; the credential id when no person stands behind it.
+     */
+    @SerialName("decided_by")
+    public val decidedBy: String? = null,
+    /**
+     * The reviewer's reason, on a rejection.
+     */
+    public val reason: String? = null,
 )
 
 /**
@@ -13038,6 +13106,10 @@ public data class IngestMemoryRequest(
      * Override stored filename; defaults to file metadata or `created-doc.md`.
      */
     public val filename: String? = null,
+    /**
+     * Stored on every chunk, before the tags ingest always adds (`document`, the filename,
+     * `chunk:i/n`); a tag in both is kept once.
+     */
     public val tags: List<String>? = null,
     @SerialName("chunk_size")
     public val chunkSize: Long? = null,
@@ -14183,6 +14255,19 @@ public data class ListContentReportsResponse(
     public val cursor: String? = null,
     @SerialName("has_more")
     public val hasMore: Boolean,
+)
+
+/**
+ * `ListCoreMemoryBlocksResponse` model.
+ */
+@Serializable
+public data class ListCoreMemoryBlocksResponse(
+    /**
+     * Whether the runtime injects these blocks (`core_memory.enabled`).
+     */
+    public val enabled: Boolean,
+    public val blocks: List<CoreMemoryBlock>,
+    public val total: Long,
 )
 
 /**
@@ -16358,6 +16443,17 @@ public data class MissionStartResponse(
      */
     public val classification: MissionStartResponseClassification,
     public val plan: PlannedMission? = null,
+    /**
+     * Whether this request also started executing the mission. `true` when planning put it in
+     * `executing` (the plan needed no authorization) and a walk began — progress then arrives on
+     * `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it
+     * is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST
+     * /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays
+     * `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported
+     * `executing` and dispatched nothing until a separate `POST /run`.
+     */
+    @SerialName("run_started")
+    public val runStarted: Boolean? = null,
 )
 
 /**
@@ -17337,8 +17433,20 @@ public data class Objective(
     @SerialName("decision_points")
     public val decisionPoints: List<ObjectiveDecisionPoint>? = null,
     public val deadline: String? = null,
+    /**
+     * Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
+     * `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
+     * errored or kept answering in an unparseable shape), which is the platform failing, not the
+     * agent's work; no strike is charged for it and the agent is not re-run.
+     */
     @SerialName("abort_reason")
     public val abortReason: String? = null,
+    /**
+     * Strikes the mission executor spent on this objective, written when it settles. Absent on
+     * objectives that never ran under a mission and on those settled before 2026-09-22.
+     */
+    @SerialName("strikes_used")
+    public val strikesUsed: Long? = null,
 )
 
 /**
@@ -20393,6 +20501,32 @@ public data class ResumeMissionResponse(
 )
 
 /**
+ * `ResumeRunRequest` model.
+ */
+@Serializable
+public data class ResumeRunRequest(
+    /**
+     * Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+     * as a user turn when the run continues.
+     */
+    public val input: ResumeRunRequestInput? = null,
+    /**
+     * Accepted and ignored; kept so existing callers are not refused.
+     */
+    public val response: JsonElement? = null,
+)
+
+/**
+ * Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+ * as a user turn when the run continues.
+ */
+@Serializable
+public data class ResumeRunRequestInput(
+    public val note: String? = null,
+    public val message: String? = null,
+)
+
+/**
  * `ResumeRunResponse` model.
  */
 @Serializable
@@ -20613,7 +20747,9 @@ public data class Run(
      * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
      * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
      * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-     * that a client had to regex-test `error`.
+     * that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+     * person refused the tool call the run was waiting on — `status` is still `failed`, and
+     * `error` is the reviewer's own reason.
      */
     @SerialName("error_code")
     public val errorCode: String? = null,
@@ -20625,6 +20761,12 @@ public data class Run(
      */
     @SerialName("error_details")
     public val errorDetails: JsonObject? = null,
+    /**
+     * Every human decision on a tool approval this run waited for, oldest first. Absent when the
+     * run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+     * trace on the run.
+     */
+    public val approvals: List<RunApproval>? = null,
     @SerialName("created_at")
     public val createdAt: String,
     @SerialName("started_at")
@@ -20655,6 +20797,57 @@ public data class Run(
     @SerialName("resource_limits")
     public val resourceLimits: RunResourceLimits? = null,
 )
+
+/**
+ * `RunApproval` model.
+ */
+@Serializable
+public data class RunApproval(
+    public val decision: RunApprovalDecision,
+    /**
+     * Tools the run was waiting on when the decision was made.
+     */
+    public val tools: List<String>,
+    @SerialName("decided_at")
+    public val decidedAt: String,
+    /**
+     * User id of the person who decided; the credential id when no person stands behind it.
+     */
+    @SerialName("decided_by")
+    public val decidedBy: String? = null,
+    /**
+     * The reviewer's reason, on a rejection.
+     */
+    public val reason: String? = null,
+)
+
+/**
+ * `RunApprovalDecision` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunApprovalDecisionSerializer::class)
+@JvmInline
+public value class RunApprovalDecision(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val APPROVED: RunApprovalDecision = RunApprovalDecision("approved")
+        public val REJECTED: RunApprovalDecision = RunApprovalDecision("rejected")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunApprovalDecision> = listOf(APPROVED, REJECTED)
+    }
+}
+
+public object RunApprovalDecisionSerializer : KSerializer<RunApprovalDecision> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunApprovalDecision", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunApprovalDecision): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunApprovalDecision = RunApprovalDecision(decoder.decodeString())
+}
 
 /**
  * The body is optional and carries at most a `response` for the agent. An unknown field is

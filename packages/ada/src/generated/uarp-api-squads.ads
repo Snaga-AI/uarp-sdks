@@ -69,6 +69,10 @@ package UARP.API.Squads is
    --  `cancelledCount` is camelCase on the wire, unlike every neighbouring field. That is what the
    --  server sends.
    --
+   --  **404** when no run with that id exists on this squad - an unknown id, the nil UUID, a
+   --  single-agent run id or another squad's run - checked before anything is stopped; it used to
+   --  answer `{cancelled: true}` for any id.
+   --
    --  `/api/v1/squads/*` is the canonical surface; `/api/v1/teams/*` is the same handler under the
    --  older noun.
    --

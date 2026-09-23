@@ -413,6 +413,8 @@ package body UARP.API.Runs is
    function Resume
      (Self : Client_Type;
       Run_Id : String;
+      Payload : UARP.Models.Resume_Run_Request;
+      Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Resume_Run_Response
    is
@@ -422,6 +424,8 @@ package body UARP.API.Runs is
             (Self,
              "POST",
              "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/resume",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
              Idempotent => True,
              Options => Options));
    end Resume;

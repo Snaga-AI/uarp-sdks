@@ -334,7 +334,11 @@ test('parses the production document into the expected shape', () => {
   // `/billing/spec-packages` is NOT in this three — the withdrawal left the
   // list answering `[]` and the checkout answering 410, both deprecated, for
   // clients that still call them.
-  assert.equal(ops.length, 734);
+  // 734 -> 735 on 2026-09-23 (build 3a9d4c08): `GET
+  // /agents/{agentId}/memory/core`, the list beside the per-label block
+  // routes. Found by the release job refusing the v0.7.0 tag, not by a
+  // refresh: the platform deployed between the regeneration and the tag.
+  assert.equal(ops.length, 735);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -542,7 +546,12 @@ test('parses the production document into the expected shape', () => {
   // `ErrorCode` goes from 58 values to 76, and `Run` gains `error_code` and
   // `error_details`. Until this refresh no generated client could read why a
   // run failed except by regex over an English sentence.
-  assert.equal(spec.types.length, 1490);
+  // 1490 -> 1496 on 2026-09-23 (build 3a9d4c08): six arrive, none leave —
+  // ListCoreMemoryBlocksResponse for the new list, ResumeRunRequest and its
+  // Input for the body `POST /runs/{runId}/resume` now accepts, and RunApproval
+  // with its decision enum plus GetRunResponseApproval for `Run.approvals`.
+  // `ErrorCode` grows again, 76 -> 77, by `approval_rejected`.
+  assert.equal(spec.types.length, 1496);
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,

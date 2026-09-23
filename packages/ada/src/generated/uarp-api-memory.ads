@@ -114,6 +114,22 @@ package UARP.API.Memory is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Ingest_Memory_Response;
 
+   --  List core memory blocks
+   --
+   --  Every core memory block stored for the agent, whatever its label. `enabled` is the agent's
+   --  `core_memory.enabled`: the runtime injects blocks into the system prompt only when it is
+   --  true, so a block listed under `enabled: false` is stored but not seen by any run. `404` when
+   --  the agent does not exist.
+   --
+   --  GET /api/v1/agents/{agentId}/memory/core
+   --
+   --  Required scopes: memory:read.
+   function List_Core_Memory_Blocks
+     (Self : Client_Type;
+      Agent_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Core_Memory_Blocks_Response;
+
    --  List recent memories for an agent
    --
    --  Returns the agent's most recent memory entries, newest first. `limit` (or its alias `top_k`)
@@ -180,7 +196,10 @@ package UARP.API.Memory is
    --  defaulting to 1000 and is CLAMPED to the platform's aggregate core-memory budget - a block
    --  larger than the whole budget could never be injected into a prompt, so the request is not
    --  allowed to raise its own limit. Content that exceeds the resulting ceiling is rejected by
-   --  the store rather than silently truncated.
+   --  the store rather than silently truncated. Writing a block also makes it one the runtime
+   --  injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks`
+   --  when it is not declared there yet (while fewer than 10 are declared). `404` when the agent
+   --  does not exist.
    --
    --  PUT /api/v1/agents/{agentId}/memory/core/{label}
    --

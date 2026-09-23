@@ -165,9 +165,14 @@ export interface AarObjectiveOutcome {
    */
   final_status: string;
   /**
-   * Retries spent on this objective before it settled.
+   * Retries spent on this objective before it settled — read from the objective record, so it
+   * agrees with `GET /missions/{missionId}/objectives`.
    */
   strikes_used: number;
+  /**
+   * The objective record's `abort_reason`, copied. Absent when it has none.
+   */
+  abort_reason?: string;
   final_agent_id?: string;
   final_model?: string;
   duration_ms?: number;
@@ -191,10 +196,25 @@ export const AAR_PHASE_RECORD_PHASE_VALUES = ['recon', 'plan', 'authorize', 'exe
 
 export interface AarRootCause {
   objective_id: string;
+  /**
+   * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+   * → `external_error`. Branch on `code` for the precise reason.
+   */
   category: AarRootCauseCategory;
   details: string;
+  /**
+   * The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent
+   * when the objective recorded none.
+   */
+  code?: string;
 }
 
+/**
+ * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+ * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+ * → `external_error`. Branch on `code` for the precise reason.
+ */
 export type AarRootCauseCategory = 'llm_timeout' | 'llm_idle' | 'llm_loop' | 'tool_error' | 'tool_truncation' | 'verification_failed' | 'authorization_denied' | 'external_error' | 'max_duration_exceeded' | 'unknown';
 
 export const AAR_ROOT_CAUSE_CATEGORY_VALUES = ['llm_timeout', 'llm_idle', 'llm_loop', 'tool_error', 'tool_truncation', 'verification_failed', 'authorization_denied', 'external_error', 'max_duration_exceeded', 'unknown'] as const;
@@ -1960,6 +1980,12 @@ export interface AgentToolOverrideUpdate {
 export interface AgentUpdate {
   name?: string;
   description?: string;
+  /**
+   * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+   * Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+   * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+   * set `public_config.system_prompt`.
+   */
   prompts?: JsonObject;
   model?: AgentModelConfigInput;
   /**
@@ -3428,13 +3454,19 @@ export interface CostReconciliationResult {
 
 export interface CreateA2ATaskRequest {
   agent_id: string;
+  /**
+   * At least one `user` message must carry input: a text part with non-empty `text`, a `data`
+   * part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route).
+   * Anything else is refused with **422** before a task or run exists (schemas/mod.ts
+   * A2AMessagesSchema).
+   */
   messages: CreateA2ATaskRequestMessage[];
   metadata?: JsonObject;
 }
 
 export interface CreateA2ATaskRequestMessage {
-  role?: string;
-  parts?: JsonObject[];
+  role: DrawingJournalEntryAuthorKind;
+  parts: A2APart[];
 }
 
 export interface CreateAdminBlogPostRequest {
@@ -3504,6 +3536,12 @@ export interface CreateAgentRequest {
   name: string;
   model?: AgentModelConfigInput;
   description?: string;
+  /**
+   * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+   * Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+   * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+   * set `public_config.system_prompt`.
+   */
   prompts?: JsonObject;
   thinking?: JsonObject;
   /**
@@ -5006,9 +5044,9 @@ export interface Error {
  * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
  * no machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -6222,7 +6260,9 @@ export interface GetRunResponse {
    * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
    * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
    * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-   * that a client had to regex-test `error`.
+   * that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+   * person refused the tool call the run was waiting on — `status` is still `failed`, and
+   * `error` is the reviewer's own reason.
    */
   error_code?: string;
   /**
@@ -6232,6 +6272,12 @@ export interface GetRunResponse {
    * picked.
    */
   error_details?: JsonObject;
+  /**
+   * Every human decision on a tool approval this run waited for, oldest first. Absent when the
+   * run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+   * trace on the run.
+   */
+  approvals?: GetRunResponseApproval[];
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -6281,6 +6327,23 @@ export interface GetRunResponse {
    * running.
    */
   pending_input?: GetRunResponsePendingInput;
+}
+
+export interface GetRunResponseApproval {
+  decision: RunApprovalDecision;
+  /**
+   * Tools the run was waiting on when the decision was made.
+   */
+  tools: string[];
+  decided_at: string;
+  /**
+   * User id of the person who decided; the credential id when no person stands behind it.
+   */
+  decided_by?: string;
+  /**
+   * The reviewer's reason, on a rejection.
+   */
+  reason?: string;
 }
 
 /**
@@ -6797,6 +6860,10 @@ export interface IngestMemoryRequest {
    * Override stored filename; defaults to file metadata or `created-doc.md`.
    */
   filename?: string;
+  /**
+   * Stored on every chunk, before the tags ingest always adds (`document`, the filename,
+   * `chunk:i/n`); a tag in both is kept once.
+   */
   tags?: string[];
   /**
    * @default 600
@@ -7408,6 +7475,15 @@ export interface ListContentReportsResponse {
   items: ContentReport[];
   cursor: string | null;
   has_more: boolean;
+}
+
+export interface ListCoreMemoryBlocksResponse {
+  /**
+   * Whether the runtime injects these blocks (`core_memory.enabled`).
+   */
+  enabled: boolean;
+  blocks: CoreMemoryBlock[];
+  total: number;
 }
 
 export interface ListCustomPlansResponse {
@@ -8617,6 +8693,16 @@ export interface MissionStartResponse {
    */
   classification: MissionStartResponseClassification;
   plan?: PlannedMission;
+  /**
+   * Whether this request also started executing the mission. `true` when planning put it in
+   * `executing` (the plan needed no authorization) and a walk began — progress then arrives on
+   * `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it
+   * is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST
+   * /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays
+   * `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported
+   * `executing` and dispatched nothing until a separate `POST /run`.
+   */
+  run_started?: boolean;
 }
 
 /**
@@ -9139,7 +9225,18 @@ export interface Objective {
   roe?: ObjectiveRoE;
   decision_points?: ObjectiveDecisionPoint[];
   deadline?: string;
+  /**
+   * Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
+   * `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
+   * errored or kept answering in an unparseable shape), which is the platform failing, not the
+   * agent's work; no strike is charged for it and the agent is not re-run.
+   */
   abort_reason?: string;
+  /**
+   * Strikes the mission executor spent on this objective, written when it settles. Absent on
+   * objectives that never ran under a mission and on those settled before 2026-09-22.
+   */
+  strikes_used?: number;
 }
 
 /**
@@ -10774,6 +10871,27 @@ export interface ResumeMissionResponse {
   mission: Mission;
 }
 
+export interface ResumeRunRequest {
+  /**
+   * Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+   * as a user turn when the run continues.
+   */
+  input?: ResumeRunRequestInput;
+  /**
+   * Accepted and ignored; kept so existing callers are not refused.
+   */
+  response?: JsonValue;
+}
+
+/**
+ * Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+ * as a user turn when the run continues.
+ */
+export interface ResumeRunRequestInput {
+  note?: string;
+  message?: string;
+}
+
 export interface ResumeRunResponse {
   resumed: boolean;
   run_id: string;
@@ -10893,7 +11011,9 @@ export interface Run {
    * Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
    * Absent when the failure carries nothing a client can branch on — which is deliberate: a code
    * meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-   * that a client had to regex-test `error`.
+   * that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+   * person refused the tool call the run was waiting on — `status` is still `failed`, and
+   * `error` is the reviewer's own reason.
    */
   error_code?: string;
   /**
@@ -10903,6 +11023,12 @@ export interface Run {
    * picked.
    */
   error_details?: JsonObject;
+  /**
+   * Every human decision on a tool approval this run waited for, oldest first. Absent when the
+   * run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+   * trace on the run.
+   */
+  approvals?: RunApproval[];
   created_at: string;
   started_at?: string | null;
   completed_at?: string | null;
@@ -10927,6 +11053,27 @@ export interface Run {
    */
   resource_limits?: RunResourceLimits;
 }
+
+export interface RunApproval {
+  decision: RunApprovalDecision;
+  /**
+   * Tools the run was waiting on when the decision was made.
+   */
+  tools: string[];
+  decided_at: string;
+  /**
+   * User id of the person who decided; the credential id when no person stands behind it.
+   */
+  decided_by?: string;
+  /**
+   * The reviewer's reason, on a rejection.
+   */
+  reason?: string;
+}
+
+export type RunApprovalDecision = 'approved' | 'rejected';
+
+export const RUN_APPROVAL_DECISION_VALUES = ['approved', 'rejected'] as const;
 
 /**
  * The body is optional and carries at most a `response` for the agent. An unknown field is

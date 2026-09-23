@@ -499,8 +499,11 @@ public struct AarObjectiveOutcome: Codable, Hashable, Sendable {
     public var objectiveId: String
     /// The objective's status when the mission ended.
     public var finalStatus: String
-    /// Retries spent on this objective before it settled.
+    /// Retries spent on this objective before it settled — read from the objective record, so it
+    /// agrees with `GET /missions/{missionId}/objectives`.
     public var strikesUsed: Int
+    /// The objective record's `abort_reason`, copied. Absent when it has none.
+    public var abortReason: String?
     public var finalAgentId: String?
     public var finalModel: String?
     public var durationMs: Int?
@@ -508,10 +511,11 @@ public struct AarObjectiveOutcome: Codable, Hashable, Sendable {
     /// Whether the success criteria were checked and held.
     public var verified: Bool
 
-    public init(objectiveId: String, finalStatus: String, strikesUsed: Int, finalAgentId: String? = nil, finalModel: String? = nil, durationMs: Int? = nil, costUsd: Double? = nil, verified: Bool) {
+    public init(objectiveId: String, finalStatus: String, strikesUsed: Int, abortReason: String? = nil, finalAgentId: String? = nil, finalModel: String? = nil, durationMs: Int? = nil, costUsd: Double? = nil, verified: Bool) {
         self.objectiveId = objectiveId
         self.finalStatus = finalStatus
         self.strikesUsed = strikesUsed
+        self.abortReason = abortReason
         self.finalAgentId = finalAgentId
         self.finalModel = finalModel
         self.durationMs = durationMs
@@ -523,6 +527,7 @@ public struct AarObjectiveOutcome: Codable, Hashable, Sendable {
         case objectiveId = "objective_id"
         case finalStatus = "final_status"
         case strikesUsed = "strikes_used"
+        case abortReason = "abort_reason"
         case finalAgentId = "final_agent_id"
         case finalModel = "final_model"
         case durationMs = "duration_ms"
@@ -582,23 +587,33 @@ public struct AarPhaseRecordPhase: RawRepresentable, Codable, Hashable, Sendable
 /// `AarRootCause` model.
 public struct AarRootCause: Codable, Hashable, Sendable {
     public var objectiveId: String
+    /// Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+    /// `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+    /// → `external_error`. Branch on `code` for the precise reason.
     public var category: AarRootCauseCategory
     public var details: String
+    /// The objective's `abort_reason` verbatim (e.g. `budget_exhausted`, `verifier_error`). Absent
+    /// when the objective recorded none.
+    public var code: String?
 
-    public init(objectiveId: String, category: AarRootCauseCategory, details: String) {
+    public init(objectiveId: String, category: AarRootCauseCategory, details: String, code: String? = nil) {
         self.objectiveId = objectiveId
         self.category = category
         self.details = details
+        self.code = code
     }
 
     private enum CodingKeys: String, CodingKey {
         case objectiveId = "objective_id"
         case category = "category"
         case details = "details"
+        case code = "code"
     }
 }
 
-/// `AarRootCauseCategory` values.
+/// Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
+/// `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
+/// → `external_error`. Branch on `code` for the precise reason.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
@@ -4993,6 +5008,10 @@ public struct AgentToolOverrideUpdate: Codable, Hashable, Sendable {
 public struct AgentUpdate: Codable, Hashable, Sendable {
     public var name: String?
     public var `description`: String?
+    /// `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+    /// Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+    /// keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+    /// set `public_config.system_prompt`.
     public var prompts: JSONObject?
     public var model: AgentModelConfigInput?
     /// Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
@@ -8789,6 +8808,10 @@ public struct CostReconciliationResult: Codable, Hashable, Sendable {
 /// `CreateA2ATaskRequest` model.
 public struct CreateA2ATaskRequest: Codable, Hashable, Sendable {
     public var agentId: String
+    /// At least one `user` message must carry input: a text part with non-empty `text`, a `data`
+    /// part, or a `file` part with inline `data` (a `uri`-only file is not fetched on this route).
+    /// Anything else is refused with **422** before a task or run exists (schemas/mod.ts
+    /// A2AMessagesSchema).
     public var messages: [CreateA2ATaskRequestMessage]
     public var metadata: JSONObject?
 
@@ -8807,10 +8830,10 @@ public struct CreateA2ATaskRequest: Codable, Hashable, Sendable {
 
 /// `CreateA2ATaskRequestMessage` model.
 public struct CreateA2ATaskRequestMessage: Codable, Hashable, Sendable {
-    public var role: String?
-    public var parts: [JSONObject]?
+    public var role: DrawingJournalEntryAuthorKind
+    public var parts: [A2APart]
 
-    public init(role: String? = nil, parts: [JSONObject]? = nil) {
+    public init(role: DrawingJournalEntryAuthorKind, parts: [A2APart]) {
         self.role = role
         self.parts = parts
     }
@@ -8989,6 +9012,10 @@ public struct CreateAgentRequest: Codable, Hashable, Sendable {
     public var name: String
     public var model: AgentModelConfigInput?
     public var `description`: String?
+    /// `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+    /// Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+    /// keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+    /// set `public_config.system_prompt`.
     public var prompts: JSONObject?
     public var thinking: JSONObject?
     /// How runs execute. Accepted by `CreateAgentSchema` (schemas/mod.ts:499) and undocumented
@@ -12698,6 +12725,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let yankConflict = ErrorCode(rawValue: "YANK_CONFLICT")
     public static let agentNotFound = ErrorCode(rawValue: "agent_not_found")
     public static let alreadyBootstrapped = ErrorCode(rawValue: "already_bootstrapped")
+    public static let approvalRejected = ErrorCode(rawValue: "approval_rejected")
     public static let billingNotConfigured = ErrorCode(rawValue: "billing_not_configured")
     public static let governanceNotEnabled = ErrorCode(rawValue: "governance_not_enabled")
     public static let incompleteRecord = ErrorCode(rawValue: "incomplete_record")
@@ -12723,7 +12751,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let runQuotaExceeded = ErrorCode(rawValue: "run_quota_exceeded")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .taskGraphFailed, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .planUpgradeRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .configurationError, .eventStoreError, .externalServiceError, .forbidden, .guardrailViolation, .invalidQuery, .invalidShareList, .invalidShareTarget, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notFound, .notYanked, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .reservedScope, .runCancelled, .scopeMismatch, .scopeTaken, .shareListConflict, .sizeLimit, .specNotFound, .taskGraphFailed, .teamAbort, .validationError, .versionConflict, .versionNotFound, .workspaceStorageLimit, .yankConflict, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .planUpgradeRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded]
 }
 
 /// `ErrorError` model.
@@ -15936,13 +15964,19 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
     /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
     /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-    /// that a client had to regex-test `error`.
+    /// that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+    /// person refused the tool call the run was waiting on — `status` is still `failed`, and
+    /// `error` is the reviewer's own reason.
     public var errorCode: String?
     /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
     /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
     /// Never a provider id — this reaches a screen, and the product does not name the model it
     /// picked.
     public var errorDetails: JSONObject?
+    /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
+    /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+    /// trace on the run.
+    public var approvals: [GetRunResponseApproval]?
     public var createdAt: String
     public var startedAt: String?
     public var completedAt: String?
@@ -15977,7 +16011,7 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
     /// running.
     public var pendingInput: GetRunResponsePendingInput?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [GetRunResponseApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: GetRunResponseResourceLimits? = nil, changedFiles: [String]? = nil, pendingApprovals: [PendingApproval]? = nil, pendingInput: GetRunResponsePendingInput? = nil) {
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -15990,6 +16024,7 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
+        self.approvals = approvals
         self.createdAt = createdAt
         self.startedAt = startedAt
         self.completedAt = completedAt
@@ -16016,6 +16051,7 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
         case error = "error"
         case errorCode = "error_code"
         case errorDetails = "error_details"
+        case approvals = "approvals"
         case createdAt = "created_at"
         case startedAt = "started_at"
         case completedAt = "completed_at"
@@ -16027,6 +16063,34 @@ public struct GetRunResponse: Codable, Hashable, Sendable {
         case changedFiles = "changed_files"
         case pendingApprovals = "pending_approvals"
         case pendingInput = "pending_input"
+    }
+}
+
+/// `GetRunResponseApproval` model.
+public struct GetRunResponseApproval: Codable, Hashable, Sendable {
+    public var decision: RunApprovalDecision
+    /// Tools the run was waiting on when the decision was made.
+    public var tools: [String]
+    public var decidedAt: String
+    /// User id of the person who decided; the credential id when no person stands behind it.
+    public var decidedBy: String?
+    /// The reviewer's reason, on a rejection.
+    public var reason: String?
+
+    public init(decision: RunApprovalDecision, tools: [String], decidedAt: String, decidedBy: String? = nil, reason: String? = nil) {
+        self.decision = decision
+        self.tools = tools
+        self.decidedAt = decidedAt
+        self.decidedBy = decidedBy
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case decision = "decision"
+        case tools = "tools"
+        case decidedAt = "decided_at"
+        case decidedBy = "decided_by"
+        case reason = "reason"
     }
 }
 
@@ -17400,6 +17464,8 @@ public struct IngestMemoryRequest: Codable, Hashable, Sendable {
     public var content: String?
     /// Override stored filename; defaults to file metadata or `created-doc.md`.
     public var filename: String?
+    /// Stored on every chunk, before the tags ingest always adds (`document`, the filename,
+    /// `chunk:i/n`); a tag in both is kept once.
     public var tags: [String]?
     public var chunkSize: Int?
 
@@ -19002,6 +19068,26 @@ public struct ListContentReportsResponse: Codable, Hashable, Sendable {
         case items = "items"
         case cursor = "cursor"
         case hasMore = "has_more"
+    }
+}
+
+/// `ListCoreMemoryBlocksResponse` model.
+public struct ListCoreMemoryBlocksResponse: Codable, Hashable, Sendable {
+    /// Whether the runtime injects these blocks (`core_memory.enabled`).
+    public var enabled: Bool
+    public var blocks: [CoreMemoryBlock]
+    public var total: Int
+
+    public init(enabled: Bool, blocks: [CoreMemoryBlock], total: Int) {
+        self.enabled = enabled
+        self.blocks = blocks
+        self.total = total
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case enabled = "enabled"
+        case blocks = "blocks"
+        case total = "total"
     }
 }
 
@@ -22034,12 +22120,21 @@ public struct MissionStartResponse: Codable, Hashable, Sendable {
     /// The intake decision. A `quick_reply` mission is recorded but is not mission work.
     public var classification: MissionStartResponseClassification
     public var plan: PlannedMission?
+    /// Whether this request also started executing the mission. `true` when planning put it in
+    /// `executing` (the plan needed no authorization) and a walk began — progress then arrives on
+    /// `/missions/{missionId}/events`, and a later `POST /run` answers `already_running` while it
+    /// is in flight. `false` when the mission is `awaiting_authorization` (authorize, then `POST
+    /// /run`) or when the tenant is at its concurrent-mission ceiling (the mission stays
+    /// `executing`; `POST /run` starts it). Added 2026-09-22: before it, a mission reported
+    /// `executing` and dispatched nothing until a separate `POST /run`.
+    public var runStarted: Bool?
 
-    public init(missionId: String, objectiveIds: [String], classification: MissionStartResponseClassification, plan: PlannedMission? = nil) {
+    public init(missionId: String, objectiveIds: [String], classification: MissionStartResponseClassification, plan: PlannedMission? = nil, runStarted: Bool? = nil) {
         self.missionId = missionId
         self.objectiveIds = objectiveIds
         self.classification = classification
         self.plan = plan
+        self.runStarted = runStarted
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -22047,6 +22142,7 @@ public struct MissionStartResponse: Codable, Hashable, Sendable {
         case objectiveIds = "objective_ids"
         case classification = "classification"
         case plan = "plan"
+        case runStarted = "run_started"
     }
 }
 
@@ -23111,9 +23207,16 @@ public struct Objective: Codable, Hashable, Sendable {
     public var roe: ObjectiveRoE?
     public var decisionPoints: [ObjectiveDecisionPoint]?
     public var deadline: String?
+    /// Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
+    /// `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
+    /// errored or kept answering in an unparseable shape), which is the platform failing, not the
+    /// agent's work; no strike is charged for it and the agent is not re-run.
     public var abortReason: String?
+    /// Strikes the mission executor spent on this objective, written when it settles. Absent on
+    /// objectives that never ran under a mission and on those settled before 2026-09-22.
+    public var strikesUsed: Int?
 
-    public init(objectiveId: String, tenantId: String, companyId: String? = nil, parentId: String? = nil, title: String, `description`: String, successCriteria: [String], status: ObjectiveStatus, priority: ObjectivePriority, assignedAgentId: String? = nil, assignedTeamId: String? = nil, dependencies: [String], budget: ObjectiveBudget, result: String? = nil, outputSummary: String? = nil, progressNotes: [String], createdAt: String, updatedAt: String, completedAt: String? = nil, commandersIntent: String? = nil, roe: ObjectiveRoE? = nil, decisionPoints: [ObjectiveDecisionPoint]? = nil, deadline: String? = nil, abortReason: String? = nil) {
+    public init(objectiveId: String, tenantId: String, companyId: String? = nil, parentId: String? = nil, title: String, `description`: String, successCriteria: [String], status: ObjectiveStatus, priority: ObjectivePriority, assignedAgentId: String? = nil, assignedTeamId: String? = nil, dependencies: [String], budget: ObjectiveBudget, result: String? = nil, outputSummary: String? = nil, progressNotes: [String], createdAt: String, updatedAt: String, completedAt: String? = nil, commandersIntent: String? = nil, roe: ObjectiveRoE? = nil, decisionPoints: [ObjectiveDecisionPoint]? = nil, deadline: String? = nil, abortReason: String? = nil, strikesUsed: Int? = nil) {
         self.objectiveId = objectiveId
         self.tenantId = tenantId
         self.companyId = companyId
@@ -23138,6 +23241,7 @@ public struct Objective: Codable, Hashable, Sendable {
         self.decisionPoints = decisionPoints
         self.deadline = deadline
         self.abortReason = abortReason
+        self.strikesUsed = strikesUsed
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -23165,6 +23269,7 @@ public struct Objective: Codable, Hashable, Sendable {
         case decisionPoints = "decision_points"
         case deadline = "deadline"
         case abortReason = "abort_reason"
+        case strikesUsed = "strikes_used"
     }
 }
 
@@ -27211,6 +27316,42 @@ public struct ResumeMissionResponse: Codable, Hashable, Sendable {
     }
 }
 
+/// `ResumeRunRequest` model.
+public struct ResumeRunRequest: Codable, Hashable, Sendable {
+    /// Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+    /// as a user turn when the run continues.
+    public var input: ResumeRunRequestInput?
+    /// Accepted and ignored; kept so existing callers are not refused.
+    public var response: JSONValue?
+
+    public init(input: ResumeRunRequestInput? = nil, response: JSONValue? = nil) {
+        self.input = input
+        self.response = response
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case input = "input"
+        case response = "response"
+    }
+}
+
+/// Stored on the run as `_resume_input`. A string `note` (or `message`) is handed to the model
+/// as a user turn when the run continues.
+public struct ResumeRunRequestInput: Codable, Hashable, Sendable {
+    public var note: String?
+    public var message: String?
+
+    public init(note: String? = nil, message: String? = nil) {
+        self.note = note
+        self.message = message
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case note = "note"
+        case message = "message"
+    }
+}
+
 /// `ResumeRunResponse` model.
 public struct ResumeRunResponse: Codable, Hashable, Sendable {
     public var resumed: Bool
@@ -27458,13 +27599,19 @@ public struct Run: Codable, Hashable, Sendable {
     /// Why the run failed, as a value from the `code` dictionary (see the `Error` schema's enum).
     /// Absent when the failure carries nothing a client can branch on — which is deliberate: a code
     /// meaning "something went wrong" would be worse than none. Populated since 2026-09-21; before
-    /// that a client had to regex-test `error`.
+    /// that a client had to regex-test `error`. `approval_rejected` (since 2026-09-22) means a
+    /// person refused the tool call the run was waiting on — `status` is still `failed`, and
+    /// `error` is the reviewer's own reason.
     public var errorCode: String?
     /// Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
     /// `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
     /// Never a provider id — this reaches a screen, and the product does not name the model it
     /// picked.
     public var errorDetails: JSONObject?
+    /// Every human decision on a tool approval this run waited for, oldest first. Absent when the
+    /// run never waited for one. Recorded since 2026-09-22; before that an approved call left no
+    /// trace on the run.
+    public var approvals: [RunApproval]?
     public var createdAt: String
     public var startedAt: String?
     public var completedAt: String?
@@ -27479,7 +27626,7 @@ public struct Run: Codable, Hashable, Sendable {
     /// Resource limits for the run
     public var resourceLimits: RunResourceLimits?
 
-    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
+    public init(executionMode: RunExecutionMode? = nil, runId: String, tenantId: String, agentId: String, sessionId: String? = nil, status: RunStatus, input: JSONObject? = nil, output: RunOutput? = nil, metrics: RunMetrics? = nil, error: String? = nil, errorCode: String? = nil, errorDetails: JSONObject? = nil, approvals: [RunApproval]? = nil, createdAt: String, startedAt: String? = nil, completedAt: String? = nil, teamRunId: String? = nil, metadata: JSONObject? = nil, stepSeq: Int? = nil, artifacts: [Artifact]? = nil, resourceLimits: RunResourceLimits? = nil) {
         self.executionMode = executionMode
         self.runId = runId
         self.tenantId = tenantId
@@ -27492,6 +27639,7 @@ public struct Run: Codable, Hashable, Sendable {
         self.error = error
         self.errorCode = errorCode
         self.errorDetails = errorDetails
+        self.approvals = approvals
         self.createdAt = createdAt
         self.startedAt = startedAt
         self.completedAt = completedAt
@@ -27515,6 +27663,7 @@ public struct Run: Codable, Hashable, Sendable {
         case error = "error"
         case errorCode = "error_code"
         case errorDetails = "error_details"
+        case approvals = "approvals"
         case createdAt = "created_at"
         case startedAt = "started_at"
         case completedAt = "completed_at"
@@ -27524,6 +27673,57 @@ public struct Run: Codable, Hashable, Sendable {
         case artifacts = "artifacts"
         case resourceLimits = "resource_limits"
     }
+}
+
+/// `RunApproval` model.
+public struct RunApproval: Codable, Hashable, Sendable {
+    public var decision: RunApprovalDecision
+    /// Tools the run was waiting on when the decision was made.
+    public var tools: [String]
+    public var decidedAt: String
+    /// User id of the person who decided; the credential id when no person stands behind it.
+    public var decidedBy: String?
+    /// The reviewer's reason, on a rejection.
+    public var reason: String?
+
+    public init(decision: RunApprovalDecision, tools: [String], decidedAt: String, decidedBy: String? = nil, reason: String? = nil) {
+        self.decision = decision
+        self.tools = tools
+        self.decidedAt = decidedAt
+        self.decidedBy = decidedBy
+        self.reason = reason
+    }
+
+    private enum CodingKeys: String, CodingKey {
+        case decision = "decision"
+        case tools = "tools"
+        case decidedAt = "decided_at"
+        case decidedBy = "decided_by"
+        case reason = "reason"
+    }
+}
+
+/// `RunApprovalDecision` values.
+///
+/// Values the API adds later decode into this type unchanged, so a new
+/// server-side case never breaks an existing client.
+public struct RunApprovalDecision: RawRepresentable, Codable, Hashable, Sendable, ExpressibleByStringLiteral {
+    public let rawValue: String
+    public init(rawValue: String) { self.rawValue = rawValue }
+    public init(stringLiteral value: String) { self.rawValue = value }
+    public init(from decoder: Decoder) throws {
+        self.rawValue = try decoder.singleValueContainer().decode(String.self)
+    }
+    public func encode(to encoder: Encoder) throws {
+        var container = encoder.singleValueContainer()
+        try container.encode(rawValue)
+    }
+
+    public static let approved = RunApprovalDecision(rawValue: "approved")
+    public static let rejected = RunApprovalDecision(rawValue: "rejected")
+
+    /// Every value the spec declared at generation time.
+    public static let knownValues: [RunApprovalDecision] = [.approved, .rejected]
 }
 
 /// The body is optional and carries at most a `response` for the agent. An unknown field is
