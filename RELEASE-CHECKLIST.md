@@ -11,13 +11,20 @@ cheap.
 [PUBLISHING.md](PUBLISHING.md) has the accounts, tokens and the DNS record.
 This file records what was actually verified, and what is left.
 
+Registry state, measured 2026-09-16 against each registry rather than read
+off a release log:
+
 | Stage | Package | Registry | State |
 |---|---|---|---|
-| 1 | `packages/typescript` | npm `uarp-sdk` | **0.3.0 published**; 0.2.0 deprecated |
-| 2 | `packages/rust` | crates.io `uarp-sdk` | **0.3.0 published**; 0.2.0 yanked |
-| 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **0.3.0 tagged** |
-| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **0.3.0 published** |
-| 5 | `packages/ada` | Alire `uarp_sdk` | **submitted** — alire-index#2059, now 0.3.0 |
+| 1 | `packages/typescript` | npm `uarp-sdk` | **0.6.0 published** |
+| 2 | `packages/rust` | crates.io `uarp-sdk` | **0.6.0 published** |
+| 3 | `packages/swift` | SwiftPM `Snaga-AI/uarp-swift` | **0.5.13** — four releases behind, see below |
+| 4 | `packages/kotlin` | Maven `ai.snaga:uarp-sdk` | **0.6.0 published** |
+| 5 | `packages/ada` | Alire `uarp_sdk` | submitted at 0.3.0 — alire-index#2059 |
+
+The stage-by-stage notes below were written for 0.3.0 and are kept because
+what they verify has not changed. Only the table and the release sections
+carry a version.
 
 ---
 
@@ -116,7 +123,7 @@ node -e "import('uarp-sdk').then(m => console.log(m.VERSION))"
 
 ---
 
-## Stage 3 — SwiftPM, `Snaga-AI/uarp-swift` — published
+## Stage 3 — SwiftPM, `Snaga-AI/uarp-swift` — stale since 2026-08-21
 
 SwiftPM resolves a git URL and expects `Package.swift` at the repository root,
 so nothing in a monorepo subdirectory can be depended upon. `packages/swift` is
@@ -135,12 +142,39 @@ copied into its own repository and tagged there.
 | Products | the library and the example only; the contract and live runners are stripped |
 | **Resolution** | a fresh package depending on the tag fetched it from GitHub, built, and ran |
 
+### Broken since 2026-08-21 — and both failure modes are hard failures
+
+`SWIFT_MIRROR_TOKEN` is a fine-grained token with `contents: write` on
+`Snaga-AI/uarp-swift`. This section used to say that without the secret the
+job "warns and skips ... without failing the release". That was true once
+and is not true now: warn-and-skip made the job green while publishing
+nothing through 0.3.0, 0.4.0, 0.5.0 and 0.5.1, so it was replaced with
+`exit 1`. The reasoning is preserved in the comment in `release.yml`.
+
+Both modes now fail the job:
+
+- **Unset** — stops at `::error::SWIFT_MIRROR_TOKEN is not set`, before
+  touching the mirror.
+- **Set but expired** — the package assembles, then:
+
+      remote: Invalid username or token. Password authentication is not
+      supported for Git operations.
+      fatal: Authentication failed for 'https://github.com/Snaga-AI/uarp-swift.git/'
+
+  This is what 0.6.0 hit.
+
+A red release run does not mean the release failed. `github-release` does
+not list this job in its `needs`, so the other four registries publish and
+the GitHub release is created regardless — read the jobs, not the run.
+
+Measured 2026-09-16: `Snaga-AI/uarp-swift` was last pushed **2026-08-21**
+and its newest tag is **0.5.13**. SwiftPM consumers have missed 0.5.15,
+0.5.21, 0.5.24 and 0.6.0.
+
 ### Left to do
 
-- `SWIFT_MIRROR_TOKEN` — a fine-grained token with `contents: write` on
-  `Snaga-AI/uarp-swift`. Both tags there, 0.2.0 and 0.3.0, were pushed by hand;
-  without the secret the release job warns and skips the mirror, which leaves
-  Swift consumers on the previous version without failing the release.
+- Rotate `SWIFT_MIRROR_TOKEN` and re-run the `SwiftPM mirror` job alone. The
+  rest of a published release must not be re-run.
 - Optionally list it on the Swift Package Index so it is findable.
 
 ---
@@ -226,6 +260,49 @@ Linux — which this repository's CI already does on every push.
 
 ---
 
+## 0.6.0 — cut twice
+
+The first `v0.6.0` tag (2026-09-12) published nothing. Every language job of
+its release run failed before its publish step, so npm, crates.io and Maven
+Central all still served 0.5.24 and the number was never consumed. It was
+re-cut on 2026-09-14 against a tree that builds, rather than burned.
+
+Three defects stood between the tag and a release, and only the first
+belonged to 0.6.0:
+
+- The generated TypeScript did not compile: the `listAgentVersions` cursor
+  was a string in the models and a number at the call site, uarp #469
+  landing half-migrated. This is also what reddened Swift, Rust, Kotlin and
+  the cross-SDK contract job.
+- The generator goldens still carried `SDK_VERSION 0.5.24` while `VERSION`
+  said 0.6.0, so the generator suite was red on the tag itself — 40 of 100
+  tests. `scripts/set-version.sh` regenerates but does not refresh goldens.
+- **The Ada SDK had not built since 2026-09-10.** `ObjectiveTree` holds
+  `children : ObjectiveTree[]`, and Ada cannot instantiate
+  `Ada.Containers.Vectors` over an incomplete type, so the record needed the
+  vector and the vector needed the record. 0.5.24 published to three
+  registries with an Ada SDK that could not be compiled by anyone.
+
+Two more surfaced on the way to the tag:
+
+- `release.yml` runs `check-spec-freshness.sh --strict`. The vendored spec
+  had fallen behind the platform (526/344/709 against 535/352/723), so
+  tagging would have failed again at a different gate. Refreshed to
+  `d281e0b33c55a670`.
+- The hand-written Ada examples still declared `Runs.Get` as
+  `UARP.Models.Run` and `Agents.Delete` as a `JSON_Value`, which the typed
+  responses of uarp #456–#470 had replaced.
+
+Breaking against 0.5.24: `Invite.secret` leaves the schema. The versions
+`cursor` is not breaking for anyone upgrading from 0.5.24 — the parameter
+did not exist there; its integer form existed only inside the tag that
+failed to publish.
+
+The Swift mirror failed again, for the reason in stage 3 above. Four of the
+five registries carry 0.6.0.
+
+---
+
 ## 0.3.0
 
 Cut because 0.2.0 reports an empty collection when it is not one: every `*All`
@@ -241,10 +318,12 @@ properties moved across five schemas. Code that set a model on create will not
 compile — and the platform had been ignoring that field anyway.
 
 The Swift mirror still has to be pushed by hand at each release, because
-`SWIFT_MIRROR_TOKEN` is not set. Without it the job warns and skips, so a
+`SWIFT_MIRROR_TOKEN` is not set. (True of 0.3.0, and no longer of the job:
+the skip became `exit 1`. See stage 3.) Without it the job warns and skips, so a
 release quietly leaves Swift consumers on the previous version — which is what
 happened here until it was noticed.
 
 ---
 
-All five registries are published. Alire is the one still in review.
+Four of the five registries carry 0.6.0. The Swift mirror is stuck at
+0.5.13 on an expired token, and Alire is still in review at 0.3.0.
