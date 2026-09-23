@@ -33,18 +33,20 @@ export type Samples = Record<LanguageId, string>;
 const PUBLISHED = VERSION;
 
 /**
- * Swift is quoted separately, and BEHIND, because SwiftPM is not a registry we
- * publish to — it is a git mirror, and the mirror is stuck. Newest tag on
- * Snaga-AI/uarp-swift is 0.5.13, pushed 2026-08-21; 0.5.15, 0.5.21, 0.5.24 and
- * 0.6.0 never arrived, because `SWIFT_MIRROR_TOKEN` expired and the release
- * job now fails on it rather than skipping. Measured against the mirror's tags
- * on 2026-09-21, not taken from the release notes.
+ * Swift is quoted separately because SwiftPM is not a registry we publish to —
+ * it is a git mirror, Snaga-AI/uarp-swift, and it has fallen behind before:
+ * stuck at 0.5.13 from 2026-08-21 until 2026-09-23, when `SWIFT_MIRROR_TOKEN`
+ * had expired and 0.5.15 through 0.6.0 never arrived. 0.7.0 reached it on
+ * 2026-09-23, pushed by hand from the v0.7.0 tag with the release job's own
+ * steps, because the replacement token still could not write. Measured
+ * against the mirror's tags, not taken from the release notes.
  *
- * So `from: "${PUBLISHED}"` would be a line that cannot resolve. This one can.
- * Raise it when the mirror catches up, and not before — a snippet a person
- * cannot run is worse than a snippet that gives them an older SDK.
+ * Keep it separate from `PUBLISHED` for that reason: `from: "${PUBLISHED}"`
+ * is a line that cannot resolve whenever the mirror lags. Raise it when the
+ * mirror has the tag, and not before — a snippet a person cannot run is worse
+ * than a snippet that gives them an older SDK.
  */
-const SWIFT_MIRROR = '0.5.13';
+const SWIFT_MIRROR = '0.7.0';
 
 /** The install line, and what it needs. */
 export const INSTALL: Record<LanguageId, { command: string; shell: boolean; needs: string }> = {
