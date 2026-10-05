@@ -11,6 +11,7 @@
 import { DEFAULT_BASE_URL, SDK_VERSION } from './generated/meta.js';
 import { createResources, type Resources } from './generated/resources/index.js';
 import { Transport, type ClientOptions, type RequestOptions, type RequestSpec } from './core/transport.js';
+import type { EventStream } from './core/sse.js';
 
 /** Version of this SDK, kept in step with the repository VERSION file. */
 export const VERSION = SDK_VERSION;
@@ -38,6 +39,15 @@ export class UarpClient {
   /** Escape hatch: issue an arbitrary request through the configured transport. */
   request<T = unknown>(spec: RequestSpec): Promise<T> {
     return this.transport.request<T>(spec);
+  }
+
+  /**
+   * POST a JSON body and read the answer as server-sent events, e.g.
+   * `/api/v1/llm/chat/completions` with `"stream": true`. One attempt, never
+   * retried or reconnected; see `Transport.streamPost`.
+   */
+  streamPost(path: string, body: unknown, options?: RequestOptions): EventStream {
+    return this.transport.streamPost(path, body, options);
   }
 }
 

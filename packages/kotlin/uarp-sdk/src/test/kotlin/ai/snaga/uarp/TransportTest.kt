@@ -18,10 +18,18 @@ import kotlin.test.assertTrue
 import kotlinx.coroutines.flow.take
 import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.encodeToString
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.addJsonObject
+import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
+import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 import java.io.File
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
@@ -510,6 +518,172 @@ class TransportTest {
         assertEquals(1, events.size)
         assertEquals("""{"text":"hi"}""", events[0].data)
         assertEquals(1, server.requestCount)
+    }
+
+    private val completionBody = buildJsonObject {
+        put("model", "contract/model")
+        put("stream", true)
+        putJsonArray("messages") {
+            addJsonObject {
+                put("role", "user")
+                put("content", "hi")
+            }
+        }
+    }
+
+    @Test
+    fun `streamPost posts the body and reads events until DONE`() = runTest {
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody(
+                    "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"he\"}}]}\n\n" +
+                        "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"llo\"}}]}\n\n" +
+                        "data: [DONE]\n\n",
+                ),
+        )
+
+        val events = client(maxRetries = 3).streamPost("/api/v1/llm/chat/completions", completionBody).toList()
+
+        //  Two chunks; `[DONE]` ends the flow and is not itself an event.
+        assertEquals(2, events.size, events.toString())
+        val text = events.joinToString("") {
+            it.json().jsonObject["choices"]!!.jsonArray[0].jsonObject["delta"]!!.jsonObject["content"]!!
+                .jsonPrimitive.content
+        }
+        assertEquals("hello", text)
+        assertTrue(events.none { it.data.contains("[DONE]") })
+
+        assertEquals(1, server.requestCount)
+        val recorded = server.takeRequest()
+        assertEquals("POST", recorded.method)
+        assertEquals("/api/v1/llm/chat/completions", recorded.path)
+        assertEquals("Bearer uarp_test1234_secret", recorded.getHeader("Authorization"))
+        assertEquals("text/event-stream", recorded.getHeader("Accept"))
+        //  Exactly, not `startsWith`: OkHttp appends `; charset=utf-8` to a
+        //  string body, and the other four SDKs send the bare type.
+        assertEquals("application/json", recorded.getHeader("Content-Type"))
+        val key = recorded.getHeader("Idempotency-Key")
+        assertNotNull(key)
+        assertTrue(
+            Regex("^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$").matches(key),
+            key,
+        )
+        assertEquals(completionBody, Json.parseToJsonElement(recorded.body.readUtf8()))
+    }
+
+    @Test
+    fun `streamPost turns a 429 into an ApiException and never retries`() = runTest {
+        server.enqueue(
+            MockResponse().setResponseCode(429)
+                .setHeader("Content-Type", "application/problem+json")
+                .setHeader("Retry-After", "0")
+                .setBody("""{"title":"Too Many Requests","status":429,"detail":"llm quota exhausted"}"""),
+        )
+        //  What a replay would get: if the transport retried, it would succeed
+        //  here and the test would see events instead of the refusal.
+        server.enqueue(
+            MockResponse()
+                .setHeader("Content-Type", "text/event-stream")
+                .setBody("data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"twice\"}}]}\n\ndata: [DONE]\n\n"),
+        )
+
+        val delivered = mutableListOf<ServerEvent>()
+        val error = assertFailsWith<ApiException> {
+            client(maxRetries = 3)
+                .streamPost("/api/v1/llm/chat/completions/refused", completionBody)
+                .collect { delivered += it }
+        }
+
+        assertEquals(429, error.status)
+        assertEquals(ApiErrorKind.RATE_LIMIT, error.kind)
+        assertEquals("llm quota exhausted", error.problem.detail)
+        assertEquals("Too Many Requests", error.problem.title)
+        //  The problem body is an error, not an event.
+        assertEquals(emptyList<ServerEvent>(), delivered)
+        //  One attempt: a replayed POST would run and bill the model twice.
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `streamPost refuses a plain JSON 200 instead of reading it as a stream`() = runTest {
+        //  The answer to a body without `"stream": true`. Its single line
+        //  starts with `{`, which the decoder would happily take for an NDJSON
+        //  event — and that event would read as a one-chunk completion.
+        val plain = """{"choices":[{"index":0,"message":{"role":"assistant","content":"hello"}}]}"""
+        server.enqueue(json(plain))
+
+        val delivered = mutableListOf<ServerEvent>()
+        val error = assertFailsWith<ApiException> {
+            client(maxRetries = 3)
+                .streamPost("/api/v1/llm/chat/completions/plain", completionBody)
+                .collect { delivered += it }
+        }
+
+        assertEquals(200, error.status)
+        assertEquals(plain, error.body)
+        assertEquals(emptyList<ServerEvent>(), delivered)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `streamPost refuses an empty 200 instead of reading it as a finished stream`() = runTest {
+        //  No Content-Type, no body: zero events would look like a stream that
+        //  ended before the model said anything.
+        server.enqueue(MockResponse().setResponseCode(200))
+
+        val delivered = mutableListOf<ServerEvent>()
+        val error = assertFailsWith<ApiException> {
+            client(maxRetries = 3)
+                .streamPost("/api/v1/llm/chat/completions", completionBody)
+                .collect { delivered += it }
+        }
+
+        assertEquals(200, error.status)
+        assertNull(error.body)
+        assertEquals(emptyList<ServerEvent>(), delivered)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun `stopping a streamPost closes a silent connection at once`() = runBlocking<Unit> {
+        //  One event, then silence — a model thinking. The server holds the
+        //  socket open far longer than the test allows, so the collector only
+        //  returns promptly if stopping it closes the connection; a blocked
+        //  read does not notice cancellation on its own.
+        val hold = java.util.concurrent.CountDownLatch(1)
+        val silent = java.net.ServerSocket(0, 1, java.net.InetAddress.getLoopbackAddress())
+        val serving = Thread {
+            silent.accept().use { socket ->
+                socket.getOutputStream().apply {
+                    write(
+                        (
+                            "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nConnection: close\r\n\r\n" +
+                                "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"he\"}}]}\n\n"
+                            ).toByteArray(),
+                    )
+                    flush()
+                }
+                hold.await(15, java.util.concurrent.TimeUnit.SECONDS)
+            }
+        }.apply { isDaemon = true; start() }
+
+        try {
+            val client = UarpClient.builder()
+                .apiKey("uarp_test1234_secret")
+                .baseUrl("http://127.0.0.1:${silent.localPort}")
+                .build()
+            val started = System.nanoTime()
+            val events = client.streamPost("/api/v1/llm/chat/completions", completionBody).take(1).toList()
+            val elapsedMillis = (System.nanoTime() - started) / 1_000_000
+
+            assertEquals(1, events.size)
+            assertTrue(elapsedMillis < 5_000, "stopping took $elapsedMillis ms; the read was left blocked")
+        } finally {
+            hold.countDown()
+            serving.join(5_000)
+            silent.close()
+        }
     }
 
     @Test

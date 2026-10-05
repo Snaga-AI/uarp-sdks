@@ -94,6 +94,39 @@ _ = try await client.runs.create(
 
 // 16. how the decoder handles a payload built to strain it
 let probe = try await client.runs.get(runId: "probe")
+
+// 17. a POST read as an event stream, consumed to the end
+let chatBody: JSONObject = [
+    "model": "contract/model",
+    "stream": true,
+    "messages": .array([.object(["role": "user", "content": "hi"])]),
+]
+var postStreamText = ""
+for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody) {
+    let chunk = try event.json(as: JSONValue.self)
+    postStreamText += chunk["choices"]?.arrayValue?.first?["delta"]?["content"]?.stringValue ?? ""
+}
+
+// 18. a refused streamed POST: an API error, and never retried
+var postStreamRefusal = "no error"
+do {
+    for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions/refused", body: chatBody) {}
+} catch let UARPError.api(error) {
+    postStreamRefusal = "\(error.status) \(error.problem.detail ?? "")"
+}
+
+// 19. a 2xx that is not an event stream: an error, not an empty stream
+let postStreamPlain: String
+do {
+    var count = 0
+    for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions/plain", body: chatBody) {
+        count += 1
+    }
+    postStreamPlain = "events \(count)"
+} catch let UARPError.api(error) {
+    postStreamPlain = "error \(error.status)"
+}
+
 let probes: [String: String] = [
     "status": probe.status.rawValue,
     "error_is_absent": String(probe.error == nil),
@@ -103,6 +136,9 @@ let probes: [String: String] = [
     "metrics_output_tokens": probe.metrics?.outputTokens.map(String.init) ?? "absent",
     "metrics_input_tokens": probe.metrics?.inputTokens.map(String.init) ?? "absent",
     "started_at_is_absent": String(probe.startedAt == nil),
+    "post_stream_text": postStreamText,
+    "post_stream_refusal": postStreamRefusal,
+    "post_stream_plain": postStreamPlain,
 ]
 
 struct Report: Encodable {

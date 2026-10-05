@@ -78,6 +78,34 @@ for try await event in client.runs.streamRunEvents(runId: id) {
 let done = try await client.runs.streamRunEvents(runId: id).until { $0.event == "run.completed" }
 ```
 
+### Streaming a POST
+
+`client.streamPost(path:body:)` sends a JSON body and reads the answer as an
+event stream: use it for an LLM completion with `"stream": true`. The platform
+cuts a silent non-streamed request at 120 s, while a streamed one stays open for
+as long as the model writes.
+
+```swift
+let body: JSONObject = [
+    "model": "…",
+    "stream": true,
+    "messages": .array([.object(["role": "user", "content": "hi"])]),
+]
+for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: body) {
+    let chunk = try event.json(as: JSONValue.self)
+    print(chunk["choices"]?.arrayValue?.first?["delta"]?["content"]?.stringValue ?? "", terminator: "")
+}
+```
+
+It makes exactly one attempt. It never reconnects and never retries, not even
+on a 429, because replaying the POST would run and bill the model twice. The
+stream ends at `data: [DONE]` (not delivered as an event), at the end of the
+body, or when you leave the loop. A connection dropped mid-answer throws
+instead of ending quietly. A refusal throws `UARPError.api` with the status and
+problem document. So does a 2xx that is not `text/event-stream`, such as plain
+JSON from a body without `"stream": true`. It carries the status as received,
+so an answer with no events never reads as a finished stream.
+
 ## Pagination
 
 ```swift

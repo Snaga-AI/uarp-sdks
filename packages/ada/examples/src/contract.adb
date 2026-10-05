@@ -273,6 +273,41 @@ begin
          JS.Set (Probes, "started_at_is_absent",
                  (if Probe.Has_Started_At then "false" else "true"));
 
+         --  17. a POST read as an event stream, to `data: [DONE]`
+         --  18. a refusal before the stream: an error, and no retry
+         declare
+            Body_Json : constant String :=
+              "{""model"":""contract/model"",""stream"":true,"
+              & """messages"":[{""role"":""user"",""content"":""hi""}]}";
+            Answer    : Contract_Sink.Text_Sink;
+            Refused   : Contract_Sink.Text_Sink;
+            Status    : Natural;
+            Body_Text : UARP.Types.Text;
+            Problem   : UARP.Errors.Problem;
+         begin
+            UARP.Client.Stream_Post
+              (Client, "/api/v1/llm/chat/completions", Body_Json, Answer);
+            JS.Set (Probes, "post_stream_text", Answer.Content);
+            UARP.Client.Execute_Stream
+              (Client, "/api/v1/llm/chat/completions/refused", Body_Json, Refused,
+               Status => Status, Body_Text => Body_Text, Problem => Problem);
+            JS.Set (Probes, "post_stream_refusal",
+                    Ada.Strings.Fixed.Trim (Natural'Image (Status), Ada.Strings.Both)
+                    & " " & (+Problem.Detail));
+            --  19. a 2xx that is not an event stream: an error, not an empty stream
+            declare
+               Plain : Contract_Sink.Text_Sink;
+            begin
+               UARP.Client.Execute_Stream
+                 (Client, "/api/v1/llm/chat/completions/plain", Body_Json, Plain,
+                  Status => Status, Body_Text => Body_Text, Problem => Problem);
+               JS.Set (Probes, "post_stream_plain",
+                       (if Status not in 200 .. 299 or else String'(+Problem.Title)'Length > 0
+                        then "error " & Ada.Strings.Fixed.Trim (Natural'Image (Status), Ada.Strings.Both)
+                        else "events " & Ada.Strings.Fixed.Trim (Natural'Image (Plain.Count), Ada.Strings.Both)));
+            end;
+         end;
+
          JS.Set (Report, "language", String'("ada"));
          JS.Set (Report, "probes", Probes);
          Ignored := UARP.Client.Call

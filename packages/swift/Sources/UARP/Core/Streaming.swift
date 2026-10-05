@@ -114,11 +114,21 @@ public struct EventStream: AsyncSequence, Sendable {
     private let client: UARPClient
     private let spec: RequestSpec
     private let options: StreamOptions
+    /// ``UARPClient/streamPost(path:body:options:)``: one request, never
+    /// reconnected or retried, and a transport failure mid-stream is thrown
+    /// rather than read as the end of the stream.
+    private let singleAttempt: Bool
+    /// Thrown from the first iteration instead of opening a connection.
+    private let failure: Error?
 
-    init(client: UARPClient, spec: RequestSpec, options: StreamOptions) {
+    init(client: UARPClient, spec: RequestSpec, options: StreamOptions, singleAttempt: Bool = false, failure: Error? = nil) {
+        var options = options
+        if singleAttempt { options.reconnect = false }
         self.client = client
         self.spec = spec
         self.options = options
+        self.singleAttempt = singleAttempt
+        self.failure = failure
     }
 
     public func makeAsyncIterator() -> AsyncThrowingStream<ServerEvent, Error>.Iterator {
@@ -148,6 +158,7 @@ public struct EventStream: AsyncSequence, Sendable {
     }
 
     private func run(_ continuation: AsyncThrowingStream<ServerEvent, Error>.Continuation) async throws {
+        if let failure { throw failure }
         #if canImport(FoundationNetworking)
         //  swift-corelibs-foundation does not implement `URLSession.bytes(for:)`,
         //  and every other way of reading a response there buffers it to the end
@@ -161,6 +172,8 @@ public struct EventStream: AsyncSequence, Sendable {
         var lastEventId: String?
         var attempt = 0
         var baseRetry = options.baseRetryMillis
+        // Nil for a GET stream; a POST carries the same key as every other POST.
+        let idempotencyKey = client.idempotencyKey(for: spec)
 
         options.onState?(.connecting)
 
@@ -187,7 +200,7 @@ public struct EventStream: AsyncSequence, Sendable {
                 attemptSpec.query.append(URLQueryItem(name: "token", value: client.configuration.apiKey))
             }
 
-            let request = try client.buildRequest(attemptSpec, idempotencyKey: nil, accept: "text/event-stream")
+            let request = try client.buildRequest(attemptSpec, idempotencyKey: idempotencyKey, accept: "text/event-stream")
             let bytes: URLSession.AsyncBytes
             let response: URLResponse
             do {
@@ -224,6 +237,20 @@ public struct EventStream: AsyncSequence, Sendable {
                 continue RECONNECT
             }
 
+            // `streamPost` only: a 2xx that is not an event stream (the body left
+            // out `"stream": true`, or an empty 200) would otherwise read as a
+            // stream that ended with no events. It is the API error instead, with
+            // the status as received and the body kept in the problem document.
+            if singleAttempt && !isEventStream(http.value(forHTTPHeaderField: "Content-Type")) {
+                var body = Data()
+                for try await byte in bytes { body.append(byte) }
+                throw UARPError.api(APIError(
+                    status: http.statusCode,
+                    problem: UARPClient.problem(from: body),
+                    headers: UARPClient.normalizedHeaders(http)
+                ))
+            }
+
             options.onState?(.connected)
 
             // A connection that delivered at least one event counts as progress
@@ -232,6 +259,7 @@ public struct EventStream: AsyncSequence, Sendable {
             var delivered = false
             var terminal = false
             var watchdogTripped = false
+            var readFailure: Error?
             let connectedAt = DispatchTime.now().uptimeNanoseconds
             var parser = SSEParser()
 
@@ -293,6 +321,7 @@ public struct EventStream: AsyncSequence, Sendable {
                     } else {
                         // Dropped mid-line: treat like a silent socket and reconnect.
                         watchdogTripped = true
+                        readFailure = error
                     }
                     break LINE
                 }
@@ -359,6 +388,12 @@ public struct EventStream: AsyncSequence, Sendable {
 
             if Task.isCancelled { break RECONNECT }
             if terminal { break RECONNECT }
+            if watchdogTripped && singleAttempt {
+                // Nothing will resume this stream, so ending quietly would hand
+                // the caller a truncated answer that looks complete.
+                if let readFailure { throw UARPError.connection(underlying: readFailure) }
+                throw UARPError.timeout
+            }
             if watchdogTripped {
                 // Inactivity: reconnect without the delivered-reset, matching
                 // Kotlin's `attempt++; continue@reconnect` inside the read loop.
@@ -410,6 +445,14 @@ private final class WatchdogFlag: @unchecked Sendable {
         fired = false
         return wasFired
     }
+}
+
+/// Whether a `Content-Type` names an event stream, ignoring case and any
+/// parameters (`text/event-stream; charset=utf-8`).
+func isEventStream(_ contentType: String?) -> Bool {
+    guard let contentType else { return false }
+    let mediaType = contentType.split(separator: ";", maxSplits: 1, omittingEmptySubsequences: false).first ?? ""
+    return mediaType.trimmingCharacters(in: .whitespaces).lowercased() == "text/event-stream"
 }
 
 /// Line-oriented `text/event-stream` decoder. Handles the three wire shapes the

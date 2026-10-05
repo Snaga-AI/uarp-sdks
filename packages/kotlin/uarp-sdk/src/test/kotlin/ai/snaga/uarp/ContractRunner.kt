@@ -12,8 +12,13 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.addJsonObject
 import kotlinx.serialization.json.buildJsonObject
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.put
+import kotlinx.serialization.json.putJsonArray
 
 /**
  * Contract runner for the Kotlin SDK.
@@ -112,7 +117,7 @@ fun main() = runBlocking {
 
     //  16. how the decoder handles a payload built to strain it
     val probe = client.runs.get("probe")
-    val probes = mapOf(
+    val decoded = mapOf(
         "status" to probe.status.value,
         "error_is_absent" to (probe.error == null).toString(),
         "step_seq" to (probe.stepSeq?.toString() ?: "absent"),
@@ -121,6 +126,48 @@ fun main() = runBlocking {
         "metrics_output_tokens" to (probe.metrics?.outputTokens?.toString() ?: "absent"),
         "metrics_input_tokens" to (probe.metrics?.inputTokens?.toString() ?: "absent"),
         "started_at_is_absent" to (probe.startedAt == null).toString(),
+    )
+
+    //  17. a POST read as an event stream, consumed to `data: [DONE]`
+    val completion = buildJsonObject {
+        put("model", "contract/model")
+        put("stream", true)
+        putJsonArray("messages") {
+            addJsonObject {
+                put("role", "user")
+                put("content", "hi")
+            }
+        }
+    }
+    val streamed = StringBuilder()
+    client.streamPost("/api/v1/llm/chat/completions", completion).collect { event ->
+        val delta = event.json().jsonObject["choices"]!!.jsonArray[0].jsonObject["delta"]!!.jsonObject
+        streamed.append(delta["content"]!!.jsonPrimitive.content)
+    }
+
+    //  18. a refusal before the stream: an API error, and never retried.
+    //  Reported rather than `check`ed, so a stream that wrongly succeeds still
+    //  reaches the harness as a mismatched probe.
+    var refusal = "no error"
+    try {
+        client.streamPost("/api/v1/llm/chat/completions/refused", completion).collect { }
+    } catch (error: ApiException) {
+        refusal = "${error.status} ${error.problem.detail}"
+    }
+
+    //  19. a 2xx that is not an event stream: an error, not an empty stream
+    var plainEvents = 0
+    val plain = try {
+        client.streamPost("/api/v1/llm/chat/completions/plain", completion).collect { plainEvents++ }
+        "events $plainEvents"
+    } catch (error: ApiException) {
+        "error ${error.status}"
+    }
+
+    val probes = decoded + mapOf(
+        "post_stream_text" to streamed.toString(),
+        "post_stream_refusal" to refusal,
+        "post_stream_plain" to plain,
     )
 
     val report = buildJsonObject {

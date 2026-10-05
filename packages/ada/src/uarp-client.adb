@@ -614,6 +614,115 @@ package body UARP.Client is
       return State.Active;
    end On_Chunk;
 
+   --------------------
+   -- Execute_Stream --
+   --------------------
+
+   procedure Execute_Stream
+     (Self      : Client_Type;
+      Path      : String;
+      Payload   : String;
+      Sink      : in out UARP.SSE.Event_Sink'Class;
+      Headers   : Pair_Vectors.Vector := No_Pairs;
+      Options   : Request_Options := Default_Options;
+      Status    : out Natural;
+      Body_Text : out Text;
+      Problem   : out UARP.Errors.Problem)
+   is
+      --  The reference never outlives this call (see Stream).
+      State   : aliased Stream_Context :=
+        (Sink            => Sink'Unchecked_Access,
+         Connected_At    => Ada.Calendar.Clock,
+         On_State        => Options.On_State,
+         Terminal_Events => Options.Terminal_Events,
+         others          => <>);
+      Key     : constant String :=
+        (if SU.Length (Options.Idempotency_Key) > 0 then +Options.Idempotency_Key
+         else New_Idempotency_Key);
+      --  0 = no overall limit: a long generation is the reason to stream.
+      Timeout : constant Natural :=
+        (if Options.Timeout_Ms > 0 then Options.Timeout_Ms else 0);
+      Query   : Pair_Vectors.Vector;
+      Refused : Boolean;
+      Refusal : Text;
+      Result  : UARP.HTTP.Stream_Result;
+      Last    : UARP.SSE.Server_Event;
+      Has     : Boolean;
+   begin
+      for Item of Options.Extra_Query loop
+         Query.Append (Item);
+      end loop;
+
+      UARP.HTTP.Stream_Post
+        (URL                => Join_URL (+Self.Base, Path) & Build_Query (Query),
+         Headers            => Request_Headers
+           (Self, Headers, Options, "text/event-stream", "application/json", True, Key),
+         Payload            => Payload,
+         Timeout_Ms         => Timeout,
+         Inactivity_Seconds => Options.Inactivity_Timeout_Seconds,
+         Handler            => On_Chunk'Access,
+         Context            => State'Address,
+         Status             => Status,
+         Refused            => Refused,
+         Refusal            => Refusal,
+         Result             => Result);
+
+      --  A stream that went silent mid-answer is broken, not finished: a
+      --  cut-off completion must not read as a whole one.
+      if Result = UARP.HTTP.Stream_Silent then
+         raise UARP.Errors.Transport_Error
+           with "the event stream went silent before it ended";
+      end if;
+
+      if not Refused then
+         --  A frame the end of the body cut short still counts, on a clean EOF.
+         if State.Active and then Result = UARP.HTTP.Stream_OK then
+            UARP.SSE.Finish (State.Parser, Last, Has);
+            if Has then
+               Sink.Handle (Last, State.Active);
+            end if;
+         end if;
+         Body_Text := Empty_Text;
+         Problem := UARP.Errors.Empty_Problem;
+      else
+         Body_Text := Refusal;
+         if Status in 200 .. 299 then
+            --  Answered, but not as an event stream: no event was delivered,
+            --  and that must not read as a stream that ended empty.
+            Problem := UARP.Errors.Empty_Problem;
+            Problem.Title := +"Not an event stream";
+            Problem.Detail := +"a streamed POST was answered without text/event-stream";
+            Problem.Raw := Refusal;
+         else
+            Problem := To_Problem (+Refusal);
+         end if;
+         Problem.Status := Status;
+      end if;
+   end Execute_Stream;
+
+   -----------------
+   -- Stream_Post --
+   -----------------
+
+   procedure Stream_Post
+     (Self    : Client_Type;
+      Path    : String;
+      Payload : String;
+      Sink    : in out UARP.SSE.Event_Sink'Class;
+      Headers : Pair_Vectors.Vector := No_Pairs;
+      Options : Request_Options := Default_Options)
+   is
+      Status    : Natural;
+      Body_Text : Text;
+      Problem   : UARP.Errors.Problem;
+   begin
+      Execute_Stream
+        (Self, Path, Payload, Sink, Headers, Options, Status, Body_Text, Problem);
+      if Status not in 200 .. 299 or else String'(+Problem.Title)'Length > 0 then
+         raise UARP.Errors.API_Error with UARP.Errors.Image (Problem, Status);
+      end if;
+   end Stream_Post;
+
    procedure Stream
      (Self    : Client_Type;
       Path    : String;

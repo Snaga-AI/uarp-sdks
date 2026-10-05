@@ -10,6 +10,7 @@ import kotlin.math.pow
 import kotlin.random.Random
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.suspendCancellableCoroutine
+import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
 import kotlinx.serialization.json.Json as KJson
@@ -220,7 +221,7 @@ public class UarpClient internal constructor(
     /** Perform the call, retrying transient failures, and return a successful response. */
     public suspend fun execute(spec: RequestSpec): Response {
         val retries = spec.options.maxRetries ?: maxRetries
-        val idempotencyKey = if (spec.idempotent) spec.options.idempotencyKey ?: UUID.randomUUID().toString() else null
+        val idempotencyKey = idempotencyKeyFor(spec)
         val canRetry = spec.method == "GET" || spec.method == "HEAD" || idempotencyKey != null
         var attempt = 0
 
@@ -260,6 +261,55 @@ public class UarpClient internal constructor(
 
     /** Open a server-sent event stream. */
     public fun stream(spec: RequestSpec): kotlinx.coroutines.flow.Flow<ServerEvent> = sseFlow(this, spec)
+
+    /**
+     * POST a JSON [body] to [path] and read the answer as server-sent events —
+     * an LLM completion with `"stream": true`.
+     *
+     * ```kotlin
+     * client.streamPost("/api/v1/llm/chat/completions", body).collect { event ->
+     *     print(event.json().jsonObject["choices"]!!.jsonArray[0].jsonObject["delta"])
+     * }
+     * ```
+     *
+     * The platform cuts a silent, non-streamed request at 120 s; a streamed one
+     * runs for as long as the model writes.
+     *
+     * The request carries `Accept: text/event-stream`, `Content-Type:
+     * application/json` and the automatic `Idempotency-Key` every POST carries
+     * ([RequestOptions.idempotencyKey] supplies your own). It makes ONE attempt:
+     * no reconnect and no retry, whatever the status, because replaying the
+     * POST would run — and bill — the model twice; [RequestOptions.maxRetries]
+     * and [RequestOptions.stream] do not apply. No call timeout applies either:
+     * bound the stream by cancelling the collector.
+     *
+     * The flow completes on `data: [DONE]` (which is not delivered), at the end
+     * of the body, or when the collector stops; cancelling it closes the
+     * connection. A non-2xx answer throws [ApiException] carrying the status and
+     * the problem document, and its body is never delivered as events. So does
+     * a 2xx that is not `text/event-stream` (plain JSON, an empty body), with
+     * the status as received and the body kept in [ApiException.body]: an
+     * answer with no events must not read as a finished stream. A connection
+     * that breaks mid-stream throws [StreamException].
+     */
+    public fun streamPost(
+        path: String,
+        body: JsonElement,
+        options: RequestOptions = RequestOptions(),
+    ): kotlinx.coroutines.flow.Flow<ServerEvent> = postSseFlow(
+        this,
+        RequestSpec(
+            method = "POST",
+            path = path,
+            body = Body.Json(uarpJson.encodeToString(JsonElement.serializer(), body)),
+            idempotent = true,
+            options = options,
+        ),
+    )
+
+    /** The `Idempotency-Key` this call carries: the caller's, a fresh UUID, or none. */
+    internal fun idempotencyKeyFor(spec: RequestSpec): String? =
+        if (spec.idempotent) spec.options.idempotencyKey ?: UUID.randomUUID().toString() else null
 
     internal fun buildRequest(spec: RequestSpec, idempotencyKey: String?, accept: String = "application/json"): Request {
         val base = spec.options.baseUrl?.trimEnd('/')?.toHttpUrlOrNull() ?: baseUrl

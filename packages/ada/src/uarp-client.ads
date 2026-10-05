@@ -164,6 +164,47 @@ package UARP.Client is
       Headers : Pair_Vectors.Vector := No_Pairs;
       Options : Request_Options := Default_Options);
 
+   --  POST ``Payload`` and read the answer as a server-sent event stream: an
+   --  LLM completion with ``"stream": true``, say.  Events reach ``Sink`` as
+   --  they arrive, so a long answer starts in seconds; the platform cuts a
+   --  silent non-streamed request at 120 s, a streamed one runs on.
+   --
+   --  One attempt, never replayed -- not on a dropped connection, not on 429:
+   --  sending the POST again would run, and bill, it twice.  The request
+   --  carries ``Accept: text/event-stream``, the JSON body and an automatic
+   --  ``Idempotency-Key``.  The stream ends at ``data: [DONE]`` (not
+   --  delivered), at the end of the body, or when the sink stops.
+   --
+   --  Non-raising, like ``Execute``: a refusal reports its status, its body and
+   --  its problem document, and none of it reaches ``Sink``.  Success is a 2xx
+   --  with an empty ``Problem``: a 2xx that is not ``text/event-stream`` (plain
+   --  JSON, an empty body) comes back with its status, its body and a problem
+   --  titled "Not an event stream" -- an answer with no events never reads as
+   --  a finished stream.  A transport failure, or a stream that went silent
+   --  under ``Options.Inactivity_Timeout_Seconds``, raises ``Transport_Error``.
+   --  ``Problem.Headers`` stays empty: a streamed answer's headers are not
+   --  kept, and there is no retry to schedule.
+   procedure Execute_Stream
+     (Self      : Client_Type;
+      Path      : String;
+      Payload   : String;
+      Sink      : in out UARP.SSE.Event_Sink'Class;
+      Headers   : Pair_Vectors.Vector := No_Pairs;
+      Options   : Request_Options := Default_Options;
+      Status    : out Natural;
+      Body_Text : out Text;
+      Problem   : out UARP.Errors.Problem);
+
+   --  ``Execute_Stream`` that raises ``API_Error`` on a refusal or an answer
+   --  that is not an event stream, like ``Call``.
+   procedure Stream_Post
+     (Self    : Client_Type;
+      Path    : String;
+      Payload : String;
+      Sink    : in out UARP.SSE.Event_Sink'Class;
+      Headers : Pair_Vectors.Vector := No_Pairs;
+      Options : Request_Options := Default_Options);
+
    --  Parse a problem document out of a response body.
    function To_Problem (Body_Text : String) return UARP.Errors.Problem;
 

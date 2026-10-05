@@ -224,6 +224,58 @@ public final class UARPClient: @unchecked Sendable {
         EventStream(client: self, spec: spec, options: spec.options.stream)
     }
 
+    /// POST a JSON body and read the answer as a server-sent event stream —
+    /// an LLM completion with `"stream": true`.
+    ///
+    /// ```swift
+    /// let body: JSONObject = ["model": "…", "stream": true, "messages": …]
+    /// for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: body) {
+    ///     print(event.data)
+    /// }
+    /// ```
+    ///
+    /// The platform cuts a silent non-streamed request at 120 s; a streamed
+    /// one keeps the connection alive for as long as the model writes.
+    ///
+    /// Sends `Accept: text/event-stream`, `Content-Type: application/json` and
+    /// the `Idempotency-Key` every POST carries. Makes ONE attempt: it never
+    /// reconnects and never retries, whatever the status, because replaying
+    /// the POST would run (and bill) the model twice. A transport failure
+    /// mid-stream is thrown, not read as the end. The stream ends on
+    /// `data: [DONE]` (not delivered), at the end of the body, or when the
+    /// caller leaves the loop. A non-2xx answer throws ``UARPError/api(_:)``
+    /// with the status and the problem document from the body; so does a 2xx
+    /// that is not `text/event-stream` (plain JSON, an empty body), with the
+    /// status as received, so an answer with no events never reads as a
+    /// finished stream.
+    ///
+    /// `path` is joined to the base URL as is, like ``RequestSpec/path``.
+    /// `options.stream.reconnect` is ignored; the rest of `options` applies.
+    public func streamPost<Body: Encodable>(
+        path: String,
+        body: Body,
+        options: RequestOptions = .init()
+    ) -> EventStream {
+        let encoded: RequestBody
+        do {
+            encoded = try encode(body)
+        } catch {
+            // Thrown from the first iteration, so the call itself stays
+            // non-throwing like every other stream.
+            return EventStream(client: self, spec: RequestSpec(method: "POST", path: path), options: options.stream,
+                               singleAttempt: true, failure: error)
+        }
+        let spec = RequestSpec(method: "POST", path: path, body: encoded, idempotent: true, options: options)
+        return EventStream(client: self, spec: spec, options: spec.options.stream, singleAttempt: true)
+    }
+
+    /// The `Idempotency-Key` for one logical request: the caller's, or a fresh
+    /// UUID when the operation is idempotent. Computed once per call, so every
+    /// retry of it carries the same key.
+    func idempotencyKey(for spec: RequestSpec) -> String? {
+        spec.idempotent ? (spec.options.idempotencyKey ?? UUID().uuidString) : nil
+    }
+
     /// Send a request and return the raw response bytes and HTTP status, WITHOUT
     /// throwing on a non-2xx body.
     ///
@@ -252,7 +304,7 @@ public final class UARPClient: @unchecked Sendable {
 
     private func performRaw(_ spec: RequestSpec) async throws -> (Data, HTTPURLResponse) {
         let maxRetries = spec.options.maxRetries ?? configuration.maxRetries
-        let idempotencyKey = spec.idempotent ? (spec.options.idempotencyKey ?? UUID().uuidString) : nil
+        let idempotencyKey = self.idempotencyKey(for: spec)
         let canRetry = spec.method == "GET" || spec.method == "HEAD" || idempotencyKey != nil
         var attempt = 0
 

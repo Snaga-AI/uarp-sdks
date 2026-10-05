@@ -1,7 +1,18 @@
 import assert from 'node:assert/strict';
+import { createServer, type ServerResponse } from 'node:http';
+import type { AddressInfo } from 'node:net';
 import { test } from 'node:test';
 
-import { autoPaginate, collect, parseEventStream, UarpClient, type UarpEvent } from '../dist/index.js';
+import {
+  APIConnectionError,
+  APIError,
+  autoPaginate,
+  collect,
+  parseEventStream,
+  RateLimitError,
+  UarpClient,
+  type UarpEvent,
+} from '../dist/index.js';
 
 function bodyOf(chunks: string[]): ReadableStream<Uint8Array> {
   const encoder = new TextEncoder();
@@ -278,4 +289,198 @@ test('generated listAll follows cursors through the transport', async () => {
   assert.equal(new URL(urls[0]!).searchParams.get('cursor'), null);
   assert.equal(new URL(urls[1]!).searchParams.get('cursor'), 'next');
   assert.equal(new URL(urls[1]!).searchParams.get('limit'), '1');
+});
+
+// ---- streamPost: a POST answered as server-sent events ---------------------
+
+const CHAT_BODY = { model: 'contract/model', stream: true, messages: [{ role: 'user', content: 'hi' }] };
+
+/** A client whose fetch records every call and answers each with `answer()`. */
+function postStreamClient(answer: () => Response, options: Record<string, unknown> = {}) {
+  const calls: Array<{ url: string; init: RequestInit }> = [];
+  const client = new UarpClient({
+    apiKey: 'uarp_test1234_secret',
+    baseURL: 'https://api.example.test',
+    ...options,
+    fetch: async (url: string, init: RequestInit) => {
+      calls.push({ url, init });
+      return answer();
+    },
+  });
+  return { client, calls };
+}
+
+function deltaText(event: UarpEvent): string {
+  return event.json<{ choices: Array<{ delta?: { content?: string } }> }>().choices[0]?.delta?.content ?? '';
+}
+
+test('streamPost POSTs the JSON body for an event stream and stops at [DONE], which it does not deliver', async () => {
+  const { client, calls } = postStreamClient(
+    () =>
+      new Response(
+        bodyOf([
+          'data: {"choices":[{"index":0,"delta":{"content":"he"}}]}\n\n',
+          'data: {"choices":[{"index":0,"delta":{"content":"llo"}}]}\n\n',
+          'data: [DONE]\n\n',
+        ]),
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      ),
+  );
+
+  const events: UarpEvent[] = [];
+  for await (const event of client.streamPost('/api/v1/llm/chat/completions', CHAT_BODY)) events.push(event);
+
+  assert.equal(calls.length, 1);
+  const { url, init } = calls[0]!;
+  assert.equal(url, 'https://api.example.test/api/v1/llm/chat/completions');
+  assert.equal(init.method, 'POST');
+  const headers = new Headers(init.headers);
+  assert.equal(headers.get('authorization'), 'Bearer uarp_test1234_secret');
+  assert.equal(headers.get('accept'), 'text/event-stream');
+  assert.equal(headers.get('content-type'), 'application/json');
+  assert.match(headers.get('idempotency-key') ?? '', /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/);
+  assert.deepEqual(JSON.parse(String(init.body)), CHAT_BODY);
+
+  assert.equal(events.length, 2, 'two data frames, and [DONE] is not an event');
+  assert.ok(events.every((e) => e.data !== '[DONE]'));
+  assert.equal(events.map(deltaText).join(''), 'hello');
+});
+
+test('streamPost ends at the end of the body without reconnecting', async () => {
+  let answered = 0;
+  const { client, calls } = postStreamClient(
+    () =>
+      // The first answer ends without [DONE]. A second request is the defect
+      // under test; answering it with [DONE] keeps that defect a red result
+      // rather than an endless loop (each delivered event resets the budget).
+      new Response(
+        bodyOf(answered++ === 0 ? ['data: {"choices":[{"index":0,"delta":{"content":"he"}}]}\n\n'] : ['data: [DONE]\n\n']),
+        { status: 200, headers: { 'content-type': 'text/event-stream' } },
+      ),
+  );
+
+  const events: UarpEvent[] = [];
+  // Tiny backoff so a regression that reconnects fails fast instead of slowly.
+  const stream = client.streamPost('/api/v1/llm/chat/completions', CHAT_BODY, {
+    stream: { baseRetryMillis: 1, maxBackoffMillis: 2 },
+  });
+  for await (const event of stream) events.push(event);
+
+  assert.equal(events.length, 1);
+  assert.equal(calls.length, 1, 'a streamed POST is never replayed');
+});
+
+test('streamPost turns a 429 into the API error with its problem document, and never retries it', async () => {
+  const { client, calls } = postStreamClient(
+    () =>
+      new Response(JSON.stringify({ title: 'Too Many Requests', status: 429, detail: 'llm quota exhausted' }), {
+        status: 429,
+        headers: { 'content-type': 'application/problem+json', 'retry-after': '0' },
+      }),
+    // A retry budget the unary path would spend on this very status.
+    { maxRetries: 2 },
+  );
+
+  const events: UarpEvent[] = [];
+  await assert.rejects(
+    async () => {
+      const stream = client.streamPost('/api/v1/llm/chat/completions/refused', CHAT_BODY, {
+        stream: { baseRetryMillis: 1, maxBackoffMillis: 2 },
+      });
+      for await (const event of stream) events.push(event);
+    },
+    (error: unknown) => {
+      assert.ok(error instanceof APIError);
+      assert.ok(error instanceof RateLimitError);
+      assert.equal(error.status, 429);
+      assert.equal(error.problem.detail, 'llm quota exhausted');
+      assert.equal(error.problem.title, 'Too Many Requests');
+      return true;
+    },
+  );
+  assert.equal(calls.length, 1, 'exactly one request: a replay would bill the model twice');
+  assert.equal(events.length, 0, 'the error body is not delivered as events');
+});
+
+test('streamPost turns a plain JSON 200 into an API error instead of an empty stream', async () => {
+  // What the platform answers when the body leaves out `"stream": true`.
+  const completion = { choices: [{ index: 0, message: { role: 'assistant', content: 'hello' } }] };
+  const { client, calls } = postStreamClient(
+    () => new Response(JSON.stringify(completion), { status: 200, headers: { 'content-type': 'application/json' } }),
+  );
+
+  const events: UarpEvent[] = [];
+  await assert.rejects(
+    async () => {
+      for await (const event of client.streamPost('/api/v1/llm/chat/completions', CHAT_BODY)) events.push(event);
+    },
+    (error: unknown) => {
+      assert.ok(error instanceof APIError);
+      assert.equal(error.status, 200);
+      assert.match(error.problem.detail ?? '', /application\/json/);
+      assert.deepEqual(JSON.parse(String(error.problem.body)), completion, 'the body is kept');
+      return true;
+    },
+  );
+  assert.equal(events.length, 0);
+  assert.equal(calls.length, 1);
+});
+
+test('streamPost turns an empty 200 with no content type into an API error', async () => {
+  const { client, calls } = postStreamClient(() => new Response(null, { status: 200 }));
+
+  const events: UarpEvent[] = [];
+  await assert.rejects(
+    async () => {
+      for await (const event of client.streamPost('/api/v1/llm/chat/completions', CHAT_BODY)) events.push(event);
+    },
+    (error: unknown) => {
+      assert.ok(error instanceof APIError);
+      assert.equal(error.status, 200);
+      assert.equal(error.problem.body, '');
+      return true;
+    },
+  );
+  assert.equal(events.length, 0);
+  assert.equal(calls.length, 1);
+});
+
+test('streamPost turns a socket destroyed mid-body into APIConnectionError, after one event and one request', async () => {
+  // A real server and the real fetch: the failure under test is the transport's.
+  let requests = 0;
+  let open: ServerResponse | undefined;
+  const server = createServer((req, res) => {
+    requests++;
+    req.resume();
+    req.on('end', () => {
+      res.writeHead(200, { 'content-type': 'text/event-stream' });
+      res.write('data: {"choices":[{"index":0,"delta":{"content":"he"}}]}\n\n');
+      open = res; // chunked and unfinished: the body is mid-stream
+    });
+  });
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const { port } = server.address() as AddressInfo;
+
+  try {
+    const client = new UarpClient({ apiKey: 'uarp_test1234_secret', baseURL: `http://127.0.0.1:${port}` });
+    const events: UarpEvent[] = [];
+    await assert.rejects(
+      async () => {
+        for await (const event of client.streamPost('/api/v1/llm/chat/completions', CHAT_BODY)) {
+          events.push(event);
+          open!.socket!.destroy(); // the first event is in hand; now the connection dies
+        }
+      },
+      (error: unknown) => {
+        assert.ok(error instanceof APIConnectionError, `got ${String(error)}`);
+        assert.ok(error.cause !== undefined, 'the transport error is kept as the cause');
+        return true;
+      },
+    );
+    assert.equal(events.length, 1);
+    assert.equal(requests, 1, 'a broken streamed POST is not replayed');
+  } finally {
+    server.closeAllConnections();
+    await new Promise<void>((resolve) => server.close(() => resolve()));
+  }
 });

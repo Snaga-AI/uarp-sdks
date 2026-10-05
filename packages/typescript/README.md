@@ -83,6 +83,35 @@ await client.runs.streamRunEvents(runId).until((e) => e.event === 'run.completed
 Browser proxies that cannot set an `Authorization` header can pass the key as a
 query parameter with `new UarpClient({ sseTokenInQuery: true })`.
 
+### Streaming a POST
+
+An LLM completion should be streamed: the platform cuts a silent, non-streamed
+request at 120 s, while a streamed one runs for as long as the model writes.
+`client.streamPost(path, body, options?)` sends the JSON body with
+`Accept: text/event-stream` and returns the same `EventStream`:
+
+```ts
+const stream = client.streamPost('/api/v1/llm/chat/completions', {
+  model: 'my-model',
+  stream: true,
+  messages: [{ role: 'user', content: 'hi' }],
+});
+
+for await (const event of stream) {
+  const chunk = event.json<{ choices: Array<{ delta?: { content?: string } }> }>();
+  process.stdout.write(chunk.choices[0]?.delta?.content ?? '');
+}   // ends after `data: [DONE]`, which is not delivered
+```
+
+It makes one attempt and never reconnects or retries, whatever the status — a
+replayed POST would run and bill the model twice. The stream ends on
+`data: [DONE]`, at the end of the body, or when you leave the loop. A refusal
+throws the `APIError` for its status (a 429 is a `RateLimitError`) with the
+problem document; its body is never delivered as events. So does a 2xx that is
+not `text/event-stream` — plain JSON when the body left out `"stream": true` —
+with the status as received and the body in `error.problem.body`, so an answer
+with no events never reads as a finished stream.
+
 ## Pagination
 
 Cursor-paginated endpoints get a second method that walks every page:

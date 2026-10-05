@@ -96,6 +96,41 @@ await client.runs.create({
 
 // 16. how the decoder handles a payload built to strain it
 const probe = await client.runs.get('probe');
+
+// 17. a POST read as an event stream, consumed to `data: [DONE]`
+const COMPLETION = {
+  model: 'contract/model',
+  stream: true,
+  messages: [{ role: 'user', content: 'hi' }],
+};
+let postStreamText = '';
+for await (const event of client.streamPost('/api/v1/llm/chat/completions', COMPLETION)) {
+  const chunk = event.json<{ choices: Array<{ delta?: { content?: string } }> }>();
+  postStreamText += chunk.choices[0]?.delta?.content ?? '';
+}
+
+// 18. a refusal before the stream: the API error, and no retry even on 429
+let postStreamRefusal = 'no error';
+try {
+  for await (const _event of client.streamPost('/api/v1/llm/chat/completions/refused', COMPLETION)) void _event;
+} catch (error) {
+  if (!(error instanceof APIError)) throw error;
+  postStreamRefusal = `${error.status} ${error.problem.detail}`;
+}
+
+// 19. a 2xx that is not an event stream: an error, not an empty stream
+let plainEvents = 0;
+let postStreamPlain: string | undefined;
+try {
+  for await (const _event of client.streamPost('/api/v1/llm/chat/completions/plain', COMPLETION)) plainEvents++;
+} catch (error) {
+  if (!(error instanceof APIError)) throw error;
+  postStreamPlain = `error ${error.status}`;
+}
+postStreamPlain ??= `events ${plainEvents}`;
+
+// One report: the server keeps the last one per language, so probes from
+// 16 to 19 travel together.
 await report('typescript', {
   status: probe.status,
   error_is_absent: String(probe.error === undefined || probe.error === null),
@@ -105,6 +140,9 @@ await report('typescript', {
   metrics_output_tokens: String(probe.metrics?.output_tokens ?? 'absent'),
   metrics_input_tokens: String(probe.metrics?.input_tokens ?? 'absent'),
   started_at_is_absent: String(probe.started_at === undefined || probe.started_at === null),
+  post_stream_text: postStreamText,
+  post_stream_refusal: postStreamRefusal,
+  post_stream_plain: postStreamPlain,
 });
 
 console.log('typescript runner done');
