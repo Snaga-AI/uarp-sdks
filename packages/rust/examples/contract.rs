@@ -9,7 +9,10 @@ use std::pin::pin;
 
 use futures_util::StreamExt;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
-use uarp_sdk::models::{CreateAgentRequest, CreateRunRequest, RegistryPublishRequest};
+use uarp_sdk::models::{
+    CompleteOAuthLoginFormPostProvider, CompleteOAuthLoginFormPostRequest, CreateAgentRequest,
+    CreateRunRequest, RegistryPublishRequest,
+};
 use uarp_sdk::{Client, Error, FilePart};
 
 /// A quote, a backslash, a newline, a tab, a non-ASCII letter and a character
@@ -196,6 +199,20 @@ async fn main() -> Result<(), Error> {
         outcome.unwrap_or_else(|| format!("events {delivered}"))
     };
 
+    // 20. an application/x-www-form-urlencoded body, byte for byte
+    let form_post = client
+        .auth()
+        .complete_o_auth_login_form_post(
+            &CompleteOAuthLoginFormPostProvider::from("apple"),
+            &CompleteOAuthLoginFormPostRequest {
+                code: Some("c 1+2".into()),
+                state: Some("s/ы&=~*".into()),
+                user: Some(r#"{"name":"А Б","email":"a@b.c"}"#.into()),
+                ..Default::default()
+            },
+        )
+        .await?;
+
     let probes = serde_json::json!({
         "status": probe.status.as_str(),
         "error_is_absent": probe.error.is_none().to_string(),
@@ -222,6 +239,7 @@ async fn main() -> Result<(), Error> {
         "post_stream_text": post_stream_text,
         "post_stream_refusal": post_stream_refusal,
         "post_stream_plain": post_stream_plain,
+        "form_post_email": form_post.email,
     });
 
     let report = serde_json::json!({ "language": "rust", "probes": probes });

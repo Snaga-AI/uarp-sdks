@@ -21,7 +21,7 @@ public struct EvaluationsAPI: Sendable {
     /// `POST /api/v1/agents/{agentId}/scorers`
     ///
     /// Required scopes: `evaluations:write`.
-    public func createAgentScorer(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> AgentScorer {
+    public func createAgentScorer(agentId: String, body: CreateAgentScorerRequest, options: RequestOptions = .init()) async throws -> AgentScorer {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/scorers",
@@ -159,12 +159,31 @@ public struct EvaluationsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:read`.
-    public func listEvalRuns(agentId: String, options: RequestOptions = .init()) async throws -> ListEvalRunsResponse {
+    public func listEvalRuns(agentId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListEvalRunsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/evaluations",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listEvalRuns`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    public func listEvalRunsAll(agentId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<EvalRun, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listEvalRuns(agentId: agentId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.evalRuns },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// List an agent's evaluation experiments

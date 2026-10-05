@@ -127,6 +127,16 @@ do {
     postStreamPlain = "error \(error.status)"
 }
 
+// 20. an application/x-www-form-urlencoded body, compared byte for byte
+let formSession = try await client.auth.completeOAuthLoginFormPost(
+    provider: "apple",
+    body: CompleteOAuthLoginFormPostRequest(
+        code: "c 1+2",
+        state: "s/ы&=~*",
+        user: #"{"name":"А Б","email":"a@b.c"}"#
+    )
+)
+
 let probes: [String: String] = [
     "status": probe.status.rawValue,
     "error_is_absent": String(probe.error == nil),
@@ -139,6 +149,7 @@ let probes: [String: String] = [
     "post_stream_text": postStreamText,
     "post_stream_refusal": postStreamRefusal,
     "post_stream_plain": postStreamPlain,
+    "form_post_email": formSession.email,
 ]
 
 struct Report: Encodable {

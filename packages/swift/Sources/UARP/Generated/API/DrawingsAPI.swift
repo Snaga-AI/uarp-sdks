@@ -22,7 +22,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `POST /api/v1/drawings/{drawingId}/ops`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     public func appendDrawingOps(drawingId: String, body: AppendDrawingOpsRequest, options: RequestOptions = .init()) async throws -> AppendDrawingOpsResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -44,7 +44,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `POST /api/v1/drawings/{drawingId}/masks`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     public func createDrawingMask(drawingId: String, body: CreateDrawingMaskRequest, options: RequestOptions = .init()) async throws -> DrawingMask {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -87,7 +87,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `DELETE /api/v1/drawings/{drawingId}`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     public func delete(drawingId: String, ifMatch: String, options: RequestOptions = .init()) async throws -> DeleteDrawingResponse {
         var headers: [String: String] = [:]
         headers["If-Match"] = ifMatch
@@ -109,7 +109,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func get(drawingId: String, options: RequestOptions = .init()) async throws -> Drawing {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -126,7 +126,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}/masks/{maskId}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func getDrawingMask(drawingId: String, maskId: String, options: RequestOptions = .init()) async throws -> DrawingMask {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -143,7 +143,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}/masks/{maskId}/content`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func getDrawingMaskContent(drawingId: String, maskId: String, options: RequestOptions = .init()) async throws -> Data {
         return try await client.sendData(RequestSpec(
             method: "GET",
@@ -161,7 +161,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func getDrawingTile(drawingId: String, layerId: String, tx: Int, ty: Int, at: Int? = nil, options: RequestOptions = .init()) async throws -> Data {
         var query: [URLQueryItem] = []
         if let at {
@@ -186,7 +186,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}/ops`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func listDrawingOps(drawingId: String, since: Int? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListDrawingOpsResponse {
         var query: [URLQueryItem] = []
         if let since {
@@ -249,7 +249,7 @@ public struct DrawingsAPI: Sendable {
     ///
     /// `GET /api/v1/drawings/{drawingId}/render`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     public func renderDrawing(drawingId: String, region: String? = nil, scale: Double? = nil, options: RequestOptions = .init()) async throws -> Data {
         var query: [URLQueryItem] = []
         if let region {

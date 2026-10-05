@@ -41,7 +41,7 @@ public struct GDPRAPI: Sendable {
     /// characters (**422**). Writes a `data_subject.erasure` audit entry.
     ///
     /// `POST /api/v1/data-subject/erasure`
-    public func dataSubjectErasure(body: JSONObject, options: RequestOptions = .init()) async throws -> DataSubjectErasureResult {
+    public func dataSubjectErasure(body: DataSubjectErasureRequest, options: RequestOptions = .init()) async throws -> DataSubjectErasureResult {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/data-subject/erasure",

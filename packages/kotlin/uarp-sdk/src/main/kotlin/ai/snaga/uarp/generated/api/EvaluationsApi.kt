@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Agent evaluation datasets and runs
@@ -38,7 +39,7 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:write`.
      */
-    public suspend fun createAgentScorer(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): AgentScorer {
+    public suspend fun createAgentScorer(agentId: String, body: CreateAgentScorerRequest, options: RequestOptions = RequestOptions()): AgentScorer {
         return client.request<AgentScorer>(
             RequestSpec(
                 method = "POST",
@@ -208,15 +209,31 @@ public class EvaluationsApi internal constructor(private val client: UarpClient)
      *
      * Required scopes: `evaluations:read`.
      */
-    public suspend fun listEvalRuns(agentId: String, options: RequestOptions = RequestOptions()): ListEvalRunsResponse {
+    public suspend fun listEvalRuns(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListEvalRunsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListEvalRunsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/evaluations",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listEvalRuns`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun listEvalRunsAll(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<EvalRun> = autoPaginate(
+        fetch = { pageCursor -> listEvalRuns(agentId = agentId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.evalRuns },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * List an agent's evaluation experiments

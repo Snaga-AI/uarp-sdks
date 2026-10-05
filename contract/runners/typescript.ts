@@ -129,8 +129,15 @@ try {
 }
 postStreamPlain ??= `events ${plainEvents}`;
 
+// 20. a form body, compared byte for byte; fields in schema order
+const signedIn = await client.auth.completeOAuthLoginFormPost('apple', {
+  code: 'c 1+2',
+  state: 's/ы&=~*',
+  user: '{"name":"А Б","email":"a@b.c"}',
+});
+
 // One report: the server keeps the last one per language, so probes from
-// 16 to 19 travel together.
+// 16 to 20 travel together.
 await report('typescript', {
   status: probe.status,
   error_is_absent: String(probe.error === undefined || probe.error === null),
@@ -143,6 +150,7 @@ await report('typescript', {
   post_stream_text: postStreamText,
   post_stream_refusal: postStreamRefusal,
   post_stream_plain: postStreamPlain,
+  form_post_email: signedIn.email,
 });
 
 console.log('typescript runner done');

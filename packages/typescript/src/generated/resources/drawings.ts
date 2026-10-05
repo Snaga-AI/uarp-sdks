@@ -82,7 +82,7 @@ export class DrawingsResource extends APIResource {
    *
    * `POST /api/v1/drawings/{drawingId}/ops`
    *
-   * Required scopes: `drawing:write`.
+   * Required scopes: `drawing:write`, `sessions:write`.
    */
   appendDrawingOps(drawingId: string, body: AppendDrawingOpsRequest, options?: RequestOptions): Promise<AppendDrawingOpsResponse> {
     return this._client.request({
@@ -106,7 +106,7 @@ export class DrawingsResource extends APIResource {
    *
    * `POST /api/v1/drawings/{drawingId}/masks`
    *
-   * Required scopes: `drawing:write`.
+   * Required scopes: `drawing:write`, `sessions:write`.
    */
   createDrawingMask(drawingId: string, body: CreateDrawingMaskRequest, options?: RequestOptions): Promise<DrawingMask> {
     return this._client.request({
@@ -153,7 +153,7 @@ export class DrawingsResource extends APIResource {
    *
    * `DELETE /api/v1/drawings/{drawingId}`
    *
-   * Required scopes: `drawing:write`.
+   * Required scopes: `drawing:write`, `sessions:write`.
    */
   delete(drawingId: string, params: DeleteDrawingParams, options?: RequestOptions): Promise<DeleteDrawingResponse> {
     return this._client.request({
@@ -175,7 +175,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   get(drawingId: string, options?: RequestOptions): Promise<Drawing> {
     return this._client.request({
@@ -194,7 +194,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}/masks/{maskId}`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   getDrawingMask(drawingId: string, maskId: string, options?: RequestOptions): Promise<DrawingMask> {
     return this._client.request({
@@ -213,7 +213,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}/masks/{maskId}/content`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   getDrawingMaskContent(drawingId: string, maskId: string, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
@@ -234,7 +234,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   getDrawingTile(drawingId: string, layerId: string, tx: number, ty: number, params?: GetDrawingTileParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
@@ -258,7 +258,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}/ops`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   listDrawingOps(drawingId: string, params?: ListDrawingOpsParams, options?: RequestOptions): Promise<ListDrawingOpsResponse> {
     return this._client.request({
@@ -313,7 +313,7 @@ export class DrawingsResource extends APIResource {
    *
    * `GET /api/v1/drawings/{drawingId}/render`
    *
-   * Required scopes: `drawing:read`.
+   * Required scopes: `drawing:read`, `sessions:read`.
    */
   renderDrawing(drawingId: string, params?: RenderDrawingParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({

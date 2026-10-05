@@ -39,8 +39,12 @@ package UARP.API.Meta is
    --  Client-side config
    --
    --  Returns the runtime configuration CLI and bridge clients read instead of hardcoding it: the
-   --  full model pricing table from the configured provider, bridge timing (heartbeat interval,
-   --  poll and approval timeouts), execution limits (tool, shell and HTTP timeouts, maximum file,
+   --  model pricing table at the rate the caller pays - the provider's rate with the platform
+   --  markup applied, as `GET /api/v1/llm/models` shows it (the provider's own rate until
+   --  2026-09-29), and empty if the markup cannot be read. This is the platform-paid rate for
+   --  every row; a caller on its own provider key pays that provider directly and should read `GET
+   --  /api/v1/llm/models`, whose rows carry `paid_by` - bridge timing (heartbeat interval, poll
+   --  and approval timeouts), execution limits (tool, shell and HTTP timeouts, maximum file,
    --  response and shell-output sizes), and `dangerous_tool_prefixes` - the tool-name prefixes
    --  whose remote invocation must be confirmed. That list is the union of the platform's own set
    --  and the CLI's built-in fallback, so a client that replaces its list with this one never ends

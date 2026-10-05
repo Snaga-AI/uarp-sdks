@@ -401,7 +401,7 @@ export class WorkspacesResource extends APIResource {
    *
    * `GET /api/v1/agents/{agentId}/workspace/files`
    *
-   * Required scopes: `agents:read`.
+   * Required scopes: `files:read`.
    */
   listAgentWorkspaceFiles(agentId: string, params?: ListAgentWorkspaceFilesParams, options?: RequestOptions): Promise<ListAgentWorkspaceFilesResponse> {
     return this._client.request({
@@ -668,6 +668,10 @@ export class WorkspacesResource extends APIResource {
    * this is scoped to the active tenant only — a workspace in another of the caller's tenants
    * answers 404 here.
    *
+   * WRITE SEMANTICS: merges. Only `name` is written, and it is required; every other workspace
+   * field keeps its stored value. A name that is blank after trimming leaves the stored name
+   * unchanged.
+   *
    * `PATCH /api/v1/workspaces/{workspaceId}`
    *
    * Required scopes: `files:write`.
@@ -692,6 +696,10 @@ export class WorkspacesResource extends APIResource {
    * hex sha256 of the content. Body: multipart/form-data with a `file` part, or the raw bytes as
    * application/octet-stream. Conditional forms via `If-Match` / `If-None-Match` — see the
    * parameters.
+   *
+   * WRITE SEMANTICS: replaces. The file record at `?path=` is rebuilt from this upload with a
+   * new `file_id`, `etag`, `size_bytes`, `mime_type` and `updated_at`; only `created_at` carries
+   * over, and the previous record moves into the path's version history.
    *
    * `PUT /api/v1/workspaces/{workspaceId}/files`
    *

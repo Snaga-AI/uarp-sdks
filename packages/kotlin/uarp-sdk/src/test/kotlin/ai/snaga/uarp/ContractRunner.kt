@@ -1,9 +1,12 @@
 package ai.snaga.uarp
 
 import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.models.CompleteOAuthLoginFormPostProvider
+import ai.snaga.uarp.models.CompleteOAuthLoginFormPostRequest
 import ai.snaga.uarp.models.CreateAgentRequest
 import ai.snaga.uarp.models.RegistryPublishRequest
 import kotlinx.coroutines.flow.collect
@@ -164,10 +167,21 @@ fun main() = runBlocking {
         "error ${error.status}"
     }
 
+    //  20. an application/x-www-form-urlencoded body, byte for byte
+    val signedIn = client.auth.completeOAuthLoginFormPost(
+        CompleteOAuthLoginFormPostProvider.APPLE,
+        CompleteOAuthLoginFormPostRequest(
+            code = "c 1+2",
+            state = "s/ы&=~*",
+            user = """{"name":"А Б","email":"a@b.c"}""",
+        ),
+    )
+
     val probes = decoded + mapOf(
         "post_stream_text" to streamed.toString(),
         "post_stream_refusal" to refusal,
         "post_stream_plain" to plain,
+        "form_post_email" to signedIn.email,
     )
 
     val report = buildJsonObject {

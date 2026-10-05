@@ -186,10 +186,15 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/chat/completions`
     ///
     /// Required scopes: `agents:read`.
-    public func llmChatCompletion(body: JSONObject, options: RequestOptions = .init()) async throws -> OpenAiChatCompletion {
+    public func llmChatCompletion(body: LLMChatCompletionRequest, xUarpSource: String? = nil, options: RequestOptions = .init()) async throws -> OpenAiChatCompletion {
+        var headers: [String: String] = [:]
+        if let xUarpSource {
+            headers["X-UARP-Source"] = xUarpSource
+        }
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/llm/chat/completions",
+            headers: headers,
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -208,10 +213,15 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.
-    public func llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = .init()) async throws -> Data {
+    public func llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, xUarpSource: String? = nil, options: RequestOptions = .init()) async throws -> Data {
+        var headers: [String: String] = [:]
+        if let xUarpSource {
+            headers["X-UARP-Source"] = xUarpSource
+        }
         return try await client.sendData(RequestSpec(
             method: "POST",
             path: "/api/v1/llm/audio/speech",
+            headers: headers,
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -231,7 +241,11 @@ public struct ProvidersAPI: Sendable {
     /// `POST /api/v1/llm/audio/transcriptions`
     ///
     /// Required scopes: `agents:read`.
-    public func llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = .init()) async throws -> LLMTranscribeAudioResponse {
+    public func llmTranscribeAudio(body: LLMTranscribeAudioRequest, xUarpSource: String? = nil, options: RequestOptions = .init()) async throws -> LLMTranscribeAudioResponse {
+        var headers: [String: String] = [:]
+        if let xUarpSource {
+            headers["X-UARP-Source"] = xUarpSource
+        }
         var parts: [MultipartPart] = []
         parts.append(MultipartPart(name: "file", value: .file(body.file)))
         if let value = body.model {
@@ -243,7 +257,41 @@ public struct ProvidersAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/llm/audio/transcriptions",
+            headers: headers,
             body: .multipart(parts),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Search the web through the platform's search provider
+    ///
+    /// Runs one web search through the provider configured for the platform (the same one the
+    /// agents' `web_search` tool uses; the provider key never leaves the platform) and returns
+    /// titles, URLs and a snippet per result — not page bodies. It spends a platform-held key, so
+    /// it carries the same gate as the LLM proxy's spend endpoints: `runs` write permission plus
+    /// the `runs:create` scope, and the billing and quota gate (a delinquent subscription is
+    /// refused 402 with a `code`, an exhausted quota 403). Each search the provider answers is one
+    /// unit of usage: it counts in `tool_calls_count` and as a `web_search` row of `GET
+    /// /api/v1/usage?breakdown=model`, at the platform's price per 1000 searches (currently 0 —
+    /// counted, not charged), and under `X-UARP-Source` when the caller sends one. An empty
+    /// `results` means the provider answered a result list with nothing in it; a provider that is
+    /// not configured, did not answer, or answered anything else is a named refusal, never an empty
+    /// 200. At most 60 searches per tenant per minute (429 with `Retry-After`). Since 2026-09-29.
+    ///
+    /// `POST /api/v1/tools/web_search`
+    ///
+    /// Required scopes: `runs:create`.
+    public func toolsWebSearch(body: ToolsWebSearchRequest, xUarpSource: String? = nil, options: RequestOptions = .init()) async throws -> ToolsWebSearchResponse {
+        var headers: [String: String] = [:]
+        if let xUarpSource {
+            headers["X-UARP-Source"] = xUarpSource
+        }
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/tools/web_search",
+            headers: headers,
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))

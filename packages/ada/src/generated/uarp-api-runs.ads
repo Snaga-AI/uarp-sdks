@@ -32,6 +32,20 @@ package UARP.API.Runs is
 
    No_Get_Run_Params : constant Get_Run_Params := (others => <>);
 
+   --  Query and header parameters for `getRunAuditLog`.
+   type Get_Run_Audit_Log_Params is record
+      --  Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+      --  existed - not a default page. Values outside 1..500 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Run_Audit_Log_Params : constant Get_Run_Audit_Log_Params := (others => <>);
+
    --  Query and header parameters for `getRunFeedback`.
    type Get_Run_Feedback_Params is record
       Has_Message_Id : Boolean := False;
@@ -39,6 +53,20 @@ package UARP.API.Runs is
    end record;
 
    No_Get_Run_Feedback_Params : constant Get_Run_Feedback_Params := (others => <>);
+
+   --  Query and header parameters for `getRunSteps`.
+   type Get_Run_Steps_Params is record
+      --  Page size, in step order. ABSENT means the whole list, exactly as before paging existed -
+      --  not a default page. Values outside 1..500 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Run_Steps_Params : constant Get_Run_Steps_Params := (others => <>);
 
    --  Query and header parameters for `listRuns`.
    type List_Runs_Params is record
@@ -109,9 +137,12 @@ package UARP.API.Runs is
    --  otherwise the scheduler aborts it, and a run the scheduler does not hold - queued but
    --  unclaimed, or stranded by a crashed worker - is flipped to `cancelled` directly in storage
    --  under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
-   --  the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
-   --  when something was stopped and `{cancelled: false, message}` when the run is unknown or
-   --  already finished - there is no `404` here, and a repeat call is safe.
+   --  the completion rather than overwriting it. Whichever path stops it, the run ends `status:
+   --  cancelled` with `error_code: RUN_CANCELLED`, and the `run.cancelled` event carries the same
+   --  `error_code` (until 2026-09-23 only a run cancelled mid-flight had it). Always answers
+   --  `200`: `{cancelled: true, run_id}` when something was stopped and `{cancelled: false,
+   --  message}` when the run is unknown or already finished - there is no `404` here, and a repeat
+   --  call is safe.
    --
    --  POST /api/v1/runs/{runId}/cancel
    --
@@ -256,8 +287,19 @@ package UARP.API.Runs is
    function Get_Run_Audit_Log
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Audit_Log_Params := No_Get_Run_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Run_Audit_Log_Response;
+
+   --  Collect every item `getRunAuditLog` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function Get_Run_Audit_Log_All
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Get_Run_Audit_Log_Params := No_Get_Run_Audit_Log_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Audit_Log_Entry_Vectors.Vector;
 
    --  Get user feedback for a run
    --
@@ -281,10 +323,11 @@ package UARP.API.Runs is
 
    --  Get run queue position
    --
-   --  Reports where the run sits in this worker's scheduling queue. The answer comes from the
-   --  in-process scheduler, not from storage, so the handler does not verify that the run exists -
-   --  an unknown or already-started run answers `200` with whatever the scheduler reports for it
-   --  rather than `404`.
+   --  Reports where the run sits in this worker's scheduling queue. The position comes from the
+   --  in-process scheduler; the run's existence comes from storage - an id that is not a run of
+   --  this tenant answers `404` (since 2026-09-23; it used to answer `200` with position `0`). A
+   --  run that exists but is not queued here (running, finished, or queued on another worker)
+   --  answers `0`.
    --
    --  GET /api/v1/runs/{runId}/queue-position
    --
@@ -298,7 +341,10 @@ package UARP.API.Runs is
    --  List steps for a run
    --
    --  Returns the ordered list of steps executed during a run, with per-step metrics including
-   --  tokens, cost, and tool calls.
+   --  tokens, cost, and tool calls. Model calls a run makes outside any step - the effort
+   --  classifier, the planner, the evaluator - are reported once in `outside_steps`, so the steps'
+   --  `cost_usd` plus `outside_steps.cost_usd` equals the run's `total_cost_usd` (both priced the
+   --  way the run is billed).
    --
    --  GET /api/v1/runs/{runId}/steps
    --
@@ -306,8 +352,19 @@ package UARP.API.Runs is
    function Get_Run_Steps
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Steps_Params := No_Get_Run_Steps_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Run_Steps_Response;
+
+   --  Collect every item `getRunSteps` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function Get_Run_Steps_All
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Get_Run_Steps_Params := No_Get_Run_Steps_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Run_Step_Vectors.Vector;
 
    --  List all runs for tenant
    --
@@ -484,6 +541,11 @@ package UARP.API.Runs is
    --  them - but cannot be matched back to the transcript, and each such arrival is counted per
    --  day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
    --
+   --  WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+   --  `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+   --  `reason` drops one stored by an earlier PUT. Other callers' rows and other messages' rows
+   --  are untouched.
+   --
    --  PUT /api/v1/runs/{runId}/feedback
    --
    --  Required scopes: runs:create.
@@ -504,7 +566,7 @@ package UARP.API.Runs is
    --
    --  GET /api/v1/runs/{runId}/events
    --
-   --  Required scopes: events:read.
+   --  Required scopes: runs:read.
    --
    --  Dispatches every event to Sink until the stream ends or the sink stops it.
    procedure Stream_Run_Events

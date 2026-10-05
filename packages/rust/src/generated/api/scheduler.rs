@@ -31,8 +31,8 @@ impl SchedulerApi {
     ///
     /// Returns the agent's schedule flattened into one object — the cron configuration together
     /// with `status`, `next_fire_at`, `last_fired_at` and `consecutive_failures`. An agent with no
-    /// schedule is answered `200` with a body of `null`, not `404`, so "never scheduled" and "no
-    /// such agent" are not distinguished here.
+    /// schedule is answered `200` with a body of `null`; an agent that does not exist is `404`
+    /// (since 2026-09-23 — before, both answered `null`).
     ///
     /// `GET /api/v1/agents/{agentId}/schedule`
     ///
@@ -57,6 +57,8 @@ impl SchedulerApi {
     /// schedule outliving its agent is exactly the case worth showing.
     ///
     /// `GET /api/v1/schedules`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn list_schedules(&self) -> Result<models::ListSchedulesResponse> {
         self.client
             .request_json(Request {

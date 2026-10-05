@@ -23,6 +23,16 @@ pub struct GetTeamChatHistoryParams {
     pub thread_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include_internal: Option<bool>,
+    /// Page size, in TURNS (two history entries each), counted back from the newest turn; oldest
+    /// first within a page. ABSENT means the newest 100 turns, with no paging fields (the window
+    /// size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+    /// outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `listTeamRuns`.
@@ -62,9 +72,13 @@ impl TeamsApi {
     /// The write is a compare-and-set against the graph document, so a concurrent graph change
     /// answers 409 and the request should be retried. Answers 201 with the created edge.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn add_team_graph_edge(&self, team_id: &str, body: &models::AddTeamGraphEdgeRequest) -> Result<models::TeamGraphEdge> {
         self.client
             .request_json(Request {
@@ -85,9 +99,13 @@ impl TeamsApi {
     /// empty. The write is a compare-and-set against the graph document, so a concurrent graph
     /// change answers 409 and the request should simply be retried. Answers 201 with the node.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn add_team_graph_node(&self, team_id: &str, body: &models::AddTeamGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
@@ -150,9 +168,13 @@ impl TeamsApi {
     /// applies, and a failure anywhere after the slot claim releases it. A collaboration graph is
     /// created from the workers, and the create is audit-logged. Answers 201 with the stored team.
     ///
+    /// **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+    /// here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn create(&self, body: &models::TeamCreate) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -176,9 +198,13 @@ impl TeamsApi {
     /// proves what was attempted. 404 when the team is unknown. The member agents themselves are
     /// not deleted. There is no undo.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn delete(&self, team_id: &str) -> Result<models::DeleteTeamResponse> {
         self.client
             .request_json(Request {
@@ -198,9 +224,13 @@ impl TeamsApi {
     /// against the graph document, so a concurrent change answers 409 and the request should be
     /// retried.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges/{edgeId}`.** The same handler under
+    /// the current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}/graph/edges/{edgeId}`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn delete_team_graph_edge(&self, team_id: &str, edge_id: &str) -> Result<models::DeleteTeamGraphEdgeResponse> {
         self.client
             .request_json(Request {
@@ -220,9 +250,14 @@ impl TeamsApi {
     /// membership of the team are untouched. The write is a compare-and-set against the graph
     /// document, so a concurrent change answers 409 and the request should be retried.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn delete_team_graph_node(&self, team_id: &str, agent_id: &str) -> Result<models::DeleteTeamGraphNodeResponse> {
         self.client
             .request_json(Request {
@@ -243,9 +278,13 @@ impl TeamsApi {
     /// answers with the team as stored rather than turning a read into an upgrade prompt. 404 when
     /// the tenant has no such team.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get(&self, team_id: &str) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -269,9 +308,13 @@ impl TeamsApi {
     /// user/assistant pair is appended and `active_team_run_id` is set, so a client returning to
     /// the page can reattach to the stream. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/chat`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/chat`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get_team_chat_history(&self, team_id: &str, params: &GetTeamChatHistoryParams) -> Result<models::GetTeamChatHistoryResponse> {
         self.client
             .request_json(Request {
@@ -285,6 +328,31 @@ impl TeamsApi {
             .await
     }
 
+    /// Stream every item returned by `getTeamChatHistory`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    #[deprecated]
+    #[allow(deprecated)]
+    pub fn get_team_chat_history_all<'a>(&'a self, team_id: &'a str, params: &'a GetTeamChatHistoryParams) -> impl Stream<Item = Result<models::TeamChatTurn>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_team_chat_history(team_id, &page_params).await?;
+                let items = page.conversation_history.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
+    }
+
     /// Get full team graph
     ///
     /// Returns the squad's collaboration graph — the envelope, its nodes and its edges. When no
@@ -292,9 +360,13 @@ impl TeamsApi {
     /// effect of this read. Nodes whose status is `terminated` are kept as an audit trail but
     /// omitted by default; `include_terminated=true` returns them. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get_team_graph(&self, team_id: &str) -> Result<models::GetTeamGraphResponse> {
         self.client
             .request_json(Request {
@@ -314,9 +386,14 @@ impl TeamsApi {
     /// agent id it represents rather than a separate node id. 404 when the graph has no node for
     /// that agent.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get_team_graph_node(&self, team_id: &str, agent_id: &str) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
@@ -347,9 +424,13 @@ impl TeamsApi {
     /// when the team is unknown, and 404 when no run with that id exists on this team — `pending`
     /// is reserved for a run that exists and has not settled, never for an unknown id.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get_team_run(&self, team_id: &str, team_run_id: &str) -> Result<models::TeamRunDetail> {
         self.client
             .request_json(Request {
@@ -371,9 +452,14 @@ impl TeamsApi {
     /// falls back to a single synthesised message built from the last protocol message, with an
     /// empty user side. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/messages`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/messages`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn get_team_run_messages(&self, team_id: &str, team_run_id: &str) -> Result<models::GetTeamRunMessagesResponse> {
         self.client
             .request_json(Request {
@@ -393,9 +479,13 @@ impl TeamsApi {
     /// the canonical `items` and as the deprecated `teams` alias — so clients written against
     /// either shape decode.
     ///
+    /// **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+    /// here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn list(&self) -> Result<models::ListTeamsResponse> {
         self.client
             .request_json(Request {
@@ -414,9 +504,13 @@ impl TeamsApi {
     /// Lists the graph's edges — the delegation and handoff links between nodes — with a `total`.
     /// The team's existence is not checked, so an unknown team id answers an empty list.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn list_team_graph_edges(&self, team_id: &str) -> Result<models::ListTeamGraphEdgesResponse> {
         self.client
             .request_json(Request {
@@ -436,9 +530,13 @@ impl TeamsApi {
     /// the team exists nor filters terminated nodes, so terminated members are included and an
     /// unknown team id answers an empty list rather than 404.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn list_team_graph_nodes(&self, team_id: &str) -> Result<models::ListTeamGraphNodesResponse> {
         self.client
             .request_json(Request {
@@ -459,11 +557,18 @@ impl TeamsApi {
     /// so, which left clients to infer an order from the data they happened to receive.
     ///
     /// `limit` and `cursor` were undeclared, so a client generated from this document saw the first
-    /// fifty runs and had no way to page past them.
+    /// fifty runs and had no way to page past them. There is no `offset`: pages continue by
+    /// `cursor` only.
+    ///
+    /// Each row is a MEMBER run of a team run; `team_run_status` says what that team run came to.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
     ///
     /// `GET /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:read`.
+    #[deprecated]
     pub async fn list_team_runs(&self, team_id: &str, params: &ListTeamRunsParams) -> Result<models::ListTeamRunsResponse> {
         self.client
             .request_json(Request {
@@ -479,6 +584,8 @@ impl TeamsApi {
 
     /// Stream every item returned by `listTeamRuns`, following the `cursor` cursor until the server
     /// reports no further pages.
+    #[deprecated]
+    #[allow(deprecated)]
     pub fn list_team_runs_all<'a>(&'a self, team_id: &'a str, params: &'a ListTeamRunsParams) -> impl Stream<Item = Result<models::TeamRunSummary>> + 'a {
         async_stream::try_stream! {
             let mut guard = CursorGuard::new();
@@ -514,9 +621,13 @@ impl TeamsApi {
     /// run settles a chat turn is saved, the state goes to DONE and the concurrency slot is
     /// released; the run is bounded by the team's timeout with a safety timeout behind it.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn start_team_run(&self, team_id: &str, body: &models::StartTeamRunRequest) -> Result<models::StartTeamRunResponse> {
         self.client
             .request_json(Request {
@@ -539,11 +650,15 @@ impl TeamsApi {
     /// 404 when the team is unknown, and 429 when the tenant is already at its concurrent-SSE
     /// ceiling.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/chat/events`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/chat/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream.
+    #[deprecated]
     pub fn stream_team_chat_events(&self, team_id: &str, params: &StreamTeamChatEventsParams) -> EventStream {
         self.client.request_stream(
             &format!("/api/v1/teams/{}/chat/events", encode_path(team_id)),
@@ -558,11 +673,16 @@ impl TeamsApi {
     /// handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
     /// value, two names, so a generated client offered both.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/events`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream.
+    #[deprecated]
     pub fn stream_team_run_events(&self, team_id: &str, team_run_id: &str) -> EventStream {
         self.client.request_stream(
             &format!("/api/v1/teams/{}/runs/{}/events", encode_path(team_id), encode_path(team_run_id)),
@@ -580,9 +700,19 @@ impl TeamsApi {
     /// (422), the same check the create performs. `swarm_config` and `goal_config` are only touched
     /// when supplied. 404 when the team is unknown; the write is audit-logged as `team.updated`.
     ///
+    /// WRITE SEMANTICS: mixed. An omitted top-level field keeps its stored value. `policies` merges
+    /// one level deep, and `policies.validation` merges over the stored one (null clears it). A
+    /// `workers` list that is present replaces the list, but each worker keeps its stored `role`
+    /// and `permissions` when omitted — except on the swarm `agent_ids` path, which rebuilds
+    /// workers with no carry-over. `swarm_config` and `goal_config` are replaced whole when sent.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `PUT /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn update(&self, team_id: &str, body: &models::TeamUpdate) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -603,9 +733,17 @@ impl TeamsApi {
     /// load-bearing rather than decorative: a member whose node is not active is excluded from
     /// later squad runs, so the supervisor never sees it and addressing it is refused.
     ///
+    /// WRITE SEMANTICS: merges. Only `status` and `goal_summary` are applied, each only when sent;
+    /// the patch is spread over the stored node, so every omitted field keeps its stored value.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
+    #[deprecated]
     pub async fn update_team_graph_node(&self, team_id: &str, agent_id: &str, body: &models::UpdateTeamGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {

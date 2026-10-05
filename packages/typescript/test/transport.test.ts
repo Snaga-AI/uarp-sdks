@@ -275,6 +275,32 @@ test('accepts a named file part', async () => {
   assert.equal(file.type, 'application/zstd');
 });
 
+test('the generated form operation sends the WHATWG form bytes, fields in schema order', async () => {
+  // Sign in with Apple posts its callback form-encoded. The bytes are the
+  // contract (SCENARIOS.md, scenario 20): schema order whatever order the
+  // caller wrote, absent fields left out, space as `+`, `~` and every other
+  // byte outside `A-Z a-z 0-9 * - . _` as upper-case %XX.
+  const { client, calls } = clientWith([json({ api_key: 'k', email: 'a@b.c' })]);
+
+  const answer = await client.auth.completeOAuthLoginFormPost('apple', {
+    user: '{"name":"А Б","email":"a@b.c"}',
+    id_token: undefined,
+    state: 's/ы&=~*',
+    code: 'c 1+2',
+  });
+
+  // What fetch itself puts on the wire, not the object handed to it.
+  const sent = new Request(calls[0]!.url, calls[0]!.init);
+  assert.equal(sent.method, 'POST');
+  assert.equal(new URL(sent.url).pathname, '/api/v1/auth/oauth/apple/callback');
+  assert.equal(sent.headers.get('content-type'), 'application/x-www-form-urlencoded');
+  assert.equal(
+    await sent.text(),
+    'code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D',
+  );
+  assert.equal(answer.email, 'a@b.c');
+});
+
 test('returns undefined for 204 responses', async () => {
   const { client } = clientWith([new Response(null, { status: 204 })]);
   const result = await client.files.delete('f1');
@@ -297,8 +323,8 @@ test('does not retry a write that carries no idempotency key', async () => {
 });
 
 test('encodes a form body when one is asked for', async () => {
-  // No endpoint in this spec uses form encoding, but the transport offers it
-  // for the escape hatch, so it has to be right.
+  // The escape hatch offers form encoding for any endpoint, so it has to be
+  // right there too, not only in the generated form operation.
   const { client, calls } = clientWith([json({ ok: true })]);
 
   await client.request({

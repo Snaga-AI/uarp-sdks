@@ -3,7 +3,6 @@
 --  Visual builder and agent playground
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 package UARP.API.Playground is
 
@@ -58,7 +57,7 @@ package UARP.API.Playground is
    function Run
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Run_Playground_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Run;
 
@@ -71,13 +70,17 @@ package UARP.API.Playground is
    --  editing the agent itself, because the canvas is the agent's composition. The canvas is
    --  stored alongside the agent record and does not itself change how the agent runs.
    --
+   --  WRITE SEMANTICS: replaces. The stored canvas is rebuilt from this body: `nodes` and `edges`
+   --  are required and stored as given, an omitted `metadata` becomes an empty object, and nothing
+   --  from the previous canvas is kept. Unknown top-level fields are stripped.
+   --
    --  PUT /api/v1/playground/agents/{agentId}
    --
    --  Required scopes: agents:write.
    function Save_Playground_Canvas
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Save_Playground_Canvas_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Playground_Agent_State;
 

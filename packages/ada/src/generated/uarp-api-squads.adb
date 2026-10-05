@@ -155,6 +155,12 @@ package body UARP.API.Squads is
       if Params.Has_Include_Internal then
          UARP.Types.Add (Query, "include_internal", Params.Include_Internal);
       end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -163,6 +169,55 @@ package body UARP.API.Squads is
              Query => Query,
              Options => Options));
    end Get_Squad_Chat_History;
+
+   function Get_Squad_Chat_History_All
+     (Self : Client_Type;
+      Squad_Id : String;
+      Params : Get_Squad_Chat_History_Params := No_Get_Squad_Chat_History_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Chat_Turn_Vectors.Vector
+   is
+      Collected : UARP.Models.Team_Chat_Turn_Vectors.Vector;
+      Page_Params : Get_Squad_Chat_History_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Squad_Chat_History_Response :=
+               Get_Squad_Chat_History
+                  (Self,
+                   Squad_Id => Squad_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Conversation_History loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Conversation_History.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Squad_Chat_History_All;
 
    function Get_Squad_Graph
      (Self : Client_Type;
@@ -274,17 +329,75 @@ package body UARP.API.Squads is
    function List_Squad_Runs
      (Self : Client_Type;
       Squad_Id : String;
+      Params : List_Squad_Runs_Params := No_List_Squad_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Squad_Runs_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/squads/" & UARP.Types.Encode_Path_Segment (Squad_Id) & "/runs",
+             Query => Query,
              Options => Options));
    end List_Squad_Runs;
+
+   function List_Squad_Runs_All
+     (Self : Client_Type;
+      Squad_Id : String;
+      Params : List_Squad_Runs_Params := No_List_Squad_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Run_Summary_Vectors.Vector
+   is
+      Collected : UARP.Models.Team_Run_Summary_Vectors.Vector;
+      Page_Params : List_Squad_Runs_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Squad_Runs_Response :=
+               List_Squad_Runs
+                  (Self,
+                   Squad_Id => Squad_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Runs loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Runs.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Squad_Runs_All;
 
    function Start_Squad_Run
      (Self : Client_Type;

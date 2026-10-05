@@ -130,6 +130,12 @@ package body UARP.API.Memory is
       if Params.Has_Limit then
          UARP.Types.Add (Query, "limit", Params.Limit);
       end if;
+      if Params.Has_Top_K then
+         UARP.Types.Add (Query, "top_k", Params.Top_K);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -138,6 +144,55 @@ package body UARP.API.Memory is
              Query => Query,
              Options => Options));
    end List_Memories;
+
+   function List_Memories_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Memories_Params := No_List_Memories_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Memory_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Memory_Entry_Vectors.Vector;
+      Page_Params : List_Memories_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Memories_Response :=
+               List_Memories
+                  (Self,
+                   Agent_Id => Agent_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Memories loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Memories.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Memories_All;
 
    function Search
      (Self : Client_Type;
@@ -162,7 +217,7 @@ package body UARP.API.Memory is
      (Self : Client_Type;
       Agent_Id : String;
       Entry_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Agent_Memory_Entry_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Memory_Entry
    is
@@ -172,7 +227,7 @@ package body UARP.API.Memory is
             (Self,
              "PUT",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/memory/" & UARP.Types.Encode_Path_Segment (Entry_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

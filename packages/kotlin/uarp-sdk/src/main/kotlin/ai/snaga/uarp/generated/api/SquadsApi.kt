@@ -32,6 +32,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `POST /api/v1/squads/{squadId}/graph/edges`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = RequestOptions()): TeamGraphEdge {
         return client.request<TeamGraphEdge>(
@@ -53,6 +55,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `POST /api/v1/squads/{squadId}/graph/nodes`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
         return client.request<TeamGraphNode>(
@@ -87,6 +91,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * under the older noun.
      *
      * `POST /api/v1/squads/{squadId}/runs/{teamRunId}/cancel`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun cancelSquadRun(squadId: String, teamRunId: String, options: RequestOptions = RequestOptions()): CancelSquadRunResponse {
         return client.request<CancelSquadRunResponse>(
@@ -107,6 +113,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `POST /api/v1/squads`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun create(body: TeamCreate, options: RequestOptions = RequestOptions()): Team {
         return client.request<Team>(
@@ -128,6 +136,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `DELETE /api/v1/squads/{squadId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun delete(squadId: String, options: RequestOptions = RequestOptions()): DeleteSquadResponse {
         return client.request<DeleteSquadResponse>(
@@ -148,6 +158,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `DELETE /api/v1/squads/{squadId}/graph/edges/{edgeId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun deleteSquadGraphEdge(squadId: String, edgeId: String, options: RequestOptions = RequestOptions()): DeleteSquadGraphEdgeResponse {
         return client.request<DeleteSquadGraphEdgeResponse>(
@@ -168,6 +180,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `DELETE /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun deleteSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = RequestOptions()): DeleteSquadGraphNodeResponse {
         return client.request<DeleteSquadGraphNodeResponse>(
@@ -188,6 +202,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun `get`(squadId: String, options: RequestOptions = RequestOptions()): Team {
         return client.request<Team>(
@@ -207,11 +223,15 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/chat`
+     *
+     * Required scopes: `agents:read`.
      */
-    public suspend fun getSquadChatHistory(squadId: String, threadId: String? = null, includeInternal: Boolean? = null, options: RequestOptions = RequestOptions()): GetSquadChatHistoryResponse {
+    public suspend fun getSquadChatHistory(squadId: String, threadId: String? = null, includeInternal: Boolean? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetSquadChatHistoryResponse {
         val query = buildList {
             if (threadId != null) add("thread_id" to threadId)
             if (includeInternal != null) add("include_internal" to includeInternal.toString())
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
         }
         return client.request<GetSquadChatHistoryResponse>(
             RequestSpec(
@@ -224,6 +244,17 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Stream every item returned by `getSquadChatHistory`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getSquadChatHistoryAll(squadId: String, threadId: String? = null, includeInternal: Boolean? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<TeamChatTurn> = autoPaginate(
+        fetch = { pageCursor -> getSquadChatHistory(squadId = squadId, threadId = threadId, includeInternal = includeInternal, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.conversationHistory ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
+
+    /**
      * Get full squad graph
      *
      * `/api/v1/squads&#47;*` is the canonical surface. `/api/v1/teams&#47;*` is the same handler
@@ -231,6 +262,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/graph`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getSquadGraph(squadId: String, options: RequestOptions = RequestOptions()): GetSquadGraphResponse {
         return client.request<GetSquadGraphResponse>(
@@ -250,6 +283,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = RequestOptions()): TeamGraphNode {
         return client.request<TeamGraphNode>(
@@ -269,6 +304,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = RequestOptions()): TeamRunDetail {
         return client.request<TeamRunDetail>(
@@ -288,6 +325,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/runs/{teamRunId}/messages`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getSquadRunMessages(squadId: String, teamRunId: String, options: RequestOptions = RequestOptions()): GetSquadRunMessagesResponse {
         return client.request<GetSquadRunMessagesResponse>(
@@ -307,6 +346,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun list(options: RequestOptions = RequestOptions()): ListSquadsResponse {
         return client.request<ListSquadsResponse>(
@@ -326,6 +367,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/graph/edges`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun listSquadGraphEdges(squadId: String, options: RequestOptions = RequestOptions()): ListSquadGraphEdgesResponse {
         return client.request<ListSquadGraphEdgesResponse>(
@@ -345,6 +388,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/graph/nodes`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun listSquadGraphNodes(squadId: String, options: RequestOptions = RequestOptions()): ListSquadGraphNodesResponse {
         return client.request<ListSquadGraphNodesResponse>(
@@ -359,21 +404,44 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
     /**
      * List runs for a squad
      *
+     * Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a squad run is a transcript
+     * and reads forward. Pages continue by `cursor` (there is no `offset`); `total` counts this
+     * page's rows only. Each row is a MEMBER run; `team_run_status` says what its squad run came
+     * to.
+     *
      * `/api/v1/squads&#47;*` is the canonical surface. `/api/v1/teams&#47;*` is the same handler
      * under the older noun: the server rewrites the leading path segment before dispatch, so the
      * two are one endpoint and cannot drift apart.
      *
      * `GET /api/v1/squads/{squadId}/runs`
+     *
+     * Required scopes: `agents:read`.
      */
-    public suspend fun listSquadRuns(squadId: String, options: RequestOptions = RequestOptions()): ListSquadRunsResponse {
+    public suspend fun listSquadRuns(squadId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListSquadRunsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListSquadRunsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/squads/${encodePathSegment(squadId)}/runs",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listSquadRuns`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun listSquadRunsAll(squadId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<TeamRunSummary> = autoPaginate(
+        fetch = { pageCursor -> listSquadRuns(squadId = squadId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.runs ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Start a squad run
@@ -383,6 +451,8 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * two are one endpoint and cannot drift apart.
      *
      * `POST /api/v1/squads/{squadId}/runs`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = RequestOptions()): StartSquadRunResponse {
         return client.request<StartSquadRunResponse>(
@@ -405,7 +475,7 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/squads/{squadId}/chat/events`
      *
-     * Required scopes: `events:read`.
+     * Required scopes: `agents:read`.
      *
      * Returns a cold flow of server-sent events.
      */
@@ -432,7 +502,7 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/squads/{squadId}/runs/{runId}/events`
      *
-     * Required scopes: `events:read`.
+     * Required scopes: `agents:read`.
      *
      * Returns a cold flow of server-sent events.
      */
@@ -453,7 +523,15 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * under the older noun: the server rewrites the leading path segment before dispatch, so the
      * two are one endpoint and cannot drift apart.
      *
+     * WRITE SEMANTICS: mixed — the same handler as `PUT /api/v1/teams/{teamId}`. An omitted
+     * top-level field keeps its stored value. `policies` merges one level deep and
+     * `policies.validation` merges over the stored one. A `workers` list that is present replaces
+     * the list but keeps each worker's stored `role` and `permissions` (not on the swarm
+     * `agent_ids` path). `swarm_config` and `goal_config` are replaced whole when sent.
+     *
      * `PUT /api/v1/squads/{squadId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun update(squadId: String, body: TeamUpdate, options: RequestOptions = RequestOptions()): Team {
         return client.request<Team>(
@@ -474,7 +552,13 @@ public class SquadsApi internal constructor(private val client: UarpClient) {
      * under the older noun: the server rewrites the leading path segment before dispatch, so the
      * two are one endpoint and cannot drift apart.
      *
+     * WRITE SEMANTICS: merges — the same handler as the `/teams` route. Only `status` and
+     * `goal_summary` are applied, each only when sent; every other node field keeps its stored
+     * value.
+     *
      * `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = RequestOptions()): TeamGraphNode {
         return client.request<TeamGraphNode>(

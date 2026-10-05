@@ -12,6 +12,7 @@ use serde::Serialize;
 use url::Url;
 
 use crate::error::{ApiError, Error, Problem, Result};
+use crate::form::{encode_form, FORM_CONTENT_TYPE};
 use crate::generated::meta::DEFAULT_BASE_URL;
 use crate::sse::{EventStream, StreamOptions};
 use crate::util::encode_query_component;
@@ -270,6 +271,37 @@ impl Client {
         decode_json(response).await
     }
 
+    /// Send an `application/x-www-form-urlencoded` request and decode a JSON
+    /// response body.
+    ///
+    /// `fields` are the form's fields in the order they go on the wire; the
+    /// generated code lists them in schema order and leaves out the absent
+    /// ones. The body is encoded once and the same bytes are sent on a retry.
+    pub async fn request_form<Q, R>(
+        &self,
+        req: Request<'_, Q, ()>,
+        fields: Vec<(&'static str, String)>,
+    ) -> Result<R>
+    where
+        Q: Serialize + ?Sized + Sync,
+        R: DeserializeOwned,
+    {
+        let body = encode_form(fields.iter().map(|(name, value)| (*name, value.as_str())));
+        let response = self
+            .run(&req, &move |builder: RequestBuilder| {
+                // `headers` replaces rather than appends, so a default header
+                // cannot leave a second `Content-Type` beside this one.
+                let mut content_type = HeaderMap::new();
+                content_type.insert(
+                    reqwest::header::CONTENT_TYPE,
+                    HeaderValue::from_static(FORM_CONTENT_TYPE),
+                );
+                Ok(builder.headers(content_type).body(body.clone()))
+            })
+            .await?;
+        decode_json(response).await
+    }
+
     /// Open a server-sent event stream.
     pub fn request_stream<Q>(
         &self,
@@ -343,15 +375,35 @@ impl Client {
     where
         B: Serialize + ?Sized,
     {
+        self.request_stream_post(path, NO_QUERY, body, Vec::new(), true)
+    }
+
+    /// The transport behind [`Client::stream_post`], for the generated
+    /// operations that POST a JSON body and answer with an event stream: the
+    /// same single attempt, plus the operation's query and header parameters.
+    /// `idempotent` adds the automatic `Idempotency-Key`, as on any write.
+    pub fn request_stream_post<Q, B>(
+        &self,
+        path: &str,
+        query: Option<&Q>,
+        body: &B,
+        headers: Vec<(&'static str, String)>,
+        idempotent: bool,
+    ) -> EventStream
+    where
+        Q: Serialize + ?Sized,
+        B: Serialize + ?Sized,
+    {
         // `json` serialises now and sets `Content-Type: application/json`,
         // exactly as the unary path's body does.
-        let request = self.build_url(path, NO_QUERY).map(|url| {
+        let request = self.build_url(path, query).map(|url| {
+            let key = idempotent.then(|| self.idempotency_key());
             self.prepare(
                 Method::POST,
                 url,
                 "text/event-stream",
-                &[],
-                Some(&self.idempotency_key()),
+                &headers,
+                key.as_deref(),
             )
             .json(body)
         });

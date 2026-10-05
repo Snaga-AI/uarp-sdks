@@ -2,10 +2,13 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   AcceptInviteRequest,
   AcceptInviteResponse,
   DeleteUserResponse,
+  Invite,
   InviteUserRequest,
   InviteUserResponse,
   ListInvitesResponse,
@@ -18,6 +21,38 @@ import type {
   TransferTenantOwnershipResponse,
   UnsuspendUserResponse,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `listUsers`.
+ */
+export interface ListUsersParams {
+  /**
+   * Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+   * existed — not a default page. Values outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
+
+/**
+ * Query and header parameters for `listInvites`.
+ */
+export interface ListInvitesParams {
+  /**
+   * Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+   * existed — not a default page. Values outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
 
 /**
  * User management, invites, roles
@@ -153,12 +188,26 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:read`.
    */
-  list(options?: RequestOptions): Promise<ListUsersResponse> {
+  list(params?: ListUsersParams, options?: RequestOptions): Promise<ListUsersResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/users',
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listUsers`, following the `cursor` cursor until the server
+   * reports no further pages.
+   */
+  listAll(params?: ListUsersParams, options?: RequestOptions): AsyncIterableIterator<TenantUser> {
+    return autoPaginate<TenantUser>(
+      (cursor) => this.list({ ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -173,12 +222,26 @@ export class UsersResource extends APIResource {
    *
    * Required scopes: `users:read`.
    */
-  listInvites(options?: RequestOptions): Promise<ListInvitesResponse> {
+  listInvites(params?: ListInvitesParams, options?: RequestOptions): Promise<ListInvitesResponse> {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/users/invites',
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listInvites`, following the `cursor` cursor until the server
+   * reports no further pages.
+   */
+  listInvitesAll(params?: ListInvitesParams, options?: RequestOptions): AsyncIterableIterator<Invite> {
+    return autoPaginate<Invite>(
+      (cursor) => this.listInvites({ ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -212,6 +275,10 @@ export class UsersResource extends APIResource {
    * An unknown user is **404** and a role outside the accepted enum fails body validation.
    * Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
    * entry.
+   *
+   * WRITE SEMANTICS: merges. Only `role` is read; the write sets `role` and `updated_at` on the
+   * stored user and every other field of the user record is kept. The user's live session keys
+   * are then re-scoped to the new role.
    *
    * `PUT /api/v1/users/{userId}/role`
    *
@@ -253,6 +320,9 @@ export class UsersResource extends APIResource {
    *
    * Demotes the calling owner to admin and promotes the target user to owner. Irreversible
    * without a counter-transfer.
+   *
+   * The calling owner is the user the credential is bound to, never a field in the body: a key
+   * bound to no user (a legacy shared key) is refused with **403**.
    *
    * `POST /api/v1/users/{userId}/transfer-ownership`
    *

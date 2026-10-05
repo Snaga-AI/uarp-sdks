@@ -3,7 +3,6 @@
 --  Agent Communication Protocol bridge sessions
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 package UARP.API.ACP is
@@ -32,6 +31,25 @@ package UARP.API.ACP is
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
 
+   --  Save ACP session state
+   --
+   --  The same handler as `PUT` on this path (router.ts sends both methods to
+   --  `handleAcpSessionRoute`), and the method the ACP bridge itself writes with. WRITE SEMANTICS:
+   --  replaces - the body becomes the whole stored state, validated exactly as the `PUT` validates
+   --  it. The first write claims the session for the caller; a later write from another identity
+   --  is 403. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+   --  `sessions:write` scope.
+   --
+   --  POST /api/v1/acp/session/{sessionId}
+   --
+   --  Required scopes: sessions:write.
+   function Save_ACP_Session
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.Models.Save_ACP_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Save_ACP_Session_Response;
+
    --  Send message / update ACP session
    --
    --  WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
@@ -50,7 +68,7 @@ package UARP.API.ACP is
    function Update_ACP_Session
      (Self : Client_Type;
       Session_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_ACP_Session_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_ACP_Session_Response;
 

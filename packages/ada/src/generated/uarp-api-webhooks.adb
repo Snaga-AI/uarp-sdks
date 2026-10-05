@@ -68,17 +68,75 @@ package body UARP.API.Webhooks is
    function List_Webhook_Deliveries
      (Self : Client_Type;
       Webhook_Id : String;
+      Params : List_Webhook_Deliveries_Params := No_List_Webhook_Deliveries_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Webhook_Deliveries_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/webhooks/" & UARP.Types.Encode_Path_Segment (Webhook_Id) & "/deliveries",
+             Query => Query,
              Options => Options));
    end List_Webhook_Deliveries;
+
+   function List_Webhook_Deliveries_All
+     (Self : Client_Type;
+      Webhook_Id : String;
+      Params : List_Webhook_Deliveries_Params := No_List_Webhook_Deliveries_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Webhook_Delivery_Attempt_Vectors.Vector
+   is
+      Collected : UARP.Models.Webhook_Delivery_Attempt_Vectors.Vector;
+      Page_Params : List_Webhook_Deliveries_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Webhook_Deliveries_Response :=
+               List_Webhook_Deliveries
+                  (Self,
+                   Webhook_Id => Webhook_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Deliveries loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Deliveries.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Webhook_Deliveries_All;
 
    function Sensor_Webhook
      (Self : Client_Type;
@@ -91,7 +149,9 @@ package body UARP.API.Webhooks is
    is
       Headers : UARP.Types.Pair_Vectors.Vector;
    begin
-      UARP.Types.Add (Headers, "X-Sensor-Signature", Params.X_Sensor_Signature);
+      if Params.Has_X_Sensor_Signature then
+         UARP.Types.Add (Headers, "X-Sensor-Signature", Params.X_Sensor_Signature);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,

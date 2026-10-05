@@ -34,6 +34,44 @@ pub struct GetLinkPreviewImageParams {
     pub url: String,
 }
 
+/// Query and header parameters for `getPublicVideoInput`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicVideoInputParams {
+    /// Unix seconds the link stops working.
+    pub exp: i64,
+    /// HMAC over purpose, id and `exp`.
+    pub sig: String,
+}
+
+/// Query and header parameters for `getPublicVideoOrder`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicVideoOrderParams {
+    /// The order's secret, returned once as `order_token` when the order was created. Without the
+    /// right token every order answers 404, so an id alone reveals nothing.
+    #[serde(skip)]
+    pub x_order_token: String,
+}
+
+/// Query and header parameters for `getPublicVideoOrderVideo`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicVideoOrderVideoParams {
+    /// Unix seconds the link stops working.
+    pub exp: i64,
+    /// HMAC over purpose, id and `exp`.
+    pub sig: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub download: Option<models::ExportDataExplorerIncludeSensitive>,
+    #[serde(skip)]
+    pub range: Option<String>,
+}
+
+/// Query and header parameters for `getPublicVideoTemplatePreview`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicVideoTemplatePreviewParams {
+    #[serde(skip)]
+    pub range: Option<String>,
+}
+
 /// Query and header parameters for `listPublicBlogPosts`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicBlogPostsParams {
@@ -64,10 +102,46 @@ pub struct ListPublicTenantsParams {
     pub cursor: Option<String>,
 }
 
+/// Query and header parameters for `openPublicVideoOrderCheckout`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct OpenPublicVideoOrderCheckoutParams {
+    /// The order's secret, returned once as `order_token` when the order was created. Without the
+    /// right token every order answers 404, so an id alone reveals nothing.
+    #[serde(skip)]
+    pub x_order_token: String,
+}
+
 /// Query and header parameters for `publicDomainLookup`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicDomainLookupParams {
     pub domain: String,
+}
+
+/// Query and header parameters for `ratePublicVideoOrder`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RatePublicVideoOrderParams {
+    /// The order's secret, returned once as `order_token` when the order was created. Without the
+    /// right token every order answers 404, so an id alone reveals nothing.
+    #[serde(skip)]
+    pub x_order_token: String,
+}
+
+/// Query and header parameters for `regeneratePublicVideoOrder`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RegeneratePublicVideoOrderParams {
+    /// The order's secret, returned once as `order_token` when the order was created. Without the
+    /// right token every order answers 404, so an id alone reveals nothing.
+    #[serde(skip)]
+    pub x_order_token: String,
+}
+
+/// Query and header parameters for `retryPublicVideoOrder`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RetryPublicVideoOrderParams {
+    /// The order's secret, returned once as `order_token` when the order was created. Without the
+    /// right token every order answers 404, so an id alone reveals nothing.
+    #[serde(skip)]
+    pub x_order_token: String,
 }
 
 /// Unauthenticated public-facing endpoints
@@ -151,6 +225,46 @@ impl PublicApi {
                 headers: Vec::new(),
                 idempotent: true,
             })
+            .await
+    }
+
+    /// Order a video
+    ///
+    /// Takes the buyer's photo and text, checks the photo, and opens a Stripe Checkout that only
+    /// AUTHORISES the price: the money is held, then captured when the clip exists, or released if
+    /// it never does — nothing is ever refunded because nothing moved. The photo is checked BEFORE
+    /// anything is stored or held; a refusal is 422 with a stable `reason` and `{en, uk}` text.
+    /// Answers 201 with the order and its `order_token` — the only time the token is returned; send
+    /// it as `X-Order-Token` on every later call, and keep it after `#` in any page URL.
+    /// Rate-limited to 10 orders per hour per address. Anonymous.
+    ///
+    /// `POST /api/v1/public/video-orders`
+    pub async fn create_public_video_order(&self, body: &models::CreatePublicVideoOrderRequest) -> Result<models::CreatePublicVideoOrderResponse> {
+        self.client
+            .request_multipart(
+                Request {
+                    method: Method::POST,
+                    path: "/api/v1/public/video-orders".to_string(),
+                    query: NO_QUERY,
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                || {
+                    let mut form = reqwest::multipart::Form::new();
+                    form = form.text("template_id", field_text(&body.template_id)?);
+                    form = form.part("photo", body.photo.clone().into_part()?);
+                    if let Some(value) = &body.slots {
+                        form = form.text("slots", field_text(value)?);
+                    }
+                    if let Some(value) = &body.locale {
+                        form = form.text("locale", field_text(value)?);
+                    }
+                    form = form.text("consent_rights", field_text(&body.consent_rights)?);
+                    form = form.text("consent_terms", field_text(&body.consent_terms)?);
+                    Ok(form)
+                },
+            )
             .await
     }
 
@@ -477,6 +591,93 @@ impl PublicApi {
             .await
     }
 
+    /// Fetch an order's photo (for the video provider)
+    ///
+    /// How the video provider reads the buyer's photo: its API takes a URL and nothing else. The
+    /// link is signed for one file and one hour and is never shown to the buyer.
+    ///
+    /// `GET /api/v1/public/video-inputs/{fileId}`
+    pub async fn get_public_video_input(&self, file_id: &str, params: &GetPublicVideoInputParams) -> Result<bytes::Bytes> {
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/video-inputs/{}", encode_path(file_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Get an order's status
+    ///
+    /// What the order page shows: status, queue position and wait, generation progress, a signed
+    /// hour-long link to the finished clip, whether the free regeneration is available and why not.
+    /// Poll every few seconds while `status` is `awaiting_payment`, `queued` or `generating`.
+    ///
+    /// `GET /api/v1/public/video-orders/{orderId}`
+    pub async fn get_public_video_order(&self, order_id: &str, params: &GetPublicVideoOrderParams) -> Result<models::VideoOrder> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        headers.push(("X-Order-Token", params.x_order_token.clone()));
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/video-orders/{}", encode_path(order_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers,
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Stream or download the finished video
+    ///
+    /// The clip behind the signed `video.url` the order answers — valid for an hour; ask the order
+    /// again for a fresh link. `download=1` sends it as an attachment.
+    ///
+    /// `GET /api/v1/public/video-orders/{orderId}/video`
+    pub async fn get_public_video_order_video(&self, order_id: &str, params: &GetPublicVideoOrderVideoParams) -> Result<bytes::Bytes> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.range {
+            headers.push(("Range", value.clone()));
+        }
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/video-orders/{}/video", encode_path(order_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers,
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Stream a template's example clip
+    ///
+    /// The example video shown in the gallery, as MP4 with byte-range support. 404 when the
+    /// template is not published or has no example. Anonymous.
+    ///
+    /// `GET /api/v1/public/video-templates/{templateId}/preview`
+    pub async fn get_public_video_template_preview(&self, template_id: &str, params: &GetPublicVideoTemplatePreviewParams) -> Result<bytes::Bytes> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.range {
+            headers.push(("Range", value.clone()));
+        }
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/video-templates/{}/preview", encode_path(template_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers,
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Is sign-up open
     ///
     /// No authentication; cached for 30 seconds.
@@ -645,6 +846,52 @@ impl PublicApi {
         }
     }
 
+    /// List video templates
+    ///
+    /// The gallery of the public video service: every published template with its bilingual
+    /// (`en`/`uk`) texts, price, clip length, the text fields the buyer fills and what makes a good
+    /// photo — and never the model, the hidden prompt or the cost behind it. `queue` estimates the
+    /// wait a new order would face, so the page can warn BEFORE payment. `stats.videos_total` and
+    /// each template's `videos_made` count videos delivered to paying buyers — never test runs or
+    /// free regenerations — so they can be shown as they are. Anonymous.
+    ///
+    /// `GET /api/v1/public/video-templates`
+    pub async fn list_public_video_templates(&self) -> Result<models::ListPublicVideoTemplatesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/video-templates".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Get a checkout link for an unpaid order
+    ///
+    /// For a buyer who came back from Stripe without paying: answers the order's open Checkout
+    /// link, or a fresh one once the first is near its 24-hour expiry. Only while `status` is
+    /// `awaiting_payment`; a second payment for an order already paid is released by the webhook,
+    /// never captured.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/checkout`
+    pub async fn open_public_video_order_checkout(&self, order_id: &str, params: &OpenPublicVideoOrderCheckoutParams) -> Result<models::OpenPublicVideoOrderCheckoutResponse> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        headers.push(("X-Order-Token", params.x_order_token.clone()));
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/video-orders/{}/checkout", encode_path(order_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers,
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Domain lookup
     ///
     /// Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
@@ -689,6 +936,50 @@ impl PublicApi {
             .await
     }
 
+    /// Rate a finished video
+    ///
+    /// 👍 or 👎 on a ready video. A 👎 is what opens the free regeneration.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/feedback`
+    pub async fn rate_public_video_order(&self, order_id: &str, body: &models::RatePublicVideoOrderRequest, params: &RatePublicVideoOrderParams) -> Result<models::RatePublicVideoOrderResponse> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        headers.push(("X-Order-Token", params.x_order_token.clone()));
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/video-orders/{}/feedback", encode_path(order_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers,
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Regenerate a video for free, once
+    ///
+    /// Makes a new take of a ready video from the SAME photo and text (only the seed changes),
+    /// free, once per order, within 24 hours of delivery, after a 👎 rating. The new clip replaces
+    /// the old one; if it fails, the buyer keeps the video they paid for. Not offered to a buyer
+    /// who regenerates most of what they buy (`reason: not_available`). Answers 202 with the order
+    /// back in the queue.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/regenerate`
+    pub async fn regenerate_public_video_order(&self, order_id: &str, params: &RegeneratePublicVideoOrderParams) -> Result<models::VideoOrder> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        headers.push(("X-Order-Token", params.x_order_token.clone()));
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/video-orders/{}/regenerate", encode_path(order_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers,
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Respond to public HITL
     ///
     /// Supplies the visitor's answer to an agent that has paused for input, storing `response` and
@@ -710,6 +1001,28 @@ impl PublicApi {
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Try a failed order again
+    ///
+    /// For an order that failed (and was never charged): a NEW order with the same photo and text
+    /// and its own checkout, answered with its own `order_token`. Once per failed order; within 24
+    /// hours, while the photo is still kept.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/retry`
+    pub async fn retry_public_video_order(&self, order_id: &str, params: &RetryPublicVideoOrderParams) -> Result<models::RetryPublicVideoOrderResponse> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        headers.push(("X-Order-Token", params.x_order_token.clone()));
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/public/video-orders/{}/retry", encode_path(order_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers,
                 idempotent: true,
             })
             .await

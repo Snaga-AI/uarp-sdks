@@ -15,6 +15,12 @@ package UARP.API.Memory is
    type List_Memories_Params is record
       Has_Limit : Boolean := False;
       Limit : UARP.Types.Integer_Value := 0;
+      --  Alias of `limit`.
+      Has_Top_K : Boolean := False;
+      Top_K : UARP.Types.Integer_Value := 0;
+      --  Opaque; the `cursor` of the previous page. A malformed cursor is 400.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_List_Memories_Params : constant List_Memories_Params := (others => <>);
@@ -132,10 +138,14 @@ package UARP.API.Memory is
 
    --  List recent memories for an agent
    --
-   --  Returns the agent's most recent memory entries, newest first. `limit` (or its alias `top_k`)
-   --  defaults to 20 and is clamped to 1..200, so an oversized value narrows silently rather than
-   --  returning the whole corpus. This is a recency listing with no query - use `POST
-   --  /api/v1/agents/{agentId}/memory/search` to retrieve by relevance.
+   --  Returns the agent's memory entries, newest created first (entry_id breaks ties), in a fixed
+   --  order: two identical calls answer the same page. `limit` (or its alias `top_k`) defaults to
+   --  20 and is clamped to 1..200. `total` is the agent's whole count of (non-archived) entries,
+   --  not the page length; while more exist, `has_more` is true and `cursor` continues the listing
+   --  when passed back as `?cursor=`. Reading the list does not count as recalling an entry (it no
+   --  longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). This is a listing with no
+   --  query - use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance. 404 when
+   --  the agent does not exist.
    --
    --  GET /api/v1/agents/{agentId}/memory
    --
@@ -146,6 +156,16 @@ package UARP.API.Memory is
       Params : List_Memories_Params := No_List_Memories_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Memories_Response;
+
+   --  Collect every item `listMemories` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_Memories_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Memories_Params := No_List_Memories_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Memory_Entry_Vectors.Vector;
 
    --  Search agent memories
    --
@@ -178,6 +198,11 @@ package UARP.API.Memory is
    --  can be refused `403` (shrinking or same-size updates never reach that gate) and the refusal
    --  is audit-logged.
    --
+   --  WRITE SEMANTICS: merges. Only `content`, `tags` and `relevance_score` are read, each applied
+   --  only when present with the right type; an omitted or wrongly-typed one keeps its stored
+   --  value, as does every other field. `tags` replaces the stored array whole. `last_accessed_at`
+   --  is always re-stamped.
+   --
    --  PUT /api/v1/agents/{agentId}/memory/{entryId}
    --
    --  Required scopes: memory:write.
@@ -185,7 +210,7 @@ package UARP.API.Memory is
      (Self : Client_Type;
       Agent_Id : String;
       Entry_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Agent_Memory_Entry_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Memory_Entry;
 
@@ -200,6 +225,12 @@ package UARP.API.Memory is
    --  injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks`
    --  when it is not declared there yet (while fewer than 10 are declared). `404` when the agent
    --  does not exist.
+   --
+   --  WRITE SEMANTICS: replaces. The block is rebuilt: `content` (required) overwrites it whole,
+   --  and an omitted `max_tokens` resets the ceiling to 1000 (clamped to the core-memory budget)
+   --  rather than keeping the stored value. Only `block_id` survives from the previous block. The
+   --  agent's `core_memory` config is merged, not replaced: it is enabled and the label appended
+   --  to `blocks` when there is room.
    --
    --  PUT /api/v1/agents/{agentId}/memory/core/{label}
    --

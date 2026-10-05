@@ -239,11 +239,15 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmChatCompletion(body: JsonObject, options: RequestOptions = RequestOptions()): OpenAiChatCompletion {
+    public suspend fun llmChatCompletion(body: LLMChatCompletionRequest, xUarpSource: String? = null, options: RequestOptions = RequestOptions()): OpenAiChatCompletion {
+        val headers = buildList {
+            if (xUarpSource != null) add("X-UARP-Source" to xUarpSource)
+        }
         return client.request<OpenAiChatCompletion>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/chat/completions",
+                headers = headers,
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -265,11 +269,15 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options: RequestOptions = RequestOptions()): ByteArray {
+    public suspend fun llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, xUarpSource: String? = null, options: RequestOptions = RequestOptions()): ByteArray {
+        val headers = buildList {
+            if (xUarpSource != null) add("X-UARP-Source" to xUarpSource)
+        }
         return client.requestBytes(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/audio/speech",
+                headers = headers,
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -292,17 +300,57 @@ public class ProvidersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun llmTranscribeAudio(body: LLMTranscribeAudioRequest, options: RequestOptions = RequestOptions()): LLMTranscribeAudioResponse {
+    public suspend fun llmTranscribeAudio(body: LLMTranscribeAudioRequest, xUarpSource: String? = null, options: RequestOptions = RequestOptions()): LLMTranscribeAudioResponse {
+        val headers = buildList {
+            if (xUarpSource != null) add("X-UARP-Source" to xUarpSource)
+        }
         val parts = buildList {
             add(Part.File("file", body.`file`))
-            body.model?.let { add(Part.Text("model", it)) }
-            body.language?.let { add(Part.Text("language", it)) }
+            body.model?.let { add(Part.Text.of("model", it)) }
+            body.language?.let { add(Part.Text.of("language", it)) }
         }
         return client.request<LLMTranscribeAudioResponse>(
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/llm/audio/transcriptions",
+                headers = headers,
                 body = Body.Multipart(parts),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Search the web through the platform's search provider
+     *
+     * Runs one web search through the provider configured for the platform (the same one the
+     * agents' `web_search` tool uses; the provider key never leaves the platform) and returns
+     * titles, URLs and a snippet per result — not page bodies. It spends a platform-held key, so
+     * it carries the same gate as the LLM proxy's spend endpoints: `runs` write permission plus
+     * the `runs:create` scope, and the billing and quota gate (a delinquent subscription is
+     * refused 402 with a `code`, an exhausted quota 403). Each search the provider answers is one
+     * unit of usage: it counts in `tool_calls_count` and as a `web_search` row of `GET
+     * /api/v1/usage?breakdown=model`, at the platform's price per 1000 searches (currently 0 —
+     * counted, not charged), and under `X-UARP-Source` when the caller sends one. An empty
+     * `results` means the provider answered a result list with nothing in it; a provider that is
+     * not configured, did not answer, or answered anything else is a named refusal, never an empty
+     * 200. At most 60 searches per tenant per minute (429 with `Retry-After`). Since 2026-09-29.
+     *
+     * `POST /api/v1/tools/web_search`
+     *
+     * Required scopes: `runs:create`.
+     */
+    public suspend fun toolsWebSearch(body: ToolsWebSearchRequest, xUarpSource: String? = null, options: RequestOptions = RequestOptions()): ToolsWebSearchResponse {
+        val headers = buildList {
+            if (xUarpSource != null) add("X-UARP-Source" to xUarpSource)
+        }
+        return client.request<ToolsWebSearchResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/tools/web_search",
+                headers = headers,
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )

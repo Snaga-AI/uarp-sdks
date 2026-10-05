@@ -16,8 +16,9 @@ export function emitTypeScript(spec: Spec): GeneratedFile[] {
   }
   const files: GeneratedFile[] = [];
   files.push({ path: 'src/generated/models.ts', content: emitModels(spec) });
+  const types = new Map(spec.types.map((t) => [t.name, t] as const));
   for (const group of spec.groups) {
-    files.push({ path: `src/generated/resources/${kebab(group.name)}.ts`, content: emitResource(group) });
+    files.push({ path: `src/generated/resources/${kebab(group.name)}.ts`, content: emitResource(group, types) });
   }
   files.push({ path: 'src/generated/resources/index.ts', content: emitResourceIndex(spec) });
   files.push({ path: 'src/generated/meta.ts', content: emitMeta(spec) });
@@ -97,11 +98,11 @@ function constName(name: string): string {
 
 // ---------------------------------------------------------------- resources
 
-function emitResource(group: Group): string {
+function emitResource(group: Group, types: ReadonlyMap<string, NamedType>): string {
   const w = new Writer();
   const used = collectTypeNames(group);
 
-  const needsPick = group.operations.some((o) => paramBag(o).length > 0);
+  const needsPick = group.operations.some((o) => paramBag(o).length > 0 || formFields(o, types) !== undefined);
   const needsStream = group.operations.some((o) => o.sse);
   const needsPaging = group.operations.some((o) => o.pagination);
 
@@ -142,7 +143,7 @@ function emitResource(group: Group): string {
     for (const op of group.operations) {
       if (!first) w.line();
       first = false;
-      emitOperation(w, op);
+      emitOperation(w, op, formFields(op, types));
       if (op.pagination) {
         w.line();
         emitAutoPaging(w, op, group);
@@ -193,13 +194,13 @@ function renderArgs(args: Arg[]): string {
     .join(', ');
 }
 
-function emitOperation(w: Writer, op: Operation): void {
+function emitOperation(w: Writer, op: Operation, form: string[] | undefined): void {
   const args = operationArgs(op);
   const returns = op.sse ? 'EventStream' : `Promise<${responseType(op)}>`;
 
   w.doc(safeDoc(operationDoc(op)), ' * ', '/**', ' */');
   w.block(`${op.method}(${renderArgs(args)}): ${returns} {`, () => {
-    emitRequestCall(w, op, op.sse ? 'stream' : 'request');
+    emitRequestCall(w, op, op.sse ? 'stream' : 'request', form);
   }, '}');
 }
 
@@ -247,7 +248,7 @@ function autoPagingName(op: Operation, group: Group): string {
   return taken ? `${op.method}AutoPaging` : candidate;
 }
 
-function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream'): void {
+function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream', form?: string[]): void {
   const pathExpr = pathTemplate(op);
   const query = op.queryParams;
   const headers = op.headerParams;
@@ -265,7 +266,12 @@ function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream'): 
     if (op.body) {
       if (op.body.encoding === 'multipart') w.line('multipart: body,');
       else if (op.body.encoding === 'binary') w.line('binary: body,');
-      else if (op.body.encoding === 'form') w.line('form: body,');
+      else if (op.body.encoding === 'form' && form) {
+        // Schema order, not the caller's key order: a form body is compared
+        // as bytes, and every SDK sends its fields in the order declared.
+        const fields = `pick(body, [${form.map((f) => `'${escapeString(f)}'`).join(', ')}])`;
+        w.line(`form: ${op.body.required ? fields : `body && ${fields}`},`);
+      } else if (op.body.encoding === 'form') w.line('form: body,');
       else w.line('body,');
     }
     if (op.idempotent) w.line('idempotent: true,');
@@ -284,6 +290,18 @@ function emitRequestCall(w: Writer, op: Operation, kind: 'request' | 'stream'): 
     w.line('options,');
   });
   w.line('});');
+}
+
+/**
+ * A form body's field names in schema order, when its type is an object with a
+ * closed set of properties. An open object keeps the caller's keys as given,
+ * since picking would drop the free-form ones.
+ */
+function formFields(op: Operation, types: ReadonlyMap<string, NamedType>): string[] | undefined {
+  if (op.body?.encoding !== 'form' || op.body.type.kind !== 'named') return undefined;
+  const type = types.get(op.body.type.name);
+  if (type?.kind !== 'object' || type.additional !== null || type.properties.length === 0) return undefined;
+  return type.properties.map((p) => p.wire);
 }
 
 /** `pick(params, ['limit','cursor'])` keeps undefined values out of the request. */

@@ -1162,6 +1162,11 @@ impl AdminConfigApi {
     /// in-process cache is refreshed and an `admin.config_updated` audit entry names the flag ids.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored override map is rebuilt from this body and ids the
+    /// platform does not define are dropped. A flag the body omits loses its override and returns
+    /// to its default. Each entry requires `enabled`, and an omitted `rollout_pct` means no rollout
+    /// limit. The GET array shape is also accepted.
+    ///
     /// `PUT /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
@@ -1186,8 +1191,8 @@ impl AdminConfigApi {
     /// number is 400; `cached_input_per_million`, when present, must be a non-negative number or
     /// 400.
     ///
-    /// WRITE SEMANTICS: the entry replaces, the map merges. This overwrites the override for this
-    /// model only and leaves every other model's override untouched. Omitting
+    /// WRITE SEMANTICS: mixed — the entry replaces, the map merges. This overwrites the override
+    /// for this model only and leaves every other model's override untouched. Omitting
     /// `cached_input_per_million` removes it, and cached tokens then bill at the full input rate.
     ///
     /// Note the response key is `modelRef` — camelCase, an outlier in a snake_case API, and
@@ -1217,10 +1222,14 @@ impl AdminConfigApi {
     /// an `admin.config_updated` audit entry names the patterns. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored map is rebuilt from `endpoints`: a known pattern the
+    /// body omits loses its override and returns to the built-in limit, and an unknown pattern is
+    /// dropped. Each entry sent must carry both `max_requests` and `window_sec`.
+    ///
     /// `PUT /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    pub async fn set_rate_limits(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetRateLimitsResponse> {
+    pub async fn set_rate_limits(&self, body: &models::SetRateLimitsRequest) -> Result<models::SetRateLimitsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1292,10 +1301,16 @@ impl AdminConfigApi {
     /// function boot uses, so the change applies without a restart, and an `admin.config_updated`
     /// audit entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `agent_memory`
+    /// override and an omitted field keeps its stored value. An explicit null for
+    /// `extraction_model` or `compression_model` is stored and read back as unset. When a
+    /// deploy-level embedding pin exists, the stored `embedding_model` and `embedding_dimensions`
+    /// are kept but the pin wins on the live config.
+    ///
     /// `PUT /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_agent_memory_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminAgentMemoryConfigResponse> {
+    pub async fn update_admin_agent_memory_config(&self, body: &models::UpdateAdminAgentMemoryConfigRequest) -> Result<models::UpdateAdminAgentMemoryConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1319,10 +1334,14 @@ impl AdminConfigApi {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `auth` override,
+    /// so an omitted field keeps its stored value. No field accepts null, so no body can remove a
+    /// stored override.
+    ///
     /// `PUT /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_auth_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminAuthConfigResponse> {
+    pub async fn update_admin_auth_config(&self, body: &models::UpdateAdminAuthConfigRequest) -> Result<models::UpdateAdminAuthConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1344,10 +1363,13 @@ impl AdminConfigApi {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `backpressure`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_backpressure_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminBackpressureConfigResponse> {
+    pub async fn update_admin_backpressure_config(&self, body: &models::UpdateAdminBackpressureConfigRequest) -> Result<models::UpdateAdminBackpressureConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1369,10 +1391,14 @@ impl AdminConfigApi {
     /// function boot uses, so the change applies without a restart, and an `admin.config_updated`
     /// audit entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored
+    /// `code_interpreter` override, so an omitted field keeps its stored value. No field accepts
+    /// null.
+    ///
     /// `PUT /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_code_interpreter_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminCodeInterpreterConfigResponse> {
+    pub async fn update_admin_code_interpreter_config(&self, body: &models::UpdateAdminCodeInterpreterConfigRequest) -> Result<models::UpdateAdminCodeInterpreterConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1421,10 +1447,14 @@ impl AdminConfigApi {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `evaluation`
+    /// override and an omitted field keeps its stored value. A `default_scorers` array that is
+    /// present replaces the stored array whole.
+    ///
     /// `PUT /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_evaluation_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminEvaluationConfigResponse> {
+    pub async fn update_admin_evaluation_config(&self, body: &models::UpdateAdminEvaluationConfigRequest) -> Result<models::UpdateAdminEvaluationConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1469,6 +1499,11 @@ impl AdminConfigApi {
     /// change takes effect without a restart, and an `admin.config_updated` audit entry names the
     /// ids. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored override map is rebuilt from this body and unknown ids
+    /// are dropped. A guardrail the body omits returns to its code default. Inside an entry, an
+    /// omitted `enabled`, `mandatory` or `default_action` reads as true, false or the code default
+    /// respectively.
+    ///
     /// `PUT /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
@@ -1494,10 +1529,13 @@ impl AdminConfigApi {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `idempotency`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_idempotency_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminIdempotencyConfigResponse> {
+    pub async fn update_admin_idempotency_config(&self, body: &models::UpdateAdminIdempotencyConfigRequest) -> Result<models::UpdateAdminIdempotencyConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1518,6 +1556,11 @@ impl AdminConfigApi {
     /// in-process cache is refreshed, an `admin.config_updated` audit entry names the connector
     /// ids, and the response is the same merged view the GET returns. Super-admin only, like every
     /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored toggle map is rebuilt from this body and ids outside
+    /// the connector catalogue are dropped silently. A connector the body omits returns to the
+    /// catalogue default. Inside an entry, an omitted `enabled` reads as true and an omitted `beta`
+    /// reads as false.
     ///
     /// `PUT /api/v1/admin/config/integrations`
     ///
@@ -1546,10 +1589,15 @@ impl AdminConfigApi {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Top-level fields the body omits keep their stored values. A
+    /// `circuit_breaker` or `provider_rate_limits` that is present replaces the stored object
+    /// whole, so an omitted `circuit_breaker` sub-field is dropped from the override, the effective
+    /// view and the live config.
+    ///
     /// `PUT /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_llm_adapters_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLLMAdaptersConfigResponse> {
+    pub async fn update_admin_llm_adapters_config(&self, body: &models::UpdateAdminLLMAdaptersConfigRequest) -> Result<models::UpdateAdminLLMAdaptersConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1573,10 +1621,13 @@ impl AdminConfigApi {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `logging`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_logging_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLoggingConfigResponse> {
+    pub async fn update_admin_logging_config(&self, body: &models::UpdateAdminLoggingConfigRequest) -> Result<models::UpdateAdminLoggingConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1598,10 +1649,13 @@ impl AdminConfigApi {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `long_running`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_long_running_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminLongRunningConfigResponse> {
+    pub async fn update_admin_long_running_config(&self, body: &models::UpdateAdminLongRunningConfigRequest) -> Result<models::UpdateAdminLongRunningConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1623,10 +1677,13 @@ impl AdminConfigApi {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `mcp` override,
+    /// so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_mcp_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminMCPConfigResponse> {
+    pub async fn update_admin_mcp_config(&self, body: &models::UpdateAdminMCPConfigRequest) -> Result<models::UpdateAdminMCPConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1648,10 +1705,14 @@ impl AdminConfigApi {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `multimodal`
+    /// override and an omitted field keeps its stored value. A `supported_image_formats` or
+    /// `supported_audio_formats` array that is present replaces the stored array whole.
+    ///
     /// `PUT /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_multimodal_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminMultimodalConfigResponse> {
+    pub async fn update_admin_multimodal_config(&self, body: &models::UpdateAdminMultimodalConfigRequest) -> Result<models::UpdateAdminMultimodalConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1698,10 +1759,14 @@ impl AdminConfigApi {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields among the four runtime-safe ones are shallow-merged
+    /// into the stored `persistence` override and an omitted field keeps its stored value. Any
+    /// other field is stripped silently, not refused.
+    ///
     /// `PUT /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_persistence_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminPersistenceConfigResponse> {
+    pub async fn update_admin_persistence_config(&self, body: &models::UpdateAdminPersistenceConfigRequest) -> Result<models::UpdateAdminPersistenceConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1723,6 +1788,11 @@ impl AdminConfigApi {
     /// checkout for every plan it dropped. On success the plan cache is cleared for every replica,
     /// a `plan.updated` audit entry is written, and the response is the same shape as the GET.
     /// Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored plan overrides are rebuilt from `plans`: a plan id the
+    /// body omits loses its override, and within a plan entry an omitted field such as `quotas`,
+    /// `llm` or `stripe_price_id` is dropped, not merged. Unknown plan ids and entries with no
+    /// recognised field are discarded silently.
     ///
     /// `PUT /api/v1/admin/config/plans`
     ///
@@ -1784,10 +1854,14 @@ impl AdminConfigApi {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `retention`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_retention_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminRetentionConfigResponse> {
+    pub async fn update_admin_retention_config(&self, body: &models::UpdateAdminRetentionConfigRequest) -> Result<models::UpdateAdminRetentionConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1811,10 +1885,15 @@ impl AdminConfigApi {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `run_command`
+    /// override and an omitted field keeps its stored value, but `allowed_commands` and
+    /// `deno_allow`, when sent, replace the stored list whole. `isolation` sent as an empty string
+    /// counts as omitted. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_run_command_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminRunCommandConfigResponse> {
+    pub async fn update_admin_run_command_config(&self, body: &models::UpdateAdminRunCommandConfigRequest) -> Result<models::UpdateAdminRunCommandConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1838,10 +1917,14 @@ impl AdminConfigApi {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `server`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_server_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminServerConfigResponse> {
+    pub async fn update_admin_server_config(&self, body: &models::UpdateAdminServerConfigRequest) -> Result<models::UpdateAdminServerConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1933,10 +2016,14 @@ impl AdminConfigApi {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `sse` override,
+    /// so an omitted field keeps its stored value. No field accepts null, so this call cannot
+    /// remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_sse_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminSSEConfigResponse> {
+    pub async fn update_admin_sse_config(&self, body: &models::UpdateAdminSSEConfigRequest) -> Result<models::UpdateAdminSSEConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1957,6 +2044,11 @@ impl AdminConfigApi {
     /// is then rebuilt so the next checkout uses the new keys, and an `admin.config_updated` audit
     /// entry records which field names changed but never their values. The response redacts the
     /// secrets again. Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value. Any value beginning
+    /// with `****` is ignored, whichever field it is in. An empty string deletes that stored field,
+    /// after which the effective value falls back to the matching environment variable (or the
+    /// config default for `enabled`, `test` for `mode`).
     ///
     /// `PUT /api/v1/admin/config/stripe`
     ///
@@ -2021,10 +2113,14 @@ impl AdminConfigApi {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `tool_security`
+    /// override and an omitted field keeps its stored value, but an `egress_allowlist_per_tenant`
+    /// that is present replaces the stored list whole. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_tool_security_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminToolSecurityConfigResponse> {
+    pub async fn update_admin_tool_security_config(&self, body: &models::UpdateAdminToolSecurityConfigRequest) -> Result<models::UpdateAdminToolSecurityConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -2048,10 +2144,14 @@ impl AdminConfigApi {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `webhooks`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_webhooks_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminWebhooksConfigResponse> {
+    pub async fn update_admin_webhooks_config(&self, body: &models::UpdateAdminWebhooksConfigRequest) -> Result<models::UpdateAdminWebhooksConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -2076,10 +2176,14 @@ impl AdminConfigApi {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `worker_pool`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_worker_pool_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminWorkerPoolConfigResponse> {
+    pub async fn update_admin_worker_pool_config(&self, body: &models::UpdateAdminWorkerPoolConfigRequest) -> Result<models::UpdateAdminWorkerPoolConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -2099,10 +2203,15 @@ impl AdminConfigApi {
     /// half. The cache the cost path reads is refreshed and an `admin.config_updated` audit entry
     /// carries the new values. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. An omitted `platform_markup_percent` or `model_markup_overrides`
+    /// keeps the current effective value; with no stored record yet, that is the billing default,
+    /// which then gets written. A `model_markup_overrides` map that is present replaces the stored
+    /// map whole, so a model left out loses its override.
+    ///
     /// `PUT /api/v1/admin/config/markup`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_markup_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateMarkupConfigResponse> {
+    pub async fn update_markup_config(&self, body: &models::UpdateMarkupConfigRequest) -> Result<models::UpdateMarkupConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -2122,6 +2231,10 @@ impl AdminConfigApi {
     /// `public_base_url` also marks the `public_url` step of the first-run setup wizard complete.
     /// Writes an `admin.config_updated` audit entry and responds with the re-read effective values.
     /// Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored override becomes exactly this body. An omitted
+    /// `public_base_url`, `webhook_base_url` or `contact_emails` (the whole object) loses its
+    /// override and falls back to the config or `UARP_PUBLIC_BASE_URL` default.
     ///
     /// `PUT /api/v1/admin/config/platform-urls`
     ///
@@ -2143,17 +2256,27 @@ impl AdminConfigApi {
     ///
     /// Merges the body's declared keys into the stored runtime override and mirrors the result into
     /// the live `container.config.runtime`, so the runtime and tool layers see it without a
-    /// restart. A key owned by another config section (the voice and image settings) is refused
+    /// restart. A key owned by another config section (the voice and image settings, and `search` —
+    /// the web-search provider and its `fallbacks`, owned by `PUT /admin/config/search`) is refused
     /// with 400 naming the endpoint that owns it, because a value written here would be overwritten
     /// by the next boot's reapply; a key the schema does not declare is still stripped but is named
     /// back in `ignored_keys` rather than silently dropped. `vision_model: ""` clears that override
-    /// instead of storing an empty string. Writes an `admin.config_updated` audit entry naming the
-    /// changed keys. Super-admin only, like every `/admin/config` route.
+    /// instead of storing an empty string; with no override, vision (describe_image and the video
+    /// photo check) follows the platform default model
+    /// `llm_defaults.default_provider`/`default_model` — clearing never disables it. Writes an
+    /// `admin.config_updated` audit entry naming the changed keys. Super-admin only, like every
+    /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: mixed. Top-level keys merge into the stored override and an omitted key
+    /// keeps its stored value. A `model_tool_caps` map that is present replaces the stored map
+    /// whole. `vision_model` sent as an empty string deletes that override, so vision follows the
+    /// platform default model. Keys owned by other sections are refused 400; undeclared keys are
+    /// stripped and listed in `ignored_keys`.
     ///
     /// `PUT /api/v1/admin/config/runtime`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_runtime_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateRuntimeConfigResponse> {
+    pub async fn update_runtime_config(&self, body: &models::UpdateRuntimeConfigRequest) -> Result<models::UpdateRuntimeConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -2175,6 +2298,10 @@ impl AdminConfigApi {
     /// validated and persisted but read by no upload path, and
     /// `admin_provider_settings_require_super_admin` is not accepted at all. Super-admin only, like
     /// every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: mixed. A field the body omits keeps its stored value, but a list that is
+    /// present (`cors_allowed_origins`, `webhook_url_denylist`, `file_upload_allowed_mime_types`)
+    /// replaces the stored list whole, and an explicit `\[\]` clears it.
     ///
     /// `PUT /api/v1/admin/config/security-policies`
     ///
@@ -2200,6 +2327,9 @@ impl AdminConfigApi {
     /// and an `admin.config_updated` audit entry written. The three `delivery_*` fields are
     /// accepted and persisted but no delivery path reads them. Super-admin only, like every
     /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored override becomes exactly this body; a field the body
+    /// omits loses its override and falls back to the config default or the built-in default.
     ///
     /// `PUT /api/v1/admin/config/webhooks-policy`
     ///

@@ -14,6 +14,8 @@ public struct ProjectsAPI: Sendable {
     /// project never claims a file the agent cannot read.
     ///
     /// `POST /api/v1/projects`
+    ///
+    /// Required scopes: `sessions:write`.
     public func create(body: CreateProjectRequest, options: RequestOptions = .init()) async throws -> Project {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -31,6 +33,8 @@ public struct ProjectsAPI: Sendable {
     /// with it is how people lose things they cannot get back.
     ///
     /// `DELETE /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:write`.
     public func delete(projectId: String, options: RequestOptions = .init()) async throws -> DeleteProjectResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -47,6 +51,8 @@ public struct ProjectsAPI: Sendable {
     /// private.
     ///
     /// `GET /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:read`.
     public func get(projectId: String, options: RequestOptions = .init()) async throws -> ProjectDetail {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -63,6 +69,8 @@ public struct ProjectsAPI: Sendable {
     /// second call.
     ///
     /// `GET /api/v1/projects`
+    ///
+    /// Required scopes: `sessions:read`.
     public func list(archived: GetRunChangedFiles? = nil, options: RequestOptions = .init()) async throws -> ListProjectsResponse {
         var query: [URLQueryItem] = []
         if let archived {
@@ -89,7 +97,14 @@ public struct ProjectsAPI: Sendable {
     /// with 400: it would leave nobody able to open it. Signing in stamps the caller as owner at
     /// that moment.
     ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value.
+    /// `knowledge_base_ids`, `file_ids` and `shared_with` are replaced whole when sent, and
+    /// `file_ids` that do not resolve in this tenant are dropped. An explicit null `archived_at`
+    /// clears the archive.
+    ///
     /// `PATCH /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:write`.
     public func update(projectId: String, body: UpdateProjectRequest, options: RequestOptions = .init()) async throws -> Project {
         return try await client.send(RequestSpec(
             method: "PATCH",

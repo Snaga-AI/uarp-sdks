@@ -6,6 +6,109 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.8.0 — 2026-10-05
+
+Build `4663ef46`, canonical digest `072de50db92ed09c`. Against 0.7.0: 544 →
+568 paths, 736 → 766 operations (+30, −0), 352 → 361 schemas (+9, −0).
+
+**The minor moves** because Rust's floor does (1.88 → 1.89, below): a caret
+under 1.0 does not cross the minor, so a 1.88 toolchain pinned to `^0.7` keeps
+building. Nothing else breaks on purpose — no exported name is removed (see
+"enum names are pinned") and the completions keep their JSON signatures.
+
+### Added — `streamPost`, a POST read as an event stream, in all five SDKs
+
+The platform cuts a silent non-streamed `POST /api/v1/llm/chat/completions` at
+120 s (measured 2026-10-05, `504 Request timed out`); the same request with
+`"stream": true` answers `text/event-stream` in about three seconds and ran
+438 s to the end. Since `4663ef46` the platform gives the non-streamed call
+600 s too, but a streamed answer is still the one no gateway or proxy cuts.
+
+| SDK | Call |
+|---|---|
+| TypeScript | `client.streamPost(path, body, options?)` → `EventStream` |
+| Rust | `Client::stream_post(path, &body)` → `EventStream` |
+| Swift | `UARPClient.streamPost(path:body:options:)` → `EventStream` |
+| Kotlin | `UarpClient.streamPost(path, body, options)` → `Flow<ServerEvent>` |
+| Ada | `UARP.Client.Execute_Stream` (non-raising) and `Stream_Post` |
+
+Same rules everywhere (contract/SCENARIOS.md, "Streaming a POST"):
+`Accept: text/event-stream`, the JSON body and the automatic `Idempotency-Key`;
+**one attempt** — no reconnect and no retry, not even on 429, because a second
+POST would run and bill the model twice; the stream ends at `data: [DONE]`
+(not delivered); a refusal, or a 2xx that is not `text/event-stream`, is the
+SDK's API error with the status and the body, never events; a connection that
+breaks mid-stream is an error, not an end. Contract scenarios 17–19.
+
+### Added — form-encoded request bodies in every SDK
+
+`POST /api/v1/auth/oauth/{provider}/callback` (`completeOAuthLoginFormPost`,
+Sign in with Apple on the web) takes `application/x-www-form-urlencoded` — the
+first such body in the document. TypeScript rendered form bodies already;
+Rust, Swift, Kotlin and Ada now do too, all byte for byte the way the WHATWG
+serializer (`URLSearchParams`) does: fields in schema order, absent ones
+skipped, a space as `+`, everything but `A-Z a-z 0-9 * - . _` percent-encoded
+as upper-case UTF-8 — `~` included. Contract scenario 20 compares the bytes.
+Ada renders string fields; a field of another type stops generation rather
+than guess an encoding (no such field exists today). New runtime pieces:
+Rust `form` module, Kotlin `Body.Form`, Swift `RequestBody.form`, Ada
+`UARP.Form`.
+
+### Added — thirty operations
+
+- **Video orders and templates** (20): the public order flow
+  (`createPublicVideoOrder` — multipart — then `getPublicVideoOrder`, its
+  `checkout`, `feedback`, `regenerate`, `retry`, `video`, inputs, and the
+  template list and preview) and the admin side (template CRUD, `preview`,
+  `publish`, `unpublish`, `test`, and the order list).
+- **Anthropic-compatible** `POST /v1/messages` (`anthropicMessages`) and
+  `POST /v1/messages/count_tokens`, in a new `AnthropicCompat` group.
+- `completeOAuthLoginFormPost` (above); `GET`/`PUT /admin/config/search`;
+  `GET /bridge/deleted-machines` and `DELETE …/{machineId}` (reconnect);
+  `POST /sessions/import`; `POST /tools/web_search`;
+  `POST /acp/session/{sessionId}`.
+- **Paging** for eighteen lists that now declare their `cursor`: run steps and
+  audit logs, session messages and annotations, agent memory, bookmarks and
+  evaluations, users and invites, webhook deliveries, squad and team chat and
+  runs, knowledge-base documents, governance violations, company activity,
+  the admin audit trail. Each gets its paging helper.
+
+### Changed
+
+- **Rust: MSRV 1.88 → 1.89.** `uuid` 1.27 declares 1.89; the crate keeps no
+  lockfile, so the MSRV job resolves it and went red. The promise follows the
+  tree rather than capping `uuid` away from its fixes.
+- **The completions stay typed by their JSON.** The document now declares
+  `text/event-stream` beside `application/json` for `llmChatCompletion`,
+  `chatCompletion` and `anthropicMessages`. Typing them by the stream would
+  have turned methods that returned a completion into ones that return
+  events — breaking every caller who never asked to stream — and the
+  reconnecting GET stream would have replayed a billed POST. They are typed by
+  their JSON answer, as in 0.7.0; the streamed mode is `streamPost`.
+- **Enum names are pinned** (`generator/enum-names.json`). A shared enum is
+  named after the first schema that uses its value set, so this refresh would
+  have renamed seventeen published types (`AgentExecutionMode` →
+  `AgentUpdateExecutionMode`, `TeamPoliciesEffort` →
+  `AgentUpdateThinkingEffortVariant1`, …). Published names are now kept, new
+  ones are added on regeneration, and `--check` fails if the pins are stale.
+
+### Fixed
+
+- **Ada: a stream the caller stops is stopped over HTTP/2.** libcurl reports
+  the abort as `CURLE_RECV_ERROR` (56) over HTTP/2, `CURLE_WRITE_ERROR` (23)
+  over HTTP/1.1, and only 23 counted — every streamed completion that ended at
+  `[DONE]` against api.snaga.ai raised `Transport_Error`, and so did a run
+  stream stopped at `run.completed`. Verified live; the mock speaks HTTP/1.1.
+- **Swift: enum path parameters** went out as
+  `TypeName(rawValue: "apple")`, percent-encoded, instead of `apple` —
+  seventeen call sites, the OAuth start and callback among them.
+- **Multipart text parts of enum type** (`createPublicVideoOrder`'s `locale`
+  and consents) are sent as their wire values in Kotlin, Swift and Ada.
+- **Ada:** an alias of free-form JSON (`BridgeAgentStats`) generated calls to
+  conversions that do not exist.
+- **TypeScript:** a form body's fields follow the schema order, not the
+  caller's.
+
 ## 0.7.0 — 2026-09-23
 
 Build `f9f433ee`, canonical digest `9de209f5e0d40b51` — sorted keys, no

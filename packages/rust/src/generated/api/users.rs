@@ -6,12 +6,40 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
+
+/// Query and header parameters for `listUsers`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListUsersParams {
+    /// Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+    /// existed — not a default page. Values outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Query and header parameters for `listInvites`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListInvitesParams {
+    /// Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+    /// existed — not a default page. Values outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
 
 /// User management, invites, roles
 #[derive(Debug, Clone)]
@@ -163,17 +191,40 @@ impl UsersApi {
     /// `GET /api/v1/users`
     ///
     /// Required scopes: `users:read`.
-    pub async fn list(&self) -> Result<models::ListUsersResponse> {
+    pub async fn list(&self, params: &ListUsersParams) -> Result<models::ListUsersResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/users".to_string(),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listUsers`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn list_all<'a>(&'a self, params: &'a ListUsersParams) -> impl Stream<Item = Result<models::TenantUser>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list(&page_params).await?;
+                let items = page.items.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// List invites
@@ -186,17 +237,40 @@ impl UsersApi {
     /// `GET /api/v1/users/invites`
     ///
     /// Required scopes: `users:read`.
-    pub async fn list_invites(&self) -> Result<models::ListInvitesResponse> {
+    pub async fn list_invites(&self, params: &ListInvitesParams) -> Result<models::ListInvitesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: "/api/v1/users/invites".to_string(),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listInvites`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn list_invites_all<'a>(&'a self, params: &'a ListInvitesParams) -> impl Stream<Item = Result<models::Invite>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_invites(&page_params).await?;
+                let items = page.items.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Resend the invite email
@@ -231,6 +305,10 @@ impl UsersApi {
     /// An unknown user is **404** and a role outside the accepted enum fails body validation.
     /// Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
     /// entry.
+    ///
+    /// WRITE SEMANTICS: merges. Only `role` is read; the write sets `role` and `updated_at` on the
+    /// stored user and every other field of the user record is kept. The user's live session keys
+    /// are then re-scoped to the new role.
     ///
     /// `PUT /api/v1/users/{userId}/role`
     ///
@@ -275,6 +353,9 @@ impl UsersApi {
     ///
     /// Demotes the calling owner to admin and promotes the target user to owner. Irreversible
     /// without a counter-transfer.
+    ///
+    /// The calling owner is the user the credential is bound to, never a field in the body: a key
+    /// bound to no user (a legacy shared key) is refused with **403**.
     ///
     /// `POST /api/v1/users/{userId}/transfer-ownership`
     ///

@@ -3,6 +3,7 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   CoreMemoryBlock,
   GetMemoriesByEntityResponse,
@@ -10,12 +11,12 @@ import type {
   ImportAgentMemoryResponse,
   IngestMemoryRequest,
   IngestMemoryResponse,
-  JsonObject,
   JsonValue,
   ListCoreMemoryBlocksResponse,
   ListMemoriesResponse,
   MemoryEntry,
   SearchMemoryResponse,
+  UpdateAgentMemoryEntryRequest,
   UpdateCoreMemoryBlockRequest,
 } from '../models.js';
 
@@ -24,6 +25,14 @@ import type {
  */
 export interface ListMemoriesParams {
   limit?: number;
+  /**
+   * Alias of `limit`.
+   */
+  top_k?: number;
+  /**
+   * Opaque; the `cursor` of the previous page. A malformed cursor is 400.
+   */
+  cursor?: string;
 }
 
 /**
@@ -173,10 +182,14 @@ export class MemoryResource extends APIResource {
   /**
    * List recent memories for an agent
    *
-   * Returns the agent's most recent memory entries, newest first. `limit` (or its alias `top_k`)
-   * defaults to 20 and is clamped to 1..200, so an oversized value narrows silently rather than
-   * returning the whole corpus. This is a recency listing with no query — use `POST
-   * /api/v1/agents/{agentId}/memory/search` to retrieve by relevance.
+   * Returns the agent's memory entries, newest created first (entry_id breaks ties), in a fixed
+   * order: two identical calls answer the same page. `limit` (or its alias `top_k`) defaults to
+   * 20 and is clamped to 1..200. `total` is the agent's whole count of (non-archived) entries,
+   * not the page length; while more exist, `has_more` is true and `cursor` continues the listing
+   * when passed back as `?cursor=`. Reading the list does not count as recalling an entry (it no
+   * longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). This is a listing with no
+   * query — use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance. 404 when
+   * the agent does not exist.
    *
    * `GET /api/v1/agents/{agentId}/memory`
    *
@@ -186,9 +199,22 @@ export class MemoryResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory`,
-      query: pick(params, ['limit']),
+      query: pick(params, ['limit', 'top_k', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listMemories`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listMemoriesAll(agentId: string, params?: ListMemoriesParams, options?: RequestOptions): AsyncIterableIterator<MemoryEntry> {
+    return autoPaginate<MemoryEntry>(
+      (cursor) => this.listMemories(agentId, { ...params, cursor }, options),
+      'memories',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -228,11 +254,16 @@ export class MemoryResource extends APIResource {
    * can be refused `403` (shrinking or same-size updates never reach that gate) and the refusal
    * is audit-logged.
    *
+   * WRITE SEMANTICS: merges. Only `content`, `tags` and `relevance_score` are read, each applied
+   * only when present with the right type; an omitted or wrongly-typed one keeps its stored
+   * value, as does every other field. `tags` replaces the stored array whole. `last_accessed_at`
+   * is always re-stamped.
+   *
    * `PUT /api/v1/agents/{agentId}/memory/{entryId}`
    *
    * Required scopes: `memory:write`.
    */
-  updateAgentMemoryEntry(agentId: string, entryId: string, body: JsonObject, options?: RequestOptions): Promise<MemoryEntry> {
+  updateAgentMemoryEntry(agentId: string, entryId: string, body: UpdateAgentMemoryEntryRequest, options?: RequestOptions): Promise<MemoryEntry> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/memory/${encodeURIComponent(String(entryId))}`,
@@ -254,6 +285,12 @@ export class MemoryResource extends APIResource {
    * injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks`
    * when it is not declared there yet (while fewer than 10 are declared). `404` when the agent
    * does not exist.
+   *
+   * WRITE SEMANTICS: replaces. The block is rebuilt: `content` (required) overwrites it whole,
+   * and an omitted `max_tokens` resets the ceiling to 1000 (clamped to the core-memory budget)
+   * rather than keeping the stored value. Only `block_id` survives from the previous block. The
+   * agent's `core_memory` config is merged, not replaced: it is enabled and the label appended
+   * to `blocks` when there is room.
    *
    * `PUT /api/v1/agents/{agentId}/memory/core/{label}`
    *

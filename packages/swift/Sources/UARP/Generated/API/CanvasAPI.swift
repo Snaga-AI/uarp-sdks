@@ -14,6 +14,8 @@ public struct CanvasAPI: Sendable {
     /// canvas, it is just blank.
     ///
     /// `GET /api/v1/canvas/fleet`
+    ///
+    /// Required scopes: `agents:read`.
     public func getFleetLayout(options: RequestOptions = .init()) async throws -> FleetLayout {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -33,6 +35,8 @@ public struct CanvasAPI: Sendable {
     /// has unsaved changes. Send the ids to be sure.
     ///
     /// `POST /api/v1/canvas/fleet/materialize`
+    ///
+    /// Required scopes: `agents:write`.
     public func materializeCanvasSquad(body: MaterializeCanvasSquadRequest, options: RequestOptions = .init()) async throws -> MaterializeCanvasSquadResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -54,6 +58,8 @@ public struct CanvasAPI: Sendable {
     /// than the ones on screen. Requires MEF.
     ///
     /// `POST /api/v1/canvas/loop/run`
+    ///
+    /// Required scopes: `agents:write`.
     public func runCanvasLoop(body: RunCanvasLoopRequest, options: RequestOptions = .init()) async throws -> RunCanvasLoopResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -74,6 +80,8 @@ public struct CanvasAPI: Sendable {
     /// has no order to execute in, and starting one would look like success. Requires MEF.
     ///
     /// `POST /api/v1/canvas/workflow/run`
+    ///
+    /// Required scopes: `agents:write`.
     public func runCanvasWorkflow(body: RunCanvasWorkflowRequest, options: RequestOptions = .init()) async throws -> RunCanvasWorkflowResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -94,7 +102,14 @@ public struct CanvasAPI: Sendable {
     /// a 200 read as “saved” while the operator's cards snapped back on the next reload. An
     /// oversize body is a clean 422 instead of a silent truncation at the storage limit.
     ///
+    /// WRITE SEMANTICS: replaces. The layout is rebuilt from this body alone: an omitted
+    /// `positions`, `edges`, `notes` or `drafts` is stored empty, and nothing carries over from the
+    /// stored layout. The 409 needs `base_updated_at` (or a storage-level race): a body without it
+    /// overwrites whatever is stored.
+    ///
     /// `PUT /api/v1/canvas/fleet`
+    ///
+    /// Required scopes: `agents:write`.
     public func saveFleetLayout(body: FleetLayoutUpdate, options: RequestOptions = .init()) async throws -> FleetLayout {
         return try await client.send(RequestSpec(
             method: "PUT",
@@ -113,6 +128,8 @@ public struct CanvasAPI: Sendable {
     /// scheduled.
     ///
     /// `POST /api/v1/canvas/workflow/schedule`
+    ///
+    /// Required scopes: `agents:write`.
     public func scheduleCanvasWorkflow(body: ScheduleCanvasWorkflowRequest, options: RequestOptions = .init()) async throws -> ScheduleCanvasWorkflowResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -128,6 +145,8 @@ public struct CanvasAPI: Sendable {
     /// Idempotent: removing a trigger that is not there still answers 200 with `status: removed`.
     ///
     /// `DELETE /api/v1/canvas/workflow/schedule/{triggerId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func unscheduleCanvasWorkflow(triggerId: String, options: RequestOptions = .init()) async throws -> UnscheduleCanvasWorkflowResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",

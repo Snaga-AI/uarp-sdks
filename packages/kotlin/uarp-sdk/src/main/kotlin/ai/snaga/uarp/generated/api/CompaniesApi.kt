@@ -113,15 +113,31 @@ public class CompaniesApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun getCompanyActivity(companyId: String, options: RequestOptions = RequestOptions()): GetCompanyActivityResponse {
+    public suspend fun getCompanyActivity(companyId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetCompanyActivityResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetCompanyActivityResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/companies/${encodePathSegment(companyId)}/activity",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getCompanyActivity`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getCompanyActivityAll(companyId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<CompanyActivityEntry> = autoPaginate(
+        fetch = { pageCursor -> getCompanyActivity(companyId = companyId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.entries ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Get company budget allocation

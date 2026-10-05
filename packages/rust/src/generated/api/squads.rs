@@ -6,11 +6,13 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
@@ -21,6 +23,26 @@ pub struct GetSquadChatHistoryParams {
     pub thread_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include_internal: Option<bool>,
+    /// Page size, in TURNS (two history entries each), counted back from the newest turn; oldest
+    /// first within a page. ABSENT means the newest 100 turns, with no paging fields (the window
+    /// size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+    /// outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Query and header parameters for `listSquadRuns`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListSquadRunsParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// From a previous response's `cursor`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `streamSquadChatEvents`.
@@ -51,6 +73,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/edges`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn add_squad_graph_edge(&self, squad_id: &str, body: &models::AddSquadGraphEdgeRequest) -> Result<models::TeamGraphEdge> {
         self.client
             .request_json(Request {
@@ -71,6 +95,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/nodes`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn add_squad_graph_node(&self, squad_id: &str, body: &models::AddSquadGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
@@ -104,6 +130,8 @@ impl SquadsApi {
     /// older noun.
     ///
     /// `POST /api/v1/squads/{squadId}/runs/{teamRunId}/cancel`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn cancel_squad_run(&self, squad_id: &str, team_run_id: &str) -> Result<models::CancelSquadRunResponse> {
         self.client
             .request_json(Request {
@@ -124,6 +152,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn create(&self, body: &models::TeamCreate) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -144,6 +174,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn delete(&self, squad_id: &str) -> Result<models::DeleteSquadResponse> {
         self.client
             .request_json(Request {
@@ -164,6 +196,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}/graph/edges/{edgeId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn delete_squad_graph_edge(&self, squad_id: &str, edge_id: &str) -> Result<models::DeleteSquadGraphEdgeResponse> {
         self.client
             .request_json(Request {
@@ -184,6 +218,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn delete_squad_graph_node(&self, squad_id: &str, agent_id: &str) -> Result<models::DeleteSquadGraphNodeResponse> {
         self.client
             .request_json(Request {
@@ -204,6 +240,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get(&self, squad_id: &str) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -224,6 +262,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/chat`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_squad_chat_history(&self, squad_id: &str, params: &GetSquadChatHistoryParams) -> Result<models::GetSquadChatHistoryResponse> {
         self.client
             .request_json(Request {
@@ -237,6 +277,29 @@ impl SquadsApi {
             .await
     }
 
+    /// Stream every item returned by `getSquadChatHistory`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_squad_chat_history_all<'a>(&'a self, squad_id: &'a str, params: &'a GetSquadChatHistoryParams) -> impl Stream<Item = Result<models::TeamChatTurn>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_squad_chat_history(squad_id, &page_params).await?;
+                let items = page.conversation_history.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
+    }
+
     /// Get full squad graph
     ///
     /// `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
@@ -244,6 +307,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_squad_graph(&self, squad_id: &str) -> Result<models::GetSquadGraphResponse> {
         self.client
             .request_json(Request {
@@ -264,6 +329,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_squad_graph_node(&self, squad_id: &str, agent_id: &str) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {
@@ -284,6 +351,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_squad_run(&self, squad_id: &str, team_run_id: &str) -> Result<models::TeamRunDetail> {
         self.client
             .request_json(Request {
@@ -304,6 +373,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}/messages`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_squad_run_messages(&self, squad_id: &str, team_run_id: &str) -> Result<models::GetSquadRunMessagesResponse> {
         self.client
             .request_json(Request {
@@ -324,6 +395,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn list(&self) -> Result<models::ListSquadsResponse> {
         self.client
             .request_json(Request {
@@ -344,6 +417,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/edges`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn list_squad_graph_edges(&self, squad_id: &str) -> Result<models::ListSquadGraphEdgesResponse> {
         self.client
             .request_json(Request {
@@ -364,6 +439,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn list_squad_graph_nodes(&self, squad_id: &str) -> Result<models::ListSquadGraphNodesResponse> {
         self.client
             .request_json(Request {
@@ -379,22 +456,52 @@ impl SquadsApi {
 
     /// List runs for a squad
     ///
+    /// Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a squad run is a transcript
+    /// and reads forward. Pages continue by `cursor` (there is no `offset`); `total` counts this
+    /// page's rows only. Each row is a MEMBER run; `team_run_status` says what its squad run came
+    /// to.
+    ///
     /// `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs`
-    pub async fn list_squad_runs(&self, squad_id: &str) -> Result<models::ListSquadRunsResponse> {
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_squad_runs(&self, squad_id: &str, params: &ListSquadRunsParams) -> Result<models::ListSquadRunsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/squads/{}/runs", encode_path(squad_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listSquadRuns`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn list_squad_runs_all<'a>(&'a self, squad_id: &'a str, params: &'a ListSquadRunsParams) -> impl Stream<Item = Result<models::TeamRunSummary>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_squad_runs(squad_id, &page_params).await?;
+                let items = page.runs.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Start a squad run
@@ -404,6 +511,8 @@ impl SquadsApi {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/runs`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn start_squad_run(&self, squad_id: &str, body: &models::StartSquadRunRequest) -> Result<models::StartSquadRunResponse> {
         self.client
             .request_json(Request {
@@ -425,7 +534,7 @@ impl SquadsApi {
     ///
     /// `GET /api/v1/squads/{squadId}/chat/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream.
     pub fn stream_squad_chat_events(&self, squad_id: &str, params: &StreamSquadChatEventsParams) -> EventStream {
@@ -444,7 +553,7 @@ impl SquadsApi {
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{runId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream.
     pub fn stream_squad_run_events(&self, squad_id: &str, run_id: &str) -> EventStream {
@@ -461,7 +570,15 @@ impl SquadsApi {
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
+    /// WRITE SEMANTICS: mixed — the same handler as `PUT /api/v1/teams/{teamId}`. An omitted
+    /// top-level field keeps its stored value. `policies` merges one level deep and
+    /// `policies.validation` merges over the stored one. A `workers` list that is present replaces
+    /// the list but keeps each worker's stored `role` and `permissions` (not on the swarm
+    /// `agent_ids` path). `swarm_config` and `goal_config` are replaced whole when sent.
+    ///
     /// `PUT /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn update(&self, squad_id: &str, body: &models::TeamUpdate) -> Result<models::Team> {
         self.client
             .request_json(Request {
@@ -481,7 +598,13 @@ impl SquadsApi {
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
+    /// WRITE SEMANTICS: merges — the same handler as the `/teams` route. Only `status` and
+    /// `goal_summary` are applied, each only when sent; every other node field keeps its stored
+    /// value.
+    ///
     /// `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn update_squad_graph_node(&self, squad_id: &str, agent_id: &str, body: &models::UpdateSquadGraphNodeRequest) -> Result<models::TeamGraphNode> {
         self.client
             .request_json(Request {

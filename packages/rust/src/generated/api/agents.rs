@@ -54,6 +54,25 @@ pub struct ListAgentsParams {
     /// ghosts are hidden from main pickers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub include_offline: Option<bool>,
+    /// Include bridge agents registered under a parent (`parent_agent_id`, e.g. QUARK profiles
+    /// under their machine). Hidden by default; the parent's row carries `children_count` either
+    /// way. Added 2026-09-25.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub include_children: Option<bool>,
+}
+
+/// Query and header parameters for `listAgentBookmarks`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAgentBookmarksParams {
+    /// Page size, in the stored order, within the 1000 the list holds. ABSENT means the whole list,
+    /// exactly as before paging existed — not a default page. Values outside 1..500 are clamped,
+    /// not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `listAgentMail`.
@@ -621,17 +640,40 @@ impl AgentsApi {
     /// `GET /api/v1/agents/{agentId}/bookmarks`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn list_agent_bookmarks(&self, agent_id: &str) -> Result<models::ListAgentBookmarksResponse> {
+    pub async fn list_agent_bookmarks(&self, agent_id: &str, params: &ListAgentBookmarksParams) -> Result<models::ListAgentBookmarksResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/agents/{}/bookmarks", encode_path(agent_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listAgentBookmarks`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn list_agent_bookmarks_all<'a>(&'a self, agent_id: &'a str, params: &'a ListAgentBookmarksParams) -> impl Stream<Item = Result<models::AgentBookmark>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_agent_bookmarks(agent_id, &page_params).await?;
+                let items = page.items;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Messages between agents
@@ -710,12 +752,18 @@ impl AgentsApi {
     /// `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
     /// more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) — so a client
     /// may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
-    /// `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
+    /// `drop_genome` or `drop_genome_source`. `resource_limits`, `memory`, `core_memory`,
+    /// `schedule`, `guardrails`, `image_generation`, `video_generation`, `command_relationships`
+    /// and `access_control` also merge one level; `mcp`, `policies`, `thinking`, `effort_policy`,
+    /// `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
+    /// stored list. The body is `AgentUpdate`, the schema the handler validates with
+    /// (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
+    /// unknown field is dropped.
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn patch(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Agent> {
+    pub async fn patch(&self, agent_id: &str, body: &models::AgentUpdate) -> Result<models::Agent> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
@@ -806,15 +854,23 @@ impl AgentsApi {
 
     /// Set agent capabilities
     ///
-    /// Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
-    /// the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
-    /// and `permissions` are read from the body — anything else is stripped. Returns `{status,
-    /// agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
+    /// Stores the agent's capability manifest, replacing any previous one. The body is the manifest
+    /// `GET` on this path serves: `skills` (required, up to 100; each needs `id` and `name`),
+    /// `constraints` (optional — when omitted the agent's own limits are used, as in the manifest
+    /// `GET` generates), `tools` and `kb_ids` (optional, default empty). `agent_id` is taken from
+    /// the path and `updated_at` is stamped by the server; anything else in the body is stripped.
+    /// `404` when the agent does not exist. Returns `{status, agent_id}` rather than the stored
+    /// manifest; read it back with the `GET` on this path.
+    ///
+    /// WRITE SEMANTICS: replaces — an omitted `tools` or `kb_ids` is stored empty, not kept from
+    /// the previous manifest. Until 2026-10-02 this operation read
+    /// `capabilities`/`tools`/`permissions` and stripped `skills`, which the store requires, so
+    /// every call was refused `422` and nothing was stored.
     ///
     /// `PUT /api/v1/agents/{agentId}/capabilities`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn set_agent_capabilities(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetAgentCapabilitiesResponse> {
+    pub async fn set_agent_capabilities(&self, agent_id: &str, body: &models::SetAgentCapabilitiesRequest) -> Result<models::SetAgentCapabilitiesResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -834,6 +890,11 @@ impl AgentsApi {
     /// refused and nothing is stored. The split is what the runtime draws against when it resolves
     /// which version a new run executes, using a cryptographically-secure weighted draw. The agent
     /// record itself is untouched.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored split is rebuilt from `entries`; a version the body
+    /// omits is dropped from the split and nothing from the previous split is kept. The weight-sum
+    /// check throws a plain error rather than a validation error, so from the code a bad sum
+    /// answers 500, not 4xx, with nothing stored (not measured on the wire).
     ///
     /// `PUT /api/v1/agents/{agentId}/traffic`
     ///
@@ -939,6 +1000,11 @@ impl AgentsApi {
     /// update lands first, which is what stops an ordinary agent save clobbering the compliance
     /// trail — and it is audit-logged. The response is the whole sanitised agent, not just the
     /// classification.
+    ///
+    /// WRITE SEMANTICS: replaces. `risk_classification` is rebuilt whole from this body: an omitted
+    /// `annex_iii_category` is cleared and an omitted `assessed_at` becomes now; `level`,
+    /// `justification`, `assessor` and `review_due_at` are required. The rest of the agent record
+    /// is kept, under a compare-and-set.
     ///
     /// `PATCH /api/v1/agents/{agentId}/risk-classification`
     ///

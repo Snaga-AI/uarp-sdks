@@ -39,7 +39,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/drawings/{drawingId}/ops`
      *
-     * Required scopes: `drawing:write`.
+     * Required scopes: `drawing:write`, `sessions:write`.
      */
     public suspend fun appendDrawingOps(drawingId: String, body: AppendDrawingOpsRequest, options: RequestOptions = RequestOptions()): AppendDrawingOpsResponse {
         return client.request<AppendDrawingOpsResponse>(
@@ -65,7 +65,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/drawings/{drawingId}/masks`
      *
-     * Required scopes: `drawing:write`.
+     * Required scopes: `drawing:write`, `sessions:write`.
      */
     public suspend fun createDrawingMask(drawingId: String, body: CreateDrawingMaskRequest, options: RequestOptions = RequestOptions()): DrawingMask {
         return client.request<DrawingMask>(
@@ -116,7 +116,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/drawings/{drawingId}`
      *
-     * Required scopes: `drawing:write`.
+     * Required scopes: `drawing:write`, `sessions:write`.
      */
     public suspend fun delete(drawingId: String, ifMatch: String, options: RequestOptions = RequestOptions()): DeleteDrawingResponse {
         val headers = buildList {
@@ -143,7 +143,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun `get`(drawingId: String, options: RequestOptions = RequestOptions()): Drawing {
         return client.request<Drawing>(
@@ -164,7 +164,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}/masks/{maskId}`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun getDrawingMask(drawingId: String, maskId: String, options: RequestOptions = RequestOptions()): DrawingMask {
         return client.request<DrawingMask>(
@@ -185,7 +185,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}/masks/{maskId}/content`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun getDrawingMaskContent(drawingId: String, maskId: String, options: RequestOptions = RequestOptions()): ByteArray {
         return client.requestBytes(
@@ -207,7 +207,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun getDrawingTile(drawingId: String, layerId: String, tx: Long, ty: Long, at: Long? = null, options: RequestOptions = RequestOptions()): ByteArray {
         val query = buildList {
@@ -235,7 +235,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}/ops`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun listDrawingOps(drawingId: String, since: Long? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListDrawingOpsResponse {
         val query = buildList {
@@ -300,7 +300,7 @@ public class DrawingsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/drawings/{drawingId}/render`
      *
-     * Required scopes: `drawing:read`.
+     * Required scopes: `drawing:read`, `sessions:read`.
      */
     public suspend fun renderDrawing(drawingId: String, region: String? = null, scale: Double? = null, options: RequestOptions = RequestOptions()): ByteArray {
         val query = buildList {

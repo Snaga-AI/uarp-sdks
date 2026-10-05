@@ -3,10 +3,11 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type {
-  JsonObject,
   ListPlaygroundTemplatesResponse,
   PlaygroundAgentState,
   Run,
+  RunPlaygroundRequest,
+  SavePlaygroundCanvasRequest,
 } from '../models.js';
 
 /**
@@ -69,7 +70,7 @@ export class PlaygroundResource extends APIResource {
    *
    * Required scopes: `runs:create`.
    */
-  run(agentId: string, body: JsonObject, options?: RequestOptions): Promise<Run> {
+  run(agentId: string, body: RunPlaygroundRequest, options?: RequestOptions): Promise<Run> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}/run`,
@@ -89,11 +90,15 @@ export class PlaygroundResource extends APIResource {
    * editing the agent itself, because the canvas is the agent's composition. The canvas is
    * stored alongside the agent record and does not itself change how the agent runs.
    *
+   * WRITE SEMANTICS: replaces. The stored canvas is rebuilt from this body: `nodes` and `edges`
+   * are required and stored as given, an omitted `metadata` becomes an empty object, and nothing
+   * from the previous canvas is kept. Unknown top-level fields are stripped.
+   *
    * `PUT /api/v1/playground/agents/{agentId}`
    *
    * Required scopes: `agents:write`.
    */
-  savePlaygroundCanvas(agentId: string, body: JsonObject, options?: RequestOptions): Promise<PlaygroundAgentState> {
+  savePlaygroundCanvas(agentId: string, body: SavePlaygroundCanvasRequest, options?: RequestOptions): Promise<PlaygroundAgentState> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/playground/agents/${encodeURIComponent(String(agentId))}`,

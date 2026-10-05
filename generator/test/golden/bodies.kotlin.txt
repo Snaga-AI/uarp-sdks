@@ -7,7 +7,7 @@ package ai.snaga.uarp
 public const val SPEC_VERSION: String = "1.0.0"
 
 /** Version of this SDK. */
-public const val SDK_VERSION: String = "0.7.0"
+public const val SDK_VERSION: String = "0.8.0"
 
 /** Production base URL. */
 public const val DEFAULT_BASE_URL: String = "https://api.test"
@@ -158,9 +158,9 @@ public class UploadsApi internal constructor(private val client: UarpClient) {
      */
     public suspend fun uploadBundle(body: UploadBundleRequest, options: RequestOptions = RequestOptions()): UploadBundleResponse {
         val parts = buildList {
-            add(Part.Text("manifest", body.manifest))
+            add(Part.Text.of("manifest", body.manifest))
             add(Part.File("artifact", body.artifact))
-            body.sha256?.let { add(Part.Text("sha256", it)) }
+            body.sha256?.let { add(Part.Text.of("sha256", it)) }
         }
         return client.request<UploadBundleResponse>(
             RequestSpec(

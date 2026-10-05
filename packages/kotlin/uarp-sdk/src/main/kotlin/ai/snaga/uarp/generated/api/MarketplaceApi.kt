@@ -33,8 +33,6 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      * not name is refused 404 rather than answered with the listing.
      *
      * `GET /api/v1/marketplace/listings/{listingId}`
-     *
-     * Required scopes: `marketplace:read`.
      */
     public suspend fun getListing(listingId: String, options: RequestOptions = RequestOptions()): MarketplaceListing {
         return client.request<MarketplaceListing>(
@@ -91,8 +89,6 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      * are taken, and the answer is the same for every caller.
      *
      * `GET /api/v1/marketplace/categories`
-     *
-     * Required scopes: `marketplace:read`.
      */
     public suspend fun getMarketplaceCategories(options: RequestOptions = RequestOptions()): GetMarketplaceCategoriesResponse {
         return client.request<GetMarketplaceCategoriesResponse>(
@@ -113,8 +109,6 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      * the output and metrics, plus `revenue_error` when the revenue-share charge failed.
      *
      * `GET /api/v1/marketplace/invocations/{invocationId}`
-     *
-     * Required scopes: `marketplace:read`.
      */
     public suspend fun getMarketplaceInvocation(invocationId: String, options: RequestOptions = RequestOptions()): MarketplaceInvocation {
         return client.request<MarketplaceInvocation>(
@@ -259,8 +253,6 @@ public class MarketplaceApi internal constructor(private val client: UarpClient)
      * of the index.
      *
      * `GET /api/v1/marketplace/search`
-     *
-     * Required scopes: `marketplace:read`.
      */
     public suspend fun search(q: String? = null, category: MarketplaceListingCategory? = null, sort: SearchMarketplaceSort? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): SearchMarketplaceResponse {
         val query = buildList {

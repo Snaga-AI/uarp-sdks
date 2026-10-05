@@ -262,10 +262,10 @@ public class RegistryApi internal constructor(private val client: UarpClient) {
      */
     public suspend fun registryPublish(body: RegistryPublishRequest, options: RequestOptions = RequestOptions()): RegistryPublishResponse {
         val parts = buildList {
-            add(Part.Text("manifest", body.manifest))
+            add(Part.Text.of("manifest", body.manifest))
             add(Part.File("artifact", body.artifact))
-            body.sha256?.let { add(Part.Text("sha256", it)) }
-            body.attestation?.let { add(Part.Text("attestation", it)) }
+            body.sha256?.let { add(Part.Text.of("sha256", it)) }
+            body.attestation?.let { add(Part.Text.of("attestation", it)) }
         }
         return client.request<RegistryPublishResponse>(
             RequestSpec(

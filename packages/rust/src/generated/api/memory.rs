@@ -6,11 +6,13 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
 
 /// Query and header parameters for `listMemories`.
@@ -18,6 +20,12 @@ use crate::util::encode_path;
 pub struct ListMemoriesParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
+    /// Alias of `limit`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub top_k: Option<i64>,
+    /// Opaque; the `cursor` of the previous page. A malformed cursor is 400.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Agent memory management
@@ -191,10 +199,14 @@ impl MemoryApi {
 
     /// List recent memories for an agent
     ///
-    /// Returns the agent's most recent memory entries, newest first. `limit` (or its alias `top_k`)
-    /// defaults to 20 and is clamped to 1..200, so an oversized value narrows silently rather than
-    /// returning the whole corpus. This is a recency listing with no query — use `POST
-    /// /api/v1/agents/{agentId}/memory/search` to retrieve by relevance.
+    /// Returns the agent's memory entries, newest created first (entry_id breaks ties), in a fixed
+    /// order: two identical calls answer the same page. `limit` (or its alias `top_k`) defaults to
+    /// 20 and is clamped to 1..200. `total` is the agent's whole count of (non-archived) entries,
+    /// not the page length; while more exist, `has_more` is true and `cursor` continues the listing
+    /// when passed back as `?cursor=`. Reading the list does not count as recalling an entry (it no
+    /// longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). This is a listing with no
+    /// query — use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance. 404 when
+    /// the agent does not exist.
     ///
     /// `GET /api/v1/agents/{agentId}/memory`
     ///
@@ -210,6 +222,29 @@ impl MemoryApi {
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listMemories`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn list_memories_all<'a>(&'a self, agent_id: &'a str, params: &'a ListMemoriesParams) -> impl Stream<Item = Result<models::MemoryEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_memories(agent_id, &page_params).await?;
+                let items = page.memories;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, Some(page.has_more), was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Search agent memories
@@ -249,10 +284,15 @@ impl MemoryApi {
     /// can be refused `403` (shrinking or same-size updates never reach that gate) and the refusal
     /// is audit-logged.
     ///
+    /// WRITE SEMANTICS: merges. Only `content`, `tags` and `relevance_score` are read, each applied
+    /// only when present with the right type; an omitted or wrongly-typed one keeps its stored
+    /// value, as does every other field. `tags` replaces the stored array whole. `last_accessed_at`
+    /// is always re-stamped.
+    ///
     /// `PUT /api/v1/agents/{agentId}/memory/{entryId}`
     ///
     /// Required scopes: `memory:write`.
-    pub async fn update_agent_memory_entry(&self, agent_id: &str, entry_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::MemoryEntry> {
+    pub async fn update_agent_memory_entry(&self, agent_id: &str, entry_id: &str, body: &models::UpdateAgentMemoryEntryRequest) -> Result<models::MemoryEntry> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -276,6 +316,12 @@ impl MemoryApi {
     /// injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks`
     /// when it is not declared there yet (while fewer than 10 are declared). `404` when the agent
     /// does not exist.
+    ///
+    /// WRITE SEMANTICS: replaces. The block is rebuilt: `content` (required) overwrites it whole,
+    /// and an omitted `max_tokens` resets the ceiling to 1000 (clamped to the core-memory budget)
+    /// rather than keeping the stored value. Only `block_id` survives from the previous block. The
+    /// agent's `core_memory` config is merged, not replaced: it is enabled and the label appended
+    /// to `blocks` when there is room.
     ///
     /// `PUT /api/v1/agents/{agentId}/memory/core/{label}`
     ///

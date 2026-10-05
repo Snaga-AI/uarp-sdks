@@ -21,7 +21,7 @@ public struct LLMCredentialsAPI: Sendable {
     public func deleteLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = .init()) async throws -> DeleteLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))",
+            path: "/api/v1/llm-credentials/\(encodePathSegment(provider.rawValue))",
             idempotent: true,
             options: options
         ))
@@ -64,7 +64,7 @@ public struct LLMCredentialsAPI: Sendable {
     public func setLLMProviderKey(provider: SetLLMProviderKeyProvider, body: SetLLMProviderKeyRequest, options: RequestOptions = .init()) async throws -> SetLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
-            path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))",
+            path: "/api/v1/llm-credentials/\(encodePathSegment(provider.rawValue))",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -86,7 +86,7 @@ public struct LLMCredentialsAPI: Sendable {
     public func testLLMProviderKey(provider: SetLLMProviderKeyProvider, options: RequestOptions = .init()) async throws -> TestLLMProviderKeyResponse {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/llm-credentials/\(encodePathSegment(String(describing: provider)))/test",
+            path: "/api/v1/llm-credentials/\(encodePathSegment(provider.rawValue))/test",
             idempotent: true,
             options: options
         ))

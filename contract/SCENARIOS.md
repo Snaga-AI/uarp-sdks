@@ -28,8 +28,30 @@ all five SDKs put **the same bytes on the wire** for the same logical request.
 | 17 | `streamPost("/api/v1/llm/chat/completions", {model, stream: true, messages})` until `data: [DONE]` | a POST read as an event stream: `Accept: text/event-stream`, a JSON body, an idempotency key, `[DONE]` not delivered |
 | 18 | `streamPost("/api/v1/llm/chat/completions/refused", …)`, error caught | a refusal before the stream is an API error with its problem document, and a streamed POST is never retried — not even on 429 |
 | 19 | `streamPost("/api/v1/llm/chat/completions/plain", …)`, error caught | a 2xx that is not `text/event-stream` is an error, not a stream that ended with no events |
+| 20 | `auth.completeOAuthLoginFormPost("apple", {code, state, user})` | an `application/x-www-form-urlencoded` body, byte for byte |
 
-Total: **21 requests**: scenarios 4 and 5 make two each, the rest one.
+Total: **22 requests**: scenarios 4 and 5 make two each, the rest one.
+
+### A form body (20)
+
+`POST /api/v1/auth/oauth/{provider}/callback` takes
+`application/x-www-form-urlencoded` (Sign in with Apple on the web posts it).
+The fields are, in schema order: `code = "c 1+2"`, `state = "s/ы&=~*"`, and
+`user = {"name":"А Б","email":"a@b.c"}` (a JSON blob, as the field's description says);
+`id_token` and `error` are absent and must not appear at all. The body is
+compared as bytes, so every SDK encodes the way the WHATWG URL standard's
+`application/x-www-form-urlencoded` serializer does — the one `URLSearchParams`
+uses:
+
+- fields in the order the schema declares them, absent and null fields skipped;
+- a space becomes `+`; `A-Z a-z 0-9 * - . _` stay as they are; every other
+  byte of the UTF-8 encoding becomes `%XX` with upper-case hex — `~` included,
+  which RFC 3986 would leave alone and this serializer does not;
+- `Content-Type: application/x-www-form-urlencoded`, exactly.
+
+Expected body: `code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D`.
+Each runner reports `form_post_email` — the `email` it decoded from the answer
+(`"a@b.c"`).
 
 ### Streaming a POST (17, 18)
 

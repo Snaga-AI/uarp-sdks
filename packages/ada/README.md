@@ -249,6 +249,10 @@ directly, for endpoints the generated surface does not fit.
 
 - Each `Character` of a `Text` value is one byte, so binary downloads and
   multipart uploads work without extra encoding.
+- An `application/x-www-form-urlencoded` body (the Sign in with Apple web
+  callback) is built from its request record by `UARP.Form.Encode`: fields in
+  schema order, unset ones left out, escaped byte for byte as
+  `URLSearchParams` does (`+` for a space, `~` escaped).
 - Bodies that are a bare scalar, array or free-form object (60 endpoints) take
   a `JSON_Value` rather than a generated record, and 243 operations return one
   for the same reason — the API document describes no schema for their

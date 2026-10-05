@@ -3,13 +3,60 @@
 --  LLM provider discovery and model listing
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Providers is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `llmChatCompletion`.
+   type LLM_Chat_Completion_Params is record
+      --  The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+      --  Recorded beside the model on the tenant's usage and reported by `GET
+      --  /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+      --  refused, and the spend then counts under `source: ""`.
+      Has_X_Uarp_Source : Boolean := False;
+      X_Uarp_Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_LLM_Chat_Completion_Params : constant LLM_Chat_Completion_Params := (others => <>);
+
+   --  Query and header parameters for `llmSynthesizeSpeech`.
+   type LLM_Synthesize_Speech_Params is record
+      --  The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+      --  Recorded beside the model on the tenant's usage and reported by `GET
+      --  /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+      --  refused, and the spend then counts under `source: ""`.
+      Has_X_Uarp_Source : Boolean := False;
+      X_Uarp_Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_LLM_Synthesize_Speech_Params : constant LLM_Synthesize_Speech_Params := (others => <>);
+
+   --  Query and header parameters for `llmTranscribeAudio`.
+   type LLM_Transcribe_Audio_Params is record
+      --  The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+      --  Recorded beside the model on the tenant's usage and reported by `GET
+      --  /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+      --  refused, and the spend then counts under `source: ""`.
+      Has_X_Uarp_Source : Boolean := False;
+      X_Uarp_Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_LLM_Transcribe_Audio_Params : constant LLM_Transcribe_Audio_Params := (others => <>);
+
+   --  Query and header parameters for `toolsWebSearch`.
+   type Tools_Web_Search_Params is record
+      --  The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+      --  Recorded beside the model on the tenant's usage and reported by `GET
+      --  /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+      --  refused, and the spend then counts under `source: ""`.
+      Has_X_Uarp_Source : Boolean := False;
+      X_Uarp_Source : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Tools_Web_Search_Params : constant Tools_Web_Search_Params := (others => <>);
 
    --  LLM usage stats
    --
@@ -165,7 +212,8 @@ package UARP.API.Providers is
    --  Required scopes: agents:read.
    function LLM_Chat_Completion
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.LLM_Chat_Completion_Request;
+      Params : LLM_Chat_Completion_Params := No_LLM_Chat_Completion_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Open_Ai_Chat_Completion;
 
@@ -184,6 +232,7 @@ package UARP.API.Providers is
    function LLM_Synthesize_Speech
      (Self : Client_Type;
       Payload : UARP.Models.LLM_Synthesize_Speech_Request;
+      Params : LLM_Synthesize_Speech_Params := No_LLM_Synthesize_Speech_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Types.Text;
 
@@ -203,7 +252,33 @@ package UARP.API.Providers is
    function LLM_Transcribe_Audio
      (Self : Client_Type;
       Payload : UARP.Models.LLM_Transcribe_Audio_Request;
+      Params : LLM_Transcribe_Audio_Params := No_LLM_Transcribe_Audio_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.LLM_Transcribe_Audio_Response;
+
+   --  Search the web through the platform's search provider
+   --
+   --  Runs one web search through the provider configured for the platform (the same one the
+   --  agents' `web_search` tool uses; the provider key never leaves the platform) and returns
+   --  titles, URLs and a snippet per result - not page bodies. It spends a platform-held key, so
+   --  it carries the same gate as the LLM proxy's spend endpoints: `runs` write permission plus
+   --  the `runs:create` scope, and the billing and quota gate (a delinquent subscription is
+   --  refused 402 with a `code`, an exhausted quota 403). Each search the provider answers is one
+   --  unit of usage: it counts in `tool_calls_count` and as a `web_search` row of `GET
+   --  /api/v1/usage?breakdown=model`, at the platform's price per 1000 searches (currently 0 -
+   --  counted, not charged), and under `X-UARP-Source` when the caller sends one. An empty
+   --  `results` means the provider answered a result list with nothing in it; a provider that is
+   --  not configured, did not answer, or answered anything else is a named refusal, never an empty
+   --  200. At most 60 searches per tenant per minute (429 with `Retry-After`). Since 2026-09-29.
+   --
+   --  POST /api/v1/tools/web_search
+   --
+   --  Required scopes: runs:create.
+   function Tools_Web_Search
+     (Self : Client_Type;
+      Payload : UARP.Models.Tools_Web_Search_Request;
+      Params : Tools_Web_Search_Params := No_Tools_Web_Search_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Tools_Web_Search_Response;
 
 end UARP.API.Providers;

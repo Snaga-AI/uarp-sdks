@@ -248,6 +248,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(
                 200, {"choices": [{"index": 0, "message": {"role": "assistant", "content": "hello"}}]}
             )
+        if path == "/api/v1/auth/oauth/apple/callback" and self.command == "POST":
+            #  Scenario 20: a form body (Sign in with Apple posts its callback
+            #  as application/x-www-form-urlencoded). The bytes are compared
+            #  exactly; the answer is the 200 the spec declares.
+            return self._json(200, {"api_key": "uarp_contract_form", "email": "a@b.c"})
         if path == "/api/v1/runs/r1/events":
             frames = (
                 b"id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\n"

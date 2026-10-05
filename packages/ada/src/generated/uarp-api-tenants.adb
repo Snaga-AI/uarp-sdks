@@ -234,7 +234,6 @@ package body UARP.API.Tenants is
 
    function Verify_Tenant_Domain
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Verify_Tenant_Domain_Response
    is
@@ -244,8 +243,6 @@ package body UARP.API.Tenants is
             (Self,
              "POST",
              "/api/v1/tenants/me/domain/verify",
-             Payload => Payload,
-             Has_Payload => True,
              Idempotent => True,
              Options => Options));
    end Verify_Tenant_Domain;

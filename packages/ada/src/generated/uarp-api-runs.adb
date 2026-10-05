@@ -165,17 +165,75 @@ package body UARP.API.Runs is
    function Get_Run_Audit_Log
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Audit_Log_Params := No_Get_Run_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Run_Audit_Log_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/audit-log",
+             Query => Query,
              Options => Options));
    end Get_Run_Audit_Log;
+
+   function Get_Run_Audit_Log_All
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Get_Run_Audit_Log_Params := No_Get_Run_Audit_Log_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Audit_Log_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Audit_Log_Entry_Vectors.Vector;
+      Page_Params : Get_Run_Audit_Log_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Run_Audit_Log_Response :=
+               Get_Run_Audit_Log
+                  (Self,
+                   Run_Id => Run_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Audit_Log loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Audit_Log.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Run_Audit_Log_All;
 
    function Get_Run_Feedback
      (Self : Client_Type;
@@ -215,17 +273,75 @@ package body UARP.API.Runs is
    function Get_Run_Steps
      (Self : Client_Type;
       Run_Id : String;
+      Params : Get_Run_Steps_Params := No_Get_Run_Steps_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Run_Steps_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/runs/" & UARP.Types.Encode_Path_Segment (Run_Id) & "/steps",
+             Query => Query,
              Options => Options));
    end Get_Run_Steps;
+
+   function Get_Run_Steps_All
+     (Self : Client_Type;
+      Run_Id : String;
+      Params : Get_Run_Steps_Params := No_Get_Run_Steps_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Run_Step_Vectors.Vector
+   is
+      Collected : UARP.Models.Run_Step_Vectors.Vector;
+      Page_Params : Get_Run_Steps_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Run_Steps_Response :=
+               Get_Run_Steps
+                  (Self,
+                   Run_Id => Run_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Steps loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Steps.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Run_Steps_All;
 
    function List
      (Self : Client_Type;

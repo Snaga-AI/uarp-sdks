@@ -7,6 +7,7 @@
 --    UARP.API.Admin_Config
 --    UARP.API.Agents
 --    UARP.API.Analytics
+--    UARP.API.Anthropic_Compat
 --    UARP.API.Auth
 --    UARP.API.Billing
 --    UARP.API.Bootstrap

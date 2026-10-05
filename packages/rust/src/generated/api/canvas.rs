@@ -33,6 +33,8 @@ impl CanvasApi {
     /// canvas, it is just blank.
     ///
     /// `GET /api/v1/canvas/fleet`
+    ///
+    /// Required scopes: `agents:read`.
     pub async fn get_fleet_layout(&self) -> Result<models::FleetLayout> {
         self.client
             .request_json(Request {
@@ -57,6 +59,8 @@ impl CanvasApi {
     /// has unsaved changes. Send the ids to be sure.
     ///
     /// `POST /api/v1/canvas/fleet/materialize`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn materialize_canvas_squad(&self, body: &models::MaterializeCanvasSquadRequest) -> Result<models::MaterializeCanvasSquadResponse> {
         self.client
             .request_json(Request {
@@ -81,6 +85,8 @@ impl CanvasApi {
     /// than the ones on screen. Requires MEF.
     ///
     /// `POST /api/v1/canvas/loop/run`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn run_canvas_loop(&self, body: &models::RunCanvasLoopRequest) -> Result<models::RunCanvasLoopResponse> {
         self.client
             .request_json(Request {
@@ -104,6 +110,8 @@ impl CanvasApi {
     /// has no order to execute in, and starting one would look like success. Requires MEF.
     ///
     /// `POST /api/v1/canvas/workflow/run`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn run_canvas_workflow(&self, body: &models::RunCanvasWorkflowRequest) -> Result<models::RunCanvasWorkflowResponse> {
         self.client
             .request_json(Request {
@@ -127,7 +135,14 @@ impl CanvasApi {
     /// a 200 read as “saved” while the operator's cards snapped back on the next reload. An
     /// oversize body is a clean 422 instead of a silent truncation at the storage limit.
     ///
+    /// WRITE SEMANTICS: replaces. The layout is rebuilt from this body alone: an omitted
+    /// `positions`, `edges`, `notes` or `drafts` is stored empty, and nothing carries over from the
+    /// stored layout. The 409 needs `base_updated_at` (or a storage-level race): a body without it
+    /// overwrites whatever is stored.
+    ///
     /// `PUT /api/v1/canvas/fleet`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn save_fleet_layout(&self, body: &models::FleetLayoutUpdate) -> Result<models::FleetLayout> {
         self.client
             .request_json(Request {
@@ -149,6 +164,8 @@ impl CanvasApi {
     /// scheduled.
     ///
     /// `POST /api/v1/canvas/workflow/schedule`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn schedule_canvas_workflow(&self, body: &models::ScheduleCanvasWorkflowRequest) -> Result<models::ScheduleCanvasWorkflowResponse> {
         self.client
             .request_json(Request {
@@ -167,6 +184,8 @@ impl CanvasApi {
     /// Idempotent: removing a trigger that is not there still answers 200 with `status: removed`.
     ///
     /// `DELETE /api/v1/canvas/workflow/schedule/{triggerId}`
+    ///
+    /// Required scopes: `agents:write`.
     pub async fn unschedule_canvas_workflow(&self, trigger_id: &str) -> Result<models::UnscheduleCanvasWorkflowResponse> {
         self.client
             .request_json(Request {

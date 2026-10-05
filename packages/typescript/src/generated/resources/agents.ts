@@ -25,7 +25,6 @@ import type {
   GetAgentSystemCardFormat,
   GetAgentTrafficResponse,
   GetAgentVersionDiffResponse,
-  JsonObject,
   ListAgentBookmarksResponse,
   ListAgentMailResponse,
   ListAgentVersionsFields,
@@ -36,6 +35,7 @@ import type {
   RiskClassificationUpdate,
   RollbackAgentRequest,
   RotateAgentIdentityResponse,
+  SetAgentCapabilitiesRequest,
   SetAgentCapabilitiesResponse,
   SetAgentTrafficRequest,
   SetAgentTrafficResponse,
@@ -91,6 +91,29 @@ export interface ListAgentsParams {
    * ghosts are hidden from main pickers.
    */
   include_offline?: boolean;
+  /**
+   * Include bridge agents registered under a parent (`parent_agent_id`, e.g. QUARK profiles
+   * under their machine). Hidden by default; the parent's row carries `children_count` either
+   * way. Added 2026-09-25.
+   */
+  include_children?: boolean;
+}
+
+/**
+ * Query and header parameters for `listAgentBookmarks`.
+ */
+export interface ListAgentBookmarksParams {
+  /**
+   * Page size, in the stored order, within the 1000 the list holds. ABSENT means the whole list,
+   * exactly as before paging existed — not a default page. Values outside 1..500 are clamped,
+   * not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -576,7 +599,7 @@ export class AgentsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/agents',
-      query: pick(params, ['workspace_id', 'limit', 'cursor', 'include_offline']),
+      query: pick(params, ['workspace_id', 'limit', 'cursor', 'include_offline', 'include_children']),
       options,
     });
   }
@@ -603,12 +626,26 @@ export class AgentsResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  listAgentBookmarks(agentId: string, options?: RequestOptions): Promise<ListAgentBookmarksResponse> {
+  listAgentBookmarks(agentId: string, params?: ListAgentBookmarksParams, options?: RequestOptions): Promise<ListAgentBookmarksResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/bookmarks`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listAgentBookmarks`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listAgentBookmarksAll(agentId: string, params?: ListAgentBookmarksParams, options?: RequestOptions): AsyncIterableIterator<AgentBookmark> {
+    return autoPaginate<AgentBookmark>(
+      (cursor) => this.listAgentBookmarks(agentId, { ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -674,13 +711,19 @@ export class AgentsResource extends APIResource {
    * `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
    * more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) — so a client
    * may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
-   * `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
+   * `drop_genome` or `drop_genome_source`. `resource_limits`, `memory`, `core_memory`,
+   * `schedule`, `guardrails`, `image_generation`, `video_generation`, `command_relationships`
+   * and `access_control` also merge one level; `mcp`, `policies`, `thinking`, `effort_policy`,
+   * `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
+   * stored list. The body is `AgentUpdate`, the schema the handler validates with
+   * (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
+   * unknown field is dropped.
    *
    * `PATCH /api/v1/agents/{agentId}`
    *
    * Required scopes: `agents:write`.
    */
-  patch(agentId: string, body: JsonObject, options?: RequestOptions): Promise<Agent> {
+  patch(agentId: string, body: AgentUpdate, options?: RequestOptions): Promise<Agent> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}`,
@@ -764,16 +807,24 @@ export class AgentsResource extends APIResource {
   /**
    * Set agent capabilities
    *
-   * Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
-   * the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
-   * and `permissions` are read from the body — anything else is stripped. Returns `{status,
-   * agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
+   * Stores the agent's capability manifest, replacing any previous one. The body is the manifest
+   * `GET` on this path serves: `skills` (required, up to 100; each needs `id` and `name`),
+   * `constraints` (optional — when omitted the agent's own limits are used, as in the manifest
+   * `GET` generates), `tools` and `kb_ids` (optional, default empty). `agent_id` is taken from
+   * the path and `updated_at` is stamped by the server; anything else in the body is stripped.
+   * `404` when the agent does not exist. Returns `{status, agent_id}` rather than the stored
+   * manifest; read it back with the `GET` on this path.
+   *
+   * WRITE SEMANTICS: replaces — an omitted `tools` or `kb_ids` is stored empty, not kept from
+   * the previous manifest. Until 2026-10-02 this operation read
+   * `capabilities`/`tools`/`permissions` and stripped `skills`, which the store requires, so
+   * every call was refused `422` and nothing was stored.
    *
    * `PUT /api/v1/agents/{agentId}/capabilities`
    *
    * Required scopes: `agents:write`.
    */
-  setAgentCapabilities(agentId: string, body: JsonObject, options?: RequestOptions): Promise<SetAgentCapabilitiesResponse> {
+  setAgentCapabilities(agentId: string, body: SetAgentCapabilitiesRequest, options?: RequestOptions): Promise<SetAgentCapabilitiesResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/capabilities`,
@@ -791,6 +842,11 @@ export class AgentsResource extends APIResource {
    * refused and nothing is stored. The split is what the runtime draws against when it resolves
    * which version a new run executes, using a cryptographically-secure weighted draw. The agent
    * record itself is untouched.
+   *
+   * WRITE SEMANTICS: replaces. The stored split is rebuilt from `entries`; a version the body
+   * omits is dropped from the split and nothing from the previous split is kept. The weight-sum
+   * check throws a plain error rather than a validation error, so from the code a bad sum
+   * answers 500, not 4xx, with nothing stored (not measured on the wire).
    *
    * `PUT /api/v1/agents/{agentId}/traffic`
    *
@@ -891,6 +947,11 @@ export class AgentsResource extends APIResource {
    * update lands first, which is what stops an ordinary agent save clobbering the compliance
    * trail — and it is audit-logged. The response is the whole sanitised agent, not just the
    * classification.
+   *
+   * WRITE SEMANTICS: replaces. `risk_classification` is rebuilt whole from this body: an omitted
+   * `annex_iii_category` is cleared and an omitted `assessed_at` becomes now; `level`,
+   * `justification`, `assessor` and `review_due_at` are required. The rest of the agent record
+   * is kept, under a compare-and-set.
    *
    * `PATCH /api/v1/agents/{agentId}/risk-classification`
    *

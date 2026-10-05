@@ -90,6 +90,38 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_Analytics_Overview;
 
+   procedure Admin_Archive_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id),
+          Idempotent => True,
+          Options => Options);
+   end Admin_Archive_Video_Template;
+
+   function Admin_Create_Video_Template
+     (Self : Client_Type;
+      Payload : UARP.Models.Video_Template_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/video-templates",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Admin_Create_Video_Template;
+
    function Admin_Data_Explorer_Raw_Keys
      (Self : Client_Type;
       Params : Admin_Data_Explorer_Raw_Keys_Params := No_Admin_Data_Explorer_Raw_Keys_Params;
@@ -267,6 +299,35 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_Get_Reconciliation;
 
+   function Admin_Get_Search_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Get_Search_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/config/search",
+             Options => Options));
+   end Admin_Get_Search_Config;
+
+   function Admin_Get_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id),
+             Options => Options));
+   end Admin_Get_Video_Template;
+
    function Admin_Get_Voice_Config
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -309,6 +370,43 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_List_Tools;
 
+   function Admin_List_Video_Orders
+     (Self : Client_Type;
+      Params : Admin_List_Video_Orders_Params := No_Admin_List_Video_Orders_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_List_Video_Orders_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Status then
+         UARP.Types.Add (Query, "status", UARP.Models.Image (Params.Status));
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/video-orders",
+             Query => Query,
+             Options => Options));
+   end Admin_List_Video_Orders;
+
+   function Admin_List_Video_Templates
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_List_Video_Templates_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/video-templates",
+             Options => Options));
+   end Admin_List_Video_Templates;
+
    function Admin_List_Webhook_DLQ
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -323,9 +421,25 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_List_Webhook_DLQ;
 
+   function Admin_Publish_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id) & "/publish",
+             Idempotent => True,
+             Options => Options));
+   end Admin_Publish_Video_Template;
+
    function Admin_Put_Landing_Config
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Admin_Put_Landing_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Put_Landing_Config_Response
    is
@@ -335,7 +449,7 @@ package body UARP.API.Admin is
             (Self,
              "PUT",
              "/api/v1/admin/config/landing",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -343,7 +457,7 @@ package body UARP.API.Admin is
 
    function Admin_Put_Model_Catalog
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Admin_Put_Model_Catalog_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Put_Model_Catalog_Response
    is
@@ -353,7 +467,7 @@ package body UARP.API.Admin is
             (Self,
              "PUT",
              "/api/v1/admin/config/model-catalog",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -377,6 +491,24 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Admin_Put_O_Auth_Provider;
+
+   function Admin_Put_Search_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Admin_Put_Search_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Put_Search_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/config/search",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Admin_Put_Search_Config;
 
    function Admin_Put_Voice_Config
      (Self : Client_Type;
@@ -414,6 +546,25 @@ package body UARP.API.Admin is
              Options => Options));
    end Admin_Put_Voice_Presets;
 
+   function Admin_Replace_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Video_Template_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Admin_Replace_Video_Template;
+
    function Admin_Replay_Webhook_DLQ
      (Self : Client_Type;
       Event_Id : String;
@@ -429,6 +580,73 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Admin_Replay_Webhook_DLQ;
+
+   function Admin_Set_Video_Template_Preview
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Admin_Set_Video_Template_Preview_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id) & "/preview",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Admin_Set_Video_Template_Preview;
+
+   function Admin_Test_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Admin_Test_Video_Template_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Test_Video_Template_Response
+   is
+   begin
+      declare
+         Form : UARP.Multipart.Builder;
+      begin
+         UARP.Multipart.Reset (Form);
+         UARP.Multipart.Add_File (Form, "photo", "photo", UARP.Types.SU.To_String (Payload.Photo));
+         if Payload.Has_Slots then
+            UARP.Multipart.Add_Field (Form, "slots", UARP.Types.SU.To_String (Payload.Slots));
+         end if;
+         declare
+            Raw_Body : constant UARP.Types.Text := UARP.Client.Call_Raw
+               (Self,
+                "POST",
+                "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id) & "/test",
+                Idempotent => True,
+                Options => Options,
+                Payload => UARP.Types.SU.To_String (UARP.Multipart.Body_Text (Form)),
+                Has_Payload => True,
+                Content_Type => UARP.Multipart.Content_Type (Form));
+         begin
+            return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));
+         end;
+      end;
+   end Admin_Test_Video_Template;
+
+   function Admin_Unpublish_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/video-templates/" & UARP.Types.Encode_Path_Segment (Template_Id) & "/unpublish",
+             Idempotent => True,
+             Options => Options));
+   end Admin_Unpublish_Video_Template;
 
    function Create_Admin_Blog_Post
      (Self : Client_Type;
@@ -450,7 +668,7 @@ package body UARP.API.Admin is
 
    function Create_Admin_Provider
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Admin_Provider_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Admin_Provider_Response
    is
@@ -460,7 +678,7 @@ package body UARP.API.Admin is
             (Self,
              "POST",
              "/api/v1/admin/providers",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -468,7 +686,7 @@ package body UARP.API.Admin is
 
    function Create_Tenant
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Tenant
    is
@@ -478,7 +696,7 @@ package body UARP.API.Admin is
             (Self,
              "POST",
              "/api/v1/admin/tenants",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -712,6 +930,12 @@ package body UARP.API.Admin is
       if Params.Has_Type then
          UARP.Types.Add (Query, "type", Params.Type_K);
       end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -720,6 +944,55 @@ package body UARP.API.Admin is
              Query => Query,
              Options => Options));
    end Get_Audit_For_Target;
+
+   function Get_Audit_For_Target_All
+     (Self : Client_Type;
+      Target_Id : String;
+      Params : Get_Audit_For_Target_Params := No_Get_Audit_For_Target_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Admin_Audit_List_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Admin_Audit_List_Entry_Vectors.Vector;
+      Page_Params : Get_Audit_For_Target_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Admin_Audit_List :=
+               Get_Audit_For_Target
+                  (Self,
+                   Target_Id => Target_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Entries loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Entries.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Audit_For_Target_All;
 
    function Get_Conformity_Report
      (Self : Client_Type;
@@ -1264,7 +1537,7 @@ package body UARP.API.Admin is
 
    function Update_Admin_Pricing
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Pricing_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Pricing_Response
@@ -1275,7 +1548,7 @@ package body UARP.API.Admin is
             (Self,
              "PUT",
              "/api/v1/admin/config/pricing",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => Include_Payload,
              Idempotent => True,
              Options => Options));
@@ -1284,7 +1557,7 @@ package body UARP.API.Admin is
    function Update_Admin_Provider
      (Self : Client_Type;
       Provider_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Provider_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Provider_Response
    is
@@ -1294,7 +1567,7 @@ package body UARP.API.Admin is
             (Self,
              "PATCH",
              "/api/v1/admin/providers/" & UARP.Types.Encode_Path_Segment (Provider_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -1303,7 +1576,7 @@ package body UARP.API.Admin is
    function Update_Admin_Tenant_Settings
      (Self : Client_Type;
       Tenant_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Tenant_Settings_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Tenant_Settings_Response
    is
@@ -1313,7 +1586,7 @@ package body UARP.API.Admin is
             (Self,
              "PATCH",
              "/api/v1/admin/tenants/" & UARP.Types.Encode_Path_Segment (Tenant_Id) & "/settings",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

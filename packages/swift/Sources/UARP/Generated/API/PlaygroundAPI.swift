@@ -58,7 +58,7 @@ public struct PlaygroundAPI: Sendable {
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
     /// Required scopes: `runs:create`.
-    public func run(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Run {
+    public func run(agentId: String, body: RunPlaygroundRequest, options: RequestOptions = .init()) async throws -> Run {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))/run",
@@ -77,10 +77,14 @@ public struct PlaygroundAPI: Sendable {
     /// editing the agent itself, because the canvas is the agent's composition. The canvas is
     /// stored alongside the agent record and does not itself change how the agent runs.
     ///
+    /// WRITE SEMANTICS: replaces. The stored canvas is rebuilt from this body: `nodes` and `edges`
+    /// are required and stored as given, an omitted `metadata` becomes an empty object, and nothing
+    /// from the previous canvas is kept. Unknown top-level fields are stripped.
+    ///
     /// `PUT /api/v1/playground/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func savePlaygroundCanvas(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> PlaygroundAgentState {
+    public func savePlaygroundCanvas(agentId: String, body: SavePlaygroundCanvasRequest, options: RequestOptions = .init()) async throws -> PlaygroundAgentState {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/playground/agents/\(encodePathSegment(agentId))",

@@ -71,7 +71,7 @@ impl GDPRApi {
     /// characters (**422**). Writes a `data_subject.erasure` audit entry.
     ///
     /// `POST /api/v1/data-subject/erasure`
-    pub async fn data_subject_erasure(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::DataSubjectErasureResult> {
+    pub async fn data_subject_erasure(&self, body: &models::DataSubjectErasureRequest) -> Result<models::DataSubjectErasureResult> {
         self.client
             .request_json(Request {
                 method: Method::POST,

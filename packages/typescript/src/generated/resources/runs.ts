@@ -7,6 +7,7 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   ApproveRunResponse,
+  AuditLogEntry,
   CancelRunResponse,
   ContinueRunRequest,
   ContinueRunResponse,
@@ -36,6 +37,7 @@ import type {
   RunFeedbackList,
   RunFeedbackOne,
   RunFeedbackSet,
+  RunStep,
   SetRunFeedbackRequest,
 } from '../models.js';
 
@@ -63,10 +65,42 @@ export interface GetRunParams {
 }
 
 /**
+ * Query and header parameters for `getRunAuditLog`.
+ */
+export interface GetRunAuditLogParams {
+  /**
+   * Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+   * existed — not a default page. Values outside 1..500 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
+
+/**
  * Query and header parameters for `getRunFeedback`.
  */
 export interface GetRunFeedbackParams {
   message_id?: string;
+}
+
+/**
+ * Query and header parameters for `getRunSteps`.
+ */
+export interface GetRunStepsParams {
+  /**
+   * Page size, in step order. ABSENT means the whole list, exactly as before paging existed —
+   * not a default page. Values outside 1..500 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -146,9 +180,12 @@ export class RunsResource extends APIResource {
    * otherwise the scheduler aborts it, and a run the scheduler does not hold — queued but
    * unclaimed, or stranded by a crashed worker — is flipped to `cancelled` directly in storage
    * under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
-   * the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
-   * when something was stopped and `{cancelled: false, message}` when the run is unknown or
-   * already finished — there is no `404` here, and a repeat call is safe.
+   * the completion rather than overwriting it. Whichever path stops it, the run ends `status:
+   * cancelled` with `error_code: RUN_CANCELLED`, and the `run.cancelled` event carries the same
+   * `error_code` (until 2026-09-23 only a run cancelled mid-flight had it). Always answers
+   * `200`: `{cancelled: true, run_id}` when something was stopped and `{cancelled: false,
+   * message}` when the run is unknown or already finished — there is no `404` here, and a repeat
+   * call is safe.
    *
    * `POST /api/v1/runs/{runId}/cancel`
    *
@@ -334,12 +371,26 @@ export class RunsResource extends APIResource {
    *
    * Required scopes: `runs:read`.
    */
-  getRunAuditLog(runId: string, options?: RequestOptions): Promise<GetRunAuditLogResponse> {
+  getRunAuditLog(runId: string, params?: GetRunAuditLogParams, options?: RequestOptions): Promise<GetRunAuditLogResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/audit-log`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getRunAuditLog`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getRunAuditLogAll(runId: string, params?: GetRunAuditLogParams, options?: RequestOptions): AsyncIterableIterator<AuditLogEntry> {
+    return autoPaginate<AuditLogEntry>(
+      (cursor) => this.getRunAuditLog(runId, { ...params, cursor }, options),
+      'audit_log',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -369,10 +420,11 @@ export class RunsResource extends APIResource {
   /**
    * Get run queue position
    *
-   * Reports where the run sits in this worker's scheduling queue. The answer comes from the
-   * in-process scheduler, not from storage, so the handler does not verify that the run exists —
-   * an unknown or already-started run answers `200` with whatever the scheduler reports for it
-   * rather than `404`.
+   * Reports where the run sits in this worker's scheduling queue. The position comes from the
+   * in-process scheduler; the run's existence comes from storage — an id that is not a run of
+   * this tenant answers `404` (since 2026-09-23; it used to answer `200` with position `0`). A
+   * run that exists but is not queued here (running, finished, or queued on another worker)
+   * answers `0`.
    *
    * `GET /api/v1/runs/{runId}/queue-position`
    *
@@ -390,18 +442,35 @@ export class RunsResource extends APIResource {
    * List steps for a run
    *
    * Returns the ordered list of steps executed during a run, with per-step metrics including
-   * tokens, cost, and tool calls.
+   * tokens, cost, and tool calls. Model calls a run makes outside any step — the effort
+   * classifier, the planner, the evaluator — are reported once in `outside_steps`, so the steps'
+   * `cost_usd` plus `outside_steps.cost_usd` equals the run's `total_cost_usd` (both priced the
+   * way the run is billed).
    *
    * `GET /api/v1/runs/{runId}/steps`
    *
    * Required scopes: `runs:read`.
    */
-  getRunSteps(runId: string, options?: RequestOptions): Promise<GetRunStepsResponse> {
+  getRunSteps(runId: string, params?: GetRunStepsParams, options?: RequestOptions): Promise<GetRunStepsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/steps`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getRunSteps`, following the `cursor` cursor until the server
+   * reports no further pages.
+   */
+  getRunStepsAll(runId: string, params?: GetRunStepsParams, options?: RequestOptions): AsyncIterableIterator<RunStep> {
+    return autoPaginate<RunStep>(
+      (cursor) => this.getRunSteps(runId, { ...params, cursor }, options),
+      'steps',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -620,6 +689,11 @@ export class RunsResource extends APIResource {
    * them — but cannot be matched back to the transcript, and each such arrival is counted per
    * day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
    *
+   * WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+   * `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+   * `reason` drops one stored by an earlier PUT. Other callers' rows and other messages' rows
+   * are untouched.
+   *
    * `PUT /api/v1/runs/{runId}/feedback`
    *
    * Required scopes: `runs:create`.
@@ -645,7 +719,7 @@ export class RunsResource extends APIResource {
    *
    * `GET /api/v1/runs/{runId}/events`
    *
-   * Required scopes: `events:read`.
+   * Required scopes: `runs:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
    */

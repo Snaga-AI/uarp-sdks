@@ -27,6 +27,8 @@ export class CanvasResource extends APIResource {
    * canvas, it is just blank.
    *
    * `GET /api/v1/canvas/fleet`
+   *
+   * Required scopes: `agents:read`.
    */
   getFleetLayout(options?: RequestOptions): Promise<FleetLayout> {
     return this._client.request({
@@ -48,6 +50,8 @@ export class CanvasResource extends APIResource {
    * has unsaved changes. Send the ids to be sure.
    *
    * `POST /api/v1/canvas/fleet/materialize`
+   *
+   * Required scopes: `agents:write`.
    */
   materializeCanvasSquad(body: MaterializeCanvasSquadRequest, options?: RequestOptions): Promise<MaterializeCanvasSquadResponse> {
     return this._client.request({
@@ -71,6 +75,8 @@ export class CanvasResource extends APIResource {
    * than the ones on screen. Requires MEF.
    *
    * `POST /api/v1/canvas/loop/run`
+   *
+   * Required scopes: `agents:write`.
    */
   runCanvasLoop(body: RunCanvasLoopRequest, options?: RequestOptions): Promise<RunCanvasLoopResponse> {
     return this._client.request({
@@ -93,6 +99,8 @@ export class CanvasResource extends APIResource {
    * has no order to execute in, and starting one would look like success. Requires MEF.
    *
    * `POST /api/v1/canvas/workflow/run`
+   *
+   * Required scopes: `agents:write`.
    */
   runCanvasWorkflow(body: RunCanvasWorkflowRequest, options?: RequestOptions): Promise<RunCanvasWorkflowResponse> {
     return this._client.request({
@@ -115,7 +123,14 @@ export class CanvasResource extends APIResource {
    * a 200 read as “saved” while the operator's cards snapped back on the next reload. An
    * oversize body is a clean 422 instead of a silent truncation at the storage limit.
    *
+   * WRITE SEMANTICS: replaces. The layout is rebuilt from this body alone: an omitted
+   * `positions`, `edges`, `notes` or `drafts` is stored empty, and nothing carries over from the
+   * stored layout. The 409 needs `base_updated_at` (or a storage-level race): a body without it
+   * overwrites whatever is stored.
+   *
    * `PUT /api/v1/canvas/fleet`
+   *
+   * Required scopes: `agents:write`.
    */
   saveFleetLayout(body: FleetLayoutUpdate, options?: RequestOptions): Promise<FleetLayout> {
     return this._client.request({
@@ -136,6 +151,8 @@ export class CanvasResource extends APIResource {
    * scheduled.
    *
    * `POST /api/v1/canvas/workflow/schedule`
+   *
+   * Required scopes: `agents:write`.
    */
   scheduleCanvasWorkflow(body: ScheduleCanvasWorkflowRequest, options?: RequestOptions): Promise<ScheduleCanvasWorkflowResponse> {
     return this._client.request({
@@ -153,6 +170,8 @@ export class CanvasResource extends APIResource {
    * Idempotent: removing a trigger that is not there still answers 200 with `status: removed`.
    *
    * `DELETE /api/v1/canvas/workflow/schedule/{triggerId}`
+   *
+   * Required scopes: `agents:write`.
    */
   unscheduleCanvasWorkflow(triggerId: string, options?: RequestOptions): Promise<UnscheduleCanvasWorkflowResponse> {
     return this._client.request({

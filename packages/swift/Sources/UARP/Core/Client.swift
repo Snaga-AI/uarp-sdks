@@ -120,6 +120,8 @@ public enum RequestBody: Sendable {
     case json(Data)
     case raw(Data, contentType: String)
     case multipart([MultipartPart])
+    /// `application/x-www-form-urlencoded` name/value pairs, sent in this order.
+    case form([(String, String)])
 }
 
 public struct MultipartPart: Sendable {
@@ -185,6 +187,23 @@ public final class UARPClient: @unchecked Sendable {
         }
     }
 
+    /// A non-string form field as text: its JSON, as the TypeScript SDK's
+    /// `JSON.stringify` writes it (a JSON string unquoted, `/` unescaped).
+    /// `nil` for a JSON null, which a form skips like an absent field.
+    func formValue<T: Encodable>(_ value: T) throws -> String? {
+        if let json = value as? JSONValue {
+            if case .null = json { return nil }
+            if case .string(let text) = json { return text }
+        }
+        let encoder = JSONEncoder()
+        encoder.outputFormatting = [.withoutEscapingSlashes]
+        do {
+            return String(decoding: try encoder.encode(value), as: UTF8.self)
+        } catch {
+            throw UARPError.encoding(underlying: error)
+        }
+    }
+
     // MARK: - Transport
 
     /// Send a request and decode a JSON response body.
@@ -220,8 +239,27 @@ public final class UARPClient: @unchecked Sendable {
     }
 
     /// Open a server-sent event stream.
+    ///
+    /// Only a `GET` stream reconnects. Any other method gets the one attempt
+    /// ``streamPost(path:body:options:)`` describes: a replayed POST would run
+    /// (and bill) its work twice.
     public func sendStream(_ spec: RequestSpec) -> EventStream {
-        EventStream(client: self, spec: spec, options: spec.options.stream)
+        EventStream(client: self, spec: spec, options: spec.options.stream, singleAttempt: spec.method.uppercased() != "GET")
+    }
+
+    /// Open an event stream answered to a JSON body. An encoding failure is
+    /// thrown from the first iteration, so the call stays non-throwing like
+    /// every other stream.
+    public func sendStream<Body: Encodable>(_ spec: RequestSpec, body: Body?) -> EventStream {
+        var spec = spec
+        if let body {
+            do {
+                spec.body = try encode(body)
+            } catch {
+                return EventStream(client: self, spec: spec, options: spec.options.stream, singleAttempt: true, failure: error)
+            }
+        }
+        return sendStream(spec)
     }
 
     /// POST a JSON body and read the answer as a server-sent event stream —
@@ -256,17 +294,7 @@ public final class UARPClient: @unchecked Sendable {
         body: Body,
         options: RequestOptions = .init()
     ) -> EventStream {
-        let encoded: RequestBody
-        do {
-            encoded = try encode(body)
-        } catch {
-            // Thrown from the first iteration, so the call itself stays
-            // non-throwing like every other stream.
-            return EventStream(client: self, spec: RequestSpec(method: "POST", path: path), options: options.stream,
-                               singleAttempt: true, failure: error)
-        }
-        let spec = RequestSpec(method: "POST", path: path, body: encoded, idempotent: true, options: options)
-        return EventStream(client: self, spec: spec, options: spec.options.stream, singleAttempt: true)
+        sendStream(RequestSpec(method: "POST", path: path, idempotent: true, options: options), body: body)
     }
 
     /// The `Idempotency-Key` for one logical request: the caller's, or a fresh
@@ -403,6 +431,9 @@ public final class UARPClient: @unchecked Sendable {
             let boundary = "uarp-\(UUID().uuidString)"
             request.httpBody = Self.encodeMultipart(parts, boundary: boundary)
             request.setValue("multipart/form-data; boundary=\(boundary)", forHTTPHeaderField: "Content-Type")
+        case .form(let fields):
+            request.httpBody = Data(encodeForm(fields).utf8)
+            request.setValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
         case nil:
             break
         }
@@ -531,6 +562,40 @@ public func encodePathSegment(_ value: String) -> String {
 /// Percent-encode one query name or value.
 public func encodeQueryComponent(_ value: String) -> String {
     value.addingPercentEncoding(withAllowedCharacters: unreserved) ?? value
+}
+
+/// Encode one form name or value exactly as the WHATWG URL standard's
+/// `application/x-www-form-urlencoded` serializer does (what `URLSearchParams`
+/// writes): a space becomes `+`, `A-Z a-z 0-9 * - . _` stay, and every other
+/// UTF-8 byte becomes `%XX` in upper-case hex — `~` included, which RFC 3986
+/// leaves alone. Written out by hand because neither `URLComponents` nor
+/// `addingPercentEncoding` produces these bytes.
+func encodeFormComponent(_ value: String) -> String {
+    let hex = Array("0123456789ABCDEF".utf8)
+    var out: [UInt8] = []
+    out.reserveCapacity(value.utf8.count)
+    for byte in value.utf8 {
+        switch byte {
+        case UInt8(ascii: " "):
+            out.append(UInt8(ascii: "+"))
+        case UInt8(ascii: "A")...UInt8(ascii: "Z"), UInt8(ascii: "a")...UInt8(ascii: "z"),
+             UInt8(ascii: "0")...UInt8(ascii: "9"),
+             UInt8(ascii: "*"), UInt8(ascii: "-"), UInt8(ascii: "."), UInt8(ascii: "_"):
+            out.append(byte)
+        default:
+            out.append(UInt8(ascii: "%"))
+            out.append(hex[Int(byte >> 4)])
+            out.append(hex[Int(byte & 0x0F)])
+        }
+    }
+    return String(decoding: out, as: UTF8.self)
+}
+
+/// Render a form body: `name=value` pairs joined by `&`, in the given order.
+func encodeForm(_ fields: [(String, String)]) -> String {
+    fields
+        .map { "\(encodeFormComponent($0.0))=\(encodeFormComponent($0.1))" }
+        .joined(separator: "&")
 }
 
 /// Render `?a=1&b=2`, with every component strictly encoded.

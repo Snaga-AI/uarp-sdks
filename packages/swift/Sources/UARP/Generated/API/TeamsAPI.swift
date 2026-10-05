@@ -14,9 +14,13 @@ public struct TeamsAPI: Sendable {
     /// The write is a compare-and-set against the graph document, so a concurrent graph change
     /// answers 409 and the request should be retried. Answers 201 with the created edge.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func addTeamGraphEdge(teamId: String, body: AddTeamGraphEdgeRequest, options: RequestOptions = .init()) async throws -> TeamGraphEdge {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -34,9 +38,13 @@ public struct TeamsAPI: Sendable {
     /// empty. The write is a compare-and-set against the graph document, so a concurrent graph
     /// change answers 409 and the request should simply be retried. Answers 201 with the node.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func addTeamGraphNode(teamId: String, body: AddTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -92,9 +100,13 @@ public struct TeamsAPI: Sendable {
     /// applies, and a failure anywhere after the slot claim releases it. A collaboration graph is
     /// created from the workers, and the create is audit-logged. Answers 201 with the stored team.
     ///
+    /// **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+    /// here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func create(body: TeamCreate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -115,9 +127,13 @@ public struct TeamsAPI: Sendable {
     /// proves what was attempted. 404 when the team is unknown. The member agents themselves are
     /// not deleted. There is no undo.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func delete(teamId: String, options: RequestOptions = .init()) async throws -> DeleteTeamResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -133,9 +149,13 @@ public struct TeamsAPI: Sendable {
     /// against the graph document, so a concurrent change answers 409 and the request should be
     /// retried.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges/{edgeId}`.** The same handler under
+    /// the current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}/graph/edges/{edgeId}`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func deleteTeamGraphEdge(teamId: String, edgeId: String, options: RequestOptions = .init()) async throws -> DeleteTeamGraphEdgeResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -151,9 +171,14 @@ public struct TeamsAPI: Sendable {
     /// membership of the team are untouched. The write is a compare-and-set against the graph
     /// document, so a concurrent change answers 409 and the request should be retried.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `DELETE /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func deleteTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = .init()) async throws -> DeleteTeamGraphNodeResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -170,9 +195,13 @@ public struct TeamsAPI: Sendable {
     /// answers with the team as stored rather than turning a read into an upgrade prompt. 404 when
     /// the tenant has no such team.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func get(teamId: String, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -191,16 +220,26 @@ public struct TeamsAPI: Sendable {
     /// user/assistant pair is appended and `active_team_run_id` is set, so a client returning to
     /// the page can reattach to the stream. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/chat`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/chat`
     ///
     /// Required scopes: `agents:read`.
-    public func getTeamChatHistory(teamId: String, threadId: String? = nil, includeInternal: Bool? = nil, options: RequestOptions = .init()) async throws -> GetTeamChatHistoryResponse {
+    @available(*, deprecated)
+    public func getTeamChatHistory(teamId: String, threadId: String? = nil, includeInternal: Bool? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetTeamChatHistoryResponse {
         var query: [URLQueryItem] = []
         if let threadId {
             query.append(URLQueryItem(name: "thread_id", value: threadId))
         }
         if let includeInternal {
             query.append(URLQueryItem(name: "include_internal", value: String(includeInternal)))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
         }
         return try await client.send(RequestSpec(
             method: "GET",
@@ -210,6 +249,17 @@ public struct TeamsAPI: Sendable {
         ))
     }
 
+    /// Stream every item returned by `getTeamChatHistory`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getTeamChatHistoryAll(teamId: String, threadId: String? = nil, includeInternal: Bool? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<TeamChatTurn, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getTeamChatHistory(teamId: teamId, threadId: threadId, includeInternal: includeInternal, limit: limit, cursor: cursor, options: options) },
+            items: { $0.conversationHistory ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
+    }
+
     /// Get full team graph
     ///
     /// Returns the squad's collaboration graph — the envelope, its nodes and its edges. When no
@@ -217,9 +267,13 @@ public struct TeamsAPI: Sendable {
     /// effect of this read. Nodes whose status is `terminated` are kept as an audit trail but
     /// omitted by default; `include_terminated=true` returns them. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func getTeamGraph(teamId: String, options: RequestOptions = .init()) async throws -> GetTeamGraphResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -234,9 +288,14 @@ public struct TeamsAPI: Sendable {
     /// agent id it represents rather than a separate node id. 404 when the graph has no node for
     /// that agent.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func getTeamGraphNode(teamId: String, agentId: String, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -262,9 +321,13 @@ public struct TeamsAPI: Sendable {
     /// when the team is unknown, and 404 when no run with that id exists on this team — `pending`
     /// is reserved for a run that exists and has not settled, never for an unknown id.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func getTeamRun(teamId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> TeamRunDetail {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -281,9 +344,14 @@ public struct TeamsAPI: Sendable {
     /// falls back to a single synthesised message built from the last protocol message, with an
     /// empty user side. 404 when the team is unknown.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/messages`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/messages`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func getTeamRunMessages(teamId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> GetTeamRunMessagesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -298,9 +366,13 @@ public struct TeamsAPI: Sendable {
     /// the canonical `items` and as the deprecated `teams` alias — so clients written against
     /// either shape decode.
     ///
+    /// **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+    /// here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func list(options: RequestOptions = .init()) async throws -> ListTeamsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -314,9 +386,13 @@ public struct TeamsAPI: Sendable {
     /// Lists the graph's edges — the delegation and handoff links between nodes — with a `total`.
     /// The team's existence is not checked, so an unknown team id answers an empty list.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/edges`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func listTeamGraphEdges(teamId: String, options: RequestOptions = .init()) async throws -> ListTeamGraphEdgesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -331,9 +407,13 @@ public struct TeamsAPI: Sendable {
     /// the team exists nor filters terminated nodes, so terminated members are included and an
     /// unknown team id answers an empty list rather than 404.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/graph/nodes`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func listTeamGraphNodes(teamId: String, options: RequestOptions = .init()) async throws -> ListTeamGraphNodesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -349,11 +429,18 @@ public struct TeamsAPI: Sendable {
     /// so, which left clients to infer an order from the data they happened to receive.
     ///
     /// `limit` and `cursor` were undeclared, so a client generated from this document saw the first
-    /// fifty runs and had no way to page past them.
+    /// fifty runs and had no way to page past them. There is no `offset`: pages continue by
+    /// `cursor` only.
+    ///
+    /// Each row is a MEMBER run of a team run; `team_run_status` says what that team run came to.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
     ///
     /// `GET /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:read`.
+    @available(*, deprecated)
     public func listTeamRuns(teamId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListTeamRunsResponse {
         var query: [URLQueryItem] = []
         if let limit {
@@ -395,9 +482,13 @@ public struct TeamsAPI: Sendable {
     /// run settles a chat turn is saved, the state goes to DONE and the concurrency slot is
     /// released; the run is bounded by the team's timeout with a safety timeout behind it.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+    /// noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `POST /api/v1/teams/{teamId}/runs`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func startTeamRun(teamId: String, body: StartTeamRunRequest, options: RequestOptions = .init()) async throws -> StartTeamRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -417,11 +508,15 @@ public struct TeamsAPI: Sendable {
     /// 404 when the team is unknown, and 429 when the tenant is already at its concurrent-SSE
     /// ceiling.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/chat/events`.** The same handler under the
+    /// current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `GET /api/v1/teams/{teamId}/chat/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
+    @available(*, deprecated)
     public func streamTeamChatEvents(teamId: String, threadId: String? = nil, options: RequestOptions = .init()) -> EventStream {
         var query: [URLQueryItem] = []
         if let threadId {
@@ -441,11 +536,16 @@ public struct TeamsAPI: Sendable {
     /// handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
     /// value, two names, so a generated client offered both.
     ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/events`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
     ///
     /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
+    @available(*, deprecated)
     public func streamTeamRunEvents(teamId: String, teamRunId: String, options: RequestOptions = .init()) -> EventStream {
         return client.sendStream(RequestSpec(
             method: "GET",
@@ -463,9 +563,19 @@ public struct TeamsAPI: Sendable {
     /// (422), the same check the create performs. `swarm_config` and `goal_config` are only touched
     /// when supplied. 404 when the team is unknown; the write is audit-logged as `team.updated`.
     ///
+    /// WRITE SEMANTICS: mixed. An omitted top-level field keeps its stored value. `policies` merges
+    /// one level deep, and `policies.validation` merges over the stored one (null clears it). A
+    /// `workers` list that is present replaces the list, but each worker keeps its stored `role`
+    /// and `permissions` when omitted — except on the swarm `agent_ids` path, which rebuilds
+    /// workers with no carry-over. `swarm_config` and `goal_config` are replaced whole when sent.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+    /// Responses here carry `Deprecation: true`; no removal date has been named.
+    ///
     /// `PUT /api/v1/teams/{teamId}`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func update(teamId: String, body: TeamUpdate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "PUT",
@@ -483,9 +593,17 @@ public struct TeamsAPI: Sendable {
     /// load-bearing rather than decorative: a member whose node is not active is excluded from
     /// later squad runs, so the supervisor never sees it and addressing it is refused.
     ///
+    /// WRITE SEMANTICS: merges. Only `status` and `goal_summary` are applied, each only when sent;
+    /// the patch is spread over the stored node, so every omitted field keeps its stored value.
+    ///
+    /// **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+    /// under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+    /// named.
+    ///
     /// `PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}`
     ///
     /// Required scopes: `agents:write`.
+    @available(*, deprecated)
     public func updateTeamGraphNode(teamId: String, agentId: String, body: UpdateTeamGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "PATCH",

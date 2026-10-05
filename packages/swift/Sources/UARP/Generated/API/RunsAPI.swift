@@ -34,9 +34,12 @@ public struct RunsAPI: Sendable {
     /// otherwise the scheduler aborts it, and a run the scheduler does not hold — queued but
     /// unclaimed, or stranded by a crashed worker — is flipped to `cancelled` directly in storage
     /// under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
-    /// the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
-    /// when something was stopped and `{cancelled: false, message}` when the run is unknown or
-    /// already finished — there is no `404` here, and a repeat call is safe.
+    /// the completion rather than overwriting it. Whichever path stops it, the run ends `status:
+    /// cancelled` with `error_code: RUN_CANCELLED`, and the `run.cancelled` event carries the same
+    /// `error_code` (until 2026-09-23 only a run cancelled mid-flight had it). Always answers
+    /// `200`: `{cancelled: true, run_id}` when something was stopped and `{cancelled: false,
+    /// message}` when the run is unknown or already finished — there is no `404` here, and a repeat
+    /// call is safe.
     ///
     /// `POST /api/v1/runs/{runId}/cancel`
     ///
@@ -209,12 +212,31 @@ public struct RunsAPI: Sendable {
     /// `GET /api/v1/runs/{runId}/audit-log`
     ///
     /// Required scopes: `runs:read`.
-    public func getRunAuditLog(runId: String, options: RequestOptions = .init()) async throws -> GetRunAuditLogResponse {
+    public func getRunAuditLog(runId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetRunAuditLogResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))/audit-log",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `getRunAuditLog`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getRunAuditLogAll(runId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AuditLogEntry, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getRunAuditLog(runId: runId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.auditLog },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Get user feedback for a run
@@ -245,10 +267,11 @@ public struct RunsAPI: Sendable {
 
     /// Get run queue position
     ///
-    /// Reports where the run sits in this worker's scheduling queue. The answer comes from the
-    /// in-process scheduler, not from storage, so the handler does not verify that the run exists —
-    /// an unknown or already-started run answers `200` with whatever the scheduler reports for it
-    /// rather than `404`.
+    /// Reports where the run sits in this worker's scheduling queue. The position comes from the
+    /// in-process scheduler; the run's existence comes from storage — an id that is not a run of
+    /// this tenant answers `404` (since 2026-09-23; it used to answer `200` with position `0`). A
+    /// run that exists but is not queued here (running, finished, or queued on another worker)
+    /// answers `0`.
     ///
     /// `GET /api/v1/runs/{runId}/queue-position`
     ///
@@ -264,17 +287,39 @@ public struct RunsAPI: Sendable {
     /// List steps for a run
     ///
     /// Returns the ordered list of steps executed during a run, with per-step metrics including
-    /// tokens, cost, and tool calls.
+    /// tokens, cost, and tool calls. Model calls a run makes outside any step — the effort
+    /// classifier, the planner, the evaluator — are reported once in `outside_steps`, so the steps'
+    /// `cost_usd` plus `outside_steps.cost_usd` equals the run's `total_cost_usd` (both priced the
+    /// way the run is billed).
     ///
     /// `GET /api/v1/runs/{runId}/steps`
     ///
     /// Required scopes: `runs:read`.
-    public func getRunSteps(runId: String, options: RequestOptions = .init()) async throws -> GetRunStepsResponse {
+    public func getRunSteps(runId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetRunStepsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/runs/\(encodePathSegment(runId))/steps",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `getRunSteps`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    public func getRunStepsAll(runId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<RunStep, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getRunSteps(runId: runId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.steps },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// List all runs for tenant
@@ -495,6 +540,11 @@ public struct RunsAPI: Sendable {
     /// them — but cannot be matched back to the transcript, and each such arrival is counted per
     /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
     ///
+    /// WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+    /// `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+    /// `reason` drops one stored by an earlier PUT. Other callers' rows and other messages' rows
+    /// are untouched.
+    ///
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
@@ -518,7 +568,7 @@ public struct RunsAPI: Sendable {
     ///
     /// `GET /api/v1/runs/{runId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `runs:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
     public func streamRunEvents(runId: String, token: String? = nil, lastEventId: String? = nil, options: RequestOptions = .init()) -> EventStream {

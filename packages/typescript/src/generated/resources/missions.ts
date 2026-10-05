@@ -286,10 +286,11 @@ export class MissionsResource extends APIResource {
    * Stream mission progress (SSE)
    *
    * Server-sent events, poll-backed. Event names: `connected` (handshake), `mission` (snapshot
-   * on connect), `status_change`, `checkpoint_added` (one per new checkpoint id),
-   * `aar_finalized`, and `terminal` as the last event before the server closes. The stream
-   * closes itself on a terminal status so a client stops reconnecting, and is capped at 15
-   * minutes per connection regardless — a long mission is expected to reconnect.
+   * on connect), `status_change` (`from`, `to`, `outcome`, `result_summary`, and since
+   * 2026-09-23 `result_code`/`result_details` when set), `checkpoint_added` (one per new
+   * checkpoint id), `aar_finalized`, and `terminal` as the last event before the server closes.
+   * The stream closes itself on a terminal status so a client stops reconnecting, and is capped
+   * at 15 minutes per connection regardless — a long mission is expected to reconnect.
    *
    * MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
    * either is off the route answers **404** with a plain body — deliberately the same answer as
@@ -314,13 +315,17 @@ export class MissionsResource extends APIResource {
    *
    * Configuration only: assignment, budget ceilings, deadline, rules of engagement, commander's
    * intent, decision points, priority and text. Lifecycle stays with the executor — there is no
-   * way to set `status` from here. An empty patch is rejected with 400 rather than answering 200
+   * way to set `status` from here. An empty patch is rejected with 422 rather than answering 200
    * for a write that did nothing. Sending `assigned_agent_id` or `assigned_team_id` as an empty
    * string clears the assignment.
    *
    * MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
    * either is off the route answers **404** with a plain body — deliberately the same answer as
    * a mission that does not exist, so an opted-out tenant cannot discover the surface.
+   *
+   * WRITE SEMANTICS: mixed. An omitted field keeps its stored value. `budget` merges one level
+   * deep over the stored budget, while `roe`, `decision_points` and `success_criteria` are
+   * replaced whole when sent.
    *
    * `PATCH /api/v1/missions/{missionId}/objectives/{objectiveId}`
    *

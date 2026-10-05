@@ -7,6 +7,7 @@ import { AdminResource } from './admin.js';
 import { AdminConfigResource } from './admin-config.js';
 import { AgentsResource } from './agents.js';
 import { AnalyticsResource } from './analytics.js';
+import { AnthropicCompatResource } from './anthropic-compat.js';
 import { AuthResource } from './auth.js';
 import { BillingResource } from './billing.js';
 import { BootstrapResource } from './bootstrap.js';
@@ -57,6 +58,7 @@ export * from './admin.js';
 export * from './admin-config.js';
 export * from './agents.js';
 export * from './analytics.js';
+export * from './anthropic-compat.js';
 export * from './auth.js';
 export * from './billing.js';
 export * from './bootstrap.js';
@@ -129,6 +131,10 @@ export interface Resources {
    * Tenant-scoped usage analytics
    */
   readonly analytics: AnalyticsResource;
+  /**
+   * Anthropic Messages API compatibility, for Anthropic clients pointed at this base URL
+   */
+  readonly anthropicCompat: AnthropicCompatResource;
   /**
    * User registration and OTP authentication
    */
@@ -313,6 +319,7 @@ export function createResources(client: Transport): Resources {
     adminConfig: new AdminConfigResource(client),
     agents: new AgentsResource(client),
     analytics: new AnalyticsResource(client),
+    anthropicCompat: new AnthropicCompatResource(client),
     auth: new AuthResource(client),
     billing: new BillingResource(client),
     bootstrap: new BootstrapResource(client),

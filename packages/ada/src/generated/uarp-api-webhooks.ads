@@ -11,9 +11,25 @@ package UARP.API.Webhooks is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `listWebhookDeliveries`.
+   type List_Webhook_Deliveries_Params is record
+      --  Page size, newest first. ABSENT means the whole list, exactly as before paging existed - not
+      --  a default page. Values outside 1..100 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Webhook_Deliveries_Params : constant List_Webhook_Deliveries_Params := (others => <>);
+
    --  Query and header parameters for `sensorWebhook`.
    type Sensor_Webhook_Params is record
-      --  Hex-encoded HMAC-SHA256 of the request body using the subscription's signing secret.
+      --  `sha256=` followed by the hex-encoded HMAC-SHA256 of the raw request body, keyed with the
+      --  subscription's signing secret. Checked only when the subscription has a secret.
+      Has_X_Sensor_Signature : Boolean := False;
       X_Sensor_Signature : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
@@ -97,14 +113,32 @@ package UARP.API.Webhooks is
    function List_Webhook_Deliveries
      (Self : Client_Type;
       Webhook_Id : String;
+      Params : List_Webhook_Deliveries_Params := No_List_Webhook_Deliveries_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Webhook_Deliveries_Response;
 
+   --  Collect every item `listWebhookDeliveries` returns, following the `cursor` cursor. Stops
+   --  early when Max_Items is reached (0 means no limit).
+   function List_Webhook_Deliveries_All
+     (Self : Client_Type;
+      Webhook_Id : String;
+      Params : List_Webhook_Deliveries_Params := No_List_Webhook_Deliveries_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Webhook_Delivery_Attempt_Vectors.Vector;
+
    --  Sensor webhook (HMAC-authenticated, triggers an agent run)
    --
-   --  External-system webhook. Bypasses normal auth - `X-Sensor-Signature` header is HMAC-verified
-   --  against the per-subscription secret. On valid signature, fires an agent run with the request
-   --  body as input.
+   --  External-system webhook created by an agent's `listen_webhook` tool. Bypasses normal auth:
+   --  when the subscription has a secret, `X-Sensor-Signature` must carry `sha256=<hex HMAC-SHA256
+   --  of the raw body>` or the call is `401`; a listener without a secret is accepted only if it
+   --  has a `max_triggers` ceiling, otherwise `403`. `404` for an unknown webhook id, `410` once
+   --  the subscription is inactive, expired or out of triggers, `409` when a concurrent call
+   --  claims the same trigger slot, `413` for a body over the size cap. On success it writes a
+   --  queued run for the subscription's agent with `input: {type: "webhook_received", webhook_id,
+   --  payload, headers, instructions}` - the JSON body (or `{raw_body}` when it is not JSON) as
+   --  `payload` - dispatches it, and answers `{received: true, run_id}` without waiting for the
+   --  run.
    --
    --  POST /api/v1/webhooks/sensor/{webhookId}
    function Sensor_Webhook

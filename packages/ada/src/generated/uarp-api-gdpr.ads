@@ -3,7 +3,6 @@
 --  Data subject access and erasure requests
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.GDPR is
@@ -51,7 +50,7 @@ package UARP.API.GDPR is
    --  POST /api/v1/data-subject/erasure
    function Data_Subject_Erasure
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Data_Subject_Erasure_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Data_Subject_Erasure_Result;
 

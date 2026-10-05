@@ -31,6 +31,32 @@ pub struct ExportSessionParams {
     pub format: Option<models::ExportSessionFormat>,
 }
 
+/// Query and header parameters for `getSessionAuditLog`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetSessionAuditLogParams {
+    /// Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+    /// existed — not a default page. Values outside 1..500 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Query and header parameters for `getSessionMessages`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetSessionMessagesParams {
+    /// Page size, oldest first, as the transcript reads. ABSENT means the whole list, exactly as
+    /// before paging existed — not a default page. Values outside 1..500 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
 /// Query and header parameters for `getSessionRunFeedback`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetSessionRunFeedbackParams {
@@ -48,6 +74,21 @@ pub struct ListSessionsParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub limit: Option<i64>,
     /// Opaque pagination cursor returned by previous page response.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
+/// Query and header parameters for `listSessionAnnotations`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListSessionAnnotationsParams {
+    /// Page size, counted back from the newest annotation; oldest first within a page. ABSENT means
+    /// the newest 500 annotations, with no paging fields (the window size this list has always had;
+    /// before 2026-10-02 some answered their OLDEST rows). Values outside 1..500 are clamped, not
+    /// refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub cursor: Option<String>,
 }
@@ -120,7 +161,7 @@ impl SessionsApi {
     ///
     /// `POST /api/v1/sessions/bulk-delete`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn bulk_delete_sessions(&self, body: &models::BulkDeleteSessionsRequest) -> Result<models::BulkDeleteSessionsResponse> {
         self.client
             .request_json(Request {
@@ -170,7 +211,7 @@ impl SessionsApi {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/confirm`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn confirm_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Todo> {
+    pub async fn confirm_session_todo(&self, session_id: &str, todo_id: &str, body: &models::ConfirmSessionTodoRequest) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -190,13 +231,16 @@ impl SessionsApi {
     /// already reached by sessions that are both `active` and not past their expiry. To absorb
     /// double-submits the handler first looks for an active session on the same agent, created
     /// within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
-    /// instead of minting a second one — so a `200` here means an existing session was reused. A
-    /// new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
-    /// record written alongside it for the session list.
+    /// instead of minting a second one — so a `200` here means an existing session was reused. The
+    /// reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
+    /// merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
+    /// silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
+    /// `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
+    /// for the session list.
     ///
     /// `POST /api/v1/sessions`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn create(&self, body: &models::CreateSessionRequest) -> Result<models::Session> {
         self.client
             .request_json(Request {
@@ -221,7 +265,7 @@ impl SessionsApi {
     ///
     /// `POST /api/v1/sessions/{sessionId}/annotations`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn create_session_annotation(&self, session_id: &str, body: &models::CreateSessionAnnotationRequest) -> Result<models::CreateSessionAnnotationResponse> {
         self.client
             .request_json(Request {
@@ -268,7 +312,7 @@ impl SessionsApi {
     ///
     /// `POST /api/v1/sessions/{sessionId}/share`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn create_session_share(&self, session_id: &str, body: &models::CreateSessionShareRequest) -> Result<models::CreateSessionShareResponse> {
         self.client
             .request_json(Request {
@@ -315,9 +359,13 @@ impl SessionsApi {
     ///
     /// Addresses one agent, several agents (fan-out, one session each, shared parent_task_id), or a
     /// squad. The server bootstraps the session(s). `due_at` omitted fires immediately; a timestamp
-    /// schedules it; explicit `null` files it in the backlog with no schedule at all.
+    /// schedules it; explicit `null` files it in the backlog with no schedule at all. Requires the
+    /// `sessions` write permission and the `sessions:write` scope; a key holding `runs:create`
+    /// instead is also accepted, as on every session write.
     ///
     /// `POST /api/v1/todos`
+    ///
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn create_task(&self, body: &serde_json::Value) -> Result<models::CreatedTask> {
         self.client
             .request_json(Request {
@@ -339,7 +387,7 @@ impl SessionsApi {
     ///
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn delete_session_annotation(&self, session_id: &str, annotation_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
@@ -485,17 +533,40 @@ impl SessionsApi {
     /// `GET /api/v1/sessions/{sessionId}/audit-log`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn get_session_audit_log(&self, session_id: &str) -> Result<models::GetSessionAuditLogResponse> {
+    pub async fn get_session_audit_log(&self, session_id: &str, params: &GetSessionAuditLogParams) -> Result<models::GetSessionAuditLogResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/sessions/{}/audit-log", encode_path(session_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getSessionAuditLog`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_session_audit_log_all<'a>(&'a self, session_id: &'a str, params: &'a GetSessionAuditLogParams) -> impl Stream<Item = Result<models::AuditLogEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_session_audit_log(session_id, &page_params).await?;
+                let items = page.audit_log;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// The conversation transcript
@@ -513,20 +584,47 @@ impl SessionsApi {
     /// A session that does not exist is 404, not an empty list: "no messages yet" and "no such
     /// session" must not render the same.
     ///
+    /// There is no paging: the whole transcript comes back and `total` is its length. A `limit` (or
+    /// any other) query parameter is not read — measured 2026-10-01, `?limit=2` and no parameter
+    /// answer the same 16 messages — so a client should not send one expecting fewer.
+    ///
     /// `GET /api/v1/sessions/{sessionId}/messages`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn get_session_messages(&self, session_id: &str) -> Result<models::GetSessionMessagesResponse> {
+    pub async fn get_session_messages(&self, session_id: &str, params: &GetSessionMessagesParams) -> Result<models::GetSessionMessagesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/sessions/{}/messages", encode_path(session_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getSessionMessages`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_session_messages_all<'a>(&'a self, session_id: &'a str, params: &'a GetSessionMessagesParams) -> impl Stream<Item = Result<models::ConversationEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_session_messages(session_id, &page_params).await?;
+                let items = page.items;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Get feedback for a run in session
@@ -573,6 +671,30 @@ impl SessionsApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
+            })
+            .await
+    }
+
+    /// Import a transcript that ran elsewhere (the CLI)
+    ///
+    /// Records a session whose turns already happened on the caller's machine — nothing is executed
+    /// and nothing is billed. Entries carry synthetic run ids with no run behind them. Re-importing
+    /// with the same `session_id` updates that session (200) instead of creating a second one
+    /// (201); an id that names a session created on the platform is refused. `agent_id` must name
+    /// an agent in this tenant (404 otherwise); `messages` holds 1–2000 entries.
+    ///
+    /// `POST /api/v1/sessions/import`
+    ///
+    /// Required scopes: `runs:create`, `sessions:write`.
+    pub async fn import(&self, body: &models::ImportSessionRequest) -> Result<models::Session> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/sessions/import".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
             })
             .await
     }
@@ -632,17 +754,40 @@ impl SessionsApi {
     /// `GET /api/v1/sessions/{sessionId}/annotations`
     ///
     /// Required scopes: `sessions:read`.
-    pub async fn list_session_annotations(&self, session_id: &str) -> Result<models::ListSessionAnnotationsResponse> {
+    pub async fn list_session_annotations(&self, session_id: &str, params: &ListSessionAnnotationsParams) -> Result<models::ListSessionAnnotationsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/sessions/{}/annotations", encode_path(session_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listSessionAnnotations`, following the `cursor` cursor until
+    /// the server reports no further pages.
+    pub fn list_session_annotations_all<'a>(&'a self, session_id: &'a str, params: &'a ListSessionAnnotationsParams) -> impl Stream<Item = Result<models::ListSessionAnnotationsResponseItem>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_session_annotations(session_id, &page_params).await?;
+                let items = page.items.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// List artifacts across all runs in session
@@ -733,6 +878,8 @@ impl SessionsApi {
     /// than a result limit.
     ///
     /// `GET /api/v1/todos`
+    ///
+    /// Required scopes: `sessions:read`.
     pub async fn list_todos(&self) -> Result<models::ListTodosResponse> {
         self.client
             .request_json(Request {
@@ -780,7 +927,7 @@ impl SessionsApi {
     ///
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn revoke_session_share(&self, session_id: &str) -> Result<()> {
         self.client
             .request_empty(Request {
@@ -825,7 +972,7 @@ impl SessionsApi {
     ///
     /// `POST /api/v1/sessions/{sessionId}/messages`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn send_session_message(&self, session_id: &str, body: &models::SendSessionMessageRequest) -> Result<models::SendSessionMessageResponse> {
         self.client
             .request_json(Request {
@@ -847,6 +994,11 @@ impl SessionsApi {
     /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
     /// them — but cannot be matched back to the transcript, and each such arrival is counted per
     /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+    ///
+    /// WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+    /// `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+    /// `reason` drops a previously stored one. Other callers' rows and other messages' rows are
+    /// untouched.
     ///
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
@@ -876,7 +1028,7 @@ impl SessionsApi {
     ///
     /// `GET /api/v1/sessions/{sessionId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `sessions:read`.
     ///
     /// Returns a server-sent event stream.
     pub fn stream_session_events(&self, session_id: &str, params: &StreamSessionEventsParams) -> EventStream {
@@ -924,9 +1076,13 @@ impl SessionsApi {
     /// without changing them. `404` when the session or the annotation does not exist. Returns the
     /// annotation as stored.
     ///
+    /// WRITE SEMANTICS: merges. Only `resolved` is applied, and only when the body sends it; every
+    /// other stored field keeps its value. The schema strips unknown keys, so a body naming
+    /// `content`, `author` or `message_id` succeeds and changes nothing.
+    ///
     /// `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     pub async fn update_session_annotation(&self, session_id: &str, annotation_id: &str, body: &models::UpdateSessionAnnotationRequest) -> Result<models::SessionAnnotation> {
         self.client
             .request_json(Request {
@@ -953,7 +1109,7 @@ impl SessionsApi {
     /// `PATCH /api/v1/sessions/{sessionId}/todos/{todoId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn update_session_todo(&self, session_id: &str, todo_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Todo> {
+    pub async fn update_session_todo(&self, session_id: &str, todo_id: &str, body: &models::UpdateSessionTodoRequest) -> Result<models::Todo> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

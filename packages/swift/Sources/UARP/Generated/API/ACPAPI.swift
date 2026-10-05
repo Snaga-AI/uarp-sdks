@@ -31,6 +31,28 @@ public struct ACPAPI: Sendable {
         ))
     }
 
+    /// Save ACP session state
+    ///
+    /// The same handler as `PUT` on this path (router.ts sends both methods to
+    /// `handleAcpSessionRoute`), and the method the ACP bridge itself writes with. WRITE SEMANTICS:
+    /// replaces — the body becomes the whole stored state, validated exactly as the `PUT` validates
+    /// it. The first write claims the session for the caller; a later write from another identity
+    /// is 403. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+    /// `sessions:write` scope.
+    ///
+    /// `POST /api/v1/acp/session/{sessionId}`
+    ///
+    /// Required scopes: `sessions:write`.
+    public func saveACPSession(sessionId: String, body: SaveACPSessionRequest, options: RequestOptions = .init()) async throws -> SaveACPSessionResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/acp/session/\(encodePathSegment(sessionId))",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Send message / update ACP session
     ///
     /// WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
@@ -46,7 +68,7 @@ public struct ACPAPI: Sendable {
     /// `PUT /api/v1/acp/session/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func updateACPSession(sessionId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateACPSessionResponse {
+    public func updateACPSession(sessionId: String, body: UpdateACPSessionRequest, options: RequestOptions = .init()) async throws -> UpdateACPSessionResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/acp/session/\(encodePathSegment(sessionId))",

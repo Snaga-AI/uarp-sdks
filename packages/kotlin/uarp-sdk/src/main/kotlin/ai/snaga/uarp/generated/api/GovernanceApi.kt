@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Agent governance: constitution, voting, permissions, emergency protocols
@@ -464,15 +465,31 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/governance/violations/{agentId}`
      */
-    public suspend fun getAgentViolations(agentId: String, options: RequestOptions = RequestOptions()): GetAgentViolationsResponse {
+    public suspend fun getAgentViolations(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetAgentViolationsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetAgentViolationsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/governance/violations/${encodePathSegment(agentId)}",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getAgentViolations`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getAgentViolationsAll(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<ConstitutionViolation> = autoPaginate(
+        fetch = { pageCursor -> getAgentViolations(agentId = agentId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.violations ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Get ambassador
@@ -1003,6 +1020,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * amendment, appended to the immutable ledger, and the enforcement cache is invalidated at
      * once.
      *
+     * WRITE SEMANTICS: mixed. The mutable rules are replaced by `rules`: a stored mutable rule
+     * whose id the body omits is removed and recorded as a remove amendment. Immutable rules are
+     * always kept, even when omitted, and an `immutable` flag on a submitted rule is stripped.
+     * `version` is bumped; `founder_id`, `created_at` and earlier amendments are kept.
+     *
      * `PUT /api/v1/governance/constitution`
      */
     public suspend fun replaceConstitution(body: ReplaceConstitutionRequest, options: RequestOptions = RequestOptions()): ConstitutionDocument {
@@ -1046,8 +1068,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * WRITE SEMANTICS: merges. A field the body omits keeps its stored value; only a FIRST write
      * falls back to the documented defaults (budget 1.0, spawn depth 3, empty lists). A field that
      * IS present but of the wrong type falls to the safe default rather than to the stored value —
-     * on a permissions surface a malformed write must fail closed, not become a silent no-op.
-     * `created_at` is server-owned and ignored from the body.
+     * on a permissions surface a malformed write must fail closed, not become a silent no-op. The
+     * exception is `max_budget_per_run_usd`: a present value that is not a finite non-negative
+     * number or null is 422 and nothing is written. `created_at` is server-owned and ignored from
+     * the body. A set that a `revoke_permissions` penalty (constitutional rule or arbiter ruling)
+     * wrote carries `sanction`; while it is present the agent's runs are refused and no agent tool
+     * can change the set. Every merge keeps it; only a body with `"sanction": null` lifts it.
      *
      * `PUT /api/v1/governance/permissions/{agentId}`
      */
@@ -1075,7 +1101,7 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/arbiter/registry`
      */
-    public suspend fun setArbiterRegistry(body: JsonObject, options: RequestOptions = RequestOptions()): SetArbiterRegistryResponse {
+    public suspend fun setArbiterRegistry(body: SetArbiterRegistryRequest, options: RequestOptions = RequestOptions()): SetArbiterRegistryResponse {
         return client.request<SetArbiterRegistryResponse>(
             RequestSpec(
                 method = "PUT",
@@ -1091,9 +1117,12 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * Set root agent
      *
      * Designates the emergency root agent; admin or founder only (403). `agent_id` must be a
-     * non-empty string (422) — the value is stored verbatim and nothing else validates it, so junk
+     * non-empty string (422) — the value is stored trimmed and nothing else validates it, so junk
      * here disables the emergency root path until the next valid write; the agent's existence is
      * not checked. Writing the same id again leaves the same state.
+     *
+     * WRITE SEMANTICS: replaces. The tenant's single `root_agent_id` value is overwritten with
+     * `agent_id`, trimmed of surrounding whitespace. No other state is written.
      *
      * `PUT /api/v1/governance/emergency/root-agent`
      */
@@ -1118,7 +1147,7 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      *
      * `PUT /api/v1/governance/emergency/root-attestation`
      */
-    public suspend fun setRootAttestation(body: JsonObject, options: RequestOptions = RequestOptions()): SetRootAttestationResponse {
+    public suspend fun setRootAttestation(body: SetRootAttestationRequest, options: RequestOptions = RequestOptions()): SetRootAttestationResponse {
         return client.request<SetRootAttestationResponse>(
             RequestSpec(
                 method = "PUT",
@@ -1185,6 +1214,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * along into the record and are deliberately not stripped, since they carry the authorisation
      * for the move.
      *
+     * WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored design
+     * request and every other field is kept. `proposal_id` and `spawned_agent_id` are written only
+     * when non-empty, so when omitted they keep their stored values and cannot be cleared here.
+     *
      * `PUT /api/v1/governance/builder/requests/{requestId}/status`
      */
     public suspend fun updateBuilderRequestStatus(requestId: String, body: UpdateBuilderRequestStatusRequest, options: RequestOptions = RequestOptions()): DesignRequest {
@@ -1208,6 +1241,10 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * verbatim. There is no transition check between them. `proposal_id` and
      * `constitution_check_passed` are carried through to the record as the update's authorisation
      * proof rather than stripped.
+     *
+     * WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored goal and
+     * every other field is kept. `proposal_id` is written only when non-empty and
+     * `constitution_check_passed` only when present; omitted, both keep their stored values.
      *
      * `PUT /api/v1/governance/goals/{goalId}/status`
      */
@@ -1234,6 +1271,11 @@ public class GovernanceApi internal constructor(private val client: UarpClient) 
      * - `approved` → `applied`
      *
      * Any other transition returns 400. Requires admin/founder role.
+     *
+     * WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored proposal and
+     * every other field is kept. `sandbox_success_rate` is written when present and
+     * `vote_proposal_id` when non-empty; omitted, both keep their stored values. These extra
+     * fields are not schema-validated. A missing proposal answers 404.
      *
      * `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
      */

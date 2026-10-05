@@ -42,8 +42,6 @@ package UARP.API.Marketplace is
    --  not name is refused 404 rather than answered with the listing.
    --
    --  GET /api/v1/marketplace/listings/{listingId}
-   --
-   --  Required scopes: marketplace:read.
    function Get_Listing
      (Self : Client_Type;
       Listing_Id : String;
@@ -83,8 +81,6 @@ package UARP.API.Marketplace is
    --  are taken, and the answer is the same for every caller.
    --
    --  GET /api/v1/marketplace/categories
-   --
-   --  Required scopes: marketplace:read.
    function Get_Marketplace_Categories
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -98,8 +94,6 @@ package UARP.API.Marketplace is
    --  the output and metrics, plus `revenue_error` when the revenue-share charge failed.
    --
    --  GET /api/v1/marketplace/invocations/{invocationId}
-   --
-   --  Required scopes: marketplace:read.
    function Get_Marketplace_Invocation
      (Self : Client_Type;
       Invocation_Id : String;
@@ -202,8 +196,6 @@ package UARP.API.Marketplace is
    --  of the index.
    --
    --  GET /api/v1/marketplace/search
-   --
-   --  Required scopes: marketplace:read.
    function Search
      (Self : Client_Type;
       Params : Search_Marketplace_Params := No_Search_Marketplace_Params;

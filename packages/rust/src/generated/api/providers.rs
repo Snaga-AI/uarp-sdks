@@ -13,6 +13,50 @@ use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
 use crate::util::encode_path;
 
+/// Query and header parameters for `llmChatCompletion`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMChatCompletionParams {
+    /// The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+    /// Recorded beside the model on the tenant's usage and reported by `GET
+    /// /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+    /// refused, and the spend then counts under `source: ""`.
+    #[serde(skip)]
+    pub x_uarp_source: Option<String>,
+}
+
+/// Query and header parameters for `llmSynthesizeSpeech`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMSynthesizeSpeechParams {
+    /// The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+    /// Recorded beside the model on the tenant's usage and reported by `GET
+    /// /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+    /// refused, and the spend then counts under `source: ""`.
+    #[serde(skip)]
+    pub x_uarp_source: Option<String>,
+}
+
+/// Query and header parameters for `llmTranscribeAudio`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LLMTranscribeAudioParams {
+    /// The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+    /// Recorded beside the model on the tenant's usage and reported by `GET
+    /// /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+    /// refused, and the spend then counts under `source: ""`.
+    #[serde(skip)]
+    pub x_uarp_source: Option<String>,
+}
+
+/// Query and header parameters for `toolsWebSearch`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ToolsWebSearchParams {
+    /// The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+    /// Recorded beside the model on the tenant's usage and reported by `GET
+    /// /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+    /// refused, and the spend then counts under `source: ""`.
+    #[serde(skip)]
+    pub x_uarp_source: Option<String>,
+}
+
 /// LLM provider discovery and model listing
 #[derive(Debug, Clone)]
 pub struct ProvidersApi {
@@ -250,14 +294,18 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/chat/completions`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_chat_completion(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::OpenAiChatCompletion> {
+    pub async fn llm_chat_completion(&self, body: &models::LLMChatCompletionRequest, params: &LLMChatCompletionParams) -> Result<models::OpenAiChatCompletion> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.x_uarp_source {
+            headers.push(("X-UARP-Source", value.clone()));
+        }
         self.client
             .request_json(Request {
                 method: Method::POST,
                 path: "/api/v1/llm/chat/completions".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
-                headers: Vec::new(),
+                headers,
                 idempotent: true,
             })
             .await
@@ -275,14 +323,18 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/audio/speech`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_synthesize_speech(&self, body: &models::LLMSynthesizeSpeechRequest) -> Result<bytes::Bytes> {
+    pub async fn llm_synthesize_speech(&self, body: &models::LLMSynthesizeSpeechRequest, params: &LLMSynthesizeSpeechParams) -> Result<bytes::Bytes> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.x_uarp_source {
+            headers.push(("X-UARP-Source", value.clone()));
+        }
         self.client
             .request_bytes(Request {
                 method: Method::POST,
                 path: "/api/v1/llm/audio/speech".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
-                headers: Vec::new(),
+                headers,
                 idempotent: true,
             })
             .await
@@ -301,7 +353,11 @@ impl ProvidersApi {
     /// `POST /api/v1/llm/audio/transcriptions`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn llm_transcribe_audio(&self, body: &models::LLMTranscribeAudioRequest) -> Result<models::LLMTranscribeAudioResponse> {
+    pub async fn llm_transcribe_audio(&self, body: &models::LLMTranscribeAudioRequest, params: &LLMTranscribeAudioParams) -> Result<models::LLMTranscribeAudioResponse> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.x_uarp_source {
+            headers.push(("X-UARP-Source", value.clone()));
+        }
         self.client
             .request_multipart(
                 Request {
@@ -309,7 +365,7 @@ impl ProvidersApi {
                     path: "/api/v1/llm/audio/transcriptions".to_string(),
                     query: NO_QUERY,
                     body: NO_BODY,
-                    headers: Vec::new(),
+                    headers,
                     idempotent: true,
                 },
                 || {
@@ -324,6 +380,41 @@ impl ProvidersApi {
                     Ok(form)
                 },
             )
+            .await
+    }
+
+    /// Search the web through the platform's search provider
+    ///
+    /// Runs one web search through the provider configured for the platform (the same one the
+    /// agents' `web_search` tool uses; the provider key never leaves the platform) and returns
+    /// titles, URLs and a snippet per result — not page bodies. It spends a platform-held key, so
+    /// it carries the same gate as the LLM proxy's spend endpoints: `runs` write permission plus
+    /// the `runs:create` scope, and the billing and quota gate (a delinquent subscription is
+    /// refused 402 with a `code`, an exhausted quota 403). Each search the provider answers is one
+    /// unit of usage: it counts in `tool_calls_count` and as a `web_search` row of `GET
+    /// /api/v1/usage?breakdown=model`, at the platform's price per 1000 searches (currently 0 —
+    /// counted, not charged), and under `X-UARP-Source` when the caller sends one. An empty
+    /// `results` means the provider answered a result list with nothing in it; a provider that is
+    /// not configured, did not answer, or answered anything else is a named refusal, never an empty
+    /// 200. At most 60 searches per tenant per minute (429 with `Retry-After`). Since 2026-09-29.
+    ///
+    /// `POST /api/v1/tools/web_search`
+    ///
+    /// Required scopes: `runs:create`.
+    pub async fn tools_web_search(&self, body: &models::ToolsWebSearchRequest, params: &ToolsWebSearchParams) -> Result<models::ToolsWebSearchResponse> {
+        let mut headers: Vec<(&'static str, String)> = Vec::new();
+        if let Some(value) = &params.x_uarp_source {
+            headers.push(("X-UARP-Source", value.clone()));
+        }
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/tools/web_search".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers,
+                idempotent: true,
+            })
             .await
     }
 }

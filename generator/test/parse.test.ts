@@ -10,6 +10,7 @@ import { test } from 'node:test';
 
 import type { ObjectType, Spec, TypeRef } from '../src/ir.ts';
 import { checkTarget } from '../src/index.ts';
+import { parse } from '../src/parse.ts';
 import { fixture, namedType, operation, productionSpec } from './support.ts';
 
 function object(spec: Spec, name: string): ObjectType {
@@ -271,6 +272,31 @@ test('recognises event streams and leaves transport headers alone', () => {
   assert.deepEqual(op.headerParams.map((p) => p.wire), ['Last-Event-ID']);
 });
 
+test('a published enum keeps its name when a new schema uses it first', () => {
+  // The value set {fast, slow} was published as `TaskMode` (from `Task`); a new
+  // `JobUpdate`, earlier in the document, would otherwise name it `JobUpdateMode`.
+  const document = {
+    openapi: '3.1.0',
+    info: { title: 'Pins', version: '1.0.0' },
+    paths: {},
+    components: {
+      schemas: {
+        JobUpdate: { type: 'object', properties: { mode: { type: 'string', enum: ['fast', 'slow'] } } },
+        Task: { type: 'object', properties: { mode: { type: 'string', enum: ['fast', 'slow'] } } },
+      },
+    },
+  };
+  const names = (spec: { types: { name: string }[] }) => spec.types.map((type) => type.name);
+
+  assert.ok(names(parse(document)).includes('JobUpdateMode'), 'without a pin: first use names it');
+  const pinned = parse(document, { 'enum:fast|slow': 'TaskMode' });
+  assert.ok(names(pinned).includes('TaskMode'), 'the pin wins');
+  assert.ok(!names(pinned).includes('JobUpdateMode'), 'and no second name appears');
+  // A pin never takes a name a component schema owns.
+  const owned = parse(document, { 'enum:fast|slow': 'Task' });
+  assert.ok(names(owned).includes('JobUpdateMode'), 'a component-owned name is not taken');
+});
+
 // ---------------------------------------------- invariants on the real spec
 
 test('parses the production document into the expected shape', () => {
@@ -340,13 +366,19 @@ test('parses the production document into the expected shape', () => {
   // refresh: the platform deployed between the regeneration and the tag.
   // 735 -> 736 the same day (build 5732283f): `GET
   // /agents/{agentId}/experiments`, deployed while that refresh sat in CI.
-  assert.equal(ops.length, 736);
+  // 736 -> 766 on 2026-10-05 (build 4663ef46, 0.8.0): thirty operations and
+  // none removed — twelve admin, ten public, `POST /v1/messages` and its
+  // `count_tokens` (the Anthropic-compatible surface), the Sign in with Apple
+  // `form_post` callback (the first form-encoded body any SDK renders), and
+  // singles across bridge, tools, acp and sessions.
+  assert.equal(ops.length, 766);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
   // 50 -> 48 on 2026-09-10 (0.5.18): Training and Creativity gone too.
   // 48 -> 49 on 2026-09-14 (uarp #472): Drawings.
-  assert.equal(spec.groups.length, 49);
+  // 49 -> 50 on 2026-10-05 (0.8.0): Anthropic Compat, for `/v1/messages`.
+  assert.equal(spec.groups.length, 50);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -558,7 +590,17 @@ test('parses the production document into the expected shape', () => {
   // 1497 -> 1498 (build c5694dc0, uarp #498): InboxItemTool — approval rows
   // in the inbox carry the tools they wait on as data. The third deploy to
   // land while this release was in CI.
-  assert.equal(spec.types.length, 1498);
+  // 1498 -> 1758 on 2026-10-05 (build 4663ef46, 0.8.0): +260, none removed —
+  // the thirty new operations' bodies (video orders and templates, admin,
+  // the Anthropic Messages shapes) and AgentUpdate's fields gaining their own
+  // named types. Before generator/enum-names.json it read +277/-17: seventeen
+  // published enums were RENAMED because a new schema used their value sets
+  // first (AgentExecutionMode -> AgentUpdateExecutionMode). Pinned now.
+  assert.equal(spec.types.length, 1758);
+  // The seventeen keep the names 0.7.0 published.
+  for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
+    assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
+  }
   // 31 -> 32 on 2026-09-10 (5011669e): `billing:write` enters the catalogue
   // (billing.ts required it on four operations, the prose lacked it);
   // `read:analytics` became `analytics:read` in the same build (a rename,
@@ -590,13 +632,35 @@ test('parses the production document into the expected shape', () => {
   // 15 -> 16 on 2026-09-14 (uarp #472): `listSessionDrawings`.
   // 16 -> 17 on 2026-09-16: `listCompanies`. The fourth number the same two
   // commits left stale.
-  assert.equal(ops.filter((o) => o.pagination).length, 17);
+  // 17 -> 35 on 2026-10-05 (build 4663ef46, 0.8.0): eighteen lists that
+  // already existed declared their `cursor` — runs' steps and audit logs,
+  // session messages and annotations, agent memory, bookmarks and
+  // evaluations, users and invites, webhook deliveries, squad and team chat
+  // and runs, KB documents, governance violations, company activity and the
+  // admin audit trail. Each now gets its paging helper.
+  assert.equal(ops.filter((o) => o.pagination).length, 35);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.
   // 3 -> 4 on 2026-09-16: `importDataExplorer`, which takes an upload.
   // The fifth and last number the same two commits left stale.
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 4);
+  // 4 -> 6 on 2026-10-05 (0.8.0): `createPublicVideoOrder` and
+  // `adminTestVideoTemplate`, the video-order uploads — the first multipart
+  // bodies with enum-typed text parts, which Kotlin's emitter had to learn.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 6);
+  // 0 -> 1 on 2026-10-05 (0.8.0): the Sign in with Apple `form_post`
+  // callback, the first form-encoded body; every emitter now renders it
+  // (contract scenario 20 compares the bytes).
+  assert.equal(ops.filter((o) => o.body?.encoding === 'form').length, 1);
+  // An operation that answers both JSON and an event stream is typed by its
+  // JSON (the completions since 4663ef46): typing it by the stream broke
+  // every caller who never asked to stream. The stream is `streamPost`.
+  for (const id of ['llmChatCompletion', 'chatCompletion', 'anthropicMessages']) {
+    const op = ops.find((o) => o.id === id);
+    assert.ok(op, `${id} exists`);
+    assert.equal(op.sse, false, `${id} is typed by its JSON answer`);
+    assert.equal(op.response.type?.kind, 'named', `${id} returns a named model`);
+  }
 });
 
 test('every named type reference resolves', () => {

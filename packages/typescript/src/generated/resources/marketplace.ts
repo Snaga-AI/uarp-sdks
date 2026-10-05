@@ -55,8 +55,6 @@ export class MarketplaceResource extends APIResource {
    * not name is refused 404 rather than answered with the listing.
    *
    * `GET /api/v1/marketplace/listings/{listingId}`
-   *
-   * Required scopes: `marketplace:read`.
    */
   getListing(listingId: string, options?: RequestOptions): Promise<MarketplaceListing> {
     return this._client.request({
@@ -107,8 +105,6 @@ export class MarketplaceResource extends APIResource {
    * are taken, and the answer is the same for every caller.
    *
    * `GET /api/v1/marketplace/categories`
-   *
-   * Required scopes: `marketplace:read`.
    */
   getMarketplaceCategories(options?: RequestOptions): Promise<GetMarketplaceCategoriesResponse> {
     return this._client.request({
@@ -127,8 +123,6 @@ export class MarketplaceResource extends APIResource {
    * the output and metrics, plus `revenue_error` when the revenue-share charge failed.
    *
    * `GET /api/v1/marketplace/invocations/{invocationId}`
-   *
-   * Required scopes: `marketplace:read`.
    */
   getMarketplaceInvocation(invocationId: string, options?: RequestOptions): Promise<MarketplaceInvocation> {
     return this._client.request({
@@ -261,8 +255,6 @@ export class MarketplaceResource extends APIResource {
    * of the index.
    *
    * `GET /api/v1/marketplace/search`
-   *
-   * Required scopes: `marketplace:read`.
    */
   search(params?: SearchMarketplaceParams, options?: RequestOptions): Promise<SearchMarketplaceResponse> {
     return this._client.request({

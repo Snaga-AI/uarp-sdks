@@ -68,8 +68,12 @@ public class OpenAiCompatApi internal constructor(private val client: UarpClient
     /**
      * OpenAI-compatible embeddings
      *
-     * Generate embedding vectors for input text. Per Standats-Protocols §6.1. Uses
-     * platform-configured model (text-embedding-3-small).
+     * Generate embedding vectors for input text. Per Standats-Protocols §6.1. Always the
+     * platform-configured model — on the hosted platform `bge-m3` (1024 dimensions, multilingual),
+     * served with a 2048-token context. Each element is embedded on its own and reports
+     * `input_tokens`, `truncated` and, when it failed, `error`; a text longer than 8000 characters
+     * or than the served context is cut, never refused, and `truncated` says so. A request where
+     * no element succeeded is 503. Per-element fields added 2026-09-26.
      *
      * `POST /v1/embeddings`
      *
@@ -98,6 +102,8 @@ public class OpenAiCompatApi internal constructor(private val client: UarpClient
      * bucket.
      *
      * `GET /v1/responses/{responseId}`
+     *
+     * Required scopes: `runs:read`.
      */
     public suspend fun getResponse(responseId: String, options: RequestOptions = RequestOptions()): GetResponseResponse {
         return client.request<GetResponseResponse>(

@@ -314,7 +314,7 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      *
      * `GET /api/v1/agents/{agentId}/workspace/files`
      *
-     * Required scopes: `agents:read`.
+     * Required scopes: `files:read`.
      */
     public suspend fun listAgentWorkspaceFiles(agentId: String, path: String? = null, options: RequestOptions = RequestOptions()): ListAgentWorkspaceFilesResponse {
         val query = buildList {
@@ -620,6 +620,10 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      * this is scoped to the active tenant only — a workspace in another of the caller's tenants
      * answers 404 here.
      *
+     * WRITE SEMANTICS: merges. Only `name` is written, and it is required; every other workspace
+     * field keeps its stored value. A name that is blank after trimming leaves the stored name
+     * unchanged.
+     *
      * `PATCH /api/v1/workspaces/{workspaceId}`
      *
      * Required scopes: `files:write`.
@@ -646,6 +650,10 @@ public class WorkspacesApi internal constructor(private val client: UarpClient) 
      * hex sha256 of the content. Body: multipart/form-data with a `file` part, or the raw bytes as
      * application/octet-stream. Conditional forms via `If-Match` / `If-None-Match` — see the
      * parameters.
+     *
+     * WRITE SEMANTICS: replaces. The file record at `?path=` is rebuilt from this upload with a
+     * new `file_id`, `etag`, `size_bytes`, `mime_type` and `updated_at`; only `created_at` carries
+     * over, and the previous record moves into the path's version history.
      *
      * `PUT /api/v1/workspaces/{workspaceId}/files`
      *

@@ -1302,3 +1302,102 @@ async fn stream_post_refuses_an_empty_200() {
         api.headers
     );
 }
+
+// ------------------------------------------------------------- form bodies
+
+/// The bytes contract/SCENARIOS.md expects for scenario 20.
+const FORM_BODY: &str = "code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D";
+
+#[tokio::test]
+async fn a_form_body_goes_on_the_wire_as_url_search_params_would_write_it() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/auth/oauth/apple/callback"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(json!({"api_key": "uarp_form", "email": "a@b.c"})),
+        )
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let answer = client
+        .auth()
+        .complete_o_auth_login_form_post(
+            &uarp_sdk::models::CompleteOAuthLoginFormPostProvider::Apple,
+            &uarp_sdk::models::CompleteOAuthLoginFormPostRequest {
+                code: Some("c 1+2".into()),
+                state: Some("s/ы&=~*".into()),
+                user: Some(r#"{"name":"А Б","email":"a@b.c"}"#.into()),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("the form post succeeds");
+    assert_eq!(answer.email, "a@b.c");
+
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1);
+    let sent = &requests[0];
+    assert_eq!(
+        header_value(sent, "content-type"),
+        Some("application/x-www-form-urlencoded"),
+        "exactly this Content-Type, and never JSON"
+    );
+    assert_eq!(
+        sent.headers.get_all("content-type").iter().count(),
+        1,
+        "one Content-Type"
+    );
+    //  Schema order, the absent `id_token` and `error` left out, space as
+    //  `+`, `~` encoded, upper-case hex.
+    assert_eq!(std::str::from_utf8(&sent.body).unwrap(), FORM_BODY);
+}
+
+// ------------------------------------------- generated POST event streams
+
+#[tokio::test]
+async fn a_generated_completion_is_a_json_post_sent_once() {
+    // The completion answers JSON, or an event stream when the body asks for
+    // one. It is typed by its JSON (generator/src/parse.ts), as in 0.7.0: the
+    // streamed mode is `stream_post`, never a replayed GET stream.
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "c1",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "contract/model",
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": "hello"}, "finish_reason": "stop"}]
+        })))
+        .mount(&server)
+        .await;
+
+    let client = retrying_client(&server);
+    let body = uarp_sdk::models::LLMChatCompletionRequest {
+        model: "contract/model".into(),
+        ..Default::default()
+    };
+    let params = uarp_sdk::api::LLMChatCompletionParams {
+        x_uarp_source: Some("fleet".into()),
+    };
+    let completion = client
+        .providers()
+        .llm_chat_completion(&body, &params)
+        .await
+        .expect("a JSON completion");
+    let text = serde_json::to_value(&completion).expect("re-encodes");
+    assert_eq!(text["choices"][0]["message"]["content"], "hello");
+
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1, "one POST");
+    let sent = &requests[0];
+    assert_eq!(sent.method, wiremock::http::Method::POST);
+    assert_eq!(header_value(sent, "accept"), Some("application/json"));
+    assert_eq!(header_value(sent, "content-type"), Some("application/json"));
+    assert_eq!(header_value(sent, "x-uarp-source"), Some("fleet"));
+    assert!(header_value(sent, "idempotency-key").is_some());
+    let received: serde_json::Value = serde_json::from_slice(&sent.body).expect("JSON body");
+    assert_eq!(received, json!({"model": "contract/model"}));
+}

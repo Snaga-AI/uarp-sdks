@@ -460,6 +460,61 @@ final class TransportTests: XCTestCase {
         XCTAssertEqual(param.value, "50")
     }
 
+    // MARK: - Form bodies
+
+    func testSendsAFormBodyByteForByte() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200), jsonData(["api_key": "uarp_x", "email": "a@b.c"]))
+        }
+
+        let session = try await client.auth.completeOAuthLoginFormPost(
+            provider: "apple",
+            body: CompleteOAuthLoginFormPostRequest(
+                code: "c 1+2",
+                state: "s/ы&=~*",
+                user: #"{"name":"А Б","email":"a@b.c"}"#
+            )
+        )
+
+        XCTAssertEqual(session.email, "a@b.c")
+        let recorded = MockURLProtocol.requests[0]
+        XCTAssertEqual(recorded.httpMethod, "POST")
+        // The provider is an enum: `String(describing:)` would put
+        // `…Provider(rawValue: "apple")` in the path.
+        XCTAssertEqual(recorded.url?.absoluteString, "https://api.example.test/api/v1/auth/oauth/apple/callback")
+        XCTAssertEqual(recorded.value(forHTTPHeaderField: "Content-Type"), "application/x-www-form-urlencoded")
+        XCTAssertNotNil(recorded.value(forHTTPHeaderField: "Idempotency-Key"))
+        let body = try XCTUnwrap(recorded.httpBody ?? recorded.httpBodyStream.map(readAll))
+        // What `URLSearchParams` writes for the same fields, in schema order;
+        // `id_token` and `error` were not set and do not appear at all.
+        XCTAssertEqual(
+            String(decoding: body, as: UTF8.self),
+            "code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D"
+        )
+    }
+
+    func testFormEncodingMatchesURLSearchParams() {
+        // Every ASCII character from U+0001 and three multi-byte ones; the
+        // expected text is what Node's `URLSearchParams` produces for them.
+        let ascii = String(String.UnicodeScalarView((1..<128).map { Unicode.Scalar(UInt8($0)) }))
+        XCTAssertEqual(
+            encodeFormComponent(ascii + "ы😀\u{E9}"),
+            "%01%02%03%04%05%06%07%08%09%0A%0B%0C%0D%0E%0F%10%11%12%13%14%15%16%17%18%19%1A%1B%1C%1D%1E%1F"
+                + "+%21%22%23%24%25%26%27%28%29*%2B%2C-.%2F0123456789%3A%3B%3C%3D%3E%3F%40"
+                + "ABCDEFGHIJKLMNOPQRSTUVWXYZ%5B%5C%5D%5E_%60abcdefghijklmnopqrstuvwxyz%7B%7C%7D%7E%7F"
+                + "%D1%8B%F0%9F%98%80%C3%A9"
+        )
+    }
+
+    func testFormValueWritesNonStringsAsTheirJSON() throws {
+        let client = makeClient()
+        XCTAssertEqual(try client.formValue(1.0), "1")
+        XCTAssertEqual(try client.formValue(["a/b": JSONValue.bool(true)]), #"{"a/b":true}"#)
+        XCTAssertEqual(try client.formValue(JSONValue.string("plain")), "plain")
+        XCTAssertNil(try client.formValue(JSONValue.null))
+    }
+
     private func readAll(_ stream: InputStream) -> Data {
         stream.open()
         defer { stream.close() }

@@ -26,6 +26,7 @@
 
 mod client;
 mod error;
+mod form;
 mod multipart;
 mod pagination;
 mod sse;

@@ -12,6 +12,7 @@ with Ada.Environment_Variables;
 with Ada.Text_IO;
 
 with UARP.API.Agents;
+with UARP.API.Auth;
 with UARP.API.Files;
 with UARP.API.Registry;
 with UARP.API.Runs;
@@ -306,6 +307,29 @@ begin
                         then "error " & Ada.Strings.Fixed.Trim (Natural'Image (Status), Ada.Strings.Both)
                         else "events " & Ada.Strings.Fixed.Trim (Natural'Image (Plain.Count), Ada.Strings.Both)));
             end;
+         end;
+
+         --  20. a form body: Sign in with Apple posts its web callback as
+         --  application/x-www-form-urlencoded. `id_token` and `error` stay
+         --  unset, so they must not appear at all.
+         declare
+            Request : UARP.Models.Complete_O_Auth_Login_Form_Post_Request;
+            Answer  : UARP.Models.Complete_O_Auth_Login_Form_Post_Response;
+         begin
+            Request.Has_Code := True;
+            Request.Code := +"c 1+2";
+            Request.Has_State := True;
+            --  "s/ы&=~*" spelled out so the source stays ASCII.
+            Request.State :=
+              +("s/" & Character'Val (16#D1#) & Character'Val (16#8B#) & "&=~*");
+            Request.Has_User := True;
+            --  {"name":"А Б","email":"a@b.c"}, likewise.
+            Request.User :=
+              +("{""name"":""" & Character'Val (16#D0#) & Character'Val (16#90#) & " "
+                & Character'Val (16#D0#) & Character'Val (16#91#)
+                & """,""email"":""a@b.c""}");
+            Answer := UARP.API.Auth.Complete_O_Auth_Login_Form_Post (Client, "apple", Request);
+            JS.Set (Probes, "form_post_email", Answer.Email);
          end;
 
          JS.Set (Report, "language", String'("ada"));

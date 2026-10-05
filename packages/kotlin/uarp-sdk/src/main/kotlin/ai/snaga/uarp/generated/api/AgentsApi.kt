@@ -509,12 +509,13 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun list(workspaceId: String? = null, limit: Long? = null, cursor: String? = null, includeOffline: Boolean? = null, options: RequestOptions = RequestOptions()): ListAgentsResponse {
+    public suspend fun list(workspaceId: String? = null, limit: Long? = null, cursor: String? = null, includeOffline: Boolean? = null, includeChildren: Boolean? = null, options: RequestOptions = RequestOptions()): ListAgentsResponse {
         val query = buildList {
             if (workspaceId != null) add("workspace_id" to workspaceId)
             if (limit != null) add("limit" to limit.toString())
             if (cursor != null) add("cursor" to cursor)
             if (includeOffline != null) add("include_offline" to includeOffline.toString())
+            if (includeChildren != null) add("include_children" to includeChildren.toString())
         }
         return client.request<ListAgentsResponse>(
             RequestSpec(
@@ -530,8 +531,8 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * Stream every item returned by `listAgents`, following the `cursor` cursor until the server
      * reports no further pages.
      */
-    public fun listAll(workspaceId: String? = null, limit: Long? = null, cursor: String? = null, includeOffline: Boolean? = null, options: RequestOptions = RequestOptions()): Flow<Agent> = autoPaginate(
-        fetch = { pageCursor -> list(workspaceId = workspaceId, limit = limit, cursor = pageCursor, includeOffline = includeOffline, options = options) },
+    public fun listAll(workspaceId: String? = null, limit: Long? = null, cursor: String? = null, includeOffline: Boolean? = null, includeChildren: Boolean? = null, options: RequestOptions = RequestOptions()): Flow<Agent> = autoPaginate(
+        fetch = { pageCursor -> list(workspaceId = workspaceId, limit = limit, cursor = pageCursor, includeOffline = includeOffline, includeChildren = includeChildren, options = options) },
         items = { it.items },
         cursor = { it.cursor },
         hasMore = { it.hasMore },
@@ -546,15 +547,31 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `agents:read`.
      */
-    public suspend fun listAgentBookmarks(agentId: String, options: RequestOptions = RequestOptions()): ListAgentBookmarksResponse {
+    public suspend fun listAgentBookmarks(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListAgentBookmarksResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListAgentBookmarksResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/bookmarks",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listAgentBookmarks`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun listAgentBookmarksAll(agentId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<AgentBookmark> = autoPaginate(
+        fetch = { pageCursor -> listAgentBookmarks(agentId = agentId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.items },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Messages between agents
@@ -631,13 +648,19 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
      * more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) — so a client
      * may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
-     * `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
+     * `drop_genome` or `drop_genome_source`. `resource_limits`, `memory`, `core_memory`,
+     * `schedule`, `guardrails`, `image_generation`, `video_generation`, `command_relationships`
+     * and `access_control` also merge one level; `mcp`, `policies`, `thinking`, `effort_policy`,
+     * `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
+     * stored list. The body is `AgentUpdate`, the schema the handler validates with
+     * (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
+     * unknown field is dropped.
      *
      * `PATCH /api/v1/agents/{agentId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun patch(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Agent {
+    public suspend fun patch(agentId: String, body: AgentUpdate, options: RequestOptions = RequestOptions()): Agent {
         return client.request<Agent>(
             RequestSpec(
                 method = "PATCH",
@@ -729,16 +752,24 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
     /**
      * Set agent capabilities
      *
-     * Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
-     * the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
-     * and `permissions` are read from the body — anything else is stripped. Returns `{status,
-     * agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
+     * Stores the agent's capability manifest, replacing any previous one. The body is the manifest
+     * `GET` on this path serves: `skills` (required, up to 100; each needs `id` and `name`),
+     * `constraints` (optional — when omitted the agent's own limits are used, as in the manifest
+     * `GET` generates), `tools` and `kb_ids` (optional, default empty). `agent_id` is taken from
+     * the path and `updated_at` is stamped by the server; anything else in the body is stripped.
+     * `404` when the agent does not exist. Returns `{status, agent_id}` rather than the stored
+     * manifest; read it back with the `GET` on this path.
+     *
+     * WRITE SEMANTICS: replaces — an omitted `tools` or `kb_ids` is stored empty, not kept from
+     * the previous manifest. Until 2026-10-02 this operation read
+     * `capabilities`/`tools`/`permissions` and stripped `skills`, which the store requires, so
+     * every call was refused `422` and nothing was stored.
      *
      * `PUT /api/v1/agents/{agentId}/capabilities`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun setAgentCapabilities(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): SetAgentCapabilitiesResponse {
+    public suspend fun setAgentCapabilities(agentId: String, body: SetAgentCapabilitiesRequest, options: RequestOptions = RequestOptions()): SetAgentCapabilitiesResponse {
         return client.request<SetAgentCapabilitiesResponse>(
             RequestSpec(
                 method = "PUT",
@@ -758,6 +789,11 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * refused and nothing is stored. The split is what the runtime draws against when it resolves
      * which version a new run executes, using a cryptographically-secure weighted draw. The agent
      * record itself is untouched.
+     *
+     * WRITE SEMANTICS: replaces. The stored split is rebuilt from `entries`; a version the body
+     * omits is dropped from the split and nothing from the previous split is kept. The weight-sum
+     * check throws a plain error rather than a validation error, so from the code a bad sum
+     * answers 500, not 4xx, with nothing stored (not measured on the wire).
      *
      * `PUT /api/v1/agents/{agentId}/traffic`
      *
@@ -866,6 +902,11 @@ public class AgentsApi internal constructor(private val client: UarpClient) {
      * update lands first, which is what stops an ordinary agent save clobbering the compliance
      * trail — and it is audit-logged. The response is the whole sanitised agent, not just the
      * classification.
+     *
+     * WRITE SEMANTICS: replaces. `risk_classification` is rebuilt whole from this body: an omitted
+     * `annex_iii_category` is cleared and an omitted `assessed_at` becomes now; `level`,
+     * `justification`, `assessor` and `review_due_at` are required. The rest of the agent record
+     * is kept, under a compare-and-set.
      *
      * `PATCH /api/v1/agents/{agentId}/risk-classification`
      *

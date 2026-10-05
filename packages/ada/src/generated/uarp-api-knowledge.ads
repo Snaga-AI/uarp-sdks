@@ -4,10 +4,25 @@
 
 with UARP.Client;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.Knowledge is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `listKbDocuments`.
+   type List_Kb_Documents_Params is record
+      --  Page size, oldest first. ABSENT means the whole list, exactly as before paging existed - not
+      --  a default page. Values outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Kb_Documents_Params : constant List_Kb_Documents_Params := (others => <>);
 
    --  Create a knowledge base
    --
@@ -125,8 +140,19 @@ package UARP.API.Knowledge is
    function List_Kb_Documents
      (Self : Client_Type;
       Kb_Id : String;
+      Params : List_Kb_Documents_Params := No_List_Kb_Documents_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Kb_Documents_Response;
+
+   --  Collect every item `listKbDocuments` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function List_Kb_Documents_All
+     (Self : Client_Type;
+      Kb_Id : String;
+      Params : List_Kb_Documents_Params := No_List_Kb_Documents_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Knowledge_Base_Document_Vectors.Vector;
 
    --  List knowledge bases
    --
@@ -148,8 +174,13 @@ package UARP.API.Knowledge is
    --  Re-embed every chunk with the current model
    --
    --  Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
-   --  embedding drift after a model change. Requires an embeddings backend: without one the answer
-   --  is 503 and nothing is written.
+   --  embedding drift after a model change. Incremental: chunks that already carry a vector from
+   --  the current model are skipped (`already_current`), and only the rest are embedded, inside
+   --  the embedding request's deadline. What the deadline cuts off is stored as far as it got and
+   --  counted as `pending`; call again until `reindexed` is true - each call continues where the
+   --  last one stopped. Requires an embeddings backend: without one the answer is 503 and nothing
+   --  is written; 503 `kb_embedding_failed` when chunks needed a vector and the provider returned
+   --  none.
    --
    --  POST /api/v1/knowledge-bases/{kbId}/reindex
    --

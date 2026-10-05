@@ -1,11 +1,14 @@
 package ai.snaga.uarp
 
 import ai.snaga.uarp.api.agents
+import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.files
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
 import ai.snaga.uarp.models.GetMeResponseAuthMethod
 import ai.snaga.uarp.models.CreateAgentRequest
+import ai.snaga.uarp.models.CompleteOAuthLoginFormPostProvider
+import ai.snaga.uarp.models.CompleteOAuthLoginFormPostRequest
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -155,6 +158,54 @@ class TransportTest {
 
         assertEquals("a1", agent.agentId)
         assertEquals(2, server.requestCount)
+    }
+
+    @Test
+    fun `sends a form body byte for byte`() = runTest {
+        server.enqueue(json("""{"api_key":"uarp_k","email":"a@b.c"}"""))
+
+        val answer = client().auth.completeOAuthLoginFormPost(
+            CompleteOAuthLoginFormPostProvider.APPLE,
+            CompleteOAuthLoginFormPostRequest(
+                code = "c 1+2",
+                state = "s/ы&=~*",
+                user = """{"name":"А Б","email":"a@b.c"}""",
+            ),
+        )
+
+        assertEquals("a@b.c", answer.email)
+        val recorded = server.takeRequest()
+        assertEquals("POST", recorded.method)
+        assertEquals("/api/v1/auth/oauth/apple/callback", recorded.path)
+        //  Exactly: no `; charset=utf-8`, and never JSON.
+        assertEquals("application/x-www-form-urlencoded", recorded.getHeader("Content-Type"))
+        //  Schema order; `id_token` and `error` absent, not empty; a space is
+        //  `+`, `~` is encoded and `*` is not.
+        assertEquals(
+            "code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*" +
+                "&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D",
+            recorded.body.readUtf8(),
+        )
+    }
+
+    @Test
+    fun `form fields render the way URLSearchParams does`() {
+        //  Every class of byte the WHATWG serializer treats differently from
+        //  RFC 3986 or from a lenient encoder.
+        assertEquals("a+b%7E*-._%21%27%28%29%2B%2F%3F%23%5B%5D%40%25", encodeFormComponent("a b~*-._!'()+/?#[]@%"))
+        assertEquals("%F0%9F%98%80%0A", encodeFormComponent("😀\n"))
+        //  A number or boolean as its literal, an object as JSON, null left out.
+        val fields = formFieldsOf(
+            buildJsonObject {
+                put("n", 0)
+                put("b", false)
+                put("o", buildJsonObject { put("k", "v") })
+                put("z", kotlinx.serialization.json.JsonNull)
+            },
+        )
+        assertEquals(listOf("n" to "0", "b" to "false", "o" to """{"k":"v"}"""), fields)
+        //  An enum in a multipart text part goes as its wire value.
+        assertEquals("uk", Part.Text.of("locale", ai.snaga.uarp.models.VideoOrderLocale.UK).value)
     }
 
     @Test

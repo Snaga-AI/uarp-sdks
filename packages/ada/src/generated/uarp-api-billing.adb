@@ -165,6 +165,9 @@ package body UARP.API.Billing is
       if Params.Has_Period then
          UARP.Types.Add (Query, "period", Params.Period);
       end if;
+      if Params.Has_Breakdown then
+         UARP.Types.Add (Query, "breakdown", Params.Breakdown);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,

@@ -40,13 +40,14 @@ public struct TenantsAPI: Sendable {
     ///
     /// Mints a new API key for the caller's tenant and returns `raw_key` exactly once. `name` is
     /// required (a non-empty string of at most 200 characters) and `scopes`, when given, must be an
-    /// array of at most 100 strings of at most 100 characters each; omitting it grants a
-    /// twelve-scope default covering agents, runs, sessions, notifications, memory and files. The
-    /// authority a key can carry is capped by the caller: only an owner may request the wildcard
-    /// `*`, and a `role:<r>` scope may only be granted for a role the caller already holds
-    /// (**403**); a caller without `*` may not grant scopes it does not itself hold (**422**). The
-    /// key is bound to the caller's `user_id`, so it shows up only in that user's own listing, and
-    /// an `api_key.created` audit entry is written.
+    /// array of at most 100 strings of at most 100 characters each; omitting it grants the default
+    /// set — agents, runs, sessions, notifications, memory and files read/write, plus
+    /// `analytics:read` (since 2026-10-01) — narrowed to what the caller itself holds, so a caller
+    /// missing one of them gets the rest rather than a 422. The authority a key can carry is capped
+    /// by the caller: only an owner may request the wildcard `*`, and a `role:<r>` scope may only
+    /// be granted for a role the caller already holds (**403**); a caller without `*` may not grant
+    /// scopes it does not itself hold (**422**). The key is bound to the caller's `user_id`, so it
+    /// shows up only in that user's own listing, and an `api_key.created` audit entry is written.
     ///
     /// `POST /api/v1/tenants/me/keys`
     ///
@@ -102,8 +103,6 @@ public struct TenantsAPI: Sendable {
     /// Returns the calling tenant's profile. Any authenticated key passes — no scope required.
     ///
     /// `GET /api/v1/tenants/me`
-    ///
-    /// Required scopes: `api_keys:read`.
     public func getCurrentTenant(options: RequestOptions = .init()) async throws -> Tenant {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -139,8 +138,6 @@ public struct TenantsAPI: Sendable {
     /// present here even for a domain added under the old flat fields.
     ///
     /// `GET /api/v1/tenants/me/domain/health`
-    ///
-    /// Required scopes: `api_keys:read`.
     public func getTenantDomainHealth(options: RequestOptions = .init()) async throws -> GetTenantDomainHealthResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -223,6 +220,13 @@ public struct TenantsAPI: Sendable {
     ///
     /// Partial update of tenant settings. Requires the `tenants:write` scope and role `owner`.
     ///
+    /// WRITE SEMANTICS: mixed — the same handler as `PUT` on this path, with identical behaviour.
+    /// An omitted top-level field keeps its stored value. `settings`, `branding` and
+    /// `public_settings` are shallow-merged; `social_links`, `marketplace_listing` (bar its `stats`
+    /// and `published_at`) and `published_agent_ids` are replaced whole. Null clears
+    /// `head_agent_id`, `shared_workspace_id`, `public_agent_id`, `published_agent_ids` and
+    /// `custom_domain`.
+    ///
     /// `PATCH /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
@@ -269,6 +273,13 @@ public struct TenantsAPI: Sendable {
     /// rows for the slug, may auto-publish the named public agent and enrol the tenant in the
     /// marketplace, and writes a `tenant.updated` audit entry.
     ///
+    /// WRITE SEMANTICS: mixed — the same handler as `PATCH` on this path. An omitted top-level
+    /// field keeps its stored value. `settings`, `branding` and `public_settings` are
+    /// shallow-merged. `social_links` and `marketplace_listing` are replaced whole, so an omitted
+    /// subfield is dropped or reset (the listing keeps its `stats` and `published_at`), and
+    /// `published_agent_ids` is replaced. Null clears `head_agent_id`, `shared_workspace_id`,
+    /// `public_agent_id`, `published_agent_ids` and `custom_domain`.
+    ///
     /// `PUT /api/v1/tenants/me`
     ///
     /// Required scopes: `tenants:write`.
@@ -298,11 +309,10 @@ public struct TenantsAPI: Sendable {
     /// `POST /api/v1/tenants/me/domain/verify`
     ///
     /// Required scopes: `tenants:write`.
-    public func verifyTenantDomain(body: JSONObject, options: RequestOptions = .init()) async throws -> VerifyTenantDomainResponse {
+    public func verifyTenantDomain(options: RequestOptions = .init()) async throws -> VerifyTenantDomainResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/tenants/me/domain/verify",
-            body: try client.encode(body),
             idempotent: true,
             options: options
         ))

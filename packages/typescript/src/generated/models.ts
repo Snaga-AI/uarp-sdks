@@ -131,7 +131,8 @@ export const A2_ATASK_STATUS_VALUES = ['submitted', 'working', 'input-required',
 
 /**
  * After-action review, built once when the mission reaches a terminal status.
- * `failure_analysis` is present only when something failed.
+ * `failure_analysis` is present only when something failed; `lessons` is always present,
+ * possibly empty.
  */
 export interface Aar {
   aar_id: string;
@@ -142,12 +143,12 @@ export interface Aar {
   phases: AarPhaseRecord[];
   objective_outcomes: AarObjectiveOutcome[];
   failure_analysis?: AarFailureAnalysis;
+  lessons: AarLesson[];
 }
 
 export interface AarFailureAnalysis {
   failed_objective_ids: string[];
   root_causes: AarRootCause[];
-  lessons: AarLesson[];
 }
 
 /**
@@ -423,6 +424,15 @@ export interface AdminAnalyticsOverviewResponseTotals {
 export interface AdminAuditList {
   entries: AdminAuditListEntry[];
   total: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface AdminAuditListEntry {
@@ -458,11 +468,18 @@ export interface AdminConfigAgentMemoryConfigAgentMemory {
   decay_half_life_days: number;
   decay_job_interval_ms: number;
   extraction_max_tokens: number;
+  /**
+   * The model memory extraction calls after a run. On PUT, `null` clears the stored override so
+   * the platform default applies again; GET then omits the field. Added 2026-09-23.
+   */
   extraction_model: string;
   eviction_threshold: number;
   embedding_dimensions: number;
   embedding_provider: string;
   embedding_model: string;
+  /**
+   * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
+   */
   compression_model: string;
 }
 
@@ -712,12 +729,24 @@ export interface AdminConfigRunCommandConfig {
 
 export interface AdminConfigRunCommandConfigRunCommand {
   enabled: boolean;
-  isolation: string;
+  /**
+   * On PUT an empty string is read as not set (the form echoes GET back); GET never returns an
+   * empty string. 2026-09-23.
+   */
+  isolation: AdminConfigRunCommandConfigRunCommandIsolation;
   timeout_ms: number;
   max_output_bytes: number;
   allowed_commands: string[];
   deno_allow: string[];
 }
+
+/**
+ * On PUT an empty string is read as not set (the form echoes GET back); GET never returns an
+ * empty string. 2026-09-23.
+ */
+export type AdminConfigRunCommandConfigRunCommandIsolation = 'subprocess' | 'container';
+
+export const ADMIN_CONFIG_RUN_COMMAND_CONFIG_RUN_COMMAND_ISOLATION_VALUES = ['subprocess', 'container'] as const;
 
 /**
  * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z. `policies` is the effective
@@ -903,6 +932,73 @@ export interface AdminGetReconciliationResponseReconciliation {
   [key: string]: unknown;
 }
 
+export interface AdminGetSearchConfigResponse {
+  search: AdminGetSearchConfigResponseSearchVariant1 | null;
+  source: AdminGetLandingConfigResponseSource;
+  resolved: AdminGetSearchConfigResponseResolvedVariant1 | null;
+  chain: AdminGetSearchConfigResponseChainItem[];
+  web_search_enabled: boolean;
+  unresolved_reason?: string;
+  unresolved_fallbacks?: AdminGetSearchConfigResponseUnresolvedFallback[];
+}
+
+export interface AdminGetSearchConfigResponseChainItem {
+  provider: ToolsWebSearchResponseProvider;
+  endpoint_url: string;
+  keyed: boolean;
+}
+
+export interface AdminGetSearchConfigResponseResolvedVariant1 {
+  provider: ToolsWebSearchResponseProvider;
+  endpoint_url: string;
+  keyed: boolean;
+}
+
+export interface AdminGetSearchConfigResponseSearchVariant1 {
+  /**
+   * The primary: every query is sent here first.
+   */
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`; optional for `ollama` (defaults to Ollama Cloud).
+   */
+  endpoint_url?: string;
+  api_key_ref?: string;
+  /**
+   * Tenant price per 1000 searches through POST /tools/web_search. Absent = 0.
+   */
+  price_per_1k_searches_usd?: number;
+  /**
+   * Tried in order when the provider before cannot serve a query: HTTP 429/402/401/403 or 5xx, a
+   * network error or timeout, a refused transport, a body that is not a result list, or zero
+   * results because the provider's own engines refused. The switch is immediate — no retry, no
+   * wait — and every query starts again at the primary. A provider that answered an empty result
+   * list stops the chain. Absent or `[]` = the primary alone.
+   */
+  fallbacks?: AdminGetSearchConfigResponseSearchVariant1fallback[];
+}
+
+export interface AdminGetSearchConfigResponseSearchVariant1fallback {
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`. The origin of this URL is the only address the search path may reach
+   * on a private network (e.g. `http://snaga-searxng:8080` on the docker network); the `fetch`
+   * tool never may.
+   */
+  endpoint_url?: string;
+  /**
+   * Names an entry in `llm_defaults.platform_api_keys`; defaults to the provider id. `ollama`
+   * does not resolve without a key.
+   */
+  api_key_ref?: string;
+}
+
+export interface AdminGetSearchConfigResponseUnresolvedFallback {
+  index: number;
+  provider: string;
+  reason: string;
+}
+
 export interface AdminGetVoiceConfigResponse {
   voice: AdminGetVoiceConfigResponseVoiceVariant1 | null;
   source: AdminGetLandingConfigResponseSource;
@@ -969,6 +1065,38 @@ export interface AdminListToolsResponseTool {
    * JSON Schema for tool parameters.
    */
   parameters?: JsonObject;
+}
+
+export interface AdminListVideoOrdersResponse {
+  orders: AdminListVideoOrdersResponseOrder[];
+}
+
+export interface AdminListVideoOrdersResponseOrder {
+  id?: string;
+  test?: boolean;
+  template_id?: string;
+  status?: string;
+  payment?: string;
+  price_cents?: number;
+  model?: string;
+  round?: number;
+  attempts?: AdminListVideoOrdersResponseOrderAttempt[];
+  provider_cost_estimate_usd?: number;
+  feedback?: string | null;
+  regenerated?: boolean;
+  buyer?: string | null;
+  created_at?: string;
+  ready_at?: string | null;
+}
+
+export interface AdminListVideoOrdersResponseOrderAttempt {
+  round?: number;
+  outcome?: string | null;
+  message?: string | null;
+}
+
+export interface AdminListVideoTemplatesResponse {
+  templates: VideoTemplate[];
 }
 
 export interface AdminListWebhookDLQResponse {
@@ -1192,6 +1320,34 @@ export interface AdminProviderSummary {
   requires_api_key: boolean;
 }
 
+export interface AdminPutLandingConfigRequest {
+  public_agent_id?: string | null;
+  texts?: Record<string, Value7>;
+  multilang_enabled?: boolean;
+  default_locale?: VideoOrderLocale;
+  partners_enabled?: boolean;
+  partners?: AdminPutLandingConfigRequestPartner[] | null;
+  expected_version?: string | null;
+}
+
+export interface AdminPutLandingConfigRequestPartner {
+  id: string;
+  name: string;
+  tagline: string;
+  tagline_uk?: string;
+  href: string;
+  logo: AdminPutLandingConfigRequestPartnerLogo;
+}
+
+export interface AdminPutLandingConfigRequestPartnerLogo {
+  slug?: AdminPutLandingConfigRequestPartnerLogoSlug;
+  url?: string;
+}
+
+export type AdminPutLandingConfigRequestPartnerLogoSlug = 'rust' | 'together' | 'ollama' | 'gonka' | 'wasm' | 'docker' | 'deno' | 'digitalocean' | 'github' | 'monogram';
+
+export const ADMIN_PUT_LANDING_CONFIG_REQUEST_PARTNER_LOGO_SLUG_VALUES = ['rust', 'together', 'ollama', 'gonka', 'wasm', 'docker', 'deno', 'digitalocean', 'github', 'monogram'] as const;
+
 export interface AdminPutLandingConfigResponse {
   landing: LandingConfigSection;
   source: AdminPutLandingConfigResponseSource;
@@ -1202,6 +1358,35 @@ export interface AdminPutLandingConfigResponse {
 export type AdminPutLandingConfigResponseSource = 'kv';
 
 export const ADMIN_PUT_LANDING_CONFIG_RESPONSE_SOURCE_VALUES = ['kv'] as const;
+
+export interface AdminPutModelCatalogRequest {
+  models: AdminPutModelCatalogRequestModel[];
+  expected_version?: string | null;
+}
+
+export interface AdminPutModelCatalogRequestModel {
+  id: string;
+  provider: string;
+  display_name: string;
+  max_context_tokens: number;
+  max_output_tokens: number;
+  supports_streaming: boolean;
+  supports_tool_calls: boolean;
+  supports_json_mode: boolean;
+  supports_vision?: boolean;
+  supports_stt?: boolean;
+  supports_tts?: boolean;
+  supports_audio_input?: boolean;
+  supports_audio_output?: boolean;
+  supports_video_input?: boolean;
+  supports_image_generation?: boolean;
+  supports_adaptive_thinking?: boolean;
+  max_thinking_tokens?: number;
+  pricing?: JsonValue;
+  input_per_million?: JsonValue;
+  output_per_million?: JsonValue;
+  tier?: PlanLLMLimitsTierAccessItem;
+}
 
 export interface AdminPutModelCatalogResponse {
   models: AdminPutModelCatalogResponseModel[];
@@ -1221,6 +1406,102 @@ export interface AdminPutModelCatalogResponseModel {
   supports_json_mode: boolean;
   supports_vision?: boolean;
   tier?: string;
+}
+
+export interface AdminPutSearchConfigRequest {
+  /**
+   * The primary: every query is sent here first.
+   */
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`; optional for `ollama` (defaults to Ollama Cloud).
+   */
+  endpoint_url?: string;
+  api_key_ref?: string;
+  /**
+   * Tenant price per 1000 searches through POST /tools/web_search. Absent = 0.
+   */
+  price_per_1k_searches_usd?: number;
+  /**
+   * Tried in order when the provider before cannot serve a query: HTTP 429/402/401/403 or 5xx, a
+   * network error or timeout, a refused transport, a body that is not a result list, or zero
+   * results because the provider's own engines refused. The switch is immediate — no retry, no
+   * wait — and every query starts again at the primary. A provider that answered an empty result
+   * list stops the chain. Absent or `[]` = the primary alone.
+   */
+  fallbacks?: AdminPutSearchConfigRequestFallback[];
+}
+
+export interface AdminPutSearchConfigRequestFallback {
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`. The origin of this URL is the only address the search path may reach
+   * on a private network (e.g. `http://snaga-searxng:8080` on the docker network); the `fetch`
+   * tool never may.
+   */
+  endpoint_url?: string;
+  /**
+   * Names an entry in `llm_defaults.platform_api_keys`; defaults to the provider id. `ollama`
+   * does not resolve without a key.
+   */
+  api_key_ref?: string;
+}
+
+export interface AdminPutSearchConfigResponse {
+  search: AdminPutSearchConfigResponseSearch;
+  updated: boolean;
+  chain: AdminPutSearchConfigResponseChainItem[];
+  web_search_enabled: boolean;
+  unresolved_fallbacks?: JsonObject[];
+  /**
+   * Only when the primary does not resolve (its API key is missing).
+   */
+  warning?: string;
+}
+
+export interface AdminPutSearchConfigResponseChainItem {
+  provider: ToolsWebSearchResponseProvider;
+  endpoint_url: string;
+  keyed: boolean;
+}
+
+export interface AdminPutSearchConfigResponseSearch {
+  /**
+   * The primary: every query is sent here first.
+   */
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`; optional for `ollama` (defaults to Ollama Cloud).
+   */
+  endpoint_url?: string;
+  api_key_ref?: string;
+  /**
+   * Tenant price per 1000 searches through POST /tools/web_search. Absent = 0.
+   */
+  price_per_1k_searches_usd?: number;
+  /**
+   * Tried in order when the provider before cannot serve a query: HTTP 429/402/401/403 or 5xx, a
+   * network error or timeout, a refused transport, a body that is not a result list, or zero
+   * results because the provider's own engines refused. The switch is immediate — no retry, no
+   * wait — and every query starts again at the primary. A provider that answered an empty result
+   * list stops the chain. Absent or `[]` = the primary alone.
+   */
+  fallbacks?: AdminPutSearchConfigResponseSearchFallback[];
+}
+
+export interface AdminPutSearchConfigResponseSearchFallback {
+  provider: ToolsWebSearchResponseProvider;
+  /**
+   * Required for `searxng`. The origin of this URL is the only address the search path may reach
+   * on a private network (e.g. `http://snaga-searxng:8080` on the docker network); the `fetch`
+   * tool never may.
+   */
+  endpoint_url?: string;
+  /**
+   * Names an entry in `llm_defaults.platform_api_keys`; defaults to the provider id. `ollama`
+   * does not resolve without a key.
+   */
+  api_key_ref?: string;
 }
 
 export interface AdminPutVoiceConfigResponse {
@@ -1314,6 +1595,10 @@ export interface AdminReplayWebhookDLQResponse {
   event_id: string;
 }
 
+export interface AdminSetVideoTemplatePreviewRequest {
+  order_id: string;
+}
+
 /**
  * Hoisted from the typed GET (handler: admin-config.ts) so the PUT can name the same shape.
  */
@@ -1396,6 +1681,20 @@ export interface AdminStripeConfigStripe {
   price_id_enterprise: string;
 }
 
+export interface AdminTestVideoTemplateRequest {
+  photo: BinaryInput;
+  /**
+   * JSON object of text fields.
+   */
+  slots?: string;
+}
+
+export interface AdminTestVideoTemplateResponse {
+  order_id: string;
+  order_token: string;
+  status: string;
+}
+
 /**
  * bytes, Web super-admin, tenant Snaga Or…, 2026-09-10T22:38:17Z; provider/model → voice ids;
  * `defaults` is always empty, `effective` equals `override` (admin-config.ts
@@ -1412,6 +1711,10 @@ export interface Agent {
    * SPECs installed on this agent, with version pin and granted permissions.
    */
   specs?: AgentSpec[];
+  /**
+   * Always-visible memory blocks placed in the system prompt (CoreMemoryConfig).
+   */
+  core_memory?: AgentCoreMemory;
   /**
    * Tools this agent may call without a human-in-the-loop prompt.
    */
@@ -1513,7 +1816,45 @@ export interface Agent {
    * Fallback model configuration
    */
   fallback_model?: JsonObject | null;
+  /**
+   * How the agent's runs execute. Present on every agent read from `/api/v1/agents` (list,
+   * detail, create/update responses): a record stored without it is `async`, which is what every
+   * reader already took absence to mean. Until 2026-09-23 it was sent only when stored, which
+   * was on 1 agent of 19 on one production tenant.
+   */
   execution_mode?: AgentExecutionMode;
+  /**
+   * Bridge agents only. Whether the agent has ever had an executor connection (one not
+   * registered `attribution_only`); set once to `true` and never unset. `false` marks an agent
+   * minted by an attribution-only registration that nothing has executed for since: GET /agents
+   * omits it — `include_offline=true` included — and the bridge cleanup deletes it once its last
+   * connection has been gone for the runtime `bridge_shell_gc_after_ms` window (default 24 h),
+   * unless it has runs, sessions or configuration. Usage attributed to it is kept. Absent on
+   * agents enrolled before 2026-09-23 until the cleanup classifies them.
+   */
+  bridge_served?: boolean;
+  /**
+   * Bridge agents with `bridge_served: false` only. When the cleanup first saw the agent with no
+   * connection left; the collection window counts from here.
+   */
+  bridge_disconnected_at?: string;
+  /**
+   * Bridge agents only. The local application behind the machine — `snaga`, `quark`, `svitlo`, …
+   * — from the register body's `app`. Absent on agents enrolled before 2026-09-25, which are all
+   * Snaga.
+   */
+  bridge_app?: string;
+  /**
+   * Bridge agents only. The bridge agent this one is filed under (a QUARK profile under its
+   * machine). Such a row is omitted from GET /agents unless `include_children=true`. Cleared
+   * when the parent is deleted. Added 2026-09-25.
+   */
+  parent_agent_id?: string;
+  /**
+   * GET /agents rows of bridge agents only, and only when non-zero: how many bridge agents are
+   * filed under this one. Added 2026-09-25.
+   */
+  children_count?: number;
   worker_reuse?: boolean;
   /**
    * Cron schedule configuration
@@ -1589,7 +1930,16 @@ export interface AgentAnalyticsSummary {
   by_execution_mode?: AgentAnalyticsSummaryByExecutionMode;
   bridge?: AgentAnalyticsSummaryBridge;
   runs_total?: number;
+  /**
+   * Spend in the range across ALL agents, including deleted ones (see deleted_agents). Until
+   * 2026-09-23 it summed live agents only, so deleting an agent lowered past spend.
+   */
   cost_total_usd?: number;
+  /**
+   * Spend in the range by agents that no longer exist — their usage outlives them. Included in
+   * runs_total, cost_total_usd and tokens_total. Added 2026-09-23.
+   */
+  deleted_agents?: AgentAnalyticsSummaryDeletedAgents;
   tokens_total?: number;
   top_by_runs?: AgentSummary[];
   top_by_cost?: AgentSummary[];
@@ -1606,6 +1956,17 @@ export interface AgentAnalyticsSummaryBridge {
 export interface AgentAnalyticsSummaryByExecutionMode {
   cloud?: number;
   bridge?: number;
+}
+
+/**
+ * Spend in the range by agents that no longer exist — their usage outlives them. Included in
+ * runs_total, cost_total_usd and tokens_total. Added 2026-09-23.
+ */
+export interface AgentAnalyticsSummaryDeletedAgents {
+  count?: number;
+  runs?: number;
+  cost_usd?: number;
+  tokens?: number;
 }
 
 export interface AgentAnalyticsSummaryRange {
@@ -1690,6 +2051,25 @@ export type AgentContextStrategy = 'compaction' | 'summarize' | 'truncate' | 'sl
 
 export const AGENT_CONTEXT_STRATEGY_VALUES = ['compaction', 'summarize', 'truncate', 'sliding_window'] as const;
 
+/**
+ * Always-visible memory blocks placed in the system prompt (CoreMemoryConfig).
+ */
+export interface AgentCoreMemory {
+  enabled?: boolean;
+  blocks?: AgentCoreMemoryBlock[];
+}
+
+export interface AgentCoreMemoryBlock {
+  label: string;
+  initial_content?: string;
+  content?: string;
+  max_tokens?: number;
+}
+
+/**
+ * Enforced enum. Changing it to or from `bridge` is refused with `403`: a bridge agent is
+ * registered by the bridge, not converted by an update.
+ */
 export type AgentExecutionMode = 'async' | 'worker' | 'bridge';
 
 export const AGENT_EXECUTION_MODE_VALUES = ['async', 'worker', 'bridge'] as const;
@@ -1907,6 +2287,11 @@ export interface AgentSpec {
    */
   enabled?: boolean;
   permissions_granted?: AgentSpecPermissionsGrantedItem[];
+  /**
+   * When present, the agent is offered only these tools from the SPEC; absent means the SPEC's
+   * whole surface.
+   */
+  tool_allowlist?: string[];
 }
 
 export interface AgentSpecPermissionsGrantedItem {
@@ -1973,9 +2358,11 @@ export interface AgentToolOverrideUpdate {
 }
 
 /**
- * Body for `PUT /api/v1/agents/{agentId}`. Every field optional — an omitted field means NO
- * CHANGE, not 'clear it'. `model` and `fallback_model` are accepted and ignored (see the model
- * lockdown).
+ * Body for `PUT` and `PATCH /api/v1/agents/{agentId}` (one handler, one schema:
+ * `UpdateAgentSchema`). Every field optional — an omitted field means NO CHANGE, not 'clear
+ * it'. Unknown fields are dropped, not refused; a declared field of the wrong type or outside
+ * its enum or bounds is `422`. `model` and `fallback_model` are accepted and ignored (see the
+ * model lockdown).
  */
 export interface AgentUpdate {
   name?: string;
@@ -1986,7 +2373,7 @@ export interface AgentUpdate {
    * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
    * set `public_config.system_prompt`.
    */
-  prompts?: JsonObject;
+  prompts?: AgentUpdatePrompts;
   model?: AgentModelConfigInput;
   /**
    * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
@@ -1994,7 +2381,7 @@ export interface AgentUpdate {
    * incoming list is normalised and persisted whole; the previous list is consulted only to keep
    * permission-grant timestamps stable for SPECs that were already installed.
    */
-  specs?: JsonObject[];
+  specs?: AgentUpdateSpec[];
   /**
    * Sending this field REPLACES the stored list; it is not merged. A PATCH carrying one id
    * leaves the agent with exactly that one — read the current value and send the full set. 
@@ -2023,6 +2410,302 @@ export interface AgentUpdate {
    * alone does not make the agent reachable — see `Agent.visibility`.
    */
   public_config?: AgentUpdatePublicConfig;
+  version?: string;
+  /**
+   * Replaced whole when sent; a sub-field the body omits is reset to its default, not kept.
+   */
+  mcp?: AgentUpdateMCP;
+  a2a?: AgentUpdateA2A;
+  /**
+   * Replaced whole when sent; a sub-field the body omits is reset to its default, not kept.
+   */
+  policies?: AgentUpdatePolicies;
+  /**
+   * Replaced whole when sent, with `mode` and `effort` defaulting as shown.
+   */
+  thinking?: AgentUpdateThinking;
+  effort_policy?: AgentUpdateEffortPolicy;
+  context_strategy?: AgentContextStrategy;
+  context_window_size?: number;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  resource_limits?: AgentUpdateResourceLimits;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  memory?: AgentUpdateMemory;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  core_memory?: AgentUpdateCoreMemory;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  guardrails?: AgentUpdateGuardrails;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  image_generation?: AgentUpdateImageGeneration;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  video_generation?: AgentUpdateVideoGeneration;
+  /**
+   * Accepted and ignored (model lockdown); `null` is accepted.
+   */
+  fallback_model?: AgentUpdateFallbackModel | null;
+  /**
+   * Enforced enum. Changing it to or from `bridge` is refused with `403`: a bridge agent is
+   * registered by the bridge, not converted by an update.
+   */
+  execution_mode?: AgentExecutionMode;
+  worker_reuse?: boolean;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  schedule?: AgentUpdateSchedule;
+  risk_classification?: AgentUpdateRiskClassification;
+  role?: AgentUpdateRole;
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  command_relationships?: AgentUpdateCommandRelationships;
+  /**
+   * Sending this field REPLACES the stored list; it is not merged.
+   */
+  succession_chain?: string[];
+  /**
+   * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+   * their stored values.
+   */
+  access_control?: AgentUpdateAccessControl;
+  /**
+   * Merges one level; `metadata.ui` one more and `metadata.ui.avatar` one more (see the PATCH
+   * description).
+   */
+  metadata?: JsonObject;
+  /**
+   * Per-agent autonomy policy (the chat "Remember this choice" setting): `manual` asks before
+   * every tool, `approve_risky` asks only for risky ones, `full_auto` asks for none. Replaced
+   * whole when sent.
+   */
+  autonomy?: AgentUpdateAutonomy;
+  /**
+   * Per-tool trust overrides. Sending this field REPLACES the stored list.
+   */
+  tool_overrides?: AgentUpdateToolOverride[];
+}
+
+export interface AgentUpdateA2A {
+  agent_card: JsonObject;
+  enabled: boolean;
+  public: boolean;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateAccessControl {
+  clearance: number;
+  compartments?: string[];
+  caveats?: string[];
+}
+
+/**
+ * Per-agent autonomy policy (the chat "Remember this choice" setting): `manual` asks before
+ * every tool, `approve_risky` asks only for risky ones, `full_auto` asks for none. Replaced
+ * whole when sent.
+ */
+export interface AgentUpdateAutonomy {
+  level: AgentAutonomyLevel;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateCommandRelationships {
+  opcon?: string;
+  coordinates_with?: string[];
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateCoreMemory {
+  /**
+   * @default false
+   */
+  enabled?: boolean;
+  /**
+   * @default []
+   */
+  blocks?: AgentUpdateCoreMemoryBlock[];
+}
+
+export interface AgentUpdateCoreMemoryBlock {
+  label: string;
+  /**
+   * @default ""
+   */
+  initial_content?: string;
+  content?: string;
+  /**
+   * @default 500
+   */
+  max_tokens?: number;
+}
+
+export interface AgentUpdateEffortPolicy {
+  plan: TeamPoliciesEffort;
+  act: TeamPoliciesEffort;
+  evaluate: TeamPoliciesEffort;
+}
+
+/**
+ * Accepted and ignored (model lockdown); `null` is accepted.
+ */
+export interface AgentUpdateFallbackModel {
+  provider: string;
+  model_ref: string;
+  endpoint_url?: string;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateGuardrails {
+  input?: AgentUpdateGuardrailsInputItem[];
+  output?: AgentUpdateGuardrailsOutputItem[];
+  built_in?: string[];
+}
+
+export interface AgentUpdateGuardrailsInputItem {
+  guardrail_id: string;
+  enabled: boolean;
+  action_override?: GuardrailAction;
+  config_override?: JsonObject;
+}
+
+export interface AgentUpdateGuardrailsOutputItem {
+  guardrail_id: string;
+  enabled: boolean;
+  action_override?: GuardrailAction;
+  config_override?: JsonObject;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateImageGeneration {
+  provider?: string;
+  model?: string;
+}
+
+/**
+ * Replaced whole when sent; a sub-field the body omits is reset to its default, not kept.
+ */
+export interface AgentUpdateMCP {
+  servers?: AgentUpdateMCPServer[];
+  allowed_tools?: string[];
+  allowed_resources?: string[];
+}
+
+export interface AgentUpdateMCPServer {
+  id: string;
+  name: string;
+  transport: AgentUpdateMCPServerTransport;
+  command?: string;
+  args?: string[];
+  url?: string;
+  api_key_ref?: string;
+  env?: JsonObject;
+  egress_allowlist?: AgentUpdateMCPServerEgressAllowlistItem[];
+  enabled: boolean;
+}
+
+export interface AgentUpdateMCPServerEgressAllowlistItem {
+  host_pattern: string;
+  ports?: number[];
+  protocol?: EgressRuleProtocol;
+}
+
+export type AgentUpdateMCPServerTransport = 'stdio' | 'http';
+
+export const AGENT_UPDATE_MCPSERVER_TRANSPORT_VALUES = ['stdio', 'http'] as const;
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateMemory {
+  enabled?: boolean;
+  types?: AgentUpdateMemoryType[];
+  max_entries?: number;
+  retrieval_strategy?: AgentUpdateMemoryRetrievalStrategy;
+  retrieval_limit?: number;
+  extraction_model?: string;
+  auto_extract?: boolean;
+  decay_enabled?: boolean;
+  decay_half_life_days?: number;
+  mcp_resource_enabled?: boolean;
+  memory_tools?: AgentUpdateMemoryMemoryTool[];
+}
+
+export type AgentUpdateMemoryMemoryTool = 'store' | 'search' | 'update' | 'delete';
+
+export const AGENT_UPDATE_MEMORY_MEMORY_TOOL_VALUES = ['store', 'search', 'update', 'delete'] as const;
+
+export type AgentUpdateMemoryRetrievalStrategy = 'relevance' | 'recency' | 'hybrid';
+
+export const AGENT_UPDATE_MEMORY_RETRIEVAL_STRATEGY_VALUES = ['relevance', 'recency', 'hybrid'] as const;
+
+export type AgentUpdateMemoryType = 'episodic' | 'semantic' | 'procedural';
+
+export const AGENT_UPDATE_MEMORY_TYPE_VALUES = ['episodic', 'semantic', 'procedural'] as const;
+
+/**
+ * Replaced whole when sent; a sub-field the body omits is reset to its default, not kept.
+ */
+export interface AgentUpdatePolicies {
+  rbac?: AgentUpdatePoliciesRbacItem[];
+  abac?: JsonObject;
+  rate_limits?: AgentUpdatePoliciesRateLimits;
+}
+
+export interface AgentUpdatePoliciesRateLimits {
+  requests_per_minute: number;
+  tokens_per_minute?: number;
+}
+
+export interface AgentUpdatePoliciesRbacItem {
+  role: string;
+  scopes: string[];
+  resources?: string[];
+}
+
+/**
+ * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
+ * Agent (system prompt lockdown, 2026-08-04). A new agent stores a neutral default; an update
+ * keeps the stored prompt. `prompts.developer` is stored. For the prompt a public chat uses,
+ * set `public_config.system_prompt`.
+ */
+export interface AgentUpdatePrompts {
+  system?: string;
+  developer?: string;
 }
 
 /**
@@ -2053,6 +2736,103 @@ export interface AgentUpdatePublicConfig {
    * default of 15.
    */
   daily_message_limit?: number | null;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tool_calls?: number;
+  max_tokens_per_run?: number;
+  /**
+   * In-run cost ceiling in USD; 0 or absent means no cap from this field (QA B4, 2026-09-23).
+   * Negative or non-numeric is 422.
+   */
+  max_cost_usd?: number;
+}
+
+export interface AgentUpdateRiskClassification {
+  level: RiskClassificationUpdateLevel;
+  annex_iii_category?: RiskClassificationUpdateAnnexIiiCategory;
+  justification: string;
+  assessor: string;
+  assessed_at: string;
+  review_due_at: string;
+}
+
+export type AgentUpdateRole = 'worker' | 'service' | 'support';
+
+export const AGENT_UPDATE_ROLE_VALUES = ['worker', 'service', 'support'] as const;
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateSchedule {
+  enabled: boolean;
+  cron: string;
+  timezone?: string;
+  input?: JsonObject;
+  max_concurrent_scheduled?: number;
+  on_failure?: AgentScheduleConfigOnFailure;
+  autonomous_mode?: boolean;
+  reflection_prompt?: string;
+}
+
+export interface AgentUpdateSpec {
+  spec_id: string;
+  version?: string;
+  enabled?: boolean;
+  permissions_granted?: AgentUpdateSpecPermissionsGrantedItem[];
+  tool_allowlist?: string[];
+}
+
+export interface AgentUpdateSpecPermissionsGrantedItem {
+  cap: AgentUpdateSpecPermissionsGrantedItemCap;
+  scope?: string;
+  reason?: string;
+  granted_by?: AgentSpecPermissionsGrantedItemGrantedBy;
+  granted_at?: string;
+}
+
+export type AgentUpdateSpecPermissionsGrantedItemCap = 'http_request' | 'read_credentials' | 'read_agent_memory' | 'write_agent_memory' | 'read_other_tool_results' | 'call_other_tool' | 'read_run_history' | 'read_environment' | 'emit_event' | 'schedule_self' | 'read_files' | 'write_files' | 'read_drawing' | 'write_drawing' | 'make_payment' | 'platform_control';
+
+export const AGENT_UPDATE_SPEC_PERMISSIONS_GRANTED_ITEM_CAP_VALUES = ['http_request', 'read_credentials', 'read_agent_memory', 'write_agent_memory', 'read_other_tool_results', 'call_other_tool', 'read_run_history', 'read_environment', 'emit_event', 'schedule_self', 'read_files', 'write_files', 'read_drawing', 'write_drawing', 'make_payment', 'platform_control'] as const;
+
+/**
+ * Replaced whole when sent, with `mode` and `effort` defaulting as shown.
+ */
+export interface AgentUpdateThinking {
+  /**
+   * @default "adaptive"
+   */
+  mode?: AgentUpdateThinkingMode;
+  budget_tokens?: number;
+  /**
+   * @default "medium"
+   */
+  effort?: TeamPoliciesEffort | number;
+}
+
+export type AgentUpdateThinkingMode = 'adaptive' | 'fixed';
+
+export const AGENT_UPDATE_THINKING_MODE_VALUES = ['adaptive', 'fixed'] as const;
+
+export interface AgentUpdateToolOverride {
+  tool_name: string;
+  trust_level: AgentToolOverrideTrustLevel;
+}
+
+/**
+ * Merges one level over the stored value (agents.ts updateAgent): keys this body omits keep
+ * their stored values.
+ */
+export interface AgentUpdateVideoGeneration {
+  provider?: string;
+  model?: string;
 }
 
 export type AgentUpdateVisibility = 'private' | 'team' | 'public';
@@ -2219,6 +2999,144 @@ export interface AndroidTesterSignupResult {
   emailed: boolean;
 }
 
+export interface AnthropicCountTokensResponse {
+  input_tokens: number;
+}
+
+/**
+ * Error envelope of the Anthropic-compatible routes (`/v1/messages*`, `anthropicError` in
+ * routes/anthropic-compat.ts), the shape Anthropic SDKs decode. Not every refusal on those
+ * routes uses it — each status says which envelope it carries.
+ */
+export interface AnthropicError {
+  type: 'error';
+  error: AnthropicErrorError;
+}
+
+export interface AnthropicErrorError {
+  type: AnthropicErrorErrorType;
+  message: string;
+}
+
+export type AnthropicErrorErrorType = 'invalid_request_error' | 'authentication_error' | 'permission_error' | 'billing_error' | 'rate_limit_error' | 'api_error';
+
+export const ANTHROPIC_ERROR_ERROR_TYPE_VALUES = ['invalid_request_error', 'authentication_error', 'permission_error', 'billing_error', 'rate_limit_error', 'api_error'] as const;
+
+/**
+ * A non-streamed answer, translated from the proxy's OpenAI completion
+ * (`openaiToAnthropicMessage`).
+ */
+export interface AnthropicMessage {
+  /**
+   * `msg_` followed by a UUIDv7.
+   */
+  id: string;
+  type: 'message';
+  role: 'assistant';
+  /**
+   * The `model` the caller sent.
+   */
+  model: string;
+  content: AnthropicMessageContentItem[];
+  /**
+   * `tool_use` whenever the answer holds a tool call and was not cut by length, whatever the
+   * model's own finish reason.
+   */
+  stop_reason: AnthropicMessageStopReason;
+  stop_sequence: JsonValue | null;
+  usage: AnthropicMessageUsage;
+}
+
+export interface AnthropicMessageContentItem {
+  type: AnthropicMessageContentItemType;
+  text?: string;
+  id?: string;
+  name?: string;
+  input?: JsonObject;
+}
+
+export type AnthropicMessageContentItemType = 'text' | 'tool_use';
+
+export const ANTHROPIC_MESSAGE_CONTENT_ITEM_TYPE_VALUES = ['text', 'tool_use'] as const;
+
+/**
+ * The subset of the Anthropic Messages request this route reads (routes/anthropic-compat.ts
+ * `AnthropicRequest`). Other fields are accepted and ignored.
+ */
+export interface AnthropicMessagesRequest {
+  /**
+   * A `claude-*` id is served by the admin-configured compat model
+   * (`config_anthropic_compat.model`), or the platform default model when that is unset. Any
+   * other id is passed to the LLM proxy as a catalogue model id (`<provider>/<model>`).
+   */
+  model: string;
+  max_tokens: number;
+  messages: AnthropicMessagesRequestMessage[];
+  /**
+   * A string or `text` blocks; joined into one system message.
+   */
+  system?: string | JsonObject[];
+  tools?: AnthropicMessagesRequestTool[];
+  tool_choice?: AnthropicMessagesRequestToolChoice;
+  temperature?: number;
+  top_p?: number;
+  stop_sequences?: string[];
+  /**
+   * @default false
+   */
+  stream?: boolean;
+  metadata?: JsonObject;
+}
+
+export interface AnthropicMessagesRequestMessage {
+  role: AgentBookmarkKind;
+  /**
+   * A string, or content blocks. Read: `text`, `image` (`source.type` `base64` or a `url`),
+   * `tool_use` (assistant), `tool_result` (user); `document` is replaced by a placeholder;
+   * `thinking` blocks are dropped.
+   */
+  content: string | AnthropicMessagesRequestMessageContentVariant2item[];
+}
+
+export interface AnthropicMessagesRequestMessageContentVariant2item {
+  type: string;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
+export interface AnthropicMessagesRequestTool {
+  name: string;
+  description?: string;
+  /**
+   * JSON Schema. Numeric bounds beyond ±2147483647 are dropped before the model sees it.
+   */
+  input_schema?: JsonObject;
+}
+
+export interface AnthropicMessagesRequestToolChoice {
+  type: AnthropicMessagesRequestToolChoiceType;
+  name?: string;
+}
+
+export type AnthropicMessagesRequestToolChoiceType = 'auto' | 'any' | 'tool';
+
+export const ANTHROPIC_MESSAGES_REQUEST_TOOL_CHOICE_TYPE_VALUES = ['auto', 'any', 'tool'] as const;
+
+/**
+ * `tool_use` whenever the answer holds a tool call and was not cut by length, whatever the
+ * model's own finish reason.
+ */
+export type AnthropicMessageStopReason = 'end_turn' | 'max_tokens' | 'tool_use';
+
+export const ANTHROPIC_MESSAGE_STOP_REASON_VALUES = ['end_turn', 'max_tokens', 'tool_use'] as const;
+
+export interface AnthropicMessageUsage {
+  input_tokens: number;
+  output_tokens: number;
+}
+
 export interface APIKeyResponse {
   key_id?: string;
   prefix?: string;
@@ -2229,6 +3147,11 @@ export interface APIKeyResponse {
   name?: string;
   scopes?: string[];
   created_at?: string;
+  /**
+   * Whether the key just minted passes the platform super-admin gate (same rule as
+   * ApiKeySummary.platform_admin). Added 2026-09-23.
+   */
+  platform_admin?: boolean;
   warning?: string;
 }
 
@@ -2248,6 +3171,17 @@ export interface APIKeySummary {
   status: APIKeySummaryStatus;
   created_at: string;
   expires_at?: string;
+  /**
+   * Whether this key passes the platform super-admin gate: the person it was minted for (its
+   * user, looked up in this tenant) is the configured super-admin email. Added 2026-09-23, so
+   * the keys screen states the fact instead of guessing.
+   */
+  platform_admin?: boolean;
+  /**
+   * Email of the user the key was minted for; null for legacy programmatic keys with no user.
+   * Added 2026-09-23.
+   */
+  created_by_email?: string | null;
   last_used_at?: string;
 }
 
@@ -2530,6 +3464,13 @@ export interface BootstrapResponseTenant {
   plan: string;
 }
 
+/**
+ * Numeric counters from the machine's last capability report — e.g. `events_sent`,
+ * `events_failed`, `reconnects`, `heartbeat_failures`, `ws_handshakes`. Keys are client-chosen
+ * `[a-z0-9_]{1,64}`, at most 32, finite numbers only; absent when the client sent none.
+ */
+export type BridgeAgentStats = JsonObject;
+
 export interface BridgeAgentSummary {
   agent_id: string;
   machine_id: string;
@@ -2538,6 +3479,19 @@ export interface BridgeAgentSummary {
   working_directory: string;
   status: string;
   last_heartbeat: string;
+  /**
+   * The agent's `bridge_app`, when it has one. Added 2026-09-25.
+   */
+  bridge_app?: string;
+  /**
+   * The agent's `parent_agent_id`, when it has one. Added 2026-09-25.
+   */
+  parent_agent_id?: string;
+  stats?: BridgeAgentStats;
+  /**
+   * When `stats` was reported; present with `stats`.
+   */
+  stats_at?: string;
 }
 
 export interface BridgeConnection {
@@ -2552,6 +3506,38 @@ export interface BridgeConnection {
   status: AgentSummaryBridgeStatus;
   registered_at?: string;
   os?: string;
+  /**
+   * Protocol version the client reported at registration.
+   */
+  protocol_version?: number;
+  /**
+   * An interactive or one-shot session that reports usage but runs no task loop; dispatch and
+   * the roster skip it.
+   */
+  attribution_only?: boolean;
+  /**
+   * True after the client deregistered itself, so the socket close that follows does not fail
+   * its in-flight runs.
+   */
+  cleanly_deregistered?: boolean;
+  /**
+   * LOCAL-runtime SPECs the machine reports as installed or failed.
+   */
+  installed_specs?: BridgeConnectionInstalledSpec[];
+  stats?: BridgeAgentStats;
+  /**
+   * When `stats` was reported.
+   */
+  stats_at?: string;
+}
+
+export interface BridgeConnectionInstalledSpec {
+  spec_id: string;
+  version?: string;
+  tools?: string[];
+  status: BridgeInstalledSpecStatus;
+  error?: string;
+  reported_at?: string;
 }
 
 export interface BridgeDelegateRequest {
@@ -2695,16 +3681,63 @@ export interface BridgeRegisterRequest {
   machine_name?: string;
   agent_name?: string;
   os?: string;
+  /**
+   * Bridge wire-protocol version the client speaks; absent = 1.
+   */
+  protocol_version?: number;
+  /**
+   * A usage-attribution session with no task loop (an interactive `snaga`), which never counts
+   * the agent as online.
+   */
+  attribution_only?: boolean;
+  /**
+   * Which local application this machine runs — `snaga`, `quark`, `svitlo`, …; stored on the
+   * agent as `bridge_app`. The enrolment texts ("Local coding agent on … via Snaga") are written
+   * only for `snaga`; any other app supplies its own `description` or is left with an empty one.
+   * Anything outside the pattern is 422. Added 2026-09-25.
+   *
+   * @default "snaga"
+   */
+  app?: string;
+  /**
+   * The agent's description. On a first registration it replaces the default; on a reconnect it
+   * overwrites the stored one — send it only when it is yours to keep current. Added 2026-09-25.
+   */
+  description?: string;
+  /**
+   * A top-level bridge agent of this tenant to file this one under (a QUARK profile under its
+   * machine). Hidden from GET /agents unless `include_children=true`; the parent's row carries
+   * `children_count`. Anything else — a cloud agent, a child, another tenant's id — is 422.
+   * Cleared when the parent is deleted. Added 2026-09-25.
+   */
+  parent_agent_id?: string;
 }
 
 export interface BridgeRegisterResponse {
   agent_id: string;
+  /**
+   * The request's `machine_id`, echoed: the key the machine is filed under. Added 2026-09-25.
+   */
+  machine_id?: string;
   status: 'online';
   registered?: boolean;
 }
 
 export interface BridgeStatusResponse {
   connections: BridgeConnection[];
+  /**
+   * The bridge protocol version this server speaks.
+   */
+  protocol_version?: number;
+  /**
+   * Protocol capabilities this server offers a bridge client.
+   */
+  capabilities?: string[];
+  /**
+   * Whether head-agent delegations this server issues are signed. When false, a bridge that
+   * requires signatures holds every dangerous call for a human.
+   */
+  delegation_signing?: boolean;
 }
 
 /**
@@ -2713,7 +3746,23 @@ export interface BridgeStatusResponse {
  */
 export interface BridgeTaskEvent {
   event_id?: string;
+  /**
+   * `started` / `step` / `approval_required` / `busy` / `cancelled` / `approval_denied` /
+   * `failed` are the Quark daemon's task kinds (quark-bridge `EventKind`), mapped into the run
+   * timeline since 2026-09-30: `failed` becomes `run.failed`, the rest a `step.act` carrying
+   * `message`, `code` and `params`. Before that each was stored and shown nowhere. A kind with
+   * no mapping is still accepted (200) and stored for seven days, and reaches no run stream.
+   */
   type: BridgeTaskEventType;
+  /**
+   * Step label for localized rendering (Quark: `quark.agent.step.*`), beside the English
+   * `message`. Copied onto the run's `step.act` event.
+   */
+  code?: string;
+  /**
+   * Parameters of `code`. Copied onto the run's `step.act` event.
+   */
+  params?: JsonObject;
   timestamp: string;
   approval_id?: string;
   status?: string;
@@ -2748,9 +3797,16 @@ export interface BridgeTaskEventMetrics {
   execution_time_ms?: number;
 }
 
-export type BridgeTaskEventType = 'status' | 'tool_call' | 'tool_result' | 'content' | 'thinking' | 'text' | 'metrics' | 'approval_request' | 'error' | 'completed' | 'capability_report' | 'escalation' | 'approval_denied';
+/**
+ * `started` / `step` / `approval_required` / `busy` / `cancelled` / `approval_denied` /
+ * `failed` are the Quark daemon's task kinds (quark-bridge `EventKind`), mapped into the run
+ * timeline since 2026-09-30: `failed` becomes `run.failed`, the rest a `step.act` carrying
+ * `message`, `code` and `params`. Before that each was stored and shown nowhere. A kind with
+ * no mapping is still accepted (200) and stored for seven days, and reaches no run stream.
+ */
+export type BridgeTaskEventType = 'status' | 'tool_call' | 'tool_result' | 'content' | 'thinking' | 'text' | 'metrics' | 'approval_request' | 'error' | 'completed' | 'capability_report' | 'escalation' | 'approval_denied' | 'started' | 'step' | 'approval_required' | 'failed' | 'busy' | 'cancelled';
 
-export const BRIDGE_TASK_EVENT_TYPE_VALUES = ['status', 'tool_call', 'tool_result', 'content', 'thinking', 'text', 'metrics', 'approval_request', 'error', 'completed', 'capability_report', 'escalation', 'approval_denied'] as const;
+export const BRIDGE_TASK_EVENT_TYPE_VALUES = ['status', 'tool_call', 'tool_result', 'content', 'thinking', 'text', 'metrics', 'approval_request', 'error', 'completed', 'capability_report', 'escalation', 'approval_denied', 'started', 'step', 'approval_required', 'failed', 'busy', 'cancelled'] as const;
 
 export interface BulkDeleteNotificationsResponse {
   deleted: number;
@@ -3073,9 +4129,33 @@ export interface CompanyUpdate {
   config?: JsonObject;
 }
 
+export type CompleteOAuthLoginFormPostProvider = 'apple';
+
+export const COMPLETE_OAUTH_LOGIN_FORM_POST_PROVIDER_VALUES = ['apple'] as const;
+
+export interface CompleteOAuthLoginFormPostRequest {
+  code?: string;
+  state?: string;
+  id_token?: string;
+  error?: string;
+  /**
+   * JSON blob with name and email, first sign-in only.
+   */
+  user?: string;
+}
+
+export interface CompleteOAuthLoginFormPostResponse {
+  api_key: string;
+  email: string;
+}
+
 export interface CompleteOAuthLoginResponse {
   api_key: string;
   email: string;
+}
+
+export interface ConfirmSessionTodoRequest {
+  execute?: boolean;
 }
 
 /**
@@ -3292,7 +4372,11 @@ export interface ContinueRunRequest {
 export interface ContinueRunResponse {
   continued: boolean;
   run_id: string;
-  checkpoint?: string;
+  /**
+   * The checkpoint number the token pointed at — a number on the wire (runs.ts continueRun sends
+   * ContinuationState.checkpoint). Documented as a string until 2026-09-23.
+   */
+  checkpoint?: number;
   resume_step?: number;
 }
 
@@ -3392,6 +4476,12 @@ export interface ConversationEntryRunMetrics {
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */
   pricing_confidence?: string;
+  /**
+   * Time the run spent executing, in ms — summed over every attempt, so a run paused and resumed
+   * counts the work before the pause; time spent paused or queued is not counted, and started_at
+   * is when the latest attempt began. Whole ms on runs finished from 2026-09-23; older records
+   * may carry a fraction.
+   */
   duration_ms?: number;
   steps_count?: number;
   input_tokens?: number;
@@ -3484,6 +4574,29 @@ export interface CreateAdminBlogPostResponse {
   post: BlogPost;
 }
 
+export interface CreateAdminProviderRequest {
+  id: string;
+  name: string;
+  default_endpoint: string;
+  requires_api_key?: boolean;
+  canonical?: CreateAdminProviderRequestCanonical;
+  default_capabilities?: CreateAdminProviderRequestDefaultCapabilities;
+  api_key?: string;
+}
+
+export type CreateAdminProviderRequestCanonical = 'openai_compat';
+
+export const CREATE_ADMIN_PROVIDER_REQUEST_CANONICAL_VALUES = ['openai_compat'] as const;
+
+export interface CreateAdminProviderRequestDefaultCapabilities {
+  supports_tool_calls?: boolean;
+  supports_streaming?: boolean;
+  supports_json_mode?: boolean;
+  supports_vision?: boolean;
+  max_context_tokens?: number;
+  max_output_tokens?: number;
+}
+
 export interface CreateAdminProviderResponse {
   id: string;
   name: string;
@@ -3567,6 +4680,17 @@ export interface CreateAgentRequest {
 export type CreateAgentRequestExecutionMode = 'async' | 'worker';
 
 export const CREATE_AGENT_REQUEST_EXECUTION_MODE_VALUES = ['async', 'worker'] as const;
+
+export interface CreateAgentScorerRequest {
+  name: string;
+  config: CreateAgentScorerRequestConfig;
+}
+
+export interface CreateAgentScorerRequestConfig {
+  type: 'webhook';
+  url: string;
+  timeout_ms?: number;
+}
 
 export interface CreateAgentVersionRequest {
   changelog?: string;
@@ -3775,8 +4899,11 @@ export interface CreateMCPServerRequest {
    * bearer token. It MUST begin `MCP_` — 422 otherwise. The namespace is the whole security
    * boundary: before it existed, the HTTP transport read ANY variable of the API process, so a
    * tenant admin registering `{url: <their server>, api_key_ref: "UARP_ENCRYPTION_KEY"}` was
-   * mailed the platform's at-rest key on the first connect (found 2026-09-15). The variable is
-   * never echoed back; only the ref is stored.
+   * mailed the platform's at-rest key on the first connect (found 2026-09-15). Since 2026-09-30
+   * the variable is also sent only to the origin the operator bound it to in
+   * `UARP_MCP_API_KEY_REF_ORIGINS` (`MCP_X=https://host`); on any other server the ref resolves
+   * to nothing, so no tenant can point a record at its own host and receive an operator key. The
+   * variable is never echoed back; only the ref is stored.
    */
   api_key_ref?: string;
   /**
@@ -3861,6 +4988,100 @@ export interface CreatePublicSessionResponse {
   greeting?: string;
 }
 
+export interface CreatePublicVideoOrderRequest {
+  template_id: string;
+  /**
+   * JPEG, PNG or WebP, up to 8 MB. Judged by its bytes, not its name or declared type.
+   */
+  photo: BinaryInput;
+  /**
+   * JSON object of the template's text fields, e.g. `{"caption":"Fresh coffee"}`.
+   */
+  slots?: string;
+  /**
+   * Language of the checkout page, the emails and refusal messages. Default `en`.
+   */
+  locale?: VideoOrderLocale;
+  /**
+   * The buyer has the right to use the photo and everyone in it agreed.
+   */
+  consent_rights: GetRunChangedFiles;
+  /**
+   * The buyer accepts the terms.
+   */
+  consent_terms: GetRunChangedFiles;
+}
+
+export interface CreatePublicVideoOrderResponse {
+  id: string;
+  status: VideoOrderStatus;
+  locale: VideoOrderLocale;
+  template: CreatePublicVideoOrderResponseTemplate;
+  price_cents: number;
+  currency: PublicVideoTemplateCurrency;
+  /**
+   * `authorized`: held, not taken. `captured`: charged — only once the clip exists. `released`:
+   * the hold was dropped; nothing was charged.
+   */
+  payment: VideoOrderPayment;
+  /**
+   * Only while `awaiting_payment`.
+   */
+  checkout_url: string | null;
+  queue: CreatePublicVideoOrderResponseQueue | null;
+  progress: CreatePublicVideoOrderResponseProgress | null;
+  video: CreatePublicVideoOrderResponseVideo | null;
+  regeneration: CreatePublicVideoOrderResponseRegeneration;
+  feedback: string | null;
+  failure: CreatePublicVideoOrderResponseFailure | null;
+  retry_available: boolean;
+  created_at: string;
+  ready_at: string | null;
+  order_token: string;
+}
+
+export interface CreatePublicVideoOrderResponseFailure {
+  code: VideoOrderFailureCode;
+}
+
+export interface CreatePublicVideoOrderResponseProgress {
+  started_at: string;
+  typical_seconds: number;
+}
+
+export interface CreatePublicVideoOrderResponseQueue {
+  position: number;
+  eta_seconds: number;
+}
+
+export interface CreatePublicVideoOrderResponseRegeneration {
+  used: boolean;
+  available: boolean;
+  reason: string | null;
+  deadline: string | null;
+}
+
+export interface CreatePublicVideoOrderResponseTemplate {
+  id: string;
+  title: CreatePublicVideoOrderResponseTemplateTitle;
+}
+
+export interface CreatePublicVideoOrderResponseTemplateTitle {
+  en: string;
+  uk: string;
+}
+
+export interface CreatePublicVideoOrderResponseVideo {
+  /**
+   * Signed path, valid for an hour.
+   */
+  url: string;
+  /**
+   * When the video is deleted.
+   */
+  expires_at: string | null;
+}
+
 export interface CreateResponseRequest {
   /**
    * Agent ID or model alias resolvable via `/v1/models`.
@@ -3928,7 +5149,9 @@ export interface CreateRunRequest {
   input?: CreateRunRequestInput;
   /**
    * Pin to a specific agent version (1-based). When omitted, runs against the agent's current
-   * head version.
+   * head version. A version the agent does not have (never created, or pruned from its history)
+   * is refused with 404 and no run is created; until 2026-09-23 it answered 202 and ran the live
+   * agent.
    */
   version?: number;
   resource_limits?: JsonObject;
@@ -4028,6 +5251,91 @@ export interface CreateSpecPackageCheckoutSessionResponse {
   message: string;
   retry_after_seconds: number;
 }
+
+export interface CreateTenantRequest {
+  name: string;
+  slug?: string;
+  status?: CreateTenantRequestStatus;
+  plan?: CustomPlanBasePlan;
+  quotas?: CreateTenantRequestQuotas;
+  settings?: CreateTenantRequestSettings;
+  billing?: CreateTenantRequestBilling;
+}
+
+export interface CreateTenantRequestBilling {
+  stripe_customer_id?: string;
+  stripe_subscription_id?: string;
+}
+
+export interface CreateTenantRequestQuotas {
+  max_agents: number;
+  max_teams: number;
+  max_workers_per_team: number;
+  max_concurrent_runs: number;
+  max_concurrent_team_runs: number;
+  max_active_sessions: number;
+  max_monthly_tokens: number;
+  max_monthly_tool_calls: number;
+  max_daily_tool_calls?: number;
+  max_daily_tokens?: number;
+  max_monthly_runs: number;
+  max_mcp_servers: number;
+  max_storage_bytes: number;
+  max_memory_entries_per_agent: number;
+  max_memory_storage_bytes: number;
+  max_agent_versions: number;
+  max_knowledge_bases: number;
+  max_workspaces: number;
+  max_monthly_images?: number;
+  max_daily_images?: number;
+  max_monthly_videos?: number;
+}
+
+export interface CreateTenantRequestSettings {
+  default_provider: string;
+  default_model: string;
+  default_mcp_servers: CreateTenantRequestSettingsDefaultMCPServer[];
+  default_guardrails: CreateTenantRequestSettingsDefaultGuardrail[];
+  mandatory_guardrails: string[];
+  egress_allowlist: CreateTenantRequestSettingsEgressAllowlistItem[];
+  max_retention_days: number;
+}
+
+export interface CreateTenantRequestSettingsDefaultGuardrail {
+  guardrail_id: string;
+  enabled: boolean;
+  action_override?: GuardrailAction;
+  config_override?: JsonObject;
+}
+
+export interface CreateTenantRequestSettingsDefaultMCPServer {
+  id: string;
+  name: string;
+  transport: AgentUpdateMCPServerTransport;
+  command?: string;
+  args?: string[];
+  url?: string;
+  api_key_ref?: string;
+  env?: JsonObject;
+  egress_allowlist?: CreateTenantRequestSettingsDefaultMCPServerEgressAllowlistItem[];
+  enabled: boolean;
+}
+
+export interface CreateTenantRequestSettingsDefaultMCPServerEgressAllowlistItem {
+  host_pattern: string;
+  ports?: number[];
+  protocol?: EgressRuleProtocol;
+}
+
+export interface CreateTenantRequestSettingsEgressAllowlistItem {
+  host_pattern: string;
+  ports?: number[];
+  protocol?: EgressRuleProtocol;
+}
+
+export type CreateTenantRequestStatus = 'active' | 'suspended' | 'trial' | 'deleted';
+
+export const CREATE_TENANT_REQUEST_STATUS_VALUES = ['active', 'suspended', 'trial', 'deleted'] as const;
 
 export interface CreateVotingProposalRequest {
   title: string;
@@ -4158,6 +5466,10 @@ export interface DataSubjectAccessReport {
    */
   not_exported: string[];
   swept: SubjectSweep;
+}
+
+export interface DataSubjectErasureRequest {
+  subject_id: string;
 }
 
 /**
@@ -4835,7 +6147,7 @@ export const EGRESS_RULE_PROTOCOL_VALUES = ['https', 'http'] as const;
 
 export interface EmbeddingsRequest {
   /**
-   * Embedding model (optional; platform default used)
+   * Ignored: the platform-configured model is always used, and the response `model` names it.
    */
   model?: string;
   /**
@@ -4870,6 +6182,27 @@ export interface EmbeddingsResponseDataItem {
   object: 'embedding';
   embedding: number[];
   index: number;
+  /**
+   * Tokens the model read for this element — after any cut. 0 for a failed element.
+   */
+  input_tokens: number;
+  /**
+   * The text was cut before it was embedded: past 8000 characters, or at the model's served
+   * context. Two texts that differ only after the cut get the same vector.
+   */
+  truncated: boolean;
+  /**
+   * Present when this element got no vector; `embedding` is then empty.
+   */
+  error?: EmbeddingsResponseDataItemError;
+}
+
+/**
+ * Present when this element got no vector; `embedding` is then empty.
+ */
+export interface EmbeddingsResponseDataItemError {
+  code: 'embedding_failed';
+  message: string;
 }
 
 export interface EmbeddingsResponseUsage {
@@ -4994,8 +6327,12 @@ export type EnrolMfaRequestAlgorithm = 'SHA-1' | 'SHA-256' | 'SHA-512';
 export const ENROL_MFA_REQUEST_ALGORITHM_VALUES = ['SHA-1', 'SHA-256', 'SHA-512'] as const;
 
 /**
- * RFC 9457 problem document; `correlation_id` (the request id, echoed from `X-Request-Id`) for
- * tracing — `correlationId` is the same value for the compatibility window.
+ * RFC 9457 problem document; `correlation_id` is the request id — the same value as this
+ * response's `X-Request-Id` header and as `requestId` in the server's log lines for the
+ * request. The server chooses it once at ingress: the caller's own `X-Request-Id` when it is
+ * 8–128 characters of `[A-Za-z0-9._:-]` starting with a letter or digit, otherwise a fresh
+ * UUIDv7. Present on every problem document. `correlationId` is the same value for the
+ * compatibility window.
  */
 export interface Error {
   type: string;
@@ -5035,6 +6372,26 @@ export interface Error {
    */
   errors?: ErrorError[];
   /**
+   * Deprecated twin, present only on refusals that answered a bare `{error}` body before
+   * 2026-10-02: the MFA step-up 401 (`mfa_required`), the public chat's 429s and some governance
+   * refusals (the same sentence as `detail`). Kept unchanged for the compatibility window,
+   * removed in the next breaking release (the one that moves `X-API-Version`); such a response
+   * carries `Deprecation: true`. Read `code` and `detail`.
+   *
+   * @deprecated
+   */
+  error?: string;
+  /**
+   * MFA step-up only (`code: mfa_required`): `not_enrolled` — enrol a second factor; `stale` —
+   * verify it again.
+   */
+  reason?: ErrorReason;
+  /**
+   * Public chat 429s only: seconds until a retry can succeed, the same value as the
+   * `Retry-After` header.
+   */
+  retry_after?: number;
+  /**
    * Request ID for tracing
    */
   correlation_id?: string;
@@ -5048,14 +6405,22 @@ export interface Error {
  * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
  * no machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONFIGURATION_ERROR' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'INVALID_QUERY' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_FOUND' | 'NOT_YANKED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'RESERVED_SCOPE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'VALIDATION_ERROR' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'YANK_CONFLICT' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'plan_upgrade_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONFIGURATION_ERROR', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'INVALID_QUERY', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_FOUND', 'NOT_YANKED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'RESERVED_SCOPE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'VALIDATION_ERROR', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'YANK_CONFLICT', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'plan_upgrade_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
   message?: string;
 }
+
+/**
+ * MFA step-up only (`code: mfa_required`): `not_enrolled` — enrol a second factor; `stale` —
+ * verify it again.
+ */
+export type ErrorReason = 'not_enrolled' | 'stale';
+
+export const ERROR_REASON_VALUES = ['not_enrolled', 'stale'] as const;
 
 /**
  * What a person reported from the “report to the team” button, or general feedback. Reports
@@ -5783,6 +7148,16 @@ export interface GetAgentViolationsResponse {
   agent_id?: string;
   violations?: ConstitutionViolation[];
   count?: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer violations already paged); `count` is the
+   * number of violations in this answer.
+   */
+  cursor?: string;
 }
 
 export interface GetAndroidTestingStatusResponse {
@@ -5812,7 +7187,12 @@ export interface GetAppleAppSiteAssociationResponseWebcredentials {
 export interface GetBillingBudgetResponse {
   configured: boolean;
   budget: GetBillingBudgetResponseBudget | null;
-  status?: JsonObject | null;
+  /**
+   * The current period against the cap (packages/billing/budget.ts BudgetStatus); `null` when no
+   * budget is configured. There is no single status word: `soft_alert` and `hard_limit_reached`
+   * are booleans — derive ok / soft alert / hard limit from them.
+   */
+  status?: GetBillingBudgetResponseStatus | null;
 }
 
 export interface GetBillingBudgetResponseBudget {
@@ -5828,6 +7208,27 @@ export interface GetBillingBudgetResponseBudget {
 export type GetBillingBudgetResponseBudgetPeriod = 'monthly' | 'weekly' | 'daily';
 
 export const GET_BILLING_BUDGET_RESPONSE_BUDGET_PERIOD_VALUES = ['monthly', 'weekly', 'daily'] as const;
+
+/**
+ * The current period against the cap (packages/billing/budget.ts BudgetStatus); `null` when no
+ * budget is configured. There is no single status word: `soft_alert` and `hard_limit_reached`
+ * are booleans — derive ok / soft alert / hard limit from them.
+ */
+export interface GetBillingBudgetResponseStatus {
+  tenant_id?: string;
+  spent_usd?: number;
+  limit_usd?: number;
+  remaining_usd?: number;
+  /**
+   * Fraction 0–1 of the cap spent.
+   */
+  utilization?: number;
+  period?: string;
+  period_start?: string;
+  period_end?: string;
+  soft_alert?: boolean;
+  hard_limit_reached?: boolean;
+}
 
 export interface GetBillingOverageResponse {
   enabled: boolean;
@@ -5879,6 +7280,15 @@ export interface GetClientConfigResponse {
 
 export interface GetCompanyActivityResponse {
   entries?: CompanyActivityEntry[];
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer entries already paged).
+   */
+  cursor?: string;
 }
 
 export interface GetCompanyBudgetResponse {
@@ -5944,6 +7354,13 @@ export interface GetHealthResponse {
    * about platform behaviour can cite it.
    */
   build_sha?: string;
+  /**
+   * When the running image was built, ISO-8601 UTC, baked in at image build time next to
+   * `build_sha`. `"unknown"` when the build argument was absent or did not parse as a date. Like
+   * `build_sha` it identifies the BUILD; `version` is the API contract stamp (the
+   * `X-API-Version` header) and does not change between deploys.
+   */
+  build_time?: string;
   /**
    * Always 0. Kept for compatibility — there is no resume-parking state: `RunStatus` has no
    * `waiting_for_resume`, and startup reconciliation FAILS an interrupted run rather than
@@ -6217,6 +7634,15 @@ export interface GetRunAuditLogResponse {
   run_id: string;
   audit_log: AuditLogEntry[];
   total: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export type GetRunChangedFiles = 'true';
@@ -6271,9 +7697,11 @@ export interface GetRunResponse {
   error_code?: string;
   /**
    * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
-   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
-   * Never a provider id — this reaches a screen, and the product does not name the model it
-   * picked.
+   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
+   * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
+   * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
+   * screen, and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -6372,11 +7800,52 @@ export interface GetRunResponseResourceLimits {
   max_steps?: number;
   max_tool_calls?: number;
   max_tokens_per_run?: number;
+  /**
+   * In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
+   * fails with error_code BUDGET_EXCEEDED and error_details.cap_source "resource_limits".
+   * Accepted on POST /runs and on the agent's resource_limits (POST/PUT/PATCH /agents); negative
+   * or non-numeric is 422.
+   */
+  max_cost_usd?: number;
 }
 
 export interface GetRunStepsResponse {
+  run_id: string;
   steps: RunStep[];
   total: number;
+  /**
+   * What the run spent in model calls that belong to no step (effort classifier, planner,
+   * evaluator): the run's totals minus the steps', priced the same way as a step. Absent while
+   * the run has no metrics yet.
+   */
+  outside_steps?: GetRunStepsResponseOutsideSteps;
+  /**
+   * The run's billed total, for reconciling against the steps. Absent until the run has been
+   * priced.
+   */
+  total_cost_usd?: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
+}
+
+/**
+ * What the run spent in model calls that belong to no step (effort classifier, planner,
+ * evaluator): the run's totals minus the steps', priced the same way as a step. Absent while
+ * the run has no metrics yet.
+ */
+export interface GetRunStepsResponseOutsideSteps {
+  input_tokens: number;
+  output_tokens: number;
+  thinking_tokens: number;
+  llm_calls: number;
+  cost_usd: number;
 }
 
 export interface GetRuntimeConfigResponse {
@@ -6387,23 +7856,44 @@ export interface GetSessionAuditLogResponse {
   session_id: string;
   audit_log: AuditLogEntry[];
   total: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface GetSessionMessagesResponse {
   /**
-   * The transcript; the key clients read first. `items` is the Wave 7.2 list alias of the same
-   * array.
+   * Deprecated twin of `items` — the same array, kept for the compatibility window and removed
+   * in the next breaking release (the one that moves `X-API-Version`). Read `items` (C-05,
+   * 2026-10-02).
+   *
+   * @deprecated
    */
   messages: ConversationEntry[];
   /**
-   * The same list as `messages` — the canonical list key (Wave 7.2); both are served so no
-   * client moves.
+   * The transcript — the canonical list key, as on every list in this API. `messages` carries
+   * the same array for the compatibility window.
    */
   items: ConversationEntry[];
   total: number;
   active_run_id?: string;
   active_run_status?: string;
   active_run_partial_content?: string;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface GetSessionShareResponse {
@@ -6417,6 +7907,16 @@ export interface GetSquadChatHistoryResponse {
   conversation_history?: TeamChatTurn[];
   total?: number;
   chat_state?: JsonObject;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer turns already paged); `total` is the number
+   * of turns in this answer.
+   */
+  cursor?: string;
 }
 
 export interface GetSquadGraphResponse {
@@ -6437,6 +7937,16 @@ export interface GetTeamChatHistoryResponse {
   conversation_history?: TeamChatTurn[];
   total?: number;
   chat_state?: JsonObject;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer turns already paged); `total` is the number
+   * of turns in this answer.
+   */
+  cursor?: string;
 }
 
 export interface GetTeamGraphResponse {
@@ -6647,6 +8157,7 @@ export interface HealthCheckV1aliasResponse {
   uptime_seconds?: number;
   version?: string;
   build_sha?: string;
+  build_time?: string;
   pending_resumes?: number;
   runs_queued?: number;
 }
@@ -6756,6 +8267,34 @@ export interface ImportDataExplorerResponse {
   total_lines: number;
 }
 
+export interface ImportSessionRequest {
+  agent_id: string;
+  session_id?: string;
+  /**
+   * @default "cli"
+   */
+  source?: ImportSessionRequestSource;
+  working_directory?: string;
+  messages: ImportSessionRequestMessage[];
+  metadata?: JsonObject;
+}
+
+export interface ImportSessionRequestMessage {
+  role: AgentBookmarkKind;
+  content: string;
+  timestamp?: string;
+  tools?: Array<string | ImportSessionRequestMessageToolVariant2>;
+}
+
+export interface ImportSessionRequestMessageToolVariant2 {
+  name: string;
+  status?: ConversationEntryToolCallStatus;
+}
+
+export type ImportSessionRequestSource = 'cli';
+
+export const IMPORT_SESSION_REQUEST_SOURCE_VALUES = ['cli'] as const;
+
 /**
  * Self-improvement proposal — multi-stage state machine (proposed → arbiter_review → voting →
  * sandbox_testing → approved → applied | rejected at any step).
@@ -6838,6 +8377,18 @@ export interface InboxItem {
    * Absent on other kinds. Since 2026-09-23.
    */
   tools?: InboxItemTool[];
+  /**
+   * `failed` items: the run's own `error_code` (see `Run.error_code`), so the row can be said
+   * without parsing `summary`. Absent on other kinds and when the run has none. Since
+   * 2026-09-23.
+   */
+  error_code?: string;
+  /**
+   * `failed` items: the run's own `error_details` (see `Run.error_details`) — e.g.
+   * `limit_ms`/`elapsed_ms` for MAX_DURATION_EXCEEDED. Absent on other kinds and when the run
+   * has none. Since 2026-09-23.
+   */
+  error_details?: JsonObject;
 }
 
 export type InboxItemKind = 'approval' | 'input' | 'paused' | 'failed';
@@ -6860,7 +8411,29 @@ export interface IngestKbDocumentResponse {
   name?: string;
   chunks_created?: number;
   status?: string;
+  /**
+   * What was stored: `embedded` when every chunk got a vector, `partial` when the embedding
+   * request stopped at its deadline part-way, `keyword_only` when no chunk got one.
+   */
+  embedding_status?: KnowledgeBaseDocumentEmbeddingStatus;
+  /**
+   * Chunks stored without a vector.
+   */
+  embedding_pending?: number;
+  /**
+   * Present when the document is `partial` and its remaining chunks were queued for background
+   * embedding. The document list reports progress through `embedding_status`.
+   */
+  embedding_completion?: IngestKbDocumentResponseEmbeddingCompletion;
 }
+
+/**
+ * Present when the document is `partial` and its remaining chunks were queued for background
+ * embedding. The document list reports progress through `embedding_status`.
+ */
+export type IngestKbDocumentResponseEmbeddingCompletion = 'scheduled';
+
+export const INGEST_KB_DOCUMENT_RESPONSE_EMBEDDING_COMPLETION_VALUES = ['scheduled'] as const;
 
 export interface IngestMemoryRequest {
   /**
@@ -7123,19 +8696,44 @@ export interface KnowledgeBaseDocument {
   updated_at: string;
   chunk_preview: string | null;
   /**
-   * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
-   * provider answered and the document is searchable by keywords only.
+   * Derived from the stored chunk vectors, counting only vectors made by the current embedding
+   * model (the ones search uses). `embedded` when every chunk has one; `partial` when some do —
+   * the embedding stopped at its request deadline and the rest is being completed in the
+   * background or awaits a reindex; `keyword_only` when none does and the document is searchable
+   * by keywords only. Absent when the capped chunk read did not see enough of the document to
+   * say.
    */
   embedding_status: KnowledgeBaseDocumentEmbeddingStatus;
+  /**
+   * Present while this server is embedding the document's remaining chunks in the background,
+   * after an ingest that stopped at the embedding deadline. Absent otherwise — including after a
+   * restart, which drops the background work; `POST /knowledge-bases/{kbId}/reindex` finishes
+   * whatever is left.
+   */
+  embedding_completion?: KnowledgeBaseDocumentEmbeddingCompletion;
 }
 
 /**
- * `embedded` when the document's chunks have vectors; `keyword_only` when no embedding
- * provider answered and the document is searchable by keywords only.
+ * Present while this server is embedding the document's remaining chunks in the background,
+ * after an ingest that stopped at the embedding deadline. Absent otherwise — including after a
+ * restart, which drops the background work; `POST /knowledge-bases/{kbId}/reindex` finishes
+ * whatever is left.
  */
-export type KnowledgeBaseDocumentEmbeddingStatus = 'embedded' | 'keyword_only';
+export type KnowledgeBaseDocumentEmbeddingCompletion = 'in_progress';
 
-export const KNOWLEDGE_BASE_DOCUMENT_EMBEDDING_STATUS_VALUES = ['embedded', 'keyword_only'] as const;
+export const KNOWLEDGE_BASE_DOCUMENT_EMBEDDING_COMPLETION_VALUES = ['in_progress'] as const;
+
+/**
+ * Derived from the stored chunk vectors, counting only vectors made by the current embedding
+ * model (the ones search uses). `embedded` when every chunk has one; `partial` when some do —
+ * the embedding stopped at its request deadline and the rest is being completed in the
+ * background or awaits a reindex; `keyword_only` when none does and the document is searchable
+ * by keywords only. Absent when the capped chunk read did not see enough of the document to
+ * say.
+ */
+export type KnowledgeBaseDocumentEmbeddingStatus = 'embedded' | 'partial' | 'keyword_only';
+
+export const KNOWLEDGE_BASE_DOCUMENT_EMBEDDING_STATUS_VALUES = ['embedded', 'partial', 'keyword_only'] as const;
 
 export type KnowledgeBaseDocumentStatus = 'uploading' | 'processing' | 'ready' | 'error';
 
@@ -7300,7 +8898,29 @@ export interface ListAdminDomainHealthResponseRow {
   cert: DomainCertLifecycle;
   created_at: string;
   updated_at?: string;
+  /**
+   * Whether the platform serves the domain right now — the answer Caddy's certificate gate gets.
+   * `dns`/`cert` are the stored lifecycle and can read verified/active while the domain is dark;
+   * this one cannot. Since 2026-10-01; reading it rebuilds a missing index row for a serving
+   * tenant.
+   */
+  serving?: ListAdminDomainHealthResponseRowServing;
 }
+
+/**
+ * Whether the platform serves the domain right now — the answer Caddy's certificate gate gets.
+ * `dns`/`cert` are the stored lifecycle and can read verified/active while the domain is dark;
+ * this one cannot. Since 2026-10-01; reading it rebuilds a missing index row for a serving
+ * tenant.
+ */
+export interface ListAdminDomainHealthResponseRowServing {
+  ok: boolean;
+  reason?: ListAdminDomainHealthResponseRowServingReason;
+}
+
+export type ListAdminDomainHealthResponseRowServingReason = 'not_mapped' | 'not_verified' | 'tenant_not_serving' | 'mapping_mismatch';
+
+export const LIST_ADMIN_DOMAIN_HEALTH_RESPONSE_ROW_SERVING_REASON_VALUES = ['not_mapped', 'not_verified', 'tenant_not_serving', 'mapping_mismatch'] as const;
 
 export interface ListAdminIntegrationOAuthProvidersResponse {
   providers: ListAdminIntegrationOAuthProvidersResponseProvider[];
@@ -7325,6 +8945,15 @@ export interface ListAdminProvidersResponse {
 
 export interface ListAgentBookmarksResponse {
   items: AgentBookmark[];
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListAgentIntegrationsResponse {
@@ -7372,9 +9001,11 @@ export interface ListAgentVersionsResponse {
    */
   versions?: AgentVersion[];
   /**
-   * `items.length` — the snapshots this response carries, which retention caps at the newest 50
-   * (agents.ts, GET /agents/:id/versions). Not a count of everything the agent was ever saved
-   * as, and there is no paging parameter to reach further back.
+   * Every version retained for the agent, whatever page this is — retention keeps the newest 50,
+   * so it is not a count of everything the agent was ever saved as. With `limit` it is larger
+   * than `items.length` while `has_more` is true (measured 2026-09-23: `limit=2` answered two
+   * items and `total: 50`). Until 2026-09-23 this said `items.length` and that there was no
+   * paging.
    */
   total: number;
   /**
@@ -7524,6 +9155,21 @@ export interface ListDatasetsResponse {
   total: number;
 }
 
+export interface ListDeletedBridgeMachinesResponse {
+  items: ListDeletedBridgeMachinesResponseItem[];
+}
+
+export interface ListDeletedBridgeMachinesResponseItem {
+  machine_id: string;
+  /**
+   * The deleted agent.
+   */
+  agent_id: string;
+  agent_name?: string;
+  machine_name?: string;
+  deleted_at: string;
+}
+
 export interface ListDrawingOpsResponse {
   items: DrawingJournalEntry[];
   cursor?: string;
@@ -7534,6 +9180,16 @@ export interface ListDrawingOpsResponse {
 export interface ListEvalRunsResponse {
   eval_runs: EvalRun[];
   total: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer runs already paged); `total` still counts
+   * the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListExperimentsResponse {
@@ -7587,11 +9243,29 @@ export interface ListInvitesResponse {
    */
   invites?: Invite[];
   total?: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListKbDocumentsResponse {
   documents?: KnowledgeBaseDocument[];
   total?: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListKnowledgeBasesResponse {
@@ -7622,6 +9296,15 @@ export interface ListLLMCredentialsProvidersResponseProvider {
 
 export interface ListLLMModelsResponse {
   models?: LLMModel[];
+  /**
+   * The platform default provider; null when none is set.
+   */
+  default_provider?: string | null;
+  /**
+   * The platform default model as `provider/model`, matching `models[].id`; null when none is
+   * set.
+   */
+  default_model?: string | null;
 }
 
 export interface ListMCPServersResponse {
@@ -7630,7 +9313,15 @@ export interface ListMCPServersResponse {
 
 export interface ListMemoriesResponse {
   memories: MemoryEntry[];
+  /**
+   * All of the agent's non-archived entries, not the page length.
+   */
   total: number;
+  has_more: boolean;
+  /**
+   * Present only while has_more is true.
+   */
+  cursor?: string;
 }
 
 export interface ListMeSessionsResponse {
@@ -7834,6 +9525,31 @@ export interface ListPublicTenantsResponse {
   total?: number;
 }
 
+export interface ListPublicVideoTemplatesResponse {
+  templates: PublicVideoTemplate[];
+  queue: ListPublicVideoTemplatesResponseQueue;
+  stats: ListPublicVideoTemplatesResponseStats;
+}
+
+export interface ListPublicVideoTemplatesResponseQueue {
+  /**
+   * Paid orders waiting for a free slot.
+   */
+  waiting: number;
+  /**
+   * Rough wait until a new order's clip is ready.
+   */
+  eta_seconds: number;
+}
+
+export interface ListPublicVideoTemplatesResponseStats {
+  /**
+   * Videos delivered to paying buyers since the service opened. Test runs and free regenerations
+   * do not count; nothing seeds it.
+   */
+  videos_total: number;
+}
+
 export interface ListRunArtifactsResponse {
   run_id: string;
   artifacts: Artifact[];
@@ -7842,6 +9558,10 @@ export interface ListRunArtifactsResponse {
 
 export interface ListRunCheckpointsResponse {
   checkpoints?: RunCheckpoint[];
+  /**
+   * `checkpoints.length`; the list reads at most 500.
+   */
+  total?: number;
 }
 
 export type ListRunsOrder = 'asc' | 'desc';
@@ -7863,6 +9583,15 @@ export interface ListSchedulesResponse {
 
 export interface ListSessionAnnotationsResponse {
   items?: ListSessionAnnotationsResponseItem[];
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the number of newer annotations already paged).
+   */
+  cursor?: string;
 }
 
 export interface ListSessionAnnotationsResponseItem {
@@ -7876,6 +9605,16 @@ export interface ListSessionAnnotationsResponseItem {
 
 export interface ListSessionArtifactsResponse {
   artifacts?: Artifact[];
+  session_id?: string;
+  /**
+   * `artifacts.length`.
+   */
+  total?: number;
+  /**
+   * True when the scan over the tenant's runs hit its runaway cap, so artifacts from older runs
+   * may be missing.
+   */
+  truncated?: boolean;
 }
 
 export interface ListSessionBranchesResponse {
@@ -7971,7 +9710,16 @@ export interface ListSquadGraphNodesResponse {
 export interface ListSquadRunsResponse {
   team_id?: string;
   runs?: TeamRunSummary[];
+  /**
+   * Rows in THIS page, not the total across pages — the list has no cheap count (the team's runs
+   * are found by scanning the tenant's runs). Use `has_more` to know whether more exist.
+   */
   total?: number;
+  /**
+   * Pass back as `cursor` to continue. `null` on the last page.
+   */
+  cursor?: string | null;
+  has_more?: boolean;
 }
 
 export interface ListSquadsResponse {
@@ -8003,13 +9751,14 @@ export interface ListTeamRunsResponse {
   team_id?: string;
   runs?: TeamRunSummary[];
   /**
-   * Rows in THIS page, not the total across pages.
+   * Rows in THIS page, not the total across pages — the list has no cheap count (the team's runs
+   * are found by scanning the tenant's runs). Use `has_more` to know whether more exist.
    */
   total?: number;
   /**
-   * Pass back as `cursor` to continue. Absent on the last page.
+   * Pass back as `cursor` to continue. `null` on the last page.
    */
-  cursor?: string;
+  cursor?: string | null;
   has_more?: boolean;
 }
 
@@ -8030,7 +9779,22 @@ export interface ListTenantsResponse {
 }
 
 export interface ListTodosResponse {
+  /**
+   * Deprecated twin of `items` — the same array, kept for the compatibility window and removed
+   * in the next breaking release. Read `items` (C-05, 2026-10-02).
+   *
+   * @deprecated
+   */
   todos?: Todo[];
+  /**
+   * The todos — the canonical list key. `todos` carries the same array for the compatibility
+   * window.
+   */
+  items?: Todo[];
+  /**
+   * Every matching todo before `limit` is applied; can exceed the entries returned.
+   */
+  total?: number;
 }
 
 export interface ListUsersResponse {
@@ -8042,6 +9806,15 @@ export interface ListUsersResponse {
    */
   users?: TenantUser[];
   total?: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here an offset); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListVideoProvidersResponse {
@@ -8056,6 +9829,16 @@ export interface ListWebhookDeliveriesResponse {
   webhook_id: string;
   deliveries: WebhookDeliveryAttempt[];
   total: number;
+  /**
+   * Present only when `limit` was sent: whether another page follows.
+   */
+  has_more?: boolean;
+  /**
+   * Present only when `limit` was sent and `has_more` is true: send it back as `?cursor=` for
+   * the next page. Opaque (here the last delivery id on the page; the next page is the older
+   * deliveries); `total` still counts the whole list.
+   */
+  cursor?: string;
 }
 
 export interface ListWebhooksResponse {
@@ -8118,6 +9901,19 @@ export interface ListWorkspaceTrashResponse {
   items?: TrashManifestEntry[];
 }
 
+/**
+ * An OpenAI chat-completions request. The proxy reads `model` and `stream` and forwards the
+ * whole body to the provider serving the model.
+ */
+export interface LLMChatCompletionRequest {
+  model: string;
+  stream?: boolean;
+  /**
+   * Additional free-form properties (`JsonValue` on the wire).
+   */
+  [key: string]: unknown;
+}
+
 export interface LLMModel {
   display_name: string;
   id: string;
@@ -8128,9 +9924,24 @@ export interface LLMModel {
   supports_json_mode: boolean;
   supports_streaming: boolean;
   supports_tool_calls: boolean;
+  /**
+   * What the model is for. `stt`/`tts` are the platform's configured speech models (GET
+   * /llm/voice-config); they carry `supports_tool_calls` and `supports_streaming` false and are
+   * not chat models. Every other row is `chat`. Added 2026-09-25.
+   */
+  modality?: LLMModelModality;
   supports_vision: boolean;
   tier: string;
 }
+
+/**
+ * What the model is for. `stt`/`tts` are the platform's configured speech models (GET
+ * /llm/voice-config); they carry `supports_tool_calls` and `supports_streaming` false and are
+ * not chat models. Every other row is `chat`. Added 2026-09-25.
+ */
+export type LLMModelModality = 'chat' | 'stt' | 'tts';
+
+export const LLMMODEL_MODALITY_VALUES = ['chat', 'stt', 'tts'] as const;
 
 /**
  * An LLM provider the platform knows about, and whether a key is configured.
@@ -8181,9 +9992,21 @@ export interface LLMTranscribeAudioResponse {
   [key: string]: unknown;
 }
 
+/**
+ * The LLM PROXY's own counters (llm-proxy.ts): only completions that went through
+ * `/api/v1/llm/*` — the Snaga bridge and direct API callers. Runs executed on the platform and
+ * other non-proxy LLM calls are not in these numbers, so `usage.tokens_used` is normally
+ * SMALLER than `total_tokens` on `GET /api/v1/usage`, which counts every billed token. The
+ * counters are also rate-limit counters, updated without compare-and-swap, so concurrent calls
+ * can lose an increment; the billed figure is `GET /api/v1/usage`. Measured 2026-09-23 on one
+ * tenant: 596,206,111 here against 944,711,867 there for the same model and month.
+ */
 export interface LLMUsageSummary {
   billing_period?: LLMUsageSummaryBillingPeriod;
-  by_model?: string[];
+  /**
+   * Per-model proxy traffic this month — the same population as `usage.tokens_used`.
+   */
+  by_model?: LLMUsageSummaryByModelItem[];
   limits?: LLMUsageSummaryLimits;
   plan?: string;
   usage?: LLMUsageSummaryUsage;
@@ -8192,6 +10015,15 @@ export interface LLMUsageSummary {
 export interface LLMUsageSummaryBillingPeriod {
   end?: string;
   start?: string;
+}
+
+export interface LLMUsageSummaryByModelItem {
+  model: string;
+  /**
+   * Input + output tokens.
+   */
+  tokens_used: number;
+  requests: number;
 }
 
 export interface LLMUsageSummaryLimits {
@@ -8206,6 +10038,10 @@ export interface LLMUsageSummaryUsage {
   requests_this_minute?: number;
   requests_today?: number;
   tokens_remaining?: number;
+  /**
+   * Input + output tokens of LLM-proxy calls this month only; not the tenant's total (see the
+   * schema description).
+   */
   tokens_used?: number;
 }
 
@@ -8648,7 +10484,24 @@ export interface Mission {
    * Terminal outcome. `partial` means some objectives verified and some did not.
    */
   outcome?: MissionOutcome;
+  /**
+   * English prose. For a client that branches or translates, read `result_code`.
+   */
   result_summary?: string;
+  /**
+   * `result_summary` as a code, written with it and cleared with it (a summary written without a
+   * code clears the previous one). Absent on summaries written before 2026-09-23.
+   * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
+   * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
+   * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
+   * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+   */
+  result_code?: MissionResultCode;
+  /**
+   * The numbers `result_summary` carries, keyed per `result_code` (see there). Absent when the
+   * code carries none.
+   */
+  result_details?: JsonObject;
   /**
    * Subset of objective_ids that failed verification.
    */
@@ -8660,7 +10513,9 @@ export interface Mission {
   created_at: string;
   updated_at: string;
   /**
-   * Set when the status first leaves `draft`.
+   * Set when the mission first enters `executing` — when work begins. Absent while it waits at
+   * `awaiting_authorization`. Since 2026-09-23; before, it was set when the status first left
+   * `draft`, i.e. at creation, so the wait for authorization counted as execution.
    */
   started_at?: string;
   /**
@@ -8699,6 +10554,18 @@ export type MissionOutcome = 'success' | 'partial' | 'failed' | 'aborted';
 export const MISSION_OUTCOME_VALUES = ['success', 'partial', 'failed', 'aborted'] as const;
 
 /**
+ * `result_summary` as a code, written with it and cleared with it (a summary written without a
+ * code clears the previous one). Absent on summaries written before 2026-09-23.
+ * `all_objectives_verified` (details `verified`), `objectives_failed` (`failed`, `total`),
+ * `planning_failed`, `aborted_by_signal`, `aborted_by_operator` (the operator's reason, when
+ * given, is the summary), `watchdog_stuck` (`stuck_status`, `stuck_minutes`),
+ * `paused_by_operator`, `resumed_by_operator`, `authorized_by_operator`.
+ */
+export type MissionResultCode = 'all_objectives_verified' | 'objectives_failed' | 'planning_failed' | 'aborted_by_signal' | 'aborted_by_operator' | 'watchdog_stuck' | 'paused_by_operator' | 'resumed_by_operator' | 'authorized_by_operator';
+
+export const MISSION_RESULT_CODE_VALUES = ['all_objectives_verified', 'objectives_failed', 'planning_failed', 'aborted_by_signal', 'aborted_by_operator', 'watchdog_stuck', 'paused_by_operator', 'resumed_by_operator', 'authorized_by_operator'] as const;
+
+/**
  * What POST /missions answers. `plan` is echoed back only when the server planned the mission
  * from a goal.
  */
@@ -8710,6 +10577,10 @@ export interface MissionStartResponse {
   objective_ids: string[];
   /**
    * The intake decision. A `quick_reply` mission is recorded but is not mission work.
+   * `classification` is the value the mission was stored with (its plan's), the same as `GET
+   * /missions/{missionId}` reports; `score` and `confidence` are the goal-text heuristic's
+   * signal and may disagree with it — since 2026-09-23 they no longer override it (before, this
+   * field carried the heuristic's verdict, e.g. `quick_reply` for a stored `mission`).
    */
   classification: MissionStartResponseClassification;
   plan?: PlannedMission;
@@ -8727,6 +10598,10 @@ export interface MissionStartResponse {
 
 /**
  * The intake decision. A `quick_reply` mission is recorded but is not mission work.
+ * `classification` is the value the mission was stored with (its plan's), the same as `GET
+ * /missions/{missionId}` reports; `score` and `confidence` are the goal-text heuristic's
+ * signal and may disagree with it — since 2026-09-23 they no longer override it (before, this
+ * field carried the heuristic's verdict, e.g. `quick_reply` for a stored `mission`).
  */
 export interface MissionStartResponseClassification {
   classification: MissionClassification;
@@ -9423,6 +11298,10 @@ export type OpenAiToolCallType = 'function';
 
 export const OPEN_AI_TOOL_CALL_TYPE_VALUES = ['function'] as const;
 
+export interface OpenPublicVideoOrderCheckoutResponse {
+  checkout_url: string;
+}
+
 export interface PatchMeRequest {
   /**
    * `/api/v1/files/<file_id>/content` of an image uploaded with `POST /files`, or `null` to
@@ -9561,9 +11440,12 @@ export interface PermissionSetUpdate {
    * child's budget may not exceed. The run's effective cost ceiling is the smaller positive of
    * this and resource_limits.max_cost_usd (or the platform ceiling); a run that crosses it fails
    * with error_code BUDGET_EXCEEDED and error_details.cap_source "permission_set" or
-   * "resource_limits". 0 means no cap from this field.
+   * "resource_limits". 0 means no cap from this field; null clears the cap and is stored as 0.
+   * Unlike the other fields, a present value of the wrong type or a negative number is refused
+   * with 422 and nothing is written — it is a spend cap, and a silent fallback here stored a
+   * string "0.0005" as 1.0.
    */
-  max_budget_per_run_usd?: number;
+  max_budget_per_run_usd?: number | null;
   max_spawn_depth?: number;
   can_spawn?: boolean;
   can_self_modify?: boolean;
@@ -10239,7 +12121,56 @@ export interface PublicPlan {
   price_amount_cents: number;
   price_currency: string;
   quotas: JsonObject;
+  /**
+   * The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
+   * word, not the scheduler's internal tier.
+   */
+  queue_tier?: PublicPlanQueueTier;
+  /**
+   * Runs at a time the plan really gets — the plan's figure clamped to the live platform
+   * ceiling.
+   */
+  effective_concurrent_runs?: number;
+  reset?: PublicPlanReset;
+  /**
+   * Pay-as-you-go beyond the quota; `null` when the plan has none (free).
+   */
+  overage?: PublicPlanOverage | null;
 }
+
+/**
+ * Pay-as-you-go beyond the quota; `null` when the plan has none (free).
+ */
+export interface PublicPlanOverage {
+  available?: boolean;
+  requires_cap?: boolean;
+  price_per_million_usd?: PublicPlanOveragePricePerMillionUsd;
+}
+
+export interface PublicPlanOveragePricePerMillionUsd {
+  input?: number;
+  output?: number;
+}
+
+/**
+ * The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
+ * word, not the scheduler's internal tier.
+ */
+export type PublicPlanQueueTier = 'standard' | 'priority';
+
+export const PUBLIC_PLAN_QUEUE_TIER_VALUES = ['standard', 'priority'] as const;
+
+export interface PublicPlanReset {
+  period?: PublicPlanResetPeriod;
+  /**
+   * Human wording of the reset instant, e.g. `00:00 UTC`.
+   */
+  at?: string;
+}
+
+export type PublicPlanResetPeriod = 'day' | 'month';
+
+export const PUBLIC_PLAN_RESET_PERIOD_VALUES = ['day', 'month'] as const;
 
 /**
  * public.ts GET /public/sessions/{sessionId} — every field always present; compacted entries
@@ -10343,6 +12274,87 @@ export interface PublicTrackEventRequest {
   properties?: JsonObject;
 }
 
+/**
+ * A template as the public gallery sees it — no model, prompt or cost.
+ */
+export interface PublicVideoTemplate {
+  id: string;
+  title: PublicVideoTemplateTitle;
+  description: PublicVideoTemplateDescription;
+  category: PublicVideoTemplateCategory;
+  badge: string | null;
+  price_cents: number;
+  currency: PublicVideoTemplateCurrency;
+  seconds: number;
+  aspect_ratio: PublicVideoTemplateAspectRatio;
+  photos: PublicVideoTemplatePhotos;
+  text_slots: PublicVideoTemplateTextSlot[];
+  photo_guidance: PublicVideoTemplatePhotoGuidance;
+  /**
+   * Path of the example clip, or null.
+   */
+  preview_url: string | null;
+  /**
+   * Videos made from this template and delivered to paying buyers. Test runs and free
+   * regenerations do not count; nothing seeds it.
+   */
+  videos_made: number;
+}
+
+export type PublicVideoTemplateAspectRatio = '9:16';
+
+export const PUBLIC_VIDEO_TEMPLATE_ASPECT_RATIO_VALUES = ['9:16'] as const;
+
+export type PublicVideoTemplateCategory = 'ads' | 'fun' | 'portrait' | 'product' | 'pets';
+
+export const PUBLIC_VIDEO_TEMPLATE_CATEGORY_VALUES = ['ads', 'fun', 'portrait', 'product', 'pets'] as const;
+
+export type PublicVideoTemplateCurrency = 'usd';
+
+export const PUBLIC_VIDEO_TEMPLATE_CURRENCY_VALUES = ['usd'] as const;
+
+export interface PublicVideoTemplateDescription {
+  en: string;
+  uk: string;
+}
+
+export interface PublicVideoTemplatePhotoGuidance {
+  good: PublicVideoTemplatePhotoGuidanceGood;
+  bad: PublicVideoTemplatePhotoGuidanceBad;
+}
+
+export interface PublicVideoTemplatePhotoGuidanceBad {
+  en: string[];
+  uk: string[];
+}
+
+export interface PublicVideoTemplatePhotoGuidanceGood {
+  en: string[];
+  uk: string[];
+}
+
+export interface PublicVideoTemplatePhotos {
+  min: number;
+  max: number;
+}
+
+export interface PublicVideoTemplateTextSlot {
+  key: string;
+  label: PublicVideoTemplateTextSlotLabel;
+  max_length: number;
+  required: boolean;
+}
+
+export interface PublicVideoTemplateTextSlotLabel {
+  en: string;
+  uk: string;
+}
+
+export interface PublicVideoTemplateTitle {
+  en: string;
+  uk: string;
+}
+
 export interface PublishListingRequest {
   agent_id: string;
   agent_version?: string;
@@ -10381,9 +12393,53 @@ export interface PushBridgeTaskEventsResponse {
   events_stored?: number;
 }
 
+/**
+ * A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
+ * seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
+ * does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
+ * allowance. `quota.kind` and `quota.period` are always present on `quota_exceeded` and
+ * `limit_reached` — read them, not `detail`, whose wording is kept only for older clients.
+ */
+export interface QuotaProblem {
+  type?: string;
+  title?: string;
+  status?: number;
+  detail?: string;
+  code?: QuotaProblemCode;
+  quota?: QuotaProblemQuota;
+  upgrade_path?: string;
+  upgrade?: JsonObject;
+}
+
+export type QuotaProblemCode = 'quota_exceeded' | 'limit_reached' | 'run_quota_exceeded' | 'rate_limit_exceeded';
+
+export const QUOTA_PROBLEM_CODE_VALUES = ['quota_exceeded', 'limit_reached', 'run_quota_exceeded', 'rate_limit_exceeded'] as const;
+
+export interface QuotaProblemQuota {
+  kind: QuotaProblemQuotaKind;
+  period: string | null;
+  resets_at?: string | null;
+  retry_after_s?: number;
+  limit?: number;
+  used?: number;
+  remaining?: number;
+}
+
+export type QuotaProblemQuotaKind = 'tokens' | 'runs' | 'tool_calls' | 'images' | 'videos' | 'unknown';
+
+export const QUOTA_PROBLEM_QUOTA_KIND_VALUES = ['tokens', 'runs', 'tool_calls', 'images', 'videos', 'unknown'] as const;
+
 export interface RateListingRequest {
   rating: number;
   comment?: string;
+}
+
+export interface RatePublicVideoOrderRequest {
+  rating: RunFeedbackListFeedbackReaction;
+}
+
+export interface RatePublicVideoOrderResponse {
+  feedback: RunFeedbackListFeedbackReaction;
 }
 
 export interface ReactivateTenantResponse {
@@ -10421,6 +12477,19 @@ export interface RegisterAmbassadorRequest {
 
 export interface RegisterAmbassadorResponse {
   ok: boolean;
+}
+
+export interface RegisterRequest {
+  email: string;
+  name?: string;
+  /**
+   * Must be `true`; anything else is 400.
+   */
+  accept_terms: boolean;
+  /**
+   * Must be `true`; anything else is 400.
+   */
+  accept_privacy: boolean;
 }
 
 export interface RegisterResponse {
@@ -10601,8 +12670,27 @@ export interface RegistrySearchResponseHit {
   categories?: string[];
   keywords?: string[];
   publisher_tenant_id?: string;
+  /**
+   * Present when the latest version's manifest has notes.
+   */
+  release_notes?: string;
+  /**
+   * Where the SPEC runs; `local` when the manifest does not say.
+   */
+  runtime_scope?: RegistrySearchResponseHitRuntimeScope;
+  /**
+   * Featured by a platform admin; featured rows sort first.
+   */
+  featured?: boolean;
   published_at?: string;
 }
+
+/**
+ * Where the SPEC runs; `local` when the manifest does not say.
+ */
+export type RegistrySearchResponseHitRuntimeScope = 'local' | 'cloud';
+
+export const REGISTRY_SEARCH_RESPONSE_HIT_RUNTIME_SCOPE_VALUES = ['local', 'cloud'] as const;
 
 export interface RegistrySetShareRequest {
   /**
@@ -10643,12 +12731,24 @@ export interface RegistryYankVersionRequest {
 }
 
 export interface ReindexKnowledgeBaseResponse {
+  /**
+   * True only when no chunk is left `pending`.
+   */
   reindexed: boolean;
   total_chunks: number;
   /**
-   * Chunks that came back with a vector. Lower than `total_chunks` means some failed.
+   * Chunks this call gave a vector.
    */
   embedded: number;
+  /**
+   * Chunks skipped because they already carry a vector from the current model.
+   */
+  already_current: number;
+  /**
+   * Chunks still without a current vector after this call — cut off by the request deadline, or
+   * refused by the provider. Call again to continue.
+   */
+  pending: number;
   documents: number;
   embedding_model: string;
   embedding_dimensions: number;
@@ -10659,7 +12759,22 @@ export interface RejectRunRequest {
    * Why the tool was refused; recorded on the run and shown to the agent.
    */
   reason?: string;
+  /**
+   * Bridge runs: which of the offered options this rejection is — one of the `options` in the
+   * waiting call. Passed to the machine unchanged; `reject_always` is remembered there for that
+   * tool name until `snaga connect` restarts. A value the endpoint does not accept is 422.
+   */
+  option_id?: RejectRunRequestOptionId;
 }
+
+/**
+ * Bridge runs: which of the offered options this rejection is — one of the `options` in the
+ * waiting call. Passed to the machine unchanged; `reject_always` is remembered there for that
+ * tool name until `snaga connect` restarts. A value the endpoint does not accept is 422.
+ */
+export type RejectRunRequestOptionId = 'reject_once' | 'reject_always';
+
+export const REJECT_RUN_REQUEST_OPTION_ID_VALUES = ['reject_once', 'reject_always'] as const;
 
 export interface RejectRunResponse {
   rejected: boolean;
@@ -10774,6 +12889,16 @@ export type ReplayResultVerified = 'recorded_log';
 
 export const REPLAY_RESULT_VERIFIED_VALUES = ['recorded_log'] as const;
 
+export interface RequestOtpCodeRequest {
+  email: string;
+  accept_terms?: boolean;
+  accept_privacy?: boolean;
+  /**
+   * Anonymous visitor cookie, joining the landing visit to this request.
+   */
+  visitor_id?: string;
+}
+
 export interface RequestOtpCodeResponse {
   ok: boolean;
   message: string;
@@ -10858,7 +12983,8 @@ export interface RespondToRunRequest {
 }
 
 export interface RespondToRunResponse {
-  accepted?: boolean;
+  status: 'ok';
+  run_id: string;
 }
 
 /**
@@ -10931,6 +13057,76 @@ export interface ResumeRunResponse {
   run_id: string;
 }
 
+export interface RetryPublicVideoOrderResponse {
+  id: string;
+  status: VideoOrderStatus;
+  locale: VideoOrderLocale;
+  template: RetryPublicVideoOrderResponseTemplate;
+  price_cents: number;
+  currency: PublicVideoTemplateCurrency;
+  /**
+   * `authorized`: held, not taken. `captured`: charged — only once the clip exists. `released`:
+   * the hold was dropped; nothing was charged.
+   */
+  payment: VideoOrderPayment;
+  /**
+   * Only while `awaiting_payment`.
+   */
+  checkout_url: string | null;
+  queue: RetryPublicVideoOrderResponseQueue | null;
+  progress: RetryPublicVideoOrderResponseProgress | null;
+  video: RetryPublicVideoOrderResponseVideo | null;
+  regeneration: RetryPublicVideoOrderResponseRegeneration;
+  feedback: string | null;
+  failure: RetryPublicVideoOrderResponseFailure | null;
+  retry_available: boolean;
+  created_at: string;
+  ready_at: string | null;
+  order_token: string;
+}
+
+export interface RetryPublicVideoOrderResponseFailure {
+  code: VideoOrderFailureCode;
+}
+
+export interface RetryPublicVideoOrderResponseProgress {
+  started_at: string;
+  typical_seconds: number;
+}
+
+export interface RetryPublicVideoOrderResponseQueue {
+  position: number;
+  eta_seconds: number;
+}
+
+export interface RetryPublicVideoOrderResponseRegeneration {
+  used: boolean;
+  available: boolean;
+  reason: string | null;
+  deadline: string | null;
+}
+
+export interface RetryPublicVideoOrderResponseTemplate {
+  id: string;
+  title: RetryPublicVideoOrderResponseTemplateTitle;
+}
+
+export interface RetryPublicVideoOrderResponseTemplateTitle {
+  en: string;
+  uk: string;
+}
+
+export interface RetryPublicVideoOrderResponseVideo {
+  /**
+   * Signed path, valid for an hour.
+   */
+  url: string;
+  /**
+   * When the video is deleted.
+   */
+  expires_at: string | null;
+}
+
 export interface RevokeAPIKeyResponse {
   revoked: boolean;
   key_id: string;
@@ -10978,9 +13174,6 @@ export interface RiskClassificationUpdate {
   review_due_at: string;
 }
 
-/**
- * Set when level is `high`.
- */
 export type RiskClassificationUpdateAnnexIiiCategory = 'biometric' | 'critical-infrastructure' | 'education' | 'employment' | 'essential-services' | 'law-enforcement' | 'migration' | 'democratic-processes';
 
 export const RISK_CLASSIFICATION_UPDATE_ANNEX_III_CATEGORY_VALUES = ['biometric', 'critical-infrastructure', 'education', 'employment', 'essential-services', 'law-enforcement', 'migration', 'democratic-processes'] as const;
@@ -11052,9 +13245,11 @@ export interface Run {
   error_code?: string;
   /**
    * Numbers the code cannot carry: `retry_after_ms` with `provider_circuit_open`,
-   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`.
-   * Never a provider id — this reaches a screen, and the product does not name the model it
-   * picked.
+   * `quota_exhausted` with `provider_rate_limited`, `stale_seconds` with `run_input_timeout`,
+   * `limit_usd` and `spent_usd` with `BUDGET_EXCEEDED` (beside the older `max_cost_usd`,
+   * `accumulated_cost_usd` and `cap_source`), `limit_ms` and `elapsed_ms` with
+   * `MAX_DURATION_EXCEEDED` (both since 2026-09-23). Never a provider id — this reaches a
+   * screen, and the product does not name the model it picked.
    */
   error_details?: JsonObject;
   /**
@@ -11120,7 +13315,24 @@ export interface RunApproveRequest {
    * Optional message passed back to the agent alongside the approval.
    */
   response?: string;
+  /**
+   * Bridge runs: which of the offered options this approval is — one of the `options` in the
+   * waiting call (`metadata._approval_tool_calls[].options`). Passed to the machine unchanged;
+   * `allow_always` is remembered there for that tool name until `snaga connect` restarts. A
+   * value the endpoint does not accept is 422.
+   */
+  option_id?: RunApproveRequestOptionId;
 }
+
+/**
+ * Bridge runs: which of the offered options this approval is — one of the `options` in the
+ * waiting call (`metadata._approval_tool_calls[].options`). Passed to the machine unchanged;
+ * `allow_always` is remembered there for that tool name until `snaga connect` restarts. A
+ * value the endpoint does not accept is 422.
+ */
+export type RunApproveRequestOptionId = 'allow_once' | 'allow_always';
+
+export const RUN_APPROVE_REQUEST_OPTION_ID_VALUES = ['allow_once', 'allow_always'] as const;
 
 export interface RunCanvasLoopRequest {
   supervisor_agent_id: string;
@@ -11365,6 +13577,12 @@ export interface RunMetrics {
    * How the cost was priced (measured 2026-09-10 on e2e-canon; billing/cost-estimator.ts).
    */
   pricing_confidence?: string;
+  /**
+   * Time the run spent executing, in ms — summed over every attempt, so a run paused and resumed
+   * counts the work before the pause; time spent paused or queued is not counted, and started_at
+   * is when the latest attempt began. Whole ms on runs finished from 2026-09-23; older records
+   * may carry a fraction.
+   */
   duration_ms?: number;
   steps_count?: number;
   input_tokens?: number;
@@ -11433,6 +13651,21 @@ export interface RunOutput {
   [key: string]: unknown;
 }
 
+export interface RunPlaygroundRequest {
+  input: JsonObject;
+  session_id?: string;
+  resource_limits?: RunPlaygroundRequestResourceLimits;
+  metadata?: JsonObject;
+  options?: JsonObject;
+}
+
+export interface RunPlaygroundRequestResourceLimits {
+  max_duration_ms?: number;
+  max_steps?: number;
+  max_tool_calls?: number;
+  max_tokens_per_run?: number;
+}
+
 export interface RunReconciliationResponse {
   reconciliation: CostReconciliationResult;
 }
@@ -11445,6 +13678,13 @@ export interface RunResourceLimits {
   max_steps?: number;
   max_tool_calls?: number;
   max_tokens_per_run?: number;
+  /**
+   * In-run cost ceiling in USD; 0 or absent means no cap from this field. A run that crosses it
+   * fails with error_code BUDGET_EXCEEDED and error_details.cap_source "resource_limits".
+   * Accepted on POST /runs and on the agent's resource_limits (POST/PUT/PATCH /agents); negative
+   * or non-numeric is 422.
+   */
+  max_cost_usd?: number;
 }
 
 export type RunStatus = 'queued' | 'running' | 'completed' | 'failed' | 'cancelled' | 'timeout' | 'guardrail_blocked' | 'paused' | 'awaiting_approval' | 'awaiting_input' | 'auth_required' | 'rejected';
@@ -11471,7 +13711,19 @@ export interface RunStepMetrics {
   thinking_tokens?: number;
   llm_calls?: number;
   tool_calls_count?: number;
+  /**
+   * The step's cost at the user rate — the rate the run is billed at — priced from this step's
+   * tokens with the run's model. Real on GET /runs/{runId}/steps since 2026-09-23 (it was always
+   * 0 there before). The `run.step_completed` event still carries 0: the runtime that emits it
+   * has no pricing.
+   */
   cost_usd?: number;
+  /**
+   * Prompt tokens served from the provider's cache: a subset of `input_tokens`, priced at the
+   * cached rate where one is set. Absent when none were cached, and on steps recorded before
+   * 2026-09-23.
+   */
+  cached_tokens?: number;
 }
 
 export type RunStepStatus = 'running' | 'completed' | 'failed';
@@ -11486,6 +13738,70 @@ export interface RunWorkspaceCommandRequest {
 
 export interface RunWorkspaceCommandResponse {
   output?: string;
+}
+
+/**
+ * The whole ACP bridge session state (routes/acp-session.ts `validateAcpState`). Field names
+ * are camelCase on this route; snake_case spellings are not read.
+ */
+export interface SaveACPSessionRequest {
+  conversationHistory: SaveACPSessionRequestConversationHistoryItem[];
+  /**
+   * Absent or null stores null.
+   */
+  selectedModelId?: string | null;
+  /**
+   * Absent or null stores `default`.
+   */
+  planMode?: string | null;
+  /**
+   * Absent or null stores `confirm`.
+   */
+  toolPermission?: string | null;
+}
+
+export interface SaveACPSessionRequestConversationHistoryItem {
+  role: AgentBookmarkKind;
+  content: string;
+}
+
+export interface SaveACPSessionResponse {
+  saved: boolean;
+  /**
+   * Deprecated spelling of `session_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read
+   * `session_id`.
+   *
+   * @deprecated
+   */
+  sessionId: string;
+  session_id: string;
+}
+
+export interface SavePlaygroundCanvasRequest {
+  nodes: SavePlaygroundCanvasRequestNode[];
+  edges: SavePlaygroundCanvasRequestEdge[];
+  metadata?: JsonObject;
+}
+
+export interface SavePlaygroundCanvasRequestEdge {
+  id: string;
+  source: string;
+  target: string;
+  label?: string;
+}
+
+export interface SavePlaygroundCanvasRequestNode {
+  id: string;
+  type: CanvasNodeType;
+  label: string;
+  position: SavePlaygroundCanvasRequestNodePosition;
+  config: JsonObject;
+}
+
+export interface SavePlaygroundCanvasRequestNodePosition {
+  x: number;
+  y: number;
 }
 
 /**
@@ -11512,8 +13828,10 @@ export interface Schedule {
   /**
    * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
    * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+   * `null` when there is no next fire (a schedule disabled when it was saved, or a cron the
+   * scheduler cannot use) — never an empty string (it was `""` until 2026-09-23).
    */
-  next_fire_at?: string;
+  next_fire_at?: string | null;
   last_fired_at?: string;
   consecutive_failures: number;
 }
@@ -11566,8 +13884,10 @@ export interface ScheduleEntry {
   /**
    * The next fire when `enabled` is true. On a disabled schedule the server keeps the last
    * computed instant, so it can lie in the past (measured 2026-09-10 on two disabled entries).
+   * `null` when there is no next fire (a schedule disabled when it was saved, or a cron the
+   * scheduler cannot use) — never an empty string (it was `""` until 2026-09-23).
    */
-  next_fire_at?: string;
+  next_fire_at?: string | null;
   consecutive_failures: number;
   /**
    * State of the scheduler ENTRY (ScheduleEntry.status in @uarp/scheduler), not whether the
@@ -11598,7 +13918,10 @@ export interface ScheduleSummary {
    * `paused` or `error`, or accumulated failures, is what a “silently dead cron” looks like.
    */
   status: string;
-  next_fire_at?: string;
+  /**
+   * `null` when there is no next fire; never an empty string.
+   */
+  next_fire_at?: string | null;
 }
 
 export interface SearchKnowledgeBaseRequest {
@@ -11740,7 +14063,8 @@ export interface SendSessionMessageResponse {
 }
 
 export interface SensorWebhookResponse {
-  accepted?: boolean;
+  received: boolean;
+  run_id: string;
 }
 
 export interface Session {
@@ -11889,6 +14213,44 @@ export interface SetAdminModelConfigResponse {
   fallback_endpoint: string | null;
 }
 
+export interface SetAgentCapabilitiesRequest {
+  skills: SetAgentCapabilitiesRequestSkill[];
+  constraints?: SetAgentCapabilitiesRequestConstraints;
+  /**
+   * @default []
+   */
+  tools?: string[];
+  /**
+   * @default []
+   */
+  kb_ids?: string[];
+}
+
+export interface SetAgentCapabilitiesRequestConstraints {
+  max_context_tokens: number;
+  supported_languages: string[];
+  rate_limit_rpm: number;
+}
+
+export interface SetAgentCapabilitiesRequestSkill {
+  id: string;
+  name: string;
+  /**
+   * @default ""
+   */
+  description?: string;
+  /**
+   * @default []
+   */
+  input_types?: string[];
+  /**
+   * @default []
+   */
+  output_types?: string[];
+  avg_latency_ms?: number;
+  success_rate?: number;
+}
+
 export interface SetAgentCapabilitiesResponse {
   status?: string;
   agent_id?: string;
@@ -11950,6 +14312,13 @@ export interface SetAgentTrafficResponse {
   agent_id: string;
   entries: TrafficSplitEntry[];
   updated_at: string | null;
+}
+
+export interface SetArbiterRegistryRequest {
+  arbiter_agent_ids: string[];
+  panel_size: number;
+  ruling_deadline_hours: number;
+  max_appeals: number;
 }
 
 export interface SetArbiterRegistryResponse {
@@ -12078,6 +14447,10 @@ export interface SetModelPricingOverrideResponse {
   model_ref: string;
 }
 
+export interface SetRateLimitsRequest {
+  endpoints: JsonValue;
+}
+
 export interface SetRateLimitsResponse {
   endpoints?: EndpointRateLimit[];
   updated: boolean;
@@ -12104,6 +14477,13 @@ export interface SetRootAgentRequest {
 export interface SetRootAgentResponse {
   ok?: boolean;
   root_agent_id?: string;
+}
+
+export interface SetRootAttestationRequest {
+  root_agent_id: string;
+  founder_id: string;
+  founder_signature: string;
+  constitution_hash: string;
 }
 
 export interface SetRootAttestationResponse {
@@ -12607,21 +14987,28 @@ export interface TeamChatTurn {
 }
 
 /**
- * Body for `POST /api/v1/teams` (`CreateTeamSchema`).
+ * Body for `POST /api/v1/teams` (`CreateTeamSchema`). `topology`, `delegation_strategy`,
+ * `merge_strategy`, `message_protocol`, `orchestration_mode` and `supervisor_mode` are
+ * enforced enums: any other value is `422` (declared as free strings until 2026-09-23).
  */
 export interface TeamCreate {
   name: string;
   description?: string;
-  topology?: string;
+  /**
+   * @default "supervisor"
+   */
+  topology?: TeamTopology;
   supervisor_agent_id?: string;
   /**
    * Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.
    */
   workers?: TeamCreateWorker[];
   agent_ids?: string[];
-  delegation_strategy?: string;
-  merge_strategy?: string;
-  orchestration_mode?: string;
+  delegation_strategy?: TeamDelegationStrategy;
+  merge_strategy?: TeamMergeStrategy;
+  orchestration_mode?: TeamOrchestrationMode;
+  message_protocol?: TeamMessageProtocol;
+  supervisor_mode?: TeamSupervisorMode;
   workspace_id?: string;
 }
 
@@ -12788,9 +15175,27 @@ export interface TeamRunSummary {
   team_run_id: string;
   run_id: string;
   agent_id: string;
+  /**
+   * This MEMBER run's own status — not the team run's; see `team_run_status`.
+   */
   status: string;
+  /**
+   * What the team run this member belongs to came to — the same verdict `GET
+   * /api/v1/squads/{squadId}/runs/{teamRunId}` answers as `status`, repeated on each of its
+   * member rows. Absent on a row with no `team_run_id`. Since 2026-09-23.
+   */
+  team_run_status?: TeamRunSummaryTeamRunStatus;
   created_at: string;
 }
+
+/**
+ * What the team run this member belongs to came to — the same verdict `GET
+ * /api/v1/squads/{squadId}/runs/{teamRunId}` answers as `status`, repeated on each of its
+ * member rows. Absent on a row with no `team_run_id`. Since 2026-09-23.
+ */
+export type TeamRunSummaryTeamRunStatus = 'pending' | 'running' | 'completed' | 'failed' | 'partial_failure' | 'cancelled';
+
+export const TEAM_RUN_SUMMARY_TEAM_RUN_STATUS_VALUES = ['pending', 'running', 'completed', 'failed', 'partial_failure', 'cancelled'] as const;
 
 export type TeamSupervisorMode = 'auto_dispatch' | 'tool_driven';
 
@@ -12814,12 +15219,37 @@ export type TeamTopology = 'supervisor' | 'round_robin' | 'pipeline' | 'goal_dri
 export const TEAM_TOPOLOGY_VALUES = ['supervisor', 'round_robin', 'pipeline', 'goal_driven', 'swarm'] as const;
 
 /**
- * Body for `PUT /api/v1/teams/{teamId}`. Every field optional — send only what changes.
+ * Body for `PUT /api/v1/teams/{teamId}`. Every field optional — send only what changes. Each
+ * field present is validated as strictly as on `POST /teams` (enums, worker shape): a value
+ * the create path refuses is `422` here too (2026-09-24).
  */
 export interface TeamUpdate {
   name?: string;
   description?: string;
-  topology?: string;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  topology?: TeamTopology;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  delegation_strategy?: TeamDelegationStrategy;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  merge_strategy?: TeamMergeStrategy;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  message_protocol?: TeamMessageProtocol;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  orchestration_mode?: TeamOrchestrationMode;
+  /**
+   * Enforced on `PUT` exactly as on `POST /teams` since 2026-09-24: any other value is `422`.
+   */
+  supervisor_mode?: TeamSupervisorMode;
   supervisor_agent_id?: string;
   workers?: TeamUpdateWorker[];
 }
@@ -12890,6 +15320,12 @@ export interface Tenant {
   onboarding_completed?: boolean;
   is_super_admin?: boolean;
   is_platform_admin?: boolean;
+  /**
+   * Whether a key the caller mints in THIS (active) tenant would pass the platform super-admin
+   * gate: super-admin email configured, and the caller's user row in this tenant carries it.
+   * Added 2026-09-23 for the keys screen.
+   */
+  platform_admin_keys_here?: boolean;
   head_agent_id?: string;
   shared_workspace_id?: string;
   public?: boolean;
@@ -13161,8 +15597,8 @@ export interface TenantOverviewRunsRecentItem {
    */
   error_code?: string;
   /**
-   * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`. See
-   * `Run.error_details`.
+   * Numbers the code cannot carry — `retry_after_ms`, `quota_exhausted`, `stale_seconds`,
+   * `limit_usd`/`spent_usd`, `limit_ms`/`elapsed_ms`. See `Run.error_details`.
    */
   error_details?: JsonObject;
   /**
@@ -13487,6 +15923,43 @@ export interface ToolOverride {
   hidden?: boolean;
 }
 
+export interface ToolsWebSearchRequest {
+  /**
+   * The search terms, passed to the provider as they are (operators included).
+   */
+  query: string;
+  /**
+   * At most this many results; 10 is the provider's own ceiling.
+   *
+   * @default 5
+   */
+  max_results?: number;
+}
+
+export interface ToolsWebSearchResponse {
+  results: ToolsWebSearchResponseResult[];
+  /**
+   * Which provider answered.
+   */
+  provider: ToolsWebSearchResponseProvider;
+}
+
+/**
+ * Which provider answered.
+ */
+export type ToolsWebSearchResponseProvider = 'ollama' | 'searxng';
+
+export const TOOLS_WEB_SEARCH_RESPONSE_PROVIDER_VALUES = ['ollama', 'searxng'] as const;
+
+export interface ToolsWebSearchResponseResult {
+  title: string;
+  url: string;
+  /**
+   * An extract of the page, at most 1200 characters.
+   */
+  snippet: string;
+}
+
 /**
  * agent-versioning.ts TrafficSplitEntry; weights sum to 100.
  */
@@ -13550,6 +16023,31 @@ export interface UnsuspendUserResponse {
   user_id: string;
 }
 
+/**
+ * The whole ACP bridge session state (routes/acp-session.ts `validateAcpState`). Field names
+ * are camelCase on this route; snake_case spellings are not read.
+ */
+export interface UpdateACPSessionRequest {
+  conversationHistory: UpdateACPSessionRequestConversationHistoryItem[];
+  /**
+   * Absent or null stores null.
+   */
+  selectedModelId?: string | null;
+  /**
+   * Absent or null stores `default`.
+   */
+  planMode?: string | null;
+  /**
+   * Absent or null stores `confirm`.
+   */
+  toolPermission?: string | null;
+}
+
+export interface UpdateACPSessionRequestConversationHistoryItem {
+  role: AgentBookmarkKind;
+  content: string;
+}
+
 export interface UpdateACPSessionResponse {
   saved: boolean;
   /**
@@ -13561,6 +16059,24 @@ export interface UpdateACPSessionResponse {
    */
   sessionId: string;
   session_id: string;
+}
+
+export interface UpdateAdminAgentMemoryConfigRequest {
+  enabled?: boolean;
+  use_shared_store?: boolean;
+  default_max_entries?: number;
+  default_retrieval_limit?: number;
+  default_retrieval_strategy?: AgentUpdateMemoryRetrievalStrategy;
+  decay_enabled?: boolean;
+  decay_half_life_days?: number;
+  decay_job_interval_ms?: number;
+  extraction_max_tokens?: number;
+  extraction_model?: string | null;
+  eviction_threshold?: number;
+  embedding_dimensions?: number;
+  embedding_provider?: string;
+  embedding_model?: string;
+  compression_model?: string | null;
 }
 
 export interface UpdateAdminAgentMemoryConfigResponse {
@@ -13578,12 +16094,29 @@ export interface UpdateAdminAgentMemoryConfigResponseAgentMemory {
   decay_half_life_days: number;
   decay_job_interval_ms: number;
   extraction_max_tokens: number;
+  /**
+   * The model memory extraction calls after a run. On PUT, `null` clears the stored override so
+   * the platform default applies again; GET then omits the field. Added 2026-09-23.
+   */
   extraction_model: string;
   eviction_threshold: number;
   embedding_dimensions: number;
   embedding_provider: string;
   embedding_model: string;
+  /**
+   * On PUT, `null` clears the stored override; GET then omits the field. Added 2026-09-23.
+   */
   compression_model: string;
+}
+
+export interface UpdateAdminAuthConfigRequest {
+  super_admin_email?: string;
+  otp_ttl_ms?: number;
+  verification_ttl_ms?: number;
+  jwks_cache_ttl_ms?: number;
+  jwks_grace_ttl_ms?: number;
+  api_key_cache_ttl_s?: number;
+  api_key_rotation_grace_period_h?: number;
 }
 
 export interface UpdateAdminAuthConfigResponse {
@@ -13599,6 +16132,14 @@ export interface UpdateAdminAuthConfigResponseAuth {
   jwks_grace_ttl_ms: number;
   api_key_cache_ttl_s: number;
   api_key_rotation_grace_period_h: number;
+}
+
+export interface UpdateAdminBackpressureConfigRequest {
+  sse_buffer_max?: number;
+  sse_high_watermark?: number;
+  sse_low_watermark?: number;
+  tool_queue_max_depth?: number;
+  tool_queue_high_watermark?: number;
 }
 
 export interface UpdateAdminBackpressureConfigResponse {
@@ -13651,6 +16192,20 @@ export interface UpdateAdminBlogPostResponse {
   post: BlogPost;
 }
 
+export interface UpdateAdminCodeInterpreterConfigRequest {
+  isolation?: UpdateAdminCodeInterpreterConfigRequestIsolation;
+  timeout_ms?: number;
+  max_memory_mb?: number;
+  container_image?: string;
+  python_venv_path?: string;
+  python_container_image?: string;
+  python_sandbox_host_dir?: string;
+}
+
+export type UpdateAdminCodeInterpreterConfigRequestIsolation = 'worker' | 'subprocess' | 'container';
+
+export const UPDATE_ADMIN_CODE_INTERPRETER_CONFIG_REQUEST_ISOLATION_VALUES = ['worker', 'subprocess', 'container'] as const;
+
 export interface UpdateAdminCodeInterpreterConfigResponse {
   code_interpreter: UpdateAdminCodeInterpreterConfigResponseCodeInterpreter;
   updated: boolean;
@@ -13668,6 +16223,16 @@ export interface UpdateAdminCodeInterpreterConfigResponseCodeInterpreter {
 export interface UpdateAdminDisabledToolsResponse {
   ok: boolean;
   disabled_tools: string[];
+}
+
+export interface UpdateAdminEvaluationConfigRequest {
+  enabled?: boolean;
+  max_concurrent_eval_cases?: number;
+  regression_threshold?: number;
+  default_scorers?: string[];
+  max_cases_per_dataset?: number;
+  eval_run_timeout_ms?: number;
+  auto_rollback_enabled?: boolean;
 }
 
 export interface UpdateAdminEvaluationConfigResponse {
@@ -13694,6 +16259,12 @@ export interface UpdateAdminFounderConfigRequest {
 export interface UpdateAdminGuardrailsResponse {
   guardrails?: GuardrailConfigItem[];
   updated: boolean;
+}
+
+export interface UpdateAdminIdempotencyConfigRequest {
+  enabled?: boolean;
+  ttl_hours?: number;
+  max_response_cache_bytes?: number;
 }
 
 export interface UpdateAdminIdempotencyConfigResponse {
@@ -13726,6 +16297,21 @@ export interface UpdateAdminIntegrationsResponseIntegration {
   source?: string;
 }
 
+export interface UpdateAdminLLMAdaptersConfigRequest {
+  max_retries?: number;
+  retry_base_delay_ms?: number;
+  retry_max_delay_ms?: number;
+  stream_empty_timeout_ms?: number;
+  circuit_breaker?: UpdateAdminLLMAdaptersConfigRequestCircuitBreaker;
+  provider_rate_limits?: Record<string, Value6>;
+}
+
+export interface UpdateAdminLLMAdaptersConfigRequestCircuitBreaker {
+  failure_threshold?: number;
+  reset_timeout_ms?: number;
+  half_open_max_requests?: number;
+}
+
 export interface UpdateAdminLLMAdaptersConfigResponse {
   llm_adapters: UpdateAdminLLMAdaptersConfigResponseLLMAdapters;
   updated: boolean;
@@ -13746,6 +16332,29 @@ export interface UpdateAdminLLMAdaptersConfigResponseLLMAdaptersCircuitBreaker {
   half_open_max_requests?: number;
 }
 
+export interface UpdateAdminLoggingConfigRequest {
+  pii_mode?: UpdateAdminLoggingConfigRequestPiiMode;
+  log_agent_responses?: boolean;
+  file_enabled?: boolean;
+  file_max_size_mb?: number;
+  file_retention_days?: number;
+  file_level?: UpdateAdminLoggingConfigRequestFileLevel;
+  file_separate_error?: boolean;
+  activity_log_verbosity?: UpdateAdminLoggingConfigRequestActivityLogVerbosity;
+}
+
+export type UpdateAdminLoggingConfigRequestActivityLogVerbosity = 'full' | 'compact' | 'minimal';
+
+export const UPDATE_ADMIN_LOGGING_CONFIG_REQUEST_ACTIVITY_LOG_VERBOSITY_VALUES = ['full', 'compact', 'minimal'] as const;
+
+export type UpdateAdminLoggingConfigRequestFileLevel = 'debug' | 'info' | 'warn' | 'error';
+
+export const UPDATE_ADMIN_LOGGING_CONFIG_REQUEST_FILE_LEVEL_VALUES = ['debug', 'info', 'warn', 'error'] as const;
+
+export type UpdateAdminLoggingConfigRequestPiiMode = 'redact' | 'allow';
+
+export const UPDATE_ADMIN_LOGGING_CONFIG_REQUEST_PII_MODE_VALUES = ['redact', 'allow'] as const;
+
 export interface UpdateAdminLoggingConfigResponse {
   logging: UpdateAdminLoggingConfigResponseLogging;
   updated: boolean;
@@ -13762,6 +16371,15 @@ export interface UpdateAdminLoggingConfigResponseLogging {
   activity_log_verbosity: string;
 }
 
+export interface UpdateAdminLongRunningConfigRequest {
+  enabled?: boolean;
+  max_duration_ms?: number;
+  checkpoint_interval_ms?: number;
+  idle_timeout_ms?: number;
+  continuation_token_ttl_days?: number;
+  max_background_runs_per_tenant?: number;
+}
+
 export interface UpdateAdminLongRunningConfigResponse {
   long_running: UpdateAdminLongRunningConfigResponseLongRunning;
   updated: boolean;
@@ -13776,6 +16394,12 @@ export interface UpdateAdminLongRunningConfigResponseLongRunning {
   max_background_runs_per_tenant: number;
 }
 
+export interface UpdateAdminMCPConfigRequest {
+  max_sessions_per_server?: number;
+  max_total_stdio_sessions?: number;
+  session_idle_timeout_ms?: number;
+}
+
 export interface UpdateAdminMCPConfigResponse {
   mcp: UpdateAdminMCPConfigResponseMCP;
   updated: boolean;
@@ -13785,6 +16409,16 @@ export interface UpdateAdminMCPConfigResponseMCP {
   max_sessions_per_server: number;
   max_total_stdio_sessions: number;
   session_idle_timeout_ms: number;
+}
+
+export interface UpdateAdminMultimodalConfigRequest {
+  enabled?: boolean;
+  max_image_size_bytes?: number;
+  max_audio_duration_s?: number;
+  max_video_duration_s?: number;
+  auto_resize_images?: boolean;
+  supported_image_formats?: string[];
+  supported_audio_formats?: string[];
 }
 
 export interface UpdateAdminMultimodalConfigResponse {
@@ -13809,6 +16443,13 @@ export interface UpdateAdminOAuthIdentityConfigRequest {
   oauth_return_to_hosts?: string[];
 }
 
+export interface UpdateAdminPersistenceConfigRequest {
+  snapshot_every_n_events?: number;
+  checkpoint_after_tool_calls?: boolean;
+  usage_shards?: number;
+  auto_cap_kv_values?: boolean;
+}
+
 export interface UpdateAdminPersistenceConfigResponse {
   persistence: UpdateAdminPersistenceConfigResponsePersistence;
   updated: boolean;
@@ -13830,6 +16471,14 @@ export interface UpdateAdminPlansResponse {
   updated?: boolean;
 }
 
+export interface UpdateAdminPricingRequest {
+  openai_compat_input?: number;
+  openai_compat_output?: number;
+  anthropic_input?: number;
+  anthropic_output?: number;
+  anthropic_thinking?: number;
+}
+
 export interface UpdateAdminPricingResponse {
   pricing: UpdateAdminPricingResponsePricing;
   updated: boolean;
@@ -13841,6 +16490,14 @@ export interface UpdateAdminPricingResponsePricing {
   anthropic_input: number;
   anthropic_output: number;
   anthropic_thinking: number;
+}
+
+export interface UpdateAdminProviderRequest {
+  enabled?: boolean;
+  model_allowlist?: string[];
+  requires_api_key?: boolean;
+  canonical?: CreateAdminProviderRequestCanonical;
+  api_key?: string;
 }
 
 export interface UpdateAdminProviderResponse {
@@ -13858,6 +16515,19 @@ export interface UpdateAdminRegistrationConfigRequest {
   confirm_open?: boolean;
   default_signup_plan?: string;
   allowed_email_domains?: string[];
+}
+
+export interface UpdateAdminRetentionConfigRequest {
+  completed_run_ttl_days?: number;
+  event_ttl_days?: number;
+  audit_log_ttl_days?: number;
+  feed_ttl_days?: number;
+  artifact_ttl_days?: number;
+  notification_ttl_days?: number;
+  checkpoint_ttl_hours?: number;
+  archive_to_sqlite?: boolean;
+  archive_job_interval_ms?: number;
+  archive_batch_size?: number;
 }
 
 export interface UpdateAdminRetentionConfigResponse {
@@ -13882,6 +16552,16 @@ export interface UpdateAdminRetentionConfigResponseRetention {
   checkpoint_ttl_hours: number;
 }
 
+export interface UpdateAdminRunCommandConfigRequest {
+  enabled?: boolean;
+  isolation?: JsonValue;
+  timeout_ms?: number;
+  max_output_bytes?: number;
+  allowed_commands?: string[];
+  deno_allow?: string[];
+  container_image?: string;
+}
+
 export interface UpdateAdminRunCommandConfigResponse {
   run_command: UpdateAdminRunCommandConfigResponseRunCommand;
   updated: boolean;
@@ -13889,11 +16569,21 @@ export interface UpdateAdminRunCommandConfigResponse {
 
 export interface UpdateAdminRunCommandConfigResponseRunCommand {
   enabled: boolean;
-  isolation: string;
+  /**
+   * On PUT an empty string is read as not set (the form echoes GET back); GET never returns an
+   * empty string. 2026-09-23.
+   */
+  isolation: AdminConfigRunCommandConfigRunCommandIsolation;
   timeout_ms: number;
   max_output_bytes: number;
   allowed_commands: string[];
   deno_allow: string[];
+}
+
+export interface UpdateAdminServerConfigRequest {
+  trust_proxy?: boolean;
+  max_body_bytes?: number;
+  graceful_shutdown_timeout_ms?: number;
 }
 
 export interface UpdateAdminServerConfigResponse {
@@ -13933,6 +16623,15 @@ export interface UpdateAdminSmtpConfigRequest {
   password?: string;
   from?: string;
   from_name?: string;
+}
+
+export interface UpdateAdminSSEConfigRequest {
+  heartbeat_interval_ms?: number;
+  watch_timeout_ms?: number;
+  poll_interval_ms?: number;
+  max_poll_interval_ms?: number;
+  reconnect_hint_ms?: number;
+  run_wait_timeout_sec?: number;
 }
 
 export interface UpdateAdminSSEConfigResponse {
@@ -13980,6 +16679,18 @@ export interface UpdateAdminStripeConfigResponseStripe {
   price_id_enterprise: string;
 }
 
+export interface UpdateAdminTenantSettingsRequest {
+  egress_allowlist?: UpdateAdminTenantSettingsRequestEgressAllowlistItem[];
+  max_retention_days?: number;
+  legal_hold?: boolean;
+}
+
+export interface UpdateAdminTenantSettingsRequestEgressAllowlistItem {
+  host_pattern: string;
+  ports?: number[];
+  protocol?: EgressRuleProtocol;
+}
+
 export interface UpdateAdminTenantSettingsResponse {
   tenant_id: string;
   /**
@@ -14001,6 +16712,14 @@ export interface UpdateAdminToolOverridesResponse {
   overrides: Record<string, ToolOverride>;
 }
 
+export interface UpdateAdminToolSecurityConfigRequest {
+  egress_allowlist_per_tenant?: string[];
+  default_tool_timeout_ms?: number;
+  default_tool_max_payload_bytes?: number;
+  default_tool_max_concurrency?: number;
+  stdio_inherit_env?: boolean;
+}
+
 export interface UpdateAdminToolSecurityConfigResponse {
   tool_security: UpdateAdminToolSecurityConfigResponseToolSecurity;
   updated: boolean;
@@ -14012,6 +16731,15 @@ export interface UpdateAdminToolSecurityConfigResponseToolSecurity {
   default_tool_max_payload_bytes: number;
   default_tool_max_concurrency: number;
   stdio_inherit_env: boolean;
+}
+
+export interface UpdateAdminWebhooksConfigRequest {
+  enabled?: boolean;
+  max_subscriptions_per_tenant?: number;
+  delivery_timeout_ms?: number;
+  max_retry_attempts?: number;
+  require_https?: boolean;
+  max_payload_bytes?: number;
 }
 
 export interface UpdateAdminWebhooksConfigResponse {
@@ -14027,6 +16755,20 @@ export interface UpdateAdminWebhooksConfigResponseWebhooks {
   require_https: boolean;
   max_payload_bytes: number;
 }
+
+export interface UpdateAdminWorkerPoolConfigRequest {
+  max_workers?: number;
+  default_mode?: UpdateAdminWorkerPoolConfigRequestDefaultMode;
+  max_run_duration_ms?: number;
+  reconciliation_interval_ms?: number;
+  schedule_max_retries?: number;
+  schedule_base_delay_ms?: number;
+  max_queue_size?: number;
+}
+
+export type UpdateAdminWorkerPoolConfigRequestDefaultMode = 'async' | 'deno_worker';
+
+export const UPDATE_ADMIN_WORKER_POOL_CONFIG_REQUEST_DEFAULT_MODE_VALUES = ['async', 'deno_worker'] as const;
 
 export interface UpdateAdminWorkerPoolConfigResponse {
   worker_pool: UpdateAdminWorkerPoolConfigResponseWorkerPool;
@@ -14046,6 +16788,12 @@ export interface UpdateAdminWorkerPoolConfigResponseWorkerPool {
 export interface UpdateAgentIntegrationRequest {
   name?: string;
   config?: JsonObject;
+}
+
+export interface UpdateAgentMemoryEntryRequest {
+  content?: string;
+  tags?: string[];
+  relevance_score?: number;
 }
 
 export interface UpdateBridgeAgentCapabilityRequest {
@@ -14119,6 +16867,11 @@ export interface UpdateImprovementStatusRequest {
 export interface UpdateIntegrationRequest {
   name?: string;
   config?: JsonObject;
+}
+
+export interface UpdateMarkupConfigRequest {
+  platform_markup_percent?: number;
+  model_markup_overrides?: JsonObject;
 }
 
 export interface UpdateMarkupConfigResponse {
@@ -14224,6 +16977,69 @@ export interface UpdateProjectRequest {
   archived_at?: string | null;
 }
 
+export interface UpdateRuntimeConfigRequest {
+  max_steps?: number;
+  max_tokens_per_run?: number;
+  max_tool_calls?: number;
+  max_context_tokens?: number;
+  history_token_budget_ratio?: number;
+  per_run_token_ceiling_ratio?: number;
+  conversational_fast_path?: boolean;
+  tool_gating?: boolean;
+  spec_skill_token_budget?: number;
+  core_memory_token_budget?: number;
+  read_file_max_bytes?: number;
+  fetch_max_redirects?: number;
+  fetch_response_max_chars?: number;
+  tool_retry_max_attempts?: number;
+  tool_retry_base_delay_ms?: number;
+  plan_high_effort_max_tokens?: number;
+  plan_low_effort_max_tokens?: number;
+  plan_thinking_budget_ratio?: number;
+  max_duration_ms?: number;
+  max_duration_ceiling_ms?: number;
+  tool_timeout_ms?: number;
+  fetch_timeout_sec?: number;
+  web_search_timeout_sec?: number;
+  run_command_timeout_ms?: number;
+  image_gen_timeout_ms?: number;
+  video_gen_timeout_ms?: number;
+  continuation_max_age_ms?: number;
+  checkpoint_ttl_ms?: number;
+  resume_timeout_ms?: number;
+  max_resume_attempts?: number;
+  temperature_with_tools?: number;
+  temperature_without_tools?: number;
+  tool_result_max_chars?: number;
+  tool_args_max_chars?: number;
+  command_max_output_bytes?: number;
+  compaction_reserve_tokens?: number;
+  loop_detection_threshold?: number;
+  auxiliary_model?: string;
+  default_video_model?: string;
+  vision_model?: string;
+  vision_timeout_ms?: number;
+  max_cost_usd_ceiling?: number;
+  cost_per_image_usd?: number;
+  cost_per_video_second_usd?: number;
+  vision_max_tokens?: number;
+  media_endpoint?: string;
+  default_team_budget_usd?: number;
+  voting_timeout_ms?: number;
+  checkpoint_max_bytes?: number;
+  emergency_cache_max_entries?: number;
+  run_start_times_max?: number;
+  a2a_fetch_timeout_ms?: number;
+  sensor_fetch_timeout_ms?: number;
+  sse_idle_timeout_ms?: number;
+  sse_max_connections_per_tenant?: number;
+  bridge_shell_gc_after_ms?: number;
+  max_amendments_per_agent?: number;
+  spawn_agent_rate_limit_max?: number;
+  spawn_agent_rate_limit_window_ms?: number;
+  model_tool_caps?: JsonObject;
+}
+
 export interface UpdateRuntimeConfigResponse {
   /**
    * The effective runtime config — sparse: only keys present in the platform config or the
@@ -14291,6 +17107,22 @@ export interface UpdateSessionRequestModelOverride {
   model_ref: string;
   endpoint_url?: string;
   capabilities?: JsonObject;
+}
+
+export interface UpdateSessionTodoRequest {
+  title?: string;
+  status?: string;
+  order_index?: number;
+  instructions?: string;
+  due_at?: string | null;
+  assign_agent_id?: string | null;
+  assign_team_id?: string | null;
+  recurrence?: UpdateSessionTodoRequestRecurrence | null;
+}
+
+export interface UpdateSessionTodoRequestRecurrence {
+  cron: string;
+  timezone?: string;
 }
 
 export interface UpdateSquadGraphNodeRequest {
@@ -14526,6 +17358,10 @@ export type UsageQuotaCounterKind = 'runs' | 'tokens' | 'tokens_daily' | 'tool_c
 export const USAGE_QUOTA_COUNTER_KIND_VALUES = ['runs', 'tokens', 'tokens_daily', 'tool_calls', 'agents', 'teams', 'knowledge_bases', 'workspaces'] as const;
 
 export interface UsageQuotaDaily {
+  /**
+   * Tokens billed TODAY (UTC day, resets at `resets_at`) — a one-day window, not comparable with
+   * the monthly totals in `usage`.
+   */
   used: number;
   limit: number;
   remaining: number | null;
@@ -14570,6 +17406,10 @@ export interface UsageQuotaUsage {
   tool_calls_count: number;
   storage_bytes: number;
   total_cost: number;
+  /**
+   * Platform administrator only; every other caller receives 0 (since 2026-09-29). Kept as a key
+   * because clients decode it as required.
+   */
   provider_cost: number;
   non_run_cost: number;
   period: string;
@@ -14589,21 +17429,83 @@ export interface UsageSummary {
   input_tokens: number;
   output_tokens: number;
   thinking_tokens: number;
+  /**
+   * Every billed token in the period: agent runs, LLM-proxy calls and non-run calls alike. This
+   * is the billed figure; `GET /api/v1/llm/usage` counts only the proxy's share, and
+   * `daily.used` on `GET /api/v1/usage/quota` only today's.
+   */
   total_tokens: number;
   runs_count: number;
   tool_calls_count: number;
   bridge_tasks?: number;
   storage_bytes: number;
   /**
-   * What the tenant is billed, in USD.
+   * What the tenant is billed, in USD, to six decimals — as are `provider_cost`, `non_run_cost`
+   * and the `cost` of every `by_model` and `by_source` entry (four until 2026-09-29).
    */
   total_cost: number;
   /**
-   * What the upstream providers charged, in USD.
+   * What the upstream providers charged, in USD — for the platform administrator only. Every
+   * other caller receives 0 (since 2026-09-29): provider cost and markup are the platform's
+   * books, not the tenant's bill. Kept as a key because clients decode it as required; do not
+   * read it as a cost.
    */
   provider_cost: number;
   non_run_cost: number;
+  /**
+   * Platform administrator only; absent for every other caller (since 2026-09-29). Whole or
+   * absent, never partial.
+   */
   margin_summary?: UsageMarginSummary;
+  /**
+   * Only with `?breakdown=model`. Per-model split of the same billed usage — the population of
+   * `total_tokens`, not of `GET /api/v1/llm/usage`. Models billed per call or per second (image,
+   * TTS, STT) carry cost and 0 tokens. Read from separate per-model shards, so the sum can
+   * differ slightly from `total_tokens` (measured 2026-09-23: 0.01%).
+   */
+  by_model?: UsageSummaryByModelItem[];
+  /**
+   * Only with `?breakdown=source`. The same billed population as `total_cost`, split by the
+   * `X-UARP-Source` the LLM-proxy caller declared. The entry with `source: ""` is everything
+   * else — runs, calls without the header, and all usage recorded before the header was read
+   * (served since 2026-09-28) — derived as the total minus the named sources, so the costs add
+   * up to `total_cost` and the tokens to `total_tokens`. Always present when requested, `""`
+   * entry included.
+   */
+  by_source?: UsageSummaryBySourceItem[];
+}
+
+export interface UsageSummaryByModelItem {
+  model: string;
+  input_tokens: number;
+  output_tokens: number;
+  /**
+   * `input_tokens + output_tokens`.
+   */
+  tokens: number;
+  cost: number;
+  /**
+   * Platform administrator only; absent for every other caller.
+   */
+  provider_cost?: number;
+  /**
+   * Platform administrator only; absent for every other caller.
+   */
+  margin?: JsonObject;
+}
+
+export interface UsageSummaryBySourceItem {
+  /**
+   * `[a-z0-9_-]{1,32}`, or `""`.
+   */
+  source: string;
+  cost: number;
+  /**
+   * `input_tokens + output_tokens`.
+   */
+  tokens: number;
+  input_tokens: number;
+  output_tokens: number;
 }
 
 /**
@@ -14691,11 +17593,26 @@ export interface Value5 {
   to?: JsonValue;
 }
 
+export interface Value6 {
+  rpm: number;
+}
+
+export interface Value7 {
+  en?: string;
+  uk?: string;
+}
+
 /**
- * The API key is e-mailed, never returned here (register.ts handleVerifyEmail).
+ * Since 2026-09-30 the API key is returned here once and never e-mailed (register.ts
+ * handleVerifyEmail).
  */
 export interface VerifyEmailResponse {
   tenant_id: string;
+  /**
+   * The owner's `*` session key (90-day sliding). Shown once, here only — it is not e-mailed and
+   * a second click on the link finds no token.
+   */
+  api_key: string;
   message: string;
 }
 
@@ -14749,12 +17666,284 @@ export type VetoRecordTargetType = 'proposal' | 'action' | 'agent' | 'case';
 
 export const VETO_RECORD_TARGET_TYPE_VALUES = ['proposal', 'action', 'agent', 'case'] as const;
 
+/**
+ * A public video order as its buyer sees it.
+ */
+export interface VideoOrder {
+  id: string;
+  status: VideoOrderStatus;
+  locale: VideoOrderLocale;
+  template: VideoOrderTemplate;
+  price_cents: number;
+  currency: PublicVideoTemplateCurrency;
+  /**
+   * `authorized`: held, not taken. `captured`: charged — only once the clip exists. `released`:
+   * the hold was dropped; nothing was charged.
+   */
+  payment: VideoOrderPayment;
+  /**
+   * Only while `awaiting_payment`.
+   */
+  checkout_url: string | null;
+  queue: VideoOrderQueue | null;
+  progress: VideoOrderProgress | null;
+  video: VideoOrderVideo | null;
+  regeneration: VideoOrderRegeneration;
+  feedback: string | null;
+  failure: VideoOrderFailure | null;
+  retry_available: boolean;
+  created_at: string;
+  ready_at: string | null;
+}
+
+export interface VideoOrderFailure {
+  code: VideoOrderFailureCode;
+}
+
+export type VideoOrderFailureCode = 'generation_failed' | 'regen_failed';
+
+export const VIDEO_ORDER_FAILURE_CODE_VALUES = ['generation_failed', 'regen_failed'] as const;
+
+export type VideoOrderLocale = 'en' | 'uk';
+
+export const VIDEO_ORDER_LOCALE_VALUES = ['en', 'uk'] as const;
+
+/**
+ * `authorized`: held, not taken. `captured`: charged — only once the clip exists. `released`:
+ * the hold was dropped; nothing was charged.
+ */
+export type VideoOrderPayment = 'none' | 'authorized' | 'captured' | 'released';
+
+export const VIDEO_ORDER_PAYMENT_VALUES = ['none', 'authorized', 'captured', 'released'] as const;
+
+export interface VideoOrderProgress {
+  started_at: string;
+  typical_seconds: number;
+}
+
+export interface VideoOrderQueue {
+  position: number;
+  eta_seconds: number;
+}
+
+export interface VideoOrderRegeneration {
+  used: boolean;
+  available: boolean;
+  reason: string | null;
+  deadline: string | null;
+}
+
+export type VideoOrderStatus = 'awaiting_payment' | 'queued' | 'generating' | 'ready' | 'failed' | 'expired';
+
+export const VIDEO_ORDER_STATUS_VALUES = ['awaiting_payment', 'queued', 'generating', 'ready', 'failed', 'expired'] as const;
+
+export interface VideoOrderTemplate {
+  id: string;
+  title: VideoOrderTemplateTitle;
+}
+
+export interface VideoOrderTemplateTitle {
+  en: string;
+  uk: string;
+}
+
+export interface VideoOrderVideo {
+  /**
+   * Signed path, valid for an hour.
+   */
+  url: string;
+  /**
+   * When the video is deleted.
+   */
+  expires_at: string | null;
+}
+
 export interface VideoProvider {
   configured?: boolean;
   id?: string;
   local?: boolean;
   models?: ModelInfo[];
   name?: string;
+}
+
+/**
+ * A template as the admin sees it.
+ */
+export interface VideoTemplate {
+  id: string;
+  title: VideoTemplateTitle;
+  description?: VideoTemplateDescription;
+  category?: PublicVideoTemplateCategory;
+  badge?: string | null;
+  /**
+   * @default 100
+   */
+  position?: number;
+  price_cents: number;
+  /**
+   * @default "usd"
+   */
+  currency?: PublicVideoTemplateCurrency;
+  model: VideoTemplateInputModel;
+  /**
+   * 4, 6 or 8 for Veo; 5 for the others.
+   */
+  seconds?: number;
+  image_role?: VideoTemplateInputImageRole;
+  /**
+   * What the photo must show — what the photo check looks for.
+   */
+  subject?: VideoTemplateInputSubject;
+  /**
+   * Hidden from buyers. Every text field appears in it as `{{key}}`.
+   */
+  prompt: string;
+  negative_prompt?: string;
+  text_slots?: VideoTemplateTextSlot[];
+  photo_guidance?: VideoTemplatePhotoGuidance;
+  status: VideoTemplateStatus;
+  last_test: VideoTemplateLastTest | null;
+  preview_file_id: string | null;
+  /**
+   * Estimated provider cost of one clip (per-second prices multiplied out).
+   */
+  provider_cost_estimate_usd?: number | null;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface VideoTemplateDescription {
+  en: string;
+  uk: string;
+}
+
+export interface VideoTemplateInput {
+  id: string;
+  title: VideoTemplateInputTitle;
+  description: VideoTemplateInputDescription;
+  category: PublicVideoTemplateCategory;
+  badge?: string | null;
+  /**
+   * @default 100
+   */
+  position?: number;
+  price_cents: number;
+  /**
+   * @default "usd"
+   */
+  currency?: PublicVideoTemplateCurrency;
+  model: VideoTemplateInputModel;
+  /**
+   * 4, 6 or 8 for Veo; 5 for the others.
+   */
+  seconds: number;
+  image_role: VideoTemplateInputImageRole;
+  /**
+   * What the photo must show — what the photo check looks for.
+   */
+  subject: VideoTemplateInputSubject;
+  /**
+   * Hidden from buyers. Every text field appears in it as `{{key}}`.
+   */
+  prompt: string;
+  negative_prompt?: string;
+  text_slots?: VideoTemplateInputTextSlot[];
+  photo_guidance: VideoTemplateInputPhotoGuidance;
+}
+
+export interface VideoTemplateInputDescription {
+  en: string;
+  uk: string;
+}
+
+export type VideoTemplateInputImageRole = 'first_frame' | 'reference';
+
+export const VIDEO_TEMPLATE_INPUT_IMAGE_ROLE_VALUES = ['first_frame', 'reference'] as const;
+
+export type VideoTemplateInputModel = 'Wan-AI/wan2.7-i2v' | 'Wan-AI/wan2.7-r2v' | 'google/veo-3.1-lite' | 'alibaba/happyhorse-1.1-i2v' | 'alibaba/happyhorse-1.1-r2v';
+
+export const VIDEO_TEMPLATE_INPUT_MODEL_VALUES = ['Wan-AI/wan2.7-i2v', 'Wan-AI/wan2.7-r2v', 'google/veo-3.1-lite', 'alibaba/happyhorse-1.1-i2v', 'alibaba/happyhorse-1.1-r2v'] as const;
+
+export interface VideoTemplateInputPhotoGuidance {
+  good: VideoTemplateInputPhotoGuidanceGood;
+  bad: VideoTemplateInputPhotoGuidanceBad;
+}
+
+export interface VideoTemplateInputPhotoGuidanceBad {
+  en: string[];
+  uk: string[];
+}
+
+export interface VideoTemplateInputPhotoGuidanceGood {
+  en: string[];
+  uk: string[];
+}
+
+/**
+ * What the photo must show — what the photo check looks for.
+ */
+export type VideoTemplateInputSubject = 'person' | 'product' | 'animal' | 'any';
+
+export const VIDEO_TEMPLATE_INPUT_SUBJECT_VALUES = ['person', 'product', 'animal', 'any'] as const;
+
+export interface VideoTemplateInputTextSlot {
+  key: string;
+  label: VideoTemplateInputTextSlotLabel;
+  max_length: number;
+  required: boolean;
+}
+
+export interface VideoTemplateInputTextSlotLabel {
+  en: string;
+  uk: string;
+}
+
+export interface VideoTemplateInputTitle {
+  en: string;
+  uk: string;
+}
+
+export interface VideoTemplateLastTest {
+  ok?: boolean;
+  at?: string;
+  order_id?: string;
+  message?: string;
+}
+
+export interface VideoTemplatePhotoGuidance {
+  good: VideoTemplatePhotoGuidanceGood;
+  bad: VideoTemplatePhotoGuidanceBad;
+}
+
+export interface VideoTemplatePhotoGuidanceBad {
+  en: string[];
+  uk: string[];
+}
+
+export interface VideoTemplatePhotoGuidanceGood {
+  en: string[];
+  uk: string[];
+}
+
+export type VideoTemplateStatus = 'draft' | 'published' | 'archived';
+
+export const VIDEO_TEMPLATE_STATUS_VALUES = ['draft', 'published', 'archived'] as const;
+
+export interface VideoTemplateTextSlot {
+  key: string;
+  label: VideoTemplateTextSlotLabel;
+  max_length: number;
+  required: boolean;
+}
+
+export interface VideoTemplateTextSlotLabel {
+  en: string;
+  uk: string;
+}
+
+export interface VideoTemplateTitle {
+  en: string;
+  uk: string;
 }
 
 export interface VoiceConfig {

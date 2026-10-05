@@ -54,9 +54,12 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * otherwise the scheduler aborts it, and a run the scheduler does not hold — queued but
      * unclaimed, or stranded by a crashed worker — is flipped to `cancelled` directly in storage
      * under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
-     * the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
-     * when something was stopped and `{cancelled: false, message}` when the run is unknown or
-     * already finished — there is no `404` here, and a repeat call is safe.
+     * the completion rather than overwriting it. Whichever path stops it, the run ends `status:
+     * cancelled` with `error_code: RUN_CANCELLED`, and the `run.cancelled` event carries the same
+     * `error_code` (until 2026-09-23 only a run cancelled mid-flight had it). Always answers
+     * `200`: `{cancelled: true, run_id}` when something was stopped and `{cancelled: false,
+     * message}` when the run is unknown or already finished — there is no `404` here, and a repeat
+     * call is safe.
      *
      * `POST /api/v1/runs/{runId}/cancel`
      *
@@ -262,15 +265,31 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun getRunAuditLog(runId: String, options: RequestOptions = RequestOptions()): GetRunAuditLogResponse {
+    public suspend fun getRunAuditLog(runId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetRunAuditLogResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetRunAuditLogResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/audit-log",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getRunAuditLog`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getRunAuditLogAll(runId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<AuditLogEntry> = autoPaginate(
+        fetch = { pageCursor -> getRunAuditLog(runId = runId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.auditLog },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Get user feedback for a run
@@ -304,10 +323,11 @@ public class RunsApi internal constructor(private val client: UarpClient) {
     /**
      * Get run queue position
      *
-     * Reports where the run sits in this worker's scheduling queue. The answer comes from the
-     * in-process scheduler, not from storage, so the handler does not verify that the run exists —
-     * an unknown or already-started run answers `200` with whatever the scheduler reports for it
-     * rather than `404`.
+     * Reports where the run sits in this worker's scheduling queue. The position comes from the
+     * in-process scheduler; the run's existence comes from storage — an id that is not a run of
+     * this tenant answers `404` (since 2026-09-23; it used to answer `200` with position `0`). A
+     * run that exists but is not queued here (running, finished, or queued on another worker)
+     * answers `0`.
      *
      * `GET /api/v1/runs/{runId}/queue-position`
      *
@@ -327,21 +347,40 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * List steps for a run
      *
      * Returns the ordered list of steps executed during a run, with per-step metrics including
-     * tokens, cost, and tool calls.
+     * tokens, cost, and tool calls. Model calls a run makes outside any step — the effort
+     * classifier, the planner, the evaluator — are reported once in `outside_steps`, so the steps'
+     * `cost_usd` plus `outside_steps.cost_usd` equals the run's `total_cost_usd` (both priced the
+     * way the run is billed).
      *
      * `GET /api/v1/runs/{runId}/steps`
      *
      * Required scopes: `runs:read`.
      */
-    public suspend fun getRunSteps(runId: String, options: RequestOptions = RequestOptions()): GetRunStepsResponse {
+    public suspend fun getRunSteps(runId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetRunStepsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetRunStepsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/runs/${encodePathSegment(runId)}/steps",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getRunSteps`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun getRunStepsAll(runId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<RunStep> = autoPaginate(
+        fetch = { pageCursor -> getRunSteps(runId = runId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.steps },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * List all runs for tenant
@@ -582,6 +621,11 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      * arrival is counted per day (owner's decision 2026-09-11, option A: a 422 comes no earlier
      * than a month of zero).
      *
+     * WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+     * `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+     * `reason` drops one stored by an earlier PUT. Other callers' rows and other messages' rows
+     * are untouched.
+     *
      * `PUT /api/v1/runs/{runId}/feedback`
      *
      * Required scopes: `runs:create`.
@@ -609,7 +653,7 @@ public class RunsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/runs/{runId}/events`
      *
-     * Required scopes: `events:read`.
+     * Required scopes: `runs:read`.
      *
      * Returns a cold flow of server-sent events.
      */

@@ -19,6 +19,8 @@ STREAM_401_STATE = {"n": 0}
 #  POST streaming: the last request as it arrived, and how many came.
 STREAM_POST_STATE = {"n": 0, "last": {}}
 REFUSED_POST_STATE = {"n": 0}
+#  Form POST: the last request's raw body and headers, and how many came.
+FORM_POST_STATE = {"n": 0, "last": {}}
 
 #  A complete Agent, since the SDK models decode strictly-typed fields.
 AGENT = {
@@ -286,6 +288,28 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", "0")
             self.end_headers()
             return
+        if path == "/api/v1/auth/oauth/apple/callback" and self.command == "POST":
+            #  A form body (Sign in with Apple posts its web callback as
+            #  application/x-www-form-urlencoded).  The raw bytes and the
+            #  Content-Type are kept for /form/last, undecoded, so the client
+            #  is held to exact bytes; the answer is the 200 the spec declares.
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = self.rfile.read(length) if length else b""
+            FORM_POST_STATE["n"] += 1
+            FORM_POST_STATE["last"] = {
+                "content_type": self.headers.get("Content-Type", ""),
+                "idempotency_key": self.headers.get("Idempotency-Key", ""),
+                #  Latin-1 maps each byte to one code point, so a byte that
+                #  should have been escaped still shows up as a mismatch.
+                "body": payload.decode("latin-1"),
+                "body_hex": payload.hex(),
+            }
+            return self._send(200, json.dumps({"api_key": "uarp_mock_form", "email": "a@b.c"}).encode())
+        if path == "/form/last":
+            return self._send(
+                200,
+                json.dumps(dict(FORM_POST_STATE["last"], n=FORM_POST_STATE["n"])).encode(),
+            )
         if path == "/llm/refused/count":
             return self._send(200, json.dumps({"n": REFUSED_POST_STATE["n"]}).encode())
         if path == "/events/401/count":

@@ -24,6 +24,8 @@ package UARP.API.Projects is
    --  project never claims a file the agent cannot read.
    --
    --  POST /api/v1/projects
+   --
+   --  Required scopes: sessions:write.
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Create_Project_Request;
@@ -37,6 +39,8 @@ package UARP.API.Projects is
    --  with it is how people lose things they cannot get back.
    --
    --  DELETE /api/v1/projects/{projectId}
+   --
+   --  Required scopes: sessions:write.
    function Delete
      (Self : Client_Type;
       Project_Id : String;
@@ -50,6 +54,8 @@ package UARP.API.Projects is
    --  private.
    --
    --  GET /api/v1/projects/{projectId}
+   --
+   --  Required scopes: sessions:read.
    function Get
      (Self : Client_Type;
       Project_Id : String;
@@ -64,6 +70,8 @@ package UARP.API.Projects is
    --  second call.
    --
    --  GET /api/v1/projects
+   --
+   --  Required scopes: sessions:read.
    function List
      (Self : Client_Type;
       Params : List_Projects_Params := No_List_Projects_Params;
@@ -83,7 +91,14 @@ package UARP.API.Projects is
    --  with 400: it would leave nobody able to open it. Signing in stamps the caller as owner at
    --  that moment.
    --
+   --  WRITE SEMANTICS: merges. A field the body omits keeps its stored value.
+   --  `knowledge_base_ids`, `file_ids` and `shared_with` are replaced whole when sent, and
+   --  `file_ids` that do not resolve in this tenant are dropped. An explicit null `archived_at`
+   --  clears the archive.
+   --
    --  PATCH /api/v1/projects/{projectId}
+   --
+   --  Required scopes: sessions:write.
    function Update
      (Self : Client_Type;
       Project_Id : String;

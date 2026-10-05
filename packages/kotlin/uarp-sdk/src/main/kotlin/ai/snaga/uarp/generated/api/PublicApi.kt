@@ -97,6 +97,39 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Order a video
+     *
+     * Takes the buyer's photo and text, checks the photo, and opens a Stripe Checkout that only
+     * AUTHORISES the price: the money is held, then captured when the clip exists, or released if
+     * it never does — nothing is ever refunded because nothing moved. The photo is checked BEFORE
+     * anything is stored or held; a refusal is 422 with a stable `reason` and `{en, uk}` text.
+     * Answers 201 with the order and its `order_token` — the only time the token is returned; send
+     * it as `X-Order-Token` on every later call, and keep it after `#` in any page URL.
+     * Rate-limited to 10 orders per hour per address. Anonymous.
+     *
+     * `POST /api/v1/public/video-orders`
+     */
+    public suspend fun createPublicVideoOrder(body: CreatePublicVideoOrderRequest, options: RequestOptions = RequestOptions()): CreatePublicVideoOrderResponse {
+        val parts = buildList {
+            add(Part.Text.of("template_id", body.templateId))
+            add(Part.File("photo", body.photo))
+            body.slots?.let { add(Part.Text.of("slots", it)) }
+            body.locale?.let { add(Part.Text.of("locale", it)) }
+            add(Part.Text.of("consent_rights", body.consentRights))
+            add(Part.Text.of("consent_terms", body.consentTerms))
+        }
+        return client.request<CreatePublicVideoOrderResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/video-orders",
+                body = Body.Multipart(parts),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Has THIS browser already signed up?
      *
      * Deliberately not an address oracle. The answer is `registered: true` only when the caller
@@ -417,6 +450,102 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Fetch an order's photo (for the video provider)
+     *
+     * How the video provider reads the buyer's photo: its API takes a URL and nothing else. The
+     * link is signed for one file and one hour and is never shown to the buyer.
+     *
+     * `GET /api/v1/public/video-inputs/{fileId}`
+     */
+    public suspend fun getPublicVideoInput(fileId: String, exp: Long, sig: String, options: RequestOptions = RequestOptions()): ByteArray {
+        val query = buildList {
+            add("exp" to exp.toString())
+            add("sig" to sig)
+        }
+        return client.requestBytes(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/video-inputs/${encodePathSegment(fileId)}",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Get an order's status
+     *
+     * What the order page shows: status, queue position and wait, generation progress, a signed
+     * hour-long link to the finished clip, whether the free regeneration is available and why not.
+     * Poll every few seconds while `status` is `awaiting_payment`, `queued` or `generating`.
+     *
+     * `GET /api/v1/public/video-orders/{orderId}`
+     */
+    public suspend fun getPublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = RequestOptions()): VideoOrder {
+        val headers = buildList {
+            add("X-Order-Token" to xOrderToken)
+        }
+        return client.request<VideoOrder>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}",
+                headers = headers,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Stream or download the finished video
+     *
+     * The clip behind the signed `video.url` the order answers — valid for an hour; ask the order
+     * again for a fresh link. `download=1` sends it as an attachment.
+     *
+     * `GET /api/v1/public/video-orders/{orderId}/video`
+     */
+    public suspend fun getPublicVideoOrderVideo(orderId: String, exp: Long, sig: String, download: ExportDataExplorerIncludeSensitive? = null, range: String? = null, options: RequestOptions = RequestOptions()): ByteArray {
+        val query = buildList {
+            add("exp" to exp.toString())
+            add("sig" to sig)
+            if (download != null) add("download" to download.value)
+        }
+        val headers = buildList {
+            if (range != null) add("Range" to range)
+        }
+        return client.requestBytes(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}/video",
+                query = query,
+                headers = headers,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Stream a template's example clip
+     *
+     * The example video shown in the gallery, as MP4 with byte-range support. 404 when the
+     * template is not published or has no example. Anonymous.
+     *
+     * `GET /api/v1/public/video-templates/{templateId}/preview`
+     */
+    public suspend fun getPublicVideoTemplatePreview(templateId: String, range: String? = null, options: RequestOptions = RequestOptions()): ByteArray {
+        val headers = buildList {
+            if (range != null) add("Range" to range)
+        }
+        return client.requestBytes(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/video-templates/${encodePathSegment(templateId)}/preview",
+                headers = headers,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Is sign-up open
      *
      * No authentication; cached for 30 seconds.
@@ -582,6 +711,53 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     )
 
     /**
+     * List video templates
+     *
+     * The gallery of the public video service: every published template with its bilingual
+     * (`en`/`uk`) texts, price, clip length, the text fields the buyer fills and what makes a good
+     * photo — and never the model, the hidden prompt or the cost behind it. `queue` estimates the
+     * wait a new order would face, so the page can warn BEFORE payment. `stats.videos_total` and
+     * each template's `videos_made` count videos delivered to paying buyers — never test runs or
+     * free regenerations — so they can be shown as they are. Anonymous.
+     *
+     * `GET /api/v1/public/video-templates`
+     */
+    public suspend fun listPublicVideoTemplates(options: RequestOptions = RequestOptions()): ListPublicVideoTemplatesResponse {
+        return client.request<ListPublicVideoTemplatesResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/video-templates",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Get a checkout link for an unpaid order
+     *
+     * For a buyer who came back from Stripe without paying: answers the order's open Checkout
+     * link, or a fresh one once the first is near its 24-hour expiry. Only while `status` is
+     * `awaiting_payment`; a second payment for an order already paid is released by the webhook,
+     * never captured.
+     *
+     * `POST /api/v1/public/video-orders/{orderId}/checkout`
+     */
+    public suspend fun openPublicVideoOrderCheckout(orderId: String, xOrderToken: String, options: RequestOptions = RequestOptions()): OpenPublicVideoOrderCheckoutResponse {
+        val headers = buildList {
+            add("X-Order-Token" to xOrderToken)
+        }
+        return client.request<OpenPublicVideoOrderCheckoutResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}/checkout",
+                headers = headers,
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Domain lookup
      *
      * Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
@@ -630,6 +806,55 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Rate a finished video
+     *
+     * 👍 or 👎 on a ready video. A 👎 is what opens the free regeneration.
+     *
+     * `POST /api/v1/public/video-orders/{orderId}/feedback`
+     */
+    public suspend fun ratePublicVideoOrder(orderId: String, body: RatePublicVideoOrderRequest, xOrderToken: String, options: RequestOptions = RequestOptions()): RatePublicVideoOrderResponse {
+        val headers = buildList {
+            add("X-Order-Token" to xOrderToken)
+        }
+        return client.request<RatePublicVideoOrderResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}/feedback",
+                headers = headers,
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Regenerate a video for free, once
+     *
+     * Makes a new take of a ready video from the SAME photo and text (only the seed changes),
+     * free, once per order, within 24 hours of delivery, after a 👎 rating. The new clip replaces
+     * the old one; if it fails, the buyer keeps the video they paid for. Not offered to a buyer
+     * who regenerates most of what they buy (`reason: not_available`). Answers 202 with the order
+     * back in the queue.
+     *
+     * `POST /api/v1/public/video-orders/{orderId}/regenerate`
+     */
+    public suspend fun regeneratePublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = RequestOptions()): VideoOrder {
+        val headers = buildList {
+            add("X-Order-Token" to xOrderToken)
+        }
+        return client.request<VideoOrder>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}/regenerate",
+                headers = headers,
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Respond to public HITL
      *
      * Supplies the visitor's answer to an agent that has paused for input, storing `response` and
@@ -650,6 +875,30 @@ public class PublicApi internal constructor(private val client: UarpClient) {
                 method = "POST",
                 path = "/api/v1/public/sessions/${encodePathSegment(sessionId)}/respond",
                 body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Try a failed order again
+     *
+     * For an order that failed (and was never charged): a NEW order with the same photo and text
+     * and its own checkout, answered with its own `order_token`. Once per failed order; within 24
+     * hours, while the photo is still kept.
+     *
+     * `POST /api/v1/public/video-orders/{orderId}/retry`
+     */
+    public suspend fun retryPublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = RequestOptions()): RetryPublicVideoOrderResponse {
+        val headers = buildList {
+            add("X-Order-Token" to xOrderToken)
+        }
+        return client.request<RetryPublicVideoOrderResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/video-orders/${encodePathSegment(orderId)}/retry",
+                headers = headers,
                 idempotent = true,
                 options = options,
             )

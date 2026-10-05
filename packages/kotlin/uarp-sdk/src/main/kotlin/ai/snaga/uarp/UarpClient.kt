@@ -13,6 +13,7 @@ import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.JsonPrimitive
+import kotlinx.serialization.json.encodeToJsonElement
 import kotlinx.serialization.json.Json as KJson
 import okhttp3.Call
 import okhttp3.Callback
@@ -59,7 +60,17 @@ public data class FilePart(
 public sealed interface Part {
     public val name: String
 
-    public data class Text(override val name: String, val value: String) : Part
+    public data class Text(override val name: String, val value: String) : Part {
+        public companion object {
+            /**
+             * A text field from a model property of any type: a string as is,
+             * an enum as its wire value, a number or boolean as its literal,
+             * an object or array as JSON.
+             */
+            public inline fun <reified T> of(name: String, value: T): Text =
+                Text(name, formValueOf(uarpJson.encodeToJsonElement(value)))
+        }
+    }
     public data class File(override val name: String, val file: FilePart) : Part
 }
 
@@ -73,6 +84,21 @@ public sealed interface Body {
         override fun hashCode(): Int = 31 * bytes.contentHashCode() + contentType.hashCode()
     }
     public data class Multipart(val parts: List<Part>) : Body
+
+    /**
+     * An `application/x-www-form-urlencoded` body: [fields] in order, encoded
+     * the way `URLSearchParams` does.
+     */
+    public data class Form(val fields: List<Pair<String, String>>) : Body {
+        public companion object {
+            /**
+             * The fields of a generated model, in the order its schema declares
+             * them. Absent and null fields are left out; a string goes as is, a
+             * number or boolean as its literal, an object or array as JSON.
+             */
+            public inline fun <reified T> of(value: T): Form = Form(formFieldsOf(uarpJson.encodeToJsonElement(value)))
+        }
+    }
 }
 
 /** Per-call overrides. */
@@ -345,6 +371,8 @@ public class UarpClient internal constructor(
             //  `application/json`.
             is Body.Json -> body.payload.toByteArray(Charsets.UTF_8).toRequestBody(JSON_MEDIA_TYPE)
             is Body.Raw -> body.bytes.toRequestBody(body.contentType.toMediaType())
+            //  Bytes for the same reason as JSON: no `; charset=utf-8`.
+            is Body.Form -> encodeForm(body.fields).toByteArray(Charsets.UTF_8).toRequestBody(FORM_MEDIA_TYPE)
             is Body.Multipart -> MultipartBody.Builder().setType(MultipartBody.FORM).apply {
                 for (part in body.parts) {
                     when (part) {
@@ -373,6 +401,7 @@ public class UarpClient internal constructor(
 }
 
 private val JSON_MEDIA_TYPE = "application/json".toMediaType()
+private val FORM_MEDIA_TYPE = "application/x-www-form-urlencoded".toMediaType()
 
 private fun emptyBodyFor(method: String): RequestBody? =
     if (method == "POST" || method == "PUT" || method == "PATCH" || method == "DELETE") {

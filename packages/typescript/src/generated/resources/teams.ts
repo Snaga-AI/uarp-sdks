@@ -22,6 +22,7 @@ import type {
   StartTeamRunRequest,
   StartTeamRunResponse,
   Team,
+  TeamChatTurn,
   TeamCreate,
   TeamGraphEdge,
   TeamGraphNode,
@@ -37,6 +38,18 @@ import type {
 export interface GetTeamChatHistoryParams {
   thread_id?: string;
   include_internal?: boolean;
+  /**
+   * Page size, in TURNS (two history entries each), counted back from the newest turn; oldest
+   * first within a page. ABSENT means the newest 100 turns, with no paging fields (the window
+   * size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+   * outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -68,9 +81,14 @@ export class TeamsResource extends APIResource {
    * The write is a compare-and-set against the graph document, so a concurrent graph change
    * answers 409 and the request should be retried. Answers 201 with the created edge.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/teams/{teamId}/graph/edges`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   addTeamGraphEdge(teamId: string, body: AddTeamGraphEdgeRequest, options?: RequestOptions): Promise<TeamGraphEdge> {
     return this._client.request({
@@ -90,9 +108,14 @@ export class TeamsResource extends APIResource {
    * empty. The write is a compare-and-set against the graph document, so a concurrent graph
    * change answers 409 and the request should simply be retried. Answers 201 with the node.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/teams/{teamId}/graph/nodes`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   addTeamGraphNode(teamId: string, body: AddTeamGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
@@ -153,9 +176,14 @@ export class TeamsResource extends APIResource {
    * applies, and a failure anywhere after the slot claim releases it. A collaboration graph is
    * created from the workers, and the create is audit-logged. Answers 201 with the stored team.
    *
+   * **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+   * here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/teams`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   create(body: TeamCreate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -178,9 +206,14 @@ export class TeamsResource extends APIResource {
    * proves what was attempted. 404 when the team is unknown. The member agents themselves are
    * not deleted. There is no undo.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+   * Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `DELETE /api/v1/teams/{teamId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   delete(teamId: string, options?: RequestOptions): Promise<DeleteTeamResponse> {
     return this._client.request({
@@ -198,9 +231,14 @@ export class TeamsResource extends APIResource {
    * against the graph document, so a concurrent change answers 409 and the request should be
    * retried.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/edges/{edgeId}`.** The same handler under
+   * the current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `DELETE /api/v1/teams/{teamId}/graph/edges/{edgeId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   deleteTeamGraphEdge(teamId: string, edgeId: string, options?: RequestOptions): Promise<DeleteTeamGraphEdgeResponse> {
     return this._client.request({
@@ -218,9 +256,15 @@ export class TeamsResource extends APIResource {
    * membership of the team are untouched. The write is a compare-and-set against the graph
    * document, so a concurrent change answers 409 and the request should be retried.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+   * under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+   * named.
+   *
    * `DELETE /api/v1/teams/{teamId}/graph/nodes/{agentId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   deleteTeamGraphNode(teamId: string, agentId: string, options?: RequestOptions): Promise<DeleteTeamGraphNodeResponse> {
     return this._client.request({
@@ -239,9 +283,14 @@ export class TeamsResource extends APIResource {
    * answers with the team as stored rather than turning a read into an upgrade prompt. 404 when
    * the tenant has no such team.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+   * Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   get(teamId: string, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -262,17 +311,35 @@ export class TeamsResource extends APIResource {
    * user/assistant pair is appended and `active_team_run_id` is set, so a client returning to
    * the page can reattach to the stream. 404 when the team is unknown.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/chat`.** The same handler under the current
+   * noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/chat`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getTeamChatHistory(teamId: string, params?: GetTeamChatHistoryParams, options?: RequestOptions): Promise<GetTeamChatHistoryResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/teams/${encodeURIComponent(String(teamId))}/chat`,
-      query: pick(params, ['thread_id', 'include_internal']),
+      query: pick(params, ['thread_id', 'include_internal', 'limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getTeamChatHistory`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getTeamChatHistoryAll(teamId: string, params?: GetTeamChatHistoryParams, options?: RequestOptions): AsyncIterableIterator<TeamChatTurn> {
+    return autoPaginate<TeamChatTurn>(
+      (cursor) => this.getTeamChatHistory(teamId, { ...params, cursor }, options),
+      'conversation_history',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -283,9 +350,14 @@ export class TeamsResource extends APIResource {
    * effect of this read. Nodes whose status is `terminated` are kept as an audit trail but
    * omitted by default; `include_terminated=true` returns them. 404 when the team is unknown.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph`.** The same handler under the current
+   * noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/graph`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getTeamGraph(teamId: string, options?: RequestOptions): Promise<GetTeamGraphResponse> {
     return this._client.request({
@@ -302,9 +374,15 @@ export class TeamsResource extends APIResource {
    * agent id it represents rather than a separate node id. 404 when the graph has no node for
    * that agent.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+   * under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+   * named.
+   *
    * `GET /api/v1/teams/{teamId}/graph/nodes/{agentId}`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getTeamGraphNode(teamId: string, agentId: string, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
@@ -332,9 +410,14 @@ export class TeamsResource extends APIResource {
    * when the team is unknown, and 404 when no run with that id exists on this team — `pending`
    * is reserved for a run that exists and has not settled, never for an unknown id.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/runs/{teamRunId}`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getTeamRun(teamId: string, teamRunId: string, options?: RequestOptions): Promise<TeamRunDetail> {
     return this._client.request({
@@ -353,9 +436,15 @@ export class TeamsResource extends APIResource {
    * falls back to a single synthesised message built from the last protocol message, with an
    * empty user side. 404 when the team is unknown.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/messages`.** The same handler
+   * under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+   * named.
+   *
    * `GET /api/v1/teams/{teamId}/runs/{teamRunId}/messages`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getTeamRunMessages(teamId: string, teamRunId: string, options?: RequestOptions): Promise<GetTeamRunMessagesResponse> {
     return this._client.request({
@@ -372,9 +461,14 @@ export class TeamsResource extends APIResource {
    * the canonical `items` and as the deprecated `teams` alias — so clients written against
    * either shape decode.
    *
+   * **Deprecated — use `/api/v1/squads`.** The same handler under the current noun. Responses
+   * here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   list(options?: RequestOptions): Promise<ListTeamsResponse> {
     return this._client.request({
@@ -390,9 +484,14 @@ export class TeamsResource extends APIResource {
    * Lists the graph's edges — the delegation and handoff links between nodes — with a `total`.
    * The team's existence is not checked, so an unknown team id answers an empty list.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/edges`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/graph/edges`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   listTeamGraphEdges(teamId: string, options?: RequestOptions): Promise<ListTeamGraphEdgesResponse> {
     return this._client.request({
@@ -409,9 +508,14 @@ export class TeamsResource extends APIResource {
    * the team exists nor filters terminated nodes, so terminated members are included and an
    * unknown team id answers an empty list rather than 404.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/graph/nodes`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   listTeamGraphNodes(teamId: string, options?: RequestOptions): Promise<ListTeamGraphNodesResponse> {
     return this._client.request({
@@ -429,11 +533,19 @@ export class TeamsResource extends APIResource {
    * so, which left clients to infer an order from the data they happened to receive.
    *
    * `limit` and `cursor` were undeclared, so a client generated from this document saw the first
-   * fifty runs and had no way to page past them.
+   * fifty runs and had no way to page past them. There is no `offset`: pages continue by
+   * `cursor` only.
+   *
+   * Each row is a MEMBER run of a team run; `team_run_status` says what that team run came to.
+   *
+   * **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+   * noun. Responses here carry `Deprecation: true`; no removal date has been named.
    *
    * `GET /api/v1/teams/{teamId}/runs`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   listTeamRuns(teamId: string, params?: ListTeamRunsParams, options?: RequestOptions): Promise<ListTeamRunsResponse> {
     return this._client.request({
@@ -472,9 +584,14 @@ export class TeamsResource extends APIResource {
    * run settles a chat turn is saved, the state goes to DONE and the concurrency slot is
    * released; the run is bounded by the team's timeout with a safety timeout behind it.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/runs`.** The same handler under the current
+   * noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/teams/{teamId}/runs`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   startTeamRun(teamId: string, body: StartTeamRunRequest, options?: RequestOptions): Promise<StartTeamRunResponse> {
     return this._client.request({
@@ -496,11 +613,16 @@ export class TeamsResource extends APIResource {
    * 404 when the team is unknown, and 429 when the tenant is already at its concurrent-SSE
    * ceiling.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/chat/events`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/teams/{teamId}/chat/events`
    *
    * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
+   *
+   * @deprecated
    */
   streamTeamChatEvents(teamId: string, params?: StreamTeamChatEventsParams, options?: RequestOptions): EventStream {
     return this._client.stream({
@@ -518,11 +640,17 @@ export class TeamsResource extends APIResource {
    * handler, which reads `params.teamRunId` for this route too — calls it `teamRunId`. Same
    * value, two names, so a generated client offered both.
    *
+   * **Deprecated — use `/api/v1/squads/{squadId}/runs/{teamRunId}/events`.** The same handler
+   * under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+   * named.
+   *
    * `GET /api/v1/teams/{teamId}/runs/{teamRunId}/events`
    *
    * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
+   *
+   * @deprecated
    */
   streamTeamRunEvents(teamId: string, teamRunId: string, options?: RequestOptions): EventStream {
     return this._client.stream({
@@ -542,9 +670,20 @@ export class TeamsResource extends APIResource {
    * (422), the same check the create performs. `swarm_config` and `goal_config` are only touched
    * when supplied. 404 when the team is unknown; the write is audit-logged as `team.updated`.
    *
+   * WRITE SEMANTICS: mixed. An omitted top-level field keeps its stored value. `policies` merges
+   * one level deep, and `policies.validation` merges over the stored one (null clears it). A
+   * `workers` list that is present replaces the list, but each worker keeps its stored `role`
+   * and `permissions` when omitted — except on the swarm `agent_ids` path, which rebuilds
+   * workers with no carry-over. `swarm_config` and `goal_config` are replaced whole when sent.
+   *
+   * **Deprecated — use `/api/v1/squads/{squadId}`.** The same handler under the current noun.
+   * Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `PUT /api/v1/teams/{teamId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   update(teamId: string, body: TeamUpdate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -564,9 +703,18 @@ export class TeamsResource extends APIResource {
    * load-bearing rather than decorative: a member whose node is not active is excluded from
    * later squad runs, so the supervisor never sees it and addressing it is refused.
    *
+   * WRITE SEMANTICS: merges. Only `status` and `goal_summary` are applied, each only when sent;
+   * the patch is spread over the stored node, so every omitted field keeps its stored value.
+   *
+   * **Deprecated — use `/api/v1/squads/{squadId}/graph/nodes/{agentId}`.** The same handler
+   * under the current noun. Responses here carry `Deprecation: true`; no removal date has been
+   * named.
+   *
    * `PATCH /api/v1/teams/{teamId}/graph/nodes/{agentId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   updateTeamGraphNode(teamId: string, agentId: string, body: UpdateTeamGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({

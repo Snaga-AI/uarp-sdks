@@ -81,8 +81,21 @@ function everyMediaTypeIsText(content: Json): boolean {
   return media.length > 0 && media.every(isTextualMediaType);
 }
 
-export function parse(doc: Json): Spec {
-  return new Parser(doc).run();
+/**
+ * `enumNames` pins the names enums were published under, keyed by
+ * {@link enumKey} (generator/enum-names.json). A hoisted enum is named after
+ * the first schema that uses its value set, so a schema added earlier in the
+ * document renamed types users already import: 0.8.0's refresh turned
+ * seventeen of them over, `AgentExecutionMode` into `AgentUpdateExecutionMode`
+ * and `TeamPoliciesEffort` into `AgentUpdateThinkingEffortVariant1`.
+ */
+export function parse(doc: Json, enumNames: Record<string, string> = {}): Spec {
+  return new Parser(doc, enumNames).run();
+}
+
+/** The value set an enum is merged — and pinned — by. */
+export function enumKey(type: { values: string[] }): string {
+  return `enum:${type.values.join('|')}`;
 }
 
 class Parser {
@@ -93,8 +106,15 @@ class Parser {
   /** Component schema names currently being built, to survive recursive $refs. */
   readonly #building = new Set<string>();
 
-  constructor(doc: Json) {
+  /** enumKey -> published name; see {@link parse}. */
+  readonly #pinned: Record<string, string>;
+  /** Names the document's own component schemas take; a pin never claims one. */
+  readonly #componentNames: Set<string>;
+
+  constructor(doc: Json, pinned: Record<string, string>) {
     this.#doc = doc;
+    this.#pinned = pinned;
+    this.#componentNames = new Set(Object.keys(doc.components?.schemas ?? {}).map(pascal));
   }
 
   run(): Spec {
@@ -340,6 +360,10 @@ class Parser {
     if (existing) return { kind: 'named', name: existing };
 
     let name = type.name;
+    // A published enum keeps its published name, wherever the document first
+    // uses it — unless that name now belongs to something else.
+    const pinned = type.kind === 'enum' ? this.#pinned[hash] : undefined;
+    if (pinned && !this.#types.has(pinned) && !this.#componentNames.has(pinned)) name = pinned;
     if (this.#types.has(name)) {
       let n = 2;
       while (this.#types.has(`${name}${n}`)) n++;
@@ -543,10 +567,17 @@ class Parser {
       const type = status === 204 || status === 205 || status === 304 ? undefined : PRIM_JSON;
       return { response: { status, type, description: node.description }, sse: false, errorStatuses };
     }
-    if (content['text/event-stream']) {
+    const json = content['application/json'];
+    // An operation that answers BOTH ways — JSON, and an event stream when the
+    // body asks for one — is typed by its JSON answer (the LLM completions,
+    // since uarp 4663ef46 documents their `"stream": true` mode). Typing it by
+    // the stream turned a method that returned a completion in 0.7.0 into one
+    // that returns events, breaking every caller who never asked to stream,
+    // and the reconnecting GET stream would have replayed a billed POST. The
+    // streamed mode is the hand-written `streamPost`: one attempt, no replay.
+    if (content['text/event-stream'] && !json) {
       return { response: { status, type: PRIM_JSON, description: node.description }, sse: true, errorStatuses };
     }
-    const json = content['application/json'];
     if (json) {
       return {
         response: { status, type: this.#schemaType(json.schema, `${opName}Response`), description: node.description },
@@ -682,7 +713,7 @@ function dedupeRefs(refs: TypeRef[]): TypeRef[] {
 
 /** Structural fingerprint used to collapse identical hoisted types. */
 function hashType(type: NamedType): string {
-  if (type.kind === 'enum') return `enum:${type.values.join('|')}`;
+  if (type.kind === 'enum') return enumKey(type);
   if (type.kind === 'alias') return `alias:${JSON.stringify(type.target)}`;
   const props = type.properties
     .map((p) => `${p.wire}:${JSON.stringify(p.type)}:${p.required ? 1 : 0}${p.nullable ? 'n' : ''}`)

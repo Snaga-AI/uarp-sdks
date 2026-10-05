@@ -7,6 +7,7 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   Company,
+  CompanyActivityEntry,
   CompanyCreate,
   CompanyUpdate,
   GetCompanyActivityResponse,
@@ -16,6 +17,23 @@ import type {
   PauseCompanyResponse,
   ResumeCompanyResponse,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `getCompanyActivity`.
+ */
+export interface GetCompanyActivityParams {
+  /**
+   * Page size, newest first. ABSENT means the newest 50 entries, with no paging fields (the
+   * window size this list has always had; before 2026-10-02 some answered their OLDEST rows).
+   * Values outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
 
 /**
  * Query and header parameters for `listCompanies`.
@@ -134,12 +152,26 @@ export class CompaniesResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  getCompanyActivity(companyId: string, options?: RequestOptions): Promise<GetCompanyActivityResponse> {
+  getCompanyActivity(companyId: string, params?: GetCompanyActivityParams, options?: RequestOptions): Promise<GetCompanyActivityResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/companies/${encodeURIComponent(String(companyId))}/activity`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getCompanyActivity`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getCompanyActivityAll(companyId: string, params?: GetCompanyActivityParams, options?: RequestOptions): AsyncIterableIterator<CompanyActivityEntry> {
+    return autoPaginate<CompanyActivityEntry>(
+      (cursor) => this.getCompanyActivity(companyId, { ...params, cursor }, options),
+      'entries',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
