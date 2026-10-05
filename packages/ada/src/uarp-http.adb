@@ -336,8 +336,11 @@ package body UARP.HTTP is
       --  so we can branch without overloading the CURLcode.
       if Code = Stream_Silent_Code then
          Result := Stream_Silent;
-      elsif Code = 23 and then State.Stopped then
-         --  CURLE_WRITE_ERROR (23) is how a caller-requested stop reaches us.
+      elsif State.Stopped then
+         --  The sink asked to stop, so the abort is ours whatever libcurl
+         --  calls it: CURLE_WRITE_ERROR (23) over HTTP/1.1, CURLE_RECV_ERROR
+         --  (56) over HTTP/2 (measured against api.snaga.ai, 2026-10-05: a
+         --  stream that ended at `data: [DONE]` raised Transport_Error).
          Result := Stream_Stopped;
       elsif Code /= 0 then
          raise UARP.Errors.Transport_Error with Error_Text (Code, Error);
@@ -416,7 +419,8 @@ package body UARP.HTTP is
 
       if Code = Stream_Silent_Code then
          Result := Stream_Silent;
-      elsif Code = 23 and then State.Stopped then
+      elsif State.Stopped then
+         --  Ours, whatever the code (see Stream): 23 over HTTP/1.1, 56 over HTTP/2.
          Result := Stream_Stopped;
       elsif Code /= 0 then
          raise UARP.Errors.Transport_Error with Error_Text (Code, Error);
