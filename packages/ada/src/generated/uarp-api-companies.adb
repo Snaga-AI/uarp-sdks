@@ -52,17 +52,75 @@ package body UARP.API.Companies is
    function Get_Company_Activity
      (Self : Client_Type;
       Company_Id : String;
+      Params : Get_Company_Activity_Params := No_Get_Company_Activity_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Company_Activity_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/companies/" & UARP.Types.Encode_Path_Segment (Company_Id) & "/activity",
+             Query => Query,
              Options => Options));
    end Get_Company_Activity;
+
+   function Get_Company_Activity_All
+     (Self : Client_Type;
+      Company_Id : String;
+      Params : Get_Company_Activity_Params := No_Get_Company_Activity_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Company_Activity_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Company_Activity_Entry_Vectors.Vector;
+      Page_Params : Get_Company_Activity_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Company_Activity_Response :=
+               Get_Company_Activity
+                  (Self,
+                   Company_Id => Company_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Entries loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Entries.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Company_Activity_All;
 
    function Get_Company_Budget
      (Self : Client_Type;

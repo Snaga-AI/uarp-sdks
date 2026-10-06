@@ -34,11 +34,37 @@ pub struct GetRunParams {
     pub changed_files: Option<models::GetRunChangedFiles>,
 }
 
+/// Query and header parameters for `getRunAuditLog`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetRunAuditLogParams {
+    /// Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+    /// existed — not a default page. Values outside 1..500 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
 /// Query and header parameters for `getRunFeedback`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetRunFeedbackParams {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message_id: Option<String>,
+}
+
+/// Query and header parameters for `getRunSteps`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetRunStepsParams {
+    /// Page size, in step order. ABSENT means the whole list, exactly as before paging existed —
+    /// not a default page. Values outside 1..500 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `listRuns`.
@@ -126,9 +152,12 @@ impl RunsApi {
     /// otherwise the scheduler aborts it, and a run the scheduler does not hold — queued but
     /// unclaimed, or stranded by a crashed worker — is flipped to `cancelled` directly in storage
     /// under CAS, with a `run.cancelled` event appended. The CAS retries on a lost race and reports
-    /// the completion rather than overwriting it. Always answers `200`: `{cancelled: true, run_id}`
-    /// when something was stopped and `{cancelled: false, message}` when the run is unknown or
-    /// already finished — there is no `404` here, and a repeat call is safe.
+    /// the completion rather than overwriting it. Whichever path stops it, the run ends `status:
+    /// cancelled` with `error_code: RUN_CANCELLED`, and the `run.cancelled` event carries the same
+    /// `error_code` (until 2026-09-23 only a run cancelled mid-flight had it). Always answers
+    /// `200`: `{cancelled: true, run_id}` when something was stopped and `{cancelled: false,
+    /// message}` when the run is unknown or already finished — there is no `404` here, and a repeat
+    /// call is safe.
     ///
     /// `POST /api/v1/runs/{runId}/cancel`
     ///
@@ -324,17 +353,40 @@ impl RunsApi {
     /// `GET /api/v1/runs/{runId}/audit-log`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn get_run_audit_log(&self, run_id: &str) -> Result<models::GetRunAuditLogResponse> {
+    pub async fn get_run_audit_log(&self, run_id: &str, params: &GetRunAuditLogParams) -> Result<models::GetRunAuditLogResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/runs/{}/audit-log", encode_path(run_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getRunAuditLog`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_run_audit_log_all<'a>(&'a self, run_id: &'a str, params: &'a GetRunAuditLogParams) -> impl Stream<Item = Result<models::AuditLogEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_run_audit_log(run_id, &page_params).await?;
+                let items = page.audit_log;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Get user feedback for a run
@@ -365,10 +417,11 @@ impl RunsApi {
 
     /// Get run queue position
     ///
-    /// Reports where the run sits in this worker's scheduling queue. The answer comes from the
-    /// in-process scheduler, not from storage, so the handler does not verify that the run exists —
-    /// an unknown or already-started run answers `200` with whatever the scheduler reports for it
-    /// rather than `404`.
+    /// Reports where the run sits in this worker's scheduling queue. The position comes from the
+    /// in-process scheduler; the run's existence comes from storage — an id that is not a run of
+    /// this tenant answers `404` (since 2026-09-23; it used to answer `200` with position `0`). A
+    /// run that exists but is not queued here (running, finished, or queued on another worker)
+    /// answers `0`.
     ///
     /// `GET /api/v1/runs/{runId}/queue-position`
     ///
@@ -389,22 +442,48 @@ impl RunsApi {
     /// List steps for a run
     ///
     /// Returns the ordered list of steps executed during a run, with per-step metrics including
-    /// tokens, cost, and tool calls.
+    /// tokens, cost, and tool calls. Model calls a run makes outside any step — the effort
+    /// classifier, the planner, the evaluator — are reported once in `outside_steps`, so the steps'
+    /// `cost_usd` plus `outside_steps.cost_usd` equals the run's `total_cost_usd` (both priced the
+    /// way the run is billed).
     ///
     /// `GET /api/v1/runs/{runId}/steps`
     ///
     /// Required scopes: `runs:read`.
-    pub async fn get_run_steps(&self, run_id: &str) -> Result<models::GetRunStepsResponse> {
+    pub async fn get_run_steps(&self, run_id: &str, params: &GetRunStepsParams) -> Result<models::GetRunStepsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/runs/{}/steps", encode_path(run_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getRunSteps`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn get_run_steps_all<'a>(&'a self, run_id: &'a str, params: &'a GetRunStepsParams) -> impl Stream<Item = Result<models::RunStep>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_run_steps(run_id, &page_params).await?;
+                let items = page.steps;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// List all runs for tenant
@@ -648,6 +727,11 @@ impl RunsApi {
     /// arrival is counted per day (owner's decision 2026-09-11, option A: a 422 comes no earlier
     /// than a month of zero).
     ///
+    /// WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+    /// `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+    /// `reason` drops one stored by an earlier PUT. Other callers' rows and other messages' rows
+    /// are untouched.
+    ///
     /// `PUT /api/v1/runs/{runId}/feedback`
     ///
     /// Required scopes: `runs:create`.
@@ -674,7 +758,7 @@ impl RunsApi {
     ///
     /// `GET /api/v1/runs/{runId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `runs:read`.
     ///
     /// Returns a server-sent event stream.
     pub fn stream_run_events(&self, run_id: &str, params: &StreamRunEventsParams) -> EventStream {

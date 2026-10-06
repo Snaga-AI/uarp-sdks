@@ -2,20 +2,40 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   AgentScorer,
+  CreateAgentScorerRequest,
   CreateDatasetRequest,
   CreateExperimentRequest,
   EvalDataset,
   EvalRun,
   Experiment,
-  JsonObject,
   ListAgentScorersResponse,
   ListDatasetsResponse,
   ListEvalRunsResponse,
   ListExperimentsResponse,
   RunEvaluationRequest,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `listEvalRuns`.
+ */
+export interface ListEvalRunsParams {
+  /**
+   * Page size, counted back from the newest run (the first page is the newest runs); oldest
+   * first within a page. ABSENT means the newest 1000 runs, with no paging fields (the window
+   * size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+   * outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
 
 /**
  * Agent evaluation datasets and runs
@@ -36,7 +56,7 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:write`.
    */
-  createAgentScorer(agentId: string, body: JsonObject, options?: RequestOptions): Promise<AgentScorer> {
+  createAgentScorer(agentId: string, body: CreateAgentScorerRequest, options?: RequestOptions): Promise<AgentScorer> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/scorers`,
@@ -190,12 +210,26 @@ export class EvaluationsResource extends APIResource {
    *
    * Required scopes: `evaluations:read`.
    */
-  listEvalRuns(agentId: string, options?: RequestOptions): Promise<ListEvalRunsResponse> {
+  listEvalRuns(agentId: string, params?: ListEvalRunsParams, options?: RequestOptions): Promise<ListEvalRunsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/evaluations`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listEvalRuns`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listEvalRunsAll(agentId: string, params?: ListEvalRunsParams, options?: RequestOptions): AsyncIterableIterator<EvalRun> {
+    return autoPaginate<EvalRun>(
+      (cursor) => this.listEvalRuns(agentId, { ...params, cursor }, options),
+      'eval_runs',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**

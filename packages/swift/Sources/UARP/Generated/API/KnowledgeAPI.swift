@@ -137,12 +137,31 @@ public struct KnowledgeAPI: Sendable {
     /// `GET /api/v1/knowledge-bases/{kbId}/documents`
     ///
     /// Required scopes: `memory:read`.
-    public func listKbDocuments(kbId: String, options: RequestOptions = .init()) async throws -> ListKbDocumentsResponse {
+    public func listKbDocuments(kbId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListKbDocumentsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/knowledge-bases/\(encodePathSegment(kbId))/documents",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listKbDocuments`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func listKbDocumentsAll(kbId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<KnowledgeBaseDocument, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listKbDocuments(kbId: kbId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.documents ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// List knowledge bases
@@ -168,8 +187,13 @@ public struct KnowledgeAPI: Sendable {
     /// Re-embed every chunk with the current model
     ///
     /// Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
-    /// embedding drift after a model change. Requires an embeddings backend: without one the answer
-    /// is 503 and nothing is written.
+    /// embedding drift after a model change. Incremental: chunks that already carry a vector from
+    /// the current model are skipped (`already_current`), and only the rest are embedded, inside
+    /// the embedding request's deadline. What the deadline cuts off is stored as far as it got and
+    /// counted as `pending`; call again until `reindexed` is true — each call continues where the
+    /// last one stopped. Requires an embeddings backend: without one the answer is 503 and nothing
+    /// is written; 503 `kb_embedding_failed` when chunks needed a vector and the provider returned
+    /// none.
     ///
     /// `POST /api/v1/knowledge-bases/{kbId}/reindex`
     ///

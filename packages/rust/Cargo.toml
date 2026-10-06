@@ -1,8 +1,8 @@
 [package]
 name = "uarp-sdk"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
-rust-version = "1.88"
+rust-version = "1.89"
 license = "MIT"
 description = "Async Rust client for the UARP (Snaga) Universal Agent Runtime Platform API"
 repository = "https://github.com/Snaga-AI/uarp-sdks"

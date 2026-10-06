@@ -34,6 +34,8 @@ export class ProjectsResource extends APIResource {
    * project never claims a file the agent cannot read.
    *
    * `POST /api/v1/projects`
+   *
+   * Required scopes: `sessions:write`.
    */
   create(body: CreateProjectRequest, options?: RequestOptions): Promise<Project> {
     return this._client.request({
@@ -53,6 +55,8 @@ export class ProjectsResource extends APIResource {
    * with it is how people lose things they cannot get back.
    *
    * `DELETE /api/v1/projects/{projectId}`
+   *
+   * Required scopes: `sessions:write`.
    */
   delete(projectId: string, options?: RequestOptions): Promise<DeleteProjectResponse> {
     return this._client.request({
@@ -71,6 +75,8 @@ export class ProjectsResource extends APIResource {
    * private.
    *
    * `GET /api/v1/projects/{projectId}`
+   *
+   * Required scopes: `sessions:read`.
    */
   get(projectId: string, options?: RequestOptions): Promise<ProjectDetail> {
     return this._client.request({
@@ -89,6 +95,8 @@ export class ProjectsResource extends APIResource {
    * second call.
    *
    * `GET /api/v1/projects`
+   *
+   * Required scopes: `sessions:read`.
    */
   list(params?: ListProjectsParams, options?: RequestOptions): Promise<ListProjectsResponse> {
     return this._client.request({
@@ -113,7 +121,14 @@ export class ProjectsResource extends APIResource {
    * with 400: it would leave nobody able to open it. Signing in stamps the caller as owner at
    * that moment.
    *
+   * WRITE SEMANTICS: merges. A field the body omits keeps its stored value.
+   * `knowledge_base_ids`, `file_ids` and `shared_with` are replaced whole when sent, and
+   * `file_ids` that do not resolve in this tenant are dropped. An explicit null `archived_at`
+   * clears the archive.
+   *
    * `PATCH /api/v1/projects/{projectId}`
+   *
+   * Required scopes: `sessions:write`.
    */
   update(projectId: string, body: UpdateProjectRequest, options?: RequestOptions): Promise<Project> {
     return this._client.request({

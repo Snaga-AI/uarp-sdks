@@ -203,8 +203,6 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      * connection is created.
      *
      * `GET /api/v1/integrations/{provider}/oauth/callback`
-     *
-     * Required scopes: `agents:read`.
      */
     public suspend fun oauthCallback(provider: StartOAuthProvider, code: String, state: String, options: RequestOptions = RequestOptions()): JsonElement {
         val query = buildList {
@@ -236,6 +234,11 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      *
      * Owner/admin only: assignment is a tenant-policy decision, not a developer-level config
      * change. Each assigned and unassigned id is audit-logged.
+     *
+     * WRITE SEMANTICS: replaces. `integration_ids` is this agent's complete assignment set: an
+     * integration the array omits is unassigned from this agent and a listed one is assigned.
+     * Non-string entries are dropped silently and unknown ids are reported in `diff.unknown`
+     * rather than refused. Other agents' assignments on the same integrations are kept.
      *
      * `PUT /api/v1/agents/{agentId}/integrations`
      *
@@ -345,6 +348,12 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      * record unchanged; any write is audit-logged as `integration.updated`. 404 when the
      * integration is not in the tenant.
      *
+     * WRITE SEMANTICS: mixed. An omitted `name`, `config` or `assigned_agent_ids` keeps its stored
+     * value. `config` merges one level deep over the stored config inside the store's
+     * compare-and-set, and a key sent as the `\[stored\]` mask keeps its stored value. An
+     * `assigned_agent_ids` list that is present replaces the stored list. A null `config` is
+     * ignored. Whether a partial `config` passes each connector's validator was not measured.
+     *
      * `PATCH /api/v1/integrations/{integrationId}`
      *
      * Required scopes: `agents:write`.
@@ -371,8 +380,14 @@ public class IntegrationsApi internal constructor(private val client: UarpClient
      * masked GET non-destructive. Moving the credential anchor (an email connector's `smtp_host`,
      * a webhook connector's `url`) while leaning on a masked secret is refused with 422: stored
      * credentials are not carried to a new endpoint. A money-moving connector requires owner or
-     * admin for a config write (403). The merged config must pass the connector's own validation
-     * (422). The write is audit-logged as `integration.updated`.
+     * admin for a config write (403). The sent config keys, after unmasking, must pass the
+     * connector's own validation (422). The write is audit-logged as `integration.updated`.
+     *
+     * WRITE SEMANTICS: merges. An omitted `name` or `config` keeps its stored value. `config` is
+     * shallow-merged at the top level into the stored config inside the store's compare-and-set:
+     * an omitted key keeps its value, a sent key (nested objects included) replaces it whole, and
+     * a key sent as `\[stored\]` keeps its stored value. Validation sees only the sent keys after
+     * unmasking, not the merged result.
      *
      * `PATCH /api/v1/agents/{agentId}/integrations/{integrationId}`
      *

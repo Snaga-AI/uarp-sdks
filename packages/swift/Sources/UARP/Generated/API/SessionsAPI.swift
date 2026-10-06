@@ -36,7 +36,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `POST /api/v1/sessions/bulk-delete`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func bulkDeleteSessions(body: BulkDeleteSessionsRequest, options: RequestOptions = .init()) async throws -> BulkDeleteSessionsResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -79,7 +79,7 @@ public struct SessionsAPI: Sendable {
     /// `POST /api/v1/sessions/{sessionId}/todos/{todoId}/confirm`
     ///
     /// Required scopes: `sessions:write`.
-    public func confirmSessionTodo(sessionId: String, todoId: String, body: JSONObject? = nil, options: RequestOptions = .init()) async throws -> Todo {
+    public func confirmSessionTodo(sessionId: String, todoId: String, body: ConfirmSessionTodoRequest? = nil, options: RequestOptions = .init()) async throws -> Todo {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",
@@ -97,13 +97,16 @@ public struct SessionsAPI: Sendable {
     /// already reached by sessions that are both `active` and not past their expiry. To absorb
     /// double-submits the handler first looks for an active session on the same agent, created
     /// within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
-    /// instead of minting a second one — so a `200` here means an existing session was reused. A
-    /// new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
-    /// record written alongside it for the session list.
+    /// instead of minting a second one — so a `200` here means an existing session was reused. The
+    /// reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
+    /// merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
+    /// silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
+    /// `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
+    /// for the session list.
     ///
     /// `POST /api/v1/sessions`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func create(body: CreateSessionRequest, options: RequestOptions = .init()) async throws -> Session {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -125,7 +128,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `POST /api/v1/sessions/{sessionId}/annotations`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest, options: RequestOptions = .init()) async throws -> CreateSessionAnnotationResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -167,7 +170,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `POST /api/v1/sessions/{sessionId}/share`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func createSessionShare(sessionId: String, body: CreateSessionShareRequest, options: RequestOptions = .init()) async throws -> CreateSessionShareResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -208,9 +211,13 @@ public struct SessionsAPI: Sendable {
     ///
     /// Addresses one agent, several agents (fan-out, one session each, shared parent_task_id), or a
     /// squad. The server bootstraps the session(s). `due_at` omitted fires immediately; a timestamp
-    /// schedules it; explicit `null` files it in the backlog with no schedule at all.
+    /// schedules it; explicit `null` files it in the backlog with no schedule at all. Requires the
+    /// `sessions` write permission and the `sessions:write` scope; a key holding `runs:create`
+    /// instead is also accepted, as on every session write.
     ///
     /// `POST /api/v1/todos`
+    ///
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func createTask(body: JSONValue, options: RequestOptions = .init()) async throws -> CreatedTask {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -229,7 +236,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
@@ -357,12 +364,31 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}/audit-log`
     ///
     /// Required scopes: `sessions:read`.
-    public func getSessionAuditLog(sessionId: String, options: RequestOptions = .init()) async throws -> GetSessionAuditLogResponse {
+    public func getSessionAuditLog(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetSessionAuditLogResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/audit-log",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `getSessionAuditLog`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getSessionAuditLogAll(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AuditLogEntry, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getSessionAuditLog(sessionId: sessionId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.auditLog },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// The conversation transcript
@@ -380,15 +406,38 @@ public struct SessionsAPI: Sendable {
     /// A session that does not exist is 404, not an empty list: "no messages yet" and "no such
     /// session" must not render the same.
     ///
+    /// There is no paging: the whole transcript comes back and `total` is its length. A `limit` (or
+    /// any other) query parameter is not read — measured 2026-10-01, `?limit=2` and no parameter
+    /// answer the same 16 messages — so a client should not send one expecting fewer.
+    ///
     /// `GET /api/v1/sessions/{sessionId}/messages`
     ///
     /// Required scopes: `sessions:read`.
-    public func getSessionMessages(sessionId: String, options: RequestOptions = .init()) async throws -> GetSessionMessagesResponse {
+    public func getSessionMessages(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetSessionMessagesResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/messages",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `getSessionMessages`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getSessionMessagesAll(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<ConversationEntry, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getSessionMessages(sessionId: sessionId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.items },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Get feedback for a run in session
@@ -428,6 +477,27 @@ public struct SessionsAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/share",
+            options: options
+        ))
+    }
+
+    /// Import a transcript that ran elsewhere (the CLI)
+    ///
+    /// Records a session whose turns already happened on the caller's machine — nothing is executed
+    /// and nothing is billed. Entries carry synthetic run ids with no run behind them. Re-importing
+    /// with the same `session_id` updates that session (200) instead of creating a second one
+    /// (201); an id that names a session created on the platform is refused. `agent_id` must name
+    /// an agent in this tenant (404 otherwise); `messages` holds 1–2000 entries.
+    ///
+    /// `POST /api/v1/sessions/import`
+    ///
+    /// Required scopes: `runs:create`, `sessions:write`.
+    public func `import`(body: ImportSessionRequest, options: RequestOptions = .init()) async throws -> Session {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/sessions/import",
+            body: try client.encode(body),
+            idempotent: true,
             options: options
         ))
     }
@@ -481,12 +551,31 @@ public struct SessionsAPI: Sendable {
     /// `GET /api/v1/sessions/{sessionId}/annotations`
     ///
     /// Required scopes: `sessions:read`.
-    public func listSessionAnnotations(sessionId: String, options: RequestOptions = .init()) async throws -> ListSessionAnnotationsResponse {
+    public func listSessionAnnotations(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListSessionAnnotationsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/annotations",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listSessionAnnotations`, following the `cursor` cursor until
+    /// the server reports no further pages.
+    public func listSessionAnnotationsAll(sessionId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<ListSessionAnnotationsResponseItem, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listSessionAnnotations(sessionId: sessionId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.items ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// List artifacts across all runs in session
@@ -570,6 +659,8 @@ public struct SessionsAPI: Sendable {
     /// than a result limit.
     ///
     /// `GET /api/v1/todos`
+    ///
+    /// Required scopes: `sessions:read`.
     public func listTodos(options: RequestOptions = .init()) async throws -> ListTodosResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -607,7 +698,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `DELETE /api/v1/sessions/{sessionId}/share`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func revokeSessionShare(sessionId: String, options: RequestOptions = .init()) async throws {
         try await client.sendVoid(RequestSpec(
             method: "DELETE",
@@ -644,7 +735,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `POST /api/v1/sessions/{sessionId}/messages`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func sendSessionMessage(sessionId: String, body: SendSessionMessageRequest, options: RequestOptions = .init()) async throws -> SendSessionMessageResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -663,6 +754,11 @@ public struct SessionsAPI: Sendable {
     /// older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
     /// them — but cannot be matched back to the transcript, and each such arrival is counted per
     /// day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+    ///
+    /// WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+    /// `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+    /// `reason` drops a previously stored one. Other callers' rows and other messages' rows are
+    /// untouched.
     ///
     /// `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
     ///
@@ -688,7 +784,7 @@ public struct SessionsAPI: Sendable {
     ///
     /// `GET /api/v1/sessions/{sessionId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `sessions:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
     public func streamSessionEvents(sessionId: String, token: String? = nil, lastEventId: String? = nil, options: RequestOptions = .init()) -> EventStream {
@@ -739,9 +835,13 @@ public struct SessionsAPI: Sendable {
     /// without changing them. `404` when the session or the annotation does not exist. Returns the
     /// annotation as stored.
     ///
+    /// WRITE SEMANTICS: merges. Only `resolved` is applied, and only when the body sends it; every
+    /// other stored field keeps its value. The schema strips unknown keys, so a body naming
+    /// `content`, `author` or `message_id` succeeds and changes nothing.
+    ///
     /// `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
     ///
-    /// Required scopes: `sessions:write`.
+    /// Required scopes: `runs:create`, `sessions:write`.
     public func updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = nil, options: RequestOptions = .init()) async throws -> SessionAnnotation {
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
@@ -766,7 +866,7 @@ public struct SessionsAPI: Sendable {
     /// `PATCH /api/v1/sessions/{sessionId}/todos/{todoId}`
     ///
     /// Required scopes: `sessions:write`.
-    public func updateSessionTodo(sessionId: String, todoId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Todo {
+    public func updateSessionTodo(sessionId: String, todoId: String, body: UpdateSessionTodoRequest, options: RequestOptions = .init()) async throws -> Todo {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/sessions/\(encodePathSegment(sessionId))/todos/\(encodePathSegment(todoId))",

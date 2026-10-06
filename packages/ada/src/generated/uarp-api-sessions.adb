@@ -57,7 +57,7 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Todo_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Confirm_Session_Todo_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Todo
@@ -68,7 +68,7 @@ package body UARP.API.Sessions is
             (Self,
              "POST",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id) & "/confirm",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => Include_Payload,
              Idempotent => True,
              Options => Options));
@@ -294,32 +294,148 @@ package body UARP.API.Sessions is
    function Get_Session_Audit_Log
      (Self : Client_Type;
       Session_Id : String;
+      Params : Get_Session_Audit_Log_Params := No_Get_Session_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Session_Audit_Log_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/audit-log",
+             Query => Query,
              Options => Options));
    end Get_Session_Audit_Log;
+
+   function Get_Session_Audit_Log_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Get_Session_Audit_Log_Params := No_Get_Session_Audit_Log_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Audit_Log_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Audit_Log_Entry_Vectors.Vector;
+      Page_Params : Get_Session_Audit_Log_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Session_Audit_Log_Response :=
+               Get_Session_Audit_Log
+                  (Self,
+                   Session_Id => Session_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Audit_Log loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Audit_Log.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Session_Audit_Log_All;
 
    function Get_Session_Messages
      (Self : Client_Type;
       Session_Id : String;
+      Params : Get_Session_Messages_Params := No_Get_Session_Messages_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Session_Messages_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/messages",
+             Query => Query,
              Options => Options));
    end Get_Session_Messages;
+
+   function Get_Session_Messages_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Get_Session_Messages_Params := No_Get_Session_Messages_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Conversation_Entry_Vectors.Vector
+   is
+      Collected : UARP.Models.Conversation_Entry_Vectors.Vector;
+      Page_Params : Get_Session_Messages_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.Get_Session_Messages_Response :=
+               Get_Session_Messages
+                  (Self,
+                   Session_Id => Session_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end Get_Session_Messages_All;
 
    function Get_Session_Run_Feedback
      (Self : Client_Type;
@@ -354,6 +470,24 @@ package body UARP.API.Sessions is
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/share",
              Options => Options));
    end Get_Session_Share;
+
+   function Import
+     (Self : Client_Type;
+      Payload : UARP.Models.Import_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/sessions/import",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Import;
 
    function List
      (Self : Client_Type;
@@ -431,17 +565,75 @@ package body UARP.API.Sessions is
    function List_Session_Annotations
      (Self : Client_Type;
       Session_Id : String;
+      Params : List_Session_Annotations_Params := No_List_Session_Annotations_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Session_Annotations_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/annotations",
+             Query => Query,
              Options => Options));
    end List_Session_Annotations;
+
+   function List_Session_Annotations_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : List_Session_Annotations_Params := No_List_Session_Annotations_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.List_Session_Annotations_Response_Item_Vectors.Vector
+   is
+      Collected : UARP.Models.List_Session_Annotations_Response_Item_Vectors.Vector;
+      Page_Params : List_Session_Annotations_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Session_Annotations_Response :=
+               List_Session_Annotations
+                  (Self,
+                   Session_Id => Session_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Session_Annotations_All;
 
    function List_Session_Artifacts
      (Self : Client_Type;
@@ -665,7 +857,7 @@ package body UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Todo_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Session_Todo_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Todo
    is
@@ -675,7 +867,7 @@ package body UARP.API.Sessions is
             (Self,
              "PATCH",
              "/api/v1/sessions/" & UARP.Types.Encode_Path_Segment (Session_Id) & "/todos/" & UARP.Types.Encode_Path_Segment (Todo_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

@@ -60,6 +60,24 @@ package UARP.HTTP is
       Status             : out Natural;
       Result             : out Stream_Result);
 
+   --  POST ``Payload`` and hand each chunk of a 2xx ``text/event-stream``
+   --  answer to ``Handler``.  Any other answer -- a non-2xx, or a 2xx that is
+   --  not an event stream -- never reaches ``Handler``: ``Refused`` is set and
+   --  up to 64 KiB of its body come back in ``Refusal`` for the caller to
+   --  decode.  One attempt; nothing here retries.
+   procedure Stream_Post
+     (URL                : String;
+      Headers            : Pair_Vectors.Vector;
+      Payload            : String;
+      Timeout_Ms         : Natural;
+      Inactivity_Seconds : Natural;
+      Handler            : Chunk_Handler;
+      Context            : System.Address;
+      Status             : out Natural;
+      Refused            : out Boolean;
+      Refusal            : out Text;
+      Result             : out Stream_Result);
+
    --  Split a raw response header block into name/value pairs.
    function Parse_Headers (Block : String) return Pair_Vectors.Vector;
 

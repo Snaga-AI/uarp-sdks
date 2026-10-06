@@ -345,6 +345,9 @@ package body UARP.API.Agents is
       if Params.Has_Include_Offline then
          UARP.Types.Add (Query, "include_offline", Params.Include_Offline);
       end if;
+      if Params.Has_Include_Children then
+         UARP.Types.Add (Query, "include_children", Params.Include_Children);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
@@ -404,17 +407,75 @@ package body UARP.API.Agents is
    function List_Agent_Bookmarks
      (Self : Client_Type;
       Agent_Id : String;
+      Params : List_Agent_Bookmarks_Params := No_List_Agent_Bookmarks_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_Bookmarks_Response
    is
+      Query : UARP.Types.Pair_Vectors.Vector;
    begin
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      if Params.Has_Cursor then
+         UARP.Types.Add (Query, "cursor", Params.Cursor);
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,
              "GET",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/bookmarks",
+             Query => Query,
              Options => Options));
    end List_Agent_Bookmarks;
+
+   function List_Agent_Bookmarks_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Bookmarks_Params := No_List_Agent_Bookmarks_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Agent_Bookmark_Vectors.Vector
+   is
+      Collected : UARP.Models.Agent_Bookmark_Vectors.Vector;
+      Page_Params : List_Agent_Bookmarks_Params := Params;
+      Seen : UARP.Types.Text_Vectors.Vector;
+      --  Consecutive empty pages tolerated before the walk gives up.
+      Empty_Page_Limit : constant := 3;
+      Empty_Pages : Natural := 0;
+   begin
+      loop
+         declare
+            Page : constant UARP.Models.List_Agent_Bookmarks_Response :=
+               List_Agent_Bookmarks
+                  (Self,
+                   Agent_Id => Agent_Id,
+                   Params => Page_Params,
+                   Options => Options);
+         begin
+            for Item of Page.Items loop
+               Collected.Append (Item);
+               if Max_Items > 0 and then Natural (Collected.Length) >= Max_Items then
+                  return Collected;
+               end if;
+            end loop;
+            if Page.Items.Is_Empty then
+               Empty_Pages := Empty_Pages + 1;
+               exit when Empty_Pages >= Empty_Page_Limit;
+            else
+               Empty_Pages := 0;
+            end if;
+            exit when Page.Has_Has_More and then not Page.Has_More;
+            exit when not Page.Has_Cursor;
+            exit when UARP.Types.SU.Length (Page.Cursor) = 0;
+            --  A server that keeps echoing one cursor must not spin us forever.
+            exit when Seen.Contains (Page.Cursor);
+            Seen.Append (Page.Cursor);
+            Page_Params.Has_Cursor := True;
+            Page_Params.Cursor := Page.Cursor;
+         end;
+      end loop;
+      return Collected;
+   end List_Agent_Bookmarks_All;
 
    function List_Agent_Mail
      (Self : Client_Type;
@@ -521,7 +582,7 @@ package body UARP.API.Agents is
    function Patch
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Agent_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent
    is
@@ -531,7 +592,7 @@ package body UARP.API.Agents is
             (Self,
              "PATCH",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));
@@ -591,7 +652,7 @@ package body UARP.API.Agents is
    function Set_Agent_Capabilities
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Agent_Capabilities_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Agent_Capabilities_Response
    is
@@ -601,7 +662,7 @@ package body UARP.API.Agents is
             (Self,
              "PUT",
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/capabilities",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

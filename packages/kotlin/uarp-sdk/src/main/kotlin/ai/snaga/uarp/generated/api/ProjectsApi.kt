@@ -30,6 +30,8 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      * project never claims a file the agent cannot read.
      *
      * `POST /api/v1/projects`
+     *
+     * Required scopes: `sessions:write`.
      */
     public suspend fun create(body: CreateProjectRequest, options: RequestOptions = RequestOptions()): Project {
         return client.request<Project>(
@@ -51,6 +53,8 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      * with it is how people lose things they cannot get back.
      *
      * `DELETE /api/v1/projects/{projectId}`
+     *
+     * Required scopes: `sessions:write`.
      */
     public suspend fun delete(projectId: String, options: RequestOptions = RequestOptions()): DeleteProjectResponse {
         return client.request<DeleteProjectResponse>(
@@ -71,6 +75,8 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      * private.
      *
      * `GET /api/v1/projects/{projectId}`
+     *
+     * Required scopes: `sessions:read`.
      */
     public suspend fun `get`(projectId: String, options: RequestOptions = RequestOptions()): ProjectDetail {
         return client.request<ProjectDetail>(
@@ -91,6 +97,8 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      * second call.
      *
      * `GET /api/v1/projects`
+     *
+     * Required scopes: `sessions:read`.
      */
     public suspend fun list(archived: GetRunChangedFiles? = null, options: RequestOptions = RequestOptions()): ListProjectsResponse {
         val query = buildList {
@@ -120,7 +128,14 @@ public class ProjectsApi internal constructor(private val client: UarpClient) {
      * with 400: it would leave nobody able to open it. Signing in stamps the caller as owner at
      * that moment.
      *
+     * WRITE SEMANTICS: merges. A field the body omits keeps its stored value.
+     * `knowledge_base_ids`, `file_ids` and `shared_with` are replaced whole when sent, and
+     * `file_ids` that do not resolve in this tenant are dropped. An explicit null `archived_at`
+     * clears the archive.
+     *
      * `PATCH /api/v1/projects/{projectId}`
+     *
+     * Required scopes: `sessions:write`.
      */
     public suspend fun update(projectId: String, body: UpdateProjectRequest, options: RequestOptions = RequestOptions()): Project {
         return client.request<Project>(

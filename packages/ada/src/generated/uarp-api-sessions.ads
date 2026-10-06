@@ -29,6 +29,34 @@ package UARP.API.Sessions is
 
    No_Export_Session_Params : constant Export_Session_Params := (others => <>);
 
+   --  Query and header parameters for `getSessionAuditLog`.
+   type Get_Session_Audit_Log_Params is record
+      --  Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+      --  existed - not a default page. Values outside 1..500 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Session_Audit_Log_Params : constant Get_Session_Audit_Log_Params := (others => <>);
+
+   --  Query and header parameters for `getSessionMessages`.
+   type Get_Session_Messages_Params is record
+      --  Page size, oldest first, as the transcript reads. ABSENT means the whole list, exactly as
+      --  before paging existed - not a default page. Values outside 1..500 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Session_Messages_Params : constant Get_Session_Messages_Params := (others => <>);
+
    --  Query and header parameters for `getSessionRunFeedback`.
    type Get_Session_Run_Feedback_Params is record
       --  Required - the handler answers 400 without it. Declared without `required` until 2026-09-18,
@@ -51,6 +79,22 @@ package UARP.API.Sessions is
    end record;
 
    No_List_Sessions_Params : constant List_Sessions_Params := (others => <>);
+
+   --  Query and header parameters for `listSessionAnnotations`.
+   type List_Session_Annotations_Params is record
+      --  Page size, counted back from the newest annotation; oldest first within a page. ABSENT means
+      --  the newest 500 annotations, with no paging fields (the window size this list has always had;
+      --  before 2026-10-02 some answered their OLDEST rows). Values outside 1..500 are clamped, not
+      --  refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Session_Annotations_Params : constant List_Session_Annotations_Params := (others => <>);
 
    --  Query and header parameters for `listSessionTodos`.
    type List_Session_Todos_Params is record
@@ -102,7 +146,7 @@ package UARP.API.Sessions is
    --
    --  POST /api/v1/sessions/bulk-delete
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Bulk_Delete_Sessions
      (Self : Client_Type;
       Payload : UARP.Models.Bulk_Delete_Sessions_Request;
@@ -142,7 +186,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Todo_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Confirm_Session_Todo_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Todo;
@@ -154,13 +198,16 @@ package UARP.API.Sessions is
    --  already reached by sessions that are both `active` and not past their expiry. To absorb
    --  double-submits the handler first looks for an active session on the same agent, created
    --  within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
-   --  instead of minting a second one - so a `200` here means an existing session was reused. A
-   --  new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
-   --  record written alongside it for the session list.
+   --  instead of minting a second one - so a `200` here means an existing session was reused. The
+   --  reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
+   --  merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
+   --  silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
+   --  `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
+   --  for the session list.
    --
    --  POST /api/v1/sessions
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Create_Session_Request;
@@ -178,7 +225,7 @@ package UARP.API.Sessions is
    --
    --  POST /api/v1/sessions/{sessionId}/annotations
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Create_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
@@ -214,7 +261,7 @@ package UARP.API.Sessions is
    --
    --  POST /api/v1/sessions/{sessionId}/share
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Create_Session_Share
      (Self : Client_Type;
       Session_Id : String;
@@ -249,9 +296,13 @@ package UARP.API.Sessions is
    --
    --  Addresses one agent, several agents (fan-out, one session each, shared parent_task_id), or a
    --  squad. The server bootstraps the session(s). `due_at` omitted fires immediately; a timestamp
-   --  schedules it; explicit `null` files it in the backlog with no schedule at all.
+   --  schedules it; explicit `null` files it in the backlog with no schedule at all. Requires the
+   --  `sessions` write permission and the `sessions:write` scope; a key holding `runs:create`
+   --  instead is also accepted, as on every session write.
    --
    --  POST /api/v1/todos
+   --
+   --  Required scopes: runs:create, sessions:write.
    function Create_Task
      (Self : Client_Type;
       Payload : UARP.JSON_Support.JSON_Value;
@@ -266,7 +317,7 @@ package UARP.API.Sessions is
    --
    --  DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    procedure Delete_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
@@ -377,8 +428,19 @@ package UARP.API.Sessions is
    function Get_Session_Audit_Log
      (Self : Client_Type;
       Session_Id : String;
+      Params : Get_Session_Audit_Log_Params := No_Get_Session_Audit_Log_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Session_Audit_Log_Response;
+
+   --  Collect every item `getSessionAuditLog` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Session_Audit_Log_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Get_Session_Audit_Log_Params := No_Get_Session_Audit_Log_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Audit_Log_Entry_Vectors.Vector;
 
    --  The conversation transcript
    --
@@ -395,14 +457,29 @@ package UARP.API.Sessions is
    --  A session that does not exist is 404, not an empty list: "no messages yet" and "no such
    --  session" must not render the same.
    --
+   --  There is no paging: the whole transcript comes back and `total` is its length. A `limit` (or
+   --  any other) query parameter is not read - measured 2026-10-01, `?limit=2` and no parameter
+   --  answer the same 16 messages - so a client should not send one expecting fewer.
+   --
    --  GET /api/v1/sessions/{sessionId}/messages
    --
    --  Required scopes: sessions:read.
    function Get_Session_Messages
      (Self : Client_Type;
       Session_Id : String;
+      Params : Get_Session_Messages_Params := No_Get_Session_Messages_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Session_Messages_Response;
+
+   --  Collect every item `getSessionMessages` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Session_Messages_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : Get_Session_Messages_Params := No_Get_Session_Messages_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Conversation_Entry_Vectors.Vector;
 
    --  Get feedback for a run in session
    --
@@ -439,6 +516,23 @@ package UARP.API.Sessions is
       Session_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Session_Share_Response;
+
+   --  Import a transcript that ran elsewhere (the CLI)
+   --
+   --  Records a session whose turns already happened on the caller's machine - nothing is executed
+   --  and nothing is billed. Entries carry synthetic run ids with no run behind them. Re-importing
+   --  with the same `session_id` updates that session (200) instead of creating a second one
+   --  (201); an id that names a session created on the platform is refused. `agent_id` must name
+   --  an agent in this tenant (404 otherwise); `messages` holds 1-2000 entries.
+   --
+   --  POST /api/v1/sessions/import
+   --
+   --  Required scopes: runs:create, sessions:write.
+   function Import
+     (Self : Client_Type;
+      Payload : UARP.Models.Import_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Session;
 
    --  List sessions
    --
@@ -477,8 +571,19 @@ package UARP.API.Sessions is
    function List_Session_Annotations
      (Self : Client_Type;
       Session_Id : String;
+      Params : List_Session_Annotations_Params := No_List_Session_Annotations_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Session_Annotations_Response;
+
+   --  Collect every item `listSessionAnnotations` returns, following the `cursor` cursor. Stops
+   --  early when Max_Items is reached (0 means no limit).
+   function List_Session_Annotations_All
+     (Self : Client_Type;
+      Session_Id : String;
+      Params : List_Session_Annotations_Params := No_List_Session_Annotations_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.List_Session_Annotations_Response_Item_Vectors.Vector;
 
    --  List artifacts across all runs in session
    --
@@ -548,6 +653,8 @@ package UARP.API.Sessions is
    --  than a result limit.
    --
    --  GET /api/v1/todos
+   --
+   --  Required scopes: sessions:read.
    function List_Todos
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -580,7 +687,7 @@ package UARP.API.Sessions is
    --
    --  DELETE /api/v1/sessions/{sessionId}/share
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    procedure Revoke_Session_Share
      (Self : Client_Type;
       Session_Id : String;
@@ -611,7 +718,7 @@ package UARP.API.Sessions is
    --
    --  POST /api/v1/sessions/{sessionId}/messages
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Send_Session_Message
      (Self : Client_Type;
       Session_Id : String;
@@ -627,6 +734,11 @@ package UARP.API.Sessions is
    --  older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
    --  them - but cannot be matched back to the transcript, and each such arrival is counted per
    --  day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+   --
+   --  WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+   --  `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+   --  `reason` drops a previously stored one. Other callers' rows and other messages' rows are
+   --  untouched.
    --
    --  PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback
    --
@@ -650,7 +762,7 @@ package UARP.API.Sessions is
    --
    --  GET /api/v1/sessions/{sessionId}/events
    --
-   --  Required scopes: events:read.
+   --  Required scopes: sessions:read.
    --
    --  Dispatches every event to Sink until the stream ends or the sink stops it.
    procedure Stream_Session_Events
@@ -687,9 +799,13 @@ package UARP.API.Sessions is
    --  without changing them. `404` when the session or the annotation does not exist. Returns the
    --  annotation as stored.
    --
+   --  WRITE SEMANTICS: merges. Only `resolved` is applied, and only when the body sends it; every
+   --  other stored field keeps its value. The schema strips unknown keys, so a body naming
+   --  `content`, `author` or `message_id` succeeds and changes nothing.
+   --
    --  PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}
    --
-   --  Required scopes: sessions:write.
+   --  Required scopes: runs:create, sessions:write.
    function Update_Session_Annotation
      (Self : Client_Type;
       Session_Id : String;
@@ -716,7 +832,7 @@ package UARP.API.Sessions is
      (Self : Client_Type;
       Session_Id : String;
       Todo_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Session_Todo_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Todo;
 

@@ -1,8 +1,14 @@
 package ai.snaga.uarp
 
 import java.io.IOException
+import java.io.InterruptedIOException
+import kotlinx.coroutines.CoroutineStart
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.awaitCancellation
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOn
@@ -10,6 +16,7 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.json.JsonElement
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okio.BufferedSource
 import kotlin.math.pow
 import kotlin.random.Random
@@ -253,6 +260,98 @@ public fun sseFlow(client: UarpClient, spec: RequestSpec): Flow<ServerEvent> = f
     // flow has already decided it is done.
     if (currentCoroutineContext().isActive) options.onState?.invoke(StreamState.Disconnected)
 }.flowOn(Dispatchers.IO)
+
+/**
+ * The flow behind [UarpClient.streamPost]: one POST, its answer read as events.
+ *
+ * Deliberately not [sseFlow] with reconnect switched off. That flow re-opens
+ * on a dropped socket or an HTTP error, which for a GET is a resume and for a
+ * POST is a second model run billed twice; here there is no loop to re-enter.
+ * The decoder is the same [SseParser].
+ */
+internal fun postSseFlow(client: UarpClient, spec: RequestSpec): Flow<ServerEvent> = flow {
+    // A long generation outlives the unary call timeout; the caller bounds the
+    // stream by cancelling it.
+    val once = spec.copy(options = spec.options.copy(timeoutMillis = 0))
+    val request = client.buildRequest(once, client.idempotencyKeyFor(once), accept = "text/event-stream")
+    val call = client.httpFor(once.options).newCall(request)
+    val response = try {
+        call.await()
+    } catch (error: IOException) {
+        throw if (error is InterruptedIOException) {
+            TimeoutException(cause = error)
+        } else {
+            ConnectionException(error.message ?: "could not open event stream", error)
+        }
+    }
+
+    if (!response.isSuccessful) {
+        val text = response.use { it.body?.string().orEmpty() }
+        throw ApiException(response.code, parseProblem(text), response.headers.toMap(), text.ifBlank { null })
+    }
+
+    // A 2xx that is not an event stream — the body left out `"stream": true`,
+    // or a proxy answered — would otherwise decode to no events, or to a JSON
+    // line taken for one, and read as a stream that simply finished.
+    val contentType = response.header("Content-Type")
+    if (!isEventStream(contentType)) {
+        val text = response.use { it.body?.string().orEmpty() }
+        throw ApiException(
+            response.code,
+            Problem(
+                title = "Not an event stream",
+                status = response.code,
+                detail = "expected text/event-stream, got ${contentType ?: "no Content-Type"}",
+            ),
+            response.headers.toMap(),
+            text.ifBlank { null },
+        )
+    }
+
+    coroutineScope {
+        // A read blocked on a silent socket never notices cancellation — a model
+        // can think for minutes without a byte. Cancelling the call closes the
+        // socket, which is what unblocks it. Started undispatched so the
+        // `finally` is armed before the first read.
+        val closer = launch(start = CoroutineStart.UNDISPATCHED) {
+            try {
+                awaitCancellation()
+            } finally {
+                call.cancel()
+            }
+        }
+        try {
+            response.use { open ->
+                val source = open.body?.source() ?: throw StreamException("event stream response has no body")
+                val parser = SseParser()
+                read@ while (true) {
+                    val line = try {
+                        source.readUtf8Line()
+                    } catch (error: IOException) {
+                        // The caller stopping is not a failure of the stream.
+                        currentCoroutineContext().ensureActive()
+                        // A POST cannot be resumed, and a completion cut short
+                        // must not read as a finished one.
+                        throw StreamException("event stream broke off: ${error.message}", error)
+                    } ?: break@read
+                    parser.feed(line)?.let { emit(it) }
+                    // `[DONE]` flushed any pending event above and is itself
+                    // never delivered.
+                    if (parser.isDone) break@read
+                }
+                if (!parser.isDone) parser.finish()?.let { emit(it) }
+            }
+        } finally {
+            closer.cancel()
+        }
+    }
+}.flowOn(Dispatchers.IO)
+
+/** `text/event-stream`, parameters such as `; charset=utf-8` allowed. */
+internal fun isEventStream(contentType: String?): Boolean {
+    val media = contentType?.toMediaTypeOrNull() ?: return false
+    return media.type == "text" && media.subtype == "event-stream"
+}
 
 /** Half-deterministic, half-random backoff: `maxSleep/2 + rand(0..maxSleep/2)`,
  *  so it climbs with attempts but clients don't all wake on the same boundary. */

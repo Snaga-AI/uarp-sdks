@@ -134,6 +134,33 @@ Options.Reconnect := False;      --  return as soon as the stream ends
 Options.Max_Reconnects := 3;     --  give up after three fruitless attempts
 ```
 
+### Streaming a POST
+
+An answer that comes back as server-sent events to a POST — an LLM completion
+with `"stream": true` — is read with `UARP.Client.Execute_Stream`. A streamed
+completion starts in seconds; the platform cuts a silent non-streamed one at
+120 s.
+
+```ada
+Status  : Natural;
+Raw     : UARP.Types.Text;
+Problem : UARP.Errors.Problem;
+...
+UARP.Client.Execute_Stream
+  (Client, "/api/v1/llm/chat/completions",
+   "{""model"":""ollama/deepseek-v4.1-flash"",""stream"":true,"
+   & """messages"":[{""role"":""user"",""content"":""hi""}]}",
+   Sink => Output, Status => Status, Body_Text => Raw, Problem => Problem);
+```
+
+It is sent once and never replayed — not on a dropped connection, not on 429 —
+because a second POST would run and bill the model twice. The stream ends at
+`data: [DONE]`, which is not delivered. A refusal, or a 2xx that is not
+`text/event-stream`, reaches the sink as nothing: it comes back as `Status`,
+`Body_Text` and `Problem` (success is a 2xx with an empty `Problem`). A broken
+connection raises `Transport_Error`. `UARP.Client.Stream_Post` is the same call
+raising `API_Error` instead.
+
 ## Pagination
 
 `<Operation>_All` collects every page into a vector, following the cursor:
@@ -222,6 +249,10 @@ directly, for endpoints the generated surface does not fit.
 
 - Each `Character` of a `Text` value is one byte, so binary downloads and
   multipart uploads work without extra encoding.
+- An `application/x-www-form-urlencoded` body (the Sign in with Apple web
+  callback) is built from its request record by `UARP.Form.Encode`: fields in
+  schema order, unset ones left out, escaped byte for byte as
+  `URLSearchParams` does (`+` for a space, `~` escaped).
 - Bodies that are a bare scalar, array or free-form object (60 endpoints) take
   a `JSON_Value` rather than a generated record, and 243 operations return one
   for the same reason — the API document describes no schema for their

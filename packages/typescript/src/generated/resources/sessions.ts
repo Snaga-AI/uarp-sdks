@@ -7,9 +7,12 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   ActivateSessionBranchResponse,
+  AuditLogEntry,
   BulkDeleteSessionsRequest,
   BulkDeleteSessionsResponse,
   CloseSessionResponse,
+  ConfirmSessionTodoRequest,
+  ConversationEntry,
   CreateSessionAnnotationRequest,
   CreateSessionAnnotationResponse,
   CreateSessionBranchRequest,
@@ -24,9 +27,10 @@ import type {
   GetSessionAuditLogResponse,
   GetSessionMessagesResponse,
   GetSessionShareResponse,
-  JsonObject,
+  ImportSessionRequest,
   JsonValue,
   ListSessionAnnotationsResponse,
+  ListSessionAnnotationsResponseItem,
   ListSessionArtifactsResponse,
   ListSessionBranchesResponse,
   ListSessionTodosResponse,
@@ -47,6 +51,7 @@ import type {
   Todo,
   UpdateSessionAnnotationRequest,
   UpdateSessionRequest,
+  UpdateSessionTodoRequest,
 } from '../models.js';
 
 /**
@@ -65,6 +70,38 @@ export interface DeleteSessionRunFeedbackParams {
  */
 export interface ExportSessionParams {
   format?: ExportSessionFormat;
+}
+
+/**
+ * Query and header parameters for `getSessionAuditLog`.
+ */
+export interface GetSessionAuditLogParams {
+  /**
+   * Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+   * existed — not a default page. Values outside 1..500 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
+
+/**
+ * Query and header parameters for `getSessionMessages`.
+ */
+export interface GetSessionMessagesParams {
+  /**
+   * Page size, oldest first, as the transcript reads. ABSENT means the whole list, exactly as
+   * before paging existed — not a default page. Values outside 1..500 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -89,6 +126,24 @@ export interface ListSessionsParams {
   limit?: number;
   /**
    * Opaque pagination cursor returned by previous page response.
+   */
+  cursor?: string;
+}
+
+/**
+ * Query and header parameters for `listSessionAnnotations`.
+ */
+export interface ListSessionAnnotationsParams {
+  /**
+   * Page size, counted back from the newest annotation; oldest first within a page. ABSENT means
+   * the newest 500 annotations, with no paging fields (the window size this list has always had;
+   * before 2026-10-02 some answered their OLDEST rows). Values outside 1..500 are clamped, not
+   * refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
    */
   cursor?: string;
 }
@@ -152,7 +207,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/sessions/bulk-delete`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   bulkDeleteSessions(body: BulkDeleteSessionsRequest, options?: RequestOptions): Promise<BulkDeleteSessionsResponse> {
     return this._client.request({
@@ -200,7 +255,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  confirmSessionTodo(sessionId: string, todoId: string, body?: JsonObject, options?: RequestOptions): Promise<Todo> {
+  confirmSessionTodo(sessionId: string, todoId: string, body?: ConfirmSessionTodoRequest, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}/confirm`,
@@ -218,13 +273,16 @@ export class SessionsResource extends APIResource {
    * already reached by sessions that are both `active` and not past their expiry. To absorb
    * double-submits the handler first looks for an active session on the same agent, created
    * within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
-   * instead of minting a second one — so a `200` here means an existing session was reused. A
-   * new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
-   * record written alongside it for the session list.
+   * instead of minting a second one — so a `200` here means an existing session was reused. The
+   * reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
+   * merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
+   * silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
+   * `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
+   * for the session list.
    *
    * `POST /api/v1/sessions`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   create(body: CreateSessionRequest, options?: RequestOptions): Promise<Session> {
     return this._client.request({
@@ -248,7 +306,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/sessions/{sessionId}/annotations`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   createSessionAnnotation(sessionId: string, body: CreateSessionAnnotationRequest, options?: RequestOptions): Promise<CreateSessionAnnotationResponse> {
     return this._client.request({
@@ -293,7 +351,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/sessions/{sessionId}/share`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   createSessionShare(sessionId: string, body: CreateSessionShareRequest, options?: RequestOptions): Promise<CreateSessionShareResponse> {
     return this._client.request({
@@ -338,9 +396,13 @@ export class SessionsResource extends APIResource {
    *
    * Addresses one agent, several agents (fan-out, one session each, shared parent_task_id), or a
    * squad. The server bootstraps the session(s). `due_at` omitted fires immediately; a timestamp
-   * schedules it; explicit `null` files it in the backlog with no schedule at all.
+   * schedules it; explicit `null` files it in the backlog with no schedule at all. Requires the
+   * `sessions` write permission and the `sessions:write` scope; a key holding `runs:create`
+   * instead is also accepted, as on every session write.
    *
    * `POST /api/v1/todos`
+   *
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   createTask(body: JsonValue, options?: RequestOptions): Promise<CreatedTask> {
     return this._client.request({
@@ -361,7 +423,7 @@ export class SessionsResource extends APIResource {
    *
    * `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   deleteSessionAnnotation(sessionId: string, annotationId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
@@ -498,12 +560,26 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  getSessionAuditLog(sessionId: string, options?: RequestOptions): Promise<GetSessionAuditLogResponse> {
+  getSessionAuditLog(sessionId: string, params?: GetSessionAuditLogParams, options?: RequestOptions): Promise<GetSessionAuditLogResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/audit-log`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getSessionAuditLog`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getSessionAuditLogAll(sessionId: string, params?: GetSessionAuditLogParams, options?: RequestOptions): AsyncIterableIterator<AuditLogEntry> {
+    return autoPaginate<AuditLogEntry>(
+      (cursor) => this.getSessionAuditLog(sessionId, { ...params, cursor }, options),
+      'audit_log',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -522,16 +598,34 @@ export class SessionsResource extends APIResource {
    * A session that does not exist is 404, not an empty list: "no messages yet" and "no such
    * session" must not render the same.
    *
+   * There is no paging: the whole transcript comes back and `total` is its length. A `limit` (or
+   * any other) query parameter is not read — measured 2026-10-01, `?limit=2` and no parameter
+   * answer the same 16 messages — so a client should not send one expecting fewer.
+   *
    * `GET /api/v1/sessions/{sessionId}/messages`
    *
    * Required scopes: `sessions:read`.
    */
-  getSessionMessages(sessionId: string, options?: RequestOptions): Promise<GetSessionMessagesResponse> {
+  getSessionMessages(sessionId: string, params?: GetSessionMessagesParams, options?: RequestOptions): Promise<GetSessionMessagesResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/messages`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getSessionMessages`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  getSessionMessagesAll(sessionId: string, params?: GetSessionMessagesParams, options?: RequestOptions): AsyncIterableIterator<ConversationEntry> {
+    return autoPaginate<ConversationEntry>(
+      (cursor) => this.getSessionMessages(sessionId, { ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -573,6 +667,29 @@ export class SessionsResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/share`,
+      options,
+    });
+  }
+
+  /**
+   * Import a transcript that ran elsewhere (the CLI)
+   *
+   * Records a session whose turns already happened on the caller's machine — nothing is executed
+   * and nothing is billed. Entries carry synthetic run ids with no run behind them. Re-importing
+   * with the same `session_id` updates that session (200) instead of creating a second one
+   * (201); an id that names a session created on the platform is refused. `agent_id` must name
+   * an agent in this tenant (404 otherwise); `messages` holds 1–2000 entries.
+   *
+   * `POST /api/v1/sessions/import`
+   *
+   * Required scopes: `runs:create`, `sessions:write`.
+   */
+  import(body: ImportSessionRequest, options?: RequestOptions): Promise<Session> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/sessions/import',
+      body,
+      idempotent: true,
       options,
     });
   }
@@ -622,12 +739,26 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:read`.
    */
-  listSessionAnnotations(sessionId: string, options?: RequestOptions): Promise<ListSessionAnnotationsResponse> {
+  listSessionAnnotations(sessionId: string, params?: ListSessionAnnotationsParams, options?: RequestOptions): Promise<ListSessionAnnotationsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/annotations`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listSessionAnnotations`, following the `cursor` cursor until
+   * the server reports no further pages.
+   */
+  listSessionAnnotationsAll(sessionId: string, params?: ListSessionAnnotationsParams, options?: RequestOptions): AsyncIterableIterator<ListSessionAnnotationsResponseItem> {
+    return autoPaginate<ListSessionAnnotationsResponseItem>(
+      (cursor) => this.listSessionAnnotations(sessionId, { ...params, cursor }, options),
+      'items',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -711,6 +842,8 @@ export class SessionsResource extends APIResource {
    * than a result limit.
    *
    * `GET /api/v1/todos`
+   *
+   * Required scopes: `sessions:read`.
    */
   listTodos(options?: RequestOptions): Promise<ListTodosResponse> {
     return this._client.request({
@@ -752,7 +885,7 @@ export class SessionsResource extends APIResource {
    *
    * `DELETE /api/v1/sessions/{sessionId}/share`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   revokeSessionShare(sessionId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
@@ -794,7 +927,7 @@ export class SessionsResource extends APIResource {
    *
    * `POST /api/v1/sessions/{sessionId}/messages`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   sendSessionMessage(sessionId: string, body: SendSessionMessageRequest, options?: RequestOptions): Promise<SendSessionMessageResponse> {
     return this._client.request({
@@ -815,6 +948,11 @@ export class SessionsResource extends APIResource {
    * older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
    * them — but cannot be matched back to the transcript, and each such arrival is counted per
    * day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+   *
+   * WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+   * `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+   * `reason` drops a previously stored one. Other callers' rows and other messages' rows are
+   * untouched.
    *
    * `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
    *
@@ -842,7 +980,7 @@ export class SessionsResource extends APIResource {
    *
    * `GET /api/v1/sessions/{sessionId}/events`
    *
-   * Required scopes: `events:read`.
+   * Required scopes: `sessions:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
    */
@@ -889,9 +1027,13 @@ export class SessionsResource extends APIResource {
    * without changing them. `404` when the session or the annotation does not exist. Returns the
    * annotation as stored.
    *
+   * WRITE SEMANTICS: merges. Only `resolved` is applied, and only when the body sends it; every
+   * other stored field keeps its value. The schema strips unknown keys, so a body naming
+   * `content`, `author` or `message_id` succeeds and changes nothing.
+   *
    * `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
    *
-   * Required scopes: `sessions:write`.
+   * Required scopes: `runs:create`, `sessions:write`.
    */
   updateSessionAnnotation(sessionId: string, annotationId: string, body?: UpdateSessionAnnotationRequest, options?: RequestOptions): Promise<SessionAnnotation> {
     return this._client.request({
@@ -918,7 +1060,7 @@ export class SessionsResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  updateSessionTodo(sessionId: string, todoId: string, body: JsonObject, options?: RequestOptions): Promise<Todo> {
+  updateSessionTodo(sessionId: string, todoId: string, body: UpdateSessionTodoRequest, options?: RequestOptions): Promise<Todo> {
     return this._client.request({
       method: 'PATCH',
       path: `/api/v1/sessions/${encodeURIComponent(String(sessionId))}/todos/${encodeURIComponent(String(todoId))}`,

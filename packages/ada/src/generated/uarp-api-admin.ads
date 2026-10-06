@@ -54,6 +54,16 @@ package UARP.API.Admin is
 
    No_Admin_Data_Explorer_Raw_Keys_Params : constant Admin_Data_Explorer_Raw_Keys_Params := (others => <>);
 
+   --  Query and header parameters for `adminListVideoOrders`.
+   type Admin_List_Video_Orders_Params is record
+      Has_Status : Boolean := False;
+      Status : UARP.Models.Video_Order_Status;
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_Admin_List_Video_Orders_Params : constant Admin_List_Video_Orders_Params := (others => <>);
+
    --  Query and header parameters for `exportDataExplorer`.
    type Export_Data_Explorer_Params is record
       --  Tenant id to scope the export to. Omit, or pass `__all__`, for the whole store.
@@ -71,6 +81,14 @@ package UARP.API.Admin is
       --  Target type (e.g., agent, run, tenant)
       Has_Type : Boolean := False;
       Type_K : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+      --  existed - not a default page. Values outside 1..500 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_Get_Audit_For_Target_Params : constant Get_Audit_For_Target_Params := (others => <>);
@@ -211,6 +229,34 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Analytics_Overview_Response;
 
+   --  Archive a video template
+   --
+   --  Takes it off sale for good. Paid orders keep their own copy of the template and finish
+   --  normally. Requires the `admin` scope and super-admin identity.
+   --
+   --  DELETE /api/v1/admin/video-templates/{templateId}
+   --
+   --  Required scopes: admin.
+   procedure Admin_Archive_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options);
+
+   --  Create a video template
+   --
+   --  Creates a DRAFT. It reaches the gallery only through publish, which needs a passed test run.
+   --  The model must be one whose request shape is known, and the clip length and photo role must
+   --  be ones that model accepts. Requires the `admin` scope and super-admin identity.
+   --
+   --  POST /api/v1/admin/video-templates
+   --
+   --  Required scopes: admin.
+   function Admin_Create_Video_Template
+     (Self : Client_Type;
+      Payload : UARP.Models.Video_Template_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
+
    --  Full KV scan (admin diagnostic)
    --
    --  Dangerous: full DB key scan. Admin-only. Use the namespace-scoped endpoints under
@@ -350,6 +396,36 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Get_Reconciliation_Response;
 
+   --  Admin: get the web-search provider chain
+   --
+   --  Returns the stored web-search config (`search`, including `fallbacks`) and what it resolves
+   --  to: `resolved` is the primary alone, `chain` is the order `web_search` and `POST
+   --  /tools/web_search` actually dial - primary first, then each fallback that resolves.
+   --  `web_search_enabled` is true while ANY link resolves. `unresolved_reason` explains a primary
+   --  that does not resolve; `unresolved_fallbacks` names each dropped fallback and why. API keys
+   --  are never returned, only `keyed`. Super-admin only, like every `/admin/config` route.
+   --
+   --  GET /api/v1/admin/config/search
+   --
+   --  Required scopes: admin.
+   function Admin_Get_Search_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Get_Search_Config_Response;
+
+   --  Get a video template
+   --
+   --  Requires the `admin` scope and super-admin identity.
+   --
+   --  GET /api/v1/admin/video-templates/{templateId}
+   --
+   --  Required scopes: admin.
+   function Admin_Get_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
+
    --  Admin: get default voice (STT/TTS) config
    --
    --  Returns the platform's default voice configuration - the STT provider and model, and the TTS
@@ -398,6 +474,36 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_List_Tools_Response;
 
+   --  List recent video orders
+   --
+   --  Newest first: status, money state, attempts with their outcome, and the ESTIMATED provider
+   --  cost - estimated because the provider's response carries none (measured 2026-10-03);
+   --  reconcile against its invoice. Buyer emails are masked. Requires the `admin` scope and
+   --  super-admin identity.
+   --
+   --  GET /api/v1/admin/video-orders
+   --
+   --  Required scopes: admin.
+   function Admin_List_Video_Orders
+     (Self : Client_Type;
+      Params : Admin_List_Video_Orders_Params := No_Admin_List_Video_Orders_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_List_Video_Orders_Response;
+
+   --  List video templates
+   --
+   --  Every template in any status (draft, published, archived) with its model, hidden prompt,
+   --  last test and estimated provider cost per clip. Requires the `admin` scope and super-admin
+   --  identity.
+   --
+   --  GET /api/v1/admin/video-templates
+   --
+   --  Required scopes: admin.
+   function Admin_List_Video_Templates
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_List_Video_Templates_Response;
+
    --  List dead-lettered webhook deliveries
    --
    --  Lists every dead-lettered Stripe webhook event - the events whose handler failed and that
@@ -413,6 +519,20 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_List_Webhook_DLQ_Response;
 
+   --  Publish a video template
+   --
+   --  Puts it in the gallery. Refused until a test run since the last change produced a clip.
+   --  Requires the `admin` scope and super-admin identity.
+   --
+   --  POST /api/v1/admin/video-templates/{templateId}/publish
+   --
+   --  Required scopes: admin.
+   function Admin_Publish_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
+
    --  Admin: set landing-page featured-agent config
    --
    --  Writes the landing-page configuration. An omitted field means no change and is read back
@@ -426,12 +546,17 @@ package UARP.API.Admin is
    --  complete. Writes an `admin.config_updated` audit entry and returns the new version.
    --  Super-admin only, like every `/admin/config` route.
    --
+   --  WRITE SEMANTICS: mixed. An omitted field keeps its stored value. Explicit null clears
+   --  `public_agent_id` and `partners`. A `texts` map that is present replaces the stored map
+   --  whole, and `partners` replaces the stored array whole. `tier` is accepted but never stored.
+   --  With `expected_version`, a stale write answers 409.
+   --
    --  PUT /api/v1/admin/config/landing
    --
    --  Required scopes: admin.
    function Admin_Put_Landing_Config
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Admin_Put_Landing_Config_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Put_Landing_Config_Response;
 
@@ -445,12 +570,17 @@ package UARP.API.Admin is
    --  rather than waiting out the TTL, an `admin.config_updated` audit entry is written, and the
    --  new version is returned. Super-admin only, like every `/admin/config` route.
    --
+   --  WRITE SEMANTICS: replaces. The stored catalogue becomes exactly the `models` array, which is
+   --  required. A model the body omits is removed from the catalogue, and unknown row fields are
+   --  stripped. With `expected_version`, a stale write answers 409; null asserts that no record
+   --  exists yet.
+   --
    --  PUT /api/v1/admin/config/model-catalog
    --
    --  Required scopes: admin.
    function Admin_Put_Model_Catalog
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Admin_Put_Model_Catalog_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Put_Model_Catalog_Response;
 
@@ -459,6 +589,11 @@ package UARP.API.Admin is
    --  Merge semantics: omitting client_secret keeps the existing one (so toggling `enabled`
    --  doesn't require re-pasting the secret). First-time PUT requires both client_id and
    --  client_secret. Stored encrypted at rest.
+   --
+   --  WRITE SEMANTICS: mixed. The record is rebuilt from four fields: `enabled`, `client_id`,
+   --  `client_secret` and `scopes`. One of them omitted (or, for `client_id` and `client_secret`,
+   --  sent blank) keeps its stored value; with nothing stored, `enabled` defaults to true. A
+   --  `scopes` array replaces the stored list whole. Any other stored field is dropped.
    --
    --  PUT /api/v1/admin/oauth-login-providers/{provider}
    --
@@ -469,6 +604,26 @@ package UARP.API.Admin is
       Payload : UARP.Models.O_Auth_Login_Provider_Config_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.O_Auth_Login_Provider_Config_Update_Response;
+
+   --  Admin: set the web-search provider chain
+   --
+   --  WRITE SEMANTICS: replaces. The stored web-search record is replaced whole - send every field
+   --  you want kept, including `price_per_1k_searches_usd` and `fallbacks` (the GET's `{search:
+   --  {...}}` envelope is accepted as-is). `provider` must be `ollama` or `searxng` and a
+   --  `searxng` link, primary or fallback, needs `endpoint_url`; anything else is 400. The record
+   --  is mirrored into the live runtime config, so the chain applies to the next query without a
+   --  restart. This endpoint is the only way to set it: `PUT /admin/config/runtime` refuses
+   --  `search`. Writes an `admin.config_updated` audit entry. Super-admin only, like every
+   --  `/admin/config` route.
+   --
+   --  PUT /api/v1/admin/config/search
+   --
+   --  Required scopes: admin.
+   function Admin_Put_Search_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Admin_Put_Search_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Put_Search_Config_Response;
 
    --  Admin: set default voice config
    --
@@ -481,6 +636,10 @@ package UARP.API.Admin is
    --  fail the save. This endpoint is the only way to set these settings: `PUT
    --  /admin/config/runtime` refuses them. Writes an `admin.config_updated` audit entry.
    --  Super-admin only, like every `/admin/config` route.
+   --
+   --  WRITE SEMANTICS: replaces. The stored record is rebuilt whole from `stt` (`provider`,
+   --  `model`) and `tts` (`provider`, `model`, `voice`); all five are required, so a body missing
+   --  any of them is refused 422 rather than partially applied.
    --
    --  PUT /api/v1/admin/config/voice
    --
@@ -498,6 +657,9 @@ package UARP.API.Admin is
    --  model ids and responds with the same view the GET returns. Super-admin only, like every
    --  `/admin/config` route.
    --
+   --  WRITE SEMANTICS: replaces. The whole preset map (model id to voice list) is stored as sent;
+   --  a model id the body omits loses its presets.
+   --
    --  PUT /api/v1/admin/config/voice-presets
    --
    --  Required scopes: admin.
@@ -506,6 +668,26 @@ package UARP.API.Admin is
       Payload : UARP.JSON_Support.JSON_Value;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Voice_Presets;
+
+   --  Replace a video template
+   --
+   --  WRITE SEMANTICS: replaces. The body is the whole template: an optional field it omits
+   --  returns to its default (`badge` null, `position` 100, `text_slots` empty, no
+   --  `negative_prompt`) rather than surviving from the stored record. Status, last test, example
+   --  clip and timestamps are not part of the body and are kept. Changing how a clip is made
+   --  (model, seconds, photo role, prompt, negative prompt, text fields) clears the last test and
+   --  takes a published template back to draft until it is tested again. Requires the `admin`
+   --  scope and super-admin identity.
+   --
+   --  PUT /api/v1/admin/video-templates/{templateId}
+   --
+   --  Required scopes: admin.
+   function Admin_Replace_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Video_Template_Input;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
 
    --  Replay a dead-lettered webhook event
    --
@@ -527,6 +709,50 @@ package UARP.API.Admin is
       Event_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Replay_Webhook_DLQ_Response;
+
+   --  Use a test clip as the gallery example
+   --
+   --  Copies the clip of a finished test run of this template into a durable example. Requires the
+   --  `admin` scope and super-admin identity.
+   --
+   --  POST /api/v1/admin/video-templates/{templateId}/preview
+   --
+   --  Required scopes: admin.
+   function Admin_Set_Video_Template_Preview
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Admin_Set_Video_Template_Preview_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
+
+   --  Test a template on a photo
+   --
+   --  Runs the template on a photo exactly as an order would, without payment. When the clip is
+   --  finished the template's `last_test` records it; follow the run with the public order route
+   --  and the returned token. Requires the `admin` scope and super-admin identity.
+   --
+   --  POST /api/v1/admin/video-templates/{templateId}/test
+   --
+   --  Required scopes: admin.
+   function Admin_Test_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Payload : UARP.Models.Admin_Test_Video_Template_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Admin_Test_Video_Template_Response;
+
+   --  Take a template out of the gallery
+   --
+   --  Requires the `admin` scope and super-admin identity.
+   --
+   --  POST /api/v1/admin/video-templates/{templateId}/unpublish
+   --
+   --  Required scopes: admin.
+   function Admin_Unpublish_Video_Template
+     (Self : Client_Type;
+      Template_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Template;
 
    --  Write a post by hand
    --
@@ -558,7 +784,7 @@ package UARP.API.Admin is
    --  Required scopes: admin.
    function Create_Admin_Provider
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Admin_Provider_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Create_Admin_Provider_Response;
 
@@ -567,8 +793,9 @@ package UARP.API.Admin is
    --  Creates a tenant with a generated UUIDv7 id, writing the canonical `tenant` record and its
    --  registry entry and registering it with the cron scheduler. `slug` defaults to a slugified
    --  `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
-   --  defaults when omitted. Deliberately writes only the canonical record and not the
-   --  `tenant_meta` overlay, because suspend and reactivate act on the canonical row alone.
+   --  defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
+   --  claim are written in one commit; a `slug` the caller chose that another tenant holds is
+   --  refused with 409, and a slug derived from `name` that collides is lengthened instead.
    --  Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
    --
    --  POST /api/v1/admin/tenants
@@ -576,7 +803,7 @@ package UARP.API.Admin is
    --  Required scopes: admin.
    function Create_Tenant
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Tenant_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Tenant;
 
@@ -828,6 +1055,16 @@ package UARP.API.Admin is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Admin_Audit_List;
 
+   --  Collect every item `getAuditForTarget` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Audit_For_Target_All
+     (Self : Client_Type;
+      Target_Id : String;
+      Params : Get_Audit_For_Target_Params := No_Get_Audit_For_Target_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Admin_Audit_List_Entry_Vectors.Vector;
+
    --  EU AI Act conformity report
    --
    --  Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
@@ -897,9 +1134,9 @@ package UARP.API.Admin is
 
    --  Get tenant details
    --
-   --  Returns one tenant record - the `tenant_meta` overlay when present, otherwise the canonical
-   --  `tenant` row - with the live platform model defaults projected in and `primary_email` from
-   --  the owner index. 404 when neither record exists. Super-admin only.
+   --  Returns one tenant's canonical `tenant` record with the live platform model defaults
+   --  projected in and `primary_email` from the owner index. 404 when neither record exists.
+   --  Super-admin only.
    --
    --  GET /api/v1/admin/tenants/{tenantId}
    --
@@ -1092,10 +1329,10 @@ package UARP.API.Admin is
 
    --  List all tenants (super admin only)
    --
-   --  Lists every tenant in the platform registry, up to 5000, each record enriched with the owner
-   --  address from the `tenant_primary_email` index. A record is read from the `tenant_meta`
-   --  overlay first and falls back to the canonical `tenant` row. When the registry is empty the
-   --  caller's own tenant is returned so the console is never blank. Super-admin only.
+   --  Lists every tenant in the platform registry (paged internally, no upper bound), each record
+   --  enriched with the owner address from the `tenant_primary_email` index. Each record is the
+   --  canonical `tenant` row. When the registry is empty the caller's own tenant is returned so
+   --  the console is never blank. Super-admin only.
    --
    --  GET /api/v1/admin/tenants
    --
@@ -1192,6 +1429,10 @@ package UARP.API.Admin is
    --  the cached provider model metadata is dropped. Writes a `platform.llm_defaults.set` audit
    --  entry naming the provider but never the key. Super-admin only.
    --
+   --  WRITE SEMANTICS: replaces. The body carries one field, `api_key`, and it overwrites the
+   --  provider's platform key in KV and in the in-memory pool; nothing else is stored under that
+   --  key.
+   --
    --  PUT /api/v1/admin/llm-defaults/{providerId}
    --
    --  Required scopes: admin.
@@ -1208,10 +1449,15 @@ package UARP.API.Admin is
    --  must already be registered or the call is 400, and when the provider declares a model
    --  allowlist the chosen model must be in it; an endpoint must be a public absolute URL, so
    --  loopback, private-range and cloud-metadata hosts are refused because
-   --  `/providers/platform-defaults` republishes these values unauthenticated. An omitted endpoint
-   --  is backfilled from the provider's registered endpoint. Setting both a default provider and
-   --  model marks the `llm_provider` step of the setup wizard complete, and a
-   --  `platform.llm_defaults.set` audit entry is written. Super-admin only.
+   --  `/providers/platform-defaults` republishes these values unauthenticated. An endpoint is
+   --  backfilled from the provider's registered endpoint only when none is held after the merge.
+   --  Setting both a default provider and model marks the `llm_provider` step of the setup wizard
+   --  complete, and a `platform.llm_defaults.set` audit entry is written. Super-admin only.
+   --
+   --  WRITE SEMANTICS: merges. An omitted field keeps the value the running process holds (not a
+   --  fresh KV read) and is re-saved with it. An empty-string `endpoint` clears it. The endpoint
+   --  is backfilled from the provider's registered one only when none is held after the merge, so
+   --  changing `provider` without sending `endpoint` keeps the previous provider's endpoint.
    --
    --  PUT /api/v1/admin/llm-defaults/model-config
    --
@@ -1253,6 +1499,11 @@ package UARP.API.Admin is
    --  site stops resolving. The optional body field `reason` is stored and recorded in the
    --  `tenant.suspended` audit entry; an absent or unparseable body defaults it. 404 when the
    --  tenant record does not exist. Super-admin only.
+   --
+   --  WRITE SEMANTICS: merges. Only `status` (set to suspended), `suspension_reason`,
+   --  `suspended_at` and `updated_at` are written. The write is a compare-and-set onto the current
+   --  `tenant` record, so every other field keeps its stored value. The `tenant_meta` overlay is
+   --  not touched. An absent, unparseable or empty `reason` falls back to the default text.
    --
    --  PUT /api/v1/admin/tenants/{tenantId}/suspend
    --
@@ -1335,12 +1586,16 @@ package UARP.API.Admin is
    --  the in-process cache and fans out to `ConfigStore` subscribers; a fan-out failure is logged
    --  and does not undo the KV write. Super-admin only, like every `/admin/config` route.
    --
+   --  WRITE SEMANTICS: merges. Each rate the body omits keeps its current effective value - the
+   --  stored override, or else the config default - and the full merged set is then stored, so
+   --  defaults that were in effect become explicit overrides.
+   --
    --  PUT /api/v1/admin/config/pricing
    --
    --  Required scopes: admin.
    function Update_Admin_Pricing
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Pricing_Request;
       Include_Payload : Boolean := True;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Pricing_Response;
@@ -1352,9 +1607,15 @@ package UARP.API.Admin is
    --  provider record itself and invalidate the model-catalogue cache. Supplying `api_key` rotates
    --  the platform key for this provider and refreshes the in-memory pool; there is no way to
    --  clear a key here - that is `DELETE /admin/llm-defaults/{providerId}` - so an omitted
-   --  `api_key` never means "remove it". 404 for an unknown provider. Writes a `provider.updated`
-   --  audit entry, and a separate `platform.llm_defaults.set` entry when a key was rotated.
-   --  Super-admin only.
+   --  `api_key` never means "remove it". 404 for any provider that is not a custom provider,
+   --  built-in ones included. Writes a `provider.updated` audit entry, and a separate
+   --  `platform.llm_defaults.set` entry when a key was rotated. Super-admin only.
+   --
+   --  WRITE SEMANTICS: mixed. An omitted field keeps its stored value. `enabled` merges into the
+   --  settings row, while a `model_allowlist` that is present replaces the stored list whole.
+   --  `requires_api_key` and `canonical` merge onto the custom-provider record. An omitted or
+   --  empty `api_key` leaves the key unchanged. Only custom providers are accepted: any other id,
+   --  built-in ones included, answers 404.
    --
    --  PATCH /api/v1/admin/providers/{providerId}
    --
@@ -1362,7 +1623,7 @@ package UARP.API.Admin is
    function Update_Admin_Provider
      (Self : Client_Type;
       Provider_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Provider_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Provider_Response;
 
@@ -1371,9 +1632,14 @@ package UARP.API.Admin is
    --  Updates the narrow slice of tenant settings an operator may change directly:
    --  `egress_allowlist`, `max_retention_days` and the `legal_hold` flag. An omitted field is left
    --  as it was. The canonical `tenant` record is updated through a compare-and-set so a
-   --  concurrent suspend or plan sync cannot clobber it from a stale snapshot, and the
-   --  `tenant_meta` overlay is kept in step only when it already exists. 404 when neither record
-   --  exists. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin only.
+   --  concurrent suspend or plan sync cannot clobber it from a stale snapshot, 404 when the tenant
+   --  has no record. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin
+   --  only.
+   --
+   --  WRITE SEMANTICS: mixed. A compare-and-set merge onto the tenant record: an omitted field
+   --  keeps its stored value. `max_retention_days` and `legal_hold` are written as sent; an
+   --  `egress_allowlist` that is present replaces the stored list whole. `null` is refused by the
+   --  schema, so nothing can be cleared here.
    --
    --  PATCH /api/v1/admin/tenants/{tenantId}/settings
    --
@@ -1381,7 +1647,7 @@ package UARP.API.Admin is
    function Update_Admin_Tenant_Settings
      (Self : Client_Type;
       Tenant_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_Admin_Tenant_Settings_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_Admin_Tenant_Settings_Response;
 

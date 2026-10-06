@@ -132,6 +132,50 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Archive a video template
+     *
+     * Takes it off sale for good. Paid orders keep their own copy of the template and finish
+     * normally. Requires the `admin` scope and super-admin identity.
+     *
+     * `DELETE /api/v1/admin/video-templates/{templateId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminArchiveVideoTemplate(templateId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Create a video template
+     *
+     * Creates a DRAFT. It reaches the gallery only through publish, which needs a passed test run.
+     * The model must be one whose request shape is known, and the clip length and photo role must
+     * be ones that model accepts. Requires the `admin` scope and super-admin identity.
+     *
+     * `POST /api/v1/admin/video-templates`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminCreateVideoTemplate(body: VideoTemplateInput, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/video-templates",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Full KV scan (admin diagnostic)
      *
      * Dangerous: full DB key scan. Admin-only. Use the namespace-scoped endpoints under
@@ -333,6 +377,49 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Admin: get the web-search provider chain
+     *
+     * Returns the stored web-search config (`search`, including `fallbacks`) and what it resolves
+     * to: `resolved` is the primary alone, `chain` is the order `web_search` and `POST
+     * /tools/web_search` actually dial — primary first, then each fallback that resolves.
+     * `web_search_enabled` is true while ANY link resolves. `unresolved_reason` explains a primary
+     * that does not resolve; `unresolved_fallbacks` names each dropped fallback and why. API keys
+     * are never returned, only `keyed`. Super-admin only, like every `/admin/config` route.
+     *
+     * `GET /api/v1/admin/config/search`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminGetSearchConfig(options: RequestOptions = RequestOptions()): AdminGetSearchConfigResponse {
+        return client.request<AdminGetSearchConfigResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/config/search",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Get a video template
+     *
+     * Requires the `admin` scope and super-admin identity.
+     *
+     * `GET /api/v1/admin/video-templates/{templateId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminGetVideoTemplate(templateId: String, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Admin: get default voice (STT/TTS) config
      *
      * Returns the platform's default voice configuration — the STT provider and model, and the TTS
@@ -402,6 +489,54 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * List recent video orders
+     *
+     * Newest first: status, money state, attempts with their outcome, and the ESTIMATED provider
+     * cost — estimated because the provider's response carries none (measured 2026-10-03);
+     * reconcile against its invoice. Buyer emails are masked. Requires the `admin` scope and
+     * super-admin identity.
+     *
+     * `GET /api/v1/admin/video-orders`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminListVideoOrders(status: VideoOrderStatus? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): AdminListVideoOrdersResponse {
+        val query = buildList {
+            if (status != null) add("status" to status.value)
+            if (limit != null) add("limit" to limit.toString())
+        }
+        return client.request<AdminListVideoOrdersResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/video-orders",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * List video templates
+     *
+     * Every template in any status (draft, published, archived) with its model, hidden prompt,
+     * last test and estimated provider cost per clip. Requires the `admin` scope and super-admin
+     * identity.
+     *
+     * `GET /api/v1/admin/video-templates`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminListVideoTemplates(options: RequestOptions = RequestOptions()): AdminListVideoTemplatesResponse {
+        return client.request<AdminListVideoTemplatesResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/video-templates",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * List dead-lettered webhook deliveries
      *
      * Lists every dead-lettered Stripe webhook event — the events whose handler failed and that
@@ -424,6 +559,27 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Publish a video template
+     *
+     * Puts it in the gallery. Refused until a test run since the last change produced a clip.
+     * Requires the `admin` scope and super-admin identity.
+     *
+     * `POST /api/v1/admin/video-templates/{templateId}/publish`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminPublishVideoTemplate(templateId: String, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}/publish",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Admin: set landing-page featured-agent config
      *
      * Writes the landing-page configuration. An omitted field means no change and is read back
@@ -437,11 +593,16 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * complete. Writes an `admin.config_updated` audit entry and returns the new version.
      * Super-admin only, like every `/admin/config` route.
      *
+     * WRITE SEMANTICS: mixed. An omitted field keeps its stored value. Explicit null clears
+     * `public_agent_id` and `partners`. A `texts` map that is present replaces the stored map
+     * whole, and `partners` replaces the stored array whole. `tier` is accepted but never stored.
+     * With `expected_version`, a stale write answers 409.
+     *
      * `PUT /api/v1/admin/config/landing`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminPutLandingConfig(body: JsonObject, options: RequestOptions = RequestOptions()): AdminPutLandingConfigResponse {
+    public suspend fun adminPutLandingConfig(body: AdminPutLandingConfigRequest, options: RequestOptions = RequestOptions()): AdminPutLandingConfigResponse {
         return client.request<AdminPutLandingConfigResponse>(
             RequestSpec(
                 method = "PUT",
@@ -464,11 +625,16 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * rather than waiting out the TTL, an `admin.config_updated` audit entry is written, and the
      * new version is returned. Super-admin only, like every `/admin/config` route.
      *
+     * WRITE SEMANTICS: replaces. The stored catalogue becomes exactly the `models` array, which is
+     * required. A model the body omits is removed from the catalogue, and unknown row fields are
+     * stripped. With `expected_version`, a stale write answers 409; null asserts that no record
+     * exists yet.
+     *
      * `PUT /api/v1/admin/config/model-catalog`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminPutModelCatalog(body: JsonObject, options: RequestOptions = RequestOptions()): AdminPutModelCatalogResponse {
+    public suspend fun adminPutModelCatalog(body: AdminPutModelCatalogRequest, options: RequestOptions = RequestOptions()): AdminPutModelCatalogResponse {
         return client.request<AdminPutModelCatalogResponse>(
             RequestSpec(
                 method = "PUT",
@@ -487,6 +653,11 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * doesn't require re-pasting the secret). First-time PUT requires both client_id and
      * client_secret. Stored encrypted at rest.
      *
+     * WRITE SEMANTICS: mixed. The record is rebuilt from four fields: `enabled`, `client_id`,
+     * `client_secret` and `scopes`. One of them omitted (or, for `client_id` and `client_secret`,
+     * sent blank) keeps its stored value; with nothing stored, `enabled` defaults to true. A
+     * `scopes` array replaces the stored list whole. Any other stored field is dropped.
+     *
      * `PUT /api/v1/admin/oauth-login-providers/{provider}`
      *
      * Required scopes: `admin`.
@@ -496,6 +667,34 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/oauth-login-providers/${encodePathSegment(provider.toString())}",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Admin: set the web-search provider chain
+     *
+     * WRITE SEMANTICS: replaces. The stored web-search record is replaced whole — send every field
+     * you want kept, including `price_per_1k_searches_usd` and `fallbacks` (the GET's `{search:
+     * {...}}` envelope is accepted as-is). `provider` must be `ollama` or `searxng` and a
+     * `searxng` link, primary or fallback, needs `endpoint_url`; anything else is 400. The record
+     * is mirrored into the live runtime config, so the chain applies to the next query without a
+     * restart. This endpoint is the only way to set it: `PUT /admin/config/runtime` refuses
+     * `search`. Writes an `admin.config_updated` audit entry. Super-admin only, like every
+     * `/admin/config` route.
+     *
+     * `PUT /api/v1/admin/config/search`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminPutSearchConfig(body: AdminPutSearchConfigRequest, options: RequestOptions = RequestOptions()): AdminPutSearchConfigResponse {
+        return client.request<AdminPutSearchConfigResponse>(
+            RequestSpec(
+                method = "PUT",
+                path = "/api/v1/admin/config/search",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -515,6 +714,10 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * fail the save. This endpoint is the only way to set these settings: `PUT
      * /admin/config/runtime` refuses them. Writes an `admin.config_updated` audit entry.
      * Super-admin only, like every `/admin/config` route.
+     *
+     * WRITE SEMANTICS: replaces. The stored record is rebuilt whole from `stt` (`provider`,
+     * `model`) and `tts` (`provider`, `model`, `voice`); all five are required, so a body missing
+     * any of them is refused 422 rather than partially applied.
      *
      * `PUT /api/v1/admin/config/voice`
      *
@@ -540,15 +743,45 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * model ids and responds with the same view the GET returns. Super-admin only, like every
      * `/admin/config` route.
      *
+     * WRITE SEMANTICS: replaces. The whole preset map (model id to voice list) is stored as sent;
+     * a model id the body omits loses its presets.
+     *
      * `PUT /api/v1/admin/config/voice-presets`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun adminPutVoicePresets(body: JsonObject, options: RequestOptions = RequestOptions()): AdminVoicePresets {
+    public suspend fun adminPutVoicePresets(body: Map<String, List<String>>, options: RequestOptions = RequestOptions()): AdminVoicePresets {
         return client.request<AdminVoicePresets>(
             RequestSpec(
                 method = "PUT",
                 path = "/api/v1/admin/config/voice-presets",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Replace a video template
+     *
+     * WRITE SEMANTICS: replaces. The body is the whole template: an optional field it omits
+     * returns to its default (`badge` null, `position` 100, `text_slots` empty, no
+     * `negative_prompt`) rather than surviving from the stored record. Status, last test, example
+     * clip and timestamps are not part of the body and are kept. Changing how a clip is made
+     * (model, seconds, photo role, prompt, negative prompt, text fields) clears the last test and
+     * takes a published template back to draft until it is tested again. Requires the `admin`
+     * scope and super-admin identity.
+     *
+     * `PUT /api/v1/admin/video-templates/{templateId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminReplaceVideoTemplate(templateId: String, body: VideoTemplateInput, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "PUT",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}",
                 body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
@@ -578,6 +811,75 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "POST",
                 path = "/api/v1/admin/webhooks/dlq/${encodePathSegment(eventId)}/replay",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Use a test clip as the gallery example
+     *
+     * Copies the clip of a finished test run of this template into a durable example. Requires the
+     * `admin` scope and super-admin identity.
+     *
+     * `POST /api/v1/admin/video-templates/{templateId}/preview`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminSetVideoTemplatePreview(templateId: String, body: AdminSetVideoTemplatePreviewRequest, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}/preview",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Test a template on a photo
+     *
+     * Runs the template on a photo exactly as an order would, without payment. When the clip is
+     * finished the template's `last_test` records it; follow the run with the public order route
+     * and the returned token. Requires the `admin` scope and super-admin identity.
+     *
+     * `POST /api/v1/admin/video-templates/{templateId}/test`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminTestVideoTemplate(templateId: String, body: AdminTestVideoTemplateRequest, options: RequestOptions = RequestOptions()): AdminTestVideoTemplateResponse {
+        val parts = buildList {
+            add(Part.File("photo", body.photo))
+            body.slots?.let { add(Part.Text.of("slots", it)) }
+        }
+        return client.request<AdminTestVideoTemplateResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}/test",
+                body = Body.Multipart(parts),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Take a template out of the gallery
+     *
+     * Requires the `admin` scope and super-admin identity.
+     *
+     * `POST /api/v1/admin/video-templates/{templateId}/unpublish`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun adminUnpublishVideoTemplate(templateId: String, options: RequestOptions = RequestOptions()): VideoTemplate {
+        return client.request<VideoTemplate>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/video-templates/${encodePathSegment(templateId)}/unpublish",
                 idempotent = true,
                 options = options,
             )
@@ -622,7 +924,7 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun createAdminProvider(body: JsonObject, options: RequestOptions = RequestOptions()): CreateAdminProviderResponse {
+    public suspend fun createAdminProvider(body: CreateAdminProviderRequest, options: RequestOptions = RequestOptions()): CreateAdminProviderResponse {
         return client.request<CreateAdminProviderResponse>(
             RequestSpec(
                 method = "POST",
@@ -640,15 +942,16 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * Creates a tenant with a generated UUIDv7 id, writing the canonical `tenant` record and its
      * registry entry and registering it with the cron scheduler. `slug` defaults to a slugified
      * `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
-     * defaults when omitted. Deliberately writes only the canonical record and not the
-     * `tenant_meta` overlay, because suspend and reactivate act on the canonical row alone.
+     * defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
+     * claim are written in one commit; a `slug` the caller chose that another tenant holds is
+     * refused with 409, and a slug derived from `name` that collides is lengthened instead.
      * Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
      *
      * `POST /api/v1/admin/tenants`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun createTenant(body: JsonObject, options: RequestOptions = RequestOptions()): Tenant {
+    public suspend fun createTenant(body: CreateTenantRequest, options: RequestOptions = RequestOptions()): Tenant {
         return client.request<Tenant>(
             RequestSpec(
                 method = "POST",
@@ -1004,9 +1307,11 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `admin`.
      */
-    public suspend fun getAuditForTarget(targetId: String, type: String? = null, options: RequestOptions = RequestOptions()): AdminAuditList {
+    public suspend fun getAuditForTarget(targetId: String, type: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): AdminAuditList {
         val query = buildList {
             if (type != null) add("type" to type)
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
         }
         return client.request<AdminAuditList>(
             RequestSpec(
@@ -1017,6 +1322,17 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getAuditForTarget`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getAuditForTargetAll(targetId: String, type: String? = null, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<AdminAuditListEntry> = autoPaginate(
+        fetch = { pageCursor -> getAuditForTarget(targetId = targetId, type = type, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.entries },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * EU AI Act conformity report
@@ -1127,9 +1443,9 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     /**
      * Get tenant details
      *
-     * Returns one tenant record — the `tenant_meta` overlay when present, otherwise the canonical
-     * `tenant` row — with the live platform model defaults projected in and `primary_email` from
-     * the owner index. 404 when neither record exists. Super-admin only.
+     * Returns one tenant's canonical `tenant` record with the live platform model defaults
+     * projected in and `primary_email` from the owner index. 404 when neither record exists.
+     * Super-admin only.
      *
      * `GET /api/v1/admin/tenants/{tenantId}`
      *
@@ -1413,10 +1729,10 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     /**
      * List all tenants (super admin only)
      *
-     * Lists every tenant in the platform registry, up to 5000, each record enriched with the owner
-     * address from the `tenant_primary_email` index. A record is read from the `tenant_meta`
-     * overlay first and falls back to the canonical `tenant` row. When the registry is empty the
-     * caller's own tenant is returned so the console is never blank. Super-admin only.
+     * Lists every tenant in the platform registry (paged internally, no upper bound), each record
+     * enriched with the owner address from the `tenant_primary_email` index. Each record is the
+     * canonical `tenant` row. When the registry is empty the caller's own tenant is returned so
+     * the console is never blank. Super-admin only.
      *
      * `GET /api/v1/admin/tenants`
      *
@@ -1553,6 +1869,10 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * the cached provider model metadata is dropped. Writes a `platform.llm_defaults.set` audit
      * entry naming the provider but never the key. Super-admin only.
      *
+     * WRITE SEMANTICS: replaces. The body carries one field, `api_key`, and it overwrites the
+     * provider's platform key in KV and in the in-memory pool; nothing else is stored under that
+     * key.
+     *
      * `PUT /api/v1/admin/llm-defaults/{providerId}`
      *
      * Required scopes: `admin`.
@@ -1576,10 +1896,15 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * must already be registered or the call is 400, and when the provider declares a model
      * allowlist the chosen model must be in it; an endpoint must be a public absolute URL, so
      * loopback, private-range and cloud-metadata hosts are refused because
-     * `/providers/platform-defaults` republishes these values unauthenticated. An omitted endpoint
-     * is backfilled from the provider's registered endpoint. Setting both a default provider and
-     * model marks the `llm_provider` step of the setup wizard complete, and a
-     * `platform.llm_defaults.set` audit entry is written. Super-admin only.
+     * `/providers/platform-defaults` republishes these values unauthenticated. An endpoint is
+     * backfilled from the provider's registered endpoint only when none is held after the merge.
+     * Setting both a default provider and model marks the `llm_provider` step of the setup wizard
+     * complete, and a `platform.llm_defaults.set` audit entry is written. Super-admin only.
+     *
+     * WRITE SEMANTICS: merges. An omitted field keeps the value the running process holds (not a
+     * fresh KV read) and is re-saved with it. An empty-string `endpoint` clears it. The endpoint
+     * is backfilled from the provider's registered one only when none is held after the merge, so
+     * changing `provider` without sending `endpoint` keeps the previous provider's endpoint.
      *
      * `PUT /api/v1/admin/llm-defaults/model-config`
      *
@@ -1637,6 +1962,11 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * site stops resolving. The optional body field `reason` is stored and recorded in the
      * `tenant.suspended` audit entry; an absent or unparseable body defaults it. 404 when the
      * tenant record does not exist. Super-admin only.
+     *
+     * WRITE SEMANTICS: merges. Only `status` (set to suspended), `suspension_reason`,
+     * `suspended_at` and `updated_at` are written. The write is a compare-and-set onto the current
+     * `tenant` record, so every other field keeps its stored value. The `tenant_meta` overlay is
+     * not touched. An absent, unparseable or empty `reason` falls back to the default text.
      *
      * `PUT /api/v1/admin/tenants/{tenantId}/suspend`
      *
@@ -1747,11 +2077,15 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * the in-process cache and fans out to `ConfigStore` subscribers; a fan-out failure is logged
      * and does not undo the KV write. Super-admin only, like every `/admin/config` route.
      *
+     * WRITE SEMANTICS: merges. Each rate the body omits keeps its current effective value — the
+     * stored override, or else the config default — and the full merged set is then stored, so
+     * defaults that were in effect become explicit overrides.
+     *
      * `PUT /api/v1/admin/config/pricing`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminPricing(body: JsonObject? = null, options: RequestOptions = RequestOptions()): UpdateAdminPricingResponse {
+    public suspend fun updateAdminPricing(body: UpdateAdminPricingRequest? = null, options: RequestOptions = RequestOptions()): UpdateAdminPricingResponse {
         return client.request<UpdateAdminPricingResponse>(
             RequestSpec(
                 method = "PUT",
@@ -1771,15 +2105,21 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * provider record itself and invalidate the model-catalogue cache. Supplying `api_key` rotates
      * the platform key for this provider and refreshes the in-memory pool; there is no way to
      * clear a key here — that is `DELETE /admin/llm-defaults/{providerId}` — so an omitted
-     * `api_key` never means "remove it". 404 for an unknown provider. Writes a `provider.updated`
-     * audit entry, and a separate `platform.llm_defaults.set` entry when a key was rotated.
-     * Super-admin only.
+     * `api_key` never means "remove it". 404 for any provider that is not a custom provider,
+     * built-in ones included. Writes a `provider.updated` audit entry, and a separate
+     * `platform.llm_defaults.set` entry when a key was rotated. Super-admin only.
+     *
+     * WRITE SEMANTICS: mixed. An omitted field keeps its stored value. `enabled` merges into the
+     * settings row, while a `model_allowlist` that is present replaces the stored list whole.
+     * `requires_api_key` and `canonical` merge onto the custom-provider record. An omitted or
+     * empty `api_key` leaves the key unchanged. Only custom providers are accepted: any other id,
+     * built-in ones included, answers 404.
      *
      * `PATCH /api/v1/admin/providers/{providerId}`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminProvider(providerId: String, body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminProviderResponse {
+    public suspend fun updateAdminProvider(providerId: String, body: UpdateAdminProviderRequest, options: RequestOptions = RequestOptions()): UpdateAdminProviderResponse {
         return client.request<UpdateAdminProviderResponse>(
             RequestSpec(
                 method = "PATCH",
@@ -1797,15 +2137,20 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * Updates the narrow slice of tenant settings an operator may change directly:
      * `egress_allowlist`, `max_retention_days` and the `legal_hold` flag. An omitted field is left
      * as it was. The canonical `tenant` record is updated through a compare-and-set so a
-     * concurrent suspend or plan sync cannot clobber it from a stale snapshot, and the
-     * `tenant_meta` overlay is kept in step only when it already exists. 404 when neither record
-     * exists. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin only.
+     * concurrent suspend or plan sync cannot clobber it from a stale snapshot, 404 when the tenant
+     * has no record. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin
+     * only.
+     *
+     * WRITE SEMANTICS: mixed. A compare-and-set merge onto the tenant record: an omitted field
+     * keeps its stored value. `max_retention_days` and `legal_hold` are written as sent; an
+     * `egress_allowlist` that is present replaces the stored list whole. `null` is refused by the
+     * schema, so nothing can be cleared here.
      *
      * `PATCH /api/v1/admin/tenants/{tenantId}/settings`
      *
      * Required scopes: `admin`.
      */
-    public suspend fun updateAdminTenantSettings(tenantId: String, body: JsonObject, options: RequestOptions = RequestOptions()): UpdateAdminTenantSettingsResponse {
+    public suspend fun updateAdminTenantSettings(tenantId: String, body: UpdateAdminTenantSettingsRequest, options: RequestOptions = RequestOptions()): UpdateAdminTenantSettingsResponse {
         return client.request<UpdateAdminTenantSettingsResponse>(
             RequestSpec(
                 method = "PATCH",

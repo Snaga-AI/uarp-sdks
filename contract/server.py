@@ -220,6 +220,39 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, BINARY, content_type="application/octet-stream")
         if path == "/api/v1/files/f1":
             return self._send(204, b"")
+        if path == "/api/v1/llm/chat/completions" and self.command == "POST":
+            #  Scenario 17: a POST answered as an event stream (an LLM
+            #  completion with "stream": true). Two chunks, then [DONE].
+            frames = (
+                b'data: {"choices":[{"index":0,"delta":{"content":"he"}}]}\n\n'
+                b'data: {"choices":[{"index":0,"delta":{"content":"llo"}}]}\n\n'
+                b"data: [DONE]\n\n"
+            )
+            return self._send(200, frames, content_type="text/event-stream")
+        if path == "/api/v1/llm/chat/completions/refused" and self.command == "POST":
+            #  Scenario 18: the refusal arrives before any stream. A 429 is the
+            #  status every SDK retries elsewhere; a streamed POST must not be
+            #  replayed (it would run, and bill, the model twice).
+            return self._send(
+                429,
+                json.dumps(
+                    {"title": "Too Many Requests", "status": 429, "detail": "llm quota exhausted"}
+                ).encode(),
+                content_type="application/problem+json",
+                extra={"Retry-After": "0"},
+            )
+        if path == "/api/v1/llm/chat/completions/plain" and self.command == "POST":
+            #  Scenario 19: a 2xx that is not an event stream (a caller left
+            #  out "stream": true). It must be an error, not a stream that
+            #  ended with no events.
+            return self._json(
+                200, {"choices": [{"index": 0, "message": {"role": "assistant", "content": "hello"}}]}
+            )
+        if path == "/api/v1/auth/oauth/apple/callback" and self.command == "POST":
+            #  Scenario 20: a form body (Sign in with Apple posts its callback
+            #  as application/x-www-form-urlencoded). The bytes are compared
+            #  exactly; the answer is the 200 the spec declares.
+            return self._json(200, {"api_key": "uarp_contract_form", "email": "a@b.c"})
         if path == "/api/v1/runs/r1/events":
             frames = (
                 b"id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\n"

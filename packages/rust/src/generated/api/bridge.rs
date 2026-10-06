@@ -153,10 +153,11 @@ impl BridgeApi {
     /// Register bridge agent (Snaga CLI handshake)
     ///
     /// Registers a long-lived bridge agent for the calling tenant. Returns 201 on first
-    /// registration, 200 on reconnect of an existing machine_id. Requires `agents:write` and role
-    /// `developer` or above — registering a machine creates and rewrites an agent record, so it is
-    /// a write like any other (2026-09-15; until then this surface enforced no scope or role at
-    /// all).
+    /// registration, 200 on reconnect of an existing machine_id, and 410 `agent_deleted` when a
+    /// person deleted this machine's agent — such a machine is refused, not resurrected. Requires
+    /// `agents:write` and role `developer` or above — registering a machine creates and rewrites an
+    /// agent record, so it is a write like any other (2026-09-15; until then this surface enforced
+    /// no scope or role at all).
     ///
     /// `POST /api/v1/bridge/register`
     ///
@@ -202,8 +203,12 @@ impl BridgeApi {
     /// Bridge WebSocket upgrade endpoint for the Snaga CLI
     ///
     /// WebSocket upgrade. Long-lived bidirectional channel between a `snaga serve` CLI and the
-    /// platform. Server delivers tasks, client streams capabilities and tool results. Auth via
-    /// `Sec-WebSocket-Protocol: uarp.\<base64(api_key)\>` subprotocol.
+    /// platform. Server delivers tasks, client streams capabilities and tool results. Requires an
+    /// API key (a browser session token is refused), presented in the upgrade request as
+    /// `Authorization: Bearer \<key\>` (or the deprecated `?token=`), or as `token` in the first
+    /// `auth` frame, which must arrive within 10 s. The upgrade itself is answered without
+    /// credentials — the key is checked in band, by the handler, and a socket that does not present
+    /// a valid one is closed with 4001. `Sec-WebSocket-Protocol` is not read on this path.
     ///
     /// `GET /api/v1/bridge/ws`
     pub async fn bridge_web_socket(&self) -> Result<serde_json::Value> {
@@ -293,6 +298,30 @@ impl BridgeApi {
             .await
     }
 
+    /// List machines whose agent a person deleted
+    ///
+    /// Machines refused with 410 `agent_deleted` because a person deleted or terminated their
+    /// bridge agent, newest first. Server-side sweeps leave no entry. Snaga 1.7.0 recomputes the
+    /// same machine id from host and user, so for those machines lifting the entry (DELETE on the
+    /// item) is the only way back short of `snaga connect --new` (Snaga 1.8+). Requires the
+    /// `agents` read permission and the `agents:read` scope. Added 2026-09-23.
+    ///
+    /// `GET /api/v1/bridge/deleted-machines`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_deleted_bridge_machines(&self) -> Result<models::ListDeletedBridgeMachinesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/bridge/deleted-machines".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Push task events
     ///
     /// Machine-to-machine only: a browser session token is refused 403 here, and the credential
@@ -316,6 +345,29 @@ impl BridgeApi {
                 path: format!("/api/v1/bridge/tasks/{}/events", encode_path(task_id)),
                 query: NO_QUERY,
                 body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Let a deleted machine connect again
+    ///
+    /// Lifts the refusal for one machine. Its next register creates a NEW agent — the deleted one
+    /// stays deleted, and the old connection record is dropped so nothing reconnects under its id.
+    /// 404 when the machine is not in the list. Undoing a delete takes the `agents` delete
+    /// permission and the `agents:write` scope. Added 2026-09-23.
+    ///
+    /// `DELETE /api/v1/bridge/deleted-machines/{machineId}`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn reconnect_deleted_bridge_machine(&self, machine_id: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/bridge/deleted-machines/{}", encode_path(machine_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
             })

@@ -125,12 +125,31 @@ public struct UsersAPI: Sendable {
     /// `GET /api/v1/users`
     ///
     /// Required scopes: `users:read`.
-    public func list(options: RequestOptions = .init()) async throws -> ListUsersResponse {
+    public func list(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListUsersResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/users",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listUsers`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    public func listAll(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<TenantUser, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.list(limit: limit, cursor: cursor, options: options) },
+            items: { $0.items ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// List invites
@@ -143,12 +162,31 @@ public struct UsersAPI: Sendable {
     /// `GET /api/v1/users/invites`
     ///
     /// Required scopes: `users:read`.
-    public func listInvites(options: RequestOptions = .init()) async throws -> ListInvitesResponse {
+    public func listInvites(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListInvitesResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/users/invites",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listInvites`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    public func listInvitesAll(limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Invite, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listInvites(limit: limit, cursor: cursor, options: options) },
+            items: { $0.items ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Resend the invite email
@@ -179,6 +217,10 @@ public struct UsersAPI: Sendable {
     /// An unknown user is **404** and a role outside the accepted enum fails body validation.
     /// Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
     /// entry.
+    ///
+    /// WRITE SEMANTICS: merges. Only `role` is read; the write sets `role` and `updated_at` on the
+    /// stored user and every other field of the user record is kept. The user's live session keys
+    /// are then re-scoped to the new role.
     ///
     /// `PUT /api/v1/users/{userId}/role`
     ///
@@ -216,6 +258,9 @@ public struct UsersAPI: Sendable {
     ///
     /// Demotes the calling owner to admin and promotes the target user to owner. Irreversible
     /// without a counter-transfer.
+    ///
+    /// The calling owner is the user the credential is bound to, never a field in the body: a key
+    /// bound to no user (a legacy shared key) is refused with **403**.
     ///
     /// `POST /api/v1/users/{userId}/transfer-ownership`
     ///

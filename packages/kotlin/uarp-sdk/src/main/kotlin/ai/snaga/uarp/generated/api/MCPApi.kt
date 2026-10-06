@@ -34,17 +34,20 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check
      * resolving DNS, so a hostname that points at a private or metadata address is rejected and a
      * resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*`
-     * environment variable. For an authenticated `http`/`streamable_http` server put the secret in
-     * `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never
-     * returned, and dropped from the stored plaintext. After persisting, a live session is opened
-     * immediately so tools surface on the next run, and a failure to connect is non-fatal and
-     * reported as `connect_error` on the 201 response.
+     * environment variable, and is used only on the origin the operator bound that variable to.
+     * For an authenticated `http`/`streamable_http` server put the secret in `env` and describe
+     * where it goes with `auth`; any `env` block is encrypted at rest, never returned, and dropped
+     * from the stored plaintext. After persisting, a live session is opened immediately so tools
+     * surface on the next run, and a failure to connect is non-fatal and reported as
+     * `connect_error` on the 201 response.
      *
      * Pass `assigned_agent_ids` in the same call to connect it at once — a server installed and
      * connected to nobody is inert, and leaving it in that state is how a working configuration
      * comes to look broken.
      *
      * `POST /api/v1/mcp/servers`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = RequestOptions()): MCPServer {
         return client.request<MCPServer>(
@@ -69,6 +72,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * which is logged. 200 whether or not the server existed.
      *
      * `DELETE /api/v1/mcp/servers/{serverId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun deleteMCPServer(serverId: String, options: RequestOptions = RequestOptions()): DeleteMCPServerResponse {
         return client.request<DeleteMCPServerResponse>(
@@ -89,6 +94,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * never returned. 404 when the tenant has no such server.
      *
      * `GET /api/v1/mcp/servers/{serverId}`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getMCPServer(serverId: String, options: RequestOptions = RequestOptions()): MCPServer {
         return client.request<MCPServer>(
@@ -137,6 +144,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * many secrets are configured without receiving any of them.
      *
      * `GET /api/v1/mcp/servers`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun listMCPServers(options: RequestOptions = RequestOptions()): ListMCPServersResponse {
         return client.request<ListMCPServersResponse>(
@@ -156,6 +165,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * headers return 400.
      *
      * `POST /api/v1/mcp`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = RequestOptions()): JSONRpcResponse {
         val headers = buildList {
@@ -187,6 +198,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * issued and no state carries between requests.
      *
      * `GET /api/v1/mcp`
+     *
+     * Required scopes: `agents:read`.
      *
      * Returns a cold flow of server-sent events.
      */
@@ -244,6 +257,8 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * `tool_count`/`tools` are absent.
      *
      * `POST /api/v1/mcp/servers/{serverId}/test`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun testMCPServer(serverId: String, options: RequestOptions = RequestOptions()): MCPServerTestResult {
         return client.request<MCPServerTestResult>(
@@ -265,7 +280,15 @@ public class MCPApi internal constructor(private val client: UarpClient) {
      * `env_encrypted` / `last_synced` are the handler's own and are refused from the wire. `env:
      * {}` explicitly clears the stored environment.
      *
+     * A stored secret is sent to whatever `url` the record holds, so a `url` that moves the server
+     * to a different ORIGIN (scheme, host or port) while it holds a stored `env` or `api_key_ref`
+     * is refused with **409** unless the same request also sends that field — the value to use at
+     * the new origin, or `env: {}` / `api_key_ref: ""` to drop it. A path or query change on the
+     * same origin is not a move.
+     *
      * `PATCH /api/v1/mcp/servers/{serverId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun updateMCPServer(serverId: String, body: UpdateMCPServerRequest, options: RequestOptions = RequestOptions()): MCPServerWithConnectResult {
         return client.request<MCPServerWithConnectResult>(

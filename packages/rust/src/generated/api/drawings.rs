@@ -87,7 +87,7 @@ impl DrawingsApi {
     ///
     /// `POST /api/v1/drawings/{drawingId}/ops`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     pub async fn append_drawing_ops(&self, drawing_id: &str, body: &models::AppendDrawingOpsRequest) -> Result<models::AppendDrawingOpsResponse> {
         self.client
             .request_json(Request {
@@ -112,7 +112,7 @@ impl DrawingsApi {
     ///
     /// `POST /api/v1/drawings/{drawingId}/masks`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     pub async fn create_drawing_mask(&self, drawing_id: &str, body: &models::CreateDrawingMaskRequest) -> Result<models::DrawingMask> {
         self.client
             .request_json(Request {
@@ -161,7 +161,7 @@ impl DrawingsApi {
     ///
     /// `DELETE /api/v1/drawings/{drawingId}`
     ///
-    /// Required scopes: `drawing:write`.
+    /// Required scopes: `drawing:write`, `sessions:write`.
     pub async fn delete(&self, drawing_id: &str, params: &DeleteDrawingParams) -> Result<models::DeleteDrawingResponse> {
         let mut headers: Vec<(&'static str, String)> = Vec::new();
         headers.push(("If-Match", params.if_match.clone()));
@@ -186,7 +186,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn get(&self, drawing_id: &str) -> Result<models::Drawing> {
         self.client
             .request_json(Request {
@@ -208,7 +208,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}/masks/{maskId}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn get_drawing_mask(&self, drawing_id: &str, mask_id: &str) -> Result<models::DrawingMask> {
         self.client
             .request_json(Request {
@@ -230,7 +230,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}/masks/{maskId}/content`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn get_drawing_mask_content(&self, drawing_id: &str, mask_id: &str) -> Result<bytes::Bytes> {
         self.client
             .request_bytes(Request {
@@ -253,7 +253,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn get_drawing_tile(&self, drawing_id: &str, layer_id: &str, tx: i64, ty: i64, params: &GetDrawingTileParams) -> Result<bytes::Bytes> {
         self.client
             .request_bytes(Request {
@@ -278,7 +278,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}/ops`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn list_drawing_ops(&self, drawing_id: &str, params: &ListDrawingOpsParams) -> Result<models::ListDrawingOpsResponse> {
         self.client
             .request_json(Request {
@@ -347,7 +347,7 @@ impl DrawingsApi {
     ///
     /// `GET /api/v1/drawings/{drawingId}/render`
     ///
-    /// Required scopes: `drawing:read`.
+    /// Required scopes: `drawing:read`, `sessions:read`.
     pub async fn render_drawing(&self, drawing_id: &str, params: &RenderDrawingParams) -> Result<bytes::Bytes> {
         self.client
             .request_bytes(Request {

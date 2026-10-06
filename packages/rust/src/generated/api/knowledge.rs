@@ -6,12 +6,27 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
+
+/// Query and header parameters for `listKbDocuments`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListKbDocumentsParams {
+    /// Page size, oldest first. ABSENT means the whole list, exactly as before paging existed — not
+    /// a default page. Values outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
 
 /// Knowledge base management
 #[derive(Debug, Clone)]
@@ -175,17 +190,40 @@ impl KnowledgeApi {
     /// `GET /api/v1/knowledge-bases/{kbId}/documents`
     ///
     /// Required scopes: `memory:read`.
-    pub async fn list_kb_documents(&self, kb_id: &str) -> Result<models::ListKbDocumentsResponse> {
+    pub async fn list_kb_documents(&self, kb_id: &str, params: &ListKbDocumentsParams) -> Result<models::ListKbDocumentsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/knowledge-bases/{}/documents", encode_path(kb_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listKbDocuments`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn list_kb_documents_all<'a>(&'a self, kb_id: &'a str, params: &'a ListKbDocumentsParams) -> impl Stream<Item = Result<models::KnowledgeBaseDocument>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_kb_documents(kb_id, &page_params).await?;
+                let items = page.documents.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// List knowledge bases
@@ -216,8 +254,13 @@ impl KnowledgeApi {
     /// Re-embed every chunk with the current model
     ///
     /// Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
-    /// embedding drift after a model change. Requires an embeddings backend: without one the answer
-    /// is 503 and nothing is written.
+    /// embedding drift after a model change. Incremental: chunks that already carry a vector from
+    /// the current model are skipped (`already_current`), and only the rest are embedded, inside
+    /// the embedding request's deadline. What the deadline cuts off is stored as far as it got and
+    /// counted as `pending`; call again until `reindexed` is true — each call continues where the
+    /// last one stopped. Requires an embeddings backend: without one the answer is 503 and nothing
+    /// is written; 503 `kb_embedding_failed` when chunks needed a vector and the provider returned
+    /// none.
     ///
     /// `POST /api/v1/knowledge-bases/{kbId}/reindex`
     ///

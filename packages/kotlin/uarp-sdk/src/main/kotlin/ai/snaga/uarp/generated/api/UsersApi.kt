@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * User management, invites, roles
@@ -162,15 +163,31 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:read`.
      */
-    public suspend fun list(options: RequestOptions = RequestOptions()): ListUsersResponse {
+    public suspend fun list(limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListUsersResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListUsersResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/users",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listUsers`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun listAll(limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<TenantUser> = autoPaginate(
+        fetch = { pageCursor -> list(limit = limit, cursor = pageCursor, options = options) },
+        items = { it.items ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * List invites
@@ -184,15 +201,31 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `users:read`.
      */
-    public suspend fun listInvites(options: RequestOptions = RequestOptions()): ListInvitesResponse {
+    public suspend fun listInvites(limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListInvitesResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListInvitesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/users/invites",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listInvites`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun listInvitesAll(limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<Invite> = autoPaginate(
+        fetch = { pageCursor -> listInvites(limit = limit, cursor = pageCursor, options = options) },
+        items = { it.items ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Resend the invite email
@@ -227,6 +260,10 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      * An unknown user is **404** and a role outside the accepted enum fails body validation.
      * Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
      * entry.
+     *
+     * WRITE SEMANTICS: merges. Only `role` is read; the write sets `role` and `updated_at` on the
+     * stored user and every other field of the user record is kept. The user's live session keys
+     * are then re-scoped to the new role.
      *
      * `PUT /api/v1/users/{userId}/role`
      *
@@ -272,6 +309,9 @@ public class UsersApi internal constructor(private val client: UarpClient) {
      *
      * Demotes the calling owner to admin and promotes the target user to owner. Irreversible
      * without a counter-transfer.
+     *
+     * The calling owner is the user the credential is bound to, never a field in the body: a key
+     * bound to no user (a legacy shared key) is refused with **403**.
      *
      * `POST /api/v1/users/{userId}/transfer-ownership`
      *

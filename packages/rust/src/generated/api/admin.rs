@@ -4,6 +4,8 @@
 
 #![allow(unused_imports, clippy::too_many_arguments)]
 
+use std::collections::HashMap;
+
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
 use futures_core::Stream;
@@ -54,6 +56,15 @@ pub struct AdminDataExplorerRawKeysParams {
     pub search: Option<String>,
 }
 
+/// Query and header parameters for `adminListVideoOrders`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminListVideoOrdersParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<models::VideoOrderStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
 /// Query and header parameters for `exportDataExplorer`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ExportDataExplorerParams {
@@ -71,6 +82,14 @@ pub struct GetAuditForTargetParams {
     /// Target type (e.g., agent, run, tenant)
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub r#type: Option<String>,
+    /// Page size, in the order recorded. ABSENT means the whole list, exactly as before paging
+    /// existed — not a default page. Values outside 1..500 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
 }
 
 /// Query and header parameters for `getImmutableAudit`.
@@ -241,6 +260,49 @@ impl AdminApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
+            })
+            .await
+    }
+
+    /// Archive a video template
+    ///
+    /// Takes it off sale for good. Paid orders keep their own copy of the template and finish
+    /// normally. Requires the `admin` scope and super-admin identity.
+    ///
+    /// `DELETE /api/v1/admin/video-templates/{templateId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_archive_video_template(&self, template_id: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/video-templates/{}", encode_path(template_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Create a video template
+    ///
+    /// Creates a DRAFT. It reaches the gallery only through publish, which needs a passed test run.
+    /// The model must be one whose request shape is known, and the clip length and photo role must
+    /// be ones that model accepts. Requires the `admin` scope and super-admin identity.
+    ///
+    /// `POST /api/v1/admin/video-templates`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_create_video_template(&self, body: &models::VideoTemplateInput) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/video-templates".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
             })
             .await
     }
@@ -458,6 +520,51 @@ impl AdminApi {
             .await
     }
 
+    /// Admin: get the web-search provider chain
+    ///
+    /// Returns the stored web-search config (`search`, including `fallbacks`) and what it resolves
+    /// to: `resolved` is the primary alone, `chain` is the order `web_search` and `POST
+    /// /tools/web_search` actually dial — primary first, then each fallback that resolves.
+    /// `web_search_enabled` is true while ANY link resolves. `unresolved_reason` explains a primary
+    /// that does not resolve; `unresolved_fallbacks` names each dropped fallback and why. API keys
+    /// are never returned, only `keyed`. Super-admin only, like every `/admin/config` route.
+    ///
+    /// `GET /api/v1/admin/config/search`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_get_search_config(&self) -> Result<models::AdminGetSearchConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/config/search".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Get a video template
+    ///
+    /// Requires the `admin` scope and super-admin identity.
+    ///
+    /// `GET /api/v1/admin/video-templates/{templateId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_get_video_template(&self, template_id: &str) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/video-templates/{}", encode_path(template_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Admin: get default voice (STT/TTS) config
     ///
     /// Returns the platform's default voice configuration — the STT provider and model, and the TTS
@@ -530,6 +637,51 @@ impl AdminApi {
             .await
     }
 
+    /// List recent video orders
+    ///
+    /// Newest first: status, money state, attempts with their outcome, and the ESTIMATED provider
+    /// cost — estimated because the provider's response carries none (measured 2026-10-03);
+    /// reconcile against its invoice. Buyer emails are masked. Requires the `admin` scope and
+    /// super-admin identity.
+    ///
+    /// `GET /api/v1/admin/video-orders`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_list_video_orders(&self, params: &AdminListVideoOrdersParams) -> Result<models::AdminListVideoOrdersResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/video-orders".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// List video templates
+    ///
+    /// Every template in any status (draft, published, archived) with its model, hidden prompt,
+    /// last test and estimated provider cost per clip. Requires the `admin` scope and super-admin
+    /// identity.
+    ///
+    /// `GET /api/v1/admin/video-templates`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_list_video_templates(&self) -> Result<models::AdminListVideoTemplatesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/video-templates".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List dead-lettered webhook deliveries
     ///
     /// Lists every dead-lettered Stripe webhook event — the events whose handler failed and that
@@ -553,6 +705,27 @@ impl AdminApi {
             .await
     }
 
+    /// Publish a video template
+    ///
+    /// Puts it in the gallery. Refused until a test run since the last change produced a clip.
+    /// Requires the `admin` scope and super-admin identity.
+    ///
+    /// `POST /api/v1/admin/video-templates/{templateId}/publish`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_publish_video_template(&self, template_id: &str) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/admin/video-templates/{}/publish", encode_path(template_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Admin: set landing-page featured-agent config
     ///
     /// Writes the landing-page configuration. An omitted field means no change and is read back
@@ -566,10 +739,15 @@ impl AdminApi {
     /// complete. Writes an `admin.config_updated` audit entry and returns the new version.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. An omitted field keeps its stored value. Explicit null clears
+    /// `public_agent_id` and `partners`. A `texts` map that is present replaces the stored map
+    /// whole, and `partners` replaces the stored array whole. `tier` is accepted but never stored.
+    /// With `expected_version`, a stale write answers 409.
+    ///
     /// `PUT /api/v1/admin/config/landing`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_landing_config(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminPutLandingConfigResponse> {
+    pub async fn admin_put_landing_config(&self, body: &models::AdminPutLandingConfigRequest) -> Result<models::AdminPutLandingConfigResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -592,10 +770,15 @@ impl AdminApi {
     /// rather than waiting out the TTL, an `admin.config_updated` audit entry is written, and the
     /// new version is returned. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored catalogue becomes exactly the `models` array, which is
+    /// required. A model the body omits is removed from the catalogue, and unknown row fields are
+    /// stripped. With `expected_version`, a stale write answers 409; null asserts that no record
+    /// exists yet.
+    ///
     /// `PUT /api/v1/admin/config/model-catalog`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_model_catalog(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminPutModelCatalogResponse> {
+    pub async fn admin_put_model_catalog(&self, body: &models::AdminPutModelCatalogRequest) -> Result<models::AdminPutModelCatalogResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -614,6 +797,11 @@ impl AdminApi {
     /// doesn't require re-pasting the secret). First-time PUT requires both client_id and
     /// client_secret. Stored encrypted at rest.
     ///
+    /// WRITE SEMANTICS: mixed. The record is rebuilt from four fields: `enabled`, `client_id`,
+    /// `client_secret` and `scopes`. One of them omitted (or, for `client_id` and `client_secret`,
+    /// sent blank) keeps its stored value; with nothing stored, `enabled` defaults to true. A
+    /// `scopes` array replaces the stored list whole. Any other stored field is dropped.
+    ///
     /// `PUT /api/v1/admin/oauth-login-providers/{provider}`
     ///
     /// Required scopes: `admin`.
@@ -622,6 +810,33 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::PUT,
                 path: format!("/api/v1/admin/oauth-login-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Admin: set the web-search provider chain
+    ///
+    /// WRITE SEMANTICS: replaces. The stored web-search record is replaced whole — send every field
+    /// you want kept, including `price_per_1k_searches_usd` and `fallbacks` (the GET's `{search:
+    /// {...}}` envelope is accepted as-is). `provider` must be `ollama` or `searxng` and a
+    /// `searxng` link, primary or fallback, needs `endpoint_url`; anything else is 400. The record
+    /// is mirrored into the live runtime config, so the chain applies to the next query without a
+    /// restart. This endpoint is the only way to set it: `PUT /admin/config/runtime` refuses
+    /// `search`. Writes an `admin.config_updated` audit entry. Super-admin only, like every
+    /// `/admin/config` route.
+    ///
+    /// `PUT /api/v1/admin/config/search`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_put_search_config(&self, body: &models::AdminPutSearchConfigRequest) -> Result<models::AdminPutSearchConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/config/search".to_string(),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -641,6 +856,10 @@ impl AdminApi {
     /// fail the save. This endpoint is the only way to set these settings: `PUT
     /// /admin/config/runtime` refuses them. Writes an `admin.config_updated` audit entry.
     /// Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored record is rebuilt whole from `stt` (`provider`,
+    /// `model`) and `tts` (`provider`, `model`, `voice`); all five are required, so a body missing
+    /// any of them is refused 422 rather than partially applied.
     ///
     /// `PUT /api/v1/admin/config/voice`
     ///
@@ -665,14 +884,43 @@ impl AdminApi {
     /// model ids and responds with the same view the GET returns. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The whole preset map (model id to voice list) is stored as sent;
+    /// a model id the body omits loses its presets.
+    ///
     /// `PUT /api/v1/admin/config/voice-presets`
     ///
     /// Required scopes: `admin`.
-    pub async fn admin_put_voice_presets(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AdminVoicePresets> {
+    pub async fn admin_put_voice_presets(&self, body: &HashMap<String, Vec<String>>) -> Result<models::AdminVoicePresets> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
                 path: "/api/v1/admin/config/voice-presets".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Replace a video template
+    ///
+    /// WRITE SEMANTICS: replaces. The body is the whole template: an optional field it omits
+    /// returns to its default (`badge` null, `position` 100, `text_slots` empty, no
+    /// `negative_prompt`) rather than surviving from the stored record. Status, last test, example
+    /// clip and timestamps are not part of the body and are kept. Changing how a clip is made
+    /// (model, seconds, photo role, prompt, negative prompt, text fields) clears the last test and
+    /// takes a published template back to draft until it is tested again. Requires the `admin`
+    /// scope and super-admin identity.
+    ///
+    /// `PUT /api/v1/admin/video-templates/{templateId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_replace_video_template(&self, template_id: &str, body: &models::VideoTemplateInput) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: format!("/api/v1/admin/video-templates/{}", encode_path(template_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),
@@ -701,6 +949,79 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/admin/webhooks/dlq/{}/replay", encode_path(event_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Use a test clip as the gallery example
+    ///
+    /// Copies the clip of a finished test run of this template into a durable example. Requires the
+    /// `admin` scope and super-admin identity.
+    ///
+    /// `POST /api/v1/admin/video-templates/{templateId}/preview`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_set_video_template_preview(&self, template_id: &str, body: &models::AdminSetVideoTemplatePreviewRequest) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/admin/video-templates/{}/preview", encode_path(template_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Test a template on a photo
+    ///
+    /// Runs the template on a photo exactly as an order would, without payment. When the clip is
+    /// finished the template's `last_test` records it; follow the run with the public order route
+    /// and the returned token. Requires the `admin` scope and super-admin identity.
+    ///
+    /// `POST /api/v1/admin/video-templates/{templateId}/test`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_test_video_template(&self, template_id: &str, body: &models::AdminTestVideoTemplateRequest) -> Result<models::AdminTestVideoTemplateResponse> {
+        self.client
+            .request_multipart(
+                Request {
+                    method: Method::POST,
+                    path: format!("/api/v1/admin/video-templates/{}/test", encode_path(template_id)),
+                    query: NO_QUERY,
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                || {
+                    let mut form = reqwest::multipart::Form::new();
+                    form = form.part("photo", body.photo.clone().into_part()?);
+                    if let Some(value) = &body.slots {
+                        form = form.text("slots", field_text(value)?);
+                    }
+                    Ok(form)
+                },
+            )
+            .await
+    }
+
+    /// Take a template out of the gallery
+    ///
+    /// Requires the `admin` scope and super-admin identity.
+    ///
+    /// `POST /api/v1/admin/video-templates/{templateId}/unpublish`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn admin_unpublish_video_template(&self, template_id: &str) -> Result<models::VideoTemplate> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/admin/video-templates/{}/unpublish", encode_path(template_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -744,7 +1065,7 @@ impl AdminApi {
     /// `POST /api/v1/admin/providers`
     ///
     /// Required scopes: `admin`.
-    pub async fn create_admin_provider(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::CreateAdminProviderResponse> {
+    pub async fn create_admin_provider(&self, body: &models::CreateAdminProviderRequest) -> Result<models::CreateAdminProviderResponse> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -762,14 +1083,15 @@ impl AdminApi {
     /// Creates a tenant with a generated UUIDv7 id, writing the canonical `tenant` record and its
     /// registry entry and registering it with the cron scheduler. `slug` defaults to a slugified
     /// `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
-    /// defaults when omitted. Deliberately writes only the canonical record and not the
-    /// `tenant_meta` overlay, because suspend and reactivate act on the canonical row alone.
+    /// defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
+    /// claim are written in one commit; a `slug` the caller chose that another tenant holds is
+    /// refused with 409, and a slug derived from `name` that collides is lengthened instead.
     /// Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
     ///
     /// `POST /api/v1/admin/tenants`
     ///
     /// Required scopes: `admin`.
-    pub async fn create_tenant(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Tenant> {
+    pub async fn create_tenant(&self, body: &models::CreateTenantRequest) -> Result<models::Tenant> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -1140,6 +1462,29 @@ impl AdminApi {
             .await
     }
 
+    /// Stream every item returned by `getAuditForTarget`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_audit_for_target_all<'a>(&'a self, target_id: &'a str, params: &'a GetAuditForTargetParams) -> impl Stream<Item = Result<models::AdminAuditListEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_audit_for_target(target_id, &page_params).await?;
+                let items = page.entries;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
+    }
+
     /// EU AI Act conformity report
     ///
     /// Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
@@ -1239,9 +1584,9 @@ impl AdminApi {
 
     /// Get tenant details
     ///
-    /// Returns one tenant record — the `tenant_meta` overlay when present, otherwise the canonical
-    /// `tenant` row — with the live platform model defaults projected in and `primary_email` from
-    /// the owner index. 404 when neither record exists. Super-admin only.
+    /// Returns one tenant's canonical `tenant` record with the live platform model defaults
+    /// projected in and `primary_email` from the owner index. 404 when neither record exists.
+    /// Super-admin only.
     ///
     /// `GET /api/v1/admin/tenants/{tenantId}`
     ///
@@ -1536,10 +1881,10 @@ impl AdminApi {
 
     /// List all tenants (super admin only)
     ///
-    /// Lists every tenant in the platform registry, up to 5000, each record enriched with the owner
-    /// address from the `tenant_primary_email` index. A record is read from the `tenant_meta`
-    /// overlay first and falls back to the canonical `tenant` row. When the registry is empty the
-    /// caller's own tenant is returned so the console is never blank. Super-admin only.
+    /// Lists every tenant in the platform registry (paged internally, no upper bound), each record
+    /// enriched with the owner address from the `tenant_primary_email` index. Each record is the
+    /// canonical `tenant` row. When the registry is empty the caller's own tenant is returned so
+    /// the console is never blank. Super-admin only.
     ///
     /// `GET /api/v1/admin/tenants`
     ///
@@ -1671,6 +2016,10 @@ impl AdminApi {
     /// the cached provider model metadata is dropped. Writes a `platform.llm_defaults.set` audit
     /// entry naming the provider but never the key. Super-admin only.
     ///
+    /// WRITE SEMANTICS: replaces. The body carries one field, `api_key`, and it overwrites the
+    /// provider's platform key in KV and in the in-memory pool; nothing else is stored under that
+    /// key.
+    ///
     /// `PUT /api/v1/admin/llm-defaults/{providerId}`
     ///
     /// Required scopes: `admin`.
@@ -1693,10 +2042,15 @@ impl AdminApi {
     /// must already be registered or the call is 400, and when the provider declares a model
     /// allowlist the chosen model must be in it; an endpoint must be a public absolute URL, so
     /// loopback, private-range and cloud-metadata hosts are refused because
-    /// `/providers/platform-defaults` republishes these values unauthenticated. An omitted endpoint
-    /// is backfilled from the provider's registered endpoint. Setting both a default provider and
-    /// model marks the `llm_provider` step of the setup wizard complete, and a
-    /// `platform.llm_defaults.set` audit entry is written. Super-admin only.
+    /// `/providers/platform-defaults` republishes these values unauthenticated. An endpoint is
+    /// backfilled from the provider's registered endpoint only when none is held after the merge.
+    /// Setting both a default provider and model marks the `llm_provider` step of the setup wizard
+    /// complete, and a `platform.llm_defaults.set` audit entry is written. Super-admin only.
+    ///
+    /// WRITE SEMANTICS: merges. An omitted field keeps the value the running process holds (not a
+    /// fresh KV read) and is re-saved with it. An empty-string `endpoint` clears it. The endpoint
+    /// is backfilled from the provider's registered one only when none is held after the merge, so
+    /// changing `provider` without sending `endpoint` keeps the previous provider's endpoint.
     ///
     /// `PUT /api/v1/admin/llm-defaults/model-config`
     ///
@@ -1752,6 +2106,11 @@ impl AdminApi {
     /// site stops resolving. The optional body field `reason` is stored and recorded in the
     /// `tenant.suspended` audit entry; an absent or unparseable body defaults it. 404 when the
     /// tenant record does not exist. Super-admin only.
+    ///
+    /// WRITE SEMANTICS: merges. Only `status` (set to suspended), `suspension_reason`,
+    /// `suspended_at` and `updated_at` are written. The write is a compare-and-set onto the current
+    /// `tenant` record, so every other field keeps its stored value. The `tenant_meta` overlay is
+    /// not touched. An absent, unparseable or empty `reason` falls back to the default text.
     ///
     /// `PUT /api/v1/admin/tenants/{tenantId}/suspend`
     ///
@@ -1859,10 +2218,14 @@ impl AdminApi {
     /// the in-process cache and fans out to `ConfigStore` subscribers; a fan-out failure is logged
     /// and does not undo the KV write. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Each rate the body omits keeps its current effective value — the
+    /// stored override, or else the config default — and the full merged set is then stored, so
+    /// defaults that were in effect become explicit overrides.
+    ///
     /// `PUT /api/v1/admin/config/pricing`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_pricing(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminPricingResponse> {
+    pub async fn update_admin_pricing(&self, body: &models::UpdateAdminPricingRequest) -> Result<models::UpdateAdminPricingResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1882,14 +2245,20 @@ impl AdminApi {
     /// provider record itself and invalidate the model-catalogue cache. Supplying `api_key` rotates
     /// the platform key for this provider and refreshes the in-memory pool; there is no way to
     /// clear a key here — that is `DELETE /admin/llm-defaults/{providerId}` — so an omitted
-    /// `api_key` never means "remove it". 404 for an unknown provider. Writes a `provider.updated`
-    /// audit entry, and a separate `platform.llm_defaults.set` entry when a key was rotated.
-    /// Super-admin only.
+    /// `api_key` never means "remove it". 404 for any provider that is not a custom provider,
+    /// built-in ones included. Writes a `provider.updated` audit entry, and a separate
+    /// `platform.llm_defaults.set` entry when a key was rotated. Super-admin only.
+    ///
+    /// WRITE SEMANTICS: mixed. An omitted field keeps its stored value. `enabled` merges into the
+    /// settings row, while a `model_allowlist` that is present replaces the stored list whole.
+    /// `requires_api_key` and `canonical` merge onto the custom-provider record. An omitted or
+    /// empty `api_key` leaves the key unchanged. Only custom providers are accepted: any other id,
+    /// built-in ones included, answers 404.
     ///
     /// `PATCH /api/v1/admin/providers/{providerId}`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_provider(&self, provider_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminProviderResponse> {
+    pub async fn update_admin_provider(&self, provider_id: &str, body: &models::UpdateAdminProviderRequest) -> Result<models::UpdateAdminProviderResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,
@@ -1907,14 +2276,19 @@ impl AdminApi {
     /// Updates the narrow slice of tenant settings an operator may change directly:
     /// `egress_allowlist`, `max_retention_days` and the `legal_hold` flag. An omitted field is left
     /// as it was. The canonical `tenant` record is updated through a compare-and-set so a
-    /// concurrent suspend or plan sync cannot clobber it from a stale snapshot, and the
-    /// `tenant_meta` overlay is kept in step only when it already exists. 404 when neither record
-    /// exists. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin only.
+    /// concurrent suspend or plan sync cannot clobber it from a stale snapshot, 404 when the tenant
+    /// has no record. Writes a `tenant.updated` audit entry naming the changed keys. Super-admin
+    /// only.
+    ///
+    /// WRITE SEMANTICS: mixed. A compare-and-set merge onto the tenant record: an omitted field
+    /// keeps its stored value. `max_retention_days` and `legal_hold` are written as sent; an
+    /// `egress_allowlist` that is present replaces the stored list whole. `null` is refused by the
+    /// schema, so nothing can be cleared here.
     ///
     /// `PATCH /api/v1/admin/tenants/{tenantId}/settings`
     ///
     /// Required scopes: `admin`.
-    pub async fn update_admin_tenant_settings(&self, tenant_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateAdminTenantSettingsResponse> {
+    pub async fn update_admin_tenant_settings(&self, tenant_id: &str, body: &models::UpdateAdminTenantSettingsRequest) -> Result<models::UpdateAdminTenantSettingsResponse> {
         self.client
             .request_json(Request {
                 method: Method::PATCH,

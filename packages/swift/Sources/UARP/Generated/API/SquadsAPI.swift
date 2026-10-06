@@ -15,6 +15,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/edges`
+    ///
+    /// Required scopes: `agents:write`.
     public func addSquadGraphEdge(squadId: String, body: AddSquadGraphEdgeRequest, options: RequestOptions = .init()) async throws -> TeamGraphEdge {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -32,6 +34,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/graph/nodes`
+    ///
+    /// Required scopes: `agents:write`.
     public func addSquadGraphNode(squadId: String, body: AddSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -62,6 +66,8 @@ public struct SquadsAPI: Sendable {
     /// older noun.
     ///
     /// `POST /api/v1/squads/{squadId}/runs/{teamRunId}/cancel`
+    ///
+    /// Required scopes: `agents:write`.
     public func cancelSquadRun(squadId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> CancelSquadRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -78,6 +84,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads`
+    ///
+    /// Required scopes: `agents:write`.
     public func create(body: TeamCreate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -95,6 +103,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func delete(squadId: String, options: RequestOptions = .init()) async throws -> DeleteSquadResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -111,6 +121,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}/graph/edges/{edgeId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func deleteSquadGraphEdge(squadId: String, edgeId: String, options: RequestOptions = .init()) async throws -> DeleteSquadGraphEdgeResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -127,6 +139,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `DELETE /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func deleteSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = .init()) async throws -> DeleteSquadGraphNodeResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -143,6 +157,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:read`.
     public func get(squadId: String, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -158,13 +174,21 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/chat`
-    public func getSquadChatHistory(squadId: String, threadId: String? = nil, includeInternal: Bool? = nil, options: RequestOptions = .init()) async throws -> GetSquadChatHistoryResponse {
+    ///
+    /// Required scopes: `agents:read`.
+    public func getSquadChatHistory(squadId: String, threadId: String? = nil, includeInternal: Bool? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetSquadChatHistoryResponse {
         var query: [URLQueryItem] = []
         if let threadId {
             query.append(URLQueryItem(name: "thread_id", value: threadId))
         }
         if let includeInternal {
             query.append(URLQueryItem(name: "include_internal", value: String(includeInternal)))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
         }
         return try await client.send(RequestSpec(
             method: "GET",
@@ -174,6 +198,17 @@ public struct SquadsAPI: Sendable {
         ))
     }
 
+    /// Stream every item returned by `getSquadChatHistory`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getSquadChatHistoryAll(squadId: String, threadId: String? = nil, includeInternal: Bool? = nil, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<TeamChatTurn, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getSquadChatHistory(squadId: squadId, threadId: threadId, includeInternal: includeInternal, limit: limit, cursor: cursor, options: options) },
+            items: { $0.conversationHistory ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
+    }
+
     /// Get full squad graph
     ///
     /// `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
@@ -181,6 +216,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph`
+    ///
+    /// Required scopes: `agents:read`.
     public func getSquadGraph(squadId: String, options: RequestOptions = .init()) async throws -> GetSquadGraphResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -196,6 +233,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:read`.
     public func getSquadGraphNode(squadId: String, agentId: String, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -211,6 +250,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
+    ///
+    /// Required scopes: `agents:read`.
     public func getSquadRun(squadId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> TeamRunDetail {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -226,6 +267,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{teamRunId}/messages`
+    ///
+    /// Required scopes: `agents:read`.
     public func getSquadRunMessages(squadId: String, teamRunId: String, options: RequestOptions = .init()) async throws -> GetSquadRunMessagesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -241,6 +284,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads`
+    ///
+    /// Required scopes: `agents:read`.
     public func list(options: RequestOptions = .init()) async throws -> ListSquadsResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -256,6 +301,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/edges`
+    ///
+    /// Required scopes: `agents:read`.
     public func listSquadGraphEdges(squadId: String, options: RequestOptions = .init()) async throws -> ListSquadGraphEdgesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -271,6 +318,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/graph/nodes`
+    ///
+    /// Required scopes: `agents:read`.
     public func listSquadGraphNodes(squadId: String, options: RequestOptions = .init()) async throws -> ListSquadGraphNodesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -281,17 +330,43 @@ public struct SquadsAPI: Sendable {
 
     /// List runs for a squad
     ///
+    /// Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a squad run is a transcript
+    /// and reads forward. Pages continue by `cursor` (there is no `offset`); `total` counts this
+    /// page's rows only. Each row is a MEMBER run; `team_run_status` says what its squad run came
+    /// to.
+    ///
     /// `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
     /// `GET /api/v1/squads/{squadId}/runs`
-    public func listSquadRuns(squadId: String, options: RequestOptions = .init()) async throws -> ListSquadRunsResponse {
+    ///
+    /// Required scopes: `agents:read`.
+    public func listSquadRuns(squadId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListSquadRunsResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/squads/\(encodePathSegment(squadId))/runs",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listSquadRuns`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func listSquadRunsAll(squadId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<TeamRunSummary, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listSquadRuns(squadId: squadId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.runs ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Start a squad run
@@ -301,6 +376,8 @@ public struct SquadsAPI: Sendable {
     /// endpoint and cannot drift apart.
     ///
     /// `POST /api/v1/squads/{squadId}/runs`
+    ///
+    /// Required scopes: `agents:write`.
     public func startSquadRun(squadId: String, body: StartSquadRunRequest, options: RequestOptions = .init()) async throws -> StartSquadRunResponse {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -319,7 +396,7 @@ public struct SquadsAPI: Sendable {
     ///
     /// `GET /api/v1/squads/{squadId}/chat/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
     public func streamSquadChatEvents(squadId: String, threadId: String? = nil, options: RequestOptions = .init()) -> EventStream {
@@ -343,7 +420,7 @@ public struct SquadsAPI: Sendable {
     ///
     /// `GET /api/v1/squads/{squadId}/runs/{runId}/events`
     ///
-    /// Required scopes: `events:read`.
+    /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
     public func streamSquadRunEvents(squadId: String, runId: String, options: RequestOptions = .init()) -> EventStream {
@@ -360,7 +437,15 @@ public struct SquadsAPI: Sendable {
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
+    /// WRITE SEMANTICS: mixed — the same handler as `PUT /api/v1/teams/{teamId}`. An omitted
+    /// top-level field keeps its stored value. `policies` merges one level deep and
+    /// `policies.validation` merges over the stored one. A `workers` list that is present replaces
+    /// the list but keeps each worker's stored `role` and `permissions` (not on the swarm
+    /// `agent_ids` path). `swarm_config` and `goal_config` are replaced whole when sent.
+    ///
     /// `PUT /api/v1/squads/{squadId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func update(squadId: String, body: TeamUpdate, options: RequestOptions = .init()) async throws -> Team {
         return try await client.send(RequestSpec(
             method: "PUT",
@@ -377,7 +462,13 @@ public struct SquadsAPI: Sendable {
     /// older noun: the server rewrites the leading path segment before dispatch, so the two are one
     /// endpoint and cannot drift apart.
     ///
+    /// WRITE SEMANTICS: merges — the same handler as the `/teams` route. Only `status` and
+    /// `goal_summary` are applied, each only when sent; every other node field keeps its stored
+    /// value.
+    ///
     /// `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func updateSquadGraphNode(squadId: String, agentId: String, body: UpdateSquadGraphNodeRequest, options: RequestOptions = .init()) async throws -> TeamGraphNode {
         return try await client.send(RequestSpec(
             method: "PATCH",

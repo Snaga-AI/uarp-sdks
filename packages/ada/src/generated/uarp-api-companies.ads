@@ -11,6 +11,21 @@ package UARP.API.Companies is
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
 
+   --  Query and header parameters for `getCompanyActivity`.
+   type Get_Company_Activity_Params is record
+      --  Page size, newest first. ABSENT means the newest 50 entries, with no paging fields (the
+      --  window size this list has always had; before 2026-10-02 some answered their OLDEST rows).
+      --  Values outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Company_Activity_Params : constant Get_Company_Activity_Params := (others => <>);
+
    --  Query and header parameters for `listCompanies`.
    type List_Companies_Params is record
       --  Page size. Clamped to 100; anything unparseable or non-positive falls back to 50 rather than
@@ -105,8 +120,19 @@ package UARP.API.Companies is
    function Get_Company_Activity
      (Self : Client_Type;
       Company_Id : String;
+      Params : Get_Company_Activity_Params := No_Get_Company_Activity_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Company_Activity_Response;
+
+   --  Collect every item `getCompanyActivity` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Company_Activity_All
+     (Self : Client_Type;
+      Company_Id : String;
+      Params : Get_Company_Activity_Params := No_Get_Company_Activity_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Company_Activity_Entry_Vectors.Vector;
 
    --  Get company budget allocation
    --

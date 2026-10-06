@@ -70,6 +70,23 @@ package body UARP.HTTP is
       Error              : System.Address) return C.long
      with Import, Convention => C, External_Name => "uarp_http_stream";
 
+   function Curl_Stream_Post
+     (URL                : CS.chars_ptr;
+      Headers            : System.Address;
+      Header_Count       : C.int;
+      Payload            : CS.chars_ptr;
+      Payload_Length     : C.size_t;
+      Timeout_Ms         : C.long;
+      Inactivity_Seconds : C.long;
+      Sink               : Sink_Function;
+      Context            : System.Address;
+      Out_Status         : System.Address;
+      Out_Refusal        : System.Address;
+      Out_Refusal_Length : System.Address;
+      Out_Refused        : System.Address;
+      Error              : System.Address) return C.long
+     with Import, Convention => C, External_Name => "uarp_http_stream_post";
+
    -----------------
    -- Local types --
    -----------------
@@ -319,8 +336,11 @@ package body UARP.HTTP is
       --  so we can branch without overloading the CURLcode.
       if Code = Stream_Silent_Code then
          Result := Stream_Silent;
-      elsif Code = 23 and then State.Stopped then
-         --  CURLE_WRITE_ERROR (23) is how a caller-requested stop reaches us.
+      elsif State.Stopped then
+         --  The sink asked to stop, so the abort is ours whatever libcurl
+         --  calls it: CURLE_WRITE_ERROR (23) over HTTP/1.1, CURLE_RECV_ERROR
+         --  (56) over HTTP/2 (measured against api.snaga.ai, 2026-10-05: a
+         --  stream that ended at `data: [DONE]` raised Transport_Error).
          Result := Stream_Stopped;
       elsif Code /= 0 then
          raise UARP.Errors.Transport_Error with Error_Text (Code, Error);
@@ -328,6 +348,86 @@ package body UARP.HTTP is
          Result := Stream_OK;
       end if;
    end Stream;
+
+   -----------------
+   -- Stream_Post --
+   -----------------
+
+   procedure Stream_Post
+     (URL                : String;
+      Headers            : Pair_Vectors.Vector;
+      Payload            : String;
+      Timeout_Ms         : Natural;
+      Inactivity_Seconds : Natural;
+      Handler            : Chunk_Handler;
+      Context            : System.Address;
+      Status             : out Natural;
+      Refused            : out Boolean;
+      Refusal            : out Text;
+      Result             : out Stream_Result)
+   is
+      C_URL     : CS.chars_ptr := CS.New_String (URL);
+      C_Payload : CS.chars_ptr := CS.New_String (Payload);
+      C_Headers : Header_Buffer := To_C_Headers (Headers);
+
+      State          : aliased Stream_State := (Handler => Handler, Context => Context, others => <>);
+      Raw_Status     : aliased C.long := 0;
+      --  An address, not a chars_ptr: a refusal body may hold NUL bytes.
+      Refusal_Ptr    : aliased System.Address := System.Null_Address;
+      Refusal_Length : aliased C.size_t := 0;
+      Raw_Refused    : aliased C.int := 0;
+      Error          : aliased C.char_array (0 .. Error_Buffer_Size - 1) := (others => C.nul);
+      Code           : C.long;
+   begin
+      Curl_Setup.Ensure;
+      Refusal := Empty_Text;
+
+      Code := Curl_Stream_Post
+        (URL                => C_URL,
+         Headers            => C_Headers (C_Headers'First)'Address,
+         Header_Count       => C.int (Headers.Length),
+         Payload            => C_Payload,
+         Payload_Length     => C.size_t (Payload'Length),
+         Timeout_Ms         => C.long (Timeout_Ms),
+         Inactivity_Seconds => C.long (Inactivity_Seconds),
+         Sink               => Sink'Access,
+         Context            => State'Address,
+         Out_Status         => Raw_Status'Address,
+         Out_Refusal        => Refusal_Ptr'Address,
+         Out_Refusal_Length => Refusal_Length'Address,
+         Out_Refused        => Raw_Refused'Address,
+         Error              => Error'Address);
+
+      if Refusal_Ptr /= System.Null_Address then
+         declare
+            Raw : String (1 .. Natural (Refusal_Length)) with Import, Address => Refusal_Ptr;
+         begin
+            Refusal := +Raw;
+         end;
+         Curl_Free (Refusal_Ptr);
+      end if;
+      CS.Free (C_URL);
+      CS.Free (C_Payload);
+      Free (C_Headers);
+
+      Status := Natural (Raw_Status);
+      Refused := Integer (Raw_Refused) /= 0;
+
+      if State.Failed then
+         raise UARP.Errors.Transport_Error with +State.Failure;
+      end if;
+
+      if Code = Stream_Silent_Code then
+         Result := Stream_Silent;
+      elsif State.Stopped then
+         --  Ours, whatever the code (see Stream): 23 over HTTP/1.1, 56 over HTTP/2.
+         Result := Stream_Stopped;
+      elsif Code /= 0 then
+         raise UARP.Errors.Transport_Error with Error_Text (Code, Error);
+      else
+         Result := Stream_OK;
+      end if;
+   end Stream_Post;
 
    -------------------
    -- Parse_Headers --

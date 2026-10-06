@@ -3,6 +3,7 @@
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   CreateWebhookRequest,
   DeleteWebhookResponse,
@@ -11,17 +12,35 @@ import type {
   ListWebhooksResponse,
   SensorWebhookResponse,
   TestWebhookResponse,
+  WebhookDeliveryAttempt,
   WebhookSubscription,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `listWebhookDeliveries`.
+ */
+export interface ListWebhookDeliveriesParams {
+  /**
+   * Page size, newest first. ABSENT means the whole list, exactly as before paging existed — not
+   * a default page. Values outside 1..100 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
 
 /**
  * Query and header parameters for `sensorWebhook`.
  */
 export interface SensorWebhookParams {
   /**
-   * Hex-encoded HMAC-SHA256 of the request body using the subscription's signing secret.
+   * `sha256=` followed by the hex-encoded HMAC-SHA256 of the raw request body, keyed with the
+   * subscription's signing secret. Checked only when the subscription has a secret.
    */
-  'X-Sensor-Signature': string;
+  'X-Sensor-Signature'?: string;
 }
 
 /**
@@ -125,24 +144,45 @@ export class WebhooksResource extends APIResource {
    *
    * Required scopes: `webhooks:read`.
    */
-  listWebhookDeliveries(webhookId: string, options?: RequestOptions): Promise<ListWebhookDeliveriesResponse> {
+  listWebhookDeliveries(webhookId: string, params?: ListWebhookDeliveriesParams, options?: RequestOptions): Promise<ListWebhookDeliveriesResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/webhooks/${encodeURIComponent(String(webhookId))}/deliveries`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
   }
 
   /**
+   * Iterate every item returned by `listWebhookDeliveries`, following the `cursor` cursor until
+   * the server reports no further pages.
+   */
+  listWebhookDeliveriesAll(webhookId: string, params?: ListWebhookDeliveriesParams, options?: RequestOptions): AsyncIterableIterator<WebhookDeliveryAttempt> {
+    return autoPaginate<WebhookDeliveryAttempt>(
+      (cursor) => this.listWebhookDeliveries(webhookId, { ...params, cursor }, options),
+      'deliveries',
+      'cursor',
+      'has_more',
+    );
+  }
+
+  /**
    * Sensor webhook (HMAC-authenticated, triggers an agent run)
    *
-   * External-system webhook. Bypasses normal auth — `X-Sensor-Signature` header is HMAC-verified
-   * against the per-subscription secret. On valid signature, fires an agent run with the request
-   * body as input.
+   * External-system webhook created by an agent's `listen_webhook` tool. Bypasses normal auth:
+   * when the subscription has a secret, `X-Sensor-Signature` must carry `sha256=<hex HMAC-SHA256
+   * of the raw body>` or the call is `401`; a listener without a secret is accepted only if it
+   * has a `max_triggers` ceiling, otherwise `403`. `404` for an unknown webhook id, `410` once
+   * the subscription is inactive, expired or out of triggers, `409` when a concurrent call
+   * claims the same trigger slot, `413` for a body over the size cap. On success it writes a
+   * queued run for the subscription's agent with `input: {type: "webhook_received", webhook_id,
+   * payload, headers, instructions}` — the JSON body (or `{raw_body}` when it is not JSON) as
+   * `payload` — dispatches it, and answers `{received: true, run_id}` without waiting for the
+   * run.
    *
    * `POST /api/v1/webhooks/sensor/{webhookId}`
    */
-  sensorWebhook(webhookId: string, body: JsonObject | undefined, params: SensorWebhookParams, options?: RequestOptions): Promise<SensorWebhookResponse> {
+  sensorWebhook(webhookId: string, body?: JsonObject, params?: SensorWebhookParams, options?: RequestOptions): Promise<SensorWebhookResponse> {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/webhooks/sensor/${encodeURIComponent(String(webhookId))}`,

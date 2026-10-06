@@ -16,6 +16,11 @@ WRITE_STATE = {"attempts": 0}
 #  How many times the 401 stream route has been hit — proves the client did
 #  not retry an Unauthorized.
 STREAM_401_STATE = {"n": 0}
+#  POST streaming: the last request as it arrived, and how many came.
+STREAM_POST_STATE = {"n": 0, "last": {}}
+REFUSED_POST_STATE = {"n": 0}
+#  Form POST: the last request's raw body and headers, and how many came.
+FORM_POST_STATE = {"n": 0, "last": {}}
 
 #  A complete Agent, since the SDK models decode strictly-typed fields.
 AGENT = {
@@ -217,6 +222,96 @@ class Handler(BaseHTTPRequestHandler):
             self.send_header("Content-Length", str(len(frames)))
             self.end_headers()
             return self.wfile.write(frames)
+        if path == "/llm/stream" and self.command == "POST":
+            #  A POST answered as an event stream: two data frames, [DONE],
+            #  then a frame that must never be delivered.  Chunked and held
+            #  open after [DONE], so only the [DONE] rule ends the stream.
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = self.rfile.read(length).decode() if length else ""
+            STREAM_POST_STATE["n"] += 1
+            STREAM_POST_STATE["last"] = {
+                "method": self.command,
+                "accept": self.headers.get("Accept", ""),
+                "content_type": self.headers.get("Content-Type", ""),
+                "idempotency_key": self.headers.get("Idempotency-Key", ""),
+                "body": payload,
+            }
+            frames = [
+                b'data: {"choices":[{"delta":{"content":"he"}}]}\n\n',
+                b'data: {"choices":[{"delta":{"content":"llo"}}]}\n\n',
+                b"data: [DONE]\n\n",
+                b'data: {"choices":[{"delta":{"content":"!"}}]}\n\n',
+            ]
+            self.send_response(200)
+            self.send_header("Content-Type", "text/event-stream")
+            self.send_header("Transfer-Encoding", "chunked")
+            self.end_headers()
+            for chunk in frames:
+                self.wfile.write(b"%x\r\n%s\r\n" % (len(chunk), chunk))
+                self.wfile.flush()
+            time.sleep(2)
+            self.wfile.write(b"0\r\n\r\n")
+            return
+        if path == "/llm/stream/last":
+            return self._send(
+                200,
+                json.dumps(dict(STREAM_POST_STATE["last"], n=STREAM_POST_STATE["n"])).encode(),
+            )
+        if path == "/llm/refused" and self.command == "POST":
+            #  A refusal before any stream: the status every client retries
+            #  elsewhere.  A streamed POST must take it once and not replay.
+            length = int(self.headers.get("Content-Length") or 0)
+            if length:
+                self.rfile.read(length)
+            REFUSED_POST_STATE["n"] += 1
+            return self._send(
+                429,
+                json.dumps(
+                    {"title": "Too Many Requests", "status": 429, "detail": "llm quota exhausted"}
+                ).encode(),
+                content_type="application/problem+json",
+                extra={"Retry-After": "0"},
+            )
+        if path == "/llm/plain" and self.command == "POST":
+            #  A 2xx that is not an event stream (the caller left out
+            #  "stream": true): an error, never a stream that ended empty.
+            length = int(self.headers.get("Content-Length") or 0)
+            if length:
+                self.rfile.read(length)
+            return self._send(200, json.dumps({"choices": [{"message": {"content": "hello"}}]}).encode())
+        if path == "/llm/empty" and self.command == "POST":
+            #  A 2xx with no body and no content type at all.
+            length = int(self.headers.get("Content-Length") or 0)
+            if length:
+                self.rfile.read(length)
+            self.send_response(200)
+            self.send_header("Content-Length", "0")
+            self.end_headers()
+            return
+        if path == "/api/v1/auth/oauth/apple/callback" and self.command == "POST":
+            #  A form body (Sign in with Apple posts its web callback as
+            #  application/x-www-form-urlencoded).  The raw bytes and the
+            #  Content-Type are kept for /form/last, undecoded, so the client
+            #  is held to exact bytes; the answer is the 200 the spec declares.
+            length = int(self.headers.get("Content-Length") or 0)
+            payload = self.rfile.read(length) if length else b""
+            FORM_POST_STATE["n"] += 1
+            FORM_POST_STATE["last"] = {
+                "content_type": self.headers.get("Content-Type", ""),
+                "idempotency_key": self.headers.get("Idempotency-Key", ""),
+                #  Latin-1 maps each byte to one code point, so a byte that
+                #  should have been escaped still shows up as a mismatch.
+                "body": payload.decode("latin-1"),
+                "body_hex": payload.hex(),
+            }
+            return self._send(200, json.dumps({"api_key": "uarp_mock_form", "email": "a@b.c"}).encode())
+        if path == "/form/last":
+            return self._send(
+                200,
+                json.dumps(dict(FORM_POST_STATE["last"], n=FORM_POST_STATE["n"])).encode(),
+            )
+        if path == "/llm/refused/count":
+            return self._send(200, json.dumps({"n": REFUSED_POST_STATE["n"]}).encode())
         if path == "/events/401/count":
             return self._send(200, json.dumps({"n": STREAM_401_STATE["n"]}).encode())
         if path == "/events/401":

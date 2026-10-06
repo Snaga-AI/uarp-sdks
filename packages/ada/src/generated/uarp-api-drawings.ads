@@ -72,7 +72,7 @@ package UARP.API.Drawings is
    --
    --  POST /api/v1/drawings/{drawingId}/ops
    --
-   --  Required scopes: drawing:write.
+   --  Required scopes: drawing:write, sessions:write.
    function Append_Drawing_Ops
      (Self : Client_Type;
       Drawing_Id : String;
@@ -91,7 +91,7 @@ package UARP.API.Drawings is
    --
    --  POST /api/v1/drawings/{drawingId}/masks
    --
-   --  Required scopes: drawing:write.
+   --  Required scopes: drawing:write, sessions:write.
    function Create_Drawing_Mask
      (Self : Client_Type;
       Drawing_Id : String;
@@ -128,7 +128,7 @@ package UARP.API.Drawings is
    --
    --  DELETE /api/v1/drawings/{drawingId}
    --
-   --  Required scopes: drawing:write.
+   --  Required scopes: drawing:write, sessions:write.
    function Delete
      (Self : Client_Type;
       Drawing_Id : String;
@@ -145,7 +145,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function Get
      (Self : Client_Type;
       Drawing_Id : String;
@@ -160,7 +160,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}/masks/{maskId}
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function Get_Drawing_Mask
      (Self : Client_Type;
       Drawing_Id : String;
@@ -176,7 +176,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}/masks/{maskId}/content
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function Get_Drawing_Mask_Content
      (Self : Client_Type;
       Drawing_Id : String;
@@ -193,7 +193,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}/tiles/{layerId}/{tx}/{ty}
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function Get_Drawing_Tile
      (Self : Client_Type;
       Drawing_Id : String;
@@ -215,7 +215,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}/ops
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function List_Drawing_Ops
      (Self : Client_Type;
       Drawing_Id : String;
@@ -259,7 +259,7 @@ package UARP.API.Drawings is
    --
    --  GET /api/v1/drawings/{drawingId}/render
    --
-   --  Required scopes: drawing:read.
+   --  Required scopes: drawing:read, sessions:read.
    function Render_Drawing
      (Self : Client_Type;
       Drawing_Id : String;

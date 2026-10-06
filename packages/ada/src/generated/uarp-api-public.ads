@@ -33,6 +33,47 @@ package UARP.API.Public is
 
    No_Get_Link_Preview_Image_Params : constant Get_Link_Preview_Image_Params := (others => <>);
 
+   --  Query and header parameters for `getPublicVideoInput`.
+   type Get_Public_Video_Input_Params is record
+      --  Unix seconds the link stops working.
+      Exp : UARP.Types.Integer_Value := 0;
+      --  HMAC over purpose, id and `exp`.
+      Sig : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Public_Video_Input_Params : constant Get_Public_Video_Input_Params := (others => <>);
+
+   --  Query and header parameters for `getPublicVideoOrder`.
+   type Get_Public_Video_Order_Params is record
+      --  The order's secret, returned once as `order_token` when the order was created. Without the
+      --  right token every order answers 404, so an id alone reveals nothing.
+      X_Order_Token : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Public_Video_Order_Params : constant Get_Public_Video_Order_Params := (others => <>);
+
+   --  Query and header parameters for `getPublicVideoOrderVideo`.
+   type Get_Public_Video_Order_Video_Params is record
+      --  Unix seconds the link stops working.
+      Exp : UARP.Types.Integer_Value := 0;
+      --  HMAC over purpose, id and `exp`.
+      Sig : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Download : Boolean := False;
+      Download : UARP.Models.Export_Data_Explorer_Include_Sensitive;
+      Has_Range : Boolean := False;
+      Range_K : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Public_Video_Order_Video_Params : constant Get_Public_Video_Order_Video_Params := (others => <>);
+
+   --  Query and header parameters for `getPublicVideoTemplatePreview`.
+   type Get_Public_Video_Template_Preview_Params is record
+      Has_Range : Boolean := False;
+      Range_K : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Public_Video_Template_Preview_Params : constant Get_Public_Video_Template_Preview_Params := (others => <>);
+
    --  Query and header parameters for `listPublicBlogPosts`.
    type List_Public_Blog_Posts_Params is record
       --  Exact tag match, case-insensitive.
@@ -65,12 +106,48 @@ package UARP.API.Public is
 
    No_List_Public_Tenants_Params : constant List_Public_Tenants_Params := (others => <>);
 
+   --  Query and header parameters for `openPublicVideoOrderCheckout`.
+   type Open_Public_Video_Order_Checkout_Params is record
+      --  The order's secret, returned once as `order_token` when the order was created. Without the
+      --  right token every order answers 404, so an id alone reveals nothing.
+      X_Order_Token : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Open_Public_Video_Order_Checkout_Params : constant Open_Public_Video_Order_Checkout_Params := (others => <>);
+
    --  Query and header parameters for `publicDomainLookup`.
    type Public_Domain_Lookup_Params is record
       Domain : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_Public_Domain_Lookup_Params : constant Public_Domain_Lookup_Params := (others => <>);
+
+   --  Query and header parameters for `ratePublicVideoOrder`.
+   type Rate_Public_Video_Order_Params is record
+      --  The order's secret, returned once as `order_token` when the order was created. Without the
+      --  right token every order answers 404, so an id alone reveals nothing.
+      X_Order_Token : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Rate_Public_Video_Order_Params : constant Rate_Public_Video_Order_Params := (others => <>);
+
+   --  Query and header parameters for `regeneratePublicVideoOrder`.
+   type Regenerate_Public_Video_Order_Params is record
+      --  The order's secret, returned once as `order_token` when the order was created. Without the
+      --  right token every order answers 404, so an id alone reveals nothing.
+      X_Order_Token : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Regenerate_Public_Video_Order_Params : constant Regenerate_Public_Video_Order_Params := (others => <>);
+
+   --  Query and header parameters for `retryPublicVideoOrder`.
+   type Retry_Public_Video_Order_Params is record
+      --  The order's secret, returned once as `order_token` when the order was created. Without the
+      --  right token every order answers 404, so an id alone reveals nothing.
+      X_Order_Token : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Retry_Public_Video_Order_Params : constant Retry_Public_Video_Order_Params := (others => <>);
 
    --  Cancel a run of this chat
    --
@@ -122,6 +199,23 @@ package UARP.API.Public is
       Payload : UARP.Models.Content_Report_Input;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Content_Report_Accepted;
+
+   --  Order a video
+   --
+   --  Takes the buyer's photo and text, checks the photo, and opens a Stripe Checkout that only
+   --  AUTHORISES the price: the money is held, then captured when the clip exists, or released if
+   --  it never does - nothing is ever refunded because nothing moved. The photo is checked BEFORE
+   --  anything is stored or held; a refusal is 422 with a stable `reason` and `{en, uk}` text.
+   --  Answers 201 with the order and its `order_token` - the only time the token is returned; send
+   --  it as `X-Order-Token` on every later call, and keep it after `#` in any page URL.
+   --  Rate-limited to 10 orders per hour per address. Anonymous.
+   --
+   --  POST /api/v1/public/video-orders
+   function Create_Public_Video_Order
+     (Self : Client_Type;
+      Payload : UARP.Models.Create_Public_Video_Order_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Create_Public_Video_Order_Response;
 
    --  Has THIS browser already signed up?
    --
@@ -336,6 +430,59 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Types.Text;
 
+   --  Fetch an order's photo (for the video provider)
+   --
+   --  How the video provider reads the buyer's photo: its API takes a URL and nothing else. The
+   --  link is signed for one file and one hour and is never shown to the buyer.
+   --
+   --  GET /api/v1/public/video-inputs/{fileId}
+   function Get_Public_Video_Input
+     (Self : Client_Type;
+      File_Id : String;
+      Params : Get_Public_Video_Input_Params := No_Get_Public_Video_Input_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
+
+   --  Get an order's status
+   --
+   --  What the order page shows: status, queue position and wait, generation progress, a signed
+   --  hour-long link to the finished clip, whether the free regeneration is available and why not.
+   --  Poll every few seconds while `status` is `awaiting_payment`, `queued` or `generating`.
+   --
+   --  GET /api/v1/public/video-orders/{orderId}
+   function Get_Public_Video_Order
+     (Self : Client_Type;
+      Order_Id : String;
+      Params : Get_Public_Video_Order_Params := No_Get_Public_Video_Order_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Order;
+
+   --  Stream or download the finished video
+   --
+   --  The clip behind the signed `video.url` the order answers - valid for an hour; ask the order
+   --  again for a fresh link. `download=1` sends it as an attachment.
+   --
+   --  GET /api/v1/public/video-orders/{orderId}/video
+   function Get_Public_Video_Order_Video
+     (Self : Client_Type;
+      Order_Id : String;
+      Params : Get_Public_Video_Order_Video_Params := No_Get_Public_Video_Order_Video_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
+
+   --  Stream a template's example clip
+   --
+   --  The example video shown in the gallery, as MP4 with byte-range support. 404 when the
+   --  template is not published or has no example. Anonymous.
+   --
+   --  GET /api/v1/public/video-templates/{templateId}/preview
+   function Get_Public_Video_Template_Preview
+     (Self : Client_Type;
+      Template_Id : String;
+      Params : Get_Public_Video_Template_Preview_Params := No_Get_Public_Video_Template_Preview_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text;
+
    --  Is sign-up open
    --
    --  No authentication; cached for 30 seconds.
@@ -444,6 +591,36 @@ package UARP.API.Public is
       Max_Items : Natural := 0)
       return UARP.Models.Public_Tenant_Vectors.Vector;
 
+   --  List video templates
+   --
+   --  The gallery of the public video service: every published template with its bilingual
+   --  (`en`/`uk`) texts, price, clip length, the text fields the buyer fills and what makes a good
+   --  photo - and never the model, the hidden prompt or the cost behind it. `queue` estimates the
+   --  wait a new order would face, so the page can warn BEFORE payment. `stats.videos_total` and
+   --  each template's `videos_made` count videos delivered to paying buyers - never test runs or
+   --  free regenerations - so they can be shown as they are. Anonymous.
+   --
+   --  GET /api/v1/public/video-templates
+   function List_Public_Video_Templates
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Video_Templates_Response;
+
+   --  Get a checkout link for an unpaid order
+   --
+   --  For a buyer who came back from Stripe without paying: answers the order's open Checkout
+   --  link, or a fresh one once the first is near its 24-hour expiry. Only while `status` is
+   --  `awaiting_payment`; a second payment for an order already paid is released by the webhook,
+   --  never captured.
+   --
+   --  POST /api/v1/public/video-orders/{orderId}/checkout
+   function Open_Public_Video_Order_Checkout
+     (Self : Client_Type;
+      Order_Id : String;
+      Params : Open_Public_Video_Order_Checkout_Params := No_Open_Public_Video_Order_Checkout_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Open_Public_Video_Order_Checkout_Response;
+
    --  Domain lookup
    --
    --  Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
@@ -473,6 +650,35 @@ package UARP.API.Public is
       Payload : UARP.Models.Public_Track_Event_Request;
       Options : Request_Options := UARP.Client.Default_Options);
 
+   --  Rate a finished video
+   --
+   --  ?? or ?? on a ready video. A ?? is what opens the free regeneration.
+   --
+   --  POST /api/v1/public/video-orders/{orderId}/feedback
+   function Rate_Public_Video_Order
+     (Self : Client_Type;
+      Order_Id : String;
+      Payload : UARP.Models.Rate_Public_Video_Order_Request;
+      Params : Rate_Public_Video_Order_Params := No_Rate_Public_Video_Order_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Rate_Public_Video_Order_Response;
+
+   --  Regenerate a video for free, once
+   --
+   --  Makes a new take of a ready video from the SAME photo and text (only the seed changes),
+   --  free, once per order, within 24 hours of delivery, after a ?? rating. The new clip replaces
+   --  the old one; if it fails, the buyer keeps the video they paid for. Not offered to a buyer
+   --  who regenerates most of what they buy (`reason: not_available`). Answers 202 with the order
+   --  back in the queue.
+   --
+   --  POST /api/v1/public/video-orders/{orderId}/regenerate
+   function Regenerate_Public_Video_Order
+     (Self : Client_Type;
+      Order_Id : String;
+      Params : Regenerate_Public_Video_Order_Params := No_Regenerate_Public_Video_Order_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Video_Order;
+
    --  Respond to public HITL
    --
    --  Supplies the visitor's answer to an agent that has paused for input, storing `response` and
@@ -492,6 +698,20 @@ package UARP.API.Public is
       Payload : UARP.Models.Respond_To_Public_Hitl_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Respond_To_Public_Hitl_Response;
+
+   --  Try a failed order again
+   --
+   --  For an order that failed (and was never charged): a NEW order with the same photo and text
+   --  and its own checkout, answered with its own `order_token`. Once per failed order; within 24
+   --  hours, while the photo is still kept.
+   --
+   --  POST /api/v1/public/video-orders/{orderId}/retry
+   function Retry_Public_Video_Order
+     (Self : Client_Type;
+      Order_Id : String;
+      Params : Retry_Public_Video_Order_Params := No_Retry_Public_Video_Order_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Retry_Public_Video_Order_Response;
 
    --  Send public message
    --

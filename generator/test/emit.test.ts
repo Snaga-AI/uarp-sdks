@@ -6,6 +6,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 
 import { renderTarget, TARGETS } from '../src/index.ts';
+import { assertSupportedBody } from '../src/ir.ts';
 import { parse } from '../src/parse.ts';
 import { fixture, fixtureNames, productionSpec, TARGET_NAMES } from './support.ts';
 
@@ -32,9 +33,12 @@ test('no emitter writes the same path twice', () => {
   }
 });
 
-test('an emitter refuses a body encoding it cannot render', () => {
-  // Four of the five have no form-urlencoded support. Falling back to JSON
-  // would put the wrong content type on the wire, so generation must stop.
+test('every emitter renders a form body, and the guard still refuses what it cannot', () => {
+  // Until 0.8.0 four of the five refused form-urlencoded bodies; the Sign in
+  // with Apple callback made all five render them (contract scenario 20
+  // compares the bytes). The guard stays: an encoding an emitter does not list
+  // must stop generation rather than fall back to JSON and put the wrong
+  // content type on the wire.
   const document = {
     openapi: '3.1.0',
     info: { title: 'Forms', version: '1.0.0' },
@@ -65,16 +69,16 @@ test('an emitter refuses a body encoding it cannot render', () => {
   const spec = parse(document);
   assert.equal(spec.groups[0]!.operations[0]!.body?.encoding, 'form');
 
-  for (const target of ['rust', 'swift', 'kotlin', 'ada']) {
-    assert.throws(
-      () => renderTarget(spec, target),
-      /submitLogin: request bodies encoded as 'form' are not supported yet/,
-      `${target} should refuse a form body`,
-    );
+  for (const target of TARGET_NAMES) {
+    assert.doesNotThrow(() => renderTarget(spec, target), `${target} renders a form body`);
   }
 
-  // TypeScript's transport does implement it.
-  assert.doesNotThrow(() => renderTarget(spec, 'typescript'));
+  const op = spec.groups[0]!.operations[0]!;
+  assert.throws(
+    () => assertSupportedBody(op, ['json', 'multipart']),
+    /submitLogin: request bodies encoded as 'form' are not supported yet/,
+  );
+  assert.doesNotThrow(() => assertSupportedBody(op, ['form']));
 });
 
 test('every emitter handles every fixture without throwing', () => {

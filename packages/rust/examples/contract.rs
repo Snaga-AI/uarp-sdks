@@ -9,7 +9,10 @@ use std::pin::pin;
 
 use futures_util::StreamExt;
 use uarp_sdk::api::{ListAgentsParams, StreamRunEventsParams};
-use uarp_sdk::models::{CreateAgentRequest, CreateRunRequest, RegistryPublishRequest};
+use uarp_sdk::models::{
+    CompleteOAuthLoginFormPostProvider, CompleteOAuthLoginFormPostRequest, CreateAgentRequest,
+    CreateRunRequest, RegistryPublishRequest,
+};
 use uarp_sdk::{Client, Error, FilePart};
 
 /// A quote, a backslash, a newline, a tab, a non-ASCII letter and a character
@@ -146,6 +149,70 @@ async fn main() -> Result<(), Error> {
         .unwrap_or_default();
     keys.sort();
 
+    // 17. a POST answered as an event stream, consumed to the end
+    let completion = serde_json::json!({
+        "model": "contract/model",
+        "stream": true,
+        "messages": [{"role": "user", "content": "hi"}],
+    });
+    let mut post_stream_text = String::new();
+    {
+        let mut events = client.stream_post("/api/v1/llm/chat/completions", &completion);
+        while let Some(event) = events.next().await {
+            let chunk: serde_json::Value = event?.json()?;
+            if let Some(delta) = chunk["choices"][0]["delta"]["content"].as_str() {
+                post_stream_text.push_str(delta);
+            }
+        }
+    }
+
+    // 18. the same POST refused before any stream, and not retried
+    let post_stream_refusal = {
+        let mut events = client.stream_post("/api/v1/llm/chat/completions/refused", &completion);
+        match events.next().await {
+            Some(Err(Error::Api(api))) => format!(
+                "{} {}",
+                api.status,
+                api.problem.detail.as_deref().unwrap_or("")
+            ),
+            Some(Err(other)) => return Err(other),
+            Some(Ok(event)) => panic!("expected a 429, got an event: {event:?}"),
+            None => panic!("expected a 429, got an empty stream"),
+        }
+    };
+
+    // 19. a 2xx that is not an event stream is an error, not an empty stream
+    let post_stream_plain = {
+        let mut events = client.stream_post("/api/v1/llm/chat/completions/plain", &completion);
+        let mut delivered = 0;
+        let mut outcome = None;
+        while let Some(item) = events.next().await {
+            match item {
+                Ok(_) => delivered += 1,
+                Err(Error::Api(api)) => {
+                    outcome = Some(format!("error {}", api.status));
+                    break;
+                }
+                Err(other) => return Err(other),
+            }
+        }
+        outcome.unwrap_or_else(|| format!("events {delivered}"))
+    };
+
+    // 20. an application/x-www-form-urlencoded body, byte for byte
+    let form_post = client
+        .auth()
+        .complete_o_auth_login_form_post(
+            &CompleteOAuthLoginFormPostProvider::from("apple"),
+            &CompleteOAuthLoginFormPostRequest {
+                code: Some("c 1+2".into()),
+                state: Some("s/ы&=~*".into()),
+                user: Some(r#"{"name":"А Б","email":"a@b.c"}"#.into()),
+                ..Default::default()
+            },
+        )
+        .await?;
+
     let probes = serde_json::json!({
         "status": probe.status.as_str(),
         "error_is_absent": probe.error.is_none().to_string(),
@@ -169,6 +236,10 @@ async fn main() -> Result<(), Error> {
             .map(|value| value.to_string())
             .unwrap_or_else(|| "absent".into()),
         "started_at_is_absent": probe.started_at.is_none().to_string(),
+        "post_stream_text": post_stream_text,
+        "post_stream_refusal": post_stream_refusal,
+        "post_stream_plain": post_stream_plain,
+        "form_post_email": form_post.email,
     });
 
     let report = serde_json::json!({ "language": "rust", "probes": probes });

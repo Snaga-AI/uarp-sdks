@@ -3,7 +3,6 @@
 --  Agent CRUD and versioning
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Agents is
@@ -52,9 +51,29 @@ package UARP.API.Agents is
       --  ghosts are hidden from main pickers.
       Has_Include_Offline : Boolean := False;
       Include_Offline : Standard.Boolean := False;
+      --  Include bridge agents registered under a parent (`parent_agent_id`, e.g. QUARK profiles
+      --  under their machine). Hidden by default; the parent's row carries `children_count` either
+      --  way. Added 2026-09-25.
+      Has_Include_Children : Boolean := False;
+      Include_Children : Standard.Boolean := False;
    end record;
 
    No_List_Agents_Params : constant List_Agents_Params := (others => <>);
+
+   --  Query and header parameters for `listAgentBookmarks`.
+   type List_Agent_Bookmarks_Params is record
+      --  Page size, in the stored order, within the 1000 the list holds. ABSENT means the whole list,
+      --  exactly as before paging existed - not a default page. Values outside 1..500 are clamped,
+      --  not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Agent_Bookmarks_Params : constant List_Agent_Bookmarks_Params := (others => <>);
 
    --  Query and header parameters for `listAgentMail`.
    type List_Agent_Mail_Params is record
@@ -464,8 +483,19 @@ package UARP.API.Agents is
    function List_Agent_Bookmarks
      (Self : Client_Type;
       Agent_Id : String;
+      Params : List_Agent_Bookmarks_Params := No_List_Agent_Bookmarks_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_Bookmarks_Response;
+
+   --  Collect every item `listAgentBookmarks` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function List_Agent_Bookmarks_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Agent_Bookmarks_Params := No_List_Agent_Bookmarks_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Agent_Bookmark_Vectors.Vector;
 
    --  Messages between agents
    --
@@ -517,7 +547,13 @@ package UARP.API.Agents is
    --  `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
    --  more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) - so a client
    --  may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
-   --  `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
+   --  `drop_genome` or `drop_genome_source`. `resource_limits`, `memory`, `core_memory`,
+   --  `schedule`, `guardrails`, `image_generation`, `video_generation`, `command_relationships`
+   --  and `access_control` also merge one level; `mcp`, `policies`, `thinking`, `effort_policy`,
+   --  `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
+   --  stored list. The body is `AgentUpdate`, the schema the handler validates with
+   --  (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
+   --  unknown field is dropped.
    --
    --  PATCH /api/v1/agents/{agentId}
    --
@@ -525,7 +561,7 @@ package UARP.API.Agents is
    function Patch
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Agent_Update;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent;
 
@@ -587,10 +623,18 @@ package UARP.API.Agents is
 
    --  Set agent capabilities
    --
-   --  Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
-   --  the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
-   --  and `permissions` are read from the body - anything else is stripped. Returns `{status,
-   --  agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
+   --  Stores the agent's capability manifest, replacing any previous one. The body is the manifest
+   --  `GET` on this path serves: `skills` (required, up to 100; each needs `id` and `name`),
+   --  `constraints` (optional - when omitted the agent's own limits are used, as in the manifest
+   --  `GET` generates), `tools` and `kb_ids` (optional, default empty). `agent_id` is taken from
+   --  the path and `updated_at` is stamped by the server; anything else in the body is stripped.
+   --  `404` when the agent does not exist. Returns `{status, agent_id}` rather than the stored
+   --  manifest; read it back with the `GET` on this path.
+   --
+   --  WRITE SEMANTICS: replaces - an omitted `tools` or `kb_ids` is stored empty, not kept from
+   --  the previous manifest. Until 2026-10-02 this operation read
+   --  `capabilities`/`tools`/`permissions` and stripped `skills`, which the store requires, so
+   --  every call was refused `422` and nothing was stored.
    --
    --  PUT /api/v1/agents/{agentId}/capabilities
    --
@@ -598,7 +642,7 @@ package UARP.API.Agents is
    function Set_Agent_Capabilities
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Agent_Capabilities_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Agent_Capabilities_Response;
 
@@ -609,6 +653,11 @@ package UARP.API.Agents is
    --  refused and nothing is stored. The split is what the runtime draws against when it resolves
    --  which version a new run executes, using a cryptographically-secure weighted draw. The agent
    --  record itself is untouched.
+   --
+   --  WRITE SEMANTICS: replaces. The stored split is rebuilt from `entries`; a version the body
+   --  omits is dropped from the split and nothing from the previous split is kept. The weight-sum
+   --  check throws a plain error rather than a validation error, so from the code a bad sum
+   --  answers 500, not 4xx, with nothing stored (not measured on the wire).
    --
    --  PUT /api/v1/agents/{agentId}/traffic
    --
@@ -690,6 +739,11 @@ package UARP.API.Agents is
    --  update lands first, which is what stops an ordinary agent save clobbering the compliance
    --  trail - and it is audit-logged. The response is the whole sanitised agent, not just the
    --  classification.
+   --
+   --  WRITE SEMANTICS: replaces. `risk_classification` is rebuilt whole from this body: an omitted
+   --  `annex_iii_category` is cleared and an omitted `assessed_at` becomes now; `level`,
+   --  `justification`, `assessor` and `review_due_at` are required. The rest of the agent record
+   --  is kept, under a compare-and-set.
    --
    --  PATCH /api/v1/agents/{agentId}/risk-classification
    --

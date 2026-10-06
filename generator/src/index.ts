@@ -16,7 +16,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { Operation, Spec } from './ir.ts';
-import { parse } from './parse.ts';
+import { enumKey, parse } from './parse.ts';
 import { emitTypeScript } from './emit/typescript.ts';
 import { emitRust } from './emit/rust.ts';
 import { emitSwift } from './emit/swift.ts';
@@ -69,8 +69,35 @@ export function sdkVersion(): string {
   }
 }
 
-export function loadSpec(path: string = DEFAULT_SPEC_PATH): Spec {
-  return parse(JSON.parse(readFileSync(path, 'utf8')));
+/** Published enum names, kept stable across refreshes (see `parse`). */
+export const ENUM_NAMES_PATH = join(repoRoot, 'generator/enum-names.json');
+
+export function readEnumNames(path: string = ENUM_NAMES_PATH): Record<string, string> {
+  try {
+    return JSON.parse(readFileSync(path, 'utf8'));
+  } catch {
+    return {};
+  }
+}
+
+/** The pins belong to the vendored document; a fixture or `--spec` run parses without them. */
+export function loadSpec(
+  path: string = DEFAULT_SPEC_PATH,
+  enumNames: Record<string, string> = resolve(path) === DEFAULT_SPEC_PATH ? readEnumNames() : {},
+): Spec {
+  return parse(JSON.parse(readFileSync(path, 'utf8')), enumNames);
+}
+
+/**
+ * The pins after this spec: every enum it names, added to what is already
+ * pinned. Append-only — a published name never moves.
+ */
+export function pinnedAfter(spec: Spec, pinned: Record<string, string>): Record<string, string> {
+  const next: Record<string, string> = { ...pinned };
+  for (const type of spec.types) {
+    if (type.kind === 'enum' && !(enumKey(type) in next)) next[enumKey(type)] = type.name;
+  }
+  return Object.fromEntries(Object.entries(next).sort(([a], [b]) => a.localeCompare(b)));
 }
 
 /**
@@ -256,8 +283,19 @@ function main(argv: string[]): void {
     return;
   }
 
+  // The pins move only with the vendored document, never with a fixture run.
+  const ownSpec = options.specPath === DEFAULT_SPEC_PATH;
+  const pinned = readEnumNames();
+  const pins = pinnedAfter(spec, pinned);
+  const pinsText = `${JSON.stringify(pins, null, 2)}\n`;
+
   if (options.check) {
     let clean = true;
+    if (ownSpec && JSON.stringify(pins) !== JSON.stringify(pinned)) {
+      clean = false;
+      const missing = Object.keys(pins).filter((key) => !(key in pinned));
+      console.error(`enum-names ${missing.length} enum(s) not pinned in generator/enum-names.json`);
+    }
     for (const name of options.targets) {
       const problems = checkTarget(spec, name, options.outRoot);
       if (problems.length === 0) {
@@ -291,6 +329,7 @@ function main(argv: string[]): void {
     }
     console.log(`${name.padEnd(11)} ${String(files.length).padStart(4)} files  ${(bytes / 1024).toFixed(0)} KiB`);
   }
+  if (ownSpec) writeFileSync(ENUM_NAMES_PATH, pinsText);
 }
 
 function printStats(spec: Spec): void {

@@ -15,11 +15,13 @@ with Ada.Text_IO;
 
 with UARP.Client;
 with UARP.Errors;
+with UARP.Form;
 with UARP.JSON_Support;
 with UARP.SSE;
 with UARP.Types;
 
 with UARP.API.Agents;
+with UARP.API.Auth;
 with UARP.API.Registry;
 with UARP.Models;
 
@@ -145,6 +147,25 @@ procedure UARP_SDK_Tests is
          Add (Parameters, "cursor", "a b");
          Check_Equal ("query parameters are joined",
                       Build_Query (Parameters), "?limit=25&cursor=a%20b");
+      end;
+
+      --  The urlencoded serializer is not the query encoder: a space is `+`,
+      --  `*` is kept, and `~` is escaped.
+      Check_Equal ("a form value keeps only A-Z a-z 0-9 * - . _",
+                   UARP.Form.Encode_Component ("Az09*-._~!'()+/"),
+                   "Az09*-._%7E%21%27%28%29%2B%2F");
+      Check_Equal ("a form value writes a space as +",
+                   UARP.Form.Encode_Component ("a b"), "a+b");
+      Check_Equal ("a form value escapes every UTF-8 byte in upper-case hex",
+                   UARP.Form.Encode_Component (Cyrillic_AG), "%D0%B0%D0%B3");
+      declare
+         Fields : Pair_Vectors.Vector;
+      begin
+         Check_Equal ("an empty form encodes to nothing", UARP.Form.Encode (Fields), "");
+         Add (Fields, "a b", "1&2");
+         Add (Fields, "c", "");
+         Check_Equal ("form pairs are joined in order, names escaped too",
+                      UARP.Form.Encode (Fields), "a+b=1%262&c=");
       end;
    end Test_Encoding;
 
@@ -706,6 +727,112 @@ procedure UARP_SDK_Tests is
                    Stream_Collector.All_Names (Events), "llm.chunk,resumed.1,run.completed");
    end Test_Watchdog_Reconnects_Silent_Socket;
 
+   --  A POST read as an event stream (an LLM completion with "stream": true):
+   --  the body and the headers reach the wire, every data frame is delivered,
+   --  `[DONE]` is not, and nothing after it is.  The mock holds the socket
+   --  open after `[DONE]`, so only that rule ends the stream in time.
+   procedure Test_Stream_Post (Client : UARP.Client.Client_Type) is
+      Events    : Stream_Collector.All_Collector;
+      Status    : Natural;
+      Body_Text : Text;
+      Problem   : UARP.Errors.Problem;
+      Started   : constant Ada.Calendar.Time := Ada.Calendar.Clock;
+      use type Ada.Calendar.Time;
+   begin
+      UARP.Client.Execute_Stream
+        (Client, "/llm/stream", "{""stream"":true,""model"":""m""}", Events,
+         Status => Status, Body_Text => Body_Text, Problem => Problem);
+      Check ("a streamed POST is answered 200", Status = 200, Natural'Image (Status));
+      Check_Equal ("a streamed POST delivers every data frame, not [DONE] or after it",
+                   Stream_Collector.All_Names (Events), "message,message");
+      Check ("a streamed POST stops at [DONE], not at the end of the body",
+             Ada.Calendar.Clock - Started < 1.5,
+             Duration'Image (Ada.Calendar.Clock - Started) & " s");
+      declare
+         Last : constant JS.JSON_Value :=
+           UARP.Client.Call (Client, "GET", "/llm/stream/last");
+      begin
+         Check_Equal ("a streamed POST asks for an event stream",
+                      +JS.Get_Text (Last, "accept"), "text/event-stream");
+         Check_Equal ("a streamed POST sends JSON",
+                      +JS.Get_Text (Last, "content_type"), "application/json");
+         Check_Equal ("a streamed POST sends its body",
+                      +JS.Get_Text (Last, "body"), "{""stream"":true,""model"":""m""}");
+         Check ("a streamed POST carries an idempotency key",
+                String'(+JS.Get_Text (Last, "idempotency_key"))'Length = 36);
+         Check ("a streamed POST is sent once",
+                JS.Get_Integer (Last, "n") = Integer_Value'(1),
+                "got" & Integer_Value'Image (JS.Get_Integer (Last, "n")));
+      end;
+   end Test_Stream_Post;
+
+   --  A refusal before the stream: status and problem document come back, no
+   --  event is delivered, and the POST is not replayed -- not even on a 429,
+   --  which every other call retries (a replay would bill the model twice).
+   procedure Test_Stream_Post_Refusal (Client : UARP.Client.Client_Type) is
+      Events    : Stream_Collector.All_Collector;
+      Status    : Natural;
+      Body_Text : Text;
+      Problem   : UARP.Errors.Problem;
+   begin
+      UARP.Client.Execute_Stream
+        (Client, "/llm/refused", "{""stream"":true}", Events,
+         Status => Status, Body_Text => Body_Text, Problem => Problem);
+      Check ("a refused streamed POST reports its status", Status = 429, Natural'Image (Status));
+      Check_Equal ("a refused streamed POST reports the problem detail",
+                   +Problem.Detail, "llm quota exhausted");
+      Check ("a refusal is not delivered as events",
+             Stream_Collector.All_Count (Events) = 0,
+             Natural'Image (Stream_Collector.All_Count (Events)));
+      begin
+         UARP.Client.Stream_Post (Client, "/llm/refused", "{""stream"":true}", Events);
+         Check ("Stream_Post raises API_Error on a refusal", False, "no exception raised");
+      exception
+         when UARP.Errors.API_Error =>
+            Check ("Stream_Post raises API_Error on a refusal", True);
+      end;
+      declare
+         Count : constant JS.JSON_Value :=
+           UARP.Client.Call (Client, "GET", "/llm/refused/count");
+      begin
+         Check ("a refused streamed POST is never retried",
+                JS.Get_Integer (Count, "n") = Integer_Value'(2),
+                "got" & Integer_Value'Image (JS.Get_Integer (Count, "n")) & ", want 2 (one per call)");
+      end;
+   end Test_Stream_Post_Refusal;
+
+   --  A 2xx that is not an event stream -- plain JSON, or no body at all --
+   --  is an error with its status and body, and no event is delivered: an
+   --  answer with no events must never read as a finished stream.
+   procedure Test_Stream_Post_Not_A_Stream (Client : UARP.Client.Client_Type) is
+      procedure One (Path, Tag : String) is
+         Events    : Stream_Collector.All_Collector;
+         Status    : Natural;
+         Body_Text : Text;
+         Problem   : UARP.Errors.Problem;
+      begin
+         UARP.Client.Execute_Stream
+           (Client, Path, "{""stream"":false}", Events,
+            Status => Status, Body_Text => Body_Text, Problem => Problem);
+         Check (Tag & ": the status is reported as received", Status = 200, Natural'Image (Status));
+         Check_Equal (Tag & ": the answer is named as not a stream",
+                      +Problem.Title, "Not an event stream");
+         Check (Tag & ": nothing is delivered as events",
+                Stream_Collector.All_Count (Events) = 0,
+                Natural'Image (Stream_Collector.All_Count (Events)));
+         begin
+            UARP.Client.Stream_Post (Client, Path, "{""stream"":false}", Events);
+            Check (Tag & ": Stream_Post raises API_Error", False, "no exception raised");
+         exception
+            when UARP.Errors.API_Error =>
+               Check (Tag & ": Stream_Post raises API_Error", True);
+         end;
+      end One;
+   begin
+      One ("/llm/plain", "a plain JSON 200");
+      One ("/llm/empty", "an empty 200");
+   end Test_Stream_Post_Not_A_Stream;
+
    --  A 401 always surfaces and is never retried, even with Reconnect on.
    procedure Test_401_Surfaces_Without_Retry (Client : UARP.Client.Client_Type) is
       Events : Stream_Collector.All_Collector;
@@ -774,6 +901,49 @@ procedure UARP_SDK_Tests is
          Check ("the file part carries a filename", +Echo.Version /= "no-filename");
       end;
    end Test_Multipart;
+
+   --  A form body (Sign in with Apple's web callback), through the generated
+   --  operation: the fields in schema order, the absent `id_token` and `error`
+   --  left out entirely, every byte escaped the way the WHATWG serializer
+   --  (URLSearchParams) does, and the exact Content-Type.  The inputs and the
+   --  expected bytes are those of contract scenario 20.
+   procedure Test_Form_Post (Client : UARP.Client.Client_Type) is
+      --  "s/ы&=~*" and {"name":"А Б","email":"a@b.c"},
+      --  spelled out so the source stays ASCII.
+      State    : constant String :=
+        "s/" & Character'Val (16#D1#) & Character'Val (16#8B#) & "&=~*";
+      User     : constant String :=
+        "{""name"":""" & Character'Val (16#D0#) & Character'Val (16#90#) & " "
+        & Character'Val (16#D0#) & Character'Val (16#91#) & """,""email"":""a@b.c""}";
+      Expected : constant String :=
+        "code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*"
+        & "&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D";
+      Request  : UARP.Models.Complete_O_Auth_Login_Form_Post_Request;
+   begin
+      Request.Has_Code := True;
+      Request.Code := +"c 1+2";
+      Request.Has_State := True;
+      Request.State := +State;
+      Request.Has_User := True;
+      Request.User := +User;
+
+      declare
+         Answer : constant UARP.Models.Complete_O_Auth_Login_Form_Post_Response :=
+           UARP.API.Auth.Complete_O_Auth_Login_Form_Post (Client, "apple", Request);
+         Last   : constant JS.JSON_Value := UARP.Client.Call (Client, "GET", "/form/last");
+      begin
+         Check_Equal ("a form POST decodes its JSON answer", +Answer.Email, "a@b.c");
+         Check_Equal ("a form body is the URLSearchParams bytes, in schema order",
+                      +JS.Get_Text (Last, "body"), Expected);
+         Check_Equal ("a form body is sent as application/x-www-form-urlencoded",
+                      +JS.Get_Text (Last, "content_type"), UARP.Form.Content_Type);
+         Check_Equal ("the form Content-Type is spelled exactly",
+                      UARP.Form.Content_Type, "application/x-www-form-urlencoded");
+         Check ("a form POST is sent once",
+                JS.Get_Integer (Last, "n") = Integer_Value'(1),
+                "got" & Integer_Value'Image (JS.Get_Integer (Last, "n")));
+      end;
+   end Test_Form_Post;
 
    --  Binary bodies travel as one byte per Character in both directions.
    procedure Test_Binary (Client : UARP.Client.Client_Type) is
@@ -888,8 +1058,12 @@ procedure UARP_SDK_Tests is
       Test_Done_Frame_Stops (Client);
       Test_Watchdog_Reconnects_Silent_Socket (Client);
       Test_401_Surfaces_Without_Retry (Client);
+      Test_Stream_Post (Client);
+      Test_Stream_Post_Refusal (Client);
+      Test_Stream_Post_Not_A_Stream (Client);
       Test_Reports_Lifecycle_Via_On_State (Client);
       Test_Multipart (Client);
+      Test_Form_Post (Client);
       Test_Binary (Client);
    end Test_HTTP;
 

@@ -2,9 +2,10 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
 import type {
   ImageProviderList,
-  JsonObject,
+  LLMChatCompletionRequest,
   LLMSynthesizeSpeechRequest,
   LLMTranscribeAudioRequest,
   LLMTranscribeAudioResponse,
@@ -15,9 +16,63 @@ import type {
   ListVideoProvidersResponse,
   OpenAiChatCompletion,
   PlatformLLMDefaults,
+  ToolsWebSearchRequest,
+  ToolsWebSearchResponse,
   VoiceConfig,
   VoiceProviderList,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `llmChatCompletion`.
+ */
+export interface LLMChatCompletionParams {
+  /**
+   * The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+   * Recorded beside the model on the tenant's usage and reported by `GET
+   * /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+   * refused, and the spend then counts under `source: ""`.
+   */
+  'X-UARP-Source'?: string;
+}
+
+/**
+ * Query and header parameters for `llmSynthesizeSpeech`.
+ */
+export interface LLMSynthesizeSpeechParams {
+  /**
+   * The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+   * Recorded beside the model on the tenant's usage and reported by `GET
+   * /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+   * refused, and the spend then counts under `source: ""`.
+   */
+  'X-UARP-Source'?: string;
+}
+
+/**
+ * Query and header parameters for `llmTranscribeAudio`.
+ */
+export interface LLMTranscribeAudioParams {
+  /**
+   * The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+   * Recorded beside the model on the tenant's usage and reported by `GET
+   * /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+   * refused, and the spend then counts under `source: ""`.
+   */
+  'X-UARP-Source'?: string;
+}
+
+/**
+ * Query and header parameters for `toolsWebSearch`.
+ */
+export interface ToolsWebSearchParams {
+  /**
+   * The executor making the call, as the caller names it (e.g. `quark`, `fleet`, `code`).
+   * Recorded beside the model on the tenant's usage and reported by `GET
+   * /api/v1/usage?breakdown=source`. Optional: a value outside the pattern is ignored, never
+   * refused, and the spend then counts under `source: ""`.
+   */
+  'X-UARP-Source'?: string;
+}
 
 /**
  * LLM provider discovery and model listing
@@ -221,10 +276,11 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmChatCompletion(body: JsonObject, options?: RequestOptions): Promise<OpenAiChatCompletion> {
+  llmChatCompletion(body: LLMChatCompletionRequest, params?: LLMChatCompletionParams, options?: RequestOptions): Promise<OpenAiChatCompletion> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/chat/completions',
+      headers: pick(params, ['X-UARP-Source']),
       body,
       idempotent: true,
       options,
@@ -245,10 +301,11 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, options?: RequestOptions): Promise<Blob> {
+  llmSynthesizeSpeech(body: LLMSynthesizeSpeechRequest, params?: LLMSynthesizeSpeechParams, options?: RequestOptions): Promise<Blob> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/audio/speech',
+      headers: pick(params, ['X-UARP-Source']),
       body,
       idempotent: true,
       responseType: 'binary',
@@ -271,11 +328,43 @@ export class ProvidersResource extends APIResource {
    *
    * Required scopes: `agents:read`.
    */
-  llmTranscribeAudio(body: LLMTranscribeAudioRequest, options?: RequestOptions): Promise<LLMTranscribeAudioResponse> {
+  llmTranscribeAudio(body: LLMTranscribeAudioRequest, params?: LLMTranscribeAudioParams, options?: RequestOptions): Promise<LLMTranscribeAudioResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/llm/audio/transcriptions',
+      headers: pick(params, ['X-UARP-Source']),
       multipart: body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Search the web through the platform's search provider
+   *
+   * Runs one web search through the provider configured for the platform (the same one the
+   * agents' `web_search` tool uses; the provider key never leaves the platform) and returns
+   * titles, URLs and a snippet per result — not page bodies. It spends a platform-held key, so
+   * it carries the same gate as the LLM proxy's spend endpoints: `runs` write permission plus
+   * the `runs:create` scope, and the billing and quota gate (a delinquent subscription is
+   * refused 402 with a `code`, an exhausted quota 403). Each search the provider answers is one
+   * unit of usage: it counts in `tool_calls_count` and as a `web_search` row of `GET
+   * /api/v1/usage?breakdown=model`, at the platform's price per 1000 searches (currently 0 —
+   * counted, not charged), and under `X-UARP-Source` when the caller sends one. An empty
+   * `results` means the provider answered a result list with nothing in it; a provider that is
+   * not configured, did not answer, or answered anything else is a named refusal, never an empty
+   * 200. At most 60 searches per tenant per minute (429 with `Retry-After`). Since 2026-09-29.
+   *
+   * `POST /api/v1/tools/web_search`
+   *
+   * Required scopes: `runs:create`.
+   */
+  toolsWebSearch(body: ToolsWebSearchRequest, params?: ToolsWebSearchParams, options?: RequestOptions): Promise<ToolsWebSearchResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/tools/web_search',
+      headers: pick(params, ['X-UARP-Source']),
+      body,
       idempotent: true,
       options,
     });

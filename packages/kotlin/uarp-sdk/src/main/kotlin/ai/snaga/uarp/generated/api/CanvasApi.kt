@@ -30,6 +30,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * canvas, it is just blank.
      *
      * `GET /api/v1/canvas/fleet`
+     *
+     * Required scopes: `agents:read`.
      */
     public suspend fun getFleetLayout(options: RequestOptions = RequestOptions()): FleetLayout {
         return client.request<FleetLayout>(
@@ -53,6 +55,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * has unsaved changes. Send the ids to be sure.
      *
      * `POST /api/v1/canvas/fleet/materialize`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun materializeCanvasSquad(body: MaterializeCanvasSquadRequest, options: RequestOptions = RequestOptions()): MaterializeCanvasSquadResponse {
         return client.request<MaterializeCanvasSquadResponse>(
@@ -78,6 +82,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * than the ones on screen. Requires MEF.
      *
      * `POST /api/v1/canvas/loop/run`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun runCanvasLoop(body: RunCanvasLoopRequest, options: RequestOptions = RequestOptions()): RunCanvasLoopResponse {
         return client.request<RunCanvasLoopResponse>(
@@ -102,6 +108,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * has no order to execute in, and starting one would look like success. Requires MEF.
      *
      * `POST /api/v1/canvas/workflow/run`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun runCanvasWorkflow(body: RunCanvasWorkflowRequest, options: RequestOptions = RequestOptions()): RunCanvasWorkflowResponse {
         return client.request<RunCanvasWorkflowResponse>(
@@ -126,7 +134,14 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * a 200 read as “saved” while the operator's cards snapped back on the next reload. An
      * oversize body is a clean 422 instead of a silent truncation at the storage limit.
      *
+     * WRITE SEMANTICS: replaces. The layout is rebuilt from this body alone: an omitted
+     * `positions`, `edges`, `notes` or `drafts` is stored empty, and nothing carries over from the
+     * stored layout. The 409 needs `base_updated_at` (or a storage-level race): a body without it
+     * overwrites whatever is stored.
+     *
      * `PUT /api/v1/canvas/fleet`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun saveFleetLayout(body: FleetLayoutUpdate, options: RequestOptions = RequestOptions()): FleetLayout {
         return client.request<FleetLayout>(
@@ -149,6 +164,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * scheduled.
      *
      * `POST /api/v1/canvas/workflow/schedule`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun scheduleCanvasWorkflow(body: ScheduleCanvasWorkflowRequest, options: RequestOptions = RequestOptions()): ScheduleCanvasWorkflowResponse {
         return client.request<ScheduleCanvasWorkflowResponse>(
@@ -168,6 +185,8 @@ public class CanvasApi internal constructor(private val client: UarpClient) {
      * Idempotent: removing a trigger that is not there still answers 200 with `status: removed`.
      *
      * `DELETE /api/v1/canvas/workflow/schedule/{triggerId}`
+     *
+     * Required scopes: `agents:write`.
      */
     public suspend fun unscheduleCanvasWorkflow(triggerId: String, options: RequestOptions = RequestOptions()): UnscheduleCanvasWorkflowResponse {
         return client.request<UnscheduleCanvasWorkflowResponse>(

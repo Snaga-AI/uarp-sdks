@@ -5,8 +5,8 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
   DataSubjectAccessReport,
+  DataSubjectErasureRequest,
   DataSubjectErasureResult,
-  JsonObject,
 } from '../models.js';
 
 /**
@@ -60,7 +60,7 @@ export class GDPRResource extends APIResource {
    *
    * `POST /api/v1/data-subject/erasure`
    */
-  dataSubjectErasure(body: JsonObject, options?: RequestOptions): Promise<DataSubjectErasureResult> {
+  dataSubjectErasure(body: DataSubjectErasureRequest, options?: RequestOptions): Promise<DataSubjectErasureResult> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/data-subject/erasure',

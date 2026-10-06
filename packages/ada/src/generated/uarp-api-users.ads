@@ -4,10 +4,39 @@
 
 with UARP.Client;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.Users is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `listUsers`.
+   type List_Users_Params is record
+      --  Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+      --  existed - not a default page. Values outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Users_Params : constant List_Users_Params := (others => <>);
+
+   --  Query and header parameters for `listInvites`.
+   type List_Invites_Params is record
+      --  Page size, in the stored order. ABSENT means the whole list, exactly as before paging
+      --  existed - not a default page. Values outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Invites_Params : constant List_Invites_Params := (others => <>);
 
    --  Accept an invite from its email link
    --
@@ -112,8 +141,18 @@ package UARP.API.Users is
    --  Required scopes: users:read.
    function List
      (Self : Client_Type;
+      Params : List_Users_Params := No_List_Users_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Users_Response;
+
+   --  Collect every item `listUsers` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_All
+     (Self : Client_Type;
+      Params : List_Users_Params := No_List_Users_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Tenant_User_Vectors.Vector;
 
    --  List invites
    --
@@ -127,8 +166,18 @@ package UARP.API.Users is
    --  Required scopes: users:read.
    function List_Invites
      (Self : Client_Type;
+      Params : List_Invites_Params := No_List_Invites_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Invites_Response;
+
+   --  Collect every item `listInvites` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_Invites_All
+     (Self : Client_Type;
+      Params : List_Invites_Params := No_List_Invites_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Invite_Vectors.Vector;
 
    --  Resend the invite email
    --
@@ -155,6 +204,10 @@ package UARP.API.Users is
    --  An unknown user is **404** and a role outside the accepted enum fails body validation.
    --  Requires the `admin` role and the `users:write` scope; writes a `user.role_changed` audit
    --  entry.
+   --
+   --  WRITE SEMANTICS: merges. Only `role` is read; the write sets `role` and `updated_at` on the
+   --  stored user and every other field of the user record is kept. The user's live session keys
+   --  are then re-scoped to the new role.
    --
    --  PUT /api/v1/users/{userId}/role
    --
@@ -186,6 +239,9 @@ package UARP.API.Users is
    --
    --  Demotes the calling owner to admin and promotes the target user to owner. Irreversible
    --  without a counter-transfer.
+   --
+   --  The calling owner is the user the credential is bound to, never a field in the body: a key
+   --  bound to no user (a legacy shared key) is refused with **403**.
    --
    --  POST /api/v1/users/{userId}/transfer-ownership
    --

@@ -17,9 +17,30 @@ package UARP.API.Squads is
       Thread_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Include_Internal : Boolean := False;
       Include_Internal : Standard.Boolean := False;
+      --  Page size, in TURNS (two history entries each), counted back from the newest turn; oldest
+      --  first within a page. ABSENT means the newest 100 turns, with no paging fields (the window
+      --  size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+      --  outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_Get_Squad_Chat_History_Params : constant Get_Squad_Chat_History_Params := (others => <>);
+
+   --  Query and header parameters for `listSquadRuns`.
+   type List_Squad_Runs_Params is record
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  From a previous response's `cursor`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Squad_Runs_Params : constant List_Squad_Runs_Params := (others => <>);
 
    --  Query and header parameters for `streamSquadChatEvents`.
    type Stream_Squad_Chat_Events_Params is record
@@ -36,6 +57,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  POST /api/v1/squads/{squadId}/graph/edges
+   --
+   --  Required scopes: agents:write.
    function Add_Squad_Graph_Edge
      (Self : Client_Type;
       Squad_Id : String;
@@ -50,6 +73,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  POST /api/v1/squads/{squadId}/graph/nodes
+   --
+   --  Required scopes: agents:write.
    function Add_Squad_Graph_Node
      (Self : Client_Type;
       Squad_Id : String;
@@ -77,6 +102,8 @@ package UARP.API.Squads is
    --  older noun.
    --
    --  POST /api/v1/squads/{squadId}/runs/{teamRunId}/cancel
+   --
+   --  Required scopes: agents:write.
    function Cancel_Squad_Run
      (Self : Client_Type;
       Squad_Id : String;
@@ -91,6 +118,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  POST /api/v1/squads
+   --
+   --  Required scopes: agents:write.
    function Create
      (Self : Client_Type;
       Payload : UARP.Models.Team_Create;
@@ -104,6 +133,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  DELETE /api/v1/squads/{squadId}
+   --
+   --  Required scopes: agents:write.
    function Delete
      (Self : Client_Type;
       Squad_Id : String;
@@ -117,6 +148,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  DELETE /api/v1/squads/{squadId}/graph/edges/{edgeId}
+   --
+   --  Required scopes: agents:write.
    function Delete_Squad_Graph_Edge
      (Self : Client_Type;
       Squad_Id : String;
@@ -131,6 +164,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  DELETE /api/v1/squads/{squadId}/graph/nodes/{agentId}
+   --
+   --  Required scopes: agents:write.
    function Delete_Squad_Graph_Node
      (Self : Client_Type;
       Squad_Id : String;
@@ -145,6 +180,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}
+   --
+   --  Required scopes: agents:read.
    function Get
      (Self : Client_Type;
       Squad_Id : String;
@@ -158,12 +195,24 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/chat
+   --
+   --  Required scopes: agents:read.
    function Get_Squad_Chat_History
      (Self : Client_Type;
       Squad_Id : String;
       Params : Get_Squad_Chat_History_Params := No_Get_Squad_Chat_History_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Squad_Chat_History_Response;
+
+   --  Collect every item `getSquadChatHistory` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Squad_Chat_History_All
+     (Self : Client_Type;
+      Squad_Id : String;
+      Params : Get_Squad_Chat_History_Params := No_Get_Squad_Chat_History_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Chat_Turn_Vectors.Vector;
 
    --  Get full squad graph
    --
@@ -172,6 +221,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/graph
+   --
+   --  Required scopes: agents:read.
    function Get_Squad_Graph
      (Self : Client_Type;
       Squad_Id : String;
@@ -185,6 +236,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/graph/nodes/{agentId}
+   --
+   --  Required scopes: agents:read.
    function Get_Squad_Graph_Node
      (Self : Client_Type;
       Squad_Id : String;
@@ -199,6 +252,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/runs/{teamRunId}
+   --
+   --  Required scopes: agents:read.
    function Get_Squad_Run
      (Self : Client_Type;
       Squad_Id : String;
@@ -213,6 +268,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/runs/{teamRunId}/messages
+   --
+   --  Required scopes: agents:read.
    function Get_Squad_Run_Messages
      (Self : Client_Type;
       Squad_Id : String;
@@ -227,6 +284,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads
+   --
+   --  Required scopes: agents:read.
    function List
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -239,6 +298,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/graph/edges
+   --
+   --  Required scopes: agents:read.
    function List_Squad_Graph_Edges
      (Self : Client_Type;
       Squad_Id : String;
@@ -252,6 +313,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/graph/nodes
+   --
+   --  Required scopes: agents:read.
    function List_Squad_Graph_Nodes
      (Self : Client_Type;
       Squad_Id : String;
@@ -260,16 +323,34 @@ package UARP.API.Squads is
 
    --  List runs for a squad
    --
+   --  Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a squad run is a transcript
+   --  and reads forward. Pages continue by `cursor` (there is no `offset`); `total` counts this
+   --  page's rows only. Each row is a MEMBER run; `team_run_status` says what its squad run came
+   --  to.
+   --
    --  `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
    --  older noun: the server rewrites the leading path segment before dispatch, so the two are one
    --  endpoint and cannot drift apart.
    --
    --  GET /api/v1/squads/{squadId}/runs
+   --
+   --  Required scopes: agents:read.
    function List_Squad_Runs
      (Self : Client_Type;
       Squad_Id : String;
+      Params : List_Squad_Runs_Params := No_List_Squad_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Squad_Runs_Response;
+
+   --  Collect every item `listSquadRuns` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_Squad_Runs_All
+     (Self : Client_Type;
+      Squad_Id : String;
+      Params : List_Squad_Runs_Params := No_List_Squad_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Team_Run_Summary_Vectors.Vector;
 
    --  Start a squad run
    --
@@ -278,6 +359,8 @@ package UARP.API.Squads is
    --  endpoint and cannot drift apart.
    --
    --  POST /api/v1/squads/{squadId}/runs
+   --
+   --  Required scopes: agents:write.
    function Start_Squad_Run
      (Self : Client_Type;
       Squad_Id : String;
@@ -293,7 +376,7 @@ package UARP.API.Squads is
    --
    --  GET /api/v1/squads/{squadId}/chat/events
    --
-   --  Required scopes: events:read.
+   --  Required scopes: agents:read.
    --
    --  Dispatches every event to Sink until the stream ends or the sink stops it.
    procedure Stream_Squad_Chat_Events
@@ -311,7 +394,7 @@ package UARP.API.Squads is
    --
    --  GET /api/v1/squads/{squadId}/runs/{runId}/events
    --
-   --  Required scopes: events:read.
+   --  Required scopes: agents:read.
    --
    --  Dispatches every event to Sink until the stream ends or the sink stops it.
    procedure Stream_Squad_Run_Events
@@ -327,7 +410,15 @@ package UARP.API.Squads is
    --  older noun: the server rewrites the leading path segment before dispatch, so the two are one
    --  endpoint and cannot drift apart.
    --
+   --  WRITE SEMANTICS: mixed - the same handler as `PUT /api/v1/teams/{teamId}`. An omitted
+   --  top-level field keeps its stored value. `policies` merges one level deep and
+   --  `policies.validation` merges over the stored one. A `workers` list that is present replaces
+   --  the list but keeps each worker's stored `role` and `permissions` (not on the swarm
+   --  `agent_ids` path). `swarm_config` and `goal_config` are replaced whole when sent.
+   --
    --  PUT /api/v1/squads/{squadId}
+   --
+   --  Required scopes: agents:write.
    function Update
      (Self : Client_Type;
       Squad_Id : String;
@@ -341,7 +432,13 @@ package UARP.API.Squads is
    --  older noun: the server rewrites the leading path segment before dispatch, so the two are one
    --  endpoint and cannot drift apart.
    --
+   --  WRITE SEMANTICS: merges - the same handler as the `/teams` route. Only `status` and
+   --  `goal_summary` are applied, each only when sent; every other node field keeps its stored
+   --  value.
+   --
    --  PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}
+   --
+   --  Required scopes: agents:write.
    function Update_Squad_Graph_Node
      (Self : Client_Type;
       Squad_Id : String;

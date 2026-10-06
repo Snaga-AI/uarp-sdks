@@ -2,11 +2,14 @@
 
 import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
+import { pick } from '../../core/util.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   IngestKbDocumentRequest,
   IngestKbDocumentResponse,
   KnowledgeBase,
   KnowledgeBaseCreate,
+  KnowledgeBaseDocument,
   KnowledgeBaseSearchResult,
   KnowledgeBaseUpdate,
   ListKbDocumentsResponse,
@@ -14,6 +17,22 @@ import type {
   ReindexKnowledgeBaseResponse,
   SearchKnowledgeBaseRequest,
 } from '../models.js';
+
+/**
+ * Query and header parameters for `listKbDocuments`.
+ */
+export interface ListKbDocumentsParams {
+  /**
+   * Page size, oldest first. ABSENT means the whole list, exactly as before paging existed — not
+   * a default page. Values outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
 
 /**
  * Knowledge base management
@@ -162,12 +181,26 @@ export class KnowledgeResource extends APIResource {
    *
    * Required scopes: `memory:read`.
    */
-  listKbDocuments(kbId: string, options?: RequestOptions): Promise<ListKbDocumentsResponse> {
+  listKbDocuments(kbId: string, params?: ListKbDocumentsParams, options?: RequestOptions): Promise<ListKbDocumentsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/knowledge-bases/${encodeURIComponent(String(kbId))}/documents`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listKbDocuments`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listKbDocumentsAll(kbId: string, params?: ListKbDocumentsParams, options?: RequestOptions): AsyncIterableIterator<KnowledgeBaseDocument> {
+    return autoPaginate<KnowledgeBaseDocument>(
+      (cursor) => this.listKbDocuments(kbId, { ...params, cursor }, options),
+      'documents',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -196,8 +229,13 @@ export class KnowledgeResource extends APIResource {
    * Re-embed every chunk with the current model
    *
    * Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
-   * embedding drift after a model change. Requires an embeddings backend: without one the answer
-   * is 503 and nothing is written.
+   * embedding drift after a model change. Incremental: chunks that already carry a vector from
+   * the current model are skipped (`already_current`), and only the rest are embedded, inside
+   * the embedding request's deadline. What the deadline cuts off is stored as far as it got and
+   * counted as `pending`; call again until `reindexed` is true — each call continues where the
+   * last one stopped. Requires an embeddings backend: without one the answer is 503 and nothing
+   * is written; 503 `kb_embedding_failed` when chunks needed a vector and the provider returned
+   * none.
    *
    * `POST /api/v1/knowledge-bases/{kbId}/reindex`
    *

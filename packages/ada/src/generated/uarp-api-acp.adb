@@ -18,10 +18,29 @@ package body UARP.API.ACP is
           Options => Options);
    end Get_ACP_Session;
 
+   function Save_ACP_Session
+     (Self : Client_Type;
+      Session_Id : String;
+      Payload : UARP.Models.Save_ACP_Session_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Save_ACP_Session_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/acp/session/" & UARP.Types.Encode_Path_Segment (Session_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Save_ACP_Session;
+
    function Update_ACP_Session
      (Self : Client_Type;
       Session_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Update_ACP_Session_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Update_ACP_Session_Response
    is
@@ -31,7 +50,7 @@ package body UARP.API.ACP is
             (Self,
              "PUT",
              "/api/v1/acp/session/" & UARP.Types.Encode_Path_Segment (Session_Id),
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

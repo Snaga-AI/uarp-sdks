@@ -12,6 +12,7 @@ use serde::Serialize;
 use url::Url;
 
 use crate::error::{ApiError, Error, Problem, Result};
+use crate::form::{encode_form, FORM_CONTENT_TYPE};
 use crate::generated::meta::DEFAULT_BASE_URL;
 use crate::sse::{EventStream, StreamOptions};
 use crate::util::encode_query_component;
@@ -270,6 +271,37 @@ impl Client {
         decode_json(response).await
     }
 
+    /// Send an `application/x-www-form-urlencoded` request and decode a JSON
+    /// response body.
+    ///
+    /// `fields` are the form's fields in the order they go on the wire; the
+    /// generated code lists them in schema order and leaves out the absent
+    /// ones. The body is encoded once and the same bytes are sent on a retry.
+    pub async fn request_form<Q, R>(
+        &self,
+        req: Request<'_, Q, ()>,
+        fields: Vec<(&'static str, String)>,
+    ) -> Result<R>
+    where
+        Q: Serialize + ?Sized + Sync,
+        R: DeserializeOwned,
+    {
+        let body = encode_form(fields.iter().map(|(name, value)| (*name, value.as_str())));
+        let response = self
+            .run(&req, &move |builder: RequestBuilder| {
+                // `headers` replaces rather than appends, so a default header
+                // cannot leave a second `Content-Type` beside this one.
+                let mut content_type = HeaderMap::new();
+                content_type.insert(
+                    reqwest::header::CONTENT_TYPE,
+                    HeaderValue::from_static(FORM_CONTENT_TYPE),
+                );
+                Ok(builder.headers(content_type).body(body.clone()))
+            })
+            .await?;
+        decode_json(response).await
+    }
+
     /// Open a server-sent event stream.
     pub fn request_stream<Q>(
         &self,
@@ -296,6 +328,86 @@ impl Client {
             url
         });
         EventStream::new(self.inner.clone(), url, headers, options)
+    }
+
+    /// POST a JSON body and read the answer as server-sent events — an LLM
+    /// completion with `"stream": true`.
+    ///
+    /// The platform cuts a non-streamed completion that stays silent for
+    /// 120 s (504); the same request streamed keeps going for minutes.
+    ///
+    /// The request carries what every POST of this client carries — the
+    /// credentials, the JSON body and an `Idempotency-Key` (the one from
+    /// [`Client::with_idempotency_key`], or a fresh one) — with `Accept:
+    /// text/event-stream`. It is sent once, when the stream is first polled.
+    ///
+    /// **One attempt.** Nothing is retried or reconnected, whatever the status
+    /// and however the stream ends: replaying the POST would run, and bill,
+    /// the model twice. [`StreamOptions`], `max_retries` and the client
+    /// timeout do not apply — a timeout on the whole response would cut the
+    /// very stream this exists to keep open.
+    ///
+    /// The stream ends after `data: [DONE]` (which is not delivered), at the
+    /// end of the body, or when it is dropped, which closes the connection. A
+    /// non-2xx answer is the first and only item: [`Error::Api`] with the
+    /// status and the problem document from the body. So is a 2xx that is not
+    /// `text/event-stream` (plain JSON, an empty body), with the status as
+    /// received and the body kept in the problem's `detail`: an answer with
+    /// no events must never read as a finished stream. A connection lost
+    /// mid-stream is an [`Error::Connection`], not a quiet end.
+    ///
+    /// ```no_run
+    /// # use futures_util::StreamExt;
+    /// # async fn demo(client: uarp_sdk::Client) -> Result<(), uarp_sdk::Error> {
+    /// let body = serde_json::json!({
+    ///     "model": "my-model",
+    ///     "stream": true,
+    ///     "messages": [{"role": "user", "content": "hi"}],
+    /// });
+    /// let mut events = client.stream_post("/api/v1/llm/chat/completions", &body);
+    /// while let Some(event) = events.next().await {
+    ///     let chunk = event?.json::<serde_json::Value>()?;
+    ///     print!("{}", chunk["choices"][0]["delta"]["content"].as_str().unwrap_or(""));
+    /// }
+    /// # Ok(()) }
+    /// ```
+    pub fn stream_post<B>(&self, path: &str, body: &B) -> EventStream
+    where
+        B: Serialize + ?Sized,
+    {
+        self.request_stream_post(path, NO_QUERY, body, Vec::new(), true)
+    }
+
+    /// The transport behind [`Client::stream_post`], for the generated
+    /// operations that POST a JSON body and answer with an event stream: the
+    /// same single attempt, plus the operation's query and header parameters.
+    /// `idempotent` adds the automatic `Idempotency-Key`, as on any write.
+    pub fn request_stream_post<Q, B>(
+        &self,
+        path: &str,
+        query: Option<&Q>,
+        body: &B,
+        headers: Vec<(&'static str, String)>,
+        idempotent: bool,
+    ) -> EventStream
+    where
+        Q: Serialize + ?Sized,
+        B: Serialize + ?Sized,
+    {
+        // `json` serialises now and sets `Content-Type: application/json`,
+        // exactly as the unary path's body does.
+        let request = self.build_url(path, query).map(|url| {
+            let key = idempotent.then(|| self.idempotency_key());
+            self.prepare(
+                Method::POST,
+                url,
+                "text/event-stream",
+                &headers,
+                key.as_deref(),
+            )
+            .json(body)
+        });
+        EventStream::single(request)
     }
 
     /// Escape hatch for endpoints the generated surface does not cover.
@@ -329,12 +441,7 @@ impl Client {
         B: Serialize + ?Sized + Sync,
     {
         let url = self.build_url(&req.path, req.query)?;
-        let idempotency_key = req.idempotent.then(|| {
-            self.options
-                .idempotency_key
-                .clone()
-                .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
-        });
+        let idempotency_key = req.idempotent.then(|| self.idempotency_key());
         let retryable_method = req.method == Method::GET || req.method == Method::HEAD;
         let can_retry = retryable_method || idempotency_key.is_some();
 
@@ -343,38 +450,16 @@ impl Client {
 
         let mut attempt: u32 = 0;
         loop {
-            let mut builder = self
-                .inner
-                .http
-                .request(req.method.clone(), url.clone())
-                .timeout(timeout)
-                .header(reqwest::header::ACCEPT, "application/json")
-                .header(reqwest::header::USER_AGENT, &self.inner.user_agent)
-                .headers(self.inner.default_headers.clone());
-
-            // An empty key means "no credentials" — the client's credentials
-            // travel another way, or it is a guest/public client. `Bearer `
-            // with nothing after it is NOT the same as sending no header: a
-            // server that validates the value can refuse it. TypeScript and
-            // Swift already draw this distinction; this keeps the family
-            // consistent for anyone who builds a client with `.api_key("")`.
-            if !self.inner.api_key.is_empty() {
-                builder = builder.header(
-                    reqwest::header::AUTHORIZATION,
-                    format!("Bearer {}", self.inner.api_key),
-                );
-            }
-
-            for (name, value) in &req.headers {
-                builder = builder.header(*name, value);
-            }
-            for (name, value) in &self.options.extra_headers {
-                builder = builder.header(name.as_str(), value);
-            }
-            if let Some(key) = &idempotency_key {
-                builder = builder.header("Idempotency-Key", key);
-            }
-            builder = apply_body(builder)?;
+            let builder = self
+                .prepare(
+                    req.method.clone(),
+                    url.clone(),
+                    "application/json",
+                    &req.headers,
+                    idempotency_key.as_deref(),
+                )
+                .timeout(timeout);
+            let builder = apply_body(builder)?;
 
             match builder.send().await {
                 Ok(response) if response.status().is_success() => return Ok(response),
@@ -414,6 +499,58 @@ impl Client {
                 }
             }
         }
+    }
+
+    /// The key a write carries: the caller's, or a fresh v4 UUID per call.
+    fn idempotency_key(&self) -> String {
+        self.options
+            .idempotency_key
+            .clone()
+            .unwrap_or_else(|| uuid::Uuid::new_v4().to_string())
+    }
+
+    /// The headers every call carries, in the order every call sends them.
+    /// Shared by the unary path and [`Client::stream_post`] so a streamed POST
+    /// puts the same bytes on the wire as any other POST, `Accept` aside.
+    fn prepare(
+        &self,
+        method: Method,
+        url: Url,
+        accept: &'static str,
+        headers: &[(&'static str, String)],
+        idempotency_key: Option<&str>,
+    ) -> RequestBuilder {
+        let mut builder = self
+            .inner
+            .http
+            .request(method, url)
+            .header(reqwest::header::ACCEPT, accept)
+            .header(reqwest::header::USER_AGENT, &self.inner.user_agent)
+            .headers(self.inner.default_headers.clone());
+
+        // An empty key means "no credentials" — the client's credentials
+        // travel another way, or it is a guest/public client. `Bearer `
+        // with nothing after it is NOT the same as sending no header: a
+        // server that validates the value can refuse it. TypeScript and
+        // Swift already draw this distinction; this keeps the family
+        // consistent for anyone who builds a client with `.api_key("")`.
+        if !self.inner.api_key.is_empty() {
+            builder = builder.header(
+                reqwest::header::AUTHORIZATION,
+                format!("Bearer {}", self.inner.api_key),
+            );
+        }
+
+        for (name, value) in headers {
+            builder = builder.header(*name, value);
+        }
+        for (name, value) in &self.options.extra_headers {
+            builder = builder.header(name.as_str(), value);
+        }
+        if let Some(key) = idempotency_key {
+            builder = builder.header("Idempotency-Key", key);
+        }
+        builder
     }
 
     fn build_url<Q: Serialize + ?Sized>(&self, path: &str, query: Option<&Q>) -> Result<Url> {
@@ -627,7 +764,7 @@ pub(crate) fn problem_from_slice(bytes: &[u8]) -> Problem {
     Problem { detail: Some(message.unwrap_or_else(raw)), ..Problem::default() }
 }
 
-async fn read_problem(response: reqwest::Response) -> Problem {
+pub(crate) async fn read_problem(response: reqwest::Response) -> Problem {
     match response.bytes().await {
         Ok(bytes) if !bytes.is_empty() => problem_from_slice(&bytes),
         _ => Problem::default(),

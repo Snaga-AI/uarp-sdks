@@ -68,6 +68,38 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Order a video
+    ///
+    /// Takes the buyer's photo and text, checks the photo, and opens a Stripe Checkout that only
+    /// AUTHORISES the price: the money is held, then captured when the clip exists, or released if
+    /// it never does — nothing is ever refunded because nothing moved. The photo is checked BEFORE
+    /// anything is stored or held; a refusal is 422 with a stable `reason` and `{en, uk}` text.
+    /// Answers 201 with the order and its `order_token` — the only time the token is returned; send
+    /// it as `X-Order-Token` on every later call, and keep it after `#` in any page URL.
+    /// Rate-limited to 10 orders per hour per address. Anonymous.
+    ///
+    /// `POST /api/v1/public/video-orders`
+    public func createPublicVideoOrder(body: CreatePublicVideoOrderRequest, options: RequestOptions = .init()) async throws -> CreatePublicVideoOrderResponse {
+        var parts: [MultipartPart] = []
+        parts.append(MultipartPart(name: "template_id", value: .text(body.templateId)))
+        parts.append(MultipartPart(name: "photo", value: .file(body.photo)))
+        if let value = body.slots {
+            parts.append(MultipartPart(name: "slots", value: .text(value)))
+        }
+        if let value = body.locale {
+            parts.append(MultipartPart(name: "locale", value: .text(value.rawValue)))
+        }
+        parts.append(MultipartPart(name: "consent_rights", value: .text(body.consentRights.rawValue)))
+        parts.append(MultipartPart(name: "consent_terms", value: .text(body.consentTerms.rawValue)))
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/video-orders",
+            body: .multipart(parts),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Has THIS browser already signed up?
     ///
     /// Deliberately not an address oracle. The answer is `registered: true` only when the caller
@@ -325,6 +357,87 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Fetch an order's photo (for the video provider)
+    ///
+    /// How the video provider reads the buyer's photo: its API takes a URL and nothing else. The
+    /// link is signed for one file and one hour and is never shown to the buyer.
+    ///
+    /// `GET /api/v1/public/video-inputs/{fileId}`
+    public func getPublicVideoInput(fileId: String, exp: Int, sig: String, options: RequestOptions = .init()) async throws -> Data {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "exp", value: String(exp)))
+        query.append(URLQueryItem(name: "sig", value: sig))
+        return try await client.sendData(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/video-inputs/\(encodePathSegment(fileId))",
+            query: query,
+            options: options
+        ))
+    }
+
+    /// Get an order's status
+    ///
+    /// What the order page shows: status, queue position and wait, generation progress, a signed
+    /// hour-long link to the finished clip, whether the free regeneration is available and why not.
+    /// Poll every few seconds while `status` is `awaiting_payment`, `queued` or `generating`.
+    ///
+    /// `GET /api/v1/public/video-orders/{orderId}`
+    public func getPublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = .init()) async throws -> VideoOrder {
+        var headers: [String: String] = [:]
+        headers["X-Order-Token"] = xOrderToken
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))",
+            headers: headers,
+            options: options
+        ))
+    }
+
+    /// Stream or download the finished video
+    ///
+    /// The clip behind the signed `video.url` the order answers — valid for an hour; ask the order
+    /// again for a fresh link. `download=1` sends it as an attachment.
+    ///
+    /// `GET /api/v1/public/video-orders/{orderId}/video`
+    public func getPublicVideoOrderVideo(orderId: String, exp: Int, sig: String, download: ExportDataExplorerIncludeSensitive? = nil, range: String? = nil, options: RequestOptions = .init()) async throws -> Data {
+        var query: [URLQueryItem] = []
+        query.append(URLQueryItem(name: "exp", value: String(exp)))
+        query.append(URLQueryItem(name: "sig", value: sig))
+        if let download {
+            query.append(URLQueryItem(name: "download", value: download.rawValue))
+        }
+        var headers: [String: String] = [:]
+        if let range {
+            headers["Range"] = range
+        }
+        return try await client.sendData(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))/video",
+            query: query,
+            headers: headers,
+            options: options
+        ))
+    }
+
+    /// Stream a template's example clip
+    ///
+    /// The example video shown in the gallery, as MP4 with byte-range support. 404 when the
+    /// template is not published or has no example. Anonymous.
+    ///
+    /// `GET /api/v1/public/video-templates/{templateId}/preview`
+    public func getPublicVideoTemplatePreview(templateId: String, range: String? = nil, options: RequestOptions = .init()) async throws -> Data {
+        var headers: [String: String] = [:]
+        if let range {
+            headers["Range"] = range
+        }
+        return try await client.sendData(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/video-templates/\(encodePathSegment(templateId))/preview",
+            headers: headers,
+            options: options
+        ))
+    }
+
     /// Is sign-up open
     ///
     /// No authentication; cached for 30 seconds.
@@ -482,6 +595,44 @@ public struct PublicAPI: Sendable {
         )
     }
 
+    /// List video templates
+    ///
+    /// The gallery of the public video service: every published template with its bilingual
+    /// (`en`/`uk`) texts, price, clip length, the text fields the buyer fills and what makes a good
+    /// photo — and never the model, the hidden prompt or the cost behind it. `queue` estimates the
+    /// wait a new order would face, so the page can warn BEFORE payment. `stats.videos_total` and
+    /// each template's `videos_made` count videos delivered to paying buyers — never test runs or
+    /// free regenerations — so they can be shown as they are. Anonymous.
+    ///
+    /// `GET /api/v1/public/video-templates`
+    public func listPublicVideoTemplates(options: RequestOptions = .init()) async throws -> ListPublicVideoTemplatesResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/video-templates",
+            options: options
+        ))
+    }
+
+    /// Get a checkout link for an unpaid order
+    ///
+    /// For a buyer who came back from Stripe without paying: answers the order's open Checkout
+    /// link, or a fresh one once the first is near its 24-hour expiry. Only while `status` is
+    /// `awaiting_payment`; a second payment for an order already paid is released by the webhook,
+    /// never captured.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/checkout`
+    public func openPublicVideoOrderCheckout(orderId: String, xOrderToken: String, options: RequestOptions = .init()) async throws -> OpenPublicVideoOrderCheckoutResponse {
+        var headers: [String: String] = [:]
+        headers["X-Order-Token"] = xOrderToken
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))/checkout",
+            headers: headers,
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Domain lookup
     ///
     /// Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
@@ -521,6 +672,45 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// Rate a finished video
+    ///
+    /// 👍 or 👎 on a ready video. A 👎 is what opens the free regeneration.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/feedback`
+    public func ratePublicVideoOrder(orderId: String, body: RatePublicVideoOrderRequest, xOrderToken: String, options: RequestOptions = .init()) async throws -> RatePublicVideoOrderResponse {
+        var headers: [String: String] = [:]
+        headers["X-Order-Token"] = xOrderToken
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))/feedback",
+            headers: headers,
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Regenerate a video for free, once
+    ///
+    /// Makes a new take of a ready video from the SAME photo and text (only the seed changes),
+    /// free, once per order, within 24 hours of delivery, after a 👎 rating. The new clip replaces
+    /// the old one; if it fails, the buyer keeps the video they paid for. Not offered to a buyer
+    /// who regenerates most of what they buy (`reason: not_available`). Answers 202 with the order
+    /// back in the queue.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/regenerate`
+    public func regeneratePublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = .init()) async throws -> VideoOrder {
+        var headers: [String: String] = [:]
+        headers["X-Order-Token"] = xOrderToken
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))/regenerate",
+            headers: headers,
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Respond to public HITL
     ///
     /// Supplies the visitor's answer to an agent that has paused for input, storing `response` and
@@ -539,6 +729,25 @@ public struct PublicAPI: Sendable {
             method: "POST",
             path: "/api/v1/public/sessions/\(encodePathSegment(sessionId))/respond",
             body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Try a failed order again
+    ///
+    /// For an order that failed (and was never charged): a NEW order with the same photo and text
+    /// and its own checkout, answered with its own `order_token`. Once per failed order; within 24
+    /// hours, while the photo is still kept.
+    ///
+    /// `POST /api/v1/public/video-orders/{orderId}/retry`
+    public func retryPublicVideoOrder(orderId: String, xOrderToken: String, options: RequestOptions = .init()) async throws -> RetryPublicVideoOrderResponse {
+        var headers: [String: String] = [:]
+        headers["X-Order-Token"] = xOrderToken
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/video-orders/\(encodePathSegment(orderId))/retry",
+            headers: headers,
             idempotent: true,
             options: options
         ))

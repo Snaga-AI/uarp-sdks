@@ -22,7 +22,7 @@ package body UARP.API.GDPR is
 
    function Data_Subject_Erasure
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Data_Subject_Erasure_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Data_Subject_Erasure_Result
    is
@@ -32,7 +32,7 @@ package body UARP.API.GDPR is
             (Self,
              "POST",
              "/api/v1/data-subject/erasure",
-             Payload => Payload,
+             Payload => UARP.Models.To_JSON (Payload),
              Has_Payload => True,
              Idempotent => True,
              Options => Options));

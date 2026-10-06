@@ -188,6 +188,72 @@ export class Transport {
     }, options.stream ?? { signal: options.signal });
   }
 
+  /**
+   * POST a JSON body and read the answer as server-sent events — an LLM
+   * completion with `"stream": true`. The platform cuts a silent non-streamed
+   * request at 120 s; a streamed one keeps the connection alive for minutes.
+   *
+   * Exactly one attempt: no retry and no reconnect, whatever the status, since
+   * a replay would run and bill the model twice. So `maxRetries`, `timeout`
+   * and `stream.reconnect` do not apply. The stream ends on `data: [DONE]`
+   * (not delivered), at the end of the body, or when the caller stops. A
+   * non-2xx answer throws the `APIError` for its status, carrying the problem
+   * document; its body is never delivered as events. So does a 2xx that is
+   * not `text/event-stream`: an `APIError` with the status as received and the
+   * raw body in `problem.body`. A connection that breaks after the stream began
+   * throws `APIConnectionError` with the transport's error as its `cause`.
+   */
+  streamPost(path: string, body: unknown, options: RequestOptions = {}): EventStream {
+    // The same key every POST gets in `request`, chosen once: there is no
+    // second attempt for it to be reused by, but the bytes must match.
+    const idempotencyKey = options.idempotencyKey ?? this.#idempotencyKey();
+    const spec: RequestSpec = {
+      method: 'POST',
+      path,
+      headers: { Accept: 'text/event-stream' },
+      body,
+      options,
+    };
+    return new EventStream(
+      async (_lastEventId, signal) => {
+        let response: Response;
+        try {
+          response = await this.#send(spec, signal, idempotencyKey);
+        } catch (error) {
+          if (signal.aborted) throw error;
+          throw new APIConnectionError('Connection error', { cause: error });
+        }
+        if (!response.ok) {
+          throw errorForStatus(response.status, await readProblem(response), response.headers);
+        }
+        // A 2xx that is not an event stream (plain JSON when the body left out
+        // `"stream": true`, an empty body) would decode to no events and read
+        // as a finished stream. It is an error, with the body kept.
+        const contentType = response.headers.get('content-type');
+        if (!isEventStream(contentType)) {
+          const text = await response.text().catch(() => '');
+          throw new APIError(
+            response.status,
+            {
+              status: response.status,
+              title: 'Not an event stream',
+              detail: `Expected text/event-stream, got ${contentType ?? 'no Content-Type'}`,
+              body: text,
+            },
+            response.headers,
+          );
+        }
+        if (!response.body) return response;
+        return new Response(connectionErrorsOf(response.body, signal), {
+          status: response.status,
+          statusText: response.statusText,
+          headers: response.headers,
+        });
+      },
+      { ...options.stream, signal: options.stream?.signal ?? options.signal, reconnect: false },
+    );
+  }
+
   /** Build and issue exactly one HTTP request. */
   async #send(spec: RequestSpec, signal: AbortSignal, idempotencyKey: string | undefined): Promise<Response> {
     const options = spec.options ?? {};
@@ -222,6 +288,40 @@ export class Transport {
     if (spec.method === 'GET' || spec.method === 'HEAD') return true;
     return idempotencyKey !== undefined;
   }
+}
+
+/**
+ * The same bytes, with a read that fails turned into `APIConnectionError`
+ * (cause kept). A streamed POST is never resumed, so a socket that dies
+ * mid-body ends the answer for good: it must reach the caller as the SDK's
+ * connection error, not as whatever the fetch implementation throws, and
+ * never as a clean end. The caller's own abort passes through as it was.
+ */
+function connectionErrorsOf(body: ReadableStream<Uint8Array>, signal: AbortSignal): ReadableStream<Uint8Array> {
+  const reader = body.getReader();
+  return new ReadableStream<Uint8Array>({
+    async pull(controller) {
+      let chunk: ReadableStreamReadResult<Uint8Array>;
+      try {
+        chunk = await reader.read();
+      } catch (error) {
+        controller.error(
+          signal.aborted ? error : new APIConnectionError('Event stream broke off', { cause: error }),
+        );
+        return;
+      }
+      if (chunk.done) controller.close();
+      else controller.enqueue(chunk.value);
+    },
+    cancel(reason) {
+      return reader.cancel(reason);
+    },
+  });
+}
+
+/** `text/event-stream`, parameters and case aside. */
+function isEventStream(contentType: string | null): boolean {
+  return (contentType ?? '').split(';')[0]!.trim().toLowerCase() === 'text/event-stream';
 }
 
 function encodeBody(spec: RequestSpec, headers: Headers): BodyInit | undefined {

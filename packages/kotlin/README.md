@@ -84,6 +84,33 @@ client.runs.streamRunEvents(runId)
 
 Cancelling the collecting coroutine closes the connection.
 
+### Streaming a POST
+
+An LLM completion should be streamed: the platform cuts a silent, non-streamed
+request at 120 s, while a streamed one runs for as long as the model writes.
+`client.streamPost(path, body)` sends the JSON body with
+`Accept: text/event-stream` and reads the answer as a `Flow<ServerEvent>`:
+
+```kotlin
+val body = buildJsonObject {
+    put("model", model)
+    put("stream", true)
+    putJsonArray("messages") { addJsonObject { put("role", "user"); put("content", prompt) } }
+}
+client.streamPost("/api/v1/llm/chat/completions", body).collect { event ->
+    val delta = event.json().jsonObject["choices"]!!.jsonArray[0].jsonObject["delta"]!!.jsonObject
+    delta["content"]?.jsonPrimitive?.contentOrNull?.let(::append)
+}
+```
+
+It makes one attempt and never reconnects or retries, whatever the status — a
+replayed POST would run and bill the model twice. The flow ends on
+`data: [DONE]` (not delivered), at the end of the body, or when you stop
+collecting. A refusal throws `ApiException` with the status and problem
+document, and so does a 2xx that is not `text/event-stream` (for example a
+body without `"stream": true`), with the status as received; a connection lost
+mid-stream throws `StreamException`.
+
 ## Pagination
 
 ```kotlin

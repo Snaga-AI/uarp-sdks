@@ -8,6 +8,9 @@ import type {
   AppleNativeAuthResponse,
   AuthVerifyCodeRequest,
   AuthVerifyCodeResponse,
+  CompleteOAuthLoginFormPostProvider,
+  CompleteOAuthLoginFormPostRequest,
+  CompleteOAuthLoginFormPostResponse,
   CompleteOAuthLoginResponse,
   DisableMfaResponse,
   EnrolMfaRequest,
@@ -15,7 +18,6 @@ import type {
   GetMfaStatusResponse,
   GoogleOneTapAuthRequest,
   GoogleOneTapAuthResponse,
-  JsonObject,
   JsonValue,
   ListAuthProvidersResponse,
   ListMeSessionsResponse,
@@ -28,7 +30,9 @@ import type {
   OAuthLoginProviderConfigStatusProvider,
   OAuthLoginProviderItemId,
   OAuthLoginProvidersList,
+  RegisterRequest,
   RegisterResponse,
+  RequestOtpCodeRequest,
   RequestOtpCodeResponse,
   RevokeMeSessionResponse,
   UnlinkAuthProviderResponse,
@@ -108,6 +112,28 @@ export class AuthResource extends APIResource {
       method: 'GET',
       path: `/api/v1/auth/oauth/${encodeURIComponent(String(provider))}/callback`,
       query: pick(params, ['code', 'state', 'error']),
+      options,
+    });
+  }
+
+  /**
+   * OAuth callback, form_post (Sign in with Apple on the web)
+   *
+   * Apple returns from its web sign-in by a cross-site form POST (`response_mode=form_post`)
+   * carrying `code`, `state`, `id_token`, an optional `error` and — on the first sign-in only —
+   * a `user` JSON blob with name and email. Same outcome as the GET callback: 302 to the stored
+   * `return_to` with the session in the fragment, else JSON `{api_key, email}`. Only `apple`
+   * takes POST; `github` and `google` answer 405 here and use GET. A body that is not
+   * `application/x-www-form-urlencoded` is read as carrying no parameters (400).
+   *
+   * `POST /api/v1/auth/oauth/{provider}/callback`
+   */
+  completeOAuthLoginFormPost(provider: CompleteOAuthLoginFormPostProvider, body: CompleteOAuthLoginFormPostRequest, options?: RequestOptions): Promise<CompleteOAuthLoginFormPostResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/auth/oauth/${encodeURIComponent(String(provider))}/callback`,
+      form: pick(body, ['code', 'state', 'id_token', 'error', 'user']),
+      idempotent: true,
       options,
     });
   }
@@ -340,11 +366,17 @@ export class AuthResource extends APIResource {
   }
 
   /**
-   * Mint a 60-second SSE token scoped to events:read
+   * Mint a 60-second SSE token for the event streams
    *
-   * Mints a short-lived (60 s) API key carrying only `events:read` scope, for use as the
-   * `?token=` query param on browser SSE/WebSocket subscriptions which cannot set Authorization
-   * headers. Token does not appear in the tenant key dashboard and auto-purges from KV.
+   * Mints a short-lived (60 s) API key for browser SSE subscriptions, which cannot set
+   * Authorization headers; pass it as `?token=` or as a bearer. It carries the caller's own
+   * `role:` and those of `sessions:read`, `notifications:read`, `runs:read`, `agents:read` the
+   * caller already holds (403 when it holds none), and it authenticates ONLY `GET` on the event
+   * streams — `/sessions/{id}/events`, `/runs/{id}/events`, `/notifications/stream`,
+   * `/feed/stream`, `/missions/{id}/events`, `/companies/{id}/events`,
+   * `/squads/{id}/chat/events`, `/squads/{id}/runs/{runId}/events` (and the `/teams` aliases),
+   * `/a2a/tasks/{id}/events`, `/public/sessions/{id}/events`. Any other request presenting it is
+   * refused 403. Token does not appear in the tenant key dashboard and auto-purges from KV.
    *
    * `POST /api/v1/auth/sse-tokens`
    */
@@ -370,7 +402,7 @@ export class AuthResource extends APIResource {
    *
    * `POST /api/v1/register`
    */
-  register(body: JsonObject, options?: RequestOptions): Promise<RegisterResponse> {
+  register(body: RegisterRequest, options?: RequestOptions): Promise<RegisterResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/register',
@@ -394,7 +426,7 @@ export class AuthResource extends APIResource {
    *
    * `POST /api/v1/auth/request-code`
    */
-  requestOtpCode(body: JsonObject, options?: RequestOptions): Promise<RequestOtpCodeResponse> {
+  requestOtpCode(body: RequestOtpCodeRequest, options?: RequestOptions): Promise<RequestOtpCodeResponse> {
     return this._client.request({
       method: 'POST',
       path: '/api/v1/auth/request-code',
@@ -466,14 +498,15 @@ export class AuthResource extends APIResource {
    * Completes registration from the link mailed by `POST /api/v1/register`: it consumes the
    * one-time `token` query parameter and, under a per-email lock, creates the tenant, its
    * registry and email-index rows, the consent record, the owner user row and a `Default` API
-   * key scoped `*`, then mails that key to the address and deletes the token. New tenants start
-   * on a seven-day trial with `plan: "free"` as the post-trial fallback, and the key is a 90-day
-   * session key rather than a permanent credential; the address configured as super-admin is
-   * provisioned `enterprise` outright, but only while the super-admin slot is still unclaimed. A
-   * missing, unknown or expired token answers **400**, an address that already owns a tenant
-   * **409**, and a failure to send the key email **503** with the tenant id, since the key is
-   * only ever shown by mail. Anonymous; also registers the tenant for cron, bootstraps Stripe
-   * billing, increments the public user counter and writes a `tenant.created` audit entry.
+   * key scoped `*`, then deletes the token and returns that key once in the response body
+   * (`api_key`) — it is never e-mailed; the address receives only a notice that the account is
+   * active. New tenants start on a seven-day trial with `plan: "free"` as the post-trial
+   * fallback, and the key is a 90-day session key rather than a permanent credential; the
+   * address configured as super-admin is provisioned `enterprise` outright, but only while the
+   * super-admin slot is still unclaimed. A missing, unknown or expired token answers **400**, an
+   * address that already owns a tenant **409**. A failed notice e-mail does not fail the call.
+   * Anonymous; also registers the tenant for cron, bootstraps Stripe billing, increments the
+   * public user counter and writes a `tenant.created` audit entry.
    *
    * `GET /api/v1/verify-email`
    */

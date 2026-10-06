@@ -6,19 +6,35 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
+
+/// Query and header parameters for `listWebhookDeliveries`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListWebhookDeliveriesParams {
+    /// Page size, newest first. ABSENT means the whole list, exactly as before paging existed — not
+    /// a default page. Values outside 1..100 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
 
 /// Query and header parameters for `sensorWebhook`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct SensorWebhookParams {
-    /// Hex-encoded HMAC-SHA256 of the request body using the subscription's signing secret.
+    /// `sha256=` followed by the hex-encoded HMAC-SHA256 of the raw request body, keyed with the
+    /// subscription's signing secret. Checked only when the subscription has a secret.
     #[serde(skip)]
-    pub x_sensor_signature: String,
+    pub x_sensor_signature: Option<String>,
 }
 
 /// Webhook subscriptions
@@ -139,12 +155,12 @@ impl WebhooksApi {
     /// `GET /api/v1/webhooks/{webhookId}/deliveries`
     ///
     /// Required scopes: `webhooks:read`.
-    pub async fn list_webhook_deliveries(&self, webhook_id: &str) -> Result<models::ListWebhookDeliveriesResponse> {
+    pub async fn list_webhook_deliveries(&self, webhook_id: &str, params: &ListWebhookDeliveriesParams) -> Result<models::ListWebhookDeliveriesResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/webhooks/{}/deliveries", encode_path(webhook_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -152,16 +168,48 @@ impl WebhooksApi {
             .await
     }
 
+    /// Stream every item returned by `listWebhookDeliveries`, following the `cursor` cursor until
+    /// the server reports no further pages.
+    pub fn list_webhook_deliveries_all<'a>(&'a self, webhook_id: &'a str, params: &'a ListWebhookDeliveriesParams) -> impl Stream<Item = Result<models::WebhookDeliveryAttempt>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_webhook_deliveries(webhook_id, &page_params).await?;
+                let items = page.deliveries;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
+    }
+
     /// Sensor webhook (HMAC-authenticated, triggers an agent run)
     ///
-    /// External-system webhook. Bypasses normal auth — `X-Sensor-Signature` header is HMAC-verified
-    /// against the per-subscription secret. On valid signature, fires an agent run with the request
-    /// body as input.
+    /// External-system webhook created by an agent's `listen_webhook` tool. Bypasses normal auth:
+    /// when the subscription has a secret, `X-Sensor-Signature` must carry `sha256=\<hex
+    /// HMAC-SHA256 of the raw body\>` or the call is `401`; a listener without a secret is accepted
+    /// only if it has a `max_triggers` ceiling, otherwise `403`. `404` for an unknown webhook id,
+    /// `410` once the subscription is inactive, expired or out of triggers, `409` when a concurrent
+    /// call claims the same trigger slot, `413` for a body over the size cap. On success it writes
+    /// a queued run for the subscription's agent with `input: {type: "webhook_received",
+    /// webhook_id, payload, headers, instructions}` — the JSON body (or `{raw_body}` when it is not
+    /// JSON) as `payload` — dispatches it, and answers `{received: true, run_id}` without waiting
+    /// for the run.
     ///
     /// `POST /api/v1/webhooks/sensor/{webhookId}`
     pub async fn sensor_webhook(&self, webhook_id: &str, body: &serde_json::Map<String, serde_json::Value>, params: &SensorWebhookParams) -> Result<models::SensorWebhookResponse> {
         let mut headers: Vec<(&'static str, String)> = Vec::new();
-        headers.push(("X-Sensor-Signature", params.x_sensor_signature.clone()));
+        if let Some(value) = &params.x_sensor_signature {
+            headers.push(("X-Sensor-Signature", value.clone()));
+        }
         self.client
             .request_json(Request {
                 method: Method::POST,

@@ -87,7 +87,7 @@ impl PlaygroundApi {
     /// `POST /api/v1/playground/agents/{agentId}/run`
     ///
     /// Required scopes: `runs:create`.
-    pub async fn run(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::Run> {
+    pub async fn run(&self, agent_id: &str, body: &models::RunPlaygroundRequest) -> Result<models::Run> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -109,10 +109,14 @@ impl PlaygroundApi {
     /// editing the agent itself, because the canvas is the agent's composition. The canvas is
     /// stored alongside the agent record and does not itself change how the agent runs.
     ///
+    /// WRITE SEMANTICS: replaces. The stored canvas is rebuilt from this body: `nodes` and `edges`
+    /// are required and stored as given, an omitted `metadata` becomes an empty object, and nothing
+    /// from the previous canvas is kept. Unknown top-level fields are stripped.
+    ///
     /// `PUT /api/v1/playground/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    pub async fn save_playground_canvas(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::PlaygroundAgentState> {
+    pub async fn save_playground_canvas(&self, agent_id: &str, body: &models::SavePlaygroundCanvasRequest) -> Result<models::PlaygroundAgentState> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

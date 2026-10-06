@@ -9,7 +9,7 @@ use futures_core::Stream;
 use futures_util::StreamExt;
 use serde::de::DeserializeOwned;
 
-use crate::client::{collect_headers, Inner};
+use crate::client::{collect_headers, read_problem, Inner};
 use crate::error::{ApiError, Error, Problem, Result};
 
 /// One decoded `text/event-stream` frame.
@@ -368,6 +368,55 @@ impl EventStream {
             inner: Box::pin(stream),
         }
     }
+
+    /// One request, one response, no second attempt: the shape of
+    /// [`crate::Client::stream_post`]. Sent on the first poll.
+    ///
+    /// Nothing here loops back to `send`: a non-2xx answer, a dropped
+    /// connection and a body that ends without `[DONE]` all end the stream,
+    /// because the request it would replay is a POST that runs a model.
+    pub(crate) fn single(request: Result<reqwest::RequestBuilder>) -> Self {
+        let stream = async_stream::try_stream! {
+            let response = request?.send().await.map_err(|err| {
+                if err.is_timeout() { Error::Timeout } else { Error::Connection(err) }
+            })?;
+
+            // A 2xx that is not an event stream (plain JSON when the body
+            // lacked `"stream": true`, or an empty body) is an error too:
+            // decoded as SSE it would end with no events and read as a
+            // finished answer.
+            if !response.status().is_success() || !is_event_stream(response.headers()) {
+                // The body is kept on the error, never delivered as events.
+                let status = response.status().as_u16();
+                let headers = collect_headers(response.headers());
+                let problem = read_problem(response).await;
+                Err(Error::from(ApiError { status, problem, headers }))?;
+            } else {
+                let mut parser = Parser::default();
+                let mut body = response.bytes_stream();
+                while let Some(chunk) = body.next().await {
+                    let chunk = chunk.map_err(Error::Connection)?;
+                    for event in parser.push(&chunk) {
+                        yield event;
+                    }
+                    // `[DONE]` may flush a pending event (yielded above) and is
+                    // itself never delivered. Stop reading: what follows it is
+                    // not part of the answer.
+                    if parser.is_done() {
+                        break;
+                    }
+                }
+                // A frame left unterminated by the end of the body. After
+                // `[DONE]` this is `None`.
+                if let Some(event) = parser.finish() {
+                    yield event;
+                }
+            }
+        };
+        Self {
+            inner: Box::pin(stream),
+        }
+    }
 }
 
 impl Stream for EventStream {
@@ -376,6 +425,15 @@ impl Stream for EventStream {
     fn poll_next(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Option<Self::Item>> {
         self.inner.as_mut().poll_next(cx)
     }
+}
+
+/// `Content-Type: text/event-stream`, parameters such as `charset` allowed.
+fn is_event_stream(headers: &reqwest::header::HeaderMap) -> bool {
+    headers
+        .get(reqwest::header::CONTENT_TYPE)
+        .and_then(|value| value.to_str().ok())
+        .and_then(|value| value.split(';').next())
+        .is_some_and(|media| media.trim().eq_ignore_ascii_case("text/event-stream"))
 }
 
 /// Half-deterministic, half-random backoff for SSE reconnects:

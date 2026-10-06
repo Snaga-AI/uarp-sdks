@@ -95,24 +95,52 @@ public struct WebhooksAPI: Sendable {
     /// `GET /api/v1/webhooks/{webhookId}/deliveries`
     ///
     /// Required scopes: `webhooks:read`.
-    public func listWebhookDeliveries(webhookId: String, options: RequestOptions = .init()) async throws -> ListWebhookDeliveriesResponse {
+    public func listWebhookDeliveries(webhookId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListWebhookDeliveriesResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/webhooks/\(encodePathSegment(webhookId))/deliveries",
+            query: query,
             options: options
         ))
     }
 
+    /// Stream every item returned by `listWebhookDeliveries`, following the `cursor` cursor until
+    /// the server reports no further pages.
+    public func listWebhookDeliveriesAll(webhookId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<WebhookDeliveryAttempt, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listWebhookDeliveries(webhookId: webhookId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.deliveries },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
+    }
+
     /// Sensor webhook (HMAC-authenticated, triggers an agent run)
     ///
-    /// External-system webhook. Bypasses normal auth — `X-Sensor-Signature` header is HMAC-verified
-    /// against the per-subscription secret. On valid signature, fires an agent run with the request
-    /// body as input.
+    /// External-system webhook created by an agent's `listen_webhook` tool. Bypasses normal auth:
+    /// when the subscription has a secret, `X-Sensor-Signature` must carry `sha256=<hex HMAC-SHA256
+    /// of the raw body>` or the call is `401`; a listener without a secret is accepted only if it
+    /// has a `max_triggers` ceiling, otherwise `403`. `404` for an unknown webhook id, `410` once
+    /// the subscription is inactive, expired or out of triggers, `409` when a concurrent call
+    /// claims the same trigger slot, `413` for a body over the size cap. On success it writes a
+    /// queued run for the subscription's agent with `input: {type: "webhook_received", webhook_id,
+    /// payload, headers, instructions}` — the JSON body (or `{raw_body}` when it is not JSON) as
+    /// `payload` — dispatches it, and answers `{received: true, run_id}` without waiting for the
+    /// run.
     ///
     /// `POST /api/v1/webhooks/sensor/{webhookId}`
-    public func sensorWebhook(webhookId: String, body: JSONObject? = nil, xSensorSignature: String, options: RequestOptions = .init()) async throws -> SensorWebhookResponse {
+    public func sensorWebhook(webhookId: String, body: JSONObject? = nil, xSensorSignature: String? = nil, options: RequestOptions = .init()) async throws -> SensorWebhookResponse {
         var headers: [String: String] = [:]
-        headers["X-Sensor-Signature"] = xSensorSignature
+        if let xSensorSignature {
+            headers["X-Sensor-Signature"] = xSensorSignature
+        }
         let encodedBody: RequestBody? = try body.map { try client.encode($0) }
         return try await client.send(RequestSpec(
             method: "POST",

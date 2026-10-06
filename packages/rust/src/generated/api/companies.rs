@@ -16,6 +16,20 @@ use crate::pagination::CursorGuard;
 use crate::sse::EventStream;
 use crate::util::encode_path;
 
+/// Query and header parameters for `getCompanyActivity`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetCompanyActivityParams {
+    /// Page size, newest first. ABSENT means the newest 50 entries, with no paging fields (the
+    /// window size this list has always had; before 2026-10-02 some answered their OLDEST rows).
+    /// Values outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
+
 /// Query and header parameters for `listCompanies`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListCompaniesParams {
@@ -141,17 +155,40 @@ impl CompaniesApi {
     /// `GET /api/v1/companies/{companyId}/activity`
     ///
     /// Required scopes: `agents:read`.
-    pub async fn get_company_activity(&self, company_id: &str) -> Result<models::GetCompanyActivityResponse> {
+    pub async fn get_company_activity(&self, company_id: &str, params: &GetCompanyActivityParams) -> Result<models::GetCompanyActivityResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/companies/{}/activity", encode_path(company_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getCompanyActivity`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_company_activity_all<'a>(&'a self, company_id: &'a str, params: &'a GetCompanyActivityParams) -> impl Stream<Item = Result<models::CompanyActivityEntry>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_company_activity(company_id, &page_params).await?;
+                let items = page.entries.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Get company budget allocation

@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Agent memory management
@@ -179,18 +180,24 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
     /**
      * List recent memories for an agent
      *
-     * Returns the agent's most recent memory entries, newest first. `limit` (or its alias `top_k`)
-     * defaults to 20 and is clamped to 1..200, so an oversized value narrows silently rather than
-     * returning the whole corpus. This is a recency listing with no query — use `POST
-     * /api/v1/agents/{agentId}/memory/search` to retrieve by relevance.
+     * Returns the agent's memory entries, newest created first (entry_id breaks ties), in a fixed
+     * order: two identical calls answer the same page. `limit` (or its alias `top_k`) defaults to
+     * 20 and is clamped to 1..200. `total` is the agent's whole count of (non-archived) entries,
+     * not the page length; while more exist, `has_more` is true and `cursor` continues the listing
+     * when passed back as `?cursor=`. Reading the list does not count as recalling an entry (it no
+     * longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). This is a listing with no
+     * query — use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance. 404 when
+     * the agent does not exist.
      *
      * `GET /api/v1/agents/{agentId}/memory`
      *
      * Required scopes: `memory:read`.
      */
-    public suspend fun listMemories(agentId: String, limit: Long? = null, options: RequestOptions = RequestOptions()): ListMemoriesResponse {
+    public suspend fun listMemories(agentId: String, limit: Long? = null, topK: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListMemoriesResponse {
         val query = buildList {
             if (limit != null) add("limit" to limit.toString())
+            if (topK != null) add("top_k" to topK.toString())
+            if (cursor != null) add("cursor" to cursor)
         }
         return client.request<ListMemoriesResponse>(
             RequestSpec(
@@ -201,6 +208,17 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listMemories`, following the `cursor` cursor until the server
+     * reports no further pages.
+     */
+    public fun listMemoriesAll(agentId: String, limit: Long? = null, topK: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<MemoryEntry> = autoPaginate(
+        fetch = { pageCursor -> listMemories(agentId = agentId, limit = limit, topK = topK, cursor = pageCursor, options = options) },
+        items = { it.memories },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Search agent memories
@@ -241,11 +259,16 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      * can be refused `403` (shrinking or same-size updates never reach that gate) and the refusal
      * is audit-logged.
      *
+     * WRITE SEMANTICS: merges. Only `content`, `tags` and `relevance_score` are read, each applied
+     * only when present with the right type; an omitted or wrongly-typed one keeps its stored
+     * value, as does every other field. `tags` replaces the stored array whole. `last_accessed_at`
+     * is always re-stamped.
+     *
      * `PUT /api/v1/agents/{agentId}/memory/{entryId}`
      *
      * Required scopes: `memory:write`.
      */
-    public suspend fun updateAgentMemoryEntry(agentId: String, entryId: String, body: JsonObject, options: RequestOptions = RequestOptions()): MemoryEntry {
+    public suspend fun updateAgentMemoryEntry(agentId: String, entryId: String, body: UpdateAgentMemoryEntryRequest, options: RequestOptions = RequestOptions()): MemoryEntry {
         return client.request<MemoryEntry>(
             RequestSpec(
                 method = "PUT",
@@ -269,6 +292,12 @@ public class MemoryApi internal constructor(private val client: UarpClient) {
      * injects: the agent's `core_memory` is enabled and the label is added to `core_memory.blocks`
      * when it is not declared there yet (while fewer than 10 are declared). `404` when the agent
      * does not exist.
+     *
+     * WRITE SEMANTICS: replaces. The block is rebuilt: `content` (required) overwrites it whole,
+     * and an omitted `max_tokens` resets the ceiling to 1000 (clamped to the core-memory budget)
+     * rather than keeping the stored value. Only `block_id` survives from the previous block. The
+     * agent's `core_memory` config is merged, not replaced: it is enabled and the label appended
+     * to `blocks` when there is room.
      *
      * `PUT /api/v1/agents/{agentId}/memory/core/{label}`
      *

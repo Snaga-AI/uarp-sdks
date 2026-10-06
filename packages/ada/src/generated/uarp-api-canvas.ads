@@ -15,6 +15,8 @@ package UARP.API.Canvas is
    --  canvas, it is just blank.
    --
    --  GET /api/v1/canvas/fleet
+   --
+   --  Required scopes: agents:read.
    function Get_Fleet_Layout
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -31,6 +33,8 @@ package UARP.API.Canvas is
    --  has unsaved changes. Send the ids to be sure.
    --
    --  POST /api/v1/canvas/fleet/materialize
+   --
+   --  Required scopes: agents:write.
    function Materialize_Canvas_Squad
      (Self : Client_Type;
       Payload : UARP.Models.Materialize_Canvas_Squad_Request;
@@ -48,6 +52,8 @@ package UARP.API.Canvas is
    --  than the ones on screen. Requires MEF.
    --
    --  POST /api/v1/canvas/loop/run
+   --
+   --  Required scopes: agents:write.
    function Run_Canvas_Loop
      (Self : Client_Type;
       Payload : UARP.Models.Run_Canvas_Loop_Request;
@@ -64,6 +70,8 @@ package UARP.API.Canvas is
    --  has no order to execute in, and starting one would look like success. Requires MEF.
    --
    --  POST /api/v1/canvas/workflow/run
+   --
+   --  Required scopes: agents:write.
    function Run_Canvas_Workflow
      (Self : Client_Type;
       Payload : UARP.Models.Run_Canvas_Workflow_Request;
@@ -80,7 +88,14 @@ package UARP.API.Canvas is
    --  a 200 read as "saved" while the operator's cards snapped back on the next reload. An
    --  oversize body is a clean 422 instead of a silent truncation at the storage limit.
    --
+   --  WRITE SEMANTICS: replaces. The layout is rebuilt from this body alone: an omitted
+   --  `positions`, `edges`, `notes` or `drafts` is stored empty, and nothing carries over from the
+   --  stored layout. The 409 needs `base_updated_at` (or a storage-level race): a body without it
+   --  overwrites whatever is stored.
+   --
    --  PUT /api/v1/canvas/fleet
+   --
+   --  Required scopes: agents:write.
    function Save_Fleet_Layout
      (Self : Client_Type;
       Payload : UARP.Models.Fleet_Layout_Update;
@@ -95,6 +110,8 @@ package UARP.API.Canvas is
    --  scheduled.
    --
    --  POST /api/v1/canvas/workflow/schedule
+   --
+   --  Required scopes: agents:write.
    function Schedule_Canvas_Workflow
      (Self : Client_Type;
       Payload : UARP.Models.Schedule_Canvas_Workflow_Request;
@@ -106,6 +123,8 @@ package UARP.API.Canvas is
    --  Idempotent: removing a trigger that is not there still answers 200 with `status: removed`.
    --
    --  DELETE /api/v1/canvas/workflow/schedule/{triggerId}
+   --
+   --  Required scopes: agents:write.
    function Unschedule_Canvas_Workflow
      (Self : Client_Type;
       Trigger_Id : String;

@@ -46,8 +46,44 @@ public struct AuthAPI: Sendable {
         }
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/auth/oauth/\(encodePathSegment(String(describing: provider)))/callback",
+            path: "/api/v1/auth/oauth/\(encodePathSegment(provider.rawValue))/callback",
             query: query,
+            options: options
+        ))
+    }
+
+    /// OAuth callback, form_post (Sign in with Apple on the web)
+    ///
+    /// Apple returns from its web sign-in by a cross-site form POST (`response_mode=form_post`)
+    /// carrying `code`, `state`, `id_token`, an optional `error` and — on the first sign-in only —
+    /// a `user` JSON blob with name and email. Same outcome as the GET callback: 302 to the stored
+    /// `return_to` with the session in the fragment, else JSON `{api_key, email}`. Only `apple`
+    /// takes POST; `github` and `google` answer 405 here and use GET. A body that is not
+    /// `application/x-www-form-urlencoded` is read as carrying no parameters (400).
+    ///
+    /// `POST /api/v1/auth/oauth/{provider}/callback`
+    public func completeOAuthLoginFormPost(provider: CompleteOAuthLoginFormPostProvider, body: CompleteOAuthLoginFormPostRequest, options: RequestOptions = .init()) async throws -> CompleteOAuthLoginFormPostResponse {
+        var fields: [(String, String)] = []
+        if let value = body.code {
+            fields.append(("code", value))
+        }
+        if let value = body.state {
+            fields.append(("state", value))
+        }
+        if let value = body.idToken {
+            fields.append(("id_token", value))
+        }
+        if let value = body.error {
+            fields.append(("error", value))
+        }
+        if let value = body.user {
+            fields.append(("user", value))
+        }
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/auth/oauth/\(encodePathSegment(provider.rawValue))/callback",
+            body: .form(fields),
+            idempotent: true,
             options: options
         ))
     }
@@ -258,11 +294,17 @@ public struct AuthAPI: Sendable {
         ))
     }
 
-    /// Mint a 60-second SSE token scoped to events:read
+    /// Mint a 60-second SSE token for the event streams
     ///
-    /// Mints a short-lived (60 s) API key carrying only `events:read` scope, for use as the
-    /// `?token=` query param on browser SSE/WebSocket subscriptions which cannot set Authorization
-    /// headers. Token does not appear in the tenant key dashboard and auto-purges from KV.
+    /// Mints a short-lived (60 s) API key for browser SSE subscriptions, which cannot set
+    /// Authorization headers; pass it as `?token=` or as a bearer. It carries the caller's own
+    /// `role:` and those of `sessions:read`, `notifications:read`, `runs:read`, `agents:read` the
+    /// caller already holds (403 when it holds none), and it authenticates ONLY `GET` on the event
+    /// streams — `/sessions/{id}/events`, `/runs/{id}/events`, `/notifications/stream`,
+    /// `/feed/stream`, `/missions/{id}/events`, `/companies/{id}/events`,
+    /// `/squads/{id}/chat/events`, `/squads/{id}/runs/{runId}/events` (and the `/teams` aliases),
+    /// `/a2a/tasks/{id}/events`, `/public/sessions/{id}/events`. Any other request presenting it is
+    /// refused 403. Token does not appear in the tenant key dashboard and auto-purges from KV.
     ///
     /// `POST /api/v1/auth/sse-tokens`
     public func mintSSEToken(options: RequestOptions = .init()) async throws -> MintSSETokenResponse {
@@ -285,7 +327,7 @@ public struct AuthAPI: Sendable {
     /// handler (**429**). Anonymous.
     ///
     /// `POST /api/v1/register`
-    public func register(body: JSONObject, options: RequestOptions = .init()) async throws -> RegisterResponse {
+    public func register(body: RegisterRequest, options: RequestOptions = .init()) async throws -> RegisterResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/register",
@@ -307,7 +349,7 @@ public struct AuthAPI: Sendable {
     /// code was requested too recently. Anonymous.
     ///
     /// `POST /api/v1/auth/request-code`
-    public func requestOtpCode(body: JSONObject, options: RequestOptions = .init()) async throws -> RequestOtpCodeResponse {
+    public func requestOtpCode(body: RequestOtpCodeRequest, options: RequestOptions = .init()) async throws -> RequestOtpCodeResponse {
         return try await client.send(RequestSpec(
             method: "POST",
             path: "/api/v1/auth/request-code",
@@ -351,7 +393,7 @@ public struct AuthAPI: Sendable {
         }
         return try await client.send(RequestSpec(
             method: "GET",
-            path: "/api/v1/auth/oauth/\(encodePathSegment(String(describing: provider)))/start",
+            path: "/api/v1/auth/oauth/\(encodePathSegment(provider.rawValue))/start",
             query: query,
             options: options
         ))
@@ -368,7 +410,7 @@ public struct AuthAPI: Sendable {
     public func unlinkAuthProvider(provider: OAuthLoginProviderItemId, options: RequestOptions = .init()) async throws -> UnlinkAuthProviderResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
-            path: "/api/v1/me/auth-providers/\(encodePathSegment(String(describing: provider)))",
+            path: "/api/v1/me/auth-providers/\(encodePathSegment(provider.rawValue))",
             idempotent: true,
             options: options
         ))
@@ -379,14 +421,15 @@ public struct AuthAPI: Sendable {
     /// Completes registration from the link mailed by `POST /api/v1/register`: it consumes the
     /// one-time `token` query parameter and, under a per-email lock, creates the tenant, its
     /// registry and email-index rows, the consent record, the owner user row and a `Default` API
-    /// key scoped `*`, then mails that key to the address and deletes the token. New tenants start
-    /// on a seven-day trial with `plan: "free"` as the post-trial fallback, and the key is a 90-day
-    /// session key rather than a permanent credential; the address configured as super-admin is
-    /// provisioned `enterprise` outright, but only while the super-admin slot is still unclaimed. A
-    /// missing, unknown or expired token answers **400**, an address that already owns a tenant
-    /// **409**, and a failure to send the key email **503** with the tenant id, since the key is
-    /// only ever shown by mail. Anonymous; also registers the tenant for cron, bootstraps Stripe
-    /// billing, increments the public user counter and writes a `tenant.created` audit entry.
+    /// key scoped `*`, then deletes the token and returns that key once in the response body
+    /// (`api_key`) — it is never e-mailed; the address receives only a notice that the account is
+    /// active. New tenants start on a seven-day trial with `plan: "free"` as the post-trial
+    /// fallback, and the key is a 90-day session key rather than a permanent credential; the
+    /// address configured as super-admin is provisioned `enterprise` outright, but only while the
+    /// super-admin slot is still unclaimed. A missing, unknown or expired token answers **400**, an
+    /// address that already owns a tenant **409**. A failed notice e-mail does not fail the call.
+    /// Anonymous; also registers the tenant for cron, bootstraps Stripe billing, increments the
+    /// public user counter and writes a `tenant.created` audit entry.
     ///
     /// `GET /api/v1/verify-email`
     public func verifyEmail(options: RequestOptions = .init()) async throws -> VerifyEmailResponse {

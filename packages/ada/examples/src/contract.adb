@@ -12,6 +12,7 @@ with Ada.Environment_Variables;
 with Ada.Text_IO;
 
 with UARP.API.Agents;
+with UARP.API.Auth;
 with UARP.API.Files;
 with UARP.API.Registry;
 with UARP.API.Runs;
@@ -272,6 +273,64 @@ begin
                   then Image (Probe.Metrics.Input_Tokens) else "absent"));
          JS.Set (Probes, "started_at_is_absent",
                  (if Probe.Has_Started_At then "false" else "true"));
+
+         --  17. a POST read as an event stream, to `data: [DONE]`
+         --  18. a refusal before the stream: an error, and no retry
+         declare
+            Body_Json : constant String :=
+              "{""model"":""contract/model"",""stream"":true,"
+              & """messages"":[{""role"":""user"",""content"":""hi""}]}";
+            Answer    : Contract_Sink.Text_Sink;
+            Refused   : Contract_Sink.Text_Sink;
+            Status    : Natural;
+            Body_Text : UARP.Types.Text;
+            Problem   : UARP.Errors.Problem;
+         begin
+            UARP.Client.Stream_Post
+              (Client, "/api/v1/llm/chat/completions", Body_Json, Answer);
+            JS.Set (Probes, "post_stream_text", Answer.Content);
+            UARP.Client.Execute_Stream
+              (Client, "/api/v1/llm/chat/completions/refused", Body_Json, Refused,
+               Status => Status, Body_Text => Body_Text, Problem => Problem);
+            JS.Set (Probes, "post_stream_refusal",
+                    Ada.Strings.Fixed.Trim (Natural'Image (Status), Ada.Strings.Both)
+                    & " " & (+Problem.Detail));
+            --  19. a 2xx that is not an event stream: an error, not an empty stream
+            declare
+               Plain : Contract_Sink.Text_Sink;
+            begin
+               UARP.Client.Execute_Stream
+                 (Client, "/api/v1/llm/chat/completions/plain", Body_Json, Plain,
+                  Status => Status, Body_Text => Body_Text, Problem => Problem);
+               JS.Set (Probes, "post_stream_plain",
+                       (if Status not in 200 .. 299 or else String'(+Problem.Title)'Length > 0
+                        then "error " & Ada.Strings.Fixed.Trim (Natural'Image (Status), Ada.Strings.Both)
+                        else "events " & Ada.Strings.Fixed.Trim (Natural'Image (Plain.Count), Ada.Strings.Both)));
+            end;
+         end;
+
+         --  20. a form body: Sign in with Apple posts its web callback as
+         --  application/x-www-form-urlencoded. `id_token` and `error` stay
+         --  unset, so they must not appear at all.
+         declare
+            Request : UARP.Models.Complete_O_Auth_Login_Form_Post_Request;
+            Answer  : UARP.Models.Complete_O_Auth_Login_Form_Post_Response;
+         begin
+            Request.Has_Code := True;
+            Request.Code := +"c 1+2";
+            Request.Has_State := True;
+            --  "s/ы&=~*" spelled out so the source stays ASCII.
+            Request.State :=
+              +("s/" & Character'Val (16#D1#) & Character'Val (16#8B#) & "&=~*");
+            Request.Has_User := True;
+            --  {"name":"А Б","email":"a@b.c"}, likewise.
+            Request.User :=
+              +("{""name"":""" & Character'Val (16#D0#) & Character'Val (16#90#) & " "
+                & Character'Val (16#D0#) & Character'Val (16#91#)
+                & """,""email"":""a@b.c""}");
+            Answer := UARP.API.Auth.Complete_O_Auth_Login_Form_Post (Client, "apple", Request);
+            JS.Set (Probes, "form_post_email", Answer.Email);
+         end;
 
          JS.Set (Report, "language", String'("ada"));
          JS.Set (Report, "probes", Probes);

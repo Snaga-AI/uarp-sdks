@@ -23,7 +23,7 @@ public struct AdminConfigAPI: Sendable {
     public func createPlanStripePrice(planId: PlanLLMLimitsTierAccessItem, body: CreatePlanStripePriceRequest, options: RequestOptions = .init()) async throws -> CreatePlanStripePriceResponse {
         return try await client.send(RequestSpec(
             method: "POST",
-            path: "/api/v1/admin/config/plans/\(encodePathSegment(String(describing: planId)))/stripe-price",
+            path: "/api/v1/admin/config/plans/\(encodePathSegment(planId.rawValue))/stripe-price",
             body: try client.encode(body),
             idempotent: true,
             options: options
@@ -908,6 +908,11 @@ public struct AdminConfigAPI: Sendable {
     /// in-process cache is refreshed and an `admin.config_updated` audit entry names the flag ids.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored override map is rebuilt from this body and ids the
+    /// platform does not define are dropped. A flag the body omits loses its override and returns
+    /// to its default. Each entry requires `enabled`, and an omitted `rollout_pct` means no rollout
+    /// limit. The GET array shape is also accepted.
+    ///
     /// `PUT /api/v1/admin/config/feature-flags`
     ///
     /// Required scopes: `admin`.
@@ -929,8 +934,8 @@ public struct AdminConfigAPI: Sendable {
     /// number is 400; `cached_input_per_million`, when present, must be a non-negative number or
     /// 400.
     ///
-    /// WRITE SEMANTICS: the entry replaces, the map merges. This overwrites the override for this
-    /// model only and leaves every other model's override untouched. Omitting
+    /// WRITE SEMANTICS: mixed — the entry replaces, the map merges. This overwrites the override
+    /// for this model only and leaves every other model's override untouched. Omitting
     /// `cached_input_per_million` removes it, and cached tokens then bill at the full input rate.
     ///
     /// Note the response key is `modelRef` — camelCase, an outlier in a snake_case API, and
@@ -957,10 +962,14 @@ public struct AdminConfigAPI: Sendable {
     /// an `admin.config_updated` audit entry names the patterns. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored map is rebuilt from `endpoints`: a known pattern the
+    /// body omits loses its override and returns to the built-in limit, and an unknown pattern is
+    /// dropped. Each entry sent must carry both `max_requests` and `window_sec`.
+    ///
     /// `PUT /api/v1/admin/config/rate-limits`
     ///
     /// Required scopes: `admin`.
-    public func setRateLimits(body: JSONObject, options: RequestOptions = .init()) async throws -> SetRateLimitsResponse {
+    public func setRateLimits(body: SetRateLimitsRequest, options: RequestOptions = .init()) async throws -> SetRateLimitsResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/rate-limits",
@@ -1022,10 +1031,16 @@ public struct AdminConfigAPI: Sendable {
     /// function boot uses, so the change applies without a restart, and an `admin.config_updated`
     /// audit entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `agent_memory`
+    /// override and an omitted field keeps its stored value. An explicit null for
+    /// `extraction_model` or `compression_model` is stored and read back as unset. When a
+    /// deploy-level embedding pin exists, the stored `embedding_model` and `embedding_dimensions`
+    /// are kept but the pin wins on the live config.
+    ///
     /// `PUT /api/v1/admin/config/agent-memory`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminAgentMemoryConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminAgentMemoryConfigResponse {
+    public func updateAdminAgentMemoryConfig(body: UpdateAdminAgentMemoryConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminAgentMemoryConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/agent-memory",
@@ -1046,10 +1061,14 @@ public struct AdminConfigAPI: Sendable {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `auth` override,
+    /// so an omitted field keeps its stored value. No field accepts null, so no body can remove a
+    /// stored override.
+    ///
     /// `PUT /api/v1/admin/config/auth`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminAuthConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminAuthConfigResponse {
+    public func updateAdminAuthConfig(body: UpdateAdminAuthConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminAuthConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/auth",
@@ -1068,10 +1087,13 @@ public struct AdminConfigAPI: Sendable {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `backpressure`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/backpressure`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminBackpressureConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminBackpressureConfigResponse {
+    public func updateAdminBackpressureConfig(body: UpdateAdminBackpressureConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminBackpressureConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/backpressure",
@@ -1090,10 +1112,14 @@ public struct AdminConfigAPI: Sendable {
     /// function boot uses, so the change applies without a restart, and an `admin.config_updated`
     /// audit entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored
+    /// `code_interpreter` override, so an omitted field keeps its stored value. No field accepts
+    /// null.
+    ///
     /// `PUT /api/v1/admin/config/code-interpreter`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminCodeInterpreterConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminCodeInterpreterConfigResponse {
+    public func updateAdminCodeInterpreterConfig(body: UpdateAdminCodeInterpreterConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminCodeInterpreterConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/code-interpreter",
@@ -1136,10 +1162,14 @@ public struct AdminConfigAPI: Sendable {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `evaluation`
+    /// override and an omitted field keeps its stored value. A `default_scorers` array that is
+    /// present replaces the stored array whole.
+    ///
     /// `PUT /api/v1/admin/config/evaluation`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminEvaluationConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminEvaluationConfigResponse {
+    public func updateAdminEvaluationConfig(body: UpdateAdminEvaluationConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminEvaluationConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/evaluation",
@@ -1178,6 +1208,11 @@ public struct AdminConfigAPI: Sendable {
     /// change takes effect without a restart, and an `admin.config_updated` audit entry names the
     /// ids. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: replaces. The stored override map is rebuilt from this body and unknown ids
+    /// are dropped. A guardrail the body omits returns to its code default. Inside an entry, an
+    /// omitted `enabled`, `mandatory` or `default_action` reads as true, false or the code default
+    /// respectively.
+    ///
     /// `PUT /api/v1/admin/config/guardrails`
     ///
     /// Required scopes: `admin`.
@@ -1200,10 +1235,13 @@ public struct AdminConfigAPI: Sendable {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `idempotency`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/idempotency`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminIdempotencyConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminIdempotencyConfigResponse {
+    public func updateAdminIdempotencyConfig(body: UpdateAdminIdempotencyConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminIdempotencyConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/idempotency",
@@ -1221,6 +1259,11 @@ public struct AdminConfigAPI: Sendable {
     /// in-process cache is refreshed, an `admin.config_updated` audit entry names the connector
     /// ids, and the response is the same merged view the GET returns. Super-admin only, like every
     /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored toggle map is rebuilt from this body and ids outside
+    /// the connector catalogue are dropped silently. A connector the body omits returns to the
+    /// catalogue default. Inside an entry, an omitted `enabled` reads as true and an omitted `beta`
+    /// reads as false.
     ///
     /// `PUT /api/v1/admin/config/integrations`
     ///
@@ -1246,10 +1289,15 @@ public struct AdminConfigAPI: Sendable {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Top-level fields the body omits keep their stored values. A
+    /// `circuit_breaker` or `provider_rate_limits` that is present replaces the stored object
+    /// whole, so an omitted `circuit_breaker` sub-field is dropped from the override, the effective
+    /// view and the live config.
+    ///
     /// `PUT /api/v1/admin/config/llm-adapters`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLLMAdaptersConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLLMAdaptersConfigResponse {
+    public func updateAdminLLMAdaptersConfig(body: UpdateAdminLLMAdaptersConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminLLMAdaptersConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/llm-adapters",
@@ -1270,10 +1318,13 @@ public struct AdminConfigAPI: Sendable {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `logging`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/logging`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLoggingConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLoggingConfigResponse {
+    public func updateAdminLoggingConfig(body: UpdateAdminLoggingConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminLoggingConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/logging",
@@ -1292,10 +1343,13 @@ public struct AdminConfigAPI: Sendable {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `long_running`
+    /// override, so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/long-running`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminLongRunningConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminLongRunningConfigResponse {
+    public func updateAdminLongRunningConfig(body: UpdateAdminLongRunningConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminLongRunningConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/long-running",
@@ -1314,10 +1368,13 @@ public struct AdminConfigAPI: Sendable {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `mcp` override,
+    /// so an omitted field keeps its stored value. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/mcp`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminMCPConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminMCPConfigResponse {
+    public func updateAdminMCPConfig(body: UpdateAdminMCPConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminMCPConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/mcp",
@@ -1336,10 +1393,14 @@ public struct AdminConfigAPI: Sendable {
     /// boot uses, so the change applies without a restart, and an `admin.config_updated` audit
     /// entry names the changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `multimodal`
+    /// override and an omitted field keeps its stored value. A `supported_image_formats` or
+    /// `supported_audio_formats` array that is present replaces the stored array whole.
+    ///
     /// `PUT /api/v1/admin/config/multimodal`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminMultimodalConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminMultimodalConfigResponse {
+    public func updateAdminMultimodalConfig(body: UpdateAdminMultimodalConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminMultimodalConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/multimodal",
@@ -1380,10 +1441,14 @@ public struct AdminConfigAPI: Sendable {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields among the four runtime-safe ones are shallow-merged
+    /// into the stored `persistence` override and an omitted field keeps its stored value. Any
+    /// other field is stripped silently, not refused.
+    ///
     /// `PUT /api/v1/admin/config/persistence`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminPersistenceConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminPersistenceConfigResponse {
+    public func updateAdminPersistenceConfig(body: UpdateAdminPersistenceConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminPersistenceConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/persistence",
@@ -1402,6 +1467,11 @@ public struct AdminConfigAPI: Sendable {
     /// checkout for every plan it dropped. On success the plan cache is cleared for every replica,
     /// a `plan.updated` audit entry is written, and the response is the same shape as the GET.
     /// Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored plan overrides are rebuilt from `plans`: a plan id the
+    /// body omits loses its override, and within a plan entry an omitted field such as `quotas`,
+    /// `llm` or `stripe_price_id` is dropped, not merged. Unknown plan ids and entries with no
+    /// recognised field are discarded silently.
     ///
     /// `PUT /api/v1/admin/config/plans`
     ///
@@ -1457,10 +1527,14 @@ public struct AdminConfigAPI: Sendable {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `retention`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/retention`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminRetentionConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminRetentionConfigResponse {
+    public func updateAdminRetentionConfig(body: UpdateAdminRetentionConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminRetentionConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/retention",
@@ -1481,10 +1555,15 @@ public struct AdminConfigAPI: Sendable {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `run_command`
+    /// override and an omitted field keeps its stored value, but `allowed_commands` and
+    /// `deno_allow`, when sent, replace the stored list whole. `isolation` sent as an empty string
+    /// counts as omitted. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/run-command`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminRunCommandConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminRunCommandConfigResponse {
+    public func updateAdminRunCommandConfig(body: UpdateAdminRunCommandConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminRunCommandConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/run-command",
@@ -1505,10 +1584,14 @@ public struct AdminConfigAPI: Sendable {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `server`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/server`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminServerConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminServerConfigResponse {
+    public func updateAdminServerConfig(body: UpdateAdminServerConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminServerConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/server",
@@ -1591,10 +1674,14 @@ public struct AdminConfigAPI: Sendable {
     /// so the change applies without a restart, and an `admin.config_updated` audit entry names the
     /// changed keys. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `sse` override,
+    /// so an omitted field keeps its stored value. No field accepts null, so this call cannot
+    /// remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/sse`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminSSEConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminSSEConfigResponse {
+    public func updateAdminSSEConfig(body: UpdateAdminSSEConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminSSEConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/sse",
@@ -1612,6 +1699,11 @@ public struct AdminConfigAPI: Sendable {
     /// is then rebuilt so the next checkout uses the new keys, and an `admin.config_updated` audit
     /// entry records which field names changed but never their values. The response redacts the
     /// secrets again. Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value. Any value beginning
+    /// with `****` is ignored, whichever field it is in. An empty string deletes that stored field,
+    /// after which the effective value falls back to the matching environment variable (or the
+    /// config default for `enabled`, `test` for `mode`).
     ///
     /// `PUT /api/v1/admin/config/stripe`
     ///
@@ -1670,10 +1762,14 @@ public struct AdminConfigAPI: Sendable {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. Defined fields are shallow-merged into the stored `tool_security`
+    /// override and an omitted field keeps its stored value, but an `egress_allowlist_per_tenant`
+    /// that is present replaces the stored list whole. No field accepts null.
+    ///
     /// `PUT /api/v1/admin/config/tool-security`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminToolSecurityConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminToolSecurityConfigResponse {
+    public func updateAdminToolSecurityConfig(body: UpdateAdminToolSecurityConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminToolSecurityConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/tool-security",
@@ -1694,10 +1790,14 @@ public struct AdminConfigAPI: Sendable {
     /// `admin.config_updated` audit entry names the changed keys. Super-admin only, like every
     /// `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `webhooks`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/webhooks`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminWebhooksConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminWebhooksConfigResponse {
+    public func updateAdminWebhooksConfig(body: UpdateAdminWebhooksConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminWebhooksConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/webhooks",
@@ -1719,10 +1819,14 @@ public struct AdminConfigAPI: Sendable {
     /// without a restart, and an `admin.config_updated` audit entry names the changed keys.
     /// Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: merges. Defined fields are shallow-merged into the stored `worker_pool`
+    /// override, so an omitted field keeps its stored value. No field accepts null, so this call
+    /// cannot remove a stored field.
+    ///
     /// `PUT /api/v1/admin/config/worker-pool`
     ///
     /// Required scopes: `admin`.
-    public func updateAdminWorkerPoolConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateAdminWorkerPoolConfigResponse {
+    public func updateAdminWorkerPoolConfig(body: UpdateAdminWorkerPoolConfigRequest, options: RequestOptions = .init()) async throws -> UpdateAdminWorkerPoolConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/worker-pool",
@@ -1739,10 +1843,15 @@ public struct AdminConfigAPI: Sendable {
     /// half. The cache the cost path reads is refreshed and an `admin.config_updated` audit entry
     /// carries the new values. Super-admin only, like every `/admin/config` route.
     ///
+    /// WRITE SEMANTICS: mixed. An omitted `platform_markup_percent` or `model_markup_overrides`
+    /// keeps the current effective value; with no stored record yet, that is the billing default,
+    /// which then gets written. A `model_markup_overrides` map that is present replaces the stored
+    /// map whole, so a model left out loses its override.
+    ///
     /// `PUT /api/v1/admin/config/markup`
     ///
     /// Required scopes: `admin`.
-    public func updateMarkupConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateMarkupConfigResponse {
+    public func updateMarkupConfig(body: UpdateMarkupConfigRequest, options: RequestOptions = .init()) async throws -> UpdateMarkupConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/markup",
@@ -1759,6 +1868,10 @@ public struct AdminConfigAPI: Sendable {
     /// `public_base_url` also marks the `public_url` step of the first-run setup wizard complete.
     /// Writes an `admin.config_updated` audit entry and responds with the re-read effective values.
     /// Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored override becomes exactly this body. An omitted
+    /// `public_base_url`, `webhook_base_url` or `contact_emails` (the whole object) loses its
+    /// override and falls back to the config or `UARP_PUBLIC_BASE_URL` default.
     ///
     /// `PUT /api/v1/admin/config/platform-urls`
     ///
@@ -1777,17 +1890,27 @@ public struct AdminConfigAPI: Sendable {
     ///
     /// Merges the body's declared keys into the stored runtime override and mirrors the result into
     /// the live `container.config.runtime`, so the runtime and tool layers see it without a
-    /// restart. A key owned by another config section (the voice and image settings) is refused
+    /// restart. A key owned by another config section (the voice and image settings, and `search` —
+    /// the web-search provider and its `fallbacks`, owned by `PUT /admin/config/search`) is refused
     /// with 400 naming the endpoint that owns it, because a value written here would be overwritten
     /// by the next boot's reapply; a key the schema does not declare is still stripped but is named
     /// back in `ignored_keys` rather than silently dropped. `vision_model: ""` clears that override
-    /// instead of storing an empty string. Writes an `admin.config_updated` audit entry naming the
-    /// changed keys. Super-admin only, like every `/admin/config` route.
+    /// instead of storing an empty string; with no override, vision (describe_image and the video
+    /// photo check) follows the platform default model
+    /// `llm_defaults.default_provider`/`default_model` — clearing never disables it. Writes an
+    /// `admin.config_updated` audit entry naming the changed keys. Super-admin only, like every
+    /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: mixed. Top-level keys merge into the stored override and an omitted key
+    /// keeps its stored value. A `model_tool_caps` map that is present replaces the stored map
+    /// whole. `vision_model` sent as an empty string deletes that override, so vision follows the
+    /// platform default model. Keys owned by other sections are refused 400; undeclared keys are
+    /// stripped and listed in `ignored_keys`.
     ///
     /// `PUT /api/v1/admin/config/runtime`
     ///
     /// Required scopes: `admin`.
-    public func updateRuntimeConfig(body: JSONObject, options: RequestOptions = .init()) async throws -> UpdateRuntimeConfigResponse {
+    public func updateRuntimeConfig(body: UpdateRuntimeConfigRequest, options: RequestOptions = .init()) async throws -> UpdateRuntimeConfigResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/admin/config/runtime",
@@ -1805,6 +1928,10 @@ public struct AdminConfigAPI: Sendable {
     /// written. `file_upload_max_size_bytes` and `file_upload_allowed_mime_types` are validated and
     /// persisted but read by no upload path, and `admin_provider_settings_require_super_admin` is
     /// not accepted at all. Super-admin only, like every `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: mixed. A field the body omits keeps its stored value, but a list that is
+    /// present (`cors_allowed_origins`, `webhook_url_denylist`, `file_upload_allowed_mime_types`)
+    /// replaces the stored list whole, and an explicit `[]` clears it.
     ///
     /// `PUT /api/v1/admin/config/security-policies`
     ///
@@ -1827,6 +1954,9 @@ public struct AdminConfigAPI: Sendable {
     /// and an `admin.config_updated` audit entry written. The three `delivery_*` fields are
     /// accepted and persisted but no delivery path reads them. Super-admin only, like every
     /// `/admin/config` route.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored override becomes exactly this body; a field the body
+    /// omits loses its override and falls back to the config default or the built-in default.
     ///
     /// `PUT /api/v1/admin/config/webhooks-policy`
     ///

@@ -57,7 +57,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/sessions/bulk-delete`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun bulkDeleteSessions(body: BulkDeleteSessionsRequest, options: RequestOptions = RequestOptions()): BulkDeleteSessionsResponse {
         return client.request<BulkDeleteSessionsResponse>(
@@ -109,7 +109,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun confirmSessionTodo(sessionId: String, todoId: String, body: JsonObject? = null, options: RequestOptions = RequestOptions()): Todo {
+    public suspend fun confirmSessionTodo(sessionId: String, todoId: String, body: ConfirmSessionTodoRequest? = null, options: RequestOptions = RequestOptions()): Todo {
         return client.request<Todo>(
             RequestSpec(
                 method = "POST",
@@ -129,13 +129,16 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * already reached by sessions that are both `active` and not past their expiry. To absorb
      * double-submits the handler first looks for an active session on the same agent, created
      * within the last 30 seconds, with no messages and no runs, and returns THAT with `200`
-     * instead of minting a second one — so a `200` here means an existing session was reused. A
-     * new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview
-     * record written alongside it for the session list.
+     * instead of minting a second one — so a `200` here means an existing session was reused. The
+     * reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
+     * merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
+     * silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
+     * `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
+     * for the session list.
      *
      * `POST /api/v1/sessions`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun create(body: CreateSessionRequest, options: RequestOptions = RequestOptions()): Session {
         return client.request<Session>(
@@ -161,7 +164,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/sessions/{sessionId}/annotations`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun createSessionAnnotation(sessionId: String, body: CreateSessionAnnotationRequest, options: RequestOptions = RequestOptions()): CreateSessionAnnotationResponse {
         return client.request<CreateSessionAnnotationResponse>(
@@ -210,7 +213,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/sessions/{sessionId}/share`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun createSessionShare(sessionId: String, body: CreateSessionShareRequest, options: RequestOptions = RequestOptions()): CreateSessionShareResponse {
         return client.request<CreateSessionShareResponse>(
@@ -259,9 +262,13 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Addresses one agent, several agents (fan-out, one session each, shared parent_task_id), or a
      * squad. The server bootstraps the session(s). `due_at` omitted fires immediately; a timestamp
-     * schedules it; explicit `null` files it in the backlog with no schedule at all.
+     * schedules it; explicit `null` files it in the backlog with no schedule at all. Requires the
+     * `sessions` write permission and the `sessions:write` scope; a key holding `runs:create`
+     * instead is also accepted, as on every session write.
      *
      * `POST /api/v1/todos`
+     *
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun createTask(body: JsonElement, options: RequestOptions = RequestOptions()): CreatedTask {
         return client.request<CreatedTask>(
@@ -284,7 +291,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/sessions/{sessionId}/annotations/{annotationId}`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun deleteSessionAnnotation(sessionId: String, annotationId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
@@ -437,15 +444,31 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun getSessionAuditLog(sessionId: String, options: RequestOptions = RequestOptions()): GetSessionAuditLogResponse {
+    public suspend fun getSessionAuditLog(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetSessionAuditLogResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetSessionAuditLogResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/audit-log",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getSessionAuditLog`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getSessionAuditLogAll(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<AuditLogEntry> = autoPaginate(
+        fetch = { pageCursor -> getSessionAuditLog(sessionId = sessionId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.auditLog },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * The conversation transcript
@@ -463,19 +486,39 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * A session that does not exist is 404, not an empty list: "no messages yet" and "no such
      * session" must not render the same.
      *
+     * There is no paging: the whole transcript comes back and `total` is its length. A `limit` (or
+     * any other) query parameter is not read — measured 2026-10-01, `?limit=2` and no parameter
+     * answer the same 16 messages — so a client should not send one expecting fewer.
+     *
      * `GET /api/v1/sessions/{sessionId}/messages`
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun getSessionMessages(sessionId: String, options: RequestOptions = RequestOptions()): GetSessionMessagesResponse {
+    public suspend fun getSessionMessages(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): GetSessionMessagesResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<GetSessionMessagesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/messages",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `getSessionMessages`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun getSessionMessagesAll(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<ConversationEntry> = autoPaginate(
+        fetch = { pageCursor -> getSessionMessages(sessionId = sessionId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.items },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * Get feedback for a run in session
@@ -522,6 +565,31 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/share",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Import a transcript that ran elsewhere (the CLI)
+     *
+     * Records a session whose turns already happened on the caller's machine — nothing is executed
+     * and nothing is billed. Entries carry synthetic run ids with no run behind them. Re-importing
+     * with the same `session_id` updates that session (200) instead of creating a second one
+     * (201); an id that names a session created on the platform is refused. `agent_id` must name
+     * an agent in this tenant (404 otherwise); `messages` holds 1–2000 entries.
+     *
+     * `POST /api/v1/sessions/import`
+     *
+     * Required scopes: `runs:create`, `sessions:write`.
+     */
+    public suspend fun `import`(body: ImportSessionRequest, options: RequestOptions = RequestOptions()): Session {
+        return client.request<Session>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/sessions/import",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
                 options = options,
             )
         )
@@ -577,15 +645,31 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:read`.
      */
-    public suspend fun listSessionAnnotations(sessionId: String, options: RequestOptions = RequestOptions()): ListSessionAnnotationsResponse {
+    public suspend fun listSessionAnnotations(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListSessionAnnotationsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListSessionAnnotationsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/sessions/${encodePathSegment(sessionId)}/annotations",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listSessionAnnotations`, following the `cursor` cursor until
+     * the server reports no further pages.
+     */
+    public fun listSessionAnnotationsAll(sessionId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<ListSessionAnnotationsResponseItem> = autoPaginate(
+        fetch = { pageCursor -> listSessionAnnotations(sessionId = sessionId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.items ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * List artifacts across all runs in session
@@ -678,6 +762,8 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * than a result limit.
      *
      * `GET /api/v1/todos`
+     *
+     * Required scopes: `sessions:read`.
      */
     public suspend fun listTodos(options: RequestOptions = RequestOptions()): ListTodosResponse {
         return client.request<ListTodosResponse>(
@@ -723,7 +809,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `DELETE /api/v1/sessions/{sessionId}/share`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun revokeSessionShare(sessionId: String, options: RequestOptions = RequestOptions()) {
         client.requestUnit(
@@ -768,7 +854,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/sessions/{sessionId}/messages`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun sendSessionMessage(sessionId: String, body: SendSessionMessageRequest, options: RequestOptions = RequestOptions()): SendSessionMessageResponse {
         return client.request<SendSessionMessageResponse>(
@@ -791,6 +877,11 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * older iOS builds send `{run_id}-{timestamp}-assistant-{hash}` and App Store never retires
      * them — but cannot be matched back to the transcript, and each such arrival is counted per
      * day (owner's decision 2026-09-11, option A: a 422 comes no earlier than a month of zero).
+     *
+     * WRITE SEMANTICS: replaces. The caller's row for this `message_id` is overwritten whole with
+     * `reaction`, a fresh `created_at` and `reason` when one is sent, so an omitted or empty
+     * `reason` drops a previously stored one. Other callers' rows and other messages' rows are
+     * untouched.
      *
      * `PUT /api/v1/sessions/{sessionId}/runs/{runId}/feedback`
      *
@@ -820,7 +911,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * `GET /api/v1/sessions/{sessionId}/events`
      *
-     * Required scopes: `events:read`.
+     * Required scopes: `sessions:read`.
      *
      * Returns a cold flow of server-sent events.
      */
@@ -877,9 +968,13 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      * without changing them. `404` when the session or the annotation does not exist. Returns the
      * annotation as stored.
      *
+     * WRITE SEMANTICS: merges. Only `resolved` is applied, and only when the body sends it; every
+     * other stored field keeps its value. The schema strips unknown keys, so a body naming
+     * `content`, `author` or `message_id` succeeds and changes nothing.
+     *
      * `PATCH /api/v1/sessions/{sessionId}/annotations/{annotationId}`
      *
-     * Required scopes: `sessions:write`.
+     * Required scopes: `runs:create`, `sessions:write`.
      */
     public suspend fun updateSessionAnnotation(sessionId: String, annotationId: String, body: UpdateSessionAnnotationRequest? = null, options: RequestOptions = RequestOptions()): SessionAnnotation {
         return client.request<SessionAnnotation>(
@@ -908,7 +1003,7 @@ public class SessionsApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun updateSessionTodo(sessionId: String, todoId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Todo {
+    public suspend fun updateSessionTodo(sessionId: String, todoId: String, body: UpdateSessionTodoRequest, options: RequestOptions = RequestOptions()): Todo {
         return client.request<Todo>(
             RequestSpec(
                 method = "PATCH",

@@ -28,17 +28,20 @@ package UARP.API.MCP is
    --  explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check
    --  resolving DNS, so a hostname that points at a private or metadata address is rejected and a
    --  resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*`
-   --  environment variable. For an authenticated `http`/`streamable_http` server put the secret in
-   --  `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never
-   --  returned, and dropped from the stored plaintext. After persisting, a live session is opened
-   --  immediately so tools surface on the next run, and a failure to connect is non-fatal and
-   --  reported as `connect_error` on the 201 response.
+   --  environment variable, and is used only on the origin the operator bound that variable to.
+   --  For an authenticated `http`/`streamable_http` server put the secret in `env` and describe
+   --  where it goes with `auth`; any `env` block is encrypted at rest, never returned, and dropped
+   --  from the stored plaintext. After persisting, a live session is opened immediately so tools
+   --  surface on the next run, and a failure to connect is non-fatal and reported as
+   --  `connect_error` on the 201 response.
    --
    --  Pass `assigned_agent_ids` in the same call to connect it at once - a server installed and
    --  connected to nobody is inert, and leaving it in that state is how a working configuration
    --  comes to look broken.
    --
    --  POST /api/v1/mcp/servers
+   --
+   --  Required scopes: agents:write.
    function Create_MCP_Server
      (Self : Client_Type;
       Payload : UARP.Models.Create_MCP_Server_Request;
@@ -55,6 +58,8 @@ package UARP.API.MCP is
    --  which is logged. 200 whether or not the server existed.
    --
    --  DELETE /api/v1/mcp/servers/{serverId}
+   --
+   --  Required scopes: agents:write.
    function Delete_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
@@ -68,6 +73,8 @@ package UARP.API.MCP is
    --  never returned. 404 when the tenant has no such server.
    --
    --  GET /api/v1/mcp/servers/{serverId}
+   --
+   --  Required scopes: agents:read.
    function Get_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
@@ -104,6 +111,8 @@ package UARP.API.MCP is
    --  many secrets are configured without receiving any of them.
    --
    --  GET /api/v1/mcp/servers
+   --
+   --  Required scopes: agents:read.
    function List_MCP_Servers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -116,6 +125,8 @@ package UARP.API.MCP is
    --  headers return 400.
    --
    --  POST /api/v1/mcp
+   --
+   --  Required scopes: agents:read.
    function MCP_JSON_Rpc
      (Self : Client_Type;
       Payload : UARP.Models.Mcpjson_Rpc_Request;
@@ -136,6 +147,8 @@ package UARP.API.MCP is
    --  issued and no state carries between requests.
    --
    --  GET /api/v1/mcp
+   --
+   --  Required scopes: agents:read.
    --
    --  Dispatches every event to Sink until the stream ends or the sink stops it.
    procedure MCP_SSE
@@ -179,6 +192,8 @@ package UARP.API.MCP is
    --  `tool_count`/`tools` are absent.
    --
    --  POST /api/v1/mcp/servers/{serverId}/test
+   --
+   --  Required scopes: agents:write.
    function Test_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
@@ -193,7 +208,15 @@ package UARP.API.MCP is
    --  `env_encrypted` / `last_synced` are the handler's own and are refused from the wire. `env:
    --  {}` explicitly clears the stored environment.
    --
+   --  A stored secret is sent to whatever `url` the record holds, so a `url` that moves the server
+   --  to a different ORIGIN (scheme, host or port) while it holds a stored `env` or `api_key_ref`
+   --  is refused with **409** unless the same request also sends that field - the value to use at
+   --  the new origin, or `env: {}` / `api_key_ref: ""` to drop it. A path or query change on the
+   --  same origin is not a move.
+   --
    --  PATCH /api/v1/mcp/servers/{serverId}
+   --
+   --  Required scopes: agents:write.
    function Update_MCP_Server
      (Self : Client_Type;
       Server_Id : String;

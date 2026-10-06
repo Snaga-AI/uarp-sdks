@@ -351,6 +351,195 @@ final class StreamingTests: XCTestCase {
 
         XCTAssertEqual(states.snapshot, [.connecting, .connected, .disconnected])
     }
+
+    // MARK: - streamPost
+
+    private let chatBody: JSONObject = [
+        "model": "contract/model",
+        "stream": true,
+        "messages": .array([.object(["role": "user", "content": "hi"])]),
+    ]
+
+    private let firstChunk = #"{"choices":[{"index":0,"delta":{"content":"he"}}]}"#
+    private let secondChunk = #"{"choices":[{"index":0,"delta":{"content":"llo"}}]}"#
+
+    func testStreamPostSendsTheBodyAndStopsAtDone() async throws {
+        let client = makeClient(maxRetries: 2)
+        let frames = "data: \(firstChunk)\n\ndata: \(secondChunk)\n\ndata: [DONE]\n\n"
+        MockURLProtocol.handler = { request in
+            (self.sseResponse(for: request), Data(frames.utf8))
+        }
+
+        var datas: [String] = []
+        for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody) {
+            datas.append(event.data)
+        }
+
+        XCTAssertEqual(datas, [firstChunk, secondChunk], "two chunks, and [DONE] is not an event")
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+        let request = MockURLProtocol.requests[0]
+        XCTAssertEqual(request.httpMethod, "POST")
+        XCTAssertEqual(request.url?.absoluteString, "https://api.example.test/api/v1/llm/chat/completions")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), "Bearer uarp_test1234_secret")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Accept"), "text/event-stream")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Content-Type"), "application/json")
+        let key = try XCTUnwrap(request.value(forHTTPHeaderField: "Idempotency-Key"))
+        XCTAssertNotNil(UUID(uuidString: key), key)
+        let body = try XCTUnwrap(request.httpBody ?? request.httpBodyStream.map(readBody))
+        XCTAssertEqual(try JSONDecoder().decode(JSONValue.self, from: body), .object(chatBody))
+    }
+
+    func testStreamPostStopsAtDoneEvenWhenTheConnectionStaysOpen() async throws {
+        // The body above closes right after [DONE], so it cannot tell
+        // "stopped at [DONE]" from "stopped at the end of the body".
+        let client = makeClient()
+        let frames = "data: \(firstChunk)\n\ndata: [DONE]\n\n"
+        MockURLProtocol.streamingHandler = { proto, request in
+            proto.client?.urlProtocol(proto, didReceive: self.sseResponse(for: request), cacheStoragePolicy: .notAllowed)
+            proto.client?.urlProtocol(proto, didLoad: Data(frames.utf8))
+            // Deliberately no didFinishLoading: the socket stays open.
+        }
+
+        var datas: [String] = []
+        // The watchdog only turns a regression into a failure instead of a hang.
+        let options = RequestOptions(stream: StreamOptions(inactivityTimeoutMillis: 2000))
+        for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody, options: options) {
+            datas.append(event.data)
+        }
+
+        XCTAssertEqual(datas, [firstChunk])
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+    }
+
+    func testStreamPostRefusalIsAnAPIErrorAndIsNotRetried() async throws {
+        // A 429 is retried everywhere else in the SDK; replaying this POST
+        // would run, and bill, the model twice.
+        let client = makeClient(maxRetries: 2)
+        MockURLProtocol.handler = { request in
+            let response = HTTPURLResponse(
+                url: request.url!,
+                statusCode: 429,
+                httpVersion: "HTTP/1.1",
+                headerFields: ["Content-Type": "application/problem+json", "Retry-After": "0"]
+            )!
+            return (response, jsonData(["title": "Too Many Requests", "status": 429, "detail": "llm quota exhausted"]))
+        }
+
+        var delivered = 0
+        do {
+            for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions/refused", body: chatBody) {
+                delivered += 1
+            }
+            XCTFail("expected a failure")
+        } catch let UARPError.api(error) {
+            XCTAssertEqual(error.status, 429)
+            XCTAssertEqual(error.problem.title, "Too Many Requests")
+            XCTAssertEqual(error.problem.detail, "llm quota exhausted")
+        }
+        XCTAssertEqual(delivered, 0, "the refusal body is not an event")
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "a streamed POST is never retried")
+    }
+
+    func testStreamPostRejectsAPlainJSONAnswer() async throws {
+        // The body left out "stream": true. Read as a stream, the JSON line
+        // would come out as one bogus event.
+        let client = makeClient(maxRetries: 2)
+        let plain = #"{"choices":[{"index":0,"message":{"role":"assistant","content":"hello"}}]}"#
+        MockURLProtocol.handler = { request in
+            (MockURLProtocol.response(request, status: 200), Data(plain.utf8))
+        }
+
+        var delivered = 0
+        do {
+            for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions/plain", body: chatBody) {
+                delivered += 1
+            }
+            XCTFail("a 2xx that is not an event stream must be an error")
+        } catch let UARPError.api(error) {
+            XCTAssertEqual(error.status, 200)
+            XCTAssertEqual(error.problem.detail, plain, "the body is kept")
+        }
+        XCTAssertEqual(delivered, 0)
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+    }
+
+    func testStreamPostRejectsAnEmptyAnswer() async throws {
+        // Read as a stream, this would end cleanly with no events: an answer
+        // that never came, reading as a finished one.
+        let client = makeClient(maxRetries: 2)
+        MockURLProtocol.handler = { request in
+            (HTTPURLResponse(url: request.url!, statusCode: 200, httpVersion: "HTTP/1.1", headerFields: [:])!, Data())
+        }
+
+        var delivered = 0
+        do {
+            for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody) {
+                delivered += 1
+            }
+            XCTFail("a 2xx that is not an event stream must be an error")
+        } catch let UARPError.api(error) {
+            XCTAssertEqual(error.status, 200)
+        }
+        XCTAssertEqual(delivered, 0)
+        XCTAssertEqual(MockURLProtocol.requests.count, 1)
+    }
+
+    func testRecognisesAnEventStreamContentType() {
+        XCTAssertTrue(isEventStream("text/event-stream"))
+        XCTAssertTrue(isEventStream("Text/Event-Stream; charset=utf-8"))
+        XCTAssertFalse(isEventStream("application/json"))
+        XCTAssertFalse(isEventStream("text/event-streams"))
+        XCTAssertFalse(isEventStream(""))
+        XCTAssertFalse(isEventStream(nil))
+    }
+
+    func testStreamPostEndsAtTheEndOfTheBodyWithoutReconnecting() async throws {
+        let client = makeClient()
+        MockURLProtocol.handler = { request in
+            (self.sseResponse(for: request), Data("data: \(self.firstChunk)\n\n".utf8))
+        }
+
+        var datas: [String] = []
+        for try await event in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody) {
+            datas.append(event.data)
+            // A reopened stream would deliver the chunk again, and forever:
+            // fail on the second copy rather than hang.
+            if datas.count > 1 { break }
+        }
+
+        XCTAssertEqual(datas, [firstChunk])
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "a streamed POST is never reopened")
+    }
+
+    func testStreamPostThrowsWhenTheConnectionDropsMidStream() async throws {
+        // Nothing resumes this stream, so a quiet end would hand the caller a
+        // truncated answer that looks complete.
+        let client = makeClient()
+        MockURLProtocol.streamingHandler = { proto, request in
+            proto.client?.urlProtocol(proto, didReceive: self.sseResponse(for: request), cacheStoragePolicy: .notAllowed)
+            proto.client?.urlProtocol(proto, didLoad: Data("data: \(self.firstChunk)\n\n".utf8))
+            proto.client?.urlProtocol(proto, didFailWithError: URLError(.networkConnectionLost))
+        }
+
+        do {
+            for try await _ in client.streamPost(path: "/api/v1/llm/chat/completions", body: chatBody) {}
+            XCTFail("a dropped connection must not read as the end of the answer")
+        } catch UARPError.connection {}
+        XCTAssertEqual(MockURLProtocol.requests.count, 1, "a streamed POST is never reopened")
+    }
+
+    private func readBody(_ stream: InputStream) -> Data {
+        stream.open()
+        defer { stream.close() }
+        var data = Data()
+        var buffer = [UInt8](repeating: 0, count: 4096)
+        while stream.hasBytesAvailable {
+            let read = stream.read(&buffer, maxLength: buffer.count)
+            if read <= 0 { break }
+            data.append(buffer, count: read)
+        }
+        return data
+    }
 }
 
 /// A tiny `Sendable` mutable cell for capturing stream-lifecycle state from a

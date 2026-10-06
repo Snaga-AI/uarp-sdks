@@ -15,6 +15,10 @@ package UARP.API.Billing is
       --  Billing period in YYYY-MM format. Defaults to current month.
       Has_Period : Boolean := False;
       Period : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Comma-separated splits to add: `model` (`by_model`), `source` (`by_source`). Unknown names
+      --  are ignored.
+      Has_Breakdown : Boolean := False;
+      Breakdown : UARP.Types.Text := UARP.Types.Empty_Text;
    end record;
 
    No_Get_Usage_Params : constant Get_Usage_Params := (others => <>);
@@ -203,11 +207,13 @@ package UARP.API.Billing is
    --
    --  Returns the tenant's token, run and cost totals for the current period, or for the `period`
    --  given as a query parameter, alongside the effective `plan`, the period length in days, the
-   --  count of bridge tasks completed in that period, and a `margin_summary` derived from the
-   --  configured platform markup. `?agent_id=` switches to a single agent's usage over the last
-   --  `days` (default 30, capped at 90) and returns nothing else; `?breakdown=model` adds a
-   --  per-model array with per-model margin. Read-only - any method other than GET answers **405**
-   --  - and gated on the `billing:read` permission and scope.
+   --  count of bridge tasks completed in that period, and - for the platform administrator only -
+   --  a `margin_summary` derived from the configured platform markup. `?agent_id=` switches to a
+   --  single agent's usage over the last `days` (default 30, capped at 90) and returns nothing
+   --  else; `?breakdown=` takes a comma list: `model` adds a per-model array (with per-model
+   --  provider cost and margin for the platform administrator only), `source` adds `by_source`,
+   --  and `model,source` adds both in one response. Read-only - any method other than GET answers
+   --  **405** - and gated on the `billing:read` permission and scope.
    --
    --  GET /api/v1/usage
    --

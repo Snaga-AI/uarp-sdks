@@ -4,6 +4,7 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
+import { autoPaginate } from '../../core/pagination.js';
 import type {
   AddSquadGraphEdgeRequest,
   AddSquadGraphNodeRequest,
@@ -21,10 +22,12 @@ import type {
   StartSquadRunRequest,
   StartSquadRunResponse,
   Team,
+  TeamChatTurn,
   TeamCreate,
   TeamGraphEdge,
   TeamGraphNode,
   TeamRunDetail,
+  TeamRunSummary,
   TeamUpdate,
   UpdateSquadGraphNodeRequest,
 } from '../models.js';
@@ -35,6 +38,29 @@ import type {
 export interface GetSquadChatHistoryParams {
   thread_id?: string;
   include_internal?: boolean;
+  /**
+   * Page size, in TURNS (two history entries each), counted back from the newest turn; oldest
+   * first within a page. ABSENT means the newest 100 turns, with no paging fields (the window
+   * size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+   * outside 1..200 are clamped, not refused.
+   */
+  limit?: number;
+  /**
+   * The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+   * list did not issue is a 400 `INVALID_CURSOR`.
+   */
+  cursor?: string;
+}
+
+/**
+ * Query and header parameters for `listSquadRuns`.
+ */
+export interface ListSquadRunsParams {
+  limit?: number;
+  /**
+   * From a previous response's `cursor`.
+   */
+  cursor?: string;
 }
 
 /**
@@ -56,6 +82,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `POST /api/v1/squads/{squadId}/graph/edges`
+   *
+   * Required scopes: `agents:write`.
    */
   addSquadGraphEdge(squadId: string, body: AddSquadGraphEdgeRequest, options?: RequestOptions): Promise<TeamGraphEdge> {
     return this._client.request({
@@ -75,6 +103,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `POST /api/v1/squads/{squadId}/graph/nodes`
+   *
+   * Required scopes: `agents:write`.
    */
   addSquadGraphNode(squadId: string, body: AddSquadGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
@@ -107,6 +137,8 @@ export class SquadsResource extends APIResource {
    * older noun.
    *
    * `POST /api/v1/squads/{squadId}/runs/{teamRunId}/cancel`
+   *
+   * Required scopes: `agents:write`.
    */
   cancelSquadRun(squadId: string, teamRunId: string, options?: RequestOptions): Promise<CancelSquadRunResponse> {
     return this._client.request({
@@ -125,6 +157,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `POST /api/v1/squads`
+   *
+   * Required scopes: `agents:write`.
    */
   create(body: TeamCreate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -144,6 +178,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `DELETE /api/v1/squads/{squadId}`
+   *
+   * Required scopes: `agents:write`.
    */
   delete(squadId: string, options?: RequestOptions): Promise<DeleteSquadResponse> {
     return this._client.request({
@@ -162,6 +198,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `DELETE /api/v1/squads/{squadId}/graph/edges/{edgeId}`
+   *
+   * Required scopes: `agents:write`.
    */
   deleteSquadGraphEdge(squadId: string, edgeId: string, options?: RequestOptions): Promise<DeleteSquadGraphEdgeResponse> {
     return this._client.request({
@@ -180,6 +218,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `DELETE /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+   *
+   * Required scopes: `agents:write`.
    */
   deleteSquadGraphNode(squadId: string, agentId: string, options?: RequestOptions): Promise<DeleteSquadGraphNodeResponse> {
     return this._client.request({
@@ -198,6 +238,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}`
+   *
+   * Required scopes: `agents:read`.
    */
   get(squadId: string, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -215,14 +257,29 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/chat`
+   *
+   * Required scopes: `agents:read`.
    */
   getSquadChatHistory(squadId: string, params?: GetSquadChatHistoryParams, options?: RequestOptions): Promise<GetSquadChatHistoryResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/chat`,
-      query: pick(params, ['thread_id', 'include_internal']),
+      query: pick(params, ['thread_id', 'include_internal', 'limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `getSquadChatHistory`, following the `cursor` cursor until
+   * the server reports no further pages.
+   */
+  getSquadChatHistoryAll(squadId: string, params?: GetSquadChatHistoryParams, options?: RequestOptions): AsyncIterableIterator<TeamChatTurn> {
+    return autoPaginate<TeamChatTurn>(
+      (cursor) => this.getSquadChatHistory(squadId, { ...params, cursor }, options),
+      'conversation_history',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -233,6 +290,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/graph`
+   *
+   * Required scopes: `agents:read`.
    */
   getSquadGraph(squadId: string, options?: RequestOptions): Promise<GetSquadGraphResponse> {
     return this._client.request({
@@ -250,6 +309,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+   *
+   * Required scopes: `agents:read`.
    */
   getSquadGraphNode(squadId: string, agentId: string, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({
@@ -267,6 +328,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/runs/{teamRunId}`
+   *
+   * Required scopes: `agents:read`.
    */
   getSquadRun(squadId: string, teamRunId: string, options?: RequestOptions): Promise<TeamRunDetail> {
     return this._client.request({
@@ -284,6 +347,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/runs/{teamRunId}/messages`
+   *
+   * Required scopes: `agents:read`.
    */
   getSquadRunMessages(squadId: string, teamRunId: string, options?: RequestOptions): Promise<GetSquadRunMessagesResponse> {
     return this._client.request({
@@ -301,6 +366,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads`
+   *
+   * Required scopes: `agents:read`.
    */
   list(options?: RequestOptions): Promise<ListSquadsResponse> {
     return this._client.request({
@@ -318,6 +385,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/graph/edges`
+   *
+   * Required scopes: `agents:read`.
    */
   listSquadGraphEdges(squadId: string, options?: RequestOptions): Promise<ListSquadGraphEdgesResponse> {
     return this._client.request({
@@ -335,6 +404,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/graph/nodes`
+   *
+   * Required scopes: `agents:read`.
    */
   listSquadGraphNodes(squadId: string, options?: RequestOptions): Promise<ListSquadGraphNodesResponse> {
     return this._client.request({
@@ -347,18 +418,39 @@ export class SquadsResource extends APIResource {
   /**
    * List runs for a squad
    *
+   * Ordered OLDEST FIRST, deliberately and unlike `/api/v1/runs`: a squad run is a transcript
+   * and reads forward. Pages continue by `cursor` (there is no `offset`); `total` counts this
+   * page's rows only. Each row is a MEMBER run; `team_run_status` says what its squad run came
+   * to.
+   *
    * `/api/v1/squads/*` is the canonical surface. `/api/v1/teams/*` is the same handler under the
    * older noun: the server rewrites the leading path segment before dispatch, so the two are one
    * endpoint and cannot drift apart.
    *
    * `GET /api/v1/squads/{squadId}/runs`
+   *
+   * Required scopes: `agents:read`.
    */
-  listSquadRuns(squadId: string, options?: RequestOptions): Promise<ListSquadRunsResponse> {
+  listSquadRuns(squadId: string, params?: ListSquadRunsParams, options?: RequestOptions): Promise<ListSquadRunsResponse> {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/squads/${encodeURIComponent(String(squadId))}/runs`,
+      query: pick(params, ['limit', 'cursor']),
       options,
     });
+  }
+
+  /**
+   * Iterate every item returned by `listSquadRuns`, following the `cursor` cursor until the
+   * server reports no further pages.
+   */
+  listSquadRunsAll(squadId: string, params?: ListSquadRunsParams, options?: RequestOptions): AsyncIterableIterator<TeamRunSummary> {
+    return autoPaginate<TeamRunSummary>(
+      (cursor) => this.listSquadRuns(squadId, { ...params, cursor }, options),
+      'runs',
+      'cursor',
+      'has_more',
+    );
   }
 
   /**
@@ -369,6 +461,8 @@ export class SquadsResource extends APIResource {
    * endpoint and cannot drift apart.
    *
    * `POST /api/v1/squads/{squadId}/runs`
+   *
+   * Required scopes: `agents:write`.
    */
   startSquadRun(squadId: string, body: StartSquadRunRequest, options?: RequestOptions): Promise<StartSquadRunResponse> {
     return this._client.request({
@@ -389,7 +483,7 @@ export class SquadsResource extends APIResource {
    *
    * `GET /api/v1/squads/{squadId}/chat/events`
    *
-   * Required scopes: `events:read`.
+   * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
    */
@@ -411,7 +505,7 @@ export class SquadsResource extends APIResource {
    *
    * `GET /api/v1/squads/{squadId}/runs/{runId}/events`
    *
-   * Required scopes: `events:read`.
+   * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
    */
@@ -430,7 +524,15 @@ export class SquadsResource extends APIResource {
    * older noun: the server rewrites the leading path segment before dispatch, so the two are one
    * endpoint and cannot drift apart.
    *
+   * WRITE SEMANTICS: mixed — the same handler as `PUT /api/v1/teams/{teamId}`. An omitted
+   * top-level field keeps its stored value. `policies` merges one level deep and
+   * `policies.validation` merges over the stored one. A `workers` list that is present replaces
+   * the list but keeps each worker's stored `role` and `permissions` (not on the swarm
+   * `agent_ids` path). `swarm_config` and `goal_config` are replaced whole when sent.
+   *
    * `PUT /api/v1/squads/{squadId}`
+   *
+   * Required scopes: `agents:write`.
    */
   update(squadId: string, body: TeamUpdate, options?: RequestOptions): Promise<Team> {
     return this._client.request({
@@ -449,7 +551,13 @@ export class SquadsResource extends APIResource {
    * older noun: the server rewrites the leading path segment before dispatch, so the two are one
    * endpoint and cannot drift apart.
    *
+   * WRITE SEMANTICS: merges — the same handler as the `/teams` route. Only `status` and
+   * `goal_summary` are applied, each only when sent; every other node field keeps its stored
+   * value.
+   *
    * `PATCH /api/v1/squads/{squadId}/graph/nodes/{agentId}`
+   *
+   * Required scopes: `agents:write`.
    */
   updateSquadGraphNode(squadId: string, agentId: string, body: UpdateSquadGraphNodeRequest, options?: RequestOptions): Promise<TeamGraphNode> {
     return this._client.request({

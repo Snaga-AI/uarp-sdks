@@ -13,6 +13,9 @@ import type {
   ContentReportInput,
   CreatePublicSessionRequest,
   CreatePublicSessionResponse,
+  CreatePublicVideoOrderRequest,
+  CreatePublicVideoOrderResponse,
+  ExportDataExplorerIncludeSensitive,
   GetAndroidTestingStatusResponse,
   GetLinkPreviewResponse,
   GetPublicBlogPostResponse,
@@ -25,20 +28,26 @@ import type {
   ListPublicPlansResponse,
   ListPublicStatesResponse,
   ListPublicTenantsResponse,
+  ListPublicVideoTemplatesResponse,
   MaintenanceStatus,
+  OpenPublicVideoOrderCheckoutResponse,
   PlatformInfo,
   PublicAgentCard,
   PublicDomainLookupResponse,
   PublicSessionView,
   PublicTenant,
   PublicTrackEventRequest,
+  RatePublicVideoOrderRequest,
+  RatePublicVideoOrderResponse,
   RespondToPublicHitlRequest,
   RespondToPublicHitlResponse,
+  RetryPublicVideoOrderResponse,
   SendPublicMessageRequest,
   SendPublicMessageResponse,
   SharePublicSessionResponse,
   SignUpForAndroidTestingRequest,
   UploadPublicSessionImageResponse,
+  VideoOrder,
 } from '../models.js';
 
 /**
@@ -60,6 +69,54 @@ export interface GetLinkPreviewParams {
  */
 export interface GetLinkPreviewImageParams {
   url: string;
+}
+
+/**
+ * Query and header parameters for `getPublicVideoInput`.
+ */
+export interface GetPublicVideoInputParams {
+  /**
+   * Unix seconds the link stops working.
+   */
+  exp: number;
+  /**
+   * HMAC over purpose, id and `exp`.
+   */
+  sig: string;
+}
+
+/**
+ * Query and header parameters for `getPublicVideoOrder`.
+ */
+export interface GetPublicVideoOrderParams {
+  /**
+   * The order's secret, returned once as `order_token` when the order was created. Without the
+   * right token every order answers 404, so an id alone reveals nothing.
+   */
+  'X-Order-Token': string;
+}
+
+/**
+ * Query and header parameters for `getPublicVideoOrderVideo`.
+ */
+export interface GetPublicVideoOrderVideoParams {
+  /**
+   * Unix seconds the link stops working.
+   */
+  exp: number;
+  /**
+   * HMAC over purpose, id and `exp`.
+   */
+  sig: string;
+  download?: ExportDataExplorerIncludeSensitive;
+  Range?: string;
+}
+
+/**
+ * Query and header parameters for `getPublicVideoTemplatePreview`.
+ */
+export interface GetPublicVideoTemplatePreviewParams {
+  Range?: string;
 }
 
 /**
@@ -90,10 +147,54 @@ export interface ListPublicTenantsParams {
 }
 
 /**
+ * Query and header parameters for `openPublicVideoOrderCheckout`.
+ */
+export interface OpenPublicVideoOrderCheckoutParams {
+  /**
+   * The order's secret, returned once as `order_token` when the order was created. Without the
+   * right token every order answers 404, so an id alone reveals nothing.
+   */
+  'X-Order-Token': string;
+}
+
+/**
  * Query and header parameters for `publicDomainLookup`.
  */
 export interface PublicDomainLookupParams {
   domain: string;
+}
+
+/**
+ * Query and header parameters for `ratePublicVideoOrder`.
+ */
+export interface RatePublicVideoOrderParams {
+  /**
+   * The order's secret, returned once as `order_token` when the order was created. Without the
+   * right token every order answers 404, so an id alone reveals nothing.
+   */
+  'X-Order-Token': string;
+}
+
+/**
+ * Query and header parameters for `regeneratePublicVideoOrder`.
+ */
+export interface RegeneratePublicVideoOrderParams {
+  /**
+   * The order's secret, returned once as `order_token` when the order was created. Without the
+   * right token every order answers 404, so an id alone reveals nothing.
+   */
+  'X-Order-Token': string;
+}
+
+/**
+ * Query and header parameters for `retryPublicVideoOrder`.
+ */
+export interface RetryPublicVideoOrderParams {
+  /**
+   * The order's secret, returned once as `order_token` when the order was created. Without the
+   * right token every order answers 404, so an id alone reveals nothing.
+   */
+  'X-Order-Token': string;
 }
 
 /**
@@ -161,6 +262,29 @@ export class PublicResource extends APIResource {
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/reports`,
       body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Order a video
+   *
+   * Takes the buyer's photo and text, checks the photo, and opens a Stripe Checkout that only
+   * AUTHORISES the price: the money is held, then captured when the clip exists, or released if
+   * it never does — nothing is ever refunded because nothing moved. The photo is checked BEFORE
+   * anything is stored or held; a refusal is 422 with a stable `reason` and `{en, uk}` text.
+   * Answers 201 with the order and its `order_token` — the only time the token is returned; send
+   * it as `X-Order-Token` on every later call, and keep it after `#` in any page URL.
+   * Rate-limited to 10 orders per hour per address. Anonymous.
+   *
+   * `POST /api/v1/public/video-orders`
+   */
+  createPublicVideoOrder(body: CreatePublicVideoOrderRequest, options?: RequestOptions): Promise<CreatePublicVideoOrderResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/public/video-orders',
+      multipart: body,
       idempotent: true,
       options,
     });
@@ -452,6 +576,79 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * Fetch an order's photo (for the video provider)
+   *
+   * How the video provider reads the buyer's photo: its API takes a URL and nothing else. The
+   * link is signed for one file and one hour and is never shown to the buyer.
+   *
+   * `GET /api/v1/public/video-inputs/{fileId}`
+   */
+  getPublicVideoInput(fileId: string, params: GetPublicVideoInputParams, options?: RequestOptions): Promise<Blob> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/video-inputs/${encodeURIComponent(String(fileId))}`,
+      query: pick(params, ['exp', 'sig']),
+      responseType: 'binary',
+      options,
+    });
+  }
+
+  /**
+   * Get an order's status
+   *
+   * What the order page shows: status, queue position and wait, generation progress, a signed
+   * hour-long link to the finished clip, whether the free regeneration is available and why not.
+   * Poll every few seconds while `status` is `awaiting_payment`, `queued` or `generating`.
+   *
+   * `GET /api/v1/public/video-orders/{orderId}`
+   */
+  getPublicVideoOrder(orderId: string, params: GetPublicVideoOrderParams, options?: RequestOptions): Promise<VideoOrder> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}`,
+      headers: pick(params, ['X-Order-Token']),
+      options,
+    });
+  }
+
+  /**
+   * Stream or download the finished video
+   *
+   * The clip behind the signed `video.url` the order answers — valid for an hour; ask the order
+   * again for a fresh link. `download=1` sends it as an attachment.
+   *
+   * `GET /api/v1/public/video-orders/{orderId}/video`
+   */
+  getPublicVideoOrderVideo(orderId: string, params: GetPublicVideoOrderVideoParams, options?: RequestOptions): Promise<Blob> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}/video`,
+      query: pick(params, ['exp', 'sig', 'download']),
+      headers: pick(params, ['Range']),
+      responseType: 'binary',
+      options,
+    });
+  }
+
+  /**
+   * Stream a template's example clip
+   *
+   * The example video shown in the gallery, as MP4 with byte-range support. 404 when the
+   * template is not published or has no example. Anonymous.
+   *
+   * `GET /api/v1/public/video-templates/{templateId}/preview`
+   */
+  getPublicVideoTemplatePreview(templateId: string, params?: GetPublicVideoTemplatePreviewParams, options?: RequestOptions): Promise<Blob> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/video-templates/${encodeURIComponent(String(templateId))}/preview`,
+      headers: pick(params, ['Range']),
+      responseType: 'binary',
+      options,
+    });
+  }
+
+  /**
    * Is sign-up open
    *
    * No authentication; cached for 30 seconds.
@@ -594,6 +791,46 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * List video templates
+   *
+   * The gallery of the public video service: every published template with its bilingual
+   * (`en`/`uk`) texts, price, clip length, the text fields the buyer fills and what makes a good
+   * photo — and never the model, the hidden prompt or the cost behind it. `queue` estimates the
+   * wait a new order would face, so the page can warn BEFORE payment. `stats.videos_total` and
+   * each template's `videos_made` count videos delivered to paying buyers — never test runs or
+   * free regenerations — so they can be shown as they are. Anonymous.
+   *
+   * `GET /api/v1/public/video-templates`
+   */
+  listPublicVideoTemplates(options?: RequestOptions): Promise<ListPublicVideoTemplatesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/video-templates',
+      options,
+    });
+  }
+
+  /**
+   * Get a checkout link for an unpaid order
+   *
+   * For a buyer who came back from Stripe without paying: answers the order's open Checkout
+   * link, or a fresh one once the first is near its 24-hour expiry. Only while `status` is
+   * `awaiting_payment`; a second payment for an order already paid is released by the webhook,
+   * never captured.
+   *
+   * `POST /api/v1/public/video-orders/{orderId}/checkout`
+   */
+  openPublicVideoOrderCheckout(orderId: string, params: OpenPublicVideoOrderCheckoutParams, options?: RequestOptions): Promise<OpenPublicVideoOrderCheckoutResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}/checkout`,
+      headers: pick(params, ['X-Order-Token']),
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Domain lookup
    *
    * Resolves a custom domain to the tenant `slug` that serves it, so an anonymous visitor
@@ -636,6 +873,45 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * Rate a finished video
+   *
+   * 👍 or 👎 on a ready video. A 👎 is what opens the free regeneration.
+   *
+   * `POST /api/v1/public/video-orders/{orderId}/feedback`
+   */
+  ratePublicVideoOrder(orderId: string, body: RatePublicVideoOrderRequest, params: RatePublicVideoOrderParams, options?: RequestOptions): Promise<RatePublicVideoOrderResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}/feedback`,
+      headers: pick(params, ['X-Order-Token']),
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Regenerate a video for free, once
+   *
+   * Makes a new take of a ready video from the SAME photo and text (only the seed changes),
+   * free, once per order, within 24 hours of delivery, after a 👎 rating. The new clip replaces
+   * the old one; if it fails, the buyer keeps the video they paid for. Not offered to a buyer
+   * who regenerates most of what they buy (`reason: not_available`). Answers 202 with the order
+   * back in the queue.
+   *
+   * `POST /api/v1/public/video-orders/{orderId}/regenerate`
+   */
+  regeneratePublicVideoOrder(orderId: string, params: RegeneratePublicVideoOrderParams, options?: RequestOptions): Promise<VideoOrder> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}/regenerate`,
+      headers: pick(params, ['X-Order-Token']),
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Respond to public HITL
    *
    * Supplies the visitor's answer to an agent that has paused for input, storing `response` and
@@ -655,6 +931,25 @@ export class PublicResource extends APIResource {
       method: 'POST',
       path: `/api/v1/public/sessions/${encodeURIComponent(String(sessionId))}/respond`,
       body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Try a failed order again
+   *
+   * For an order that failed (and was never charged): a NEW order with the same photo and text
+   * and its own checkout, answered with its own `order_token`. Once per failed order; within 24
+   * hours, while the photo is still kept.
+   *
+   * `POST /api/v1/public/video-orders/{orderId}/retry`
+   */
+  retryPublicVideoOrder(orderId: string, params: RetryPublicVideoOrderParams, options?: RequestOptions): Promise<RetryPublicVideoOrderResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/video-orders/${encodeURIComponent(String(orderId))}/retry`,
+      headers: pick(params, ['X-Order-Token']),
       idempotent: true,
       options,
     });

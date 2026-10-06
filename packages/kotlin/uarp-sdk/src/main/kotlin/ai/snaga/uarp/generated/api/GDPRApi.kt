@@ -63,7 +63,7 @@ public class GDPRApi internal constructor(private val client: UarpClient) {
      *
      * `POST /api/v1/data-subject/erasure`
      */
-    public suspend fun dataSubjectErasure(body: JsonObject, options: RequestOptions = RequestOptions()): DataSubjectErasureResult {
+    public suspend fun dataSubjectErasure(body: DataSubjectErasureRequest, options: RequestOptions = RequestOptions()): DataSubjectErasureResult {
         return client.request<DataSubjectErasureResult>(
             RequestSpec(
                 method = "POST",

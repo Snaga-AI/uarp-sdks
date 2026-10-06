@@ -158,6 +158,10 @@ impl MeApi {
     /// Both fields are optional; what is sent is merged onto the stored record. Same person-bound
     /// credential rule as the read.
     ///
+    /// WRITE SEMANTICS: merges. `custom_instructions` and `enabled` each keep their stored value
+    /// when omitted; with nothing stored the defaults are an empty string and `true`.
+    /// `custom_instructions` is trimmed before it is stored.
+    ///
     /// `PUT /api/v1/me/preferences`
     pub async fn update_my_preferences(&self, body: &models::UpdateMyPreferencesRequest) -> Result<models::UserPreferences> {
         self.client

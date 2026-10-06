@@ -51,6 +51,31 @@ impl ACPApi {
         )
     }
 
+    /// Save ACP session state
+    ///
+    /// The same handler as `PUT` on this path (router.ts sends both methods to
+    /// `handleAcpSessionRoute`), and the method the ACP bridge itself writes with. WRITE SEMANTICS:
+    /// replaces — the body becomes the whole stored state, validated exactly as the `PUT` validates
+    /// it. The first write claims the session for the caller; a later write from another identity
+    /// is 403. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+    /// `sessions:write` scope.
+    ///
+    /// `POST /api/v1/acp/session/{sessionId}`
+    ///
+    /// Required scopes: `sessions:write`.
+    pub async fn save_acp_session(&self, session_id: &str, body: &models::SaveACPSessionRequest) -> Result<models::SaveACPSessionResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/acp/session/{}", encode_path(session_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Send message / update ACP session
     ///
     /// WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
@@ -66,7 +91,7 @@ impl ACPApi {
     /// `PUT /api/v1/acp/session/{sessionId}`
     ///
     /// Required scopes: `sessions:write`.
-    pub async fn update_acp_session(&self, session_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::UpdateACPSessionResponse> {
+    pub async fn update_acp_session(&self, session_id: &str, body: &models::UpdateACPSessionRequest) -> Result<models::UpdateACPSessionResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,

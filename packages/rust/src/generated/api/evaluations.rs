@@ -6,12 +6,29 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
+
+/// Query and header parameters for `listEvalRuns`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListEvalRunsParams {
+    /// Page size, counted back from the newest run (the first page is the newest runs); oldest
+    /// first within a page. ABSENT means the newest 1000 runs, with no paging fields (the window
+    /// size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+    /// outside 1..200 are clamped, not refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
 
 /// Agent evaluation datasets and runs
 #[derive(Debug, Clone)]
@@ -40,7 +57,7 @@ impl EvaluationsApi {
     /// `POST /api/v1/agents/{agentId}/scorers`
     ///
     /// Required scopes: `evaluations:write`.
-    pub async fn create_agent_scorer(&self, agent_id: &str, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::AgentScorer> {
+    pub async fn create_agent_scorer(&self, agent_id: &str, body: &models::CreateAgentScorerRequest) -> Result<models::AgentScorer> {
         self.client
             .request_json(Request {
                 method: Method::POST,
@@ -212,17 +229,40 @@ impl EvaluationsApi {
     /// `GET /api/v1/agents/{agentId}/evaluations`
     ///
     /// Required scopes: `evaluations:read`.
-    pub async fn list_eval_runs(&self, agent_id: &str) -> Result<models::ListEvalRunsResponse> {
+    pub async fn list_eval_runs(&self, agent_id: &str, params: &ListEvalRunsParams) -> Result<models::ListEvalRunsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/agents/{}/evaluations", encode_path(agent_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `listEvalRuns`, following the `cursor` cursor until the server
+    /// reports no further pages.
+    pub fn list_eval_runs_all<'a>(&'a self, agent_id: &'a str, params: &'a ListEvalRunsParams) -> impl Stream<Item = Result<models::EvalRun>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.list_eval_runs(agent_id, &page_params).await?;
+                let items = page.eval_runs;
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// List an agent's evaluation experiments

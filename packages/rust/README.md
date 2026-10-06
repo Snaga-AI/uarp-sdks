@@ -10,7 +10,7 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 futures-util = "0.3"   # only if you use streams
 ```
 
-Rust 1.88+. TLS is `rustls` by default; `features = ["native-tls"]` switches.
+Rust 1.89+. TLS is `rustls` by default; `features = ["native-tls"]` switches.
 
 ## Quick start
 
@@ -70,6 +70,30 @@ while let Some(event) = events.next().await {
     if event.event == "run.completed" { break; }   // dropping the stream closes it
 }
 ```
+
+An answer streamed to a POST, such as an LLM completion with `"stream": true`,
+uses `stream_post`, which returns the same `EventStream`. Stream long
+completions: the platform cuts a non-streamed one that stays silent for 120 s.
+
+```rust
+use futures_util::StreamExt;
+
+let completion = serde_json::json!({
+    "model": "my-model",
+    "stream": true,
+    "messages": [{"role": "user", "content": "hi"}],
+});
+let mut events = client.stream_post("/api/v1/llm/chat/completions", &completion);
+while let Some(event) = events.next().await {
+    let chunk = event?.json::<serde_json::Value>()?;   // a refusal is Error::Api here
+    print!("{}", chunk["choices"][0]["delta"]["content"].as_str().unwrap_or(""));
+}   // ends after `data: [DONE]`, which is not delivered
+```
+
+It makes one attempt: no retry and no reconnect, whatever the status, because
+replaying the POST would run, and bill, the model twice. A 2xx that is not
+`text/event-stream` (say, plain JSON because `"stream": true` was left out) is
+an `Error::Api` with the status as received, not an empty stream.
 
 ## Pagination
 

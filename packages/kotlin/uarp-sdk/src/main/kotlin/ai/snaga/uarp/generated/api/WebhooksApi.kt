@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Webhook subscriptions
@@ -128,28 +129,51 @@ public class WebhooksApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `webhooks:read`.
      */
-    public suspend fun listWebhookDeliveries(webhookId: String, options: RequestOptions = RequestOptions()): ListWebhookDeliveriesResponse {
+    public suspend fun listWebhookDeliveries(webhookId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListWebhookDeliveriesResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListWebhookDeliveriesResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/webhooks/${encodePathSegment(webhookId)}/deliveries",
+                query = query,
                 options = options,
             )
         )
     }
 
     /**
+     * Stream every item returned by `listWebhookDeliveries`, following the `cursor` cursor until
+     * the server reports no further pages.
+     */
+    public fun listWebhookDeliveriesAll(webhookId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<WebhookDeliveryAttempt> = autoPaginate(
+        fetch = { pageCursor -> listWebhookDeliveries(webhookId = webhookId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.deliveries },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
+
+    /**
      * Sensor webhook (HMAC-authenticated, triggers an agent run)
      *
-     * External-system webhook. Bypasses normal auth — `X-Sensor-Signature` header is HMAC-verified
-     * against the per-subscription secret. On valid signature, fires an agent run with the request
-     * body as input.
+     * External-system webhook created by an agent's `listen_webhook` tool. Bypasses normal auth:
+     * when the subscription has a secret, `X-Sensor-Signature` must carry `sha256=<hex HMAC-SHA256
+     * of the raw body>` or the call is `401`; a listener without a secret is accepted only if it
+     * has a `max_triggers` ceiling, otherwise `403`. `404` for an unknown webhook id, `410` once
+     * the subscription is inactive, expired or out of triggers, `409` when a concurrent call
+     * claims the same trigger slot, `413` for a body over the size cap. On success it writes a
+     * queued run for the subscription's agent with `input: {type: "webhook_received", webhook_id,
+     * payload, headers, instructions}` — the JSON body (or `{raw_body}` when it is not JSON) as
+     * `payload` — dispatches it, and answers `{received: true, run_id}` without waiting for the
+     * run.
      *
      * `POST /api/v1/webhooks/sensor/{webhookId}`
      */
-    public suspend fun sensorWebhook(webhookId: String, body: JsonObject? = null, xSensorSignature: String, options: RequestOptions = RequestOptions()): SensorWebhookResponse {
+    public suspend fun sensorWebhook(webhookId: String, body: JsonObject? = null, xSensorSignature: String? = null, options: RequestOptions = RequestOptions()): SensorWebhookResponse {
         val headers = buildList {
-            add("X-Sensor-Signature" to xSensorSignature)
+            if (xSensorSignature != null) add("X-Sensor-Signature" to xSensorSignature)
         }
         return client.request<SensorWebhookResponse>(
             RequestSpec(

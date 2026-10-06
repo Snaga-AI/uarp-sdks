@@ -4,7 +4,9 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import type { EventStream } from '../../core/sse.js';
 import type {
-  JsonObject,
+  SaveACPSessionRequest,
+  SaveACPSessionResponse,
+  UpdateACPSessionRequest,
   UpdateACPSessionResponse,
 } from '../models.js';
 
@@ -38,6 +40,30 @@ export class ACPResource extends APIResource {
   }
 
   /**
+   * Save ACP session state
+   *
+   * The same handler as `PUT` on this path (router.ts sends both methods to
+   * `handleAcpSessionRoute`), and the method the ACP bridge itself writes with. WRITE SEMANTICS:
+   * replaces — the body becomes the whole stored state, validated exactly as the `PUT` validates
+   * it. The first write claims the session for the caller; a later write from another identity
+   * is 403. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+   * `sessions:write` scope.
+   *
+   * `POST /api/v1/acp/session/{sessionId}`
+   *
+   * Required scopes: `sessions:write`.
+   */
+  saveACPSession(sessionId: string, body: SaveACPSessionRequest, options?: RequestOptions): Promise<SaveACPSessionResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/acp/session/${encodeURIComponent(String(sessionId))}`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
    * Send message / update ACP session
    *
    * WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
@@ -54,7 +80,7 @@ export class ACPResource extends APIResource {
    *
    * Required scopes: `sessions:write`.
    */
-  updateACPSession(sessionId: string, body: JsonObject, options?: RequestOptions): Promise<UpdateACPSessionResponse> {
+  updateACPSession(sessionId: string, body: UpdateACPSessionRequest, options?: RequestOptions): Promise<UpdateACPSessionResponse> {
     return this._client.request({
       method: 'PUT',
       path: `/api/v1/acp/session/${encodeURIComponent(String(sessionId))}`,

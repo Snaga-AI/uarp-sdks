@@ -41,6 +41,8 @@ impl ProjectsApi {
     /// project never claims a file the agent cannot read.
     ///
     /// `POST /api/v1/projects`
+    ///
+    /// Required scopes: `sessions:write`.
     pub async fn create(&self, body: &models::CreateProjectRequest) -> Result<models::Project> {
         self.client
             .request_json(Request {
@@ -61,6 +63,8 @@ impl ProjectsApi {
     /// with it is how people lose things they cannot get back.
     ///
     /// `DELETE /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:write`.
     pub async fn delete(&self, project_id: &str) -> Result<models::DeleteProjectResponse> {
         self.client
             .request_json(Request {
@@ -81,6 +85,8 @@ impl ProjectsApi {
     /// private.
     ///
     /// `GET /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:read`.
     pub async fn get(&self, project_id: &str) -> Result<models::ProjectDetail> {
         self.client
             .request_json(Request {
@@ -102,6 +108,8 @@ impl ProjectsApi {
     /// second call.
     ///
     /// `GET /api/v1/projects`
+    ///
+    /// Required scopes: `sessions:read`.
     pub async fn list(&self, params: &ListProjectsParams) -> Result<models::ListProjectsResponse> {
         self.client
             .request_json(Request {
@@ -128,7 +136,14 @@ impl ProjectsApi {
     /// with 400: it would leave nobody able to open it. Signing in stamps the caller as owner at
     /// that moment.
     ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value.
+    /// `knowledge_base_ids`, `file_ids` and `shared_with` are replaced whole when sent, and
+    /// `file_ids` that do not resolve in this tenant are dropped. An explicit null `archived_at`
+    /// clears the archive.
+    ///
     /// `PATCH /api/v1/projects/{projectId}`
+    ///
+    /// Required scopes: `sessions:write`.
     pub async fn update(&self, project_id: &str, body: &models::UpdateProjectRequest) -> Result<models::Project> {
         self.client
             .request_json(Request {

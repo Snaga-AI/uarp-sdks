@@ -17,17 +17,20 @@ public struct MCPAPI: Sendable {
     /// explicitly opts in, and `http`/`streamable_http` require a `url` that passes an SSRF check
     /// resolving DNS, so a hostname that points at a private or metadata address is rejected and a
     /// resolution failure fails closed (422). `api_key_ref`, when given, must name an `MCP_*`
-    /// environment variable. For an authenticated `http`/`streamable_http` server put the secret in
-    /// `env` and describe where it goes with `auth`; any `env` block is encrypted at rest, never
-    /// returned, and dropped from the stored plaintext. After persisting, a live session is opened
-    /// immediately so tools surface on the next run, and a failure to connect is non-fatal and
-    /// reported as `connect_error` on the 201 response.
+    /// environment variable, and is used only on the origin the operator bound that variable to.
+    /// For an authenticated `http`/`streamable_http` server put the secret in `env` and describe
+    /// where it goes with `auth`; any `env` block is encrypted at rest, never returned, and dropped
+    /// from the stored plaintext. After persisting, a live session is opened immediately so tools
+    /// surface on the next run, and a failure to connect is non-fatal and reported as
+    /// `connect_error` on the 201 response.
     ///
     /// Pass `assigned_agent_ids` in the same call to connect it at once — a server installed and
     /// connected to nobody is inert, and leaving it in that state is how a working configuration
     /// comes to look broken.
     ///
     /// `POST /api/v1/mcp/servers`
+    ///
+    /// Required scopes: `agents:write`.
     public func createMCPServer(body: CreateMCPServerRequest, options: RequestOptions = .init()) async throws -> MCPServer {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -48,6 +51,8 @@ public struct MCPAPI: Sendable {
     /// which is logged. 200 whether or not the server existed.
     ///
     /// `DELETE /api/v1/mcp/servers/{serverId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func deleteMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> DeleteMCPServerResponse {
         return try await client.send(RequestSpec(
             method: "DELETE",
@@ -64,6 +69,8 @@ public struct MCPAPI: Sendable {
     /// never returned. 404 when the tenant has no such server.
     ///
     /// `GET /api/v1/mcp/servers/{serverId}`
+    ///
+    /// Required scopes: `agents:read`.
     public func getMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> MCPServer {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -104,6 +111,8 @@ public struct MCPAPI: Sendable {
     /// many secrets are configured without receiving any of them.
     ///
     /// `GET /api/v1/mcp/servers`
+    ///
+    /// Required scopes: `agents:read`.
     public func listMCPServers(options: RequestOptions = .init()) async throws -> ListMCPServersResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -119,6 +128,8 @@ public struct MCPAPI: Sendable {
     /// headers return 400.
     ///
     /// `POST /api/v1/mcp`
+    ///
+    /// Required scopes: `agents:read`.
     public func mcpJSONRpc(body: McpjsonRpcRequest, xUarpAgentId: String, options: RequestOptions = .init()) async throws -> JSONRpcResponse {
         var headers: [String: String] = [:]
         headers["X-UARP-Agent-Id"] = xUarpAgentId
@@ -145,6 +156,8 @@ public struct MCPAPI: Sendable {
     /// issued and no state carries between requests.
     ///
     /// `GET /api/v1/mcp`
+    ///
+    /// Required scopes: `agents:read`.
     ///
     /// Returns a server-sent event stream; iterate it with `for try await`.
     public func mcpSSE(options: RequestOptions = .init()) -> EventStream {
@@ -194,6 +207,8 @@ public struct MCPAPI: Sendable {
     /// `tool_count`/`tools` are absent.
     ///
     /// `POST /api/v1/mcp/servers/{serverId}/test`
+    ///
+    /// Required scopes: `agents:write`.
     public func testMCPServer(serverId: String, options: RequestOptions = .init()) async throws -> MCPServerTestResult {
         return try await client.send(RequestSpec(
             method: "POST",
@@ -211,7 +226,15 @@ public struct MCPAPI: Sendable {
     /// `env_encrypted` / `last_synced` are the handler's own and are refused from the wire. `env:
     /// {}` explicitly clears the stored environment.
     ///
+    /// A stored secret is sent to whatever `url` the record holds, so a `url` that moves the server
+    /// to a different ORIGIN (scheme, host or port) while it holds a stored `env` or `api_key_ref`
+    /// is refused with **409** unless the same request also sends that field — the value to use at
+    /// the new origin, or `env: {}` / `api_key_ref: ""` to drop it. A path or query change on the
+    /// same origin is not a move.
+    ///
     /// `PATCH /api/v1/mcp/servers/{serverId}`
+    ///
+    /// Required scopes: `agents:write`.
     public func updateMCPServer(serverId: String, body: UpdateMCPServerRequest, options: RequestOptions = .init()) async throws -> MCPServerWithConnectResult {
         return try await client.send(RequestSpec(
             method: "PATCH",

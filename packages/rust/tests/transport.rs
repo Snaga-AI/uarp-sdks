@@ -1083,3 +1083,321 @@ fn a_set_but_empty_env_var_is_still_a_missing_key() {
         std::env::set_var("SNAGA_API_KEY", value);
     }
 }
+
+// -------------------------------------------------------------- stream_post
+
+fn completion_body() -> serde_json::Value {
+    json!({
+        "model": "contract/model",
+        "stream": true,
+        "messages": [{"role": "user", "content": "hi"}]
+    })
+}
+
+/// Retries ON, so a `stream_post` that went through the retrying path would
+/// show it: a no-retry client cannot tell "does not retry" from "was not
+/// allowed to".
+fn retrying_client(server: &MockServer) -> Client {
+    Client::builder()
+        .api_key("uarp_test1234_secret")
+        .base_url(server.uri())
+        .max_retries(2)
+        .build()
+        .unwrap()
+}
+
+fn header_value<'a>(request: &'a Request, name: &str) -> Option<&'a str> {
+    request
+        .headers
+        .get(name)
+        .and_then(|value| value.to_str().ok())
+}
+
+#[tokio::test]
+async fn stream_post_sends_one_post_and_stops_at_done() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions"))
+        .respond_with(sse_response(concat!(
+            "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"he\"}}]}\n\n",
+            "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"llo\"}}]}\n\n",
+            "data: [DONE]\n\n",
+            "data: {\"after\":\"done\"}\n\n",
+        )))
+        .mount(&server)
+        .await;
+
+    let client = retrying_client(&server);
+    let body = completion_body();
+    let mut events = client.stream_post("/api/v1/llm/chat/completions", &body);
+    let mut data = Vec::new();
+    while let Some(event) = events.next().await {
+        data.push(event.expect("event decodes").data);
+    }
+    assert_eq!(
+        data,
+        vec![
+            "{\"choices\":[{\"index\":0,\"delta\":{\"content\":\"he\"}}]}".to_string(),
+            "{\"choices\":[{\"index\":0,\"delta\":{\"content\":\"llo\"}}]}".to_string(),
+        ],
+        "exactly the two chunks: [DONE] and what follows it are not delivered"
+    );
+
+    //  The request the server received, not a matcher having matched.
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1, "one POST");
+    let sent = &requests[0];
+    assert_eq!(sent.method, wiremock::http::Method::POST);
+    assert_eq!(header_value(sent, "accept"), Some("text/event-stream"));
+    assert_eq!(header_value(sent, "content-type"), Some("application/json"));
+    assert_eq!(
+        header_value(sent, "authorization"),
+        Some("Bearer uarp_test1234_secret")
+    );
+    let key = header_value(sent, "idempotency-key").expect("an Idempotency-Key");
+    assert!(
+        uuid::Uuid::parse_str(key).is_ok(),
+        "the automatic key is a UUID, got {key:?}"
+    );
+    let received: serde_json::Value = serde_json::from_slice(&sent.body).expect("the body is JSON");
+    assert_eq!(received, body);
+}
+
+#[tokio::test]
+async fn stream_post_surfaces_a_refusal_without_retrying() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions/refused"))
+        .respond_with(
+            ResponseTemplate::new(429)
+                .insert_header("retry-after", "0")
+                .set_body_raw(
+                    serde_json::to_vec(&json!({
+                        "title": "Too Many Requests",
+                        "status": 429,
+                        "detail": "llm quota exhausted"
+                    }))
+                    .unwrap(),
+                    "application/problem+json",
+                ),
+        )
+        .mount(&server)
+        .await;
+
+    let client = retrying_client(&server);
+    let mut events = client.stream_post("/api/v1/llm/chat/completions/refused", &completion_body());
+    let error = events
+        .next()
+        .await
+        .expect("one item")
+        .expect_err("a 429 must surface as an error");
+    match &error {
+        Error::Api(api) => {
+            assert_eq!(api.status, 429);
+            assert_eq!(api.kind(), ApiErrorKind::RateLimit);
+            assert_eq!(api.problem.title.as_deref(), Some("Too Many Requests"));
+            assert_eq!(api.problem.status, Some(429));
+            assert_eq!(api.problem.detail.as_deref(), Some("llm quota exhausted"));
+        }
+        other => panic!("unexpected error: {other:?}"),
+    }
+    assert!(
+        events.next().await.is_none(),
+        "the refusal's body is not delivered as events"
+    );
+
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(
+        requests.len(),
+        1,
+        "a streamed POST is never replayed, not even on 429"
+    );
+}
+
+#[tokio::test]
+async fn stream_post_does_not_reconnect_when_the_body_ends() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions"))
+        //  A parameter on the media type is still an event stream.
+        .respond_with(ResponseTemplate::new(200).set_body_raw(
+            "data: {\"choices\":[{\"index\":0,\"delta\":{\"content\":\"he\"}}]}\n\n",
+            "text/event-stream; charset=utf-8",
+        ))
+        .mount(&server)
+        .await;
+
+    //  The default stream options reconnect a GET stream that ends without a
+    //  terminal frame; they must not make a POST run twice.
+    let client = retrying_client(&server).with_stream_options(StreamOptions::default());
+    let mut events = client.stream_post("/api/v1/llm/chat/completions", &completion_body());
+    let mut count = 0;
+    while let Some(event) = events.next().await {
+        event.expect("event decodes");
+        count += 1;
+    }
+    assert_eq!(count, 1);
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(
+        requests.len(),
+        1,
+        "end of body ends the stream: no reconnect"
+    );
+}
+
+/// Drain a `stream_post` against a 2xx that is not an event stream: it must
+/// be one `Error::Api` carrying the status as received, and no events.
+async fn not_a_stream(response: ResponseTemplate) -> (Box<uarp_sdk::ApiError>, MockServer) {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions/plain"))
+        .respond_with(response)
+        .mount(&server)
+        .await;
+
+    let client = retrying_client(&server);
+    let mut events = client.stream_post("/api/v1/llm/chat/completions/plain", &completion_body());
+    let mut delivered = 0;
+    let mut errors = Vec::new();
+    while let Some(item) = events.next().await {
+        match item {
+            Ok(_) => delivered += 1,
+            Err(error) => errors.push(error),
+        }
+    }
+    assert_eq!(delivered, 0, "a non-stream body is not events");
+    assert_eq!(errors.len(), 1, "exactly one error: {errors:?}");
+    let api = match errors.pop().unwrap() {
+        Error::Api(api) => api,
+        other => panic!("expected the API error, got {other:?}"),
+    };
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1, "one request, no retry");
+    (api, server)
+}
+
+#[tokio::test]
+async fn stream_post_refuses_a_plain_json_200() {
+    let body = json!({
+        "choices": [{"index": 0, "message": {"role": "assistant", "content": "hello"}}]
+    });
+    let (api, _server) = not_a_stream(ResponseTemplate::new(200).set_body_json(&body)).await;
+    assert_eq!(api.status, 200, "the status as received");
+    let kept = api.problem.detail.as_deref().expect("the body is kept");
+    assert_eq!(
+        serde_json::from_str::<serde_json::Value>(kept).expect("the kept body is the JSON"),
+        body
+    );
+}
+
+#[tokio::test]
+async fn stream_post_refuses_an_empty_200() {
+    //  No body and no Content-Type: decoded as SSE this is a stream that
+    //  ended with no events, which would read as a finished answer.
+    let (api, _server) = not_a_stream(ResponseTemplate::new(200)).await;
+    assert_eq!(api.status, 200, "the status as received");
+    assert!(
+        !api.headers.contains_key("content-type"),
+        "the case under test has no Content-Type: {:?}",
+        api.headers
+    );
+}
+
+// ------------------------------------------------------------- form bodies
+
+/// The bytes contract/SCENARIOS.md expects for scenario 20.
+const FORM_BODY: &str = "code=c+1%2B2&state=s%2F%D1%8B%26%3D%7E*&user=%7B%22name%22%3A%22%D0%90+%D0%91%22%2C%22email%22%3A%22a%40b.c%22%7D";
+
+#[tokio::test]
+async fn a_form_body_goes_on_the_wire_as_url_search_params_would_write_it() {
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/auth/oauth/apple/callback"))
+        .respond_with(
+            ResponseTemplate::new(200)
+                .set_body_json(json!({"api_key": "uarp_form", "email": "a@b.c"})),
+        )
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let answer = client
+        .auth()
+        .complete_o_auth_login_form_post(
+            &uarp_sdk::models::CompleteOAuthLoginFormPostProvider::Apple,
+            &uarp_sdk::models::CompleteOAuthLoginFormPostRequest {
+                code: Some("c 1+2".into()),
+                state: Some("s/ы&=~*".into()),
+                user: Some(r#"{"name":"А Б","email":"a@b.c"}"#.into()),
+                ..Default::default()
+            },
+        )
+        .await
+        .expect("the form post succeeds");
+    assert_eq!(answer.email, "a@b.c");
+
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1);
+    let sent = &requests[0];
+    assert_eq!(
+        header_value(sent, "content-type"),
+        Some("application/x-www-form-urlencoded"),
+        "exactly this Content-Type, and never JSON"
+    );
+    assert_eq!(
+        sent.headers.get_all("content-type").iter().count(),
+        1,
+        "one Content-Type"
+    );
+    //  Schema order, the absent `id_token` and `error` left out, space as
+    //  `+`, `~` encoded, upper-case hex.
+    assert_eq!(std::str::from_utf8(&sent.body).unwrap(), FORM_BODY);
+}
+
+// ------------------------------------------- generated POST event streams
+
+#[tokio::test]
+async fn a_generated_completion_is_a_json_post_sent_once() {
+    // The completion answers JSON, or an event stream when the body asks for
+    // one. It is typed by its JSON (generator/src/parse.ts), as in 0.7.0: the
+    // streamed mode is `stream_post`, never a replayed GET stream.
+    let server = MockServer::start().await;
+    Mock::given(method("POST"))
+        .and(path("/api/v1/llm/chat/completions"))
+        .respond_with(ResponseTemplate::new(200).set_body_json(json!({
+            "id": "c1",
+            "object": "chat.completion",
+            "created": 1,
+            "model": "contract/model",
+            "choices": [{"index": 0, "message": {"role": "assistant", "content": "hello"}, "finish_reason": "stop"}]
+        })))
+        .mount(&server)
+        .await;
+
+    let client = retrying_client(&server);
+    let body = uarp_sdk::models::LLMChatCompletionRequest {
+        model: "contract/model".into(),
+        ..Default::default()
+    };
+    let params = uarp_sdk::api::LLMChatCompletionParams {
+        x_uarp_source: Some("fleet".into()),
+    };
+    let completion = client
+        .providers()
+        .llm_chat_completion(&body, &params)
+        .await
+        .expect("a JSON completion");
+    let text = serde_json::to_value(&completion).expect("re-encodes");
+    assert_eq!(text["choices"][0]["message"]["content"], "hello");
+
+    let requests = server.received_requests().await.expect("requests recorded");
+    assert_eq!(requests.len(), 1, "one POST");
+    let sent = &requests[0];
+    assert_eq!(sent.method, wiremock::http::Method::POST);
+    assert_eq!(header_value(sent, "accept"), Some("application/json"));
+    assert_eq!(header_value(sent, "content-type"), Some("application/json"));
+    assert_eq!(header_value(sent, "x-uarp-source"), Some("fleet"));
+    assert!(header_value(sent, "idempotency-key").is_some());
+    let received: serde_json::Value = serde_json::from_slice(&sent.body).expect("JSON body");
+    assert_eq!(received, json!({"model": "contract/model"}));
+}

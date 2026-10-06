@@ -83,12 +83,31 @@ public struct CompaniesAPI: Sendable {
     /// `GET /api/v1/companies/{companyId}/activity`
     ///
     /// Required scopes: `agents:read`.
-    public func getCompanyActivity(companyId: String, options: RequestOptions = .init()) async throws -> GetCompanyActivityResponse {
+    public func getCompanyActivity(companyId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> GetCompanyActivityResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/companies/\(encodePathSegment(companyId))/activity",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `getCompanyActivity`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func getCompanyActivityAll(companyId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<CompanyActivityEntry, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.getCompanyActivity(companyId: companyId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.entries ?? [] },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Get company budget allocation

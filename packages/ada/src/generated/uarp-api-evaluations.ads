@@ -3,12 +3,28 @@
 --  Agent evaluation datasets and runs
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
+with UARP.Types;
 package UARP.API.Evaluations is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `listEvalRuns`.
+   type List_Eval_Runs_Params is record
+      --  Page size, counted back from the newest run (the first page is the newest runs); oldest
+      --  first within a page. ABSENT means the newest 1000 runs, with no paging fields (the window
+      --  size this list has always had; before 2026-10-02 some answered their OLDEST rows). Values
+      --  outside 1..200 are clamped, not refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_List_Eval_Runs_Params : constant List_Eval_Runs_Params := (others => <>);
 
    --  Create custom webhook scorer
    --
@@ -26,7 +42,7 @@ package UARP.API.Evaluations is
    function Create_Agent_Scorer
      (Self : Client_Type;
       Agent_Id : String;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Create_Agent_Scorer_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Agent_Scorer;
 
@@ -148,8 +164,19 @@ package UARP.API.Evaluations is
    function List_Eval_Runs
      (Self : Client_Type;
       Agent_Id : String;
+      Params : List_Eval_Runs_Params := No_List_Eval_Runs_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Eval_Runs_Response;
+
+   --  Collect every item `listEvalRuns` returns, following the `cursor` cursor. Stops early when
+   --  Max_Items is reached (0 means no limit).
+   function List_Eval_Runs_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : List_Eval_Runs_Params := No_List_Eval_Runs_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Eval_Run_Vectors.Vector;
 
    --  List an agent's evaluation experiments
    --

@@ -52,6 +52,32 @@ public class ACPApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Save ACP session state
+     *
+     * The same handler as `PUT` on this path (router.ts sends both methods to
+     * `handleAcpSessionRoute`), and the method the ACP bridge itself writes with. WRITE SEMANTICS:
+     * replaces — the body becomes the whole stored state, validated exactly as the `PUT` validates
+     * it. The first write claims the session for the caller; a later write from another identity
+     * is 403. Returns `{saved, sessionId}`. Requires the `sessions` write permission and the
+     * `sessions:write` scope.
+     *
+     * `POST /api/v1/acp/session/{sessionId}`
+     *
+     * Required scopes: `sessions:write`.
+     */
+    public suspend fun saveACPSession(sessionId: String, body: SaveACPSessionRequest, options: RequestOptions = RequestOptions()): SaveACPSessionResponse {
+        return client.request<SaveACPSessionResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/acp/session/${encodePathSegment(sessionId)}",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Send message / update ACP session
      *
      * WRITE SEMANTICS: replaces. The body becomes the whole stored ACP session state; POST on the
@@ -68,7 +94,7 @@ public class ACPApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `sessions:write`.
      */
-    public suspend fun updateACPSession(sessionId: String, body: JsonObject, options: RequestOptions = RequestOptions()): UpdateACPSessionResponse {
+    public suspend fun updateACPSession(sessionId: String, body: UpdateACPSessionRequest, options: RequestOptions = RequestOptions()): UpdateACPSessionResponse {
         return client.request<UpdateACPSessionResponse>(
             RequestSpec(
                 method = "PUT",

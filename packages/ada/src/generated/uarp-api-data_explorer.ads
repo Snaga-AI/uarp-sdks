@@ -135,6 +135,10 @@ package UARP.API.Data_Explorer is
    --  version check and no prior value is kept. Writes an `admin.data_explorer.update` audit
    --  entry. Requires the `admin` scope and super-admin identity.
    --
+   --  WRITE SEMANTICS: replaces. `value` overwrites the whole stored row at `namespace`/`key`;
+   --  nothing from the previous value is merged, so a field missing from `value` is gone after the
+   --  write.
+   --
    --  PUT /api/v1/admin/data-explorer/value
    --
    --  Required scopes: admin.

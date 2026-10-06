@@ -18,6 +18,7 @@ import ai.snaga.uarp.models.*
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.JsonElement
 import kotlinx.serialization.json.JsonObject
+import kotlinx.coroutines.flow.Flow
 
 /**
  * Knowledge base management
@@ -174,15 +175,31 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      *
      * Required scopes: `memory:read`.
      */
-    public suspend fun listKbDocuments(kbId: String, options: RequestOptions = RequestOptions()): ListKbDocumentsResponse {
+    public suspend fun listKbDocuments(kbId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): ListKbDocumentsResponse {
+        val query = buildList {
+            if (limit != null) add("limit" to limit.toString())
+            if (cursor != null) add("cursor" to cursor)
+        }
         return client.request<ListKbDocumentsResponse>(
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/knowledge-bases/${encodePathSegment(kbId)}/documents",
+                query = query,
                 options = options,
             )
         )
     }
+
+    /**
+     * Stream every item returned by `listKbDocuments`, following the `cursor` cursor until the
+     * server reports no further pages.
+     */
+    public fun listKbDocumentsAll(kbId: String, limit: Long? = null, cursor: String? = null, options: RequestOptions = RequestOptions()): Flow<KnowledgeBaseDocument> = autoPaginate(
+        fetch = { pageCursor -> listKbDocuments(kbId = kbId, limit = limit, cursor = pageCursor, options = options) },
+        items = { it.documents ?: emptyList() },
+        cursor = { it.cursor },
+        hasMore = { it.hasMore },
+    )
 
     /**
      * List knowledge bases
@@ -212,8 +229,13 @@ public class KnowledgeApi internal constructor(private val client: UarpClient) {
      * Re-embed every chunk with the current model
      *
      * Recovers a knowledge base that was indexed without embeddings (keyword-only) and clears
-     * embedding drift after a model change. Requires an embeddings backend: without one the answer
-     * is 503 and nothing is written.
+     * embedding drift after a model change. Incremental: chunks that already carry a vector from
+     * the current model are skipped (`already_current`), and only the rest are embedded, inside
+     * the embedding request's deadline. What the deadline cuts off is stored as far as it got and
+     * counted as `pending`; call again until `reindexed` is true — each call continues where the
+     * last one stopped. Requires an embeddings backend: without one the answer is 503 and nothing
+     * is written; 503 `kb_embedding_failed` when chunks needed a vector and the provider returned
+     * none.
      *
      * `POST /api/v1/knowledge-bases/{kbId}/reindex`
      *

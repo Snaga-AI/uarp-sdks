@@ -417,7 +417,7 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents`
     ///
     /// Required scopes: `agents:read`.
-    public func list(workspaceId: String? = nil, limit: Int? = nil, cursor: String? = nil, includeOffline: Bool? = nil, options: RequestOptions = .init()) async throws -> ListAgentsResponse {
+    public func list(workspaceId: String? = nil, limit: Int? = nil, cursor: String? = nil, includeOffline: Bool? = nil, includeChildren: Bool? = nil, options: RequestOptions = .init()) async throws -> ListAgentsResponse {
         var query: [URLQueryItem] = []
         if let workspaceId {
             query.append(URLQueryItem(name: "workspace_id", value: workspaceId))
@@ -431,6 +431,9 @@ public struct AgentsAPI: Sendable {
         if let includeOffline {
             query.append(URLQueryItem(name: "include_offline", value: String(includeOffline)))
         }
+        if let includeChildren {
+            query.append(URLQueryItem(name: "include_children", value: String(includeChildren)))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents",
@@ -441,9 +444,9 @@ public struct AgentsAPI: Sendable {
 
     /// Stream every item returned by `listAgents`, following the `cursor` cursor until the server
     /// reports no further pages.
-    public func listAll(workspaceId: String? = nil, limit: Int? = nil, cursor: String? = nil, includeOffline: Bool? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Agent, Error> {
+    public func listAll(workspaceId: String? = nil, limit: Int? = nil, cursor: String? = nil, includeOffline: Bool? = nil, includeChildren: Bool? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<Agent, Error> {
         autoPaginate(
-            fetch: { cursor in try await self.list(workspaceId: workspaceId, limit: limit, cursor: cursor, includeOffline: includeOffline, options: options) },
+            fetch: { cursor in try await self.list(workspaceId: workspaceId, limit: limit, cursor: cursor, includeOffline: includeOffline, includeChildren: includeChildren, options: options) },
             items: { $0.items },
             cursor: { $0.cursor },
             hasMore: { $0.hasMore }
@@ -457,12 +460,31 @@ public struct AgentsAPI: Sendable {
     /// `GET /api/v1/agents/{agentId}/bookmarks`
     ///
     /// Required scopes: `agents:read`.
-    public func listAgentBookmarks(agentId: String, options: RequestOptions = .init()) async throws -> ListAgentBookmarksResponse {
+    public func listAgentBookmarks(agentId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) async throws -> ListAgentBookmarksResponse {
+        var query: [URLQueryItem] = []
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        if let cursor {
+            query.append(URLQueryItem(name: "cursor", value: cursor))
+        }
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/bookmarks",
+            query: query,
             options: options
         ))
+    }
+
+    /// Stream every item returned by `listAgentBookmarks`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    public func listAgentBookmarksAll(agentId: String, limit: Int? = nil, cursor: String? = nil, options: RequestOptions = .init()) -> AsyncThrowingStream<AgentBookmark, Error> {
+        autoPaginate(
+            fetch: { cursor in try await self.listAgentBookmarks(agentId: agentId, limit: limit, cursor: cursor, options: options) },
+            items: { $0.items },
+            cursor: { $0.cursor },
+            hasMore: { $0.hasMore }
+        )
     }
 
     /// Messages between agents
@@ -541,12 +563,18 @@ public struct AgentsAPI: Sendable {
     /// `public_config` merges one level (agents.ts). `metadata` merges one level, `metadata.ui` one
     /// more, and `metadata.ui.avatar` one more (agent-genome.ts mergeAgentMetadata) — so a client
     /// may send `{metadata: {ui: {avatar: {hue: 40}}}}` without erasing `protocol`, `variant`,
-    /// `drop_genome` or `drop_genome_source`. Any other nested object is replaced whole.
+    /// `drop_genome` or `drop_genome_source`. `resource_limits`, `memory`, `core_memory`,
+    /// `schedule`, `guardrails`, `image_generation`, `video_generation`, `command_relationships`
+    /// and `access_control` also merge one level; `mcp`, `policies`, `thinking`, `effort_policy`,
+    /// `a2a`, `risk_classification` and `autonomy` are replaced whole, and every array replaces the
+    /// stored list. The body is `AgentUpdate`, the schema the handler validates with
+    /// (`UpdateAgentSchema`): a declared field of the wrong type or outside its enum is `422`, an
+    /// unknown field is dropped.
     ///
     /// `PATCH /api/v1/agents/{agentId}`
     ///
     /// Required scopes: `agents:write`.
-    public func patch(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> Agent {
+    public func patch(agentId: String, body: AgentUpdate, options: RequestOptions = .init()) async throws -> Agent {
         return try await client.send(RequestSpec(
             method: "PATCH",
             path: "/api/v1/agents/\(encodePathSegment(agentId))",
@@ -623,15 +651,23 @@ public struct AgentsAPI: Sendable {
 
     /// Set agent capabilities
     ///
-    /// Stores the agent's capability manifest, replacing any previous one; `agent_id` is taken from
-    /// the path and an `agent_id` in the body is ignored. Only `capabilities`, `tools` (up to 200)
-    /// and `permissions` are read from the body — anything else is stripped. Returns `{status,
-    /// agent_id}` rather than the stored manifest; read it back with the `GET` on this path.
+    /// Stores the agent's capability manifest, replacing any previous one. The body is the manifest
+    /// `GET` on this path serves: `skills` (required, up to 100; each needs `id` and `name`),
+    /// `constraints` (optional — when omitted the agent's own limits are used, as in the manifest
+    /// `GET` generates), `tools` and `kb_ids` (optional, default empty). `agent_id` is taken from
+    /// the path and `updated_at` is stamped by the server; anything else in the body is stripped.
+    /// `404` when the agent does not exist. Returns `{status, agent_id}` rather than the stored
+    /// manifest; read it back with the `GET` on this path.
+    ///
+    /// WRITE SEMANTICS: replaces — an omitted `tools` or `kb_ids` is stored empty, not kept from
+    /// the previous manifest. Until 2026-10-02 this operation read
+    /// `capabilities`/`tools`/`permissions` and stripped `skills`, which the store requires, so
+    /// every call was refused `422` and nothing was stored.
     ///
     /// `PUT /api/v1/agents/{agentId}/capabilities`
     ///
     /// Required scopes: `agents:write`.
-    public func setAgentCapabilities(agentId: String, body: JSONObject, options: RequestOptions = .init()) async throws -> SetAgentCapabilitiesResponse {
+    public func setAgentCapabilities(agentId: String, body: SetAgentCapabilitiesRequest, options: RequestOptions = .init()) async throws -> SetAgentCapabilitiesResponse {
         return try await client.send(RequestSpec(
             method: "PUT",
             path: "/api/v1/agents/\(encodePathSegment(agentId))/capabilities",
@@ -648,6 +684,11 @@ public struct AgentsAPI: Sendable {
     /// refused and nothing is stored. The split is what the runtime draws against when it resolves
     /// which version a new run executes, using a cryptographically-secure weighted draw. The agent
     /// record itself is untouched.
+    ///
+    /// WRITE SEMANTICS: replaces. The stored split is rebuilt from `entries`; a version the body
+    /// omits is dropped from the split and nothing from the previous split is kept. The weight-sum
+    /// check throws a plain error rather than a validation error, so from the code a bad sum
+    /// answers 500, not 4xx, with nothing stored (not measured on the wire).
     ///
     /// `PUT /api/v1/agents/{agentId}/traffic`
     ///
@@ -741,6 +782,11 @@ public struct AgentsAPI: Sendable {
     /// update lands first, which is what stops an ordinary agent save clobbering the compliance
     /// trail — and it is audit-logged. The response is the whole sanitised agent, not just the
     /// classification.
+    ///
+    /// WRITE SEMANTICS: replaces. `risk_classification` is rebuilt whole from this body: an omitted
+    /// `annex_iii_category` is cleared and an omitted `assessed_at` becomes now; `level`,
+    /// `justification`, `assessor` and `review_due_at` are required. The rest of the agent record
+    /// is kept, under a compare-and-set.
     ///
     /// `PATCH /api/v1/agents/{agentId}/risk-classification`
     ///

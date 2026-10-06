@@ -6,12 +6,29 @@
 
 use reqwest::Method;
 use serde::{Deserialize, Serialize};
+use futures_core::Stream;
 
 use crate::client::{Client, Request, NO_BODY, NO_QUERY};
 use crate::error::Result;
 use crate::generated::models;
 use crate::multipart::{field_text, FilePart};
+use crate::pagination::CursorGuard;
 use crate::util::encode_path;
+
+/// Query and header parameters for `getAgentViolations`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentViolationsParams {
+    /// Page size, counted back from the newest violation; oldest first within a page. ABSENT means
+    /// the newest 100 violations, with no paging fields (the window size this list has always had;
+    /// before 2026-10-02 some answered their OLDEST rows). Values outside 1..200 are clamped, not
+    /// refused.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+    /// The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+    /// list did not issue is a 400 `INVALID_CURSOR`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cursor: Option<String>,
+}
 
 /// Query and header parameters for `getGovernanceLedger`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -512,17 +529,40 @@ impl GovernanceApi {
     /// distinguishes an unknown agent from an unviolating one.
     ///
     /// `GET /api/v1/governance/violations/{agentId}`
-    pub async fn get_agent_violations(&self, agent_id: &str) -> Result<models::GetAgentViolationsResponse> {
+    pub async fn get_agent_violations(&self, agent_id: &str, params: &GetAgentViolationsParams) -> Result<models::GetAgentViolationsResponse> {
         self.client
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/governance/violations/{}", encode_path(agent_id)),
-                query: NO_QUERY,
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
             })
             .await
+    }
+
+    /// Stream every item returned by `getAgentViolations`, following the `cursor` cursor until the
+    /// server reports no further pages.
+    pub fn get_agent_violations_all<'a>(&'a self, agent_id: &'a str, params: &'a GetAgentViolationsParams) -> impl Stream<Item = Result<models::ConstitutionViolation>> + 'a {
+        async_stream::try_stream! {
+            let mut guard = CursorGuard::new();
+            let mut cursor = params.cursor.clone();
+            loop {
+                let mut page_params = params.clone();
+                page_params.cursor = cursor.clone();
+                let page = self.get_agent_violations(agent_id, &page_params).await?;
+                let items = page.violations.unwrap_or_default();
+                let was_empty = items.is_empty();
+                for item in items {
+                    yield item;
+                }
+                match guard.advance(page.cursor, page.has_more, was_empty) {
+                    Some(next) => cursor = Some(next),
+                    None => break,
+                }
+            }
+        }
     }
 
     /// Get ambassador
@@ -1058,6 +1098,11 @@ impl GovernanceApi {
     /// amendment, appended to the immutable ledger, and the enforcement cache is invalidated at
     /// once.
     ///
+    /// WRITE SEMANTICS: mixed. The mutable rules are replaced by `rules`: a stored mutable rule
+    /// whose id the body omits is removed and recorded as a remove amendment. Immutable rules are
+    /// always kept, even when omitted, and an `immutable` flag on a submitted rule is stripped.
+    /// `version` is bumped; `founder_id`, `created_at` and earlier amendments are kept.
+    ///
     /// `PUT /api/v1/governance/constitution`
     pub async fn replace_constitution(&self, body: &models::ReplaceConstitutionRequest) -> Result<models::ConstitutionDocument> {
         self.client
@@ -1099,8 +1144,12 @@ impl GovernanceApi {
     /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; only a FIRST write
     /// falls back to the documented defaults (budget 1.0, spawn depth 3, empty lists). A field that
     /// IS present but of the wrong type falls to the safe default rather than to the stored value —
-    /// on a permissions surface a malformed write must fail closed, not become a silent no-op.
-    /// `created_at` is server-owned and ignored from the body.
+    /// on a permissions surface a malformed write must fail closed, not become a silent no-op. The
+    /// exception is `max_budget_per_run_usd`: a present value that is not a finite non-negative
+    /// number or null is 422 and nothing is written. `created_at` is server-owned and ignored from
+    /// the body. A set that a `revoke_permissions` penalty (constitutional rule or arbiter ruling)
+    /// wrote carries `sanction`; while it is present the agent's runs are refused and no agent tool
+    /// can change the set. Every merge keeps it; only a body with `"sanction": null` lifts it.
     ///
     /// `PUT /api/v1/governance/permissions/{agentId}`
     pub async fn set_agent_permissions(&self, agent_id: &str, body: &models::PermissionSetUpdate) -> Result<models::SetAgentPermissionsResponse> {
@@ -1126,7 +1175,7 @@ impl GovernanceApi {
     /// true}`.
     ///
     /// `PUT /api/v1/governance/arbiter/registry`
-    pub async fn set_arbiter_registry(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetArbiterRegistryResponse> {
+    pub async fn set_arbiter_registry(&self, body: &models::SetArbiterRegistryRequest) -> Result<models::SetArbiterRegistryResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1142,9 +1191,12 @@ impl GovernanceApi {
     /// Set root agent
     ///
     /// Designates the emergency root agent; admin or founder only (403). `agent_id` must be a
-    /// non-empty string (422) — the value is stored verbatim and nothing else validates it, so junk
+    /// non-empty string (422) — the value is stored trimmed and nothing else validates it, so junk
     /// here disables the emergency root path until the next valid write; the agent's existence is
     /// not checked. Writing the same id again leaves the same state.
+    ///
+    /// WRITE SEMANTICS: replaces. The tenant's single `root_agent_id` value is overwritten with
+    /// `agent_id`, trimmed of surrounding whitespace. No other state is written.
     ///
     /// `PUT /api/v1/governance/emergency/root-agent`
     pub async fn set_root_agent(&self, body: &models::SetRootAgentRequest) -> Result<models::SetRootAgentResponse> {
@@ -1167,7 +1219,7 @@ impl GovernanceApi {
     /// partial record. `created_at` is server-stamped, never taken from the caller.
     ///
     /// `PUT /api/v1/governance/emergency/root-attestation`
-    pub async fn set_root_attestation(&self, body: &serde_json::Map<String, serde_json::Value>) -> Result<models::SetRootAttestationResponse> {
+    pub async fn set_root_attestation(&self, body: &models::SetRootAttestationRequest) -> Result<models::SetRootAttestationResponse> {
         self.client
             .request_json(Request {
                 method: Method::PUT,
@@ -1233,6 +1285,10 @@ impl GovernanceApi {
     /// along into the record and are deliberately not stripped, since they carry the authorisation
     /// for the move.
     ///
+    /// WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored design
+    /// request and every other field is kept. `proposal_id` and `spawned_agent_id` are written only
+    /// when non-empty, so when omitted they keep their stored values and cannot be cleared here.
+    ///
     /// `PUT /api/v1/governance/builder/requests/{requestId}/status`
     pub async fn update_builder_request_status(&self, request_id: &str, body: &models::UpdateBuilderRequestStatusRequest) -> Result<models::DesignRequest> {
         self.client
@@ -1255,6 +1311,10 @@ impl GovernanceApi {
     /// verbatim. There is no transition check between them. `proposal_id` and
     /// `constitution_check_passed` are carried through to the record as the update's authorisation
     /// proof rather than stripped.
+    ///
+    /// WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored goal and
+    /// every other field is kept. `proposal_id` is written only when non-empty and
+    /// `constitution_check_passed` only when present; omitted, both keep their stored values.
     ///
     /// `PUT /api/v1/governance/goals/{goalId}/status`
     pub async fn update_goal_status(&self, goal_id: &str, body: &models::UpdateGoalStatusRequest) -> Result<models::Goal> {
@@ -1280,6 +1340,11 @@ impl GovernanceApi {
     /// - `approved` → `applied`
     ///
     /// Any other transition returns 400. Requires admin/founder role.
+    ///
+    /// WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored proposal and
+    /// every other field is kept. `sandbox_success_rate` is written when present and
+    /// `vote_proposal_id` when non-empty; omitted, both keep their stored values. These extra
+    /// fields are not schema-validated. A missing proposal answers 404.
     ///
     /// `PUT /api/v1/governance/improvement/{agentId}/{version}/status`
     pub async fn update_improvement_status(&self, agent_id: &str, version: &str, body: &models::UpdateImprovementStatusRequest) -> Result<models::ImprovementProposal> {

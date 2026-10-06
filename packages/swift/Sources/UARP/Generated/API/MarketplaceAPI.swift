@@ -16,8 +16,6 @@ public struct MarketplaceAPI: Sendable {
     /// not name is refused 404 rather than answered with the listing.
     ///
     /// `GET /api/v1/marketplace/listings/{listingId}`
-    ///
-    /// Required scopes: `marketplace:read`.
     public func getListing(listingId: String, options: RequestOptions = .init()) async throws -> MarketplaceListing {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -69,8 +67,6 @@ public struct MarketplaceAPI: Sendable {
     /// are taken, and the answer is the same for every caller.
     ///
     /// `GET /api/v1/marketplace/categories`
-    ///
-    /// Required scopes: `marketplace:read`.
     public func getMarketplaceCategories(options: RequestOptions = .init()) async throws -> GetMarketplaceCategoriesResponse {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -87,8 +83,6 @@ public struct MarketplaceAPI: Sendable {
     /// the output and metrics, plus `revenue_error` when the revenue-share charge failed.
     ///
     /// `GET /api/v1/marketplace/invocations/{invocationId}`
-    ///
-    /// Required scopes: `marketplace:read`.
     public func getMarketplaceInvocation(invocationId: String, options: RequestOptions = .init()) async throws -> MarketplaceInvocation {
         return try await client.send(RequestSpec(
             method: "GET",
@@ -209,8 +203,6 @@ public struct MarketplaceAPI: Sendable {
     /// of the index.
     ///
     /// `GET /api/v1/marketplace/search`
-    ///
-    /// Required scopes: `marketplace:read`.
     public func search(q: String? = nil, category: MarketplaceListingCategory? = nil, sort: SearchMarketplaceSort? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> SearchMarketplaceResponse {
         var query: [URLQueryItem] = []
         if let q {

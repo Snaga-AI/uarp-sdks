@@ -83,7 +83,7 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      *
      * Required scopes: `runs:create`.
      */
-    public suspend fun run(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): Run {
+    public suspend fun run(agentId: String, body: RunPlaygroundRequest, options: RequestOptions = RequestOptions()): Run {
         return client.request<Run>(
             RequestSpec(
                 method = "POST",
@@ -105,11 +105,15 @@ public class PlaygroundApi internal constructor(private val client: UarpClient) 
      * editing the agent itself, because the canvas is the agent's composition. The canvas is
      * stored alongside the agent record and does not itself change how the agent runs.
      *
+     * WRITE SEMANTICS: replaces. The stored canvas is rebuilt from this body: `nodes` and `edges`
+     * are required and stored as given, an omitted `metadata` becomes an empty object, and nothing
+     * from the previous canvas is kept. Unknown top-level fields are stripped.
+     *
      * `PUT /api/v1/playground/agents/{agentId}`
      *
      * Required scopes: `agents:write`.
      */
-    public suspend fun savePlaygroundCanvas(agentId: String, body: JsonObject, options: RequestOptions = RequestOptions()): PlaygroundAgentState {
+    public suspend fun savePlaygroundCanvas(agentId: String, body: SavePlaygroundCanvasRequest, options: RequestOptions = RequestOptions()): PlaygroundAgentState {
         return client.request<PlaygroundAgentState>(
             RequestSpec(
                 method = "PUT",

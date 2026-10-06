@@ -190,6 +190,20 @@ package body UARP.API.Bridge is
       end;
    end List_Bridge_Agents;
 
+   function List_Deleted_Bridge_Machines
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Deleted_Bridge_Machines_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/bridge/deleted-machines",
+             Options => Options));
+   end List_Deleted_Bridge_Machines;
+
    function Push_Bridge_Task_Events
      (Self : Client_Type;
       Task_Id : String;
@@ -208,6 +222,20 @@ package body UARP.API.Bridge is
              Idempotent => True,
              Options => Options));
    end Push_Bridge_Task_Events;
+
+   procedure Reconnect_Deleted_Bridge_Machine
+     (Self : Client_Type;
+      Machine_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/bridge/deleted-machines/" & UARP.Types.Encode_Path_Segment (Machine_Id),
+          Idempotent => True,
+          Options => Options);
+   end Reconnect_Deleted_Bridge_Machine;
 
    function Update_Bridge_Agent_Capability
      (Self : Client_Type;

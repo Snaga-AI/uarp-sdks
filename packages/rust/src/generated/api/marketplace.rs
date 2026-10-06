@@ -59,8 +59,6 @@ impl MarketplaceApi {
     /// not name is refused 404 rather than answered with the listing.
     ///
     /// `GET /api/v1/marketplace/listings/{listingId}`
-    ///
-    /// Required scopes: `marketplace:read`.
     pub async fn get_listing(&self, listing_id: &str) -> Result<models::MarketplaceListing> {
         self.client
             .request_json(Request {
@@ -126,8 +124,6 @@ impl MarketplaceApi {
     /// are taken, and the answer is the same for every caller.
     ///
     /// `GET /api/v1/marketplace/categories`
-    ///
-    /// Required scopes: `marketplace:read`.
     pub async fn get_marketplace_categories(&self) -> Result<models::GetMarketplaceCategoriesResponse> {
         self.client
             .request_json(Request {
@@ -149,8 +145,6 @@ impl MarketplaceApi {
     /// the output and metrics, plus `revenue_error` when the revenue-share charge failed.
     ///
     /// `GET /api/v1/marketplace/invocations/{invocationId}`
-    ///
-    /// Required scopes: `marketplace:read`.
     pub async fn get_marketplace_invocation(&self, invocation_id: &str) -> Result<models::MarketplaceInvocation> {
         self.client
             .request_json(Request {
@@ -295,8 +289,6 @@ impl MarketplaceApi {
     /// of the index.
     ///
     /// `GET /api/v1/marketplace/search`
-    ///
-    /// Required scopes: `marketplace:read`.
     pub async fn search(&self, params: &SearchMarketplaceParams) -> Result<models::SearchMarketplaceResponse> {
         self.client
             .request_json(Request {

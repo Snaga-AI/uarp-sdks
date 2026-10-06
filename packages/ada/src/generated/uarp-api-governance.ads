@@ -3,13 +3,28 @@
 --  Agent governance: constitution, voting, permissions, emergency protocols
 
 with UARP.Client;
-with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Governance is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `getAgentViolations`.
+   type Get_Agent_Violations_Params is record
+      --  Page size, counted back from the newest violation; oldest first within a page. ABSENT means
+      --  the newest 100 violations, with no paging fields (the window size this list has always had;
+      --  before 2026-10-02 some answered their OLDEST rows). Values outside 1..200 are clamped, not
+      --  refused.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+      --  The `cursor` of the previous page, sent back unchanged. Read only with `limit`. A value this
+      --  list did not issue is a 400 `INVALID_CURSOR`.
+      Has_Cursor : Boolean := False;
+      Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_Get_Agent_Violations_Params : constant Get_Agent_Violations_Params := (others => <>);
 
    --  Query and header parameters for `getGovernanceLedger`.
    type Get_Governance_Ledger_Params is record
@@ -369,8 +384,19 @@ package UARP.API.Governance is
    function Get_Agent_Violations
      (Self : Client_Type;
       Agent_Id : String;
+      Params : Get_Agent_Violations_Params := No_Get_Agent_Violations_Params;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Get_Agent_Violations_Response;
+
+   --  Collect every item `getAgentViolations` returns, following the `cursor` cursor. Stops early
+   --  when Max_Items is reached (0 means no limit).
+   function Get_Agent_Violations_All
+     (Self : Client_Type;
+      Agent_Id : String;
+      Params : Get_Agent_Violations_Params := No_Get_Agent_Violations_Params;
+      Options : Request_Options := UARP.Client.Default_Options;
+      Max_Items : Natural := 0)
+      return UARP.Models.Constitution_Violation_Vectors.Vector;
 
    --  Get ambassador
    --
@@ -721,6 +747,11 @@ package UARP.API.Governance is
    --  amendment, appended to the immutable ledger, and the enforcement cache is invalidated at
    --  once.
    --
+   --  WRITE SEMANTICS: mixed. The mutable rules are replaced by `rules`: a stored mutable rule
+   --  whose id the body omits is removed and recorded as a remove amendment. Immutable rules are
+   --  always kept, even when omitted, and an `immutable` flag on a submitted rule is stripped.
+   --  `version` is bumped; `founder_id`, `created_at` and earlier amendments are kept.
+   --
    --  PUT /api/v1/governance/constitution
    function Replace_Constitution
      (Self : Client_Type;
@@ -749,8 +780,12 @@ package UARP.API.Governance is
    --  WRITE SEMANTICS: merges. A field the body omits keeps its stored value; only a FIRST write
    --  falls back to the documented defaults (budget 1.0, spawn depth 3, empty lists). A field that
    --  IS present but of the wrong type falls to the safe default rather than to the stored value -
-   --  on a permissions surface a malformed write must fail closed, not become a silent no-op.
-   --  `created_at` is server-owned and ignored from the body.
+   --  on a permissions surface a malformed write must fail closed, not become a silent no-op. The
+   --  exception is `max_budget_per_run_usd`: a present value that is not a finite non-negative
+   --  number or null is 422 and nothing is written. `created_at` is server-owned and ignored from
+   --  the body. A set that a `revoke_permissions` penalty (constitutional rule or arbiter ruling)
+   --  wrote carries `sanction`; while it is present the agent's runs are refused and no agent tool
+   --  can change the set. Every merge keeps it; only a body with `"sanction": null` lifts it.
    --
    --  PUT /api/v1/governance/permissions/{agentId}
    function Set_Agent_Permissions
@@ -772,16 +807,19 @@ package UARP.API.Governance is
    --  PUT /api/v1/governance/arbiter/registry
    function Set_Arbiter_Registry
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Arbiter_Registry_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Arbiter_Registry_Response;
 
    --  Set root agent
    --
    --  Designates the emergency root agent; admin or founder only (403). `agent_id` must be a
-   --  non-empty string (422) - the value is stored verbatim and nothing else validates it, so junk
+   --  non-empty string (422) - the value is stored trimmed and nothing else validates it, so junk
    --  here disables the emergency root path until the next valid write; the agent's existence is
    --  not checked. Writing the same id again leaves the same state.
+   --
+   --  WRITE SEMANTICS: replaces. The tenant's single `root_agent_id` value is overwritten with
+   --  `agent_id`, trimmed of surrounding whitespace. No other state is written.
    --
    --  PUT /api/v1/governance/emergency/root-agent
    function Set_Root_Agent
@@ -799,7 +837,7 @@ package UARP.API.Governance is
    --  PUT /api/v1/governance/emergency/root-attestation
    function Set_Root_Attestation
      (Self : Client_Type;
-      Payload : UARP.JSON_Support.JSON_Value;
+      Payload : UARP.Models.Set_Root_Attestation_Request;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Set_Root_Attestation_Response;
 
@@ -842,6 +880,10 @@ package UARP.API.Governance is
    --  along into the record and are deliberately not stripped, since they carry the authorisation
    --  for the move.
    --
+   --  WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored design
+   --  request and every other field is kept. `proposal_id` and `spawned_agent_id` are written only
+   --  when non-empty, so when omitted they keep their stored values and cannot be cleared here.
+   --
    --  PUT /api/v1/governance/builder/requests/{requestId}/status
    function Update_Builder_Request_Status
      (Self : Client_Type;
@@ -858,6 +900,10 @@ package UARP.API.Governance is
    --  verbatim. There is no transition check between them. `proposal_id` and
    --  `constitution_check_passed` are carried through to the record as the update's authorisation
    --  proof rather than stripped.
+   --
+   --  WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored goal and
+   --  every other field is kept. `proposal_id` is written only when non-empty and
+   --  `constitution_check_passed` only when present; omitted, both keep their stored values.
    --
    --  PUT /api/v1/governance/goals/{goalId}/status
    function Update_Goal_Status
@@ -877,6 +923,11 @@ package UARP.API.Governance is
    --  - `approved` ? `applied`
    --
    --  Any other transition returns 400. Requires admin/founder role.
+   --
+   --  WRITE SEMANTICS: merges. `status` and `updated_at` are written onto the stored proposal and
+   --  every other field is kept. `sandbox_success_rate` is written when present and
+   --  `vote_proposal_id` when non-empty; omitted, both keep their stored values. These extra
+   --  fields are not schema-validated. A missing proposal answers 404.
    --
    --  PUT /api/v1/governance/improvement/{agentId}/{version}/status
    function Update_Improvement_Status
