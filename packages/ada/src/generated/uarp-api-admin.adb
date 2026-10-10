@@ -666,6 +666,24 @@ package body UARP.API.Admin is
              Options => Options));
    end Create_Admin_Blog_Post;
 
+   function Create_Admin_Job
+     (Self : Client_Type;
+      Payload : UARP.Models.Create_Admin_Job_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Create_Admin_Job_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/admin/jobs",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Create_Admin_Job;
+
    function Create_Admin_Provider
      (Self : Client_Type;
       Payload : UARP.Models.Create_Admin_Provider_Request;
@@ -734,6 +752,20 @@ package body UARP.API.Admin is
              Options => Options));
    end Delete_Admin_Integration_O_Auth_Provider;
 
+   procedure Delete_Admin_Job
+     (Self : Client_Type;
+      Job_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id),
+          Idempotent => True,
+          Options => Options);
+   end Delete_Admin_Job;
+
    function Delete_Admin_LLM_Default
      (Self : Client_Type;
       Provider_Id : String;
@@ -779,6 +811,36 @@ package body UARP.API.Admin is
           Idempotent => True,
           Options => Options);
    end Delete_Android_Tester;
+
+   procedure Delete_Job_Application
+     (Self : Client_Type;
+      Job_Id : String;
+      Application_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+   is
+   begin
+      UARP.Client.Call_And_Discard
+         (Self,
+          "DELETE",
+          "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id) & "/applications/" & UARP.Types.Encode_Path_Segment (Application_Id),
+          Idempotent => True,
+          Options => Options);
+   end Delete_Job_Application;
+
+   function Download_Job_Application_Cv
+     (Self : Client_Type;
+      Job_Id : String;
+      Application_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Types.Text
+   is
+   begin
+      return UARP.Client.Call_Raw
+         (Self,
+          "GET",
+          "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id) & "/applications/" & UARP.Types.Encode_Path_Segment (Application_Id) & "/cv",
+          Options => Options);
+   end Download_Job_Application_Cv;
 
    function Export_Data_Explorer
      (Self : Client_Type;
@@ -845,6 +907,21 @@ package body UARP.API.Admin is
              "/api/v1/admin/integration-oauth-providers/" & UARP.Types.Encode_Path_Segment (Provider),
              Options => Options));
    end Get_Admin_Integration_O_Auth_Provider;
+
+   function Get_Admin_Job
+     (Self : Client_Type;
+      Job_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Admin_Job_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id),
+             Options => Options));
+   end Get_Admin_Job;
 
    function Get_Admin_LLM_Defaults
      (Self : Client_Type;
@@ -994,6 +1071,20 @@ package body UARP.API.Admin is
       return Collected;
    end Get_Audit_For_Target_All;
 
+   function Get_Careers_Config
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Careers_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/jobs/config",
+             Options => Options));
+   end Get_Careers_Config;
+
    function Get_Conformity_Report
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -1040,6 +1131,22 @@ package body UARP.API.Admin is
              Query => Query,
              Options => Options));
    end Get_Immutable_Audit;
+
+   function Get_Job_Application
+     (Self : Client_Type;
+      Job_Id : String;
+      Application_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Job_Application_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id) & "/applications/" & UARP.Types.Encode_Path_Segment (Application_Id),
+             Options => Options));
+   end Get_Job_Application;
 
    function Get_Maintenance_State
      (Self : Client_Type;
@@ -1210,6 +1317,20 @@ package body UARP.API.Admin is
              Options => Options));
    end List_Admin_Integration_O_Auth_Providers;
 
+   function List_Admin_Jobs
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Admin_Jobs_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/jobs",
+             Options => Options));
+   end List_Admin_Jobs;
+
    function List_Admin_Providers
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -1316,6 +1437,33 @@ package body UARP.API.Admin is
              Options => Options));
    end List_Feedback;
 
+   function List_Job_Applications
+     (Self : Client_Type;
+      Job_Id : String;
+      Params : List_Job_Applications_Params := No_List_Job_Applications_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Job_Applications_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Status then
+         UARP.Types.Add (Query, "status", UARP.Models.Image (Params.Status));
+      end if;
+      if Params.Has_Page then
+         UARP.Types.Add (Query, "page", Params.Page);
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id) & "/applications",
+             Query => Query,
+             Options => Options));
+   end List_Job_Applications;
+
    function List_Tenants
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
@@ -1345,6 +1493,24 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Purge_Admin_Tenant;
+
+   function Put_Careers_Config
+     (Self : Client_Type;
+      Payload : UARP.Models.Put_Careers_Config_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Put_Careers_Config_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PUT",
+             "/api/v1/admin/jobs/config",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Put_Careers_Config;
 
    function Query_Audit_Log
      (Self : Client_Type;
@@ -1535,6 +1701,25 @@ package body UARP.API.Admin is
              Options => Options));
    end Update_Admin_Blog_Post;
 
+   function Update_Admin_Job
+     (Self : Client_Type;
+      Job_Id : String;
+      Payload : UARP.Models.Update_Admin_Job_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Admin_Job_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Admin_Job;
+
    function Update_Admin_Pricing
      (Self : Client_Type;
       Payload : UARP.Models.Update_Admin_Pricing_Request;
@@ -1611,6 +1796,26 @@ package body UARP.API.Admin is
              Idempotent => True,
              Options => Options));
    end Update_Feedback_Report_Status;
+
+   function Update_Job_Application
+     (Self : Client_Type;
+      Job_Id : String;
+      Application_Id : String;
+      Payload : UARP.Models.Update_Job_Application_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Update_Job_Application_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "PATCH",
+             "/api/v1/admin/jobs/" & UARP.Types.Encode_Path_Segment (Job_Id) & "/applications/" & UARP.Types.Encode_Path_Segment (Application_Id),
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Update_Job_Application;
 
    function Update_Tenant_Mef_Config
      (Self : Client_Type;

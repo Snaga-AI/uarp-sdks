@@ -395,12 +395,39 @@ export interface AdminAnalyticsOverviewResponse {
   unique_visitors_30d?: number;
   signups_30d?: number;
   conversion_rate?: number;
+  product_cohorts?: AdminAnalyticsOverviewResponseProductCohorts;
   timeseries?: AnalyticsTimeseriesPoint[];
   top_countries?: AnalyticsTopValue[];
   top_devices?: AnalyticsTopValue[];
   top_browsers?: AnalyticsTopValue[];
   top_referrers?: AnalyticsTopValue[];
   top_utm_sources?: AnalyticsTopValue[];
+}
+
+export interface AdminAnalyticsOverviewResponseProductCohorts {
+  tracking_since: string | null;
+  as_of: string;
+  complete: boolean;
+  signups: number;
+  successful: number;
+  repeat: number;
+  paid: number;
+  retention: AdminAnalyticsOverviewResponseProductCohortsRetention;
+}
+
+export interface AdminAnalyticsOverviewResponseProductCohortsRetention {
+  d1: AdminAnalyticsOverviewResponseProductCohortsRetentionD1;
+  d7: AdminAnalyticsOverviewResponseProductCohortsRetentionD7;
+}
+
+export interface AdminAnalyticsOverviewResponseProductCohortsRetentionD1 {
+  eligible: number;
+  returned: number;
+}
+
+export interface AdminAnalyticsOverviewResponseProductCohortsRetentionD7 {
+  eligible: number;
+  returned: number;
 }
 
 export interface AdminAnalyticsOverviewResponseRange {
@@ -1052,6 +1079,98 @@ export type AdminIntegrationsConfigIntegrationAuthType = 'oauth2' | 'api_key' | 
 
 export const ADMIN_INTEGRATIONS_CONFIG_INTEGRATION_AUTH_TYPE_VALUES = ['oauth2', 'api_key', 'none'] as const;
 
+export interface AdminJob {
+  id: string;
+  /**
+   * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+   */
+  slug: string;
+  /**
+   * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+   */
+  previous_slugs: string[];
+  /**
+   * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+   * the public.
+   */
+  status: JobStatus;
+  /**
+   * The language the texts are written in.
+   */
+  language: VideoOrderLocale;
+  title: string;
+  /**
+   * Plain text for the card, the meta description and the OG text.
+   */
+  summary: string;
+  /**
+   * Markdown.
+   */
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  nice_to_have: string[];
+  benefits: string[];
+  /**
+   * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+   */
+  category: string;
+  department?: string;
+  seniority?: JobSeniority;
+  /**
+   * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+   * internship → INTERN, the rest upper-cased.
+   */
+  employment_type: JobEmploymentType;
+  /**
+   * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+   * Google requires.
+   */
+  workplace_type: JobWorkplaceType;
+  location: JobLocation;
+  /**
+   * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+   */
+  applicant_countries: string[];
+  /**
+   * CEFR; `none` = not required.
+   */
+  english_level?: JobEnglishLevel;
+  /**
+   * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+   */
+  experience_years_min?: number;
+  skills: string[];
+  salary: JobSalary | null;
+  /**
+   * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+   * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+   * is the simplest way to comply.
+   */
+  salary_public: boolean;
+  apply: JobApply;
+  created_at: string;
+  updated_at: string;
+  /**
+   * JSON-LD `datePosted`.
+   */
+  published_at: string | null;
+  /**
+   * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+   * no applications.
+   */
+  closes_at: string | null;
+  /**
+   * When it was actually closed.
+   */
+  closed_at: string | null;
+  applications_count: number;
+  /**
+   * Applications still in status `new`.
+   */
+  new_applications_count: number;
+}
+
 export interface AdminListToolsResponse {
   tools: AdminListToolsResponseTool[];
   count: number;
@@ -1322,7 +1441,7 @@ export interface AdminProviderSummary {
 
 export interface AdminPutLandingConfigRequest {
   public_agent_id?: string | null;
-  texts?: Record<string, Value7>;
+  texts?: Record<string, AdminPutLandingConfigRequestTextsValue>;
   multilang_enabled?: boolean;
   default_locale?: VideoOrderLocale;
   partners_enabled?: boolean;
@@ -1347,6 +1466,11 @@ export interface AdminPutLandingConfigRequestPartnerLogo {
 export type AdminPutLandingConfigRequestPartnerLogoSlug = 'rust' | 'together' | 'ollama' | 'gonka' | 'wasm' | 'docker' | 'deno' | 'digitalocean' | 'github' | 'monogram';
 
 export const ADMIN_PUT_LANDING_CONFIG_REQUEST_PARTNER_LOGO_SLUG_VALUES = ['rust', 'together', 'ollama', 'gonka', 'wasm', 'docker', 'deno', 'digitalocean', 'github', 'monogram'] as const;
+
+export interface AdminPutLandingConfigRequestTextsValue {
+  en?: string;
+  uk?: string;
+}
 
 export interface AdminPutLandingConfigResponse {
   landing: LandingConfigSection;
@@ -2589,6 +2713,19 @@ export interface AgentUpdateFallbackModel {
 export interface AgentUpdateGuardrails {
   input?: AgentUpdateGuardrailsInputItem[];
   output?: AgentUpdateGuardrailsOutputItem[];
+  /**
+   * Guardrails switched on by id — a platform guardrail (`pii_detector`,
+   * `prompt_injection_detector`, `content_policy`, …) or one of the tenant's own from `GET
+   * /guardrails`. Each runs in its own phase like an `input`/`output` ref; an id that names no
+   * guardrail is skipped. Read at run time since 2026-10-09; before that the list was stored and
+   * nothing ran. The switches the settings screens offer all exist since then too:
+   * `toxicity_detector` (threats, urging self-harm, calls to kill a group of people — input and
+   * answer, block), `jailbreak_detector` (safety-bypass framings — input, block),
+   * `content_filter` (sexual content with minors, explicit porn — input and answer, block),
+   * `sqli_detector` (injection signatures in tool-call arguments, checked before the call —
+   * block), `xss_detector` (active HTML in the answer outside code — redacted, not blocked). All
+   * are phrase-level pattern checks, not classifiers.
+   */
   built_in?: string[];
 }
 
@@ -2854,12 +2991,13 @@ export interface AgentVersion {
    * kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
    * (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
    * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
-   * provider healed to the platform default`, `Core memory enabled`, `Tool trust override
-   * updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
-   * to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
-   * analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
-   * ratings or feedback — words, not a number). A reason code beside the prose is the owner's
-   * decision (DEC 11).
+   * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
+   * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
+   * provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
+   * version rolled back to), `Self-improvement: N changes based on N analysis` (the
+   * self-improvement loop: the first N is a count, the second is one of errors, ratings or
+   * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
+   * 11).
    */
   changelog?: string | null;
   created_at: string;
@@ -3066,8 +3204,9 @@ export const ANTHROPIC_MESSAGE_CONTENT_ITEM_TYPE_VALUES = ['text', 'tool_use'] a
 export interface AnthropicMessagesRequest {
   /**
    * A `claude-*` id is served by the admin-configured compat model
-   * (`config_anthropic_compat.model`), or the platform default model when that is unset. Any
-   * other id is passed to the LLM proxy as a catalogue model id (`<provider>/<model>`).
+   * (`config_anthropic_compat.model`) while that model is served, or the platform default model
+   * when it is unset or no longer served (since 2026-10-09). Any other id is passed to the LLM
+   * proxy as a catalogue model id (`<provider>/<model>`).
    */
   model: string;
   max_tokens: number;
@@ -3237,12 +3376,33 @@ export interface AppleNativeAuthRequest {
    * Device name (e.g. `iPhone 15 Pro`) surfaced on the minted api_key for `/me/sessions`.
    */
   device_label?: string;
+  /**
+   * Apple's one-time `authorizationCode` from the same sign-in. Optional; send it whenever Apple
+   * provides it. The server exchanges it at Apple for a refresh token, kept encrypted, so that
+   * deleting the account (`DELETE /me`) or unlinking Apple revokes the person's Apple tokens, as
+   * App Store Review Guideline 5.1.1(v) requires. A code Apple refuses never fails the sign-in.
+   */
+  authorization_code?: string;
 }
 
 export interface AppleNativeAuthResponse {
   api_key: string;
   email: string;
 }
+
+export interface ApplicationCv {
+  file_id: string;
+  /**
+   * Sanitised: letters, digits, `.`, `_`, `-`.
+   */
+  filename: string;
+  size_bytes: number;
+  mime_type: ApplicationCvMimeType;
+}
+
+export type ApplicationCvMimeType = 'application/pdf' | 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' | 'text/markdown' | 'text/plain';
+
+export const APPLICATION_CV_MIME_TYPE_VALUES = ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'text/markdown', 'text/plain'] as const;
 
 export interface ApplyProgramRequest {
   session_id: string;
@@ -3254,6 +3414,49 @@ export interface ApplyProgramResponse {
   applied: boolean;
   program_id: string;
   todos: Todo[];
+}
+
+export interface ApplyToJobRequest {
+  name: string;
+  email: string;
+  phone?: string;
+  /**
+   * Required when the vacancy's `apply.requires_cover_letter` is true (422 names the field).
+   */
+  cover_letter?: string;
+  links?: string[];
+  /**
+   * PDF, .docx, Markdown (.md) or plain text (.txt), at most `cv_max_bytes`. Required when
+   * `apply.requires_cv` is true (400 `cv_invalid` when missing or not one of those by content;
+   * 413 `cv_too_large`).
+   */
+  cv?: BinaryInput;
+  /**
+   * Privacy consent; a truthy string.
+   */
+  consent: string;
+  /**
+   * May we keep the application for other roles; a truthy string. Never pre-tick it.
+   */
+  talent_pool_consent?: string;
+  locale?: string;
+  /**
+   * Where the candidate came from (a UTM source, a referrer).
+   */
+  source?: string;
+  /**
+   * Honeypot. Leave empty; a person never sees it.
+   */
+  website?: string;
+}
+
+export interface ApplyToJobResponse {
+  application: ApplyToJobResponseApplication;
+}
+
+export interface ApplyToJobResponseApplication {
+  id: string;
+  status?: JobApplicationStatus;
 }
 
 export interface ApproveRunResponse {
@@ -3933,6 +4136,42 @@ export interface CanvasWorkflowStep {
   prompt?: string;
 }
 
+export interface CareersConfig {
+  /**
+   * Advisory for the web layer (show or hide the page); the API answers either way.
+   */
+  enabled: boolean;
+  title: string;
+  description: string;
+  /**
+   * JSON-LD `hiringOrganization.name`.
+   */
+  company_name: string;
+  /**
+   * Mailed on every application; empty = the super-admin address.
+   */
+  notify_emails: string[];
+  /**
+   * Days an application is kept after its vacancy closes. The ceiling is the two years CNIL
+   * states for unsuccessful candidates.
+   */
+  retention_days: number;
+}
+
+/**
+ * The distinct values present among OPEN vacancies — the whole set, not this page — so a
+ * filter shows only values that exist.
+ */
+export interface CareersFacets {
+  categories: string[];
+  departments: string[];
+  workplace_types: JobWorkplaceType[];
+  employment_types: JobEmploymentType[];
+  seniorities: JobSeniority[];
+  countries: string[];
+  cities: string[];
+}
+
 export interface CastBallotRequest {
   agent_id: string;
   vote: string;
@@ -4127,6 +4366,11 @@ export interface CompanyUpdate {
   description?: string;
   strategic_goals?: string[];
   config?: JsonObject;
+}
+
+export interface CompleteMcpoAuthRequest {
+  state: string;
+  code: string;
 }
 
 export type CompleteOAuthLoginFormPostProvider = 'apple';
@@ -4574,6 +4818,107 @@ export interface CreateAdminBlogPostResponse {
   post: BlogPost;
 }
 
+export interface CreateAdminJobRequest {
+  title: string;
+  /**
+   * @default ""
+   */
+  summary?: string;
+  /**
+   * @default ""
+   */
+  description?: string;
+  /**
+   * @default []
+   */
+  responsibilities?: string[];
+  /**
+   * @default []
+   */
+  requirements?: string[];
+  /**
+   * @default []
+   */
+  nice_to_have?: string[];
+  /**
+   * @default []
+   */
+  benefits?: string[];
+  category: string;
+  department?: string;
+  seniority?: JobSeniority;
+  employment_type: JobEmploymentType;
+  workplace_type: JobWorkplaceType;
+  /**
+   * @default {}
+   */
+  location?: CreateAdminJobRequestLocation;
+  /**
+   * @default []
+   */
+  applicant_countries?: JsonValue[];
+  english_level?: JobEnglishLevel;
+  experience_years_min?: number;
+  /**
+   * @default []
+   */
+  skills?: string[];
+  /**
+   * @default null
+   */
+  salary?: CreateAdminJobRequestSalary | null;
+  /**
+   * @default false
+   */
+  salary_public?: boolean;
+  /**
+   * @default {"mode":"form","requires_cv":true,"requires_cover_letter":false}
+   */
+  apply?: CreateAdminJobRequestApply;
+  /**
+   * @default "en"
+   */
+  language?: VideoOrderLocale;
+  /**
+   * @default "draft"
+   */
+  status?: JobStatus;
+  /**
+   * @default null
+   */
+  closes_at?: string | null;
+}
+
+export interface CreateAdminJobRequestApply {
+  mode: JobApplyMode;
+  url?: string;
+  email?: string;
+  /**
+   * @default true
+   */
+  requires_cv?: boolean;
+  /**
+   * @default false
+   */
+  requires_cover_letter?: boolean;
+}
+
+export interface CreateAdminJobRequestLocation {
+  city?: string;
+  country?: JsonValue;
+}
+
+export interface CreateAdminJobRequestSalary {
+  min?: number;
+  max?: number;
+  currency: JsonValue;
+  period: JobSalaryPeriod;
+}
+
+export interface CreateAdminJobResponse {
+  job: Job;
+}
+
 export interface CreateAdminProviderRequest {
   id: string;
   name: string;
@@ -4707,7 +5052,7 @@ export interface CreateAPIKeyRequest {
   name: string;
   /**
    * @default
-   * ["agents:read","agents:write","runs:create","runs:read","notifications:read","notifications:write","memory:read","memory:write","files:read","files:write"]
+   * ["agents:read","agents:write","runs:create","runs:read","sessions:read","sessions:write","notifications:read","notifications:write","memory:read","memory:write","files:read","files:write","analytics:read"]
    */
   scopes?: string[];
 }
@@ -5092,11 +5437,13 @@ export interface CreateResponseRequest {
    */
   input: string | JsonObject[];
   /**
-   * Chain to an earlier response in the same conversation.
+   * Chain to an earlier response of this workspace: its turn and its history are carried into
+   * this call. 404 when there is no such response.
    */
   previous_response_id?: string;
   /**
-   * System-prompt override for this call only.
+   * Instructions for this call only, delivered with the turn; the agent's own system prompt
+   * stays.
    */
   instructions?: string;
   /**
@@ -5240,10 +5587,31 @@ export interface CreateSessionShareResponse {
 
 export interface CreateSessionTodoRequest {
   title: string;
+  /**
+   * What the assignee is told to do. The run's input is the title alone when this is absent.
+   */
+  instructions?: string;
+  /**
+   * Alias of `instructions`, read only when `instructions` is absent. This document named the
+   * field `description` while the handler read `instructions`, so a client written from it had
+   * its instructions dropped in silence (measured 2026-10-09: the run received the title only).
+   *
+   * @deprecated
+   */
   description?: string;
-  due_at?: string;
+  due_at?: string | null;
   assign_agent_id?: string;
+  assign_team_id?: string;
   status?: string;
+  recurrence?: CreateSessionTodoRequestRecurrence;
+  require_confirmation?: boolean;
+  order_index?: number;
+  parent_task_id?: string;
+}
+
+export interface CreateSessionTodoRequestRecurrence {
+  cron: string;
+  timezone?: string;
 }
 
 export interface CreateSpecPackageCheckoutSessionResponse {
@@ -5254,6 +5622,7 @@ export interface CreateSpecPackageCheckoutSessionResponse {
 
 export interface CreateTenantRequest {
   name: string;
+  email?: string;
   slug?: string;
   status?: CreateTenantRequestStatus;
   plan?: CustomPlanBasePlan;
@@ -5631,6 +6000,11 @@ export interface DeleteMeResponse {
   tenants: DeleteMeResponseTenant[];
   sessions_revoked: number;
   /**
+   * Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
+   * for sign-ins that sent `authorization_code`.
+   */
+  apple_tokens_revoked?: number;
+  /**
    * What the data sweep actually removed, summed across every membership. Present since
    * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
    * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
@@ -5764,6 +6138,53 @@ export interface DeleteWorkspaceFileResponse {
 export type DeleteWorkspaceFileTrash = 'false';
 
 export const DELETE_WORKSPACE_FILE_TRASH_VALUES = ['false'] as const;
+
+/**
+ * Which deployment-conditional capabilities are on here. `false` means the operations that
+ * depend on it answer 501 on this deployment — each such 501 in this document names its flag.
+ * Computed by the same check the handler's 501 branch runs, on every call.
+ */
+export interface DeploymentFeatures {
+  /**
+   * Governance is enabled (`UARP_GOVERNANCE_ENABLED`).
+   */
+  governance: boolean;
+  /**
+   * Stripe billing is wired.
+   */
+  billing: boolean;
+  /**
+   * A second factor can be enrolled and verified (`UARP_IDENTITY_ENCRYPTION_KEY`). False also
+   * means every step-up-gated action answers 501 where `auth.mfa_enabled` is on.
+   */
+  mfa: boolean;
+  /**
+   * A web-search provider resolves.
+   */
+  web_search: boolean;
+  /**
+   * A speech-to-text provider and default model are configured. A caller that names its own
+   * `model` may still be served when this is false.
+   */
+  speech_to_text: boolean;
+  /**
+   * A text-to-speech provider and default model are configured. A caller that names its own
+   * `model` may still be served when this is false.
+   */
+  text_to_speech: boolean;
+  /**
+   * An embedding provider is wired and a key resolves for the caller.
+   */
+  embeddings: boolean;
+  /**
+   * SPEC artifacts are signed (`spec_registry.signing_mode` is not `off`).
+   */
+  spec_signing: boolean;
+  /**
+   * Published marketplace listings can be invoked. Always false today: no executor runs them.
+   */
+  marketplace_invoke: boolean;
+}
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -6405,9 +6826,9 @@ export interface Error {
  * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
  * no machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -6711,7 +7132,7 @@ export interface FleetLayout {
   /**
    * Agent id → its place on the canvas.
    */
-  positions: Record<string, Value4>;
+  positions: Record<string, FleetLayoutPositionsValue>;
   edges: FleetLayoutEdge[];
   notes?: FleetLayoutNote[];
   drafts?: FleetLayoutDraft[];
@@ -6777,6 +7198,11 @@ export interface FleetLayoutNote {
   frame?: boolean;
 }
 
+export interface FleetLayoutPositionsValue {
+  x: number;
+  y: number;
+}
+
 /**
  * What a client SENDS when saving the canvas. The stored record additionally carries
  * `updated_at`, and the response may carry `dropped` — both are produced by the server, so
@@ -6786,7 +7212,7 @@ export interface FleetLayoutUpdate {
   /**
    * Agent id → its place on the canvas.
    */
-  positions: Record<string, Value3>;
+  positions: Record<string, FleetLayoutUpdatePositionsValue>;
   edges: FleetLayoutUpdateEdge[];
   notes?: FleetLayoutUpdateNote[];
   drafts?: FleetLayoutUpdateDraft[];
@@ -6817,6 +7243,11 @@ export interface FleetLayoutUpdateNote {
   text: string;
   color?: string;
   frame?: boolean;
+}
+
+export interface FleetLayoutUpdatePositionsValue {
+  x: number;
+  y: number;
 }
 
 export interface FounderIdentity {
@@ -6890,6 +7321,10 @@ export interface GetAdminIntegrationOAuthProviderResponse {
    * override is stored.
    */
   scopes?: string[] | null;
+}
+
+export interface GetAdminJobResponse {
+  job: AdminJob;
 }
 
 export interface GetAdminLLMDefaultsResponse {
@@ -7140,8 +7575,13 @@ export interface GetAgentVersionDiffResponse {
   agent_id?: string;
   version_from?: number;
   version_to?: number;
-  diff?: Record<string, Value5>;
+  diff?: Record<string, GetAgentVersionDiffResponseDiffValue>;
   changed_fields?: string[];
+}
+
+export interface GetAgentVersionDiffResponseDiffValue {
+  from?: JsonValue;
+  to?: JsonValue;
 }
 
 export interface GetAgentViolationsResponse {
@@ -7273,9 +7713,44 @@ export interface GetBridgeTaskApprovalResponse {
   approval_response?: JsonObject;
 }
 
+export interface GetCareersConfigResponse {
+  config: CareersConfig;
+}
+
 export interface GetClientConfigResponse {
-  features?: JsonObject;
-  providers?: JsonObject;
+  /**
+   * Model id → the rate the caller pays per million tokens. Empty when the markup cannot be
+   * read.
+   */
+  pricing: Record<string, GetClientConfigResponsePricingValue>;
+  bridge: GetClientConfigResponseBridge;
+  limits: GetClientConfigResponseLimits;
+  dangerous_tool_prefixes: string[];
+  features: DeploymentFeatures;
+}
+
+export interface GetClientConfigResponseBridge {
+  heartbeat_interval_secs?: number;
+  poll_timeout_ms?: number;
+  poll_http_timeout_secs?: number;
+  approval_max_wait_secs?: number;
+  approval_poll_interval_secs?: number;
+}
+
+export interface GetClientConfigResponseLimits {
+  tool_timeout_secs?: number;
+  shell_timeout_secs?: number;
+  http_timeout_secs?: number;
+  max_file_size_bytes?: number;
+  max_http_response_bytes?: number;
+  max_shell_output_bytes?: number;
+  max_shell_execs?: number;
+  wasm_shell_timeout_ms?: number;
+}
+
+export interface GetClientConfigResponsePricingValue {
+  input_per_million: number;
+  output_per_million: number;
 }
 
 export interface GetCompanyActivityResponse {
@@ -7385,6 +7860,10 @@ export interface GetImmutableAuditResponse {
   total: number;
 }
 
+export interface GetJobApplicationResponse {
+  application: JobApplication;
+}
+
 export interface GetLinkPreviewResponse {
   preview: LinkPreview;
 }
@@ -7401,6 +7880,16 @@ export interface GetMarketplaceCategoriesResponse {
 
 export interface GetMarkupConfigResponse {
   markup?: JsonObject;
+}
+
+export interface GetMcpoAuthClientMetadataResponse {
+  client_id: string;
+  client_name?: string;
+  client_uri?: string;
+  redirect_uris: string[];
+  grant_types?: string[];
+  response_types?: string[];
+  token_endpoint_auth_method?: string;
 }
 
 export interface GetMediaUsageResponse {
@@ -7536,6 +8025,26 @@ export interface GetPublicBlogPostResponse {
 
 export interface GetPublicFeaturedAgentResponse {
   agent?: JsonObject | null;
+}
+
+export interface GetPublicJobResponse {
+  job: PublicJob;
+  /**
+   * The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+   * on/off decision need no second call.
+   */
+  careers: GetPublicJobResponseCareers;
+}
+
+/**
+ * The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+ * on/off decision need no second call.
+ */
+export interface GetPublicJobResponseCareers {
+  enabled: boolean;
+  title: string;
+  description: string;
+  company_name: string;
 }
 
 export interface GetPublicStateResponse {
@@ -8475,6 +8984,35 @@ export interface IngestMemoryResponseEntry {
   tags?: string[];
 }
 
+export interface InstallEssentialsOnHeadAgentsResponse {
+  /**
+   * Tenants visited.
+   */
+  scanned: number;
+  /**
+   * Head agents that received the SPEC on this run.
+   */
+  updated: number;
+  already_present: number;
+  no_head_agent: number;
+  /**
+   * Absent when nothing failed.
+   */
+  errors?: InstallEssentialsOnHeadAgentsResponseError[];
+}
+
+export interface InstallEssentialsOnHeadAgentsResponseError {
+  /**
+   * Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+   * removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+   *
+   * @deprecated
+   */
+  tenantId: string;
+  error: string;
+  tenant_id: string;
+}
+
 /**
  * OAuth/API integration record (Slack, GitHub, Linear, etc.).
  */
@@ -8570,8 +9108,12 @@ export interface Invite {
 
 export interface InviteUserRequest {
   email: string;
-  role: string;
+  role: InviteUserRequestRole;
 }
+
+export type InviteUserRequestRole = 'admin' | 'developer' | 'viewer';
+
+export const INVITE_USER_REQUEST_ROLE_VALUES = ['admin', 'developer', 'viewer'] as const;
 
 export interface InviteUserResponse {
   created_at?: string;
@@ -8607,6 +9149,220 @@ export interface IssueArbiterRulingRequest {
 export interface IssueArbiterRulingResponse {
   ok?: boolean;
 }
+
+/**
+ * A vacancy as the admin sees it. The public view (`PublicJob`) is this with a non-public
+ * `salary` set to null and three derived fields added. No field names age, gender or any other
+ * ground the Ukrainian advertising law (art. 24-1) forbids a vacancy to require;
+ * `experience_years_min` and `english_level` are the permitted requirements.
+ */
+export interface Job {
+  id: string;
+  /**
+   * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+   */
+  slug: string;
+  /**
+   * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+   */
+  previous_slugs: string[];
+  /**
+   * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+   * the public.
+   */
+  status: JobStatus;
+  /**
+   * The language the texts are written in.
+   */
+  language: VideoOrderLocale;
+  title: string;
+  /**
+   * Plain text for the card, the meta description and the OG text.
+   */
+  summary: string;
+  /**
+   * Markdown.
+   */
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  nice_to_have: string[];
+  benefits: string[];
+  /**
+   * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+   */
+  category: string;
+  department?: string;
+  seniority?: JobSeniority;
+  /**
+   * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+   * internship → INTERN, the rest upper-cased.
+   */
+  employment_type: JobEmploymentType;
+  /**
+   * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+   * Google requires.
+   */
+  workplace_type: JobWorkplaceType;
+  location: JobLocation;
+  /**
+   * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+   */
+  applicant_countries: string[];
+  /**
+   * CEFR; `none` = not required.
+   */
+  english_level?: JobEnglishLevel;
+  /**
+   * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+   */
+  experience_years_min?: number;
+  skills: string[];
+  salary: JobSalary | null;
+  /**
+   * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+   * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+   * is the simplest way to comply.
+   */
+  salary_public: boolean;
+  apply: JobApply;
+  created_at: string;
+  updated_at: string;
+  /**
+   * JSON-LD `datePosted`.
+   */
+  published_at: string | null;
+  /**
+   * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+   * no applications.
+   */
+  closes_at: string | null;
+  /**
+   * When it was actually closed.
+   */
+  closed_at: string | null;
+}
+
+/**
+ * A candidate's application, as the admin sees it. Personal data: deleted `retention_days`
+ * after the vacancy closes, or on `DELETE`.
+ */
+export interface JobApplication {
+  id: string;
+  job_id: string;
+  status: JobApplicationStatus;
+  name: string;
+  email: string;
+  phone?: string;
+  links: string[];
+  cover_letter?: string;
+  cv: ApplicationCv | null;
+  locale?: string;
+  /**
+   * Where the candidate came from, as the form sent it.
+   */
+  source?: string;
+  /**
+   * When the privacy consent was given.
+   */
+  consent_at: string;
+  /**
+   * Separate, never pre-ticked: the candidate agreed to be kept for other roles.
+   */
+  talent_pool_consent_at: string | null;
+  /**
+   * Set when the vacancy closes; the daily sweep deletes the application after it.
+   */
+  retain_until: string | null;
+  /**
+   * Reviewer's private notes.
+   */
+  notes: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export type JobApplicationStatus = 'new' | 'reviewing' | 'interview' | 'offer' | 'hired' | 'rejected' | 'withdrawn';
+
+export const JOB_APPLICATION_STATUS_VALUES = ['new', 'reviewing', 'interview', 'offer', 'hired', 'rejected', 'withdrawn'] as const;
+
+/**
+ * How a candidate applies. `form`: `POST /api/v1/public/jobs/{slug}/apply`. `external`: send
+ * them to `url`. `email`: tell them to write to `email`. The two requirement flags apply to
+ * the form.
+ */
+export interface JobApply {
+  mode: JobApplyMode;
+  url?: string;
+  email?: string;
+  requires_cv: boolean;
+  requires_cover_letter: boolean;
+}
+
+export type JobApplyMode = 'form' | 'external' | 'email';
+
+export const JOB_APPLY_MODE_VALUES = ['form', 'external', 'email'] as const;
+
+/**
+ * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+ * internship → INTERN, the rest upper-cased.
+ */
+export type JobEmploymentType = 'full_time' | 'part_time' | 'contract' | 'temporary' | 'internship' | 'volunteer' | 'per_diem' | 'other';
+
+export const JOB_EMPLOYMENT_TYPE_VALUES = ['full_time', 'part_time', 'contract', 'temporary', 'internship', 'volunteer', 'per_diem', 'other'] as const;
+
+/**
+ * CEFR; `none` = not required.
+ */
+export type JobEnglishLevel = 'none' | 'a1' | 'a2' | 'b1' | 'b2' | 'c1' | 'c2' | 'native';
+
+export const JOB_ENGLISH_LEVEL_VALUES = ['none', 'a1', 'a2', 'b1', 'b2', 'c1', 'c2', 'native'] as const;
+
+export interface JobLocation {
+  city?: string;
+  /**
+   * ISO 3166-1 alpha-2, upper-case.
+   */
+  country?: string;
+}
+
+/**
+ * A pay range. At least one bound is present. JSON-LD: `baseSalary` as a `MonetaryAmount`
+ * whose `value.unitText` is `period` upper-cased.
+ */
+export interface JobSalary {
+  min?: number;
+  max?: number;
+  /**
+   * ISO 4217, upper-case.
+   */
+  currency: string;
+  period: JobSalaryPeriod;
+}
+
+export type JobSalaryPeriod = 'hour' | 'day' | 'week' | 'month' | 'year';
+
+export const JOB_SALARY_PERIOD_VALUES = ['hour', 'day', 'week', 'month', 'year'] as const;
+
+export type JobSeniority = 'intern' | 'junior' | 'middle' | 'senior' | 'lead' | 'principal' | 'head' | 'director' | 'executive';
+
+export const JOB_SENIORITY_VALUES = ['intern', 'junior', 'middle', 'senior', 'lead', 'principal', 'head', 'director', 'executive'] as const;
+
+/**
+ * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+ * the public.
+ */
+export type JobStatus = 'draft' | 'published' | 'closed';
+
+export const JOB_STATUS_VALUES = ['draft', 'published', 'closed'] as const;
+
+/**
+ * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+ * Google requires.
+ */
+export type JobWorkplaceType = 'remote' | 'hybrid' | 'onsite';
+
+export const JOB_WORKPLACE_TYPE_VALUES = ['remote', 'hybrid', 'onsite'] as const;
 
 /**
  * A JSON-RPC 2.0 envelope. Exactly one of `result` and `error` is present.
@@ -8786,7 +9542,7 @@ export interface KnowledgeBaseUpdate {
  */
 export interface LandingConfigSection {
   public_agent_id: string | null;
-  texts: Record<string, Value>;
+  texts: Record<string, LandingConfigSectionTextsValue>;
   multilang_enabled: boolean;
   default_locale: string;
   partners_enabled: boolean;
@@ -8805,6 +9561,11 @@ export interface LandingConfigSectionPartner {
 export interface LandingConfigSectionPartnerLogo {
   slug?: string;
   url?: string;
+}
+
+export interface LandingConfigSectionTextsValue {
+  en?: string;
+  uk?: string;
 }
 
 /**
@@ -8937,6 +9698,11 @@ export interface ListAdminIntegrationOAuthProvidersResponseProvider {
    * credentials reports false here, so this is readiness rather than the stored flag.
    */
   enabled: boolean;
+}
+
+export interface ListAdminJobsResponse {
+  items: AdminJob[];
+  total: number;
 }
 
 export interface ListAdminProvidersResponse {
@@ -9254,6 +10020,18 @@ export interface ListInvitesResponse {
   cursor?: string;
 }
 
+export interface ListJobApplicationsResponse {
+  items: JobApplication[];
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+  /**
+   * One key per `ApplicationStatus`.
+   */
+  counts_by_status: JsonObject;
+}
+
 export interface ListKbDocumentsResponse {
   documents?: KnowledgeBaseDocument[];
   total?: number;
@@ -9305,6 +10083,11 @@ export interface ListLLMModelsResponse {
    * set.
    */
   default_model?: string | null;
+}
+
+export interface ListMCPCatalogResponse {
+  items: MCPCatalogEntry[];
+  total: number;
 }
 
 export interface ListMCPServersResponse {
@@ -9507,6 +10290,23 @@ export type ListPublicIntegrationsResponseConnectorAuthType = 'oauth2' | 'api_ke
 
 export const LIST_PUBLIC_INTEGRATIONS_RESPONSE_CONNECTOR_AUTH_TYPE_VALUES = ['oauth2', 'api_key'] as const;
 
+export interface ListPublicJobsResponse {
+  careers: ListPublicJobsResponseCareers;
+  items: PublicJobSummary[];
+  facets: CareersFacets;
+  total: number;
+  page: number;
+  limit: number;
+  total_pages: number;
+}
+
+export interface ListPublicJobsResponseCareers {
+  enabled: boolean;
+  title: string;
+  description: string;
+  company_name: string;
+}
+
 export interface ListPublicPlansResponse {
   plans?: PublicPlan[];
 }
@@ -9549,6 +10349,28 @@ export interface ListPublicVideoTemplatesResponseStats {
    */
   videos_total: number;
 }
+
+export interface ListRegistrySigningKeysResponse {
+  keys: ListRegistrySigningKeysResponseKey[];
+}
+
+export interface ListRegistrySigningKeysResponseKey {
+  alg: ListRegistrySigningKeysResponseKeyAlg;
+  key_id: string;
+  /**
+   * Base64 of the raw 32-byte Ed25519 public key.
+   */
+  public_key: string;
+  created_at: string;
+  /**
+   * Absent while the key is active. Refuse signatures with `signed_at` later than this.
+   */
+  retired_at?: string;
+}
+
+export type ListRegistrySigningKeysResponseKeyAlg = 'ed25519';
+
+export const LIST_REGISTRY_SIGNING_KEYS_RESPONSE_KEY_ALG_VALUES = ['ed25519'] as const;
 
 export interface ListRunArtifactsResponse {
   run_id: string;
@@ -9630,6 +10452,14 @@ export interface ListSessionDrawingsResponse {
   has_more: boolean;
 }
 
+export type ListSessionsArchived = 'false' | 'true' | 'all';
+
+export const LIST_SESSIONS_ARCHIVED_VALUES = ['false', 'true', 'all'] as const;
+
+export type ListSessionsPinned = 'true' | 'false';
+
+export const LIST_SESSIONS_PINNED_VALUES = ['true', 'false'] as const;
+
 export interface ListSessionsResponse {
   items: ListSessionsResponseItem[];
   cursor: string | null;
@@ -9637,6 +10467,19 @@ export interface ListSessionsResponse {
 }
 
 export interface ListSessionsResponseItem {
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not archived.
+   */
+  archived?: boolean;
+  archived_at?: string;
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not pinned.
+   */
+  pinned?: boolean;
+  /**
+   * When it was pinned; order the pinned group by it.
+   */
+  pinned_at?: string;
   created_by?: string;
   session_id: string;
   tenant_id: string;
@@ -10210,12 +11053,155 @@ export interface MaterializeCanvasSquadResponse {
   worker_count: number;
 }
 
+/**
+ * A vendor-hosted MCP server that connects in one step. Every entry was measured on the wire:
+ * an `oauth` entry answers with an OAuth challenge, its authorization server supports PKCE
+ * S256, and the platform can obtain a client_id there without a human; a `none` entry is run
+ * by the data's own publisher, answers without credentials and lists its tools.
+ */
+export interface MCPCatalogEntry {
+  id: string;
+  name: string;
+  category: MCPCatalogEntryCategory;
+  description: string;
+  /**
+   * `description` in Ukrainian, for a uk interface.
+   */
+  description_uk: string;
+  url: string;
+  /**
+   * A read-only endpoint, where the vendor offers one.
+   */
+  read_only_url?: string;
+  /**
+   * `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+   * answers 201 at once, with no sign-in.
+   */
+  auth: MCPCatalogEntryAuth;
+  access: MCPCatalogEntryAccess;
+  /**
+   * What the vendor's tools can do that cannot be taken back: `money` (charges, refunds,
+   * payouts, payroll, payment requests), `send` (email, sequences, replies, documents for
+   * signature, on the tenant's behalf), `delete` (write or delete records wholesale). Empty when
+   * none apply. Build a warning from this list so it says only what is true of the entry.
+   */
+  risks: MCPCatalogEntryRisk[];
+  /**
+   * `risks` is not empty. Connect prefers `read_only_url` for these unless `read_only: false` is
+   * sent.
+   */
+  sensitive: boolean;
+  docs_url: string;
+  /**
+   * Vendor domain, for the icon.
+   */
+  domain: string;
+  /**
+   * A plan or admin switch the person needs.
+   */
+  note?: string;
+  /**
+   * `note` in Ukrainian; present exactly when `note` is.
+   */
+  note_uk?: string;
+}
+
+export type MCPCatalogEntryAccess = 'read' | 'read_write';
+
+export const MCPCATALOG_ENTRY_ACCESS_VALUES = ['read', 'read_write'] as const;
+
+/**
+ * `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+ * answers 201 at once, with no sign-in.
+ */
+export type MCPCatalogEntryAuth = 'oauth' | 'none';
+
+export const MCPCATALOG_ENTRY_AUTH_VALUES = ['oauth', 'none'] as const;
+
+export type MCPCatalogEntryCategory = 'finance' | 'sales' | 'marketing' | 'analytics' | 'support' | 'people' | 'operations' | 'meetings' | 'compliance' | 'data' | 'open_data' | 'markets' | 'research';
+
+export const MCPCATALOG_ENTRY_CATEGORY_VALUES = ['finance', 'sales', 'marketing', 'analytics', 'support', 'people', 'operations', 'meetings', 'compliance', 'data', 'open_data', 'markets', 'research'] as const;
+
+export type MCPCatalogEntryRisk = 'money' | 'send' | 'delete';
+
+export const MCPCATALOG_ENTRY_RISK_VALUES = ['money', 'send', 'delete'] as const;
+
+/**
+ * Exactly one of `catalog_id` and `url`.
+ */
+export interface MCPConnectRequest {
+  catalog_id?: string;
+  /**
+   * Any streamable-HTTP MCP server, for one outside the catalog.
+   */
+  url?: string;
+  name?: string;
+  /**
+   * Agents that get the server's tools. Empty connects it to nobody yet.
+   */
+  agent_ids?: string[];
+  /**
+   * Use the vendor's read-only endpoint when it has one. Defaults to the entry's `sensitive`.
+   */
+  read_only?: boolean;
+  return_to?: MCPOAuthReturnTo;
+}
+
+/**
+ * `authorization_required`: open `authorize_url` in a browser; the vendor returns to
+ * `/api/v1/mcp/oauth/callback`, which hands `state` and `code` to
+ * `{public_base_url}/mcp/oauth/callback`, which calls `POST /mcp/oauth/complete`. `connected`:
+ * the server is stored and its live session opened (or `connect_error` says why not).
+ */
+export interface MCPConnectResult {
+  status: MCPConnectResultStatus;
+  /**
+   * Always https. A client should refuse anything else.
+   */
+  authorize_url?: string;
+  /**
+   * Exactly where the callback's final 302 will land: `return_to` when one was sent, else
+   * `{public_base_url}/mcp/oauth/callback`. A client that intercepts the navigation itself
+   * matches on this rather than on a host it knows.
+   */
+  callback_url?: string;
+  state?: string;
+  /**
+   * The started connection is forgotten after this (10 minutes).
+   */
+  expires_at?: string;
+  server?: MCPServer;
+  /**
+   * Tool names the live session listed.
+   */
+  tools?: string[];
+  connect_error?: string | null;
+  /**
+   * The server was already connected; the agents were added to it.
+   */
+  already_connected?: boolean;
+}
+
+export type MCPConnectResultStatus = 'authorization_required' | 'connected';
+
+export const MCPCONNECT_RESULT_STATUS_VALUES = ['authorization_required', 'connected'] as const;
+
 export interface McpjsonRpcRequest {
   jsonrpc: '2.0';
   method: string;
   params?: JsonObject;
   id?: JsonValue;
 }
+
+/**
+ * For a native client that cannot catch the https hop: the callback's final 302 goes here
+ * instead of `{public_base_url}/mcp/oauth/callback`, carrying `state` and either `code` or
+ * `error` (plus `error_description` when the vendor gave one). Every outcome takes this hop.
+ * Exact values only; anything else is 400. Omit it for the web app.
+ */
+export type MCPOAuthReturnTo = 'uarp://mcp/oauth/callback' | 'snaga://mcp/oauth/callback';
+
+export const MCPOAUTH_RETURN_TO_VALUES = ['uarp://mcp/oauth/callback', 'snaga://mcp/oauth/callback'] as const;
 
 /**
  * An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
@@ -10263,7 +11249,12 @@ export interface MCPServer {
  * not offered: a key in a URL lands in every proxy log on the way.
  */
 export interface MCPServerAuth {
+  /**
+   * `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+   * /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
+   */
   type: MCPServerAuthType;
+  oauth?: MCPServerOAuth;
   /**
    * Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
    * not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
@@ -10279,9 +11270,50 @@ export interface MCPServerAuth {
   env_key?: string;
 }
 
-export type MCPServerAuthType = 'none' | 'api_key';
+/**
+ * `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+ * /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
+ */
+export type MCPServerAuthType = 'none' | 'api_key' | 'oauth';
 
-export const MCPSERVER_AUTH_TYPE_VALUES = ['none', 'api_key'] as const;
+export const MCPSERVER_AUTH_TYPE_VALUES = ['none', 'api_key', 'oauth'] as const;
+
+/**
+ * The non-secret half of an OAuth connection. Access token, refresh token and any client
+ * secret live in the record's encrypted `env` and are never returned.
+ */
+export interface MCPServerOAuth {
+  /**
+   * The authorization server.
+   */
+  issuer: string;
+  token_endpoint: string;
+  client_id: string;
+  token_endpoint_auth_method: string;
+  /**
+   * The resource the token is bound to (RFC 8707).
+   */
+  resource: string;
+  scopes: string[];
+  /**
+   * Access-token expiry. The platform refreshes before it.
+   */
+  expires_at?: string;
+  /**
+   * User who granted access.
+   */
+  connected_by?: string;
+  connected_at: string;
+  /**
+   * True when the vendor refused a refresh (revoked or expired grant). The server's tools are
+   * withheld until the person reconnects with `POST /mcp/servers/{serverId}/reconnect`.
+   */
+  needs_reauth?: boolean;
+  /**
+   * Catalog entry it came from.
+   */
+  catalog_id?: string;
+}
 
 export type MCPServerStatus = 'active' | 'error' | 'disabled';
 
@@ -11346,11 +12378,84 @@ export interface PatchMeResponseUser {
  * JsonObject)` that could not describe what to send.
  */
 export interface PatchTenantRequest {
+  name?: string;
+  /**
+   * The public handle. An invalid slug answers 422; one held by another tenant answers 409.
+   */
+  slug?: string;
+  description?: string;
+  /**
+   * Trimmed and cut to 2000 characters.
+   */
+  logo_url?: string;
+  /**
+   * Shallow-merged into the stored branding.
+   */
+  branding?: TenantBranding;
+  public?: boolean;
+  /**
+   * An agent of this tenant (404 otherwise); setting it publishes that agent. Null clears.
+   */
+  public_agent_id?: string | null;
+  /**
+   * Replaced whole. More than 50 answers 422. Null clears.
+   */
+  published_agent_ids?: string[] | null;
+  /**
+   * Shallow-merged.
+   */
+  public_settings?: TenantPublicSettings;
+  /**
+   * Shallow-merged. `legal_hold`, `suspended`, `max_concurrent_runs_override`, `default_model`
+   * and `default_provider` are stripped before the write.
+   */
+  settings?: JsonObject;
+  /**
+   * An agent of this tenant (404 otherwise). Null clears.
+   */
+  head_agent_id?: string | null;
+  /**
+   * A workspace of this tenant (404 otherwise). Null clears.
+   */
+  shared_workspace_id?: string | null;
+  /**
+   * `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+   * public profile — `public: true`, here or already stored (422 without it).
+   */
+  custom_domain?: PatchTenantRequestCustomDomain | null;
+  /**
+   * Replaced whole (its `stats` and `published_at` are kept).
+   */
+  marketplace_listing?: PatchTenantRequestMarketplaceListing;
+  /**
+   * Can be set; a set hold cannot be cleared here (403).
+   */
+  legal_hold?: boolean;
   social_links?: TenantSocialLinks;
   /**
    * Additional free-form properties (`JsonValue` on the wire).
    */
   [key: string]: unknown;
+}
+
+/**
+ * `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+ * public profile — `public: true`, here or already stored (422 without it).
+ */
+export interface PatchTenantRequestCustomDomain {
+  domain?: string;
+}
+
+/**
+ * Replaced whole (its `stats` and `published_at` are kept).
+ */
+export interface PatchTenantRequestMarketplaceListing {
+  enabled?: boolean;
+  category?: string;
+  tags?: string[];
+  short_description?: string;
+  long_description?: string;
+  featured_agents?: string[];
 }
 
 export interface PauseCompanyResponse {
@@ -12115,6 +13220,131 @@ export interface PublicDomainLookupResponse {
   found?: boolean;
 }
 
+export interface PublicJob {
+  id: string;
+  /**
+   * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+   */
+  slug: string;
+  /**
+   * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+   */
+  previous_slugs: string[];
+  /**
+   * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+   * the public.
+   */
+  status: JobStatus;
+  /**
+   * The language the texts are written in.
+   */
+  language: VideoOrderLocale;
+  title: string;
+  /**
+   * Plain text for the card, the meta description and the OG text.
+   */
+  summary: string;
+  /**
+   * Markdown.
+   */
+  description: string;
+  responsibilities: string[];
+  requirements: string[];
+  nice_to_have: string[];
+  benefits: string[];
+  /**
+   * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+   */
+  category: string;
+  department?: string;
+  seniority?: JobSeniority;
+  /**
+   * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+   * internship → INTERN, the rest upper-cased.
+   */
+  employment_type: JobEmploymentType;
+  /**
+   * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+   * Google requires.
+   */
+  workplace_type: JobWorkplaceType;
+  location: JobLocation;
+  /**
+   * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+   */
+  applicant_countries: string[];
+  /**
+   * CEFR; `none` = not required.
+   */
+  english_level?: JobEnglishLevel;
+  /**
+   * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+   */
+  experience_years_min?: number;
+  skills: string[];
+  salary: JobSalary | null;
+  /**
+   * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+   * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+   * is the simplest way to comply.
+   */
+  salary_public: boolean;
+  apply: JobApply;
+  created_at: string;
+  updated_at: string;
+  /**
+   * JSON-LD `datePosted`.
+   */
+  published_at: string | null;
+  /**
+   * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+   * no applications.
+   */
+  closes_at: string | null;
+  /**
+   * When it was actually closed.
+   */
+  closed_at: string | null;
+  /**
+   * `apply.mode` is `form` (JSON-LD `directApply`).
+   */
+  direct_apply: boolean;
+  /**
+   * Published and not past `closes_at`. False on a closed vacancy, whose page still answers 200.
+   */
+  applications_open: boolean;
+  /**
+   * 5242880: refuse a larger file before uploading it.
+   */
+  cv_max_bytes: number;
+  /**
+   * What the server accepts, checked by content.
+   */
+  cv_mime_types: string[];
+}
+
+/**
+ * One card of the public list.
+ */
+export interface PublicJobSummary {
+  id: string;
+  slug: string;
+  title: string;
+  summary: string;
+  category: string;
+  department?: string;
+  seniority?: JobSeniority;
+  employment_type: JobEmploymentType;
+  workplace_type: JobWorkplaceType;
+  location: JobLocation;
+  applicant_countries: string[];
+  salary: JobSalary | null;
+  salary_public: boolean;
+  language: VideoOrderLocale;
+  published_at: string | null;
+  closes_at: string | null;
+}
+
 export interface PublicPlan {
   id: string;
   name: string;
@@ -12393,6 +13623,19 @@ export interface PushBridgeTaskEventsResponse {
   events_stored?: number;
 }
 
+export interface PutCareersConfigRequest {
+  enabled?: boolean;
+  title?: string;
+  description?: string;
+  company_name?: string;
+  notify_emails?: string[];
+  retention_days?: number;
+}
+
+export interface PutCareersConfigResponse {
+  config: CareersConfig;
+}
+
 /**
  * A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
  * seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
@@ -12455,6 +13698,10 @@ export interface ReadinessReport {
   status: string;
   timestamp: string;
   components: JsonObject;
+}
+
+export interface ReconnectMCPServerRequest {
+  return_to?: MCPOAuthReturnTo;
 }
 
 export interface RedeemPromoCodeRequest {
@@ -13514,6 +14761,43 @@ export interface RunEvaluationRequest {
 }
 
 /**
+ * One run event as it is stored and replayed. `payload` depends on `type`; for a type without
+ * a typed payload it is an object of whatever the emitter recorded.
+ */
+export interface RunEvent {
+  event_id: string;
+  tenant_id?: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventType;
+  /**
+   * Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+   */
+  seq: number;
+  payload: JsonObject;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  span_id?: string;
+  trace_context?: RunEventTraceContext;
+}
+
+export interface RunEventTraceContext {
+  traceparent?: string;
+  tracestate?: string;
+}
+
+/**
+ * Every event type the runtime defines. Measured on the production event log 2026-10-05: 31 of
+ * these occurred, all members. A type outside this list is a contract defect, not a
+ * forward-compatible addition — but a client should still ignore an unknown one rather than
+ * fail, which is how a new type arrives before a client knows it.
+ */
+export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.budget_updated' | 'company.escalation' | 'company.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
+
+export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.budget_updated', 'company.escalation', 'company.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
+
+/**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
  * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
  * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -13729,6 +15013,67 @@ export interface RunStepMetrics {
 export type RunStepStatus = 'running' | 'completed' | 'failed';
 
 export const RUN_STEP_STATUS_VALUES = ['running', 'completed', 'failed'] as const;
+
+/**
+ * The closing frame (`event: done`). Clients close on this, not on `run.completed`. When a
+ * guardrail withheld the output, `output` is null and `guardrail_blocked` is true.
+ */
+export interface RunStreamDone {
+  run_id: string;
+  status: JsonValue;
+  metrics?: RunMetrics;
+  output?: JsonValue;
+  error?: JsonValue;
+  cost_usd?: number;
+  guardrail_blocked?: boolean;
+  _guardrail_violation?: JsonValue;
+  stream_type: RunStreamDoneStreamType;
+}
+
+export type RunStreamDoneStreamType = 'lifecycle';
+
+export const RUN_STREAM_DONE_STREAM_TYPE_VALUES = ['lifecycle'] as const;
+
+/**
+ * A run event on `GET /runs/{runId}/events`: the stored event plus `stream_type` (the bucket
+ * to filter on: `run.*` lifecycle except the cosmetic `run.affect`, `llm.chunk` assistant,
+ * `tool.*` tool, anything else other) and per-frame `_chunk_id` / `_chunk_index`. With
+ * `?flat=1` the payload's fields are merged into the top level instead of nested under
+ * `payload`.
+ */
+export interface RunStreamEvent {
+  event_id: string;
+  tenant_id?: string;
+  run_id: string;
+  session_id?: string;
+  type: RunEventType;
+  /**
+   * Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+   */
+  seq: number;
+  payload: JsonObject;
+  timestamp: string;
+  step_id?: string;
+  parent_event_id?: string;
+  span_id?: string;
+  trace_context?: RunStreamEventTraceContext;
+  stream_type: RunStreamEventStreamType;
+  _chunk_id?: string;
+  _chunk_index?: number;
+  /**
+   * Present on an `llm.chunk` a streaming guardrail redacted.
+   */
+  _guardrail_violation?: JsonValue;
+}
+
+export type RunStreamEventStreamType = 'lifecycle' | 'assistant' | 'tool' | 'other';
+
+export const RUN_STREAM_EVENT_STREAM_TYPE_VALUES = ['lifecycle', 'assistant', 'tool', 'other'] as const;
+
+export interface RunStreamEventTraceContext {
+  traceparent?: string;
+  tracestate?: string;
+}
 
 export interface RunWorkspaceCommandRequest {
   command: string;
@@ -14068,6 +15413,19 @@ export interface SensorWebhookResponse {
 }
 
 export interface Session {
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not archived.
+   */
+  archived?: boolean;
+  archived_at?: string;
+  /**
+   * Set by `PUT /sessions/{id}`. Absent when not pinned.
+   */
+  pinned?: boolean;
+  /**
+   * When it was pinned; order the pinned group by it.
+   */
+  pinned_at?: string;
   created_by?: string;
   session_id: string;
   tenant_id: string;
@@ -14671,7 +16029,7 @@ export interface SpecToolCatalog {
    * Tool name → the SPEC that owns it and the view to render its output with. Integration
    * aliases map onto their base tool's view.
    */
-  tools: Record<string, Value2>;
+  tools: Record<string, SpecToolCatalogToolsValue>;
 }
 
 export interface SpecToolCatalogDrawing {
@@ -14704,6 +16062,14 @@ export const SPEC_TOOL_CATALOG_SPEC_REQUIRES_MODE_VALUES = ['integration'] as co
 export type SpecToolCatalogSpecStatus = 'ready' | 'needs_connection';
 
 export const SPEC_TOOL_CATALOG_SPEC_STATUS_VALUES = ['ready', 'needs_connection'] as const;
+
+export interface SpecToolCatalogToolsValue {
+  spec_id: string;
+  /**
+   * The parsed view document, or null when the stored view was unparseable.
+   */
+  output_view: JsonValue;
+}
 
 export interface StartMissionRequest {
   /**
@@ -15843,7 +17209,12 @@ export interface TestLLMProviderKeyResponse {
    */
   success: boolean;
   /**
-   * Why it failed. Absent on success.
+   * Whose key was tested: `user` is the caller's own stored key, the others are the fallback the
+   * runtime resolves to. Null when no key was found.
+   */
+  level?: string | null;
+  /**
+   * What happened: why it failed, or that the key is valid.
    */
   message?: string;
 }
@@ -16297,19 +17668,79 @@ export interface UpdateAdminIntegrationsResponseIntegration {
   source?: string;
 }
 
+export interface UpdateAdminJobRequest {
+  title?: string;
+  summary?: string;
+  description?: string;
+  responsibilities?: string[];
+  requirements?: string[];
+  nice_to_have?: string[];
+  benefits?: string[];
+  category?: string;
+  department?: string;
+  seniority?: JobSeniority;
+  employment_type?: JobEmploymentType;
+  workplace_type?: JobWorkplaceType;
+  location?: UpdateAdminJobRequestLocation;
+  applicant_countries?: JsonValue[];
+  english_level?: JobEnglishLevel;
+  experience_years_min?: number;
+  skills?: string[];
+  salary?: UpdateAdminJobRequestSalary | null;
+  salary_public?: boolean;
+  apply?: UpdateAdminJobRequestApply;
+  language?: VideoOrderLocale;
+  status?: JobStatus;
+  closes_at?: string | null;
+}
+
+export interface UpdateAdminJobRequestApply {
+  mode: JobApplyMode;
+  url?: string;
+  email?: string;
+  /**
+   * @default true
+   */
+  requires_cv?: boolean;
+  /**
+   * @default false
+   */
+  requires_cover_letter?: boolean;
+}
+
+export interface UpdateAdminJobRequestLocation {
+  city?: string;
+  country?: JsonValue;
+}
+
+export interface UpdateAdminJobRequestSalary {
+  min?: number;
+  max?: number;
+  currency: JsonValue;
+  period: JobSalaryPeriod;
+}
+
+export interface UpdateAdminJobResponse {
+  job: Job;
+}
+
 export interface UpdateAdminLLMAdaptersConfigRequest {
   max_retries?: number;
   retry_base_delay_ms?: number;
   retry_max_delay_ms?: number;
   stream_empty_timeout_ms?: number;
   circuit_breaker?: UpdateAdminLLMAdaptersConfigRequestCircuitBreaker;
-  provider_rate_limits?: Record<string, Value6>;
+  provider_rate_limits?: Record<string, UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue>;
 }
 
 export interface UpdateAdminLLMAdaptersConfigRequestCircuitBreaker {
   failure_threshold?: number;
   reset_timeout_ms?: number;
   half_open_max_requests?: number;
+}
+
+export interface UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue {
+  rpm: number;
 }
 
 export interface UpdateAdminLLMAdaptersConfigResponse {
@@ -16869,6 +18300,15 @@ export interface UpdateIntegrationRequest {
   config?: JsonObject;
 }
 
+export interface UpdateJobApplicationRequest {
+  status?: JobApplicationStatus;
+  notes?: string;
+}
+
+export interface UpdateJobApplicationResponse {
+  application: JobApplication;
+}
+
 export interface UpdateMarkupConfigRequest {
   platform_markup_percent?: number;
   model_markup_overrides?: JsonObject;
@@ -17089,6 +18529,16 @@ export interface UpdateSessionRequest {
    * longer need; this is a label bag, not content.
    */
   metadata?: JsonObject;
+  /**
+   * true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+   * stays readable by id, and the next message sent to it unarchives it. false unarchives.
+   */
+  archived?: boolean;
+  /**
+   * true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+   * the first `pinned_at`. false unpins.
+   */
+  pinned?: boolean;
   /**
    * Per-conversation model override. Send null to clear (revert to agent default), or {
    * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
@@ -17565,43 +19015,6 @@ export interface ValidationPolicy {
   selective: boolean;
 }
 
-export interface Value {
-  en?: string;
-  uk?: string;
-}
-
-export interface Value2 {
-  spec_id: string;
-  /**
-   * The parsed view document, or null when the stored view was unparseable.
-   */
-  output_view: JsonValue;
-}
-
-export interface Value3 {
-  x: number;
-  y: number;
-}
-
-export interface Value4 {
-  x: number;
-  y: number;
-}
-
-export interface Value5 {
-  from?: JsonValue;
-  to?: JsonValue;
-}
-
-export interface Value6 {
-  rpm: number;
-}
-
-export interface Value7 {
-  en?: string;
-  uk?: string;
-}
-
 /**
  * Since 2026-09-30 the API key is returned here once and never e-mailed (register.ts
  * handleVerifyEmail).
@@ -17704,6 +19117,9 @@ export type VideoOrderFailureCode = 'generation_failed' | 'regen_failed';
 
 export const VIDEO_ORDER_FAILURE_CODE_VALUES = ['generation_failed', 'regen_failed'] as const;
 
+/**
+ * The language the texts are written in.
+ */
 export type VideoOrderLocale = 'en' | 'uk';
 
 export const VIDEO_ORDER_LOCALE_VALUES = ['en', 'uk'] as const;

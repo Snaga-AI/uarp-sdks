@@ -25,6 +25,57 @@ import kotlinx.coroutines.flow.Flow
  */
 public class MCPApi internal constructor(private val client: UarpClient) {
     /**
+     * Finish an OAuth connection
+     *
+     * Exchanges the code for tokens, stores them encrypted, and opens the live session with the
+     * agents chosen at connect. Only the user who started the connection may finish it (403
+     * otherwise), and a state works once. 201 for a new connection, 200 for a renewed one.
+     *
+     * `POST /api/v1/mcp/oauth/complete`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun completeMcpoAuth(body: CompleteMcpoAuthRequest, options: RequestOptions = RequestOptions()): MCPConnectResult {
+        return client.request<MCPConnectResult>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/mcp/oauth/complete",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Connect an MCP server to agents
+     *
+     * Starts a connection to a catalog entry or any streamable-HTTP MCP server URL. A server that
+     * asks for OAuth answers `authorization_required` with the URL to open; one that asks for
+     * nothing is stored and connected at once (201). A server already connected in this tenant is
+     * not connected twice: the agents are added to it (200, `already_connected`). Developer role.
+     *
+     * The platform registers itself with the vendor's authorization server once (client ID
+     * metadata document when the server accepts one, else dynamic client registration), uses PKCE
+     * S256 and binds the token to the server with the `resource` parameter.
+     *
+     * `POST /api/v1/mcp/connect`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun connectMCPServer(body: MCPConnectRequest, options: RequestOptions = RequestOptions()): MCPConnectResult {
+        return client.request<MCPConnectResult>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/mcp/connect",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Create MCP server
      *
      * Registers an external MCP server for the tenant. Tenant owner or developer — `viewer` is
@@ -87,6 +138,24 @@ public class MCPApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Snaga's OAuth client metadata document
+     *
+     * Fetched by authorization servers that accept client ID metadata documents: this URL is then
+     * Snaga's client_id, and nothing is registered. Holds no secret.
+     *
+     * `GET /api/v1/mcp/oauth/client.json`
+     */
+    public suspend fun getMcpoAuthClientMetadata(options: RequestOptions = RequestOptions()): GetMcpoAuthClientMetadataResponse {
+        return client.request<GetMcpoAuthClientMetadataResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/mcp/oauth/client.json",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get MCP server
      *
      * Returns one registered MCP server; `admin` role only, like the rest of this route. The
@@ -129,6 +198,26 @@ public class MCPApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/agents/${encodePathSegment(agentId)}/mcp-servers",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Business MCP servers that connect in one step
+     *
+     * Vendor-hosted MCP servers (Stripe, Notion, Attio, Linear, …) a tenant can connect to its
+     * agents with `POST /mcp/connect`. Developer role.
+     *
+     * `GET /api/v1/mcp/catalog`
+     *
+     * Required scopes: `agents:read`.
+     */
+    public suspend fun listMCPCatalog(options: RequestOptions = RequestOptions()): ListMCPCatalogResponse {
+        return client.request<ListMCPCatalogResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/mcp/catalog",
                 options = options,
             )
         )
@@ -185,6 +274,35 @@ public class MCPApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Vendor redirect after sign-in
+     *
+     * Runs without authentication: the vendor redirects a browser, which carries no Snaga
+     * credentials. The tenant is recovered from the `state` prefix. Answers 302 to
+     * `{public_base_url}/mcp/oauth/callback` with `state` and either `code` or `error`
+     * (`issuer_mismatch` when the redirect names a different authorization server than the one the
+     * connection started with, RFC 9207). No token is exchanged here: `POST /mcp/oauth/complete`
+     * does that as the signed-in user who started the connection.
+     *
+     * `GET /api/v1/mcp/oauth/callback`
+     */
+    public suspend fun mcpOAuthCallback(state: String, code: String? = null, error: String? = null, iss: String? = null, options: RequestOptions = RequestOptions()): JsonElement {
+        val query = buildList {
+            add("state" to state)
+            if (code != null) add("code" to code)
+            if (error != null) add("error" to error)
+            if (iss != null) add("iss" to iss)
+        }
+        return client.request<JsonElement>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/mcp/oauth/callback",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * MCP SSE transport (Server-Sent Events)
      *
      * The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
@@ -208,6 +326,31 @@ public class MCPApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/mcp",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Renew an OAuth connection
+     *
+     * For a server whose grant expired or was revoked (`auth.oauth.needs_reauth`), or to sign in
+     * with a different account. Answers `authorization_required` whether or not the current grant
+     * still works — a connection that is healthy is renewed all the same, which is how a person
+     * switches the vendor account behind it. Completing it renews the same record, keeping its id
+     * and agents.
+     *
+     * `POST /api/v1/mcp/servers/{serverId}/reconnect`
+     *
+     * Required scopes: `agents:write`.
+     */
+    public suspend fun reconnectMCPServer(serverId: String, body: ReconnectMCPServerRequest? = null, options: RequestOptions = RequestOptions()): MCPConnectResult {
+        return client.request<MCPConnectResult>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/mcp/servers/${encodePathSegment(serverId)}/reconnect",
+                body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                idempotent = true,
                 options = options,
             )
         )

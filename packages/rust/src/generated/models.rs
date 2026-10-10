@@ -954,6 +954,8 @@ pub struct AdminAnalyticsOverviewResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub conversion_rate: Option<f64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product_cohorts: Option<AdminAnalyticsOverviewResponseProductCohorts>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub timeseries: Option<Vec<AnalyticsTimeseriesPoint>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub top_countries: Option<Vec<AnalyticsTopValue>>,
@@ -965,6 +967,41 @@ pub struct AdminAnalyticsOverviewResponse {
     pub top_referrers: Option<Vec<AnalyticsTopValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub top_utm_sources: Option<Vec<AnalyticsTopValue>>,
+}
+
+/// `AdminAnalyticsOverviewResponseProductCohorts` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAnalyticsOverviewResponseProductCohorts {
+    #[serde(default)]
+    pub tracking_since: Option<String>,
+    pub as_of: String,
+    pub complete: bool,
+    pub signups: i64,
+    pub successful: i64,
+    pub repeat: i64,
+    pub paid: i64,
+    pub retention: AdminAnalyticsOverviewResponseProductCohortsRetention,
+}
+
+/// `AdminAnalyticsOverviewResponseProductCohortsRetention` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAnalyticsOverviewResponseProductCohortsRetention {
+    pub d1: AdminAnalyticsOverviewResponseProductCohortsRetentionD1,
+    pub d7: AdminAnalyticsOverviewResponseProductCohortsRetentionD7,
+}
+
+/// `AdminAnalyticsOverviewResponseProductCohortsRetentionD1` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAnalyticsOverviewResponseProductCohortsRetentionD1 {
+    pub eligible: i64,
+    pub returned: i64,
+}
+
+/// `AdminAnalyticsOverviewResponseProductCohortsRetentionD7` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminAnalyticsOverviewResponseProductCohortsRetentionD7 {
+    pub eligible: i64,
+    pub returned: i64,
 }
 
 /// `AdminAnalyticsOverviewResponseRange` model.
@@ -1867,6 +1904,74 @@ impl From<&str> for AdminIntegrationsConfigIntegrationAuthType {
     }
 }
 
+/// `AdminJob` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminJob {
+    pub id: String,
+    /// Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+    pub slug: String,
+    /// Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+    pub previous_slugs: Vec<String>,
+    /// `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+    /// the public.
+    pub status: JobStatus,
+    /// The language the texts are written in.
+    pub language: VideoOrderLocale,
+    pub title: String,
+    /// Plain text for the card, the meta description and the OG text.
+    pub summary: String,
+    /// Markdown.
+    pub description: String,
+    pub responsibilities: Vec<String>,
+    pub requirements: Vec<String>,
+    pub nice_to_have: Vec<String>,
+    pub benefits: Vec<String>,
+    /// Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    /// schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+    /// internship → INTERN, the rest upper-cased.
+    pub employment_type: JobEmploymentType,
+    /// `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+    /// Google requires.
+    pub workplace_type: JobWorkplaceType,
+    pub location: JobLocation,
+    /// ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+    pub applicant_countries: Vec<String>,
+    /// CEFR; `none` = not required.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub english_level: Option<JobEnglishLevel>,
+    /// JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience_years_min: Option<i64>,
+    pub skills: Vec<String>,
+    #[serde(default)]
+    pub salary: Option<JobSalary>,
+    /// False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+    /// (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+    /// is the simplest way to comply.
+    pub salary_public: bool,
+    pub apply: JobApply,
+    pub created_at: String,
+    pub updated_at: String,
+    /// JSON-LD `datePosted`.
+    #[serde(default)]
+    pub published_at: Option<String>,
+    /// Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+    /// no applications.
+    #[serde(default)]
+    pub closes_at: Option<String>,
+    /// When it was actually closed.
+    #[serde(default)]
+    pub closed_at: Option<String>,
+    pub applications_count: i64,
+    /// Applications still in status `new`.
+    pub new_applications_count: i64,
+}
+
 /// `AdminListToolsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AdminListToolsResponse {
@@ -2252,7 +2357,7 @@ pub struct AdminPutLandingConfigRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub public_agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub texts: Option<HashMap<String, Value7>>,
+    pub texts: Option<HashMap<String, AdminPutLandingConfigRequestTextsValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub multilang_enabled: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -2356,6 +2461,15 @@ impl From<&str> for AdminPutLandingConfigRequestPartnerLogoSlug {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `AdminPutLandingConfigRequestTextsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct AdminPutLandingConfigRequestTextsValue {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub en: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uk: Option<String>,
 }
 
 /// `AdminPutLandingConfigResponse` model.
@@ -4340,6 +4454,17 @@ pub struct AgentUpdateGuardrails {
     pub input: Option<Vec<AgentUpdateGuardrailsInputItem>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub output: Option<Vec<AgentUpdateGuardrailsOutputItem>>,
+    /// Guardrails switched on by id — a platform guardrail (`pii_detector`,
+    /// `prompt_injection_detector`, `content_policy`, …) or one of the tenant's own from `GET
+    /// /guardrails`. Each runs in its own phase like an `input`/`output` ref; an id that names no
+    /// guardrail is skipped. Read at run time since 2026-10-09; before that the list was stored and
+    /// nothing ran. The switches the settings screens offer all exist since then too:
+    /// `toxicity_detector` (threats, urging self-harm, calls to kill a group of people — input and
+    /// answer, block), `jailbreak_detector` (safety-bypass framings — input, block),
+    /// `content_filter` (sexual content with minors, explicit porn — input and answer, block),
+    /// `sqli_detector` (injection signatures in tool-call arguments, checked before the call —
+    /// block), `xss_detector` (active HTML in the answer outside code — redacted, not blocked). All
+    /// are phrase-level pattern checks, not classifiers.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub built_in: Option<Vec<String>>,
 }
@@ -5044,12 +5169,13 @@ pub struct AgentVersion {
     /// kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
     /// (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
     /// canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
-    /// provider healed to the platform default`, `Core memory enabled`, `Tool trust override
-    /// updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
-    /// to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
-    /// analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
-    /// ratings or feedback — words, not a number). A reason code beside the prose is the owner's
-    /// decision (DEC 11).
+    /// provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
+    /// detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
+    /// provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
+    /// version rolled back to), `Self-improvement: N changes based on N analysis` (the
+    /// self-improvement loop: the first N is a count, the second is one of errors, ratings or
+    /// feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
+    /// 11).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changelog: Option<String>,
     pub created_at: String,
@@ -5502,8 +5628,9 @@ impl From<&str> for AnthropicMessageContentItemType {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct AnthropicMessagesRequest {
     /// A `claude-*` id is served by the admin-configured compat model
-    /// (`config_anthropic_compat.model`), or the platform default model when that is unset. Any
-    /// other id is passed to the LLM proxy as a catalogue model id (`\<provider\>/\<model\>`).
+    /// (`config_anthropic_compat.model`) while that model is served, or the platform default model
+    /// when it is unset or no longer served (since 2026-10-09). Any other id is passed to the LLM
+    /// proxy as a catalogue model id (`\<provider\>/\<model\>`).
     pub model: String,
     pub max_tokens: i64,
     pub messages: Vec<AnthropicMessagesRequestMessage>,
@@ -5836,6 +5963,12 @@ pub struct AppleNativeAuthRequest {
     /// Device name (e.g. `iPhone 15 Pro`) surfaced on the minted api_key for `/me/sessions`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub device_label: Option<String>,
+    /// Apple's one-time `authorizationCode` from the same sign-in. Optional; send it whenever Apple
+    /// provides it. The server exchanges it at Apple for a refresh token, kept encrypted, so that
+    /// deleting the account (`DELETE /me`) or unlinking Apple revokes the person's Apple tokens, as
+    /// App Store Review Guideline 5.1.1(v) requires. A code Apple refuses never fails the sign-in.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorization_code: Option<String>,
 }
 
 /// `AppleNativeAuthResponse` model.
@@ -5843,6 +5976,64 @@ pub struct AppleNativeAuthRequest {
 pub struct AppleNativeAuthResponse {
     pub api_key: String,
     pub email: String,
+}
+
+/// `ApplicationCv` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplicationCv {
+    pub file_id: String,
+    /// Sanitised: letters, digits, `.`, `_`, `-`.
+    pub filename: String,
+    pub size_bytes: i64,
+    pub mime_type: ApplicationCvMimeType,
+}
+
+/// `ApplicationCvMimeType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ApplicationCvMimeType {
+    #[default]
+    #[serde(rename = "application/pdf")]
+    ApplicationPDF,
+    #[serde(rename = "application/vnd.openxmlformats-officedocument.wordprocessingml.document")]
+    ApplicationVndOpenxmlformatsOfficedocumentWordprocessingmlDocument,
+    #[serde(rename = "text/markdown")]
+    TextMarkdown,
+    #[serde(rename = "text/plain")]
+    TextPlain,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ApplicationCvMimeType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::ApplicationPDF => "application/pdf",
+            Self::ApplicationVndOpenxmlformatsOfficedocumentWordprocessingmlDocument => "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            Self::TextMarkdown => "text/markdown",
+            Self::TextPlain => "text/plain",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ApplicationCvMimeType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ApplicationCvMimeType {
+    fn from(value: &str) -> Self {
+        match value {
+            "application/pdf" => Self::ApplicationPDF,
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" => Self::ApplicationVndOpenxmlformatsOfficedocumentWordprocessingmlDocument,
+            "text/markdown" => Self::TextMarkdown,
+            "text/plain" => Self::TextPlain,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `ApplyProgramRequest` model.
@@ -5860,6 +6051,52 @@ pub struct ApplyProgramResponse {
     pub applied: bool,
     pub program_id: String,
     pub todos: Vec<Todo>,
+}
+
+/// `ApplyToJobRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplyToJobRequest {
+    pub name: String,
+    pub email: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    /// Required when the vacancy's `apply.requires_cover_letter` is true (422 names the field).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_letter: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub links: Option<Vec<String>>,
+    /// PDF, .docx, Markdown (.md) or plain text (.txt), at most `cv_max_bytes`. Required when
+    /// `apply.requires_cv` is true (400 `cv_invalid` when missing or not one of those by content;
+    /// 413 `cv_too_large`).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cv: Option<FilePart>,
+    /// Privacy consent; a truthy string.
+    pub consent: String,
+    /// May we keep the application for other roles; a truthy string. Never pre-tick it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub talent_pool_consent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>,
+    /// Where the candidate came from (a UTM source, a referrer).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    /// Honeypot. Leave empty; a person never sees it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub website: Option<String>,
+}
+
+/// `ApplyToJobResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplyToJobResponse {
+    pub application: ApplyToJobResponseApplication,
+}
+
+/// `ApplyToJobResponseApplication` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ApplyToJobResponseApplication {
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobApplicationStatus>,
 }
 
 /// `ApproveRunResponse` model.
@@ -7132,6 +7369,35 @@ pub struct CanvasWorkflowStep {
     pub prompt: Option<String>,
 }
 
+/// `CareersConfig` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CareersConfig {
+    /// Advisory for the web layer (show or hide the page); the API answers either way.
+    pub enabled: bool,
+    pub title: String,
+    pub description: String,
+    /// JSON-LD `hiringOrganization.name`.
+    pub company_name: String,
+    /// Mailed on every application; empty = the super-admin address.
+    pub notify_emails: Vec<String>,
+    /// Days an application is kept after its vacancy closes. The ceiling is the two years CNIL
+    /// states for unsuccessful candidates.
+    pub retention_days: i64,
+}
+
+/// The distinct values present among OPEN vacancies — the whole set, not this page — so a
+/// filter shows only values that exist.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CareersFacets {
+    pub categories: Vec<String>,
+    pub departments: Vec<String>,
+    pub workplace_types: Vec<JobWorkplaceType>,
+    pub employment_types: Vec<JobEmploymentType>,
+    pub seniorities: Vec<JobSeniority>,
+    pub countries: Vec<String>,
+    pub cities: Vec<String>,
+}
+
 /// `CastBallotRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CastBallotRequest {
@@ -7504,6 +7770,13 @@ pub struct CompanyUpdate {
     pub strategic_goals: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `CompleteMcpoAuthRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CompleteMcpoAuthRequest {
+    pub state: String,
+    pub code: String,
 }
 
 /// `CompleteOAuthLoginFormPostProvider` enumeration.
@@ -8523,6 +8796,110 @@ pub struct CreateAdminBlogPostResponse {
     pub post: BlogPost,
 }
 
+/// `CreateAdminJobRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminJobRequest {
+    pub title: String,
+    /// Server default: `""`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// Server default: `""`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub responsibilities: Option<Vec<String>>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirements: Option<Vec<String>>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nice_to_have: Option<Vec<String>>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub benefits: Option<Vec<String>>,
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    pub employment_type: JobEmploymentType,
+    pub workplace_type: JobWorkplaceType,
+    /// Server default: `{}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<CreateAdminJobRequestLocation>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub applicant_countries: Option<Vec<serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub english_level: Option<JobEnglishLevel>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience_years_min: Option<i64>,
+    /// Server default: `\[\]`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skills: Option<Vec<String>>,
+    /// Server default: `null`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub salary: Option<CreateAdminJobRequestSalary>,
+    /// Server default: `false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub salary_public: Option<bool>,
+    /// Server default: `{"mode":"form","requires_cv":true,"requires_cover_letter":false}`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub apply: Option<CreateAdminJobRequestApply>,
+    /// Server default: `"en"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<VideoOrderLocale>,
+    /// Server default: `"draft"`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobStatus>,
+    /// Server default: `null`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub closes_at: Option<String>,
+}
+
+/// `CreateAdminJobRequestApply` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminJobRequestApply {
+    pub mode: JobApplyMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    /// Server default: `true`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cv: Option<bool>,
+    /// Server default: `false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cover_letter: Option<bool>,
+}
+
+/// `CreateAdminJobRequestLocation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminJobRequestLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<serde_json::Value>,
+}
+
+/// `CreateAdminJobRequestSalary` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminJobRequestSalary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    pub currency: serde_json::Value,
+    pub period: JobSalaryPeriod,
+}
+
+/// `CreateAdminJobResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateAdminJobResponse {
+    pub job: Job,
+}
+
 /// `CreateAdminProviderRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateAdminProviderRequest {
@@ -8763,7 +9140,7 @@ pub struct CreateAmbassadorRequestRequest {
 pub struct CreateAPIKeyRequest {
     pub name: String,
     /// Server default:
-    /// `\["agents:read","agents:write","runs:create","runs:read","notifications:read","notifications:write","memory:read","memory:write","files:read","files:write"\]`.
+    /// `\["agents:read","agents:write","runs:create","runs:read","sessions:read","sessions:write","notifications:read","notifications:write","memory:read","memory:write","files:read","files:write","analytics:read"\]`.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
 }
@@ -9302,10 +9679,12 @@ pub struct CreateResponseRequest {
     pub model: String,
     /// Input string or structured turn array.
     pub input: serde_json::Value,
-    /// Chain to an earlier response in the same conversation.
+    /// Chain to an earlier response of this workspace: its turn and its history are carried into
+    /// this call. 404 when there is no such response.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub previous_response_id: Option<String>,
-    /// System-prompt override for this call only.
+    /// Instructions for this call only, delivered with the turn; the agent's own system prompt
+    /// stays.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub instructions: Option<String>,
     /// Server default: `false`.
@@ -9522,6 +9901,12 @@ pub struct CreateSessionShareResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateSessionTodoRequest {
     pub title: String,
+    /// What the assignee is told to do. The run's input is the title alone when this is absent.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub instructions: Option<String>,
+    /// Alias of `instructions`, read only when `instructions` is absent. This document named the
+    /// field `description` while the handler read `instructions`, so a client written from it had
+    /// its instructions dropped in silence (measured 2026-10-09: the run received the title only).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub description: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -9529,7 +9914,25 @@ pub struct CreateSessionTodoRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub assign_agent_id: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub assign_team_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub recurrence: Option<CreateSessionTodoRequestRecurrence>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub require_confirmation: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub order_index: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_task_id: Option<String>,
+}
+
+/// `CreateSessionTodoRequestRecurrence` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct CreateSessionTodoRequestRecurrence {
+    pub cron: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub timezone: Option<String>,
 }
 
 /// `CreateSpecPackageCheckoutSessionResponse` model.
@@ -9544,6 +9947,8 @@ pub struct CreateSpecPackageCheckoutSessionResponse {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct CreateTenantRequest {
     pub name: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub slug: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -10119,6 +10524,10 @@ pub struct DeleteMeResponse {
     pub deleted: bool,
     pub tenants: Vec<DeleteMeResponseTenant>,
     pub sessions_revoked: i64,
+    /// Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
+    /// for sign-ins that sent `authorization_code`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub apple_tokens_revoked: Option<i64>,
     /// What the data sweep actually removed, summed across every membership. Present since
     /// 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
     /// real `sessions_revoked` number while the sweep itself matched a field nothing writes and
@@ -10324,6 +10733,34 @@ impl From<&str> for DeleteWorkspaceFileTrash {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// Which deployment-conditional capabilities are on here. `false` means the operations that
+/// depend on it answer 501 on this deployment — each such 501 in this document names its flag.
+/// Computed by the same check the handler's 501 branch runs, on every call.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct DeploymentFeatures {
+    /// Governance is enabled (`UARP_GOVERNANCE_ENABLED`).
+    pub governance: bool,
+    /// Stripe billing is wired.
+    pub billing: bool,
+    /// A second factor can be enrolled and verified (`UARP_IDENTITY_ENCRYPTION_KEY`). False also
+    /// means every step-up-gated action answers 501 where `auth.mfa_enabled` is on.
+    pub mfa: bool,
+    /// A web-search provider resolves.
+    pub web_search: bool,
+    /// A speech-to-text provider and default model are configured. A caller that names its own
+    /// `model` may still be served when this is false.
+    pub speech_to_text: bool,
+    /// A text-to-speech provider and default model are configured. A caller that names its own
+    /// `model` may still be served when this is false.
+    pub text_to_speech: bool,
+    /// An embedding provider is wired and a key resolves for the caller.
+    pub embeddings: bool,
+    /// SPEC artifacts are signed (`spec_registry.signing_mode` is not `off`).
+    pub spec_signing: bool,
+    /// Published marketplace listings can be invoked. Always false today: no executor runs them.
+    pub marketplace_invoke: bool,
 }
 
 /// Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -11637,6 +12074,8 @@ pub enum ErrorCode {
     #[default]
     #[serde(rename = "AAR_NOT_AVAILABLE")]
     AarNotAvailable,
+    #[serde(rename = "ACTIVE_TENANT_NOT_SUPPORTED")]
+    ActiveTenantNotSupported,
     #[serde(rename = "ALREADY_EXISTS")]
     AlreadyExists,
     #[serde(rename = "ANON_BUSY")]
@@ -11779,6 +12218,8 @@ pub enum ErrorCode {
     SizeLimit,
     #[serde(rename = "SPEC_NOT_FOUND")]
     SpecNotFound,
+    #[serde(rename = "STARTED_BY_ANOTHER_USER")]
+    StartedByAnotherUser,
     #[serde(rename = "TASK_GRAPH_FAILED")]
     TaskGraphFailed,
     #[serde(rename = "TEAM_ABORT")]
@@ -11813,6 +12254,14 @@ pub enum ErrorCode {
     ApprovalRejected,
     #[serde(rename = "billing_not_configured")]
     BillingNotConfigured,
+    #[serde(rename = "consent_required")]
+    ConsentRequired,
+    #[serde(rename = "cv_invalid")]
+    CvInvalid,
+    #[serde(rename = "cv_too_large")]
+    CvTooLarge,
+    #[serde(rename = "duplicate_application")]
+    DuplicateApplication,
     #[serde(rename = "governance_not_enabled")]
     GovernanceNotEnabled,
     #[serde(rename = "incomplete_record")]
@@ -11821,6 +12270,10 @@ pub enum ErrorCode {
     InertPolicyField,
     #[serde(rename = "inert_public_config_field")]
     InertPublicConfigField,
+    #[serde(rename = "job_apply_elsewhere")]
+    JobApplyElsewhere,
+    #[serde(rename = "job_closed")]
+    JobClosed,
     #[serde(rename = "kb_chunk_limit")]
     KbChunkLimit,
     #[serde(rename = "kb_document_body_invalid")]
@@ -11857,6 +12310,8 @@ pub enum ErrorCode {
     RateLimited,
     #[serde(rename = "resource_limit_reached")]
     ResourceLimitReached,
+    #[serde(rename = "run_approval_expired")]
+    RunApprovalExpired,
     #[serde(rename = "run_input_timeout")]
     RunInputTimeout,
     #[serde(rename = "run_never_claimed")]
@@ -11865,6 +12320,8 @@ pub enum ErrorCode {
     RunOrphanedRestart,
     #[serde(rename = "run_quota_exceeded")]
     RunQuotaExceeded,
+    #[serde(rename = "run_stalled")]
+    RunStalled,
     #[serde(rename = "secret_would_move")]
     SecretWouldMove,
     #[serde(rename = "video_consent_required")]
@@ -11889,6 +12346,7 @@ impl ErrorCode {
     pub fn as_str(&self) -> &str {
         match self {
             Self::AarNotAvailable => "AAR_NOT_AVAILABLE",
+            Self::ActiveTenantNotSupported => "ACTIVE_TENANT_NOT_SUPPORTED",
             Self::AlreadyExists => "ALREADY_EXISTS",
             Self::AnonBusy => "ANON_BUSY",
             Self::ArtifactIntegrityError => "ARTIFACT_INTEGRITY_ERROR",
@@ -11960,6 +12418,7 @@ impl ErrorCode {
             Self::ShareListConflict => "SHARE_LIST_CONFLICT",
             Self::SizeLimit => "SIZE_LIMIT",
             Self::SpecNotFound => "SPEC_NOT_FOUND",
+            Self::StartedByAnotherUser => "STARTED_BY_ANOTHER_USER",
             Self::TaskGraphFailed => "TASK_GRAPH_FAILED",
             Self::TeamAbort => "TEAM_ABORT",
             Self::TermsNotAccepted => "TERMS_NOT_ACCEPTED",
@@ -11977,10 +12436,16 @@ impl ErrorCode {
             Self::AlreadyBootstrapped => "already_bootstrapped",
             Self::ApprovalRejected => "approval_rejected",
             Self::BillingNotConfigured => "billing_not_configured",
+            Self::ConsentRequired => "consent_required",
+            Self::CvInvalid => "cv_invalid",
+            Self::CvTooLarge => "cv_too_large",
+            Self::DuplicateApplication => "duplicate_application",
             Self::GovernanceNotEnabled => "governance_not_enabled",
             Self::IncompleteRecord => "incomplete_record",
             Self::InertPolicyField => "inert_policy_field",
             Self::InertPublicConfigField => "inert_public_config_field",
+            Self::JobApplyElsewhere => "job_apply_elsewhere",
+            Self::JobClosed => "job_closed",
             Self::KbChunkLimit => "kb_chunk_limit",
             Self::KbDocumentBodyInvalid => "kb_document_body_invalid",
             Self::KbDocumentTooLarge => "kb_document_too_large",
@@ -11999,10 +12464,12 @@ impl ErrorCode {
             Self::QuotaExceeded2 => "quota_exceeded",
             Self::RateLimited => "rate_limited",
             Self::ResourceLimitReached => "resource_limit_reached",
+            Self::RunApprovalExpired => "run_approval_expired",
             Self::RunInputTimeout => "run_input_timeout",
             Self::RunNeverClaimed => "run_never_claimed",
             Self::RunOrphanedRestart => "run_orphaned_restart",
             Self::RunQuotaExceeded => "run_quota_exceeded",
+            Self::RunStalled => "run_stalled",
             Self::SecretWouldMove => "secret_would_move",
             Self::VideoConsentRequired => "video_consent_required",
             Self::VideoOrderState => "video_order_state",
@@ -12025,6 +12492,7 @@ impl From<&str> for ErrorCode {
     fn from(value: &str) -> Self {
         match value {
             "AAR_NOT_AVAILABLE" => Self::AarNotAvailable,
+            "ACTIVE_TENANT_NOT_SUPPORTED" => Self::ActiveTenantNotSupported,
             "ALREADY_EXISTS" => Self::AlreadyExists,
             "ANON_BUSY" => Self::AnonBusy,
             "ARTIFACT_INTEGRITY_ERROR" => Self::ArtifactIntegrityError,
@@ -12096,6 +12564,7 @@ impl From<&str> for ErrorCode {
             "SHARE_LIST_CONFLICT" => Self::ShareListConflict,
             "SIZE_LIMIT" => Self::SizeLimit,
             "SPEC_NOT_FOUND" => Self::SpecNotFound,
+            "STARTED_BY_ANOTHER_USER" => Self::StartedByAnotherUser,
             "TASK_GRAPH_FAILED" => Self::TaskGraphFailed,
             "TEAM_ABORT" => Self::TeamAbort,
             "TERMS_NOT_ACCEPTED" => Self::TermsNotAccepted,
@@ -12113,10 +12582,16 @@ impl From<&str> for ErrorCode {
             "already_bootstrapped" => Self::AlreadyBootstrapped,
             "approval_rejected" => Self::ApprovalRejected,
             "billing_not_configured" => Self::BillingNotConfigured,
+            "consent_required" => Self::ConsentRequired,
+            "cv_invalid" => Self::CvInvalid,
+            "cv_too_large" => Self::CvTooLarge,
+            "duplicate_application" => Self::DuplicateApplication,
             "governance_not_enabled" => Self::GovernanceNotEnabled,
             "incomplete_record" => Self::IncompleteRecord,
             "inert_policy_field" => Self::InertPolicyField,
             "inert_public_config_field" => Self::InertPublicConfigField,
+            "job_apply_elsewhere" => Self::JobApplyElsewhere,
+            "job_closed" => Self::JobClosed,
             "kb_chunk_limit" => Self::KbChunkLimit,
             "kb_document_body_invalid" => Self::KbDocumentBodyInvalid,
             "kb_document_too_large" => Self::KbDocumentTooLarge,
@@ -12135,10 +12610,12 @@ impl From<&str> for ErrorCode {
             "quota_exceeded" => Self::QuotaExceeded2,
             "rate_limited" => Self::RateLimited,
             "resource_limit_reached" => Self::ResourceLimitReached,
+            "run_approval_expired" => Self::RunApprovalExpired,
             "run_input_timeout" => Self::RunInputTimeout,
             "run_never_claimed" => Self::RunNeverClaimed,
             "run_orphaned_restart" => Self::RunOrphanedRestart,
             "run_quota_exceeded" => Self::RunQuotaExceeded,
+            "run_stalled" => Self::RunStalled,
             "secret_would_move" => Self::SecretWouldMove,
             "video_consent_required" => Self::VideoConsentRequired,
             "video_order_state" => Self::VideoOrderState,
@@ -12988,7 +13465,7 @@ pub struct FileRecord {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FleetLayout {
     /// Agent id → its place on the canvas.
-    pub positions: HashMap<String, Value4>,
+    pub positions: HashMap<String, FleetLayoutPositionsValue>,
     pub edges: Vec<FleetLayoutEdge>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<Vec<FleetLayoutNote>>,
@@ -13056,13 +13533,20 @@ pub struct FleetLayoutNote {
     pub frame: Option<bool>,
 }
 
+/// `FleetLayoutPositionsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FleetLayoutPositionsValue {
+    pub x: f64,
+    pub y: f64,
+}
+
 /// What a client SENDS when saving the canvas. The stored record additionally carries
 /// `updated_at`, and the response may carry `dropped` — both are produced by the server, so
 /// neither belongs in a request.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct FleetLayoutUpdate {
     /// Agent id → its place on the canvas.
-    pub positions: HashMap<String, Value3>,
+    pub positions: HashMap<String, FleetLayoutUpdatePositionsValue>,
     pub edges: Vec<FleetLayoutUpdateEdge>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub notes: Option<Vec<FleetLayoutUpdateNote>>,
@@ -13106,6 +13590,13 @@ pub struct FleetLayoutUpdateNote {
     pub color: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub frame: Option<bool>,
+}
+
+/// `FleetLayoutUpdatePositionsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct FleetLayoutUpdatePositionsValue {
+    pub x: f64,
+    pub y: f64,
 }
 
 /// `FounderIdentity` model.
@@ -13322,6 +13813,12 @@ pub struct GetAdminIntegrationOAuthProviderResponse {
     /// override is stored.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub scopes: Option<Vec<String>>,
+}
+
+/// `GetAdminJobResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAdminJobResponse {
+    pub job: AdminJob,
 }
 
 /// `GetAdminLLMDefaultsResponse` model.
@@ -13655,9 +14152,18 @@ pub struct GetAgentVersionDiffResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub version_to: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub diff: Option<HashMap<String, Value5>>,
+    pub diff: Option<HashMap<String, GetAgentVersionDiffResponseDiffValue>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub changed_fields: Option<Vec<String>>,
+}
+
+/// `GetAgentVersionDiffResponseDiffValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetAgentVersionDiffResponseDiffValue {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub from: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub to: Option<serde_json::Value>,
 }
 
 /// `GetAgentViolationsResponse` model.
@@ -13873,13 +14379,65 @@ pub struct GetBridgeTaskApprovalResponse {
     pub approval_response: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
+/// `GetCareersConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetCareersConfigResponse {
+    pub config: CareersConfig,
+}
+
 /// `GetClientConfigResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetClientConfigResponse {
+    /// Model id → the rate the caller pays per million tokens. Empty when the markup cannot be
+    /// read.
+    pub pricing: HashMap<String, GetClientConfigResponsePricingValue>,
+    pub bridge: GetClientConfigResponseBridge,
+    pub limits: GetClientConfigResponseLimits,
+    pub dangerous_tool_prefixes: Vec<String>,
+    pub features: DeploymentFeatures,
+}
+
+/// `GetClientConfigResponseBridge` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetClientConfigResponseBridge {
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub features: Option<serde_json::Map<String, serde_json::Value>>,
+    pub heartbeat_interval_secs: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub providers: Option<serde_json::Map<String, serde_json::Value>>,
+    pub poll_timeout_ms: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub poll_http_timeout_secs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_max_wait_secs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub approval_poll_interval_secs: Option<i64>,
+}
+
+/// `GetClientConfigResponseLimits` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetClientConfigResponseLimits {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tool_timeout_secs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shell_timeout_secs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub http_timeout_secs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_file_size_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_http_response_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_shell_output_bytes: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max_shell_execs: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub wasm_shell_timeout_ms: Option<i64>,
+}
+
+/// `GetClientConfigResponsePricingValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetClientConfigResponsePricingValue {
+    pub input_per_million: f64,
+    pub output_per_million: f64,
 }
 
 /// `GetCompanyActivityResponse` model.
@@ -14049,6 +14607,12 @@ pub struct GetImmutableAuditResponse {
     pub total: i64,
 }
 
+/// `GetJobApplicationResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetJobApplicationResponse {
+    pub application: JobApplication,
+}
+
 /// `GetLinkPreviewResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct GetLinkPreviewResponse {
@@ -14077,6 +14641,23 @@ pub struct GetMarketplaceCategoriesResponse {
 pub struct GetMarkupConfigResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub markup: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `GetMcpoAuthClientMetadataResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetMcpoAuthClientMetadataResponse {
+    pub client_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub client_uri: Option<String>,
+    pub redirect_uris: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub grant_types: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub response_types: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub token_endpoint_auth_method: Option<String>,
 }
 
 /// `GetMediaUsageResponse` model.
@@ -14413,6 +14994,25 @@ pub struct GetPublicBlogPostResponse {
 pub struct GetPublicFeaturedAgentResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub agent: Option<serde_json::Map<String, serde_json::Value>>,
+}
+
+/// `GetPublicJobResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicJobResponse {
+    pub job: PublicJob,
+    /// The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+    /// on/off decision need no second call.
+    pub careers: GetPublicJobResponseCareers,
+}
+
+/// The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+/// on/off decision need no second call.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct GetPublicJobResponseCareers {
+    pub enabled: bool,
+    pub title: String,
+    pub description: String,
+    pub company_name: String,
 }
 
 /// `GetPublicStateResponse` model.
@@ -16142,6 +16742,32 @@ pub struct IngestMemoryResponseEntry {
     pub tags: Option<Vec<String>>,
 }
 
+/// `InstallEssentialsOnHeadAgentsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InstallEssentialsOnHeadAgentsResponse {
+    /// Tenants visited.
+    pub scanned: i64,
+    /// Head agents that received the SPEC on this run.
+    pub updated: i64,
+    pub already_present: i64,
+    pub no_head_agent: i64,
+    /// Absent when nothing failed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<InstallEssentialsOnHeadAgentsResponseError>>,
+}
+
+/// `InstallEssentialsOnHeadAgentsResponseError` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct InstallEssentialsOnHeadAgentsResponseError {
+    /// Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+    /// removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+    #[serde(rename = "tenantId")]
+    pub tenant_id: String,
+    pub error: String,
+    #[serde(rename = "tenant_id")]
+    pub tenant_id_: String,
+}
+
 /// OAuth/API integration record (Slack, GitHub, Linear, etc.).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Integration {
@@ -16323,7 +16949,51 @@ pub struct Invite {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct InviteUserRequest {
     pub email: String,
-    pub role: String,
+    pub role: InviteUserRequestRole,
+}
+
+/// `InviteUserRequestRole` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum InviteUserRequestRole {
+    #[default]
+    #[serde(rename = "admin")]
+    Admin,
+    #[serde(rename = "developer")]
+    Developer,
+    #[serde(rename = "viewer")]
+    Viewer,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl InviteUserRequestRole {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Admin => "admin",
+            Self::Developer => "developer",
+            Self::Viewer => "viewer",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for InviteUserRequestRole {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for InviteUserRequestRole {
+    fn from(value: &str) -> Self {
+        match value {
+            "admin" => Self::Admin,
+            "developer" => Self::Developer,
+            "viewer" => Self::Viewer,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `InviteUserResponse` model.
@@ -16411,6 +17081,589 @@ pub struct IssueArbiterRulingRequest {
 pub struct IssueArbiterRulingResponse {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub ok: Option<bool>,
+}
+
+/// A vacancy as the admin sees it. The public view (`PublicJob`) is this with a non-public
+/// `salary` set to null and three derived fields added. No field names age, gender or any other
+/// ground the Ukrainian advertising law (art. 24-1) forbids a vacancy to require;
+/// `experience_years_min` and `english_level` are the permitted requirements.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct Job {
+    pub id: String,
+    /// Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+    pub slug: String,
+    /// Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+    pub previous_slugs: Vec<String>,
+    /// `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+    /// the public.
+    pub status: JobStatus,
+    /// The language the texts are written in.
+    pub language: VideoOrderLocale,
+    pub title: String,
+    /// Plain text for the card, the meta description and the OG text.
+    pub summary: String,
+    /// Markdown.
+    pub description: String,
+    pub responsibilities: Vec<String>,
+    pub requirements: Vec<String>,
+    pub nice_to_have: Vec<String>,
+    pub benefits: Vec<String>,
+    /// Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    /// schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+    /// internship → INTERN, the rest upper-cased.
+    pub employment_type: JobEmploymentType,
+    /// `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+    /// Google requires.
+    pub workplace_type: JobWorkplaceType,
+    pub location: JobLocation,
+    /// ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+    pub applicant_countries: Vec<String>,
+    /// CEFR; `none` = not required.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub english_level: Option<JobEnglishLevel>,
+    /// JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience_years_min: Option<i64>,
+    pub skills: Vec<String>,
+    #[serde(default)]
+    pub salary: Option<JobSalary>,
+    /// False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+    /// (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+    /// is the simplest way to comply.
+    pub salary_public: bool,
+    pub apply: JobApply,
+    pub created_at: String,
+    pub updated_at: String,
+    /// JSON-LD `datePosted`.
+    #[serde(default)]
+    pub published_at: Option<String>,
+    /// Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+    /// no applications.
+    #[serde(default)]
+    pub closes_at: Option<String>,
+    /// When it was actually closed.
+    #[serde(default)]
+    pub closed_at: Option<String>,
+}
+
+/// A candidate's application, as the admin sees it. Personal data: deleted `retention_days`
+/// after the vacancy closes, or on `DELETE`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JobApplication {
+    pub id: String,
+    pub job_id: String,
+    pub status: JobApplicationStatus,
+    pub name: String,
+    pub email: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub phone: Option<String>,
+    pub links: Vec<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cover_letter: Option<String>,
+    #[serde(default)]
+    pub cv: Option<ApplicationCv>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub locale: Option<String>,
+    /// Where the candidate came from, as the form sent it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub source: Option<String>,
+    /// When the privacy consent was given.
+    pub consent_at: String,
+    /// Separate, never pre-ticked: the candidate agreed to be kept for other roles.
+    #[serde(default)]
+    pub talent_pool_consent_at: Option<String>,
+    /// Set when the vacancy closes; the daily sweep deletes the application after it.
+    #[serde(default)]
+    pub retain_until: Option<String>,
+    /// Reviewer's private notes.
+    pub notes: String,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
+/// `JobApplicationStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobApplicationStatus {
+    #[default]
+    #[serde(rename = "new")]
+    New,
+    #[serde(rename = "reviewing")]
+    Reviewing,
+    #[serde(rename = "interview")]
+    Interview,
+    #[serde(rename = "offer")]
+    Offer,
+    #[serde(rename = "hired")]
+    Hired,
+    #[serde(rename = "rejected")]
+    Rejected,
+    #[serde(rename = "withdrawn")]
+    Withdrawn,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobApplicationStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::New => "new",
+            Self::Reviewing => "reviewing",
+            Self::Interview => "interview",
+            Self::Offer => "offer",
+            Self::Hired => "hired",
+            Self::Rejected => "rejected",
+            Self::Withdrawn => "withdrawn",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobApplicationStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobApplicationStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "new" => Self::New,
+            "reviewing" => Self::Reviewing,
+            "interview" => Self::Interview,
+            "offer" => Self::Offer,
+            "hired" => Self::Hired,
+            "rejected" => Self::Rejected,
+            "withdrawn" => Self::Withdrawn,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// How a candidate applies. `form`: `POST /api/v1/public/jobs/{slug}/apply`. `external`: send
+/// them to `url`. `email`: tell them to write to `email`. The two requirement flags apply to
+/// the form.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JobApply {
+    pub mode: JobApplyMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    pub requires_cv: bool,
+    pub requires_cover_letter: bool,
+}
+
+/// `JobApplyMode` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobApplyMode {
+    #[default]
+    #[serde(rename = "form")]
+    Form,
+    #[serde(rename = "external")]
+    External,
+    #[serde(rename = "email")]
+    Email,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobApplyMode {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Form => "form",
+            Self::External => "external",
+            Self::Email => "email",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobApplyMode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobApplyMode {
+    fn from(value: &str) -> Self {
+        match value {
+            "form" => Self::Form,
+            "external" => Self::External,
+            "email" => Self::Email,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+/// internship → INTERN, the rest upper-cased.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobEmploymentType {
+    #[default]
+    #[serde(rename = "full_time")]
+    FullTime,
+    #[serde(rename = "part_time")]
+    PartTime,
+    #[serde(rename = "contract")]
+    Contract,
+    #[serde(rename = "temporary")]
+    Temporary,
+    #[serde(rename = "internship")]
+    Internship,
+    #[serde(rename = "volunteer")]
+    Volunteer,
+    #[serde(rename = "per_diem")]
+    PerDiem,
+    #[serde(rename = "other")]
+    Other,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Unknown(String),
+}
+
+impl JobEmploymentType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::FullTime => "full_time",
+            Self::PartTime => "part_time",
+            Self::Contract => "contract",
+            Self::Temporary => "temporary",
+            Self::Internship => "internship",
+            Self::Volunteer => "volunteer",
+            Self::PerDiem => "per_diem",
+            Self::Other => "other",
+            Self::Unknown(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobEmploymentType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobEmploymentType {
+    fn from(value: &str) -> Self {
+        match value {
+            "full_time" => Self::FullTime,
+            "part_time" => Self::PartTime,
+            "contract" => Self::Contract,
+            "temporary" => Self::Temporary,
+            "internship" => Self::Internship,
+            "volunteer" => Self::Volunteer,
+            "per_diem" => Self::PerDiem,
+            "other" => Self::Other,
+            other => Self::Unknown(other.to_string()),
+        }
+    }
+}
+
+/// CEFR; `none` = not required.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobEnglishLevel {
+    #[default]
+    #[serde(rename = "none")]
+    None,
+    #[serde(rename = "a1")]
+    A1,
+    #[serde(rename = "a2")]
+    A2,
+    #[serde(rename = "b1")]
+    B1,
+    #[serde(rename = "b2")]
+    B2,
+    #[serde(rename = "c1")]
+    C1,
+    #[serde(rename = "c2")]
+    C2,
+    #[serde(rename = "native")]
+    Native,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobEnglishLevel {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::None => "none",
+            Self::A1 => "a1",
+            Self::A2 => "a2",
+            Self::B1 => "b1",
+            Self::B2 => "b2",
+            Self::C1 => "c1",
+            Self::C2 => "c2",
+            Self::Native => "native",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobEnglishLevel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobEnglishLevel {
+    fn from(value: &str) -> Self {
+        match value {
+            "none" => Self::None,
+            "a1" => Self::A1,
+            "a2" => Self::A2,
+            "b1" => Self::B1,
+            "b2" => Self::B2,
+            "c1" => Self::C1,
+            "c2" => Self::C2,
+            "native" => Self::Native,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `JobLocation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JobLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    /// ISO 3166-1 alpha-2, upper-case.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<String>,
+}
+
+/// A pay range. At least one bound is present. JSON-LD: `baseSalary` as a `MonetaryAmount`
+/// whose `value.unitText` is `period` upper-cased.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct JobSalary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    /// ISO 4217, upper-case.
+    pub currency: String,
+    pub period: JobSalaryPeriod,
+}
+
+/// `JobSalaryPeriod` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobSalaryPeriod {
+    #[default]
+    #[serde(rename = "hour")]
+    Hour,
+    #[serde(rename = "day")]
+    Day,
+    #[serde(rename = "week")]
+    Week,
+    #[serde(rename = "month")]
+    Month,
+    #[serde(rename = "year")]
+    Year,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobSalaryPeriod {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Hour => "hour",
+            Self::Day => "day",
+            Self::Week => "week",
+            Self::Month => "month",
+            Self::Year => "year",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobSalaryPeriod {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobSalaryPeriod {
+    fn from(value: &str) -> Self {
+        match value {
+            "hour" => Self::Hour,
+            "day" => Self::Day,
+            "week" => Self::Week,
+            "month" => Self::Month,
+            "year" => Self::Year,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `JobSeniority` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobSeniority {
+    #[default]
+    #[serde(rename = "intern")]
+    Intern,
+    #[serde(rename = "junior")]
+    Junior,
+    #[serde(rename = "middle")]
+    Middle,
+    #[serde(rename = "senior")]
+    Senior,
+    #[serde(rename = "lead")]
+    Lead,
+    #[serde(rename = "principal")]
+    Principal,
+    #[serde(rename = "head")]
+    Head,
+    #[serde(rename = "director")]
+    Director,
+    #[serde(rename = "executive")]
+    Executive,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobSeniority {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Intern => "intern",
+            Self::Junior => "junior",
+            Self::Middle => "middle",
+            Self::Senior => "senior",
+            Self::Lead => "lead",
+            Self::Principal => "principal",
+            Self::Head => "head",
+            Self::Director => "director",
+            Self::Executive => "executive",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobSeniority {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobSeniority {
+    fn from(value: &str) -> Self {
+        match value {
+            "intern" => Self::Intern,
+            "junior" => Self::Junior,
+            "middle" => Self::Middle,
+            "senior" => Self::Senior,
+            "lead" => Self::Lead,
+            "principal" => Self::Principal,
+            "head" => Self::Head,
+            "director" => Self::Director,
+            "executive" => Self::Executive,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+/// the public.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobStatus {
+    #[default]
+    #[serde(rename = "draft")]
+    Draft,
+    #[serde(rename = "published")]
+    Published,
+    #[serde(rename = "closed")]
+    Closed,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Draft => "draft",
+            Self::Published => "published",
+            Self::Closed => "closed",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "draft" => Self::Draft,
+            "published" => Self::Published,
+            "closed" => Self::Closed,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+/// Google requires.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum JobWorkplaceType {
+    #[default]
+    #[serde(rename = "remote")]
+    Remote,
+    #[serde(rename = "hybrid")]
+    Hybrid,
+    #[serde(rename = "onsite")]
+    Onsite,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl JobWorkplaceType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Remote => "remote",
+            Self::Hybrid => "hybrid",
+            Self::Onsite => "onsite",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for JobWorkplaceType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for JobWorkplaceType {
+    fn from(value: &str) -> Self {
+        match value {
+            "remote" => Self::Remote,
+            "hybrid" => Self::Hybrid,
+            "onsite" => Self::Onsite,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// A JSON-RPC 2.0 envelope. Exactly one of `result` and `error` is present.
@@ -16843,7 +18096,7 @@ pub struct KnowledgeBaseUpdate {
 pub struct LandingConfigSection {
     #[serde(default)]
     pub public_agent_id: Option<String>,
-    pub texts: HashMap<String, Value>,
+    pub texts: HashMap<String, LandingConfigSectionTextsValue>,
     pub multilang_enabled: bool,
     pub default_locale: String,
     pub partners_enabled: bool,
@@ -16870,6 +18123,15 @@ pub struct LandingConfigSectionPartnerLogo {
     pub slug: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub url: Option<String>,
+}
+
+/// `LandingConfigSectionTextsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct LandingConfigSectionTextsValue {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub en: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub uk: Option<String>,
 }
 
 /// Operator-set text and partner logos for the public landing page.
@@ -17072,6 +18334,13 @@ pub struct ListAdminIntegrationOAuthProvidersResponseProvider {
     /// Enabled AND holding both a client id and a secret — a provider switched on with incomplete
     /// credentials reports false here, so this is readiness rather than the stored flag.
     pub enabled: bool,
+}
+
+/// `ListAdminJobsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListAdminJobsResponse {
+    pub items: Vec<AdminJob>,
+    pub total: i64,
 }
 
 /// `ListAdminProvidersResponse` model.
@@ -17556,6 +18825,18 @@ pub struct ListInvitesResponse {
     pub cursor: Option<String>,
 }
 
+/// `ListJobApplicationsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListJobApplicationsResponse {
+    pub items: Vec<JobApplication>,
+    pub total: i64,
+    pub page: i64,
+    pub limit: i64,
+    pub total_pages: i64,
+    /// One key per `ApplicationStatus`.
+    pub counts_by_status: serde_json::Map<String, serde_json::Value>,
+}
+
 /// `ListKbDocumentsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListKbDocumentsResponse {
@@ -17617,6 +18898,13 @@ pub struct ListLLMModelsResponse {
     /// set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub default_model: Option<String>,
+}
+
+/// `ListMCPCatalogResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListMCPCatalogResponse {
+    pub items: Vec<MCPCatalogEntry>,
+    pub total: i64,
 }
 
 /// `ListMCPServersResponse` model.
@@ -17904,6 +19192,27 @@ impl From<&str> for ListPublicIntegrationsResponseConnectorAuthType {
     }
 }
 
+/// `ListPublicJobsResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListPublicJobsResponse {
+    pub careers: ListPublicJobsResponseCareers,
+    pub items: Vec<PublicJobSummary>,
+    pub facets: CareersFacets,
+    pub total: i64,
+    pub page: i64,
+    pub limit: i64,
+    pub total_pages: i64,
+}
+
+/// `ListPublicJobsResponseCareers` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListPublicJobsResponseCareers {
+    pub enabled: bool,
+    pub title: String,
+    pub description: String,
+    pub company_name: String,
+}
+
 /// `ListPublicPlansResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicPlansResponse {
@@ -17955,6 +19264,61 @@ pub struct ListPublicVideoTemplatesResponseStats {
     /// Videos delivered to paying buyers since the service opened. Test runs and free regenerations
     /// do not count; nothing seeds it.
     pub videos_total: i64,
+}
+
+/// `ListRegistrySigningKeysResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListRegistrySigningKeysResponse {
+    pub keys: Vec<ListRegistrySigningKeysResponseKey>,
+}
+
+/// `ListRegistrySigningKeysResponseKey` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListRegistrySigningKeysResponseKey {
+    pub alg: ListRegistrySigningKeysResponseKeyAlg,
+    pub key_id: String,
+    /// Base64 of the raw 32-byte Ed25519 public key.
+    pub public_key: String,
+    pub created_at: String,
+    /// Absent while the key is active. Refuse signatures with `signed_at` later than this.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retired_at: Option<String>,
+}
+
+/// `ListRegistrySigningKeysResponseKeyAlg` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ListRegistrySigningKeysResponseKeyAlg {
+    #[default]
+    #[serde(rename = "ed25519")]
+    Ed25519,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ListRegistrySigningKeysResponseKeyAlg {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Ed25519 => "ed25519",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ListRegistrySigningKeysResponseKeyAlg {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ListRegistrySigningKeysResponseKeyAlg {
+    fn from(value: &str) -> Self {
+        match value {
+            "ed25519" => Self::Ed25519,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// `ListRunArtifactsResponse` model.
@@ -18097,6 +19461,90 @@ pub struct ListSessionDrawingsResponse {
     pub has_more: bool,
 }
 
+/// `ListSessionsArchived` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ListSessionsArchived {
+    #[default]
+    #[serde(rename = "false")]
+    False,
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "all")]
+    All,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ListSessionsArchived {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::False => "false",
+            Self::True => "true",
+            Self::All => "all",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ListSessionsArchived {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ListSessionsArchived {
+    fn from(value: &str) -> Self {
+        match value {
+            "false" => Self::False,
+            "true" => Self::True,
+            "all" => Self::All,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `ListSessionsPinned` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum ListSessionsPinned {
+    #[default]
+    #[serde(rename = "true")]
+    True,
+    #[serde(rename = "false")]
+    False,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl ListSessionsPinned {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::True => "true",
+            Self::False => "false",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for ListSessionsPinned {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for ListSessionsPinned {
+    fn from(value: &str) -> Self {
+        match value {
+            "true" => Self::True,
+            "false" => Self::False,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `ListSessionsResponse` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSessionsResponse {
@@ -18109,6 +19557,17 @@ pub struct ListSessionsResponse {
 /// `ListSessionsResponseItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSessionsResponseItem {
+    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived_at: Option<String>,
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned: Option<bool>,
+    /// When it was pinned; order the pinned group by it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     pub session_id: String,
@@ -19053,6 +20512,346 @@ pub struct MaterializeCanvasSquadResponse {
     pub worker_count: i64,
 }
 
+/// A vendor-hosted MCP server that connects in one step. Every entry was measured on the wire:
+/// an `oauth` entry answers with an OAuth challenge, its authorization server supports PKCE
+/// S256, and the platform can obtain a client_id there without a human; a `none` entry is run
+/// by the data's own publisher, answers without credentials and lists its tools.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPCatalogEntry {
+    pub id: String,
+    pub name: String,
+    pub category: MCPCatalogEntryCategory,
+    pub description: String,
+    /// `description` in Ukrainian, for a uk interface.
+    pub description_uk: String,
+    pub url: String,
+    /// A read-only endpoint, where the vendor offers one.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read_only_url: Option<String>,
+    /// `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+    /// answers 201 at once, with no sign-in.
+    pub auth: MCPCatalogEntryAuth,
+    pub access: MCPCatalogEntryAccess,
+    /// What the vendor's tools can do that cannot be taken back: `money` (charges, refunds,
+    /// payouts, payroll, payment requests), `send` (email, sequences, replies, documents for
+    /// signature, on the tenant's behalf), `delete` (write or delete records wholesale). Empty when
+    /// none apply. Build a warning from this list so it says only what is true of the entry.
+    pub risks: Vec<MCPCatalogEntryRisk>,
+    /// `risks` is not empty. Connect prefers `read_only_url` for these unless `read_only: false` is
+    /// sent.
+    pub sensitive: bool,
+    pub docs_url: String,
+    /// Vendor domain, for the icon.
+    pub domain: String,
+    /// A plan or admin switch the person needs.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note: Option<String>,
+    /// `note` in Ukrainian; present exactly when `note` is.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub note_uk: Option<String>,
+}
+
+/// `MCPCatalogEntryAccess` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPCatalogEntryAccess {
+    #[default]
+    #[serde(rename = "read")]
+    Read,
+    #[serde(rename = "read_write")]
+    ReadWrite,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPCatalogEntryAccess {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Read => "read",
+            Self::ReadWrite => "read_write",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPCatalogEntryAccess {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPCatalogEntryAccess {
+    fn from(value: &str) -> Self {
+        match value {
+            "read" => Self::Read,
+            "read_write" => Self::ReadWrite,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+/// answers 201 at once, with no sign-in.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPCatalogEntryAuth {
+    #[default]
+    #[serde(rename = "oauth")]
+    Oauth,
+    #[serde(rename = "none")]
+    None,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPCatalogEntryAuth {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Oauth => "oauth",
+            Self::None => "none",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPCatalogEntryAuth {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPCatalogEntryAuth {
+    fn from(value: &str) -> Self {
+        match value {
+            "oauth" => Self::Oauth,
+            "none" => Self::None,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `MCPCatalogEntryCategory` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPCatalogEntryCategory {
+    #[default]
+    #[serde(rename = "finance")]
+    Finance,
+    #[serde(rename = "sales")]
+    Sales,
+    #[serde(rename = "marketing")]
+    Marketing,
+    #[serde(rename = "analytics")]
+    Analytics,
+    #[serde(rename = "support")]
+    Support,
+    #[serde(rename = "people")]
+    People,
+    #[serde(rename = "operations")]
+    Operations,
+    #[serde(rename = "meetings")]
+    Meetings,
+    #[serde(rename = "compliance")]
+    Compliance,
+    #[serde(rename = "data")]
+    Data,
+    #[serde(rename = "open_data")]
+    OpenData,
+    #[serde(rename = "markets")]
+    Markets,
+    #[serde(rename = "research")]
+    Research,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPCatalogEntryCategory {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Finance => "finance",
+            Self::Sales => "sales",
+            Self::Marketing => "marketing",
+            Self::Analytics => "analytics",
+            Self::Support => "support",
+            Self::People => "people",
+            Self::Operations => "operations",
+            Self::Meetings => "meetings",
+            Self::Compliance => "compliance",
+            Self::Data => "data",
+            Self::OpenData => "open_data",
+            Self::Markets => "markets",
+            Self::Research => "research",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPCatalogEntryCategory {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPCatalogEntryCategory {
+    fn from(value: &str) -> Self {
+        match value {
+            "finance" => Self::Finance,
+            "sales" => Self::Sales,
+            "marketing" => Self::Marketing,
+            "analytics" => Self::Analytics,
+            "support" => Self::Support,
+            "people" => Self::People,
+            "operations" => Self::Operations,
+            "meetings" => Self::Meetings,
+            "compliance" => Self::Compliance,
+            "data" => Self::Data,
+            "open_data" => Self::OpenData,
+            "markets" => Self::Markets,
+            "research" => Self::Research,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// `MCPCatalogEntryRisk` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPCatalogEntryRisk {
+    #[default]
+    #[serde(rename = "money")]
+    Money,
+    #[serde(rename = "send")]
+    Send,
+    #[serde(rename = "delete")]
+    Delete,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPCatalogEntryRisk {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Money => "money",
+            Self::Send => "send",
+            Self::Delete => "delete",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPCatalogEntryRisk {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPCatalogEntryRisk {
+    fn from(value: &str) -> Self {
+        match value {
+            "money" => Self::Money,
+            "send" => Self::Send,
+            "delete" => Self::Delete,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// Exactly one of `catalog_id` and `url`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPConnectRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub catalog_id: Option<String>,
+    /// Any streamable-HTTP MCP server, for one outside the catalog.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// Agents that get the server's tools. Empty connects it to nobody yet.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub agent_ids: Option<Vec<String>>,
+    /// Use the vendor's read-only endpoint when it has one. Defaults to the entry's `sensitive`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub read_only: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub return_to: Option<MCPOAuthReturnTo>,
+}
+
+/// `authorization_required`: open `authorize_url` in a browser; the vendor returns to
+/// `/api/v1/mcp/oauth/callback`, which hands `state` and `code` to
+/// `{public_base_url}/mcp/oauth/callback`, which calls `POST /mcp/oauth/complete`. `connected`:
+/// the server is stored and its live session opened (or `connect_error` says why not).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPConnectResult {
+    pub status: MCPConnectResultStatus,
+    /// Always https. A client should refuse anything else.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub authorize_url: Option<String>,
+    /// Exactly where the callback's final 302 will land: `return_to` when one was sent, else
+    /// `{public_base_url}/mcp/oauth/callback`. A client that intercepts the navigation itself
+    /// matches on this rather than on a host it knows.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub callback_url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub state: Option<String>,
+    /// The started connection is forgotten after this (10 minutes).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub server: Option<MCPServer>,
+    /// Tool names the live session listed.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tools: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connect_error: Option<String>,
+    /// The server was already connected; the agents were added to it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub already_connected: Option<bool>,
+}
+
+/// `MCPConnectResultStatus` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPConnectResultStatus {
+    #[default]
+    #[serde(rename = "authorization_required")]
+    AuthorizationRequired,
+    #[serde(rename = "connected")]
+    Connected,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPConnectResultStatus {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::AuthorizationRequired => "authorization_required",
+            Self::Connected => "connected",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPConnectResultStatus {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPConnectResultStatus {
+    fn from(value: &str) -> Self {
+        match value {
+            "authorization_required" => Self::AuthorizationRequired,
+            "connected" => Self::Connected,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// `McpjsonRpcRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct McpjsonRpcRequest {
@@ -19063,6 +20862,49 @@ pub struct McpjsonRpcRequest {
     pub params: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub id: Option<serde_json::Value>,
+}
+
+/// For a native client that cannot catch the https hop: the callback's final 302 goes here
+/// instead of `{public_base_url}/mcp/oauth/callback`, carrying `state` and either `code` or
+/// `error` (plus `error_description` when the vendor gave one). Every outcome takes this hop.
+/// Exact values only; anything else is 400. Omit it for the web app.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum MCPOAuthReturnTo {
+    #[default]
+    #[serde(rename = "uarp://mcp/oauth/callback")]
+    UarpMCPOauthCallback,
+    #[serde(rename = "snaga://mcp/oauth/callback")]
+    SnagaMCPOauthCallback,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl MCPOAuthReturnTo {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::UarpMCPOauthCallback => "uarp://mcp/oauth/callback",
+            Self::SnagaMCPOauthCallback => "snaga://mcp/oauth/callback",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for MCPOAuthReturnTo {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for MCPOAuthReturnTo {
+    fn from(value: &str) -> Self {
+        match value {
+            "uarp://mcp/oauth/callback" => Self::UarpMCPOauthCallback,
+            "snaga://mcp/oauth/callback" => Self::SnagaMCPOauthCallback,
+            other => Self::Other(other.to_string()),
+        }
+    }
 }
 
 /// An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
@@ -19111,7 +20953,11 @@ pub struct MCPServer {
 /// not offered: a key in a URL lands in every proxy log on the way.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct MCPServerAuth {
+    /// `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+    /// /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
     pub r#type: MCPServerAuthType,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub oauth: Option<MCPServerOAuth>,
     /// Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
     /// not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -19124,7 +20970,8 @@ pub struct MCPServerAuth {
     pub env_key: Option<String>,
 }
 
-/// `MCPServerAuthType` enumeration.
+/// `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+/// /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum MCPServerAuthType {
     #[default]
@@ -19132,6 +20979,8 @@ pub enum MCPServerAuthType {
     None,
     #[serde(rename = "api_key")]
     APIKey,
+    #[serde(rename = "oauth")]
+    Oauth,
     /// A value the API introduced after this SDK was generated.
     #[serde(untagged)]
     Other(String),
@@ -19143,6 +20992,7 @@ impl MCPServerAuthType {
         match self {
             Self::None => "none",
             Self::APIKey => "api_key",
+            Self::Oauth => "oauth",
             Self::Other(value) => value.as_str(),
         }
     }
@@ -19159,9 +21009,38 @@ impl From<&str> for MCPServerAuthType {
         match value {
             "none" => Self::None,
             "api_key" => Self::APIKey,
+            "oauth" => Self::Oauth,
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// The non-secret half of an OAuth connection. Access token, refresh token and any client
+/// secret live in the record's encrypted `env` and are never returned.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPServerOAuth {
+    /// The authorization server.
+    pub issuer: String,
+    pub token_endpoint: String,
+    pub client_id: String,
+    pub token_endpoint_auth_method: String,
+    /// The resource the token is bound to (RFC 8707).
+    pub resource: String,
+    pub scopes: Vec<String>,
+    /// Access-token expiry. The platform refreshes before it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub expires_at: Option<String>,
+    /// User who granted access.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub connected_by: Option<String>,
+    pub connected_at: String,
+    /// True when the vendor refused a refresh (revoked or expired grant). The server's tools are
+    /// withheld until the person reconnects with `POST /mcp/servers/{serverId}/reconnect`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub needs_reauth: Option<bool>,
+    /// Catalog entry it came from.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub catalog_id: Option<String>,
 }
 
 /// `MCPServerStatus` enumeration.
@@ -21241,10 +23120,79 @@ pub struct PatchMeResponseUser {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PatchTenantRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// The public handle. An invalid slug answers 422; one held by another tenant answers 409.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub slug: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Trimmed and cut to 2000 characters.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub logo_url: Option<String>,
+    /// Shallow-merged into the stored branding.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub branding: Option<TenantBranding>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public: Option<bool>,
+    /// An agent of this tenant (404 otherwise); setting it publishes that agent. Null clears.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_agent_id: Option<String>,
+    /// Replaced whole. More than 50 answers 422. Null clears.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub published_agent_ids: Option<Vec<String>>,
+    /// Shallow-merged.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub public_settings: Option<TenantPublicSettings>,
+    /// Shallow-merged. `legal_hold`, `suspended`, `max_concurrent_runs_override`, `default_model`
+    /// and `default_provider` are stripped before the write.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub settings: Option<serde_json::Map<String, serde_json::Value>>,
+    /// An agent of this tenant (404 otherwise). Null clears.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub head_agent_id: Option<String>,
+    /// A workspace of this tenant (404 otherwise). Null clears.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub shared_workspace_id: Option<String>,
+    /// `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+    /// public profile — `public: true`, here or already stored (422 without it).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub custom_domain: Option<PatchTenantRequestCustomDomain>,
+    /// Replaced whole (its `stats` and `published_at` are kept).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub marketplace_listing: Option<PatchTenantRequestMarketplaceListing>,
+    /// Can be set; a set hold cannot be cleared here (403).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub legal_hold: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
     pub social_links: Option<TenantSocialLinks>,
     /// Any additional properties the server returned.
     #[serde(flatten)]
     pub extra: HashMap<String, serde_json::Value>,
+}
+
+/// `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+/// public profile — `public: true`, here or already stored (422 without it).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PatchTenantRequestCustomDomain {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub domain: Option<String>,
+}
+
+/// Replaced whole (its `stats` and `published_at` are kept).
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PatchTenantRequestMarketplaceListing {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tags: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub short_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub long_description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub featured_agents: Option<Vec<String>>,
 }
 
 /// `PauseCompanyResponse` model.
@@ -22223,6 +24171,105 @@ pub struct PublicDomainLookupResponse {
     pub found: Option<bool>,
 }
 
+/// `PublicJob` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicJob {
+    pub id: String,
+    /// Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+    pub slug: String,
+    /// Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+    pub previous_slugs: Vec<String>,
+    /// `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+    /// the public.
+    pub status: JobStatus,
+    /// The language the texts are written in.
+    pub language: VideoOrderLocale,
+    pub title: String,
+    /// Plain text for the card, the meta description and the OG text.
+    pub summary: String,
+    /// Markdown.
+    pub description: String,
+    pub responsibilities: Vec<String>,
+    pub requirements: Vec<String>,
+    pub nice_to_have: Vec<String>,
+    pub benefits: Vec<String>,
+    /// Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    /// schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+    /// internship → INTERN, the rest upper-cased.
+    pub employment_type: JobEmploymentType,
+    /// `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+    /// Google requires.
+    pub workplace_type: JobWorkplaceType,
+    pub location: JobLocation,
+    /// ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+    pub applicant_countries: Vec<String>,
+    /// CEFR; `none` = not required.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub english_level: Option<JobEnglishLevel>,
+    /// JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience_years_min: Option<i64>,
+    pub skills: Vec<String>,
+    #[serde(default)]
+    pub salary: Option<JobSalary>,
+    /// False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+    /// (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+    /// is the simplest way to comply.
+    pub salary_public: bool,
+    pub apply: JobApply,
+    pub created_at: String,
+    pub updated_at: String,
+    /// JSON-LD `datePosted`.
+    #[serde(default)]
+    pub published_at: Option<String>,
+    /// Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+    /// no applications.
+    #[serde(default)]
+    pub closes_at: Option<String>,
+    /// When it was actually closed.
+    #[serde(default)]
+    pub closed_at: Option<String>,
+    /// `apply.mode` is `form` (JSON-LD `directApply`).
+    pub direct_apply: bool,
+    /// Published and not past `closes_at`. False on a closed vacancy, whose page still answers 200.
+    pub applications_open: bool,
+    /// 5242880: refuse a larger file before uploading it.
+    pub cv_max_bytes: i64,
+    /// What the server accepts, checked by content.
+    pub cv_mime_types: Vec<String>,
+}
+
+/// One card of the public list.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PublicJobSummary {
+    pub id: String,
+    pub slug: String,
+    pub title: String,
+    pub summary: String,
+    pub category: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    pub employment_type: JobEmploymentType,
+    pub workplace_type: JobWorkplaceType,
+    pub location: JobLocation,
+    pub applicant_countries: Vec<String>,
+    #[serde(default)]
+    pub salary: Option<JobSalary>,
+    pub salary_public: bool,
+    pub language: VideoOrderLocale,
+    #[serde(default)]
+    pub published_at: Option<String>,
+    #[serde(default)]
+    pub closes_at: Option<String>,
+}
+
 /// `PublicPlan` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct PublicPlan {
@@ -22835,6 +24882,29 @@ pub struct PushBridgeTaskEventsResponse {
     pub events_stored: Option<i64>,
 }
 
+/// `PutCareersConfigRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PutCareersConfigRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub enabled: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub company_name: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notify_emails: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub retention_days: Option<i64>,
+}
+
+/// `PutCareersConfigResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct PutCareersConfigResponse {
+    pub config: CareersConfig,
+}
+
 /// A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
 /// seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
 /// does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
@@ -23016,6 +25086,13 @@ pub struct ReadinessReport {
     pub status: String,
     pub timestamp: String,
     pub components: serde_json::Map<String, serde_json::Value>,
+}
+
+/// `ReconnectMCPServerRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ReconnectMCPServerRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub return_to: Option<MCPOAuthReturnTo>,
 }
 
 /// `RedeemPromoCodeRequest` model.
@@ -24782,6 +26859,819 @@ pub struct RunEvaluationRequest {
     pub agent_version: Option<String>,
 }
 
+/// One run event as it is stored and replayed. `payload` depends on `type`; for a type without
+/// a typed payload it is an object of whatever the emitter recorded.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEvent {
+    pub event_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventType,
+    /// Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+    pub seq: i64,
+    pub payload: serde_json::Map<String, serde_json::Value>,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub span_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace_context: Option<RunEventTraceContext>,
+}
+
+/// `RunEventTraceContext` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunEventTraceContext {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub traceparent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tracestate: Option<String>,
+}
+
+/// Every event type the runtime defines. Measured on the production event log 2026-10-05: 31 of
+/// these occurred, all members. A type outside this list is a contract defect, not a
+/// forward-compatible addition — but a client should still ignore an unknown one rather than
+/// fail, which is how a new type arrives before a client knows it.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunEventType {
+    #[default]
+    #[serde(rename = "run.created")]
+    RunCreated,
+    #[serde(rename = "run.started")]
+    RunStarted,
+    #[serde(rename = "run.completed")]
+    RunCompleted,
+    #[serde(rename = "run.failed")]
+    RunFailed,
+    #[serde(rename = "run.cancelled")]
+    RunCancelled,
+    #[serde(rename = "run.timeout")]
+    RunTimeout,
+    #[serde(rename = "run.guardrail_blocked")]
+    RunGuardrailBlocked,
+    #[serde(rename = "run.awaiting_approval")]
+    RunAwaitingApproval,
+    #[serde(rename = "run.awaiting_input")]
+    RunAwaitingInput,
+    #[serde(rename = "run.input_received")]
+    RunInputReceived,
+    #[serde(rename = "run.approved")]
+    RunApproved,
+    #[serde(rename = "run.rejected")]
+    RunRejected,
+    #[serde(rename = "run.checkpoint")]
+    RunCheckpoint,
+    #[serde(rename = "run.paused")]
+    RunPaused,
+    #[serde(rename = "run.resumed")]
+    RunResumed,
+    #[serde(rename = "run.restored")]
+    RunRestored,
+    #[serde(rename = "run.affect")]
+    RunAffect,
+    #[serde(rename = "llm.request")]
+    LLMRequest,
+    #[serde(rename = "llm.response")]
+    LLMResponse,
+    #[serde(rename = "llm.error")]
+    LLMError,
+    #[serde(rename = "llm.thinking")]
+    LLMThinking,
+    #[serde(rename = "llm.chunk")]
+    LLMChunk,
+    #[serde(rename = "llm.timeout")]
+    LLMTimeout,
+    #[serde(rename = "llm.fallback")]
+    LLMFallback,
+    #[serde(rename = "step.plan")]
+    StepPlan,
+    #[serde(rename = "step.act")]
+    StepAct,
+    #[serde(rename = "step.evaluate")]
+    StepEvaluate,
+    #[serde(rename = "step.thinking")]
+    StepThinking,
+    #[serde(rename = "tool.call")]
+    ToolCall,
+    #[serde(rename = "tool.result")]
+    ToolResult,
+    #[serde(rename = "tool.error")]
+    ToolError,
+    #[serde(rename = "tool.timeout")]
+    ToolTimeout,
+    #[serde(rename = "guardrail.check")]
+    GuardrailCheck,
+    #[serde(rename = "guardrail.violation")]
+    GuardrailViolation,
+    #[serde(rename = "guardrail.custom.check")]
+    GuardrailCustomCheck,
+    #[serde(rename = "guardrail.custom.violation")]
+    GuardrailCustomViolation,
+    #[serde(rename = "memory.retrieval")]
+    MemoryRetrieval,
+    #[serde(rename = "memory.extraction")]
+    MemoryExtraction,
+    #[serde(rename = "memory.stored")]
+    MemoryStored,
+    #[serde(rename = "memory.evicted")]
+    MemoryEvicted,
+    #[serde(rename = "session.context_compacted")]
+    SessionContextCompacted,
+    #[serde(rename = "session.created")]
+    SessionCreated,
+    #[serde(rename = "session.closed")]
+    SessionClosed,
+    #[serde(rename = "team.message")]
+    TeamMessage,
+    #[serde(rename = "team.round_start")]
+    TeamRoundStart,
+    #[serde(rename = "team.round_end")]
+    TeamRoundEnd,
+    #[serde(rename = "team.delegate")]
+    TeamDelegate,
+    #[serde(rename = "team.broadcast")]
+    TeamBroadcast,
+    #[serde(rename = "team.merge")]
+    TeamMerge,
+    #[serde(rename = "team.handoff")]
+    TeamHandoff,
+    #[serde(rename = "child_run.completed")]
+    ChildRunCompleted,
+    #[serde(rename = "child_run.failed")]
+    ChildRunFailed,
+    #[serde(rename = "company.tick_start")]
+    CompanyTickStart,
+    #[serde(rename = "company.tick_end")]
+    CompanyTickEnd,
+    #[serde(rename = "company.paused")]
+    CompanyPaused,
+    #[serde(rename = "company.resumed")]
+    CompanyResumed,
+    #[serde(rename = "company.budget_updated")]
+    CompanyBudgetUpdated,
+    #[serde(rename = "company.escalation")]
+    CompanyEscalation,
+    #[serde(rename = "company.objective_updated")]
+    CompanyObjectiveUpdated,
+    #[serde(rename = "circuit_breaker.opened")]
+    CircuitBreakerOpened,
+    #[serde(rename = "circuit_breaker.closed")]
+    CircuitBreakerClosed,
+    #[serde(rename = "circuit_breaker.half_open")]
+    CircuitBreakerHalfOpen,
+    #[serde(rename = "streaming.started")]
+    StreamingStarted,
+    #[serde(rename = "streaming.completed")]
+    StreamingCompleted,
+    #[serde(rename = "streaming.error")]
+    StreamingError,
+    #[serde(rename = "streaming.buffer_truncated")]
+    StreamingBufferTruncated,
+    #[serde(rename = "run.step_started")]
+    RunStepStarted,
+    #[serde(rename = "run.step_completed")]
+    RunStepCompleted,
+    #[serde(rename = "budget.soft_threshold_crossed")]
+    BudgetSoftThresholdCrossed,
+    #[serde(rename = "budget.hard_limit_reached")]
+    BudgetHardLimitReached,
+    #[serde(rename = "tenant.created")]
+    TenantCreated,
+    #[serde(rename = "tenant.suspended")]
+    TenantSuspended,
+    #[serde(rename = "tenant.purged")]
+    TenantPurged,
+    #[serde(rename = "config.updated")]
+    ConfigUpdated,
+    #[serde(rename = "webhook.delivered")]
+    WebhookDelivered,
+    #[serde(rename = "webhook.failed")]
+    WebhookFailed,
+    #[serde(rename = "cron.fired")]
+    CronFired,
+    #[serde(rename = "agent.version_created")]
+    AgentVersionCreated,
+    #[serde(rename = "agent.rollback")]
+    AgentRollback,
+    #[serde(rename = "mcp.server_log")]
+    MCPServerLog,
+    #[serde(rename = "orchestration.started")]
+    OrchestrationStarted,
+    #[serde(rename = "orchestration.planned")]
+    OrchestrationPlanned,
+    #[serde(rename = "orchestration.replanned")]
+    OrchestrationReplanned,
+    #[serde(rename = "orchestration.task_started")]
+    OrchestrationTaskStarted,
+    #[serde(rename = "orchestration.task_completed")]
+    OrchestrationTaskCompleted,
+    #[serde(rename = "orchestration.task_failed")]
+    OrchestrationTaskFailed,
+    #[serde(rename = "orchestration.checkpoint")]
+    OrchestrationCheckpoint,
+    #[serde(rename = "orchestration.policy_violation")]
+    OrchestrationPolicyViolation,
+    #[serde(rename = "orchestration.quality_report")]
+    OrchestrationQualityReport,
+    #[serde(rename = "orchestration.completed")]
+    OrchestrationCompleted,
+    #[serde(rename = "orchestration.failed")]
+    OrchestrationFailed,
+    #[serde(rename = "graph.agent_spawned")]
+    GraphAgentSpawned,
+    #[serde(rename = "graph.agent_terminated")]
+    GraphAgentTerminated,
+    #[serde(rename = "graph.task_delegated")]
+    GraphTaskDelegated,
+    #[serde(rename = "graph.edge_added")]
+    GraphEdgeAdded,
+    #[serde(rename = "graph.edge_removed")]
+    GraphEdgeRemoved,
+    #[serde(rename = "plan.created")]
+    PlanCreated,
+    #[serde(rename = "plan.updated")]
+    PlanUpdated,
+    #[serde(rename = "plan.sub_goal_completed")]
+    PlanSubGoalCompleted,
+    #[serde(rename = "plan.sub_goal_abandoned")]
+    PlanSubGoalAbandoned,
+    #[serde(rename = "mcp.tool_called")]
+    MCPToolCalled,
+    #[serde(rename = "mcp.server_connected")]
+    MCPServerConnected,
+    #[serde(rename = "mcp.server_disconnected")]
+    MCPServerDisconnected,
+    #[serde(rename = "a2a.task_sent")]
+    A2ATaskSent,
+    #[serde(rename = "a2a.task_received")]
+    A2ATaskReceived,
+    #[serde(rename = "memory.compressed")]
+    MemoryCompressed,
+    #[serde(rename = "capability.best_agent_selected")]
+    CapabilityBestAgentSelected,
+    #[serde(rename = "identity.created")]
+    IdentityCreated,
+    #[serde(rename = "identity.rotated")]
+    IdentityRotated,
+    #[serde(rename = "message.signed")]
+    MessageSigned,
+    #[serde(rename = "message.verified")]
+    MessageVerified,
+    #[serde(rename = "message.replay_blocked")]
+    MessageReplayBlocked,
+    #[serde(rename = "constitution.bootstrapped")]
+    ConstitutionBootstrapped,
+    #[serde(rename = "constitution.amended")]
+    ConstitutionAmended,
+    #[serde(rename = "constitution.check_passed")]
+    ConstitutionCheckPassed,
+    #[serde(rename = "constitution.check_blocked")]
+    ConstitutionCheckBlocked,
+    #[serde(rename = "constitution.violation")]
+    ConstitutionViolation,
+    #[serde(rename = "ledger.appended")]
+    LedgerAppended,
+    #[serde(rename = "ledger.integrity_checked")]
+    LedgerIntegrityChecked,
+    #[serde(rename = "permission.checked")]
+    PermissionChecked,
+    #[serde(rename = "permission.denied")]
+    PermissionDenied,
+    #[serde(rename = "permission.spawn_blocked")]
+    PermissionSpawnBlocked,
+    #[serde(rename = "attestation.created")]
+    AttestationCreated,
+    #[serde(rename = "attestation.verified")]
+    AttestationVerified,
+    #[serde(rename = "attestation.invalid")]
+    AttestationInvalid,
+    #[serde(rename = "arbitration.case_opened")]
+    ArbitrationCaseOpened,
+    #[serde(rename = "arbitration.ruling_submitted")]
+    ArbitrationRulingSubmitted,
+    #[serde(rename = "arbitration.appeal_filed")]
+    ArbitrationAppealFiled,
+    #[serde(rename = "voting.proposal_created")]
+    VotingProposalCreated,
+    #[serde(rename = "voting.ballot_cast")]
+    VotingBallotCast,
+    #[serde(rename = "voting.tallied")]
+    VotingTallied,
+    #[serde(rename = "voting.vetoed")]
+    VotingVetoed,
+    #[serde(rename = "resource.spent")]
+    ResourceSpent,
+    #[serde(rename = "resource.earned")]
+    ResourceEarned,
+    #[serde(rename = "resource.transferred")]
+    ResourceTransferred,
+    #[serde(rename = "resource.insufficient")]
+    ResourceInsufficient,
+    #[serde(rename = "ambassador.veto_issued")]
+    AmbassadorVetoIssued,
+    #[serde(rename = "ambassador.request_submitted")]
+    AmbassadorRequestSubmitted,
+    #[serde(rename = "builder.design_submitted")]
+    BuilderDesignSubmitted,
+    #[serde(rename = "builder.design_approved")]
+    BuilderDesignApproved,
+    #[serde(rename = "builder.design_spawned")]
+    BuilderDesignSpawned,
+    #[serde(rename = "emergency.safe_mode_activated")]
+    EmergencySafeModeActivated,
+    #[serde(rename = "emergency.safe_mode_deactivated")]
+    EmergencySafeModeDeactivated,
+    #[serde(rename = "emergency.deadlock_detected")]
+    EmergencyDeadlockDetected,
+    #[serde(rename = "goal.self_formulated")]
+    GoalSelfFormulated,
+    #[serde(rename = "goal.approved")]
+    GoalApproved,
+    #[serde(rename = "improvement.proposed")]
+    ImprovementProposed,
+    #[serde(rename = "improvement.sandbox_tested")]
+    ImprovementSandboxTested,
+    #[serde(rename = "improvement.applied")]
+    ImprovementApplied,
+    #[serde(rename = "collective.insight_published")]
+    CollectiveInsightPublished,
+    #[serde(rename = "collective.insights_retrieved")]
+    CollectiveInsightsRetrieved,
+    #[serde(rename = "collective.review_requested")]
+    CollectiveReviewRequested,
+    #[serde(rename = "collective.poll_created")]
+    CollectivePollCreated,
+    #[serde(rename = "collective.agent_rated")]
+    CollectiveAgentRated,
+    #[serde(rename = "collective.feedback_requested")]
+    CollectiveFeedbackRequested,
+    #[serde(rename = "collective.reflection_completed")]
+    CollectiveReflectionCompleted,
+    #[serde(rename = "collective.approaches_compared")]
+    CollectiveApproachesCompared,
+    #[serde(rename = "collective.lesson_logged")]
+    CollectiveLessonLogged,
+    #[serde(rename = "collective.team_formed")]
+    CollectiveTeamFormed,
+    #[serde(rename = "collective.team_joined")]
+    CollectiveTeamJoined,
+    #[serde(rename = "collective.team_left")]
+    CollectiveTeamLeft,
+    #[serde(rename = "collective.team_broadcast")]
+    CollectiveTeamBroadcast,
+    #[serde(rename = "collective.specialist_requested")]
+    CollectiveSpecialistRequested,
+    #[serde(rename = "collective.budget_requested")]
+    CollectiveBudgetRequested,
+    #[serde(rename = "collective.tokens_transferred")]
+    CollectiveTokensTransferred,
+    #[serde(rename = "collective.task_posted")]
+    CollectiveTaskPosted,
+    #[serde(rename = "collective.bid_placed")]
+    CollectiveBidPlaced,
+    #[serde(rename = "collective.bid_accepted")]
+    CollectiveBidAccepted,
+    #[serde(rename = "collective.cost_reported")]
+    CollectiveCostReported,
+    #[serde(rename = "sensor.url_watch_created")]
+    SensorURLWatchCreated,
+    #[serde(rename = "sensor.rss_watch_created")]
+    SensorRssWatchCreated,
+    #[serde(rename = "sensor.webhook_listener_created")]
+    SensorWebhookListenerCreated,
+    #[serde(rename = "sensor.check_scheduled")]
+    SensorCheckScheduled,
+    #[serde(rename = "sensor.event_subscription_created")]
+    SensorEventSubscriptionCreated,
+    #[serde(rename = "sensor.triggered")]
+    SensorTriggered,
+    #[serde(rename = "collective.report_presented")]
+    CollectiveReportPresented,
+    #[serde(rename = "collective.escalation")]
+    CollectiveEscalation,
+    #[serde(rename = "collective.anomaly_reported")]
+    CollectiveAnomalyReported,
+    #[serde(rename = "collective.human_override")]
+    CollectiveHumanOverride,
+    #[serde(rename = "collective.collective_paused")]
+    CollectiveCollectivePaused,
+    #[serde(rename = "collective.verification_requested")]
+    CollectiveVerificationRequested,
+    #[serde(rename = "strategy.created")]
+    StrategyCreated,
+    #[serde(rename = "strategy.kpi_updated")]
+    StrategyKpiUpdated,
+    #[serde(rename = "document.edit_start")]
+    DocumentEditStart,
+    #[serde(rename = "document.edit_chunk")]
+    DocumentEditChunk,
+    #[serde(rename = "document.edit_complete")]
+    DocumentEditComplete,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunEventType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::RunCreated => "run.created",
+            Self::RunStarted => "run.started",
+            Self::RunCompleted => "run.completed",
+            Self::RunFailed => "run.failed",
+            Self::RunCancelled => "run.cancelled",
+            Self::RunTimeout => "run.timeout",
+            Self::RunGuardrailBlocked => "run.guardrail_blocked",
+            Self::RunAwaitingApproval => "run.awaiting_approval",
+            Self::RunAwaitingInput => "run.awaiting_input",
+            Self::RunInputReceived => "run.input_received",
+            Self::RunApproved => "run.approved",
+            Self::RunRejected => "run.rejected",
+            Self::RunCheckpoint => "run.checkpoint",
+            Self::RunPaused => "run.paused",
+            Self::RunResumed => "run.resumed",
+            Self::RunRestored => "run.restored",
+            Self::RunAffect => "run.affect",
+            Self::LLMRequest => "llm.request",
+            Self::LLMResponse => "llm.response",
+            Self::LLMError => "llm.error",
+            Self::LLMThinking => "llm.thinking",
+            Self::LLMChunk => "llm.chunk",
+            Self::LLMTimeout => "llm.timeout",
+            Self::LLMFallback => "llm.fallback",
+            Self::StepPlan => "step.plan",
+            Self::StepAct => "step.act",
+            Self::StepEvaluate => "step.evaluate",
+            Self::StepThinking => "step.thinking",
+            Self::ToolCall => "tool.call",
+            Self::ToolResult => "tool.result",
+            Self::ToolError => "tool.error",
+            Self::ToolTimeout => "tool.timeout",
+            Self::GuardrailCheck => "guardrail.check",
+            Self::GuardrailViolation => "guardrail.violation",
+            Self::GuardrailCustomCheck => "guardrail.custom.check",
+            Self::GuardrailCustomViolation => "guardrail.custom.violation",
+            Self::MemoryRetrieval => "memory.retrieval",
+            Self::MemoryExtraction => "memory.extraction",
+            Self::MemoryStored => "memory.stored",
+            Self::MemoryEvicted => "memory.evicted",
+            Self::SessionContextCompacted => "session.context_compacted",
+            Self::SessionCreated => "session.created",
+            Self::SessionClosed => "session.closed",
+            Self::TeamMessage => "team.message",
+            Self::TeamRoundStart => "team.round_start",
+            Self::TeamRoundEnd => "team.round_end",
+            Self::TeamDelegate => "team.delegate",
+            Self::TeamBroadcast => "team.broadcast",
+            Self::TeamMerge => "team.merge",
+            Self::TeamHandoff => "team.handoff",
+            Self::ChildRunCompleted => "child_run.completed",
+            Self::ChildRunFailed => "child_run.failed",
+            Self::CompanyTickStart => "company.tick_start",
+            Self::CompanyTickEnd => "company.tick_end",
+            Self::CompanyPaused => "company.paused",
+            Self::CompanyResumed => "company.resumed",
+            Self::CompanyBudgetUpdated => "company.budget_updated",
+            Self::CompanyEscalation => "company.escalation",
+            Self::CompanyObjectiveUpdated => "company.objective_updated",
+            Self::CircuitBreakerOpened => "circuit_breaker.opened",
+            Self::CircuitBreakerClosed => "circuit_breaker.closed",
+            Self::CircuitBreakerHalfOpen => "circuit_breaker.half_open",
+            Self::StreamingStarted => "streaming.started",
+            Self::StreamingCompleted => "streaming.completed",
+            Self::StreamingError => "streaming.error",
+            Self::StreamingBufferTruncated => "streaming.buffer_truncated",
+            Self::RunStepStarted => "run.step_started",
+            Self::RunStepCompleted => "run.step_completed",
+            Self::BudgetSoftThresholdCrossed => "budget.soft_threshold_crossed",
+            Self::BudgetHardLimitReached => "budget.hard_limit_reached",
+            Self::TenantCreated => "tenant.created",
+            Self::TenantSuspended => "tenant.suspended",
+            Self::TenantPurged => "tenant.purged",
+            Self::ConfigUpdated => "config.updated",
+            Self::WebhookDelivered => "webhook.delivered",
+            Self::WebhookFailed => "webhook.failed",
+            Self::CronFired => "cron.fired",
+            Self::AgentVersionCreated => "agent.version_created",
+            Self::AgentRollback => "agent.rollback",
+            Self::MCPServerLog => "mcp.server_log",
+            Self::OrchestrationStarted => "orchestration.started",
+            Self::OrchestrationPlanned => "orchestration.planned",
+            Self::OrchestrationReplanned => "orchestration.replanned",
+            Self::OrchestrationTaskStarted => "orchestration.task_started",
+            Self::OrchestrationTaskCompleted => "orchestration.task_completed",
+            Self::OrchestrationTaskFailed => "orchestration.task_failed",
+            Self::OrchestrationCheckpoint => "orchestration.checkpoint",
+            Self::OrchestrationPolicyViolation => "orchestration.policy_violation",
+            Self::OrchestrationQualityReport => "orchestration.quality_report",
+            Self::OrchestrationCompleted => "orchestration.completed",
+            Self::OrchestrationFailed => "orchestration.failed",
+            Self::GraphAgentSpawned => "graph.agent_spawned",
+            Self::GraphAgentTerminated => "graph.agent_terminated",
+            Self::GraphTaskDelegated => "graph.task_delegated",
+            Self::GraphEdgeAdded => "graph.edge_added",
+            Self::GraphEdgeRemoved => "graph.edge_removed",
+            Self::PlanCreated => "plan.created",
+            Self::PlanUpdated => "plan.updated",
+            Self::PlanSubGoalCompleted => "plan.sub_goal_completed",
+            Self::PlanSubGoalAbandoned => "plan.sub_goal_abandoned",
+            Self::MCPToolCalled => "mcp.tool_called",
+            Self::MCPServerConnected => "mcp.server_connected",
+            Self::MCPServerDisconnected => "mcp.server_disconnected",
+            Self::A2ATaskSent => "a2a.task_sent",
+            Self::A2ATaskReceived => "a2a.task_received",
+            Self::MemoryCompressed => "memory.compressed",
+            Self::CapabilityBestAgentSelected => "capability.best_agent_selected",
+            Self::IdentityCreated => "identity.created",
+            Self::IdentityRotated => "identity.rotated",
+            Self::MessageSigned => "message.signed",
+            Self::MessageVerified => "message.verified",
+            Self::MessageReplayBlocked => "message.replay_blocked",
+            Self::ConstitutionBootstrapped => "constitution.bootstrapped",
+            Self::ConstitutionAmended => "constitution.amended",
+            Self::ConstitutionCheckPassed => "constitution.check_passed",
+            Self::ConstitutionCheckBlocked => "constitution.check_blocked",
+            Self::ConstitutionViolation => "constitution.violation",
+            Self::LedgerAppended => "ledger.appended",
+            Self::LedgerIntegrityChecked => "ledger.integrity_checked",
+            Self::PermissionChecked => "permission.checked",
+            Self::PermissionDenied => "permission.denied",
+            Self::PermissionSpawnBlocked => "permission.spawn_blocked",
+            Self::AttestationCreated => "attestation.created",
+            Self::AttestationVerified => "attestation.verified",
+            Self::AttestationInvalid => "attestation.invalid",
+            Self::ArbitrationCaseOpened => "arbitration.case_opened",
+            Self::ArbitrationRulingSubmitted => "arbitration.ruling_submitted",
+            Self::ArbitrationAppealFiled => "arbitration.appeal_filed",
+            Self::VotingProposalCreated => "voting.proposal_created",
+            Self::VotingBallotCast => "voting.ballot_cast",
+            Self::VotingTallied => "voting.tallied",
+            Self::VotingVetoed => "voting.vetoed",
+            Self::ResourceSpent => "resource.spent",
+            Self::ResourceEarned => "resource.earned",
+            Self::ResourceTransferred => "resource.transferred",
+            Self::ResourceInsufficient => "resource.insufficient",
+            Self::AmbassadorVetoIssued => "ambassador.veto_issued",
+            Self::AmbassadorRequestSubmitted => "ambassador.request_submitted",
+            Self::BuilderDesignSubmitted => "builder.design_submitted",
+            Self::BuilderDesignApproved => "builder.design_approved",
+            Self::BuilderDesignSpawned => "builder.design_spawned",
+            Self::EmergencySafeModeActivated => "emergency.safe_mode_activated",
+            Self::EmergencySafeModeDeactivated => "emergency.safe_mode_deactivated",
+            Self::EmergencyDeadlockDetected => "emergency.deadlock_detected",
+            Self::GoalSelfFormulated => "goal.self_formulated",
+            Self::GoalApproved => "goal.approved",
+            Self::ImprovementProposed => "improvement.proposed",
+            Self::ImprovementSandboxTested => "improvement.sandbox_tested",
+            Self::ImprovementApplied => "improvement.applied",
+            Self::CollectiveInsightPublished => "collective.insight_published",
+            Self::CollectiveInsightsRetrieved => "collective.insights_retrieved",
+            Self::CollectiveReviewRequested => "collective.review_requested",
+            Self::CollectivePollCreated => "collective.poll_created",
+            Self::CollectiveAgentRated => "collective.agent_rated",
+            Self::CollectiveFeedbackRequested => "collective.feedback_requested",
+            Self::CollectiveReflectionCompleted => "collective.reflection_completed",
+            Self::CollectiveApproachesCompared => "collective.approaches_compared",
+            Self::CollectiveLessonLogged => "collective.lesson_logged",
+            Self::CollectiveTeamFormed => "collective.team_formed",
+            Self::CollectiveTeamJoined => "collective.team_joined",
+            Self::CollectiveTeamLeft => "collective.team_left",
+            Self::CollectiveTeamBroadcast => "collective.team_broadcast",
+            Self::CollectiveSpecialistRequested => "collective.specialist_requested",
+            Self::CollectiveBudgetRequested => "collective.budget_requested",
+            Self::CollectiveTokensTransferred => "collective.tokens_transferred",
+            Self::CollectiveTaskPosted => "collective.task_posted",
+            Self::CollectiveBidPlaced => "collective.bid_placed",
+            Self::CollectiveBidAccepted => "collective.bid_accepted",
+            Self::CollectiveCostReported => "collective.cost_reported",
+            Self::SensorURLWatchCreated => "sensor.url_watch_created",
+            Self::SensorRssWatchCreated => "sensor.rss_watch_created",
+            Self::SensorWebhookListenerCreated => "sensor.webhook_listener_created",
+            Self::SensorCheckScheduled => "sensor.check_scheduled",
+            Self::SensorEventSubscriptionCreated => "sensor.event_subscription_created",
+            Self::SensorTriggered => "sensor.triggered",
+            Self::CollectiveReportPresented => "collective.report_presented",
+            Self::CollectiveEscalation => "collective.escalation",
+            Self::CollectiveAnomalyReported => "collective.anomaly_reported",
+            Self::CollectiveHumanOverride => "collective.human_override",
+            Self::CollectiveCollectivePaused => "collective.collective_paused",
+            Self::CollectiveVerificationRequested => "collective.verification_requested",
+            Self::StrategyCreated => "strategy.created",
+            Self::StrategyKpiUpdated => "strategy.kpi_updated",
+            Self::DocumentEditStart => "document.edit_start",
+            Self::DocumentEditChunk => "document.edit_chunk",
+            Self::DocumentEditComplete => "document.edit_complete",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunEventType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunEventType {
+    fn from(value: &str) -> Self {
+        match value {
+            "run.created" => Self::RunCreated,
+            "run.started" => Self::RunStarted,
+            "run.completed" => Self::RunCompleted,
+            "run.failed" => Self::RunFailed,
+            "run.cancelled" => Self::RunCancelled,
+            "run.timeout" => Self::RunTimeout,
+            "run.guardrail_blocked" => Self::RunGuardrailBlocked,
+            "run.awaiting_approval" => Self::RunAwaitingApproval,
+            "run.awaiting_input" => Self::RunAwaitingInput,
+            "run.input_received" => Self::RunInputReceived,
+            "run.approved" => Self::RunApproved,
+            "run.rejected" => Self::RunRejected,
+            "run.checkpoint" => Self::RunCheckpoint,
+            "run.paused" => Self::RunPaused,
+            "run.resumed" => Self::RunResumed,
+            "run.restored" => Self::RunRestored,
+            "run.affect" => Self::RunAffect,
+            "llm.request" => Self::LLMRequest,
+            "llm.response" => Self::LLMResponse,
+            "llm.error" => Self::LLMError,
+            "llm.thinking" => Self::LLMThinking,
+            "llm.chunk" => Self::LLMChunk,
+            "llm.timeout" => Self::LLMTimeout,
+            "llm.fallback" => Self::LLMFallback,
+            "step.plan" => Self::StepPlan,
+            "step.act" => Self::StepAct,
+            "step.evaluate" => Self::StepEvaluate,
+            "step.thinking" => Self::StepThinking,
+            "tool.call" => Self::ToolCall,
+            "tool.result" => Self::ToolResult,
+            "tool.error" => Self::ToolError,
+            "tool.timeout" => Self::ToolTimeout,
+            "guardrail.check" => Self::GuardrailCheck,
+            "guardrail.violation" => Self::GuardrailViolation,
+            "guardrail.custom.check" => Self::GuardrailCustomCheck,
+            "guardrail.custom.violation" => Self::GuardrailCustomViolation,
+            "memory.retrieval" => Self::MemoryRetrieval,
+            "memory.extraction" => Self::MemoryExtraction,
+            "memory.stored" => Self::MemoryStored,
+            "memory.evicted" => Self::MemoryEvicted,
+            "session.context_compacted" => Self::SessionContextCompacted,
+            "session.created" => Self::SessionCreated,
+            "session.closed" => Self::SessionClosed,
+            "team.message" => Self::TeamMessage,
+            "team.round_start" => Self::TeamRoundStart,
+            "team.round_end" => Self::TeamRoundEnd,
+            "team.delegate" => Self::TeamDelegate,
+            "team.broadcast" => Self::TeamBroadcast,
+            "team.merge" => Self::TeamMerge,
+            "team.handoff" => Self::TeamHandoff,
+            "child_run.completed" => Self::ChildRunCompleted,
+            "child_run.failed" => Self::ChildRunFailed,
+            "company.tick_start" => Self::CompanyTickStart,
+            "company.tick_end" => Self::CompanyTickEnd,
+            "company.paused" => Self::CompanyPaused,
+            "company.resumed" => Self::CompanyResumed,
+            "company.budget_updated" => Self::CompanyBudgetUpdated,
+            "company.escalation" => Self::CompanyEscalation,
+            "company.objective_updated" => Self::CompanyObjectiveUpdated,
+            "circuit_breaker.opened" => Self::CircuitBreakerOpened,
+            "circuit_breaker.closed" => Self::CircuitBreakerClosed,
+            "circuit_breaker.half_open" => Self::CircuitBreakerHalfOpen,
+            "streaming.started" => Self::StreamingStarted,
+            "streaming.completed" => Self::StreamingCompleted,
+            "streaming.error" => Self::StreamingError,
+            "streaming.buffer_truncated" => Self::StreamingBufferTruncated,
+            "run.step_started" => Self::RunStepStarted,
+            "run.step_completed" => Self::RunStepCompleted,
+            "budget.soft_threshold_crossed" => Self::BudgetSoftThresholdCrossed,
+            "budget.hard_limit_reached" => Self::BudgetHardLimitReached,
+            "tenant.created" => Self::TenantCreated,
+            "tenant.suspended" => Self::TenantSuspended,
+            "tenant.purged" => Self::TenantPurged,
+            "config.updated" => Self::ConfigUpdated,
+            "webhook.delivered" => Self::WebhookDelivered,
+            "webhook.failed" => Self::WebhookFailed,
+            "cron.fired" => Self::CronFired,
+            "agent.version_created" => Self::AgentVersionCreated,
+            "agent.rollback" => Self::AgentRollback,
+            "mcp.server_log" => Self::MCPServerLog,
+            "orchestration.started" => Self::OrchestrationStarted,
+            "orchestration.planned" => Self::OrchestrationPlanned,
+            "orchestration.replanned" => Self::OrchestrationReplanned,
+            "orchestration.task_started" => Self::OrchestrationTaskStarted,
+            "orchestration.task_completed" => Self::OrchestrationTaskCompleted,
+            "orchestration.task_failed" => Self::OrchestrationTaskFailed,
+            "orchestration.checkpoint" => Self::OrchestrationCheckpoint,
+            "orchestration.policy_violation" => Self::OrchestrationPolicyViolation,
+            "orchestration.quality_report" => Self::OrchestrationQualityReport,
+            "orchestration.completed" => Self::OrchestrationCompleted,
+            "orchestration.failed" => Self::OrchestrationFailed,
+            "graph.agent_spawned" => Self::GraphAgentSpawned,
+            "graph.agent_terminated" => Self::GraphAgentTerminated,
+            "graph.task_delegated" => Self::GraphTaskDelegated,
+            "graph.edge_added" => Self::GraphEdgeAdded,
+            "graph.edge_removed" => Self::GraphEdgeRemoved,
+            "plan.created" => Self::PlanCreated,
+            "plan.updated" => Self::PlanUpdated,
+            "plan.sub_goal_completed" => Self::PlanSubGoalCompleted,
+            "plan.sub_goal_abandoned" => Self::PlanSubGoalAbandoned,
+            "mcp.tool_called" => Self::MCPToolCalled,
+            "mcp.server_connected" => Self::MCPServerConnected,
+            "mcp.server_disconnected" => Self::MCPServerDisconnected,
+            "a2a.task_sent" => Self::A2ATaskSent,
+            "a2a.task_received" => Self::A2ATaskReceived,
+            "memory.compressed" => Self::MemoryCompressed,
+            "capability.best_agent_selected" => Self::CapabilityBestAgentSelected,
+            "identity.created" => Self::IdentityCreated,
+            "identity.rotated" => Self::IdentityRotated,
+            "message.signed" => Self::MessageSigned,
+            "message.verified" => Self::MessageVerified,
+            "message.replay_blocked" => Self::MessageReplayBlocked,
+            "constitution.bootstrapped" => Self::ConstitutionBootstrapped,
+            "constitution.amended" => Self::ConstitutionAmended,
+            "constitution.check_passed" => Self::ConstitutionCheckPassed,
+            "constitution.check_blocked" => Self::ConstitutionCheckBlocked,
+            "constitution.violation" => Self::ConstitutionViolation,
+            "ledger.appended" => Self::LedgerAppended,
+            "ledger.integrity_checked" => Self::LedgerIntegrityChecked,
+            "permission.checked" => Self::PermissionChecked,
+            "permission.denied" => Self::PermissionDenied,
+            "permission.spawn_blocked" => Self::PermissionSpawnBlocked,
+            "attestation.created" => Self::AttestationCreated,
+            "attestation.verified" => Self::AttestationVerified,
+            "attestation.invalid" => Self::AttestationInvalid,
+            "arbitration.case_opened" => Self::ArbitrationCaseOpened,
+            "arbitration.ruling_submitted" => Self::ArbitrationRulingSubmitted,
+            "arbitration.appeal_filed" => Self::ArbitrationAppealFiled,
+            "voting.proposal_created" => Self::VotingProposalCreated,
+            "voting.ballot_cast" => Self::VotingBallotCast,
+            "voting.tallied" => Self::VotingTallied,
+            "voting.vetoed" => Self::VotingVetoed,
+            "resource.spent" => Self::ResourceSpent,
+            "resource.earned" => Self::ResourceEarned,
+            "resource.transferred" => Self::ResourceTransferred,
+            "resource.insufficient" => Self::ResourceInsufficient,
+            "ambassador.veto_issued" => Self::AmbassadorVetoIssued,
+            "ambassador.request_submitted" => Self::AmbassadorRequestSubmitted,
+            "builder.design_submitted" => Self::BuilderDesignSubmitted,
+            "builder.design_approved" => Self::BuilderDesignApproved,
+            "builder.design_spawned" => Self::BuilderDesignSpawned,
+            "emergency.safe_mode_activated" => Self::EmergencySafeModeActivated,
+            "emergency.safe_mode_deactivated" => Self::EmergencySafeModeDeactivated,
+            "emergency.deadlock_detected" => Self::EmergencyDeadlockDetected,
+            "goal.self_formulated" => Self::GoalSelfFormulated,
+            "goal.approved" => Self::GoalApproved,
+            "improvement.proposed" => Self::ImprovementProposed,
+            "improvement.sandbox_tested" => Self::ImprovementSandboxTested,
+            "improvement.applied" => Self::ImprovementApplied,
+            "collective.insight_published" => Self::CollectiveInsightPublished,
+            "collective.insights_retrieved" => Self::CollectiveInsightsRetrieved,
+            "collective.review_requested" => Self::CollectiveReviewRequested,
+            "collective.poll_created" => Self::CollectivePollCreated,
+            "collective.agent_rated" => Self::CollectiveAgentRated,
+            "collective.feedback_requested" => Self::CollectiveFeedbackRequested,
+            "collective.reflection_completed" => Self::CollectiveReflectionCompleted,
+            "collective.approaches_compared" => Self::CollectiveApproachesCompared,
+            "collective.lesson_logged" => Self::CollectiveLessonLogged,
+            "collective.team_formed" => Self::CollectiveTeamFormed,
+            "collective.team_joined" => Self::CollectiveTeamJoined,
+            "collective.team_left" => Self::CollectiveTeamLeft,
+            "collective.team_broadcast" => Self::CollectiveTeamBroadcast,
+            "collective.specialist_requested" => Self::CollectiveSpecialistRequested,
+            "collective.budget_requested" => Self::CollectiveBudgetRequested,
+            "collective.tokens_transferred" => Self::CollectiveTokensTransferred,
+            "collective.task_posted" => Self::CollectiveTaskPosted,
+            "collective.bid_placed" => Self::CollectiveBidPlaced,
+            "collective.bid_accepted" => Self::CollectiveBidAccepted,
+            "collective.cost_reported" => Self::CollectiveCostReported,
+            "sensor.url_watch_created" => Self::SensorURLWatchCreated,
+            "sensor.rss_watch_created" => Self::SensorRssWatchCreated,
+            "sensor.webhook_listener_created" => Self::SensorWebhookListenerCreated,
+            "sensor.check_scheduled" => Self::SensorCheckScheduled,
+            "sensor.event_subscription_created" => Self::SensorEventSubscriptionCreated,
+            "sensor.triggered" => Self::SensorTriggered,
+            "collective.report_presented" => Self::CollectiveReportPresented,
+            "collective.escalation" => Self::CollectiveEscalation,
+            "collective.anomaly_reported" => Self::CollectiveAnomalyReported,
+            "collective.human_override" => Self::CollectiveHumanOverride,
+            "collective.collective_paused" => Self::CollectiveCollectivePaused,
+            "collective.verification_requested" => Self::CollectiveVerificationRequested,
+            "strategy.created" => Self::StrategyCreated,
+            "strategy.kpi_updated" => Self::StrategyKpiUpdated,
+            "document.edit_start" => Self::DocumentEditStart,
+            "document.edit_chunk" => Self::DocumentEditChunk,
+            "document.edit_complete" => Self::DocumentEditComplete,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
 /// Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
 /// agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
 /// client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -25215,6 +28105,156 @@ impl From<&str> for RunStepStatus {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// The closing frame (`event: done`). Clients close on this, not on `run.completed`. When a
+/// guardrail withheld the output, `output` is null and `guardrail_blocked` is true.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamDone {
+    pub run_id: String,
+    pub status: serde_json::Value,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub metrics: Option<RunMetrics>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub output: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<serde_json::Value>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub cost_usd: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_blocked: Option<bool>,
+    #[serde(rename = "_guardrail_violation", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violation: Option<serde_json::Value>,
+    pub stream_type: RunStreamDoneStreamType,
+}
+
+/// `RunStreamDoneStreamType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamDoneStreamType {
+    #[default]
+    #[serde(rename = "lifecycle")]
+    Lifecycle,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Other(String),
+}
+
+impl RunStreamDoneStreamType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Lifecycle => "lifecycle",
+            Self::Other(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamDoneStreamType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamDoneStreamType {
+    fn from(value: &str) -> Self {
+        match value {
+            "lifecycle" => Self::Lifecycle,
+            other => Self::Other(other.to_string()),
+        }
+    }
+}
+
+/// A run event on `GET /runs/{runId}/events`: the stored event plus `stream_type` (the bucket
+/// to filter on: `run.*` lifecycle except the cosmetic `run.affect`, `llm.chunk` assistant,
+/// `tool.*` tool, anything else other) and per-frame `_chunk_id` / `_chunk_index`. With
+/// `?flat=1` the payload's fields are merged into the top level instead of nested under
+/// `payload`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamEvent {
+    pub event_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tenant_id: Option<String>,
+    pub run_id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub session_id: Option<String>,
+    pub r#type: RunEventType,
+    /// Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+    pub seq: i64,
+    pub payload: serde_json::Map<String, serde_json::Value>,
+    pub timestamp: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub step_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub parent_event_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub span_id: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub trace_context: Option<RunStreamEventTraceContext>,
+    pub stream_type: RunStreamEventStreamType,
+    #[serde(rename = "_chunk_id", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_id: Option<String>,
+    #[serde(rename = "_chunk_index", default, skip_serializing_if = "Option::is_none")]
+    pub chunk_index: Option<i64>,
+    /// Present on an `llm.chunk` a streaming guardrail redacted.
+    #[serde(rename = "_guardrail_violation", default, skip_serializing_if = "Option::is_none")]
+    pub guardrail_violation: Option<serde_json::Value>,
+}
+
+/// `RunStreamEventStreamType` enumeration.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
+pub enum RunStreamEventStreamType {
+    #[default]
+    #[serde(rename = "lifecycle")]
+    Lifecycle,
+    #[serde(rename = "assistant")]
+    Assistant,
+    #[serde(rename = "tool")]
+    Tool,
+    #[serde(rename = "other")]
+    Other,
+    /// A value the API introduced after this SDK was generated.
+    #[serde(untagged)]
+    Unknown(String),
+}
+
+impl RunStreamEventStreamType {
+    /// The value as it appears on the wire.
+    pub fn as_str(&self) -> &str {
+        match self {
+            Self::Lifecycle => "lifecycle",
+            Self::Assistant => "assistant",
+            Self::Tool => "tool",
+            Self::Other => "other",
+            Self::Unknown(value) => value.as_str(),
+        }
+    }
+}
+
+impl std::fmt::Display for RunStreamEventStreamType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+impl From<&str> for RunStreamEventStreamType {
+    fn from(value: &str) -> Self {
+        match value {
+            "lifecycle" => Self::Lifecycle,
+            "assistant" => Self::Assistant,
+            "tool" => Self::Tool,
+            "other" => Self::Other,
+            other => Self::Unknown(other.to_string()),
+        }
+    }
+}
+
+/// `RunStreamEventTraceContext` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct RunStreamEventTraceContext {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub traceparent: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub tracestate: Option<String>,
 }
 
 /// `RunWorkspaceCommandRequest` model.
@@ -25820,6 +28860,17 @@ pub struct SensorWebhookResponse {
 /// `Session` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {
+    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived_at: Option<String>,
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned: Option<bool>,
+    /// When it was pinned; order the pinned group by it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_by: Option<String>,
     pub session_id: String,
@@ -26660,7 +29711,7 @@ pub struct SpecToolCatalog {
     pub drawings: Vec<SpecToolCatalogDrawing>,
     /// Tool name → the SPEC that owns it and the view to render its output with. Integration
     /// aliases map onto their base tool's view.
-    pub tools: HashMap<String, Value2>,
+    pub tools: HashMap<String, SpecToolCatalogToolsValue>,
 }
 
 /// `SpecToolCatalogDrawing` model.
@@ -26802,6 +29853,14 @@ impl From<&str> for SpecToolCatalogSpecStatus {
             other => Self::Other(other.to_string()),
         }
     }
+}
+
+/// `SpecToolCatalogToolsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct SpecToolCatalogToolsValue {
+    pub spec_id: String,
+    /// The parsed view document, or null when the stored view was unparseable.
+    pub output_view: serde_json::Value,
 }
 
 /// `StartMissionRequest` model.
@@ -28927,7 +31986,11 @@ pub struct TestLLMProviderKeyResponse {
     /// False when the connector could not reach the remote or the credentials were refused. This is
     /// the only field that says so; the status will be 200 either way.
     pub success: bool,
-    /// Why it failed. Absent on success.
+    /// Whose key was tested: `user` is the caller's own stored key, the others are the fallback the
+    /// runtime resolves to. Null when no key was found.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub level: Option<String>,
+    /// What happened: why it failed, or that the key is valid.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub message: Option<String>,
 }
@@ -29729,6 +32792,99 @@ pub struct UpdateAdminIntegrationsResponseIntegration {
     pub source: Option<String>,
 }
 
+/// `UpdateAdminJobRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminJobRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub title: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub responsibilities: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requirements: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nice_to_have: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub benefits: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub department: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<JobSeniority>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employment_type: Option<JobEmploymentType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workplace_type: Option<JobWorkplaceType>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub location: Option<UpdateAdminJobRequestLocation>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub applicant_countries: Option<Vec<serde_json::Value>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub english_level: Option<JobEnglishLevel>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub experience_years_min: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub skills: Option<Vec<String>>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub salary: Option<UpdateAdminJobRequestSalary>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub salary_public: Option<bool>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub apply: Option<UpdateAdminJobRequestApply>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub language: Option<VideoOrderLocale>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub closes_at: Option<String>,
+}
+
+/// `UpdateAdminJobRequestApply` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminJobRequestApply {
+    pub mode: JobApplyMode,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub url: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    /// Server default: `true`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cv: Option<bool>,
+    /// Server default: `false`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub requires_cover_letter: Option<bool>,
+}
+
+/// `UpdateAdminJobRequestLocation` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminJobRequestLocation {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub city: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<serde_json::Value>,
+}
+
+/// `UpdateAdminJobRequestSalary` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminJobRequestSalary {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min: Option<f64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub max: Option<f64>,
+    pub currency: serde_json::Value,
+    pub period: JobSalaryPeriod,
+}
+
+/// `UpdateAdminJobResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminJobResponse {
+    pub job: Job,
+}
+
 /// `UpdateAdminLLMAdaptersConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateAdminLLMAdaptersConfigRequest {
@@ -29743,7 +32899,7 @@ pub struct UpdateAdminLLMAdaptersConfigRequest {
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub circuit_breaker: Option<UpdateAdminLLMAdaptersConfigRequestCircuitBreaker>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub provider_rate_limits: Option<HashMap<String, Value6>>,
+    pub provider_rate_limits: Option<HashMap<String, UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue>>,
 }
 
 /// `UpdateAdminLLMAdaptersConfigRequestCircuitBreaker` model.
@@ -29755,6 +32911,12 @@ pub struct UpdateAdminLLMAdaptersConfigRequestCircuitBreaker {
     pub reset_timeout_ms: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub half_open_max_requests: Option<i64>,
+}
+
+/// `UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue {
+    pub rpm: i64,
 }
 
 /// `UpdateAdminLLMAdaptersConfigResponse` model.
@@ -30862,6 +34024,21 @@ pub struct UpdateIntegrationRequest {
     pub config: Option<serde_json::Map<String, serde_json::Value>>,
 }
 
+/// `UpdateJobApplicationRequest` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobApplicationRequest {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<JobApplicationStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
+}
+
+/// `UpdateJobApplicationResponse` model.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct UpdateJobApplicationResponse {
+    pub application: JobApplication,
+}
+
 /// `UpdateMarkupConfigRequest` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct UpdateMarkupConfigRequest {
@@ -31203,6 +34380,14 @@ pub struct UpdateSessionRequest {
     /// longer need; this is a label bag, not content.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
+    /// true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+    /// stays readable by id, and the next message sent to it unarchives it. false unarchives.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub archived: Option<bool>,
+    /// true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+    /// the first `pinned_at`. false unpins.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pinned: Option<bool>,
     /// Per-conversation model override. Send null to clear (revert to agent default), or {
     /// provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
     /// is still enforced at run time.
@@ -31811,61 +34996,6 @@ pub struct ValidationPolicy {
     pub selective: bool,
 }
 
-/// `Value` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub en: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uk: Option<String>,
-}
-
-/// `Value2` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value2 {
-    pub spec_id: String,
-    /// The parsed view document, or null when the stored view was unparseable.
-    pub output_view: serde_json::Value,
-}
-
-/// `Value3` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value3 {
-    pub x: f64,
-    pub y: f64,
-}
-
-/// `Value4` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value4 {
-    pub x: f64,
-    pub y: f64,
-}
-
-/// `Value5` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value5 {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub from: Option<serde_json::Value>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub to: Option<serde_json::Value>,
-}
-
-/// `Value6` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value6 {
-    pub rpm: i64,
-}
-
-/// `Value7` model.
-#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
-pub struct Value7 {
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub en: Option<String>,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub uk: Option<String>,
-}
-
 /// Since 2026-09-30 the API key is returned here once and never e-mailed (register.ts
 /// handleVerifyEmail).
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
@@ -32064,7 +35194,7 @@ impl From<&str> for VideoOrderFailureCode {
     }
 }
 
-/// `VideoOrderLocale` enumeration.
+/// The language the texts are written in.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum VideoOrderLocale {
     #[default]

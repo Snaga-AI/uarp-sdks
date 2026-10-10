@@ -22,6 +22,18 @@ pub struct MCPJSONRpcParams {
     pub x_uarp_agent_id: String,
 }
 
+/// Query and header parameters for `mcpOAuthCallback`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct MCPOAuthCallbackParams {
+    pub state: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub code: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub error: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub iss: Option<String>,
+}
+
 /// Model Context Protocol server endpoints
 #[derive(Debug, Clone)]
 pub struct MCPApi {
@@ -36,6 +48,55 @@ impl Client {
 }
 
 impl MCPApi {
+    /// Finish an OAuth connection
+    ///
+    /// Exchanges the code for tokens, stores them encrypted, and opens the live session with the
+    /// agents chosen at connect. Only the user who started the connection may finish it (403
+    /// otherwise), and a state works once. 201 for a new connection, 200 for a renewed one.
+    ///
+    /// `POST /api/v1/mcp/oauth/complete`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn complete_mcpo_auth(&self, body: &models::CompleteMcpoAuthRequest) -> Result<models::MCPConnectResult> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/mcp/oauth/complete".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Connect an MCP server to agents
+    ///
+    /// Starts a connection to a catalog entry or any streamable-HTTP MCP server URL. A server that
+    /// asks for OAuth answers `authorization_required` with the URL to open; one that asks for
+    /// nothing is stored and connected at once (201). A server already connected in this tenant is
+    /// not connected twice: the agents are added to it (200, `already_connected`). Developer role.
+    ///
+    /// The platform registers itself with the vendor's authorization server once (client ID
+    /// metadata document when the server accepts one, else dynamic client registration), uses PKCE
+    /// S256 and binds the token to the server with the `resource` parameter.
+    ///
+    /// `POST /api/v1/mcp/connect`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn connect_mcp_server(&self, body: &models::MCPConnectRequest) -> Result<models::MCPConnectResult> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/mcp/connect".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create MCP server
     ///
     /// Registers an external MCP server for the tenant. Tenant owner or developer — `viewer` is
@@ -97,6 +158,25 @@ impl MCPApi {
             .await
     }
 
+    /// Snaga's OAuth client metadata document
+    ///
+    /// Fetched by authorization servers that accept client ID metadata documents: this URL is then
+    /// Snaga's client_id, and nothing is registered. Holds no secret.
+    ///
+    /// `GET /api/v1/mcp/oauth/client.json`
+    pub async fn get_mcpo_auth_client_metadata(&self) -> Result<models::GetMcpoAuthClientMetadataResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/mcp/oauth/client.json".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get MCP server
     ///
     /// Returns one registered MCP server; `admin` role only, like the rest of this route. The
@@ -139,6 +219,27 @@ impl MCPApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/agents/{}/mcp-servers", encode_path(agent_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// Business MCP servers that connect in one step
+    ///
+    /// Vendor-hosted MCP servers (Stripe, Notion, Attio, Linear, …) a tenant can connect to its
+    /// agents with `POST /mcp/connect`. Developer role.
+    ///
+    /// `GET /api/v1/mcp/catalog`
+    ///
+    /// Required scopes: `agents:read`.
+    pub async fn list_mcp_catalog(&self) -> Result<models::ListMCPCatalogResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/mcp/catalog".to_string(),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -195,6 +296,29 @@ impl MCPApi {
             .await
     }
 
+    /// Vendor redirect after sign-in
+    ///
+    /// Runs without authentication: the vendor redirects a browser, which carries no Snaga
+    /// credentials. The tenant is recovered from the `state` prefix. Answers 302 to
+    /// `{public_base_url}/mcp/oauth/callback` with `state` and either `code` or `error`
+    /// (`issuer_mismatch` when the redirect names a different authorization server than the one the
+    /// connection started with, RFC 9207). No token is exchanged here: `POST /mcp/oauth/complete`
+    /// does that as the signed-in user who started the connection.
+    ///
+    /// `GET /api/v1/mcp/oauth/callback`
+    pub async fn mcp_o_auth_callback(&self, params: &MCPOAuthCallbackParams) -> Result<serde_json::Value> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/mcp/oauth/callback".to_string(),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// MCP SSE transport (Server-Sent Events)
     ///
     /// The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
@@ -218,6 +342,30 @@ impl MCPApi {
             NO_QUERY,
             Vec::new(),
         )
+    }
+
+    /// Renew an OAuth connection
+    ///
+    /// For a server whose grant expired or was revoked (`auth.oauth.needs_reauth`), or to sign in
+    /// with a different account. Answers `authorization_required` whether or not the current grant
+    /// still works — a connection that is healthy is renewed all the same, which is how a person
+    /// switches the vendor account behind it. Completing it renews the same record, keeping its id
+    /// and agents.
+    ///
+    /// `POST /api/v1/mcp/servers/{serverId}/reconnect`
+    ///
+    /// Required scopes: `agents:write`.
+    pub async fn reconnect_mcp_server(&self, server_id: &str, body: &models::ReconnectMCPServerRequest) -> Result<models::MCPConnectResult> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/mcp/servers/{}/reconnect", encode_path(server_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
     }
 
     /// Replace the set of MCP servers connected to an agent

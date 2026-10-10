@@ -297,6 +297,33 @@ test('a published enum keeps its name when a new schema uses it first', () => {
   assert.ok(names(owned).includes('JobUpdateMode'), 'a component-owned name is not taken');
 });
 
+test('a map added earlier in the document does not rename the value types after it', () => {
+  // Build 15987a5f added `pricing`, a map of objects, ahead of
+  // `provider_rate_limits` in document order. Under a positional `Value<n>`
+  // the published Value6 (`{rpm}`) became Value7 and Value6 took the new shape.
+  const map = (props: Record<string, unknown>) => ({
+    type: 'object',
+    additionalProperties: { type: 'object', properties: props },
+  });
+  const limits = { type: 'object', properties: { limits: map({ rpm: { type: 'integer' } }) } };
+  const before = parse({ openapi: '3.1.0', paths: {}, components: { schemas: { Limits: limits } } });
+  const after = parse({
+    openapi: '3.1.0',
+    paths: {},
+    components: {
+      schemas: { Config: { type: 'object', properties: { pricing: map({ usd: { type: 'number' } }) } }, Limits: limits },
+    },
+  });
+  for (const spec of [before, after]) {
+    const value = namedType(spec, 'LimitsLimitsValue') as ObjectType;
+    assert.deepEqual(value.properties.map((p) => p.wire), ['rpm']);
+  }
+  assert.deepEqual(
+    (namedType(after, 'ConfigPricingValue') as ObjectType).properties.map((p) => p.wire),
+    ['usd'],
+  );
+});
+
 // ---------------------------------------------- invariants on the real spec
 
 test('parses the production document into the expected shape', () => {
@@ -371,7 +398,10 @@ test('parses the production document into the expected shape', () => {
   // `count_tokens` (the Anthropic-compatible surface), the Sign in with Apple
   // `form_post` callback (the first form-encoded body any SDK renders), and
   // singles across bridge, tools, acp and sessions.
-  assert.equal(ops.length, 766);
+  // 766 -> 789 on 2026-10-10 (build 15987a5f): twenty-three and none removed —
+  // the MCP one-click connect and its OAuth round trip (six, uarp #552), a
+  // careers surface (twelve admin, three public), and two registry singles.
+  assert.equal(ops.length, 789);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
@@ -596,7 +626,13 @@ test('parses the production document into the expected shape', () => {
   // named types. Before generator/enum-names.json it read +277/-17: seventeen
   // published enums were RENAMED because a new schema used their value sets
   // first (AgentExecutionMode -> AgentUpdateExecutionMode). Pinned now.
-  assert.equal(spec.types.length, 1758);
+  // 1758 -> 1845 on 2026-10-10 (build 15987a5f): +87, none removed — the MCP
+  // catalog/connect/OAuth shapes, the careers surface, the run-stream events
+  // and twenty-four newly pinned enums. The new `pricing` map would have
+  // taken `Value6` and pushed the published Value6/Value7 along by one; map
+  // value types are named after their map from here on (Value..Value7 ->
+  // e.g. UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue).
+  assert.equal(spec.types.length, 1845);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -647,7 +683,9 @@ test('parses the production document into the expected shape', () => {
   // 4 -> 6 on 2026-10-05 (0.8.0): `createPublicVideoOrder` and
   // `adminTestVideoTemplate`, the video-order uploads — the first multipart
   // bodies with enum-typed text parts, which Kotlin's emitter had to learn.
-  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 6);
+  // 6 -> 7 on 2026-10-10 (build 15987a5f): `applyToJob`, a public job
+  // application carrying its CV.
+  assert.equal(ops.filter((o) => o.body?.encoding === 'multipart').length, 7);
   // 0 -> 1 on 2026-10-05 (0.8.0): the Sign in with Apple `form_post`
   // callback, the first form-encoded body; every emitter now renders it
   // (contract scenario 20 compares the bytes).

@@ -65,12 +65,12 @@ package UARP.API.LLM_Credentials is
 
    --  Test configured API key for an LLM provider
    --
-   --  Resolves the key the runtime would use for this provider (user, then tenant, shared and
-   --  platform) and calls the provider's own `/v1/models` with it under a 10-second timeout. The
-   --  outcome is reported in the body's `success` and `message`, so a missing key, a rejected key
-   --  and an unreachable endpoint all answer 200 rather than an HTTP error; a provider with no
-   --  configured endpoint reports success and says nothing was tested. Nothing is written.
-   --  Super-admin only.
+   --  Tests the key the caller stored for this provider when there is one; otherwise the key the
+   --  runtime would use (platform first, then tenant and shared), and `level` says which was
+   --  tested. Calls the provider's own `/v1/models` with it under a 10-second timeout. The outcome
+   --  is reported in the body's `success` and `message`, so a missing key, a rejected key and an
+   --  unreachable endpoint all answer 200 rather than an HTTP error; a provider with no configured
+   --  endpoint reports success and says nothing was tested. Nothing is written. Super-admin only.
    --
    --  POST /api/v1/llm-credentials/{provider}/test
    --

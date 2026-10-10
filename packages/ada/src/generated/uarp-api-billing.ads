@@ -130,7 +130,10 @@ package UARP.API.Billing is
    --  Reads the tenant's spend cap. When none is configured the response is `{configured: false}`
    --  with null `budget` and `status`; otherwise it returns the stored config (limit, soft and
    --  hard thresholds as fractions, period) together with the live status from the budget manager
-   --  - the same ceiling that gates every run start. Requires the `billing:read` permission and
+   --  - the same ceiling that gates every run start. Spend is counted in every period at once, so
+   --  a cap set or switched mid-period counts what was already spent in its period (since
+   --  2026-10-09; before, only the configured period - monthly while no cap was set - was counted,
+   --  and a new daily or weekly cap started from zero). Requires the `billing:read` permission and
    --  scope.
    --
    --  GET /api/v1/billing/budget
@@ -244,9 +247,11 @@ package UARP.API.Billing is
 
    --  Handle Stripe webhook events
    --
-   --  Processes incoming Stripe events (invoice.paid, invoice.payment_failed,
-   --  customer.subscription.deleted). Bypasses normal auth - `Stripe-Signature` header is
-   --  HMAC-verified against the webhook signing secret.
+   --  Processes incoming Stripe events (invoice.paid, invoice.payment_succeeded,
+   --  invoice.payment_failed, customer.subscription.deleted). Bypasses normal auth -
+   --  `Stripe-Signature` header is HMAC-verified against the webhook signing secret.
+   --  invoice.payment_succeeded records positive live first payments for prospective product
+   --  cohorts without duplicating invoice.paid billing state changes.
    --
    --  POST /api/v1/webhooks/stripe
    function Handle_Stripe_Webhook
