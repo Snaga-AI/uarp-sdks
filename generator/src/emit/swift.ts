@@ -447,13 +447,21 @@ function labelFor(op: Operation, args: Arg[], param: Param): string {
 }
 
 function appendQuery(w: Writer, param: Param, label: string): void {
-  const value = queryValue(param.type, label);
+  // An array is `style: form, explode: true`: the key once per item.
+  const type = param.type;
+  const append = (): void => {
+    if (type.kind === 'array') {
+      w.block(`for item in ${label} {`, () => {
+        w.line(`query.append(URLQueryItem(name: "${escape(param.wire)}", value: ${queryValue(type.items, 'item')}))`);
+      }, '}');
+    } else {
+      w.line(`query.append(URLQueryItem(name: "${escape(param.wire)}", value: ${queryValue(type, label)}))`);
+    }
+  };
   if (param.required) {
-    w.line(`query.append(URLQueryItem(name: "${escape(param.wire)}", value: ${value}))`);
+    append();
   } else {
-    w.block(`if let ${label} {`, () => {
-      w.line(`query.append(URLQueryItem(name: "${escape(param.wire)}", value: ${value}))`);
-    }, '}');
+    w.block(`if let ${label} {`, append, '}');
   }
 }
 

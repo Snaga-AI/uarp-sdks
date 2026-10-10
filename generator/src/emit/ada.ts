@@ -891,14 +891,25 @@ function emitParamAssignments(w: Writer, op: Operation): void {
   for (const [index, param] of bag.entries()) {
     const field = fields[index]!;
     const target = param.location === 'query' ? 'Query' : 'Headers';
-    const value = param.type.kind === 'named' ? `UARP.Models.Image (Params.${field.name})` : `Params.${field.name}`;
-    const statement = `UARP.Types.Add (${target}, "${escape(param.wire)}", ${value});`;
+    const type = param.type;
+    const add = (ref: TypeRef, of: string): string =>
+      `UARP.Types.Add (${target}, "${escape(param.wire)}", ${ref.kind === 'named' ? `UARP.Models.Image (${of})` : of});`;
+    // An array is `style: form, explode: true`: the key once per item.
+    const emit = (): void => {
+      if (type.kind === 'array') {
+        w.line(`for Item of Params.${field.name} loop`);
+        w.indent(() => w.line(add(type.items, 'Item')));
+        w.line('end loop;');
+      } else {
+        w.line(add(type, `Params.${field.name}`));
+      }
+    };
     if (field.optional) {
       w.line(`if Params.${field.has} then`);
-      w.indent(() => w.line(statement));
+      w.indent(emit);
       w.line('end if;');
     } else {
-      w.line(statement);
+      emit();
     }
   }
 }
@@ -926,15 +937,45 @@ function emitMultipartCall(w: Writer, op: Operation, args: string[]): void {
       const resolved = declared ? resolveAlias(declared.type) : undefined;
       const isEnum = resolved?.kind === 'named' && namedTypes.get(resolved.name)?.kind === 'enum';
       const value = isEnum ? `UARP.Models.Image (${accessor})` : `UARP.Types.SU.To_String (${accessor})`;
-      const statement =
-        part.role === 'file'
-          ? `UARP.Multipart.Add_File (Form, "${escape(part.wire)}", "${escape(part.wire)}", ${value});`
-          : `UARP.Multipart.Add_Field (Form, "${escape(part.wire)}", ${value});`;
+      //  An array part goes on the wire as one JSON array, as the other four
+      //  SDKs send it. `applyToJob`'s `links` (build 15987a5f) was the first.
+      const emitPart = (): void => {
+        if (part.role !== 'file' && resolved?.kind === 'array') {
+          const items = resolveAlias(resolved.items);
+          const itemIsEnum = items.kind === 'named' && namedTypes.get(items.name)?.kind === 'enum';
+          const isText = items.kind === 'prim' && ['string', 'uuid', 'uri', 'email', 'date', 'datetime'].includes(items.prim);
+          if (!itemIsEnum && !isText) {
+            throw new Error(`ada: multipart part ${op.id}.${part.wire} is an array of ${JSON.stringify(items)}; only text and enum items are rendered`);
+          }
+          w.line('declare');
+          w.indent(() => w.line('Items : UARP.JSON_Support.JSON_Array := UARP.JSON_Support.JSON.Empty_Array;'));
+          w.line('begin');
+          w.indent(() => {
+            w.line(`for Element of ${accessor} loop`);
+            w.indent(() =>
+              w.line(
+                `UARP.JSON_Support.JSON.Append (Items, ${itemIsEnum ? 'UARP.Models.To_JSON (Element)' : 'UARP.JSON_Support.JSON.Create (Element)'});`,
+              ),
+            );
+            w.line('end loop;');
+            w.line(
+              `UARP.Multipart.Add_Field (Form, "${escape(part.wire)}", UARP.JSON_Support.Serialize (UARP.JSON_Support.JSON.Create (Items)));`,
+            );
+          });
+          w.line('end;');
+          return;
+        }
+        w.line(
+          part.role === 'file'
+            ? `UARP.Multipart.Add_File (Form, "${escape(part.wire)}", "${escape(part.wire)}", ${value});`
+            : `UARP.Multipart.Add_Field (Form, "${escape(part.wire)}", ${value});`,
+        );
+      };
       if (part.required) {
-        w.line(statement);
+        emitPart();
       } else {
         w.line(`if Payload.Has_${adaName(part.wire)} then`);
-        w.indent(() => w.line(statement));
+        w.indent(emitPart);
         w.line('end if;');
       }
     }

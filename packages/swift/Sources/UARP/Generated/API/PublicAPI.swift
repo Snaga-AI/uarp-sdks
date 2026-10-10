@@ -591,19 +591,29 @@ public struct PublicAPI: Sendable {
     public func listPublicJobs(workplaceType: [JobWorkplaceType]? = nil, employmentType: [JobEmploymentType]? = nil, seniority: [JobSeniority]? = nil, category: [String]? = nil, country: [String]? = nil, q: String? = nil, page: Int? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListPublicJobsResponse {
         var query: [URLQueryItem] = []
         if let workplaceType {
-            query.append(URLQueryItem(name: "workplace_type", value: String(describing: workplaceType)))
+            for item in workplaceType {
+                query.append(URLQueryItem(name: "workplace_type", value: item.rawValue))
+            }
         }
         if let employmentType {
-            query.append(URLQueryItem(name: "employment_type", value: String(describing: employmentType)))
+            for item in employmentType {
+                query.append(URLQueryItem(name: "employment_type", value: item.rawValue))
+            }
         }
         if let seniority {
-            query.append(URLQueryItem(name: "seniority", value: String(describing: seniority)))
+            for item in seniority {
+                query.append(URLQueryItem(name: "seniority", value: item.rawValue))
+            }
         }
         if let category {
-            query.append(URLQueryItem(name: "category", value: String(describing: category)))
+            for item in category {
+                query.append(URLQueryItem(name: "category", value: item))
+            }
         }
         if let country {
-            query.append(URLQueryItem(name: "country", value: String(describing: country)))
+            for item in country {
+                query.append(URLQueryItem(name: "country", value: item))
+            }
         }
         if let q {
             query.append(URLQueryItem(name: "q", value: q))

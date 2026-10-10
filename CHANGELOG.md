@@ -40,6 +40,27 @@ its map's name, as every other hoisted type takes its parent's:
 Code that reads through the map (`positions["a"].x`) is unaffected. Only
 code that spells the type's name changes.
 
+### Fixed — array query parameters, in four of the five SDKs
+
+`listPublicJobs` is the first operation in the document with array query
+parameters (`workplace_type`, `employment_type`, `seniority`, `category` and
+`country`, each `style: form, explode: true`). Only TypeScript sent them
+right, as `seniority=junior&seniority=senior`. The other four failed in four
+different ways:
+
+| SDK | What `seniority = [junior, senior]` did |
+|---|---|
+| Rust | `Error::Encode` before sending: `serde_urlencoded` cannot write a sequence. Replaced by `serde_html_form`, which writes the key once per item, in field order |
+| Swift | sent `seniority=[UARP.JobSeniority(rawValue: "junior"), …]` via `String(describing:)` |
+| Kotlin | sent `seniority=[junior, senior]` via `toString()` |
+| Ada | did not compile; CI caught it, and the other three compiled |
+
+All five now repeat the key, one item at a time. Ada also learned to send an
+array in a multipart body: `applyToJob`'s `links` goes as one text part holding
+a compact JSON array, as the other four already sent it. Contract scenarios 21
+and 22 compare the bytes. Reverting the Kotlin fix sends
+`seniority=[junior, senior]`, and scenario 21 catches it.
+
 ### Added — fields clients were sending or reading by hand
 
 - **Sessions archive and pin.** `updateSession` accepts `archived` and

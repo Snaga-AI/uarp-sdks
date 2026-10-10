@@ -27,7 +27,14 @@ package body UARP.API.Public is
             UARP.Multipart.Add_Field (Form, "cover_letter", UARP.Types.SU.To_String (Payload.Cover_Letter));
          end if;
          if Payload.Has_Links then
-            UARP.Multipart.Add_Field (Form, "links", UARP.Types.SU.To_String (Payload.Links));
+            declare
+               Items : UARP.JSON_Support.JSON_Array := UARP.JSON_Support.JSON.Empty_Array;
+            begin
+               for Element of Payload.Links loop
+                  UARP.JSON_Support.JSON.Append (Items, UARP.JSON_Support.JSON.Create (Element));
+               end loop;
+               UARP.Multipart.Add_Field (Form, "links", UARP.JSON_Support.Serialize (UARP.JSON_Support.JSON.Create (Items)));
+            end;
          end if;
          if Payload.Has_Cv then
             UARP.Multipart.Add_File (Form, "cv", "cv", UARP.Types.SU.To_String (Payload.Cv));
@@ -543,19 +550,29 @@ package body UARP.API.Public is
       Query : UARP.Types.Pair_Vectors.Vector;
    begin
       if Params.Has_Workplace_Type then
-         UARP.Types.Add (Query, "workplace_type", Params.Workplace_Type);
+         for Item of Params.Workplace_Type loop
+            UARP.Types.Add (Query, "workplace_type", UARP.Models.Image (Item));
+         end loop;
       end if;
       if Params.Has_Employment_Type then
-         UARP.Types.Add (Query, "employment_type", Params.Employment_Type);
+         for Item of Params.Employment_Type loop
+            UARP.Types.Add (Query, "employment_type", UARP.Models.Image (Item));
+         end loop;
       end if;
       if Params.Has_Seniority then
-         UARP.Types.Add (Query, "seniority", Params.Seniority);
+         for Item of Params.Seniority loop
+            UARP.Types.Add (Query, "seniority", UARP.Models.Image (Item));
+         end loop;
       end if;
       if Params.Has_Category then
-         UARP.Types.Add (Query, "category", Params.Category);
+         for Item of Params.Category loop
+            UARP.Types.Add (Query, "category", Item);
+         end loop;
       end if;
       if Params.Has_Country then
-         UARP.Types.Add (Query, "country", Params.Country);
+         for Item of Params.Country loop
+            UARP.Types.Add (Query, "country", Item);
+         end loop;
       end if;
       if Params.Has_Q then
          UARP.Types.Add (Query, "q", Params.Q);

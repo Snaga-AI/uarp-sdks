@@ -697,11 +697,11 @@ public class PublicApi internal constructor(private val client: UarpClient) {
      */
     public suspend fun listPublicJobs(workplaceType: List<JobWorkplaceType>? = null, employmentType: List<JobEmploymentType>? = null, seniority: List<JobSeniority>? = null, category: List<String>? = null, country: List<String>? = null, q: String? = null, page: Long? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListPublicJobsResponse {
         val query = buildList {
-            if (workplaceType != null) add("workplace_type" to workplaceType.toString())
-            if (employmentType != null) add("employment_type" to employmentType.toString())
-            if (seniority != null) add("seniority" to seniority.toString())
-            if (category != null) add("category" to category.toString())
-            if (country != null) add("country" to country.toString())
+            if (workplaceType != null) workplaceType.forEach { add("workplace_type" to it.value) }
+            if (employmentType != null) employmentType.forEach { add("employment_type" to it.value) }
+            if (seniority != null) seniority.forEach { add("seniority" to it.value) }
+            if (category != null) category.forEach { add("category" to it) }
+            if (country != null) country.forEach { add("country" to it) }
             if (q != null) add("q" to q)
             if (page != null) add("page" to page.toString())
             if (limit != null) add("limit" to limit.toString())
