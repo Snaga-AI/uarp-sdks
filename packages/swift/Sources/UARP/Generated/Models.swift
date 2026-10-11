@@ -25668,10 +25668,14 @@ public struct ListSessionsResponse: Codable, Hashable, Sendable {
 
 /// `ListSessionsResponseItem` model.
 public struct ListSessionsResponseItem: Codable, Hashable, Sendable {
-    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    /// Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+    /// `metadata.archived: true` read as archived here and in the list filters; writing the flag
+    /// removes those metadata keys.
     public var archived: Bool?
     public var archivedAt: String?
-    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+    /// `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+    /// the flag removes the metadata key.
     public var pinned: Bool?
     /// When it was pinned; order the pinned group by it.
     public var pinnedAt: String?
@@ -25684,6 +25688,10 @@ public struct ListSessionsResponseItem: Codable, Hashable, Sendable {
     public var metadata: JSONObject?
     public var runs: [String]?
     public var createdAt: String?
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+    /// writes that only set `title`, `project_id` or the legacy
+    /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+    /// by it.
     public var updatedAt: String?
     public var expiresAt: String?
     /// Team ID if session belongs to a team
@@ -37138,10 +37146,14 @@ public struct SensorWebhookResponse: Codable, Hashable, Sendable {
 
 /// `Session` model.
 public struct Session: Codable, Hashable, Sendable {
-    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    /// Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+    /// `metadata.archived: true` read as archived here and in the list filters; writing the flag
+    /// removes those metadata keys.
     public var archived: Bool?
     public var archivedAt: String?
-    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+    /// `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+    /// the flag removes the metadata key.
     public var pinned: Bool?
     /// When it was pinned; order the pinned group by it.
     public var pinnedAt: String?
@@ -37154,6 +37166,10 @@ public struct Session: Codable, Hashable, Sendable {
     public var metadata: JSONObject?
     public var runs: [String]?
     public var createdAt: String?
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+    /// writes that only set `title`, `project_id` or the legacy
+    /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+    /// by it.
     public var updatedAt: String?
     public var expiresAt: String?
     /// Team ID if session belongs to a team

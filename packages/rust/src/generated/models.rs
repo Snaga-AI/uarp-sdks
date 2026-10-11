@@ -19557,12 +19557,16 @@ pub struct ListSessionsResponse {
 /// `ListSessionsResponseItem` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListSessionsResponseItem {
-    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    /// Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+    /// `metadata.archived: true` read as archived here and in the list filters; writing the flag
+    /// removes those metadata keys.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<String>,
-    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+    /// `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+    /// the flag removes the metadata key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned: Option<bool>,
     /// When it was pinned; order the pinned group by it.
@@ -19582,6 +19586,10 @@ pub struct ListSessionsResponseItem {
     pub runs: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+    /// writes that only set `title`, `project_id` or the legacy
+    /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+    /// by it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -28860,12 +28868,16 @@ pub struct SensorWebhookResponse {
 /// `Session` model.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct Session {
-    /// Set by `PUT /sessions/{id}`. Absent when not archived.
+    /// Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+    /// `metadata.archived: true` read as archived here and in the list filters; writing the flag
+    /// removes those metadata keys.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived: Option<bool>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub archived_at: Option<String>,
-    /// Set by `PUT /sessions/{id}`. Absent when not pinned.
+    /// Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+    /// `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+    /// the flag removes the metadata key.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pinned: Option<bool>,
     /// When it was pinned; order the pinned group by it.
@@ -28885,6 +28897,10 @@ pub struct Session {
     pub runs: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+    /// writes that only set `title`, `project_id` or the legacy
+    /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+    /// by it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub updated_at: Option<String>,
     #[serde(default, skip_serializing_if = "Option::is_none")]

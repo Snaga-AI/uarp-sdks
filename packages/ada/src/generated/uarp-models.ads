@@ -20577,12 +20577,16 @@ package UARP.Models is
 
    --  `ListSessionsResponseItem` model.
    type List_Sessions_Response_Item is record
-      --  Set by `PUT /sessions/{id}`. Absent when not archived.
+      --  Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+      --  `metadata.archived: true` read as archived here and in the list filters; writing the flag
+      --  removes those metadata keys.
       Has_Archived : Boolean := False;
       Archived : Standard.Boolean := False;
       Has_Archived_At : Boolean := False;
       Archived_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Set by `PUT /sessions/{id}`. Absent when not pinned.
+      --  Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+      --  `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+      --  the flag removes the metadata key.
       Has_Pinned : Boolean := False;
       Pinned : Standard.Boolean := False;
       --  When it was pinned; order the pinned group by it.
@@ -20602,6 +20606,10 @@ package UARP.Models is
       Runs : UARP.Types.Text_Vectors.Vector;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+      --  writes that only set `title`, `project_id` or the legacy
+      --  `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+      --  by it.
       Has_Updated_At : Boolean := False;
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Expires_At : Boolean := False;
@@ -26599,12 +26607,16 @@ package UARP.Models is
 
    --  `Session` model.
    type Session is record
-      --  Set by `PUT /sessions/{id}`. Absent when not archived.
+      --  Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+      --  `metadata.archived: true` read as archived here and in the list filters; writing the flag
+      --  removes those metadata keys.
       Has_Archived : Boolean := False;
       Archived : Standard.Boolean := False;
       Has_Archived_At : Boolean := False;
       Archived_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Set by `PUT /sessions/{id}`. Absent when not pinned.
+      --  Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+      --  `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+      --  the flag removes the metadata key.
       Has_Pinned : Boolean := False;
       Pinned : Standard.Boolean := False;
       --  When it was pinned; order the pinned group by it.
@@ -26624,6 +26636,10 @@ package UARP.Models is
       Runs : UARP.Types.Text_Vectors.Vector;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+      --  writes that only set `title`, `project_id` or the legacy
+      --  `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+      --  by it.
       Has_Updated_At : Boolean := False;
       Updated_At : UARP.Types.Text := UARP.Types.Empty_Text;
       Has_Expires_At : Boolean := False;

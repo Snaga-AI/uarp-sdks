@@ -9271,7 +9271,7 @@
                 "properties": {
                     "archived": {
                         "type": "boolean",
-                        "description": "Set by `PUT /sessions/{id}`. Absent when not archived."
+                        "description": "Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept `metadata.archived: true` read as archived here and in the list filters; writing the flag removes those metadata keys."
                     },
                     "archived_at": {
                         "type": "string",
@@ -9279,7 +9279,7 @@
                     },
                     "pinned": {
                         "type": "boolean",
-                        "description": "Set by `PUT /sessions/{id}`. Absent when not pinned."
+                        "description": "Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing the flag removes the metadata key."
                     },
                     "pinned_at": {
                         "type": "string",
@@ -9329,7 +9329,8 @@
                     },
                     "updated_at": {
                         "type": "string",
-                        "format": "date-time"
+                        "format": "date-time",
+                        "description": "Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata writes that only set `title`, `project_id` or the legacy `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread by it."
                     },
                     "expires_at": {
                         "type": [

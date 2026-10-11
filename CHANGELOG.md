@@ -8,8 +8,11 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## 0.9.0 — 2026-10-10
 
-Build `15987a5f`, canonical digest `f0aacecd910be10b`. Against 0.8.0: 568 →
+Build `917d6ba8`, canonical digest `945fb7ee308afd8b`. Against 0.8.0: 568 →
 585 paths, 766 → 789 operations (+23, −0), 361 → 382 schemas (+21, −0).
+The refresh was cut at `15987a5f`; `917d6ba8` (uarp #556) deployed while it
+was in CI and changed only the descriptions of `Session.updated_at`, `pinned`
+and `archived`: a pin or archive no longer bumps `updated_at`.
 
 **The minor moves** because eight exported type names change (below). Under
 1.0 a caret does not cross the minor, so `^0.8` keeps building. The Swift

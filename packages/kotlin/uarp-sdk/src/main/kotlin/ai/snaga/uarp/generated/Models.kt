@@ -19335,13 +19335,17 @@ public data class ListSessionsResponse(
 @Serializable
 public data class ListSessionsResponseItem(
     /**
-     * Set by `PUT /sessions/{id}`. Absent when not archived.
+     * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+     * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+     * removes those metadata keys.
      */
     public val archived: Boolean? = null,
     @SerialName("archived_at")
     public val archivedAt: String? = null,
     /**
-     * Set by `PUT /sessions/{id}`. Absent when not pinned.
+     * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+     * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+     * the flag removes the metadata key.
      */
     public val pinned: Boolean? = null,
     /**
@@ -19364,6 +19368,12 @@ public data class ListSessionsResponseItem(
     public val runs: List<String>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    /**
+     * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+     * writes that only set `title`, `project_id` or the legacy
+     * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+     * by it.
+     */
     @SerialName("updated_at")
     public val updatedAt: String? = null,
     @SerialName("expires_at")
@@ -28699,13 +28709,17 @@ public data class SensorWebhookResponse(
 @Serializable
 public data class Session(
     /**
-     * Set by `PUT /sessions/{id}`. Absent when not archived.
+     * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+     * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+     * removes those metadata keys.
      */
     public val archived: Boolean? = null,
     @SerialName("archived_at")
     public val archivedAt: String? = null,
     /**
-     * Set by `PUT /sessions/{id}`. Absent when not pinned.
+     * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+     * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+     * the flag removes the metadata key.
      */
     public val pinned: Boolean? = null,
     /**
@@ -28728,6 +28742,12 @@ public data class Session(
     public val runs: List<String>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    /**
+     * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+     * writes that only set `title`, `project_id` or the legacy
+     * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+     * by it.
+     */
     @SerialName("updated_at")
     public val updatedAt: String? = null,
     @SerialName("expires_at")

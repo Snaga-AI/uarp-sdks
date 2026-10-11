@@ -10468,12 +10468,16 @@ export interface ListSessionsResponse {
 
 export interface ListSessionsResponseItem {
   /**
-   * Set by `PUT /sessions/{id}`. Absent when not archived.
+   * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+   * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+   * removes those metadata keys.
    */
   archived?: boolean;
   archived_at?: string;
   /**
-   * Set by `PUT /sessions/{id}`. Absent when not pinned.
+   * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+   * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+   * the flag removes the metadata key.
    */
   pinned?: boolean;
   /**
@@ -10489,6 +10493,12 @@ export interface ListSessionsResponseItem {
   metadata?: JsonObject;
   runs?: string[];
   created_at?: string;
+  /**
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+   * writes that only set `title`, `project_id` or the legacy
+   * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+   * by it.
+   */
   updated_at?: string;
   expires_at?: string | null;
   /**
@@ -15414,12 +15424,16 @@ export interface SensorWebhookResponse {
 
 export interface Session {
   /**
-   * Set by `PUT /sessions/{id}`. Absent when not archived.
+   * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+   * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+   * removes those metadata keys.
    */
   archived?: boolean;
   archived_at?: string;
   /**
-   * Set by `PUT /sessions/{id}`. Absent when not pinned.
+   * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+   * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+   * the flag removes the metadata key.
    */
   pinned?: boolean;
   /**
@@ -15435,6 +15449,12 @@ export interface Session {
   metadata?: JsonObject;
   runs?: string[];
   created_at?: string;
+  /**
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+   * writes that only set `title`, `project_id` or the legacy
+   * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+   * by it.
+   */
   updated_at?: string;
   expires_at?: string | null;
   /**
