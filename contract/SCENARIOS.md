@@ -29,8 +29,10 @@ all five SDKs put **the same bytes on the wire** for the same logical request.
 | 18 | `streamPost("/api/v1/llm/chat/completions/refused", …)`, error caught | a refusal before the stream is an API error with its problem document, and a streamed POST is never retried — not even on 429 |
 | 19 | `streamPost("/api/v1/llm/chat/completions/plain", …)`, error caught | a 2xx that is not `text/event-stream` is an error, not a stream that ended with no events |
 | 20 | `auth.completeOAuthLoginFormPost("apple", {code, state, user})` | an `application/x-www-form-urlencoded` body, byte for byte |
+| 21 | `public.listPublicJobs(seniority = [junior, senior], country = ["UA"])` | array query parameters (`style: form, explode: true`): the key once per item, in declaration order |
+| 22 | `public.applyToJob("dev", {name, email, consent, links: [two urls]})` | an array in a multipart body: one text part holding a compact JSON array, `/` unescaped |
 
-Total: **22 requests**: scenarios 4 and 5 make two each, the rest one.
+Total: **24 requests**: scenarios 4 and 5 make two each, the rest one.
 
 ### A form body (20)
 

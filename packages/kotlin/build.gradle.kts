@@ -5,5 +5,5 @@ plugins {
 
 allprojects {
     group = "ai.snaga"
-    version = "0.8.0"
+    version = "0.9.0"
 }

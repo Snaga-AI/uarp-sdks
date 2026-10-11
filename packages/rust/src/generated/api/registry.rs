@@ -83,6 +83,52 @@ impl RegistryApi {
             .await
     }
 
+    /// Add @platform/essentials to every head agent (super-admin)
+    ///
+    /// One-shot grandfathering for tenants created before Phase 1: every tenant's head agent gets
+    /// `@platform/essentials@1.0.0` in its `specs`. Idempotent — a head agent that already has it
+    /// is counted in `already_present`; a tenant with no head agent yet in `no_head_agent`
+    /// (onboarding installs it at promotion). `errors` is present ONLY when at least one tenant
+    /// failed; the status is still 200 and the other counts stay meaningful. Super-admin only; no
+    /// request body.
+    ///
+    /// `POST /api/v1/registry/admin/specs/install-essentials`
+    pub async fn install_essentials_on_head_agents(&self) -> Result<models::InstallEssentialsOnHeadAgentsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/registry/admin/specs/install-essentials".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// List the registry's SPEC-signing public keys
+    ///
+    /// The Ed25519 public keys a client verifies `\[ownership\].signature` against, offline. A
+    /// retired key stays listed with `retired_at`; a signature whose `signed_at` is later than that
+    /// must be refused. 501 `SIGNING_NOT_CONFIGURED` when this deployment signs nothing
+    /// (`spec_registry.signing_mode = "off"`) — `features.spec_signing` in `GET
+    /// /api/v1/client-config` says which. Requires an authenticated caller (measured 2026-10-05:
+    /// 401 without one), any scope.
+    ///
+    /// `GET /api/v1/registry/keys`
+    pub async fn list_registry_signing_keys(&self) -> Result<models::ListRegistrySigningKeysResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/registry/keys".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Admin: list all specs (regardless of visibility)
     ///
     /// Lists every SPEC in the registry regardless of tenant or visibility; super-admin only, and

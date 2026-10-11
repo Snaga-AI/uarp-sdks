@@ -8,6 +8,59 @@ public struct PublicAPI: Sendable {
 
     init(client: UARPClient) { self.client = client }
 
+    /// Apply to a vacancy
+    ///
+    /// Multipart form. The CV is checked by content — a PDF by its magic number, a .docx by the zip
+    /// magic plus its extension, a Markdown or plain-text file by being valid UTF-8 with no NUL
+    /// byte (the extension picks between the two) — never by the declared type, and stored durably;
+    /// the application record carries its `file_id`. One application per e-mail address per vacancy
+    /// (409 `duplicate_application`). `links` may be repeated or sent once as a JSON array; at most
+    /// 5, each an http(s) URL. `consent` must be a truthy string (`true`, `1`, `on`, `yes`);
+    /// `talent_pool_consent` is separate and optional. `website` is a honeypot: a filled one gets
+    /// 201 and nothing is stored. Refused with 409 `job_closed` when the vacancy is closed or past
+    /// `closes_at`, and 409 `job_apply_elsewhere` when `apply.mode` is not `form` (the detail names
+    /// where to apply). Per client address, at most 10 applications an hour (429). The configured
+    /// addresses are mailed on each stored application, best effort.
+    ///
+    /// `POST /api/v1/public/jobs/{slug}/apply`
+    public func applyToJob(slug: String, body: ApplyToJobRequest, options: RequestOptions = .init()) async throws -> ApplyToJobResponse {
+        var parts: [MultipartPart] = []
+        parts.append(MultipartPart(name: "name", value: .text(body.name)))
+        parts.append(MultipartPart(name: "email", value: .text(body.email)))
+        if let value = body.phone {
+            parts.append(MultipartPart(name: "phone", value: .text(value)))
+        }
+        if let value = body.coverLetter {
+            parts.append(MultipartPart(name: "cover_letter", value: .text(value)))
+        }
+        if let value = body.links, let text = try client.formValue(value) {
+            parts.append(MultipartPart(name: "links", value: .text(text)))
+        }
+        if let value = body.cv {
+            parts.append(MultipartPart(name: "cv", value: .file(value)))
+        }
+        parts.append(MultipartPart(name: "consent", value: .text(body.consent)))
+        if let value = body.talentPoolConsent {
+            parts.append(MultipartPart(name: "talent_pool_consent", value: .text(value)))
+        }
+        if let value = body.locale {
+            parts.append(MultipartPart(name: "locale", value: .text(value)))
+        }
+        if let value = body.source {
+            parts.append(MultipartPart(name: "source", value: .text(value)))
+        }
+        if let value = body.website {
+            parts.append(MultipartPart(name: "website", value: .text(value)))
+        }
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/public/jobs/\(encodePathSegment(slug))/apply",
+            body: .multipart(parts),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Cancel a run of this chat
     ///
     /// Cancels a run that belongs to this public session. No body. A run id from outside the
@@ -286,6 +339,21 @@ public struct PublicAPI: Sendable {
         ))
     }
 
+    /// One vacancy
+    ///
+    /// A published vacancy, or a CLOSED one — `applications_open` is then false and `closed_at` is
+    /// set, so the page can say the role was filled instead of 404. A draft answers 404 exactly
+    /// like an unknown slug.
+    ///
+    /// `GET /api/v1/public/jobs/{slug}`
+    public func getPublicJob(slug: String, options: RequestOptions = .init()) async throws -> GetPublicJobResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/jobs/\(encodePathSegment(slug))",
+            options: options
+        ))
+    }
+
     /// Get public session
     ///
     /// Returns the transcript of an anonymous session to the holder of its token: the agent's name,
@@ -506,6 +574,60 @@ public struct PublicAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/public/integrations",
+            options: options
+        ))
+    }
+
+    /// List open vacancies
+    ///
+    /// Published vacancies not past `closes_at`, newest first, paged with `page` and `limit` like
+    /// the blog. Every filter is repeatable (or comma-separated) and matched case-insensitively;
+    /// `q` searches title, summary, description and skills. `facets` is computed over every OPEN
+    /// vacancy before the filters are applied, so a filter UI lists only values that exist. `total`
+    /// and `total_pages` count AFTER the filters. A non-public salary is sent as `null` with
+    /// `salary_public: false`. Anonymous; shares the public-read rate bucket.
+    ///
+    /// `GET /api/v1/public/jobs`
+    public func listPublicJobs(workplaceType: [JobWorkplaceType]? = nil, employmentType: [JobEmploymentType]? = nil, seniority: [JobSeniority]? = nil, category: [String]? = nil, country: [String]? = nil, q: String? = nil, page: Int? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListPublicJobsResponse {
+        var query: [URLQueryItem] = []
+        if let workplaceType {
+            for item in workplaceType {
+                query.append(URLQueryItem(name: "workplace_type", value: item.rawValue))
+            }
+        }
+        if let employmentType {
+            for item in employmentType {
+                query.append(URLQueryItem(name: "employment_type", value: item.rawValue))
+            }
+        }
+        if let seniority {
+            for item in seniority {
+                query.append(URLQueryItem(name: "seniority", value: item.rawValue))
+            }
+        }
+        if let category {
+            for item in category {
+                query.append(URLQueryItem(name: "category", value: item))
+            }
+        }
+        if let country {
+            for item in country {
+                query.append(URLQueryItem(name: "country", value: item))
+            }
+        }
+        if let q {
+            query.append(URLQueryItem(name: "q", value: q))
+        }
+        if let page {
+            query.append(URLQueryItem(name: "page", value: String(page)))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/public/jobs",
+            query: query,
             options: options
         ))
     }

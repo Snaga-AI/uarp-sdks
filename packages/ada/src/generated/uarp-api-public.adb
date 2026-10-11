@@ -6,6 +6,68 @@ package body UARP.API.Public is
 
    package JS renames UARP.JSON_Support;
 
+   function Apply_To_Job
+     (Self : Client_Type;
+      Slug : String;
+      Payload : UARP.Models.Apply_To_Job_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Apply_To_Job_Response
+   is
+   begin
+      declare
+         Form : UARP.Multipart.Builder;
+      begin
+         UARP.Multipart.Reset (Form);
+         UARP.Multipart.Add_Field (Form, "name", UARP.Types.SU.To_String (Payload.Name));
+         UARP.Multipart.Add_Field (Form, "email", UARP.Types.SU.To_String (Payload.Email));
+         if Payload.Has_Phone then
+            UARP.Multipart.Add_Field (Form, "phone", UARP.Types.SU.To_String (Payload.Phone));
+         end if;
+         if Payload.Has_Cover_Letter then
+            UARP.Multipart.Add_Field (Form, "cover_letter", UARP.Types.SU.To_String (Payload.Cover_Letter));
+         end if;
+         if Payload.Has_Links then
+            declare
+               Items : UARP.JSON_Support.JSON_Array := UARP.JSON_Support.JSON.Empty_Array;
+            begin
+               for Element of Payload.Links loop
+                  UARP.JSON_Support.JSON.Append (Items, UARP.JSON_Support.JSON.Create (Element));
+               end loop;
+               UARP.Multipart.Add_Field (Form, "links", UARP.JSON_Support.Serialize (UARP.JSON_Support.JSON.Create (Items)));
+            end;
+         end if;
+         if Payload.Has_Cv then
+            UARP.Multipart.Add_File (Form, "cv", "cv", UARP.Types.SU.To_String (Payload.Cv));
+         end if;
+         UARP.Multipart.Add_Field (Form, "consent", UARP.Types.SU.To_String (Payload.Consent));
+         if Payload.Has_Talent_Pool_Consent then
+            UARP.Multipart.Add_Field (Form, "talent_pool_consent", UARP.Types.SU.To_String (Payload.Talent_Pool_Consent));
+         end if;
+         if Payload.Has_Locale then
+            UARP.Multipart.Add_Field (Form, "locale", UARP.Types.SU.To_String (Payload.Locale));
+         end if;
+         if Payload.Has_Source then
+            UARP.Multipart.Add_Field (Form, "source", UARP.Types.SU.To_String (Payload.Source));
+         end if;
+         if Payload.Has_Website then
+            UARP.Multipart.Add_Field (Form, "website", UARP.Types.SU.To_String (Payload.Website));
+         end if;
+         declare
+            Raw_Body : constant UARP.Types.Text := UARP.Client.Call_Raw
+               (Self,
+                "POST",
+                "/api/v1/public/jobs/" & UARP.Types.Encode_Path_Segment (Slug) & "/apply",
+                Idempotent => True,
+                Options => Options,
+                Payload => UARP.Types.SU.To_String (UARP.Multipart.Body_Text (Form)),
+                Has_Payload => True,
+                Content_Type => UARP.Multipart.Content_Type (Form));
+         begin
+            return UARP.Models.From_JSON (JS.Parse (UARP.Types.SU.To_String (Raw_Body)));
+         end;
+      end;
+   end Apply_To_Job;
+
    function Cancel_Public_Session_Run
      (Self : Client_Type;
       Session_Id : String;
@@ -263,6 +325,21 @@ package body UARP.API.Public is
           Options => Options);
    end Get_Public_File_Content;
 
+   function Get_Public_Job
+     (Self : Client_Type;
+      Slug : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Public_Job_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/jobs/" & UARP.Types.Encode_Path_Segment (Slug),
+             Options => Options));
+   end Get_Public_Job;
+
    function Get_Public_Session
      (Self : Client_Type;
       Session_Id : String;
@@ -463,6 +540,57 @@ package body UARP.API.Public is
              "/api/v1/public/integrations",
              Options => Options));
    end List_Public_Integrations;
+
+   function List_Public_Jobs
+     (Self : Client_Type;
+      Params : List_Public_Jobs_Params := No_List_Public_Jobs_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Jobs_Response
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      if Params.Has_Workplace_Type then
+         for Item of Params.Workplace_Type loop
+            UARP.Types.Add (Query, "workplace_type", UARP.Models.Image (Item));
+         end loop;
+      end if;
+      if Params.Has_Employment_Type then
+         for Item of Params.Employment_Type loop
+            UARP.Types.Add (Query, "employment_type", UARP.Models.Image (Item));
+         end loop;
+      end if;
+      if Params.Has_Seniority then
+         for Item of Params.Seniority loop
+            UARP.Types.Add (Query, "seniority", UARP.Models.Image (Item));
+         end loop;
+      end if;
+      if Params.Has_Category then
+         for Item of Params.Category loop
+            UARP.Types.Add (Query, "category", Item);
+         end loop;
+      end if;
+      if Params.Has_Country then
+         for Item of Params.Country loop
+            UARP.Types.Add (Query, "country", Item);
+         end loop;
+      end if;
+      if Params.Has_Q then
+         UARP.Types.Add (Query, "q", Params.Q);
+      end if;
+      if Params.Has_Page then
+         UARP.Types.Add (Query, "page", Params.Page);
+      end if;
+      if Params.Has_Limit then
+         UARP.Types.Add (Query, "limit", Params.Limit);
+      end if;
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/public/jobs",
+             Query => Query,
+             Options => Options));
+   end List_Public_Jobs;
 
    function List_Public_Plans
      (Self : Client_Type;

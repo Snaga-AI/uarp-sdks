@@ -107,6 +107,38 @@ async fn serialises_query_parameters_and_skips_none() {
 }
 
 #[tokio::test]
+async fn repeats_the_key_for_each_item_of_an_array_query_parameter() {
+    //  `GET /public/jobs` (build 15987a5f) declared the document's first array
+    //  query parameters, `style: form, explode: true`. serde_urlencoded cannot
+    //  write a sequence at all, so the call failed before it was sent.
+    let server = MockServer::start().await;
+    Mock::given(method("GET"))
+        .and(path("/api/v1/public/jobs"))
+        .respond_with(ResponseTemplate::new(500))
+        .mount(&server)
+        .await;
+
+    let client = client_for(&server).await;
+    let params = uarp_sdk::api::ListPublicJobsParams {
+        seniority: Some(vec![
+            uarp_sdk::models::JobSeniority::Junior,
+            uarp_sdk::models::JobSeniority::Senior,
+        ]),
+        country: Some(vec!["UA".into()]),
+        q: Some("rust dev".into()),
+        ..Default::default()
+    };
+    let _ = client.public().list_public_jobs(&params).await;
+
+    let received = server.received_requests().await.unwrap();
+    assert_eq!(received.len(), 1, "the request must reach the wire");
+    assert_eq!(
+        received[0].url.query(),
+        Some("seniority=junior&seniority=senior&country=UA&q=rust%20dev")
+    );
+}
+
+#[tokio::test]
 async fn percent_encodes_path_parameters() {
     let server = MockServer::start().await;
     Mock::given(method("GET"))

@@ -144,6 +144,17 @@ pub struct ListFeedbackParams {
     pub limit: Option<i64>,
 }
 
+/// Query and header parameters for `listJobApplications`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListJobApplicationsParams {
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub status: Option<models::JobApplicationStatus>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<i64>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
 /// Query and header parameters for `queryAuditLog`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct QueryAuditLogParams {
@@ -241,12 +252,14 @@ impl AdminApi {
 
     /// Platform-wide analytics overview
     ///
-    /// Platform-wide funnel and traffic overview over the last `days` days (default 30, capped at
-    /// 90): per-event-type totals, a daily timeseries, the signup and revenue funnel with its
-    /// conversion percentages, and the top countries, devices, browsers, referrers and UTM sources.
-    /// Unique visitors are counted over a fixed 30-day window regardless of `days`, because that
-    /// section scans raw events rather than the daily counters. Requires the `admin` scope and
-    /// super-admin identity.
+    /// Platform-wide traffic overview over the last `days` days (default 30, capped at 90), plus
+    /// prospective workspace signup cohorts: successful human-associated root tasks, activity on
+    /// distinct UTC task-start dates, positive live Stripe payments and day-1/day-7 activity with
+    /// mature denominators. Cohort outcomes accumulate up to as_of and only include new signups
+    /// recorded since tracking_since. complete=false means the bounded scan is partial; do not
+    /// display exact percentages. Legacy revenue_funnel contains event counts, not successful
+    /// activation or confirmed paid conversion. Unique visitors use a fixed 30-day window. Requires
+    /// the admin scope and super-admin identity.
     ///
     /// `GET /api/v1/admin/analytics/overview`
     ///
@@ -1051,6 +1064,30 @@ impl AdminApi {
             .await
     }
 
+    /// Create a vacancy
+    ///
+    /// The body is `CreateJobSchema`: `title`, `category`, `employment_type` and `workplace_type`
+    /// are required, everything else has a default (`status` `draft`, `apply` the form with a CV
+    /// required, `language` `en`, empty lists, no salary). The slug is derived from the title and
+    /// made unique; `status: published` stamps `published_at`. Country and currency codes are
+    /// upper-cased on the way in.
+    ///
+    /// `POST /api/v1/admin/jobs`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn create_admin_job(&self, body: &models::CreateAdminJobRequest) -> Result<models::CreateAdminJobResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: "/api/v1/admin/jobs".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Create custom provider
     ///
     /// Registers a custom provider: `id`, `name`, `default_endpoint` and optionally `canonical`,
@@ -1085,8 +1122,13 @@ impl AdminApi {
     /// `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
     /// defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
     /// claim are written in one commit; a `slug` the caller chose that another tenant holds is
-    /// refused with 409, and a slug derived from `name` that collides is lengthened instead.
-    /// Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
+    /// refused with 409, and a slug derived from `name` that collides is lengthened instead. An
+    /// optional `email` is the client's sign-in address: it is linked to the new tenant
+    /// (`email_to_tenant`, `tenant_primary_email`), so the client's first sign-in lands in this
+    /// tenant as its owner; an address that already signs in to a tenant is refused with 409 and
+    /// nothing is created (since 2026-10-09; before, the field was dropped and the client's sign-in
+    /// made a second tenant). Answers 201 with the new tenant and writes a `tenant.created` audit
+    /// entry. Super-admin only.
     ///
     /// `POST /api/v1/admin/tenants`
     ///
@@ -1141,6 +1183,27 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::DELETE,
                 path: format!("/api/v1/admin/integration-oauth-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Delete a vacancy and its applications
+    ///
+    /// Every application under it is deleted, CV bytes included, and every slug it ever had stops
+    /// resolving. Prefer `status: closed` for a filled role — the public page then says so.
+    ///
+    /// `DELETE /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_admin_job(&self, job_id: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/jobs/{}", encode_path(job_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -1219,6 +1282,48 @@ impl AdminApi {
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: true,
+            })
+            .await
+    }
+
+    /// Erase an application
+    ///
+    /// The record, its dedupe index and its CV bytes. This is how an erasure request is honoured
+    /// before retention would.
+    ///
+    /// `DELETE /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn delete_job_application(&self, job_id: &str, application_id: &str) -> Result<()> {
+        self.client
+            .request_empty(Request {
+                method: Method::DELETE,
+                path: format!("/api/v1/admin/jobs/{}/applications/{}", encode_path(job_id), encode_path(application_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// The candidate's CV
+    ///
+    /// The bytes as uploaded, with `Content-Disposition: attachment` and the sanitised filename.
+    /// `Cache-Control: private, no-store`.
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}/cv`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn download_job_application_cv(&self, job_id: &str, application_id: &str) -> Result<bytes::Bytes> {
+        self.client
+            .request_bytes(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/jobs/{}/applications/{}/cv", encode_path(job_id), encode_path(application_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
             })
             .await
     }
@@ -1311,6 +1416,24 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::GET,
                 path: format!("/api/v1/admin/integration-oauth-providers/{}", encode_path(&provider.to_string())),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// One vacancy, with applicant counts
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_admin_job(&self, job_id: &str) -> Result<models::GetAdminJobResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/jobs/{}", encode_path(job_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
@@ -1485,6 +1608,24 @@ impl AdminApi {
         }
     }
 
+    /// Careers page settings
+    ///
+    /// `GET /api/v1/admin/jobs/config`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_careers_config(&self) -> Result<models::GetCareersConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/jobs/config".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// EU AI Act conformity report
     ///
     /// Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
@@ -1527,6 +1668,24 @@ impl AdminApi {
                 method: Method::GET,
                 path: "/api/v1/admin/immutable-audit".to_string(),
                 query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// One application
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn get_job_application(&self, job_id: &str, application_id: &str) -> Result<models::GetJobApplicationResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/jobs/{}/applications/{}", encode_path(job_id), encode_path(application_id)),
+                query: NO_QUERY,
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,
@@ -1786,6 +1945,27 @@ impl AdminApi {
             .await
     }
 
+    /// Every vacancy, drafts and closed included
+    ///
+    /// Unpaged, newest first, each with its applicant counts so the list can show "3 new" without a
+    /// second call.
+    ///
+    /// `GET /api/v1/admin/jobs`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_admin_jobs(&self) -> Result<models::ListAdminJobsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/admin/jobs".to_string(),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List providers with admin settings
     ///
     /// Lists every provider registered on the platform with its admin-side settings: name,
@@ -1879,6 +2059,27 @@ impl AdminApi {
             .await
     }
 
+    /// Applications to a vacancy
+    ///
+    /// Newest first, paged. `counts_by_status` counts every application of the vacancy BEFORE the
+    /// `status` filter; `total` counts after it.
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn list_job_applications(&self, job_id: &str, params: &ListJobApplicationsParams) -> Result<models::ListJobApplicationsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/admin/jobs/{}/applications", encode_path(job_id)),
+                query: Some(params),
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List all tenants (super admin only)
     ///
     /// Lists every tenant in the platform registry (paged internally, no upper bound), each record
@@ -1922,6 +2123,27 @@ impl AdminApi {
                 path: format!("/api/v1/admin/tenants/{}", encode_path(tenant_id)),
                 query: NO_QUERY,
                 body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Change the careers page settings
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; `notify_emails` sent
+    /// replaces the stored list whole. The body is `PutCareersConfigSchema`, every field optional.
+    ///
+    /// `PUT /api/v1/admin/jobs/config`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn put_careers_config(&self, body: &models::PutCareersConfigRequest) -> Result<models::PutCareersConfigResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PUT,
+                path: "/api/v1/admin/jobs/config".to_string(),
+                query: NO_QUERY,
+                body: Some(body),
                 headers: Vec::new(),
                 idempotent: true,
             })
@@ -2211,6 +2433,34 @@ impl AdminApi {
             .await
     }
 
+    /// Edit a vacancy
+    ///
+    /// WRITE SEMANTICS: merges at the top level — a field the body omits keeps its stored value —
+    /// and every array (`responsibilities`, `requirements`, `nice_to_have`, `benefits`,
+    /// `applicant_countries`, `skills`) and every object (`location`, `salary`, `apply`) sent
+    /// REPLACES the stored one whole; `salary: null` removes the salary. The body is
+    /// `UpdateJobSchema`, every field optional. A new `title` renames the slug and keeps the old
+    /// one in `previous_slugs`. Status transitions stamp dates: to `published` sets `published_at`
+    /// (first time) and clears `closed_at`; to `closed` sets `closed_at` and gives every
+    /// application a `retain_until` of `closed_at + retention_days`; back out of `closed` clears
+    /// both.
+    ///
+    /// `PATCH /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_admin_job(&self, job_id: &str, body: &models::UpdateAdminJobRequest) -> Result<models::UpdateAdminJobResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: format!("/api/v1/admin/jobs/{}", encode_path(job_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
     /// Update pricing configuration
     ///
     /// Replaces the stored pricing override with the current effective pricing merged field by
@@ -2319,6 +2569,27 @@ impl AdminApi {
             .request_json(Request {
                 method: Method::PATCH,
                 path: format!("/api/v1/admin/feedback/{}", encode_path(report_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Move an application along, or annotate it
+    ///
+    /// WRITE SEMANTICS: merges. `status` and `notes` are the only writable fields; each replaces
+    /// its stored value when sent and is kept when omitted. There is no array in the body.
+    ///
+    /// `PATCH /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    pub async fn update_job_application(&self, job_id: &str, application_id: &str, body: &models::UpdateJobApplicationRequest) -> Result<models::UpdateJobApplicationResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::PATCH,
+                path: format!("/api/v1/admin/jobs/{}/applications/{}", encode_path(job_id), encode_path(application_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

@@ -5,15 +5,22 @@ import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type { EventStream } from '../../core/sse.js';
 import type {
+  CompleteMcpoAuthRequest,
   CreateMCPServerRequest,
   DeleteMCPServerResponse,
+  GetMcpoAuthClientMetadataResponse,
   JSONRpcResponse,
+  JsonValue,
   ListAgentMCPServersResponse,
+  ListMCPCatalogResponse,
   ListMCPServersResponse,
+  MCPConnectRequest,
+  MCPConnectResult,
   MCPServer,
   MCPServerTestResult,
   MCPServerWithConnectResult,
   McpjsonRpcRequest,
+  ReconnectMCPServerRequest,
   SetAgentMCPServersRequest,
   SetAgentMCPServersResponse,
   UpdateMCPServerRequest,
@@ -30,9 +37,66 @@ export interface MCPJSONRpcParams {
 }
 
 /**
+ * Query and header parameters for `mcpOAuthCallback`.
+ */
+export interface MCPOAuthCallbackParams {
+  state: string;
+  code?: string;
+  error?: string;
+  iss?: string;
+}
+
+/**
  * Model Context Protocol server endpoints
  */
 export class MCPResource extends APIResource {
+  /**
+   * Finish an OAuth connection
+   *
+   * Exchanges the code for tokens, stores them encrypted, and opens the live session with the
+   * agents chosen at connect. Only the user who started the connection may finish it (403
+   * otherwise), and a state works once. 201 for a new connection, 200 for a renewed one.
+   *
+   * `POST /api/v1/mcp/oauth/complete`
+   *
+   * Required scopes: `agents:write`.
+   */
+  completeMCPOAuth(body: CompleteMcpoAuthRequest, options?: RequestOptions): Promise<MCPConnectResult> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/mcp/oauth/complete',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Connect an MCP server to agents
+   *
+   * Starts a connection to a catalog entry or any streamable-HTTP MCP server URL. A server that
+   * asks for OAuth answers `authorization_required` with the URL to open; one that asks for
+   * nothing is stored and connected at once (201). A server already connected in this tenant is
+   * not connected twice: the agents are added to it (200, `already_connected`). Developer role.
+   *
+   * The platform registers itself with the vendor's authorization server once (client ID
+   * metadata document when the server accepts one, else dynamic client registration), uses PKCE
+   * S256 and binds the token to the server with the `resource` parameter.
+   *
+   * `POST /api/v1/mcp/connect`
+   *
+   * Required scopes: `agents:write`.
+   */
+  connectMCPServer(body: MCPConnectRequest, options?: RequestOptions): Promise<MCPConnectResult> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/mcp/connect',
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Create MCP server
    *
@@ -92,6 +156,22 @@ export class MCPResource extends APIResource {
   }
 
   /**
+   * Snaga's OAuth client metadata document
+   *
+   * Fetched by authorization servers that accept client ID metadata documents: this URL is then
+   * Snaga's client_id, and nothing is registered. Holds no secret.
+   *
+   * `GET /api/v1/mcp/oauth/client.json`
+   */
+  getMCPOAuthClientMetadata(options?: RequestOptions): Promise<GetMcpoAuthClientMetadataResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/mcp/oauth/client.json',
+      options,
+    });
+  }
+
+  /**
    * Get MCP server
    *
    * Returns one registered MCP server; `admin` role only, like the rest of this route. The
@@ -131,6 +211,24 @@ export class MCPResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: `/api/v1/agents/${encodeURIComponent(String(agentId))}/mcp-servers`,
+      options,
+    });
+  }
+
+  /**
+   * Business MCP servers that connect in one step
+   *
+   * Vendor-hosted MCP servers (Stripe, Notion, Attio, Linear, …) a tenant can connect to its
+   * agents with `POST /mcp/connect`. Developer role.
+   *
+   * `GET /api/v1/mcp/catalog`
+   *
+   * Required scopes: `agents:read`.
+   */
+  listMCPCatalog(options?: RequestOptions): Promise<ListMCPCatalogResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/mcp/catalog',
       options,
     });
   }
@@ -179,6 +277,27 @@ export class MCPResource extends APIResource {
   }
 
   /**
+   * Vendor redirect after sign-in
+   *
+   * Runs without authentication: the vendor redirects a browser, which carries no Snaga
+   * credentials. The tenant is recovered from the `state` prefix. Answers 302 to
+   * `{public_base_url}/mcp/oauth/callback` with `state` and either `code` or `error`
+   * (`issuer_mismatch` when the redirect names a different authorization server than the one the
+   * connection started with, RFC 9207). No token is exchanged here: `POST /mcp/oauth/complete`
+   * does that as the signed-in user who started the connection.
+   *
+   * `GET /api/v1/mcp/oauth/callback`
+   */
+  mcpOAuthCallback(params: MCPOAuthCallbackParams, options?: RequestOptions): Promise<JsonValue> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/mcp/oauth/callback',
+      query: pick(params, ['state', 'code', 'error', 'iss']),
+      options,
+    });
+  }
+
+  /**
    * MCP SSE transport (Server-Sent Events)
    *
    * The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
@@ -201,6 +320,29 @@ export class MCPResource extends APIResource {
     return this._client.stream({
       method: 'GET',
       path: '/api/v1/mcp',
+      options,
+    });
+  }
+
+  /**
+   * Renew an OAuth connection
+   *
+   * For a server whose grant expired or was revoked (`auth.oauth.needs_reauth`), or to sign in
+   * with a different account. Answers `authorization_required` whether or not the current grant
+   * still works — a connection that is healthy is renewed all the same, which is how a person
+   * switches the vendor account behind it. Completing it renews the same record, keeping its id
+   * and agents.
+   *
+   * `POST /api/v1/mcp/servers/{serverId}/reconnect`
+   *
+   * Required scopes: `agents:write`.
+   */
+  reconnectMCPServer(serverId: string, body?: ReconnectMCPServerRequest, options?: RequestOptions): Promise<MCPConnectResult> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/mcp/servers/${encodeURIComponent(String(serverId))}/reconnect`,
+      body,
+      idempotent: true,
       options,
     });
   }

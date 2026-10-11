@@ -3,11 +3,14 @@ package ai.snaga.uarp
 import ai.snaga.uarp.api.agents
 import ai.snaga.uarp.api.auth
 import ai.snaga.uarp.api.files
+import ai.snaga.uarp.api.public
 import ai.snaga.uarp.api.registry
 import ai.snaga.uarp.api.runs
+import ai.snaga.uarp.models.ApplyToJobRequest
 import ai.snaga.uarp.models.CompleteOAuthLoginFormPostProvider
 import ai.snaga.uarp.models.CompleteOAuthLoginFormPostRequest
 import ai.snaga.uarp.models.CreateAgentRequest
+import ai.snaga.uarp.models.JobSeniority
 import ai.snaga.uarp.models.RegistryPublishRequest
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.takeWhile
@@ -177,11 +180,30 @@ fun main() = runBlocking {
         ),
     )
 
+    //  21. array query parameters: the key once per item, in declaration order
+    val jobs = client.public.listPublicJobs(
+        seniority = listOf(JobSeniority.JUNIOR, JobSeniority.SENIOR),
+        country = listOf("UA"),
+    )
+
+    //  22. an array in a multipart body: one JSON array text part
+    val applied = client.public.applyToJob(
+        "dev",
+        ApplyToJobRequest(
+            name = "А Б",
+            email = "a@b.c",
+            links = listOf("https://a.example/x?y=1", "https://b.example/"),
+            consent = "true",
+        ),
+    )
+
     val probes = decoded + mapOf(
         "post_stream_text" to streamed.toString(),
         "post_stream_refusal" to refusal,
         "post_stream_plain" to plain,
         "form_post_email" to signedIn.email,
+        "jobs_total" to jobs.total.toString(),
+        "application_id" to applied.application.id,
     )
 
     val report = buildJsonObject {

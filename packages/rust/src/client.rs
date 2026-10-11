@@ -560,11 +560,14 @@ impl Client {
             .join(path.trim_start_matches('/'))
             .map_err(|err| Error::Config(format!("invalid path {path}: {err}")))?;
         if let Some(query) = query {
-            //  serde_urlencoded turns the params struct into pairs, but writes
-            //  them with form-encoding rules. Re-encode strictly so the five
-            //  SDKs put the same bytes on the wire.
+            //  serde_html_form turns the params struct into pairs, in field
+            //  order, with an array written as the key repeated per item
+            //  (`style: form, explode: true`) — serde_urlencoded, which it
+            //  replaced, could not write a sequence at all. It writes them with
+            //  form-encoding rules; re-encode strictly so the five SDKs put the
+            //  same bytes on the wire.
             let form =
-                serde_urlencoded::to_string(query).map_err(|err| Error::Encode(err.to_string()))?;
+                serde_html_form::to_string(query).map_err(|err| Error::Encode(err.to_string()))?;
             let encoded = form_urlencoded::parse(form.as_bytes())
                 .map(|(name, value)| {
                     format!(

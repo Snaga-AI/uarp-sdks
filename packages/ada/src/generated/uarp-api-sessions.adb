@@ -506,6 +506,12 @@ package body UARP.API.Sessions is
       if Params.Has_Cursor then
          UARP.Types.Add (Query, "cursor", Params.Cursor);
       end if;
+      if Params.Has_Archived then
+         UARP.Types.Add (Query, "archived", UARP.Models.Image (Params.Archived));
+      end if;
+      if Params.Has_Pinned then
+         UARP.Types.Add (Query, "pinned", UARP.Models.Image (Params.Pinned));
+      end if;
       return UARP.Models.From_JSON
          (UARP.Client.Call
             (Self,

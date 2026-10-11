@@ -21,7 +21,12 @@ export class OpenAiCompatResource extends APIResource {
    * OpenAI-compatible chat completion
    *
    * Maps OpenAI ChatCompletion requests to UARP agent runs. The 'model' field maps to
-   * 'agent/<agent_id>' or a plain agent_id.
+   * 'agent/<agent_id>' or a plain agent_id. A `system` message is the caller's instruction for
+   * this call: it is delivered with the last user turn, clearly delimited, and the agent's own
+   * system prompt stays (since 2026-10-09; it used to be dropped). Calls from the IDE bridge
+   * (`X-UARP-ACP-Client: 1`) are unchanged. Runs in the API key's own tenant: an
+   * `X-Active-Tenant` naming another tenant is refused with 400 (`ACTIVE_TENANT_NOT_SUPPORTED`)
+   * — create a key in that tenant instead.
    *
    * `POST /v1/chat/completions`
    *
@@ -40,7 +45,12 @@ export class OpenAiCompatResource extends APIResource {
    * Create response (OpenAI Responses API)
    *
    * OpenAI-compatible Responses API. `model` and `input` required; `previous_response_id` chains
-   * to a prior response; `instructions` overrides the agent's system prompt for this call.
+   * to a prior response of this workspace — its turn and everything before it become this call's
+   * history, and an id that is not a response here is 404 (since 2026-10-09; the first response
+   * of a chain used to be dropped and an unknown id ignored); `instructions` apply to this call
+   * only and are delivered with the turn — the agent's own system prompt stays. Runs in the API
+   * key's own tenant: an `X-Active-Tenant` naming another tenant is refused with 400
+   * (`ACTIVE_TENANT_NOT_SUPPORTED`) — create a key in that tenant instead.
    *
    * `POST /v1/responses`
    *
@@ -63,7 +73,12 @@ export class OpenAiCompatResource extends APIResource {
    * served with a 2048-token context. Each element is embedded on its own and reports
    * `input_tokens`, `truncated` and, when it failed, `error`; a text longer than 8000 characters
    * or than the served context is cut, never refused, and `truncated` says so. A request where
-   * no element succeeded is 503. Per-element fields added 2026-09-26.
+   * no element succeeded is 503. Per-element fields added 2026-09-26. Runs in the API key's own
+   * tenant: an `X-Active-Tenant` naming another tenant is refused with 400
+   * (`ACTIVE_TENANT_NOT_SUPPORTED`) — create a key in that tenant instead.
+   *
+   * 501: `features.embeddings` in `GET /api/v1/client-config` says whether this deployment has
+   * it on.
    *
    * `POST /v1/embeddings`
    *
@@ -87,7 +102,8 @@ export class OpenAiCompatResource extends APIResource {
    * run that does not exist in this tenant answers **404** in the OpenAI error envelope. Because
    * this returns the same output as `GET /api/v1/runs/{runId}`, it enforces the same `runs:read`
    * permission and scope, and it draws on the shared `/v1/responses` per-caller rate-limit
-   * bucket.
+   * bucket. Runs in the API key's own tenant: an `X-Active-Tenant` naming another tenant is
+   * refused with 400 (`ACTIVE_TENANT_NOT_SUPPORTED`) — create a key in that tenant instead.
    *
    * `GET /v1/responses/{responseId}`
    *
@@ -104,7 +120,9 @@ export class OpenAiCompatResource extends APIResource {
   /**
    * List available models (OpenAI-compatible)
    *
-   * Returns agents as models in OpenAI model list format.
+   * Returns agents as models in OpenAI model list format. Runs in the API key's own tenant: an
+   * `X-Active-Tenant` naming another tenant is refused with 400 (`ACTIVE_TENANT_NOT_SUPPORTED`)
+   * — create a key in that tenant instead.
    *
    * `GET /v1/models`
    */

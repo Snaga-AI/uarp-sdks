@@ -200,15 +200,22 @@ class Parser {
       name,
       description: schema.description,
       properties,
-      additional: this.#additional(schema),
+      additional: this.#additional(schema, name),
     };
   }
 
-  #additional(schema: Json): TypeRef | null {
+  /**
+   * A map's value type is named after the map, as every other hoisted type is
+   * named after its parent. Until 0.9.0 they were all hinted `Value` and told
+   * apart by a counter, so one new map earlier in the document renumbered the
+   * rest: build 15987a5f's `pricing` took `Value6`, and the published Value6
+   * and Value7 would have changed shape under the same names.
+   */
+  #additional(schema: Json, hint: string): TypeRef | null {
     const ap = schema.additionalProperties;
     if (ap === undefined || ap === false) return null;
     if (ap === true) return PRIM_JSON;
-    return this.#schemaType(ap, 'Value');
+    return this.#schemaType(ap, `${hint}Value`);
   }
 
   /** Resolve `$ref` chains and merge `allOf` members into one schema object. */
@@ -322,7 +329,7 @@ class Parser {
         if (schema.properties && Object.keys(schema.properties).length > 0) {
           return { type: this.#hoistObject(hint, schema), nullable };
         }
-        const additional = this.#additional(schema);
+        const additional = this.#additional(schema, hint);
         if (additional && additional.kind !== 'prim') return { type: { kind: 'map', values: additional }, nullable };
         if (type === 'object') return { type: PRIM_JSON_OBJECT, nullable };
         return { type: PRIM_JSON, nullable };

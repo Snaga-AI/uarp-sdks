@@ -2,6 +2,42 @@
 
 package body UARP.API.MCP is
 
+   function Complete_Mcpo_Auth
+     (Self : Client_Type;
+      Payload : UARP.Models.Complete_Mcpo_Auth_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp/oauth/complete",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Complete_Mcpo_Auth;
+
+   function Connect_MCP_Server
+     (Self : Client_Type;
+      Payload : UARP.Models.MCP_Connect_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp/connect",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Connect_MCP_Server;
+
    function Create_MCP_Server
      (Self : Client_Type;
       Payload : UARP.Models.Create_MCP_Server_Request;
@@ -36,6 +72,20 @@ package body UARP.API.MCP is
              Options => Options));
    end Delete_MCP_Server;
 
+   function Get_Mcpo_Auth_Client_Metadata
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Mcpo_Auth_Client_Metadata_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/mcp/oauth/client.json",
+             Options => Options));
+   end Get_Mcpo_Auth_Client_Metadata;
+
    function Get_MCP_Server
      (Self : Client_Type;
       Server_Id : String;
@@ -65,6 +115,20 @@ package body UARP.API.MCP is
              "/api/v1/agents/" & UARP.Types.Encode_Path_Segment (Agent_Id) & "/mcp-servers",
              Options => Options));
    end List_Agent_MCP_Servers;
+
+   function List_MCP_Catalog
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_MCP_Catalog_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/mcp/catalog",
+             Options => Options));
+   end List_MCP_Catalog;
 
    function List_MCP_Servers
      (Self : Client_Type;
@@ -102,6 +166,32 @@ package body UARP.API.MCP is
              Options => Options));
    end MCP_JSON_Rpc;
 
+   function MCP_O_Auth_Callback
+     (Self : Client_Type;
+      Params : MCP_O_Auth_Callback_Params := No_MCP_O_Auth_Callback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+      Query : UARP.Types.Pair_Vectors.Vector;
+   begin
+      UARP.Types.Add (Query, "state", Params.State);
+      if Params.Has_Code then
+         UARP.Types.Add (Query, "code", Params.Code);
+      end if;
+      if Params.Has_Error then
+         UARP.Types.Add (Query, "error", Params.Error);
+      end if;
+      if Params.Has_Iss then
+         UARP.Types.Add (Query, "iss", Params.Iss);
+      end if;
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/api/v1/mcp/oauth/callback",
+          Query => Query,
+          Options => Options);
+   end MCP_O_Auth_Callback;
+
    procedure MCP_SSE
      (Self : Client_Type;
       Sink : in out UARP.SSE.Event_Sink'Class;
@@ -114,6 +204,26 @@ package body UARP.API.MCP is
           Sink,
           Options => Options);
    end MCP_SSE;
+
+   function Reconnect_MCP_Server
+     (Self : Client_Type;
+      Server_Id : String;
+      Payload : UARP.Models.Reconnect_MCP_Server_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/mcp/servers/" & UARP.Types.Encode_Path_Segment (Server_Id) & "/reconnect",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => Include_Payload,
+             Idempotent => True,
+             Options => Options));
+   end Reconnect_MCP_Server;
 
    function Set_Agent_MCP_Servers
      (Self : Client_Type;

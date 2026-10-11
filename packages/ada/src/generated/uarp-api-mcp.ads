@@ -3,6 +3,7 @@
 --  Model Context Protocol server endpoints
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -18,6 +19,54 @@ package UARP.API.MCP is
    end record;
 
    No_MCP_JSON_Rpc_Params : constant MCP_JSON_Rpc_Params := (others => <>);
+
+   --  Query and header parameters for `mcpOAuthCallback`.
+   type MCP_O_Auth_Callback_Params is record
+      State : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Code : Boolean := False;
+      Code : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Error : Boolean := False;
+      Error : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Iss : Boolean := False;
+      Iss : UARP.Types.Text := UARP.Types.Empty_Text;
+   end record;
+
+   No_MCP_O_Auth_Callback_Params : constant MCP_O_Auth_Callback_Params := (others => <>);
+
+   --  Finish an OAuth connection
+   --
+   --  Exchanges the code for tokens, stores them encrypted, and opens the live session with the
+   --  agents chosen at connect. Only the user who started the connection may finish it (403
+   --  otherwise), and a state works once. 201 for a new connection, 200 for a renewed one.
+   --
+   --  POST /api/v1/mcp/oauth/complete
+   --
+   --  Required scopes: agents:write.
+   function Complete_Mcpo_Auth
+     (Self : Client_Type;
+      Payload : UARP.Models.Complete_Mcpo_Auth_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result;
+
+   --  Connect an MCP server to agents
+   --
+   --  Starts a connection to a catalog entry or any streamable-HTTP MCP server URL. A server that
+   --  asks for OAuth answers `authorization_required` with the URL to open; one that asks for
+   --  nothing is stored and connected at once (201). A server already connected in this tenant is
+   --  not connected twice: the agents are added to it (200, `already_connected`). Developer role.
+   --
+   --  The platform registers itself with the vendor's authorization server once (client ID
+   --  metadata document when the server accepts one, else dynamic client registration), uses PKCE
+   --  S256 and binds the token to the server with the `resource` parameter.
+   --
+   --  POST /api/v1/mcp/connect
+   --
+   --  Required scopes: agents:write.
+   function Connect_MCP_Server
+     (Self : Client_Type;
+      Payload : UARP.Models.MCP_Connect_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result;
 
    --  Create MCP server
    --
@@ -66,6 +115,17 @@ package UARP.API.MCP is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Delete_MCP_Server_Response;
 
+   --  Snaga's OAuth client metadata document
+   --
+   --  Fetched by authorization servers that accept client ID metadata documents: this URL is then
+   --  Snaga's client_id, and nothing is registered. Holds no secret.
+   --
+   --  GET /api/v1/mcp/oauth/client.json
+   function Get_Mcpo_Auth_Client_Metadata
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Mcpo_Auth_Client_Metadata_Response;
+
    --  Get MCP server
    --
    --  Returns one registered MCP server; `admin` role only, like the rest of this route. The
@@ -102,6 +162,19 @@ package UARP.API.MCP is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Agent_MCP_Servers_Response;
 
+   --  Business MCP servers that connect in one step
+   --
+   --  Vendor-hosted MCP servers (Stripe, Notion, Attio, Linear, ...) a tenant can connect to its
+   --  agents with `POST /mcp/connect`. Developer role.
+   --
+   --  GET /api/v1/mcp/catalog
+   --
+   --  Required scopes: agents:read.
+   function List_MCP_Catalog
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_MCP_Catalog_Response;
+
    --  List MCP servers
    --
    --  Lists the tenant's registered external MCP servers, up to 200. Every method on this route
@@ -134,6 +207,22 @@ package UARP.API.MCP is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.JSON_Rpc_Response;
 
+   --  Vendor redirect after sign-in
+   --
+   --  Runs without authentication: the vendor redirects a browser, which carries no Snaga
+   --  credentials. The tenant is recovered from the `state` prefix. Answers 302 to
+   --  `{public_base_url}/mcp/oauth/callback` with `state` and either `code` or `error`
+   --  (`issuer_mismatch` when the redirect names a different authorization server than the one the
+   --  connection started with, RFC 9207). No token is exchanged here: `POST /mcp/oauth/complete`
+   --  does that as the signed-in user who started the connection.
+   --
+   --  GET /api/v1/mcp/oauth/callback
+   function MCP_O_Auth_Callback
+     (Self : Client_Type;
+      Params : MCP_O_Auth_Callback_Params := No_MCP_O_Auth_Callback_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
    --  MCP SSE transport (Server-Sent Events)
    --
    --  The MCP Streamable HTTP endpoint, exposing the tenant's tools, resources and prompts to an
@@ -155,6 +244,25 @@ package UARP.API.MCP is
      (Self : Client_Type;
       Sink : in out UARP.SSE.Event_Sink'Class;
       Options : Request_Options := UARP.Client.Default_Options);
+
+   --  Renew an OAuth connection
+   --
+   --  For a server whose grant expired or was revoked (`auth.oauth.needs_reauth`), or to sign in
+   --  with a different account. Answers `authorization_required` whether or not the current grant
+   --  still works - a connection that is healthy is renewed all the same, which is how a person
+   --  switches the vendor account behind it. Completing it renews the same record, keeping its id
+   --  and agents.
+   --
+   --  POST /api/v1/mcp/servers/{serverId}/reconnect
+   --
+   --  Required scopes: agents:write.
+   function Reconnect_MCP_Server
+     (Self : Client_Type;
+      Server_Id : String;
+      Payload : UARP.Models.Reconnect_MCP_Server_Request;
+      Include_Payload : Boolean := True;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.MCP_Connect_Result;
 
    --  Replace the set of MCP servers connected to an agent
    --

@@ -6,6 +6,100 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## 0.9.0 — 2026-10-10
+
+Build `917d6ba8`, canonical digest `945fb7ee308afd8b`. Against 0.8.0: 568 →
+585 paths, 766 → 789 operations (+23, −0), 361 → 382 schemas (+21, −0).
+The refresh was cut at `15987a5f`; `917d6ba8` (uarp #556) deployed while it
+was in CI and changed only the descriptions of `Session.updated_at`, `pinned`
+and `archived`: a pin or archive no longer bumps `updated_at`.
+
+**The minor moves** because eight exported type names change (below). Under
+1.0 a caret does not cross the minor, so `^0.8` keeps building. The Swift
+mirror's `from:` requirement does cross it: an app that pins `from: "0.8.0"`
+resolves 0.9.0. An app that pins `upToNextMinorVersion` stays where it is.
+
+### Changed — map value types are named after their map
+
+Until now, every `additionalProperties` object was hoisted as `Value`, and a
+counter told them apart. One new map earlier in the document therefore
+renumbered every later one. This build's `pricing` would have taken `Value6`.
+The published `Value6` (`{rpm}`) would then have become `Value7`, and `Value7`
+(`{en, uk}`) would have become `Value8`. In TypeScript that change is silent:
+`Value7` would compile against a different shape. Each value type now takes
+its map's name, as every other hoisted type takes its parent's:
+
+| 0.8.0 | 0.9.0 | Map |
+|---|---|---|
+| `Value` | `LandingConfigSectionTextsValue` | `LandingConfigSection.texts` |
+| `Value2` | `SpecToolCatalogToolsValue` | `SpecToolCatalog.tools` |
+| `Value3` | `FleetLayoutUpdatePositionsValue` | `FleetLayoutUpdate.positions` |
+| `Value4` | `FleetLayoutPositionsValue` | `FleetLayout.positions` |
+| `Value5` | `GetAgentVersionDiffResponseDiffValue` | `GetAgentVersionDiffResponse.diff` |
+| `Value6` | `UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue` | `UpdateAdminLLMAdaptersConfigRequest.provider_rate_limits` |
+| `Value7` | `AdminPutLandingConfigRequestTextsValue` | `AdminPutLandingConfigRequest.texts` |
+| — | `GetClientConfigResponsePricingValue` | `GetClientConfigResponse.pricing` (new) |
+
+Code that reads through the map (`positions["a"].x`) is unaffected. Only
+code that spells the type's name changes.
+
+### Fixed — array query parameters, in four of the five SDKs
+
+`listPublicJobs` is the first operation in the document with array query
+parameters (`workplace_type`, `employment_type`, `seniority`, `category` and
+`country`, each `style: form, explode: true`). Only TypeScript sent them
+right, as `seniority=junior&seniority=senior`. The other four failed in four
+different ways:
+
+| SDK | What `seniority = [junior, senior]` did |
+|---|---|
+| Rust | `Error::Encode` before sending: `serde_urlencoded` cannot write a sequence. Replaced by `serde_html_form`, which writes the key once per item, in field order |
+| Swift | sent `seniority=[UARP.JobSeniority(rawValue: "junior"), …]` via `String(describing:)` |
+| Kotlin | sent `seniority=[junior, senior]` via `toString()` |
+| Ada | did not compile; CI caught it, and the other three compiled |
+
+All five now repeat the key, one item at a time. Ada also learned to send an
+array in a multipart body: `applyToJob`'s `links` goes as one text part holding
+a compact JSON array, as the other four already sent it. Contract scenarios 21
+and 22 compare the bytes. Reverting the Kotlin fix sends
+`seniority=[junior, senior]`, and scenario 21 catches it.
+
+### Added — fields clients were sending or reading by hand
+
+- **Sessions archive and pin.** `updateSession` accepts `archived` and
+  `pinned`. `Session` gains `archived`, `archived_at`, `pinned` and
+  `pinned_at`; each is absent while its flag is off. `listSessions` takes
+  `archived` (`false` by default, `true`, `all`) and `pinned`.
+- **Sign in with Apple.** `appleNativeAuth` takes `authorization_code`.
+  `DELETE /me` answers `apple_tokens_revoked`.
+- `McpServerAuth.type` gains `oauth`.
+- `ErrorCode` gains `ACTIVE_TENANT_NOT_SUPPORTED`, `STARTED_BY_ANOTHER_USER`,
+  `run_approval_expired`, `run_stalled`, and the careers codes
+  (`consent_required`, `cv_invalid`, `cv_too_large`, `duplicate_application`,
+  `job_apply_elsewhere`, `job_closed`).
+- `patchTenant` declares its body, which had no properties before.
+  `createSessionTodo` declares six more fields. `createTenant` (admin) takes
+  `email`.
+
+### Added — twenty-three operations
+
+- **MCP one-click connect** (6): `listMcpCatalog`, `connectMcpServer`,
+  `reconnectMcpServer`, `completeMcpOAuth`, and the two public OAuth routes
+  `mcpOAuthCallback` and `getMcpOAuthClientMetadata`. They come with the
+  `McpCatalogEntry`, `McpConnectRequest`, `McpConnectResult`,
+  `McpOAuthReturnTo` and `McpServerOAuth` schemas.
+- **Careers** (15): twelve under `/admin/jobs` and three public operations,
+  `listPublicJobs`, `getPublicJob` and `applyToJob`. `applyToJob` takes a
+  multipart body carrying the CV.
+- **Registry** (2): `installEssentialsOnHeadAgents` and
+  `listRegistrySigningKeys`.
+
+### Not verified on the wire
+
+No API key was available where this refresh was made. The request and
+response shapes of the twenty-three new operations come from the document,
+and no live call has checked them.
+
 ## 0.8.0 — 2026-10-05
 
 Build `4663ef46`, canonical digest `072de50db92ed09c`. Against 0.7.0: 544 →

@@ -57,7 +57,9 @@ public class AnthropicCompatApi internal constructor(private val client: UarpCli
      * budget as a stream (`timeouts.stream_ms`, 600 s by default). Refusals carry the Anthropic
      * error envelope except where a status below says otherwise: a missing scope or role, a body
      * over the size limit, a JSON body without `Content-Length`, the per-key rate limit and the
-     * request time budget answer in the platform's problem document.
+     * request time budget answer in the platform's problem document. Runs in the API key's own
+     * tenant: an `X-Active-Tenant` naming another tenant is refused with 400
+     * (`invalid_request_error`) — create a key in that tenant instead.
      *
      * `POST /v1/messages`
      *

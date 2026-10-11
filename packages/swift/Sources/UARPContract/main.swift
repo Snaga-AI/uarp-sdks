@@ -137,6 +137,20 @@ let formSession = try await client.auth.completeOAuthLoginFormPost(
     )
 )
 
+// 21. array query parameters: the key once per item, in declaration order
+let jobs = try await client.public.listPublicJobs(seniority: ["junior", "senior"], country: ["UA"])
+
+// 22. an array in a multipart body: one JSON array text part
+let applied = try await client.public.applyToJob(
+    slug: "dev",
+    body: ApplyToJobRequest(
+        name: "А Б",
+        email: "a@b.c",
+        links: ["https://a.example/x?y=1", "https://b.example/"],
+        consent: "true"
+    )
+)
+
 let probes: [String: String] = [
     "status": probe.status.rawValue,
     "error_is_absent": String(probe.error == nil),
@@ -150,6 +164,8 @@ let probes: [String: String] = [
     "post_stream_refusal": postStreamRefusal,
     "post_stream_plain": postStreamPlain,
     "form_post_email": formSession.email,
+    "jobs_total": String(jobs.total),
+    "application_id": applied.application.id,
 ]
 
 struct Report: Encodable {

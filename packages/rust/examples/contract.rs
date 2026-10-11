@@ -213,6 +213,34 @@ async fn main() -> Result<(), Error> {
         )
         .await?;
 
+    // 21. array query parameters: the key once per item, in declaration order
+    let jobs = client
+        .public()
+        .list_public_jobs(&uarp_sdk::api::ListPublicJobsParams {
+            seniority: Some(vec![
+                uarp_sdk::models::JobSeniority::Junior,
+                uarp_sdk::models::JobSeniority::Senior,
+            ]),
+            country: Some(vec!["UA".into()]),
+            ..Default::default()
+        })
+        .await?;
+
+    // 22. an array in a multipart body: one JSON array text part
+    let applied = client
+        .public()
+        .apply_to_job(
+            "dev",
+            &uarp_sdk::models::ApplyToJobRequest {
+                name: "А Б".into(),
+                email: "a@b.c".into(),
+                consent: "true".into(),
+                links: Some(vec!["https://a.example/x?y=1".into(), "https://b.example/".into()]),
+                ..Default::default()
+            },
+        )
+        .await?;
+
     let probes = serde_json::json!({
         "status": probe.status.as_str(),
         "error_is_absent": probe.error.is_none().to_string(),
@@ -240,6 +268,8 @@ async fn main() -> Result<(), Error> {
         "post_stream_refusal": post_stream_refusal,
         "post_stream_plain": post_stream_plain,
         "form_post_email": form_post.email,
+        "jobs_total": jobs.total.to_string(),
+        "application_id": applied.application.id,
     });
 
     let report = serde_json::json!({ "language": "rust", "probes": probes });

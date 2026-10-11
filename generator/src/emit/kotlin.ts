@@ -391,10 +391,16 @@ function emitBody(w: Writer, op: Operation, args: Arg[], kind: CallKind): void {
     w.block('val query = buildList {', () => {
       for (const param of op.queryParams) {
         const arg = argFor(args, param);
+        const type = param.type;
+        // An array is `style: form, explode: true`: the key once per item.
+        const add =
+          type.kind === 'array'
+            ? `${arg.name}.forEach { add("${escape(param.wire)}" to ${wireValue(type.items, 'it')}) }`
+            : `add("${escape(param.wire)}" to ${wireValue(type, arg.name)})`;
         if (param.required) {
-          w.line(`add("${escape(param.wire)}" to ${wireValue(param.type, arg.name)})`);
+          w.line(add);
         } else {
-          w.line(`if (${arg.name} != null) add("${escape(param.wire)}" to ${wireValue(param.type, arg.name)})`);
+          w.line(`if (${arg.name} != null) ${add}`);
         }
       }
     }, '}');

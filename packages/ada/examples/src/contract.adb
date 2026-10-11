@@ -14,6 +14,7 @@ with Ada.Text_IO;
 with UARP.API.Agents;
 with UARP.API.Auth;
 with UARP.API.Files;
+with UARP.API.Public;
 with UARP.API.Registry;
 with UARP.API.Runs;
 with UARP.Client;
@@ -330,6 +331,40 @@ begin
                 & """,""email"":""a@b.c""}");
             Answer := UARP.API.Auth.Complete_O_Auth_Login_Form_Post (Client, "apple", Request);
             JS.Set (Probes, "form_post_email", Answer.Email);
+         end;
+
+         --  21. array query parameters: the key once per item, in
+         --  declaration order (`style: form, explode: true`).
+         declare
+            Params : UARP.API.Public.List_Public_Jobs_Params;
+            Jobs   : UARP.Models.List_Public_Jobs_Response;
+         begin
+            Params.Has_Seniority := True;
+            Params.Seniority.Append (UARP.Models.To_Job_Seniority (UARP.Models.Job_Seniority_Junior));
+            Params.Seniority.Append (UARP.Models.To_Job_Seniority (UARP.Models.Job_Seniority_Senior));
+            Params.Has_Country := True;
+            Params.Country.Append (+"UA");
+            Jobs := UARP.API.Public.List_Public_Jobs (Client, Params);
+            JS.Set (Probes, "jobs_total",
+                    Ada.Strings.Fixed.Trim (UARP.Types.Integer_Value'Image (Jobs.Total), Ada.Strings.Both));
+         end;
+
+         --  22. an array in a multipart body: one JSON array text part.
+         declare
+            Request : UARP.Models.Apply_To_Job_Request;
+            Answer  : UARP.Models.Apply_To_Job_Response;
+         begin
+            --  "А Б" spelled out so the source stays ASCII.
+            Request.Name :=
+              +(Character'Val (16#D0#) & Character'Val (16#90#) & " "
+                & Character'Val (16#D0#) & Character'Val (16#91#));
+            Request.Email := +"a@b.c";
+            Request.Has_Links := True;
+            Request.Links.Append (+"https://a.example/x?y=1");
+            Request.Links.Append (+"https://b.example/");
+            Request.Consent := +"true";
+            Answer := UARP.API.Public.Apply_To_Job (Client, "dev", Request);
+            JS.Set (Probes, "application_id", Answer.Application.Id);
          end;
 
          JS.Set (Report, "language", String'("ada"));

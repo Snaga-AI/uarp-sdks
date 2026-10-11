@@ -88,8 +88,11 @@ export class TenantsResource extends APIResource {
    * Create a new tenant with the caller as owner
    *
    * Provisions a brand-new tenant on the `free` plan (or `enterprise` for super-admin). The
-   * caller becomes the founding owner. Onboarding wizard auto-runs on /browser to provision the
-   * Head Agent.
+   * caller becomes the founding owner. The Head Agent is provisioned server-side before the 201
+   * is sent, so one `GET /tenants/me` (with `X-Active-Tenant` set to the new `tenant_id`) shows
+   * `head_agent_id`; nothing sets it later. Provisioning is best-effort: if it failed the tenant
+   * still exists without one, and the client sets one up with `POST /agents` then `PATCH
+   * /tenants/me {head_agent_id}`. The 201 body does not carry `head_agent_id`.
    *
    * `POST /api/v1/me/tenants/create`
    */

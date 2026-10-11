@@ -876,6 +876,8 @@ public data class AdminAnalyticsOverviewResponse(
     public val signups30d: Long? = null,
     @SerialName("conversion_rate")
     public val conversionRate: Double? = null,
+    @SerialName("product_cohorts")
+    public val productCohorts: AdminAnalyticsOverviewResponseProductCohorts? = null,
     public val timeseries: List<AnalyticsTimeseriesPoint>? = null,
     @SerialName("top_countries")
     public val topCountries: List<AnalyticsTopValue>? = null,
@@ -887,6 +889,50 @@ public data class AdminAnalyticsOverviewResponse(
     public val topReferrers: List<AnalyticsTopValue>? = null,
     @SerialName("top_utm_sources")
     public val topUtmSources: List<AnalyticsTopValue>? = null,
+)
+
+/**
+ * `AdminAnalyticsOverviewResponseProductCohorts` model.
+ */
+@Serializable
+public data class AdminAnalyticsOverviewResponseProductCohorts(
+    @SerialName("tracking_since")
+    public val trackingSince: String? = null,
+    @SerialName("as_of")
+    public val asOf: String,
+    public val complete: Boolean,
+    public val signups: Long,
+    public val successful: Long,
+    public val repeat: Long,
+    public val paid: Long,
+    public val retention: AdminAnalyticsOverviewResponseProductCohortsRetention,
+)
+
+/**
+ * `AdminAnalyticsOverviewResponseProductCohortsRetention` model.
+ */
+@Serializable
+public data class AdminAnalyticsOverviewResponseProductCohortsRetention(
+    public val d1: AdminAnalyticsOverviewResponseProductCohortsRetentionD1,
+    public val d7: AdminAnalyticsOverviewResponseProductCohortsRetentionD7,
+)
+
+/**
+ * `AdminAnalyticsOverviewResponseProductCohortsRetentionD1` model.
+ */
+@Serializable
+public data class AdminAnalyticsOverviewResponseProductCohortsRetentionD1(
+    public val eligible: Long,
+    public val returned: Long,
+)
+
+/**
+ * `AdminAnalyticsOverviewResponseProductCohortsRetentionD7` model.
+ */
+@Serializable
+public data class AdminAnalyticsOverviewResponseProductCohortsRetentionD7(
+    public val eligible: Long,
+    public val returned: Long,
 )
 
 /**
@@ -2020,6 +2066,117 @@ public object AdminIntegrationsConfigIntegrationAuthTypeSerializer : KSerializer
 }
 
 /**
+ * `AdminJob` model.
+ */
+@Serializable
+public data class AdminJob(
+    public val id: String,
+    /**
+     * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+     */
+    public val slug: String,
+    /**
+     * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+     */
+    @SerialName("previous_slugs")
+    public val previousSlugs: List<String>,
+    /**
+     * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+     * the public.
+     */
+    public val status: JobStatus,
+    /**
+     * The language the texts are written in.
+     */
+    public val language: VideoOrderLocale,
+    public val title: String,
+    /**
+     * Plain text for the card, the meta description and the OG text.
+     */
+    public val summary: String,
+    /**
+     * Markdown.
+     */
+    public val description: String,
+    public val responsibilities: List<String>,
+    public val requirements: List<String>,
+    @SerialName("nice_to_have")
+    public val niceToHave: List<String>,
+    public val benefits: List<String>,
+    /**
+     * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+     */
+    public val category: String,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    /**
+     * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+     * internship → INTERN, the rest upper-cased.
+     */
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType,
+    /**
+     * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+     * Google requires.
+     */
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType,
+    public val location: JobLocation,
+    /**
+     * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+     */
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<String>,
+    /**
+     * CEFR; `none` = not required.
+     */
+    @SerialName("english_level")
+    public val englishLevel: JobEnglishLevel? = null,
+    /**
+     * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+     */
+    @SerialName("experience_years_min")
+    public val experienceYearsMin: Long? = null,
+    public val skills: List<String>,
+    public val salary: JobSalary? = null,
+    /**
+     * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+     * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+     * is the simplest way to comply.
+     */
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean,
+    public val apply: JobApply,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+    /**
+     * JSON-LD `datePosted`.
+     */
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    /**
+     * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+     * no applications.
+     */
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+    /**
+     * When it was actually closed.
+     */
+    @SerialName("closed_at")
+    public val closedAt: String? = null,
+    @SerialName("applications_count")
+    public val applicationsCount: Long,
+    /**
+     * Applications still in status `new`.
+     */
+    @SerialName("new_applications_count")
+    public val newApplicationsCount: Long,
+)
+
+/**
  * `AdminListToolsResponse` model.
  */
 @Serializable
@@ -2449,7 +2606,7 @@ public data class AdminProviderSummary(
 public data class AdminPutLandingConfigRequest(
     @SerialName("public_agent_id")
     public val publicAgentId: String? = null,
-    public val texts: Map<String, Value7>? = null,
+    public val texts: Map<String, AdminPutLandingConfigRequestTextsValue>? = null,
     @SerialName("multilang_enabled")
     public val multilangEnabled: Boolean? = null,
     @SerialName("default_locale")
@@ -2519,6 +2676,15 @@ public object AdminPutLandingConfigRequestPartnerLogoSlugSerializer : KSerialize
     override fun serialize(encoder: Encoder, value: AdminPutLandingConfigRequestPartnerLogoSlug): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): AdminPutLandingConfigRequestPartnerLogoSlug = AdminPutLandingConfigRequestPartnerLogoSlug(decoder.decodeString())
 }
+
+/**
+ * `AdminPutLandingConfigRequestTextsValue` model.
+ */
+@Serializable
+public data class AdminPutLandingConfigRequestTextsValue(
+    public val en: String? = null,
+    public val uk: String? = null,
+)
 
 /**
  * `AdminPutLandingConfigResponse` model.
@@ -4648,6 +4814,19 @@ public data class AgentUpdateFallbackModel(
 public data class AgentUpdateGuardrails(
     public val input: List<AgentUpdateGuardrailsInputItem>? = null,
     public val output: List<AgentUpdateGuardrailsOutputItem>? = null,
+    /**
+     * Guardrails switched on by id — a platform guardrail (`pii_detector`,
+     * `prompt_injection_detector`, `content_policy`, …) or one of the tenant's own from `GET
+     * /guardrails`. Each runs in its own phase like an `input`/`output` ref; an id that names no
+     * guardrail is skipped. Read at run time since 2026-10-09; before that the list was stored and
+     * nothing ran. The switches the settings screens offer all exist since then too:
+     * `toxicity_detector` (threats, urging self-harm, calls to kill a group of people — input and
+     * answer, block), `jailbreak_detector` (safety-bypass framings — input, block),
+     * `content_filter` (sexual content with minors, explicit porn — input and answer, block),
+     * `sqli_detector` (injection signatures in tool-call arguments, checked before the call —
+     * block), `xss_detector` (active HTML in the answer outside code — redacted, not blocked). All
+     * are phrase-level pattern checks, not classifiers.
+     */
     @SerialName("built_in")
     public val builtIn: List<String>? = null,
 )
@@ -5227,12 +5406,13 @@ public data class AgentVersion(
      * kernel installed (agent-factory + discovery)`, `Head Agent orchestration kernel back-filled
      * (agent-factory + discovery)`, `Head Agent promoted`, `Head Agent system prompt synced to
      * canonical`, `Head Agent system prompt restored from backup`, `Tier SPECs synced`, `Model
-     * provider healed to the platform default`, `Core memory enabled`, `Tool trust override
-     * updated`, `Platform agent provisioned`, `Platform agent config migrated on boot`, `Rollback
-     * to version N` (N = the version rolled back to), `Self-improvement: N changes based on N
-     * analysis` (the self-improvement loop: the first N is a count, the second is one of errors,
-     * ratings or feedback — words, not a number). A reason code beside the prose is the owner's
-     * decision (DEC 11).
+     * provider healed to the platform default`, `Core memory enabled`, `Guardrail deleted and
+     * detached`, `Workspace tools enabled`, `Tool trust override updated`, `Platform agent
+     * provisioned`, `Platform agent config migrated on boot`, `Rollback to version N` (N = the
+     * version rolled back to), `Self-improvement: N changes based on N analysis` (the
+     * self-improvement loop: the first N is a count, the second is one of errors, ratings or
+     * feedback — words, not a number). A reason code beside the prose is the owner's decision (DEC
+     * 11).
      */
     public val changelog: String? = null,
     @SerialName("created_at")
@@ -5668,8 +5848,9 @@ public object AnthropicMessageContentItemTypeSerializer : KSerializer<AnthropicM
 public data class AnthropicMessagesRequest(
     /**
      * A `claude-*` id is served by the admin-configured compat model
-     * (`config_anthropic_compat.model`), or the platform default model when that is unset. Any
-     * other id is passed to the LLM proxy as a catalogue model id (`<provider>/<model>`).
+     * (`config_anthropic_compat.model`) while that model is served, or the platform default model
+     * when it is unset or no longer served (since 2026-10-09). Any other id is passed to the LLM
+     * proxy as a catalogue model id (`<provider>/<model>`).
      */
     public val model: String,
     @SerialName("max_tokens")
@@ -6031,6 +6212,14 @@ public data class AppleNativeAuthRequest(
      */
     @SerialName("device_label")
     public val deviceLabel: String? = null,
+    /**
+     * Apple's one-time `authorizationCode` from the same sign-in. Optional; send it whenever Apple
+     * provides it. The server exchanges it at Apple for a refresh token, kept encrypted, so that
+     * deleting the account (`DELETE /me`) or unlinking Apple revokes the person's Apple tokens, as
+     * App Store Review Guideline 5.1.1(v) requires. A code Apple refuses never fails the sign-in.
+     */
+    @SerialName("authorization_code")
+    public val authorizationCode: String? = null,
 )
 
 /**
@@ -6042,6 +6231,53 @@ public data class AppleNativeAuthResponse(
     public val apiKey: String,
     public val email: String,
 )
+
+/**
+ * `ApplicationCv` model.
+ */
+@Serializable
+public data class ApplicationCv(
+    @SerialName("file_id")
+    public val fileId: String,
+    /**
+     * Sanitised: letters, digits, `.`, `_`, `-`.
+     */
+    public val filename: String,
+    @SerialName("size_bytes")
+    public val sizeBytes: Long,
+    @SerialName("mime_type")
+    public val mimeType: ApplicationCvMimeType,
+)
+
+/**
+ * `ApplicationCvMimeType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ApplicationCvMimeTypeSerializer::class)
+@JvmInline
+public value class ApplicationCvMimeType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val APPLICATION_PDF: ApplicationCvMimeType = ApplicationCvMimeType("application/pdf")
+        public val APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT: ApplicationCvMimeType = ApplicationCvMimeType("application/vnd.openxmlformats-officedocument.wordprocessingml.document")
+        public val TEXT_MARKDOWN: ApplicationCvMimeType = ApplicationCvMimeType("text/markdown")
+        public val TEXT_PLAIN: ApplicationCvMimeType = ApplicationCvMimeType("text/plain")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ApplicationCvMimeType> = listOf(APPLICATION_PDF, APPLICATION_VND_OPENXMLFORMATS_OFFICEDOCUMENT_WORDPROCESSINGML_DOCUMENT, TEXT_MARKDOWN, TEXT_PLAIN)
+    }
+}
+
+public object ApplicationCvMimeTypeSerializer : KSerializer<ApplicationCvMimeType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ApplicationCvMimeType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ApplicationCvMimeType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ApplicationCvMimeType = ApplicationCvMimeType(decoder.decodeString())
+}
 
 /**
  * `ApplyProgramRequest` model.
@@ -6065,6 +6301,63 @@ public data class ApplyProgramResponse(
     @SerialName("program_id")
     public val programId: String,
     public val todos: List<Todo>,
+)
+
+/**
+ * `ApplyToJobRequest` model.
+ */
+@Serializable
+public data class ApplyToJobRequest(
+    public val name: String,
+    public val email: String,
+    public val phone: String? = null,
+    /**
+     * Required when the vacancy's `apply.requires_cover_letter` is true (422 names the field).
+     */
+    @SerialName("cover_letter")
+    public val coverLetter: String? = null,
+    public val links: List<String>? = null,
+    /**
+     * PDF, .docx, Markdown (.md) or plain text (.txt), at most `cv_max_bytes`. Required when
+     * `apply.requires_cv` is true (400 `cv_invalid` when missing or not one of those by content;
+     * 413 `cv_too_large`).
+     */
+    public val cv: FilePart? = null,
+    /**
+     * Privacy consent; a truthy string.
+     */
+    public val consent: String,
+    /**
+     * May we keep the application for other roles; a truthy string. Never pre-tick it.
+     */
+    @SerialName("talent_pool_consent")
+    public val talentPoolConsent: String? = null,
+    public val locale: String? = null,
+    /**
+     * Where the candidate came from (a UTM source, a referrer).
+     */
+    public val source: String? = null,
+    /**
+     * Honeypot. Leave empty; a person never sees it.
+     */
+    public val website: String? = null,
+)
+
+/**
+ * `ApplyToJobResponse` model.
+ */
+@Serializable
+public data class ApplyToJobResponse(
+    public val application: ApplyToJobResponseApplication,
+)
+
+/**
+ * `ApplyToJobResponseApplication` model.
+ */
+@Serializable
+public data class ApplyToJobResponseApplication(
+    public val id: String,
+    public val status: JobApplicationStatus? = null,
 )
 
 /**
@@ -7328,6 +7621,52 @@ public data class CanvasWorkflowStep(
 )
 
 /**
+ * `CareersConfig` model.
+ */
+@Serializable
+public data class CareersConfig(
+    /**
+     * Advisory for the web layer (show or hide the page); the API answers either way.
+     */
+    public val enabled: Boolean,
+    public val title: String,
+    public val description: String,
+    /**
+     * JSON-LD `hiringOrganization.name`.
+     */
+    @SerialName("company_name")
+    public val companyName: String,
+    /**
+     * Mailed on every application; empty = the super-admin address.
+     */
+    @SerialName("notify_emails")
+    public val notifyEmails: List<String>,
+    /**
+     * Days an application is kept after its vacancy closes. The ceiling is the two years CNIL
+     * states for unsuccessful candidates.
+     */
+    @SerialName("retention_days")
+    public val retentionDays: Long,
+)
+
+/**
+ * The distinct values present among OPEN vacancies — the whole set, not this page — so a
+ * filter shows only values that exist.
+ */
+@Serializable
+public data class CareersFacets(
+    public val categories: List<String>,
+    public val departments: List<String>,
+    @SerialName("workplace_types")
+    public val workplaceTypes: List<JobWorkplaceType>,
+    @SerialName("employment_types")
+    public val employmentTypes: List<JobEmploymentType>,
+    public val seniorities: List<JobSeniority>,
+    public val countries: List<String>,
+    public val cities: List<String>,
+)
+
+/**
  * `CastBallotRequest` model.
  */
 @Serializable
@@ -7679,6 +8018,15 @@ public data class CompanyUpdate(
     @SerialName("strategic_goals")
     public val strategicGoals: List<String>? = null,
     public val config: JsonObject? = null,
+)
+
+/**
+ * `CompleteMcpoAuthRequest` model.
+ */
+@Serializable
+public data class CompleteMcpoAuthRequest(
+    public val state: String,
+    public val code: String,
 )
 
 /**
@@ -8623,6 +8971,86 @@ public data class CreateAdminBlogPostResponse(
 )
 
 /**
+ * `CreateAdminJobRequest` model.
+ */
+@Serializable
+public data class CreateAdminJobRequest(
+    public val title: String,
+    public val summary: String? = null,
+    public val description: String? = null,
+    public val responsibilities: List<String>? = null,
+    public val requirements: List<String>? = null,
+    @SerialName("nice_to_have")
+    public val niceToHave: List<String>? = null,
+    public val benefits: List<String>? = null,
+    public val category: String,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType,
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType,
+    public val location: CreateAdminJobRequestLocation? = null,
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<JsonElement>? = null,
+    @SerialName("english_level")
+    public val englishLevel: JobEnglishLevel? = null,
+    @SerialName("experience_years_min")
+    public val experienceYearsMin: Long? = null,
+    public val skills: List<String>? = null,
+    public val salary: CreateAdminJobRequestSalary? = null,
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean? = null,
+    public val apply: CreateAdminJobRequestApply? = null,
+    public val language: VideoOrderLocale? = null,
+    public val status: JobStatus? = null,
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+)
+
+/**
+ * `CreateAdminJobRequestApply` model.
+ */
+@Serializable
+public data class CreateAdminJobRequestApply(
+    public val mode: JobApplyMode,
+    public val url: String? = null,
+    public val email: String? = null,
+    @SerialName("requires_cv")
+    public val requiresCv: Boolean? = null,
+    @SerialName("requires_cover_letter")
+    public val requiresCoverLetter: Boolean? = null,
+)
+
+/**
+ * `CreateAdminJobRequestLocation` model.
+ */
+@Serializable
+public data class CreateAdminJobRequestLocation(
+    public val city: String? = null,
+    public val country: JsonElement? = null,
+)
+
+/**
+ * `CreateAdminJobRequestSalary` model.
+ */
+@Serializable
+public data class CreateAdminJobRequestSalary(
+    public val min: Double? = null,
+    public val max: Double? = null,
+    public val currency: JsonElement,
+    public val period: JobSalaryPeriod,
+)
+
+/**
+ * `CreateAdminJobResponse` model.
+ */
+@Serializable
+public data class CreateAdminJobResponse(
+    public val job: Job,
+)
+
+/**
  * `CreateAdminProviderRequest` model.
  */
 @Serializable
@@ -9499,12 +9927,14 @@ public data class CreateResponseRequest(
      */
     public val input: JsonElement,
     /**
-     * Chain to an earlier response in the same conversation.
+     * Chain to an earlier response of this workspace: its turn and its history are carried into
+     * this call. 404 when there is no such response.
      */
     @SerialName("previous_response_id")
     public val previousResponseId: String? = null,
     /**
-     * System-prompt override for this call only.
+     * Instructions for this call only, delivered with the turn; the agent's own system prompt
+     * stays.
      */
     public val instructions: String? = null,
     public val stream: Boolean? = null,
@@ -9736,12 +10166,40 @@ public data class CreateSessionShareResponse(
 @Serializable
 public data class CreateSessionTodoRequest(
     public val title: String,
+    /**
+     * What the assignee is told to do. The run's input is the title alone when this is absent.
+     */
+    public val instructions: String? = null,
+    /**
+     * Alias of `instructions`, read only when `instructions` is absent. This document named the
+     * field `description` while the handler read `instructions`, so a client written from it had
+     * its instructions dropped in silence (measured 2026-10-09: the run received the title only).
+     * Deprecated by the API.
+     */
     public val description: String? = null,
     @SerialName("due_at")
     public val dueAt: String? = null,
     @SerialName("assign_agent_id")
     public val assignAgentId: String? = null,
+    @SerialName("assign_team_id")
+    public val assignTeamId: String? = null,
     public val status: String? = null,
+    public val recurrence: CreateSessionTodoRequestRecurrence? = null,
+    @SerialName("require_confirmation")
+    public val requireConfirmation: Boolean? = null,
+    @SerialName("order_index")
+    public val orderIndex: Double? = null,
+    @SerialName("parent_task_id")
+    public val parentTaskId: String? = null,
+)
+
+/**
+ * `CreateSessionTodoRequestRecurrence` model.
+ */
+@Serializable
+public data class CreateSessionTodoRequestRecurrence(
+    public val cron: String,
+    public val timezone: String? = null,
 )
 
 /**
@@ -9761,6 +10219,7 @@ public data class CreateSpecPackageCheckoutSessionResponse(
 @Serializable
 public data class CreateTenantRequest(
     public val name: String,
+    public val email: String? = null,
     public val slug: String? = null,
     public val status: CreateTenantRequestStatus? = null,
     public val plan: CustomPlanBasePlan? = null,
@@ -10419,6 +10878,12 @@ public data class DeleteMeResponse(
     @SerialName("sessions_revoked")
     public val sessionsRevoked: Long,
     /**
+     * Sign in with Apple refresh tokens revoked at Apple (App Store 5.1.1(v)). Tokens exist only
+     * for sign-ins that sent `authorization_code`.
+     */
+    @SerialName("apple_tokens_revoked")
+    public val appleTokensRevoked: Long? = null,
+    /**
      * What the data sweep actually removed, summed across every membership. Present since
      * 2026-09-16: the sweep's counts used to be discarded here, so `deleted: true` sat beside a
      * real `sessions_revoked` number while the sweep itself matched a field nothing writes and
@@ -10665,6 +11130,59 @@ public object DeleteWorkspaceFileTrashSerializer : KSerializer<DeleteWorkspaceFi
     override fun serialize(encoder: Encoder, value: DeleteWorkspaceFileTrash): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): DeleteWorkspaceFileTrash = DeleteWorkspaceFileTrash(decoder.decodeString())
 }
+
+/**
+ * Which deployment-conditional capabilities are on here. `false` means the operations that
+ * depend on it answer 501 on this deployment — each such 501 in this document names its flag.
+ * Computed by the same check the handler's 501 branch runs, on every call.
+ */
+@Serializable
+public data class DeploymentFeatures(
+    /**
+     * Governance is enabled (`UARP_GOVERNANCE_ENABLED`).
+     */
+    public val governance: Boolean,
+    /**
+     * Stripe billing is wired.
+     */
+    public val billing: Boolean,
+    /**
+     * A second factor can be enrolled and verified (`UARP_IDENTITY_ENCRYPTION_KEY`). False also
+     * means every step-up-gated action answers 501 where `auth.mfa_enabled` is on.
+     */
+    public val mfa: Boolean,
+    /**
+     * A web-search provider resolves.
+     */
+    @SerialName("web_search")
+    public val webSearch: Boolean,
+    /**
+     * A speech-to-text provider and default model are configured. A caller that names its own
+     * `model` may still be served when this is false.
+     */
+    @SerialName("speech_to_text")
+    public val speechToText: Boolean,
+    /**
+     * A text-to-speech provider and default model are configured. A caller that names its own
+     * `model` may still be served when this is false.
+     */
+    @SerialName("text_to_speech")
+    public val textToSpeech: Boolean,
+    /**
+     * An embedding provider is wired and a key resolves for the caller.
+     */
+    public val embeddings: Boolean,
+    /**
+     * SPEC artifacts are signed (`spec_registry.signing_mode` is not `off`).
+     */
+    @SerialName("spec_signing")
+    public val specSigning: Boolean,
+    /**
+     * Published marketplace listings can be invoked. Always false today: no executor runs them.
+     */
+    @SerialName("marketplace_invoke")
+    public val marketplaceInvoke: Boolean,
+)
 
 /**
  * Governance-builder request to design a new agent (packages/governance/builder-flow.ts).
@@ -11855,6 +12373,7 @@ public value class ErrorCode(public val value: String) {
 
     public companion object {
         public val AAR_NOT_AVAILABLE: ErrorCode = ErrorCode("AAR_NOT_AVAILABLE")
+        public val ACTIVE_TENANT_NOT_SUPPORTED: ErrorCode = ErrorCode("ACTIVE_TENANT_NOT_SUPPORTED")
         public val ALREADY_EXISTS: ErrorCode = ErrorCode("ALREADY_EXISTS")
         public val ANON_BUSY: ErrorCode = ErrorCode("ANON_BUSY")
         public val ARTIFACT_INTEGRITY_ERROR: ErrorCode = ErrorCode("ARTIFACT_INTEGRITY_ERROR")
@@ -11926,6 +12445,7 @@ public value class ErrorCode(public val value: String) {
         public val SHARE_LIST_CONFLICT: ErrorCode = ErrorCode("SHARE_LIST_CONFLICT")
         public val SIZE_LIMIT: ErrorCode = ErrorCode("SIZE_LIMIT")
         public val SPEC_NOT_FOUND: ErrorCode = ErrorCode("SPEC_NOT_FOUND")
+        public val STARTED_BY_ANOTHER_USER: ErrorCode = ErrorCode("STARTED_BY_ANOTHER_USER")
         public val TASK_GRAPH_FAILED: ErrorCode = ErrorCode("TASK_GRAPH_FAILED")
         public val TEAM_ABORT: ErrorCode = ErrorCode("TEAM_ABORT")
         public val TERMS_NOT_ACCEPTED: ErrorCode = ErrorCode("TERMS_NOT_ACCEPTED")
@@ -11943,10 +12463,16 @@ public value class ErrorCode(public val value: String) {
         public val ALREADY_BOOTSTRAPPED: ErrorCode = ErrorCode("already_bootstrapped")
         public val APPROVAL_REJECTED: ErrorCode = ErrorCode("approval_rejected")
         public val BILLING_NOT_CONFIGURED: ErrorCode = ErrorCode("billing_not_configured")
+        public val CONSENT_REQUIRED: ErrorCode = ErrorCode("consent_required")
+        public val CV_INVALID: ErrorCode = ErrorCode("cv_invalid")
+        public val CV_TOO_LARGE: ErrorCode = ErrorCode("cv_too_large")
+        public val DUPLICATE_APPLICATION: ErrorCode = ErrorCode("duplicate_application")
         public val GOVERNANCE_NOT_ENABLED: ErrorCode = ErrorCode("governance_not_enabled")
         public val INCOMPLETE_RECORD: ErrorCode = ErrorCode("incomplete_record")
         public val INERT_POLICY_FIELD: ErrorCode = ErrorCode("inert_policy_field")
         public val INERT_PUBLIC_CONFIG_FIELD: ErrorCode = ErrorCode("inert_public_config_field")
+        public val JOB_APPLY_ELSEWHERE: ErrorCode = ErrorCode("job_apply_elsewhere")
+        public val JOB_CLOSED: ErrorCode = ErrorCode("job_closed")
         public val KB_CHUNK_LIMIT: ErrorCode = ErrorCode("kb_chunk_limit")
         public val KB_DOCUMENT_BODY_INVALID: ErrorCode = ErrorCode("kb_document_body_invalid")
         public val KB_DOCUMENT_TOO_LARGE: ErrorCode = ErrorCode("kb_document_too_large")
@@ -11965,10 +12491,12 @@ public value class ErrorCode(public val value: String) {
         public val QUOTA_EXCEEDED_: ErrorCode = ErrorCode("quota_exceeded")
         public val RATE_LIMITED: ErrorCode = ErrorCode("rate_limited")
         public val RESOURCE_LIMIT_REACHED: ErrorCode = ErrorCode("resource_limit_reached")
+        public val RUN_APPROVAL_EXPIRED: ErrorCode = ErrorCode("run_approval_expired")
         public val RUN_INPUT_TIMEOUT: ErrorCode = ErrorCode("run_input_timeout")
         public val RUN_NEVER_CLAIMED: ErrorCode = ErrorCode("run_never_claimed")
         public val RUN_ORPHANED_RESTART: ErrorCode = ErrorCode("run_orphaned_restart")
         public val RUN_QUOTA_EXCEEDED: ErrorCode = ErrorCode("run_quota_exceeded")
+        public val RUN_STALLED: ErrorCode = ErrorCode("run_stalled")
         public val SECRET_WOULD_MOVE: ErrorCode = ErrorCode("secret_would_move")
         public val VIDEO_CONSENT_REQUIRED: ErrorCode = ErrorCode("video_consent_required")
         public val VIDEO_ORDER_STATE: ErrorCode = ErrorCode("video_order_state")
@@ -11978,7 +12506,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -12696,7 +13224,7 @@ public data class FleetLayout(
     /**
      * Agent id → its place on the canvas.
      */
-    public val positions: Map<String, Value4>,
+    public val positions: Map<String, FleetLayoutPositionsValue>,
     public val edges: List<FleetLayoutEdge>,
     public val notes: List<FleetLayoutNote>? = null,
     public val drafts: List<FleetLayoutDraft>? = null,
@@ -12777,6 +13305,15 @@ public data class FleetLayoutNote(
 )
 
 /**
+ * `FleetLayoutPositionsValue` model.
+ */
+@Serializable
+public data class FleetLayoutPositionsValue(
+    public val x: Double,
+    public val y: Double,
+)
+
+/**
  * What a client SENDS when saving the canvas. The stored record additionally carries
  * `updated_at`, and the response may carry `dropped` — both are produced by the server, so
  * neither belongs in a request.
@@ -12786,7 +13323,7 @@ public data class FleetLayoutUpdate(
     /**
      * Agent id → its place on the canvas.
      */
-    public val positions: Map<String, Value3>,
+    public val positions: Map<String, FleetLayoutUpdatePositionsValue>,
     public val edges: List<FleetLayoutUpdateEdge>,
     public val notes: List<FleetLayoutUpdateNote>? = null,
     public val drafts: List<FleetLayoutUpdateDraft>? = null,
@@ -12829,6 +13366,15 @@ public data class FleetLayoutUpdateNote(
     public val text: String,
     public val color: String? = null,
     public val frame: Boolean? = null,
+)
+
+/**
+ * `FleetLayoutUpdatePositionsValue` model.
+ */
+@Serializable
+public data class FleetLayoutUpdatePositionsValue(
+    public val x: Double,
+    public val y: Double,
 )
 
 /**
@@ -13007,6 +13553,14 @@ public data class GetAdminIntegrationOAuthProviderResponse(
      * override is stored.
      */
     public val scopes: List<String>? = null,
+)
+
+/**
+ * `GetAdminJobResponse` model.
+ */
+@Serializable
+public data class GetAdminJobResponse(
+    public val job: AdminJob,
 )
 
 /**
@@ -13366,9 +13920,18 @@ public data class GetAgentVersionDiffResponse(
     public val versionFrom: Long? = null,
     @SerialName("version_to")
     public val versionTo: Long? = null,
-    public val diff: Map<String, Value5>? = null,
+    public val diff: Map<String, GetAgentVersionDiffResponseDiffValue>? = null,
     @SerialName("changed_fields")
     public val changedFields: List<String>? = null,
+)
+
+/**
+ * `GetAgentVersionDiffResponseDiffValue` model.
+ */
+@Serializable
+public data class GetAgentVersionDiffResponseDiffValue(
+    public val from: JsonElement? = null,
+    public val to: JsonElement? = null,
 )
 
 /**
@@ -13604,12 +14167,79 @@ public data class GetBridgeTaskApprovalResponse(
 )
 
 /**
+ * `GetCareersConfigResponse` model.
+ */
+@Serializable
+public data class GetCareersConfigResponse(
+    public val config: CareersConfig,
+)
+
+/**
  * `GetClientConfigResponse` model.
  */
 @Serializable
 public data class GetClientConfigResponse(
-    public val features: JsonObject? = null,
-    public val providers: JsonObject? = null,
+    /**
+     * Model id → the rate the caller pays per million tokens. Empty when the markup cannot be
+     * read.
+     */
+    public val pricing: Map<String, GetClientConfigResponsePricingValue>,
+    public val bridge: GetClientConfigResponseBridge,
+    public val limits: GetClientConfigResponseLimits,
+    @SerialName("dangerous_tool_prefixes")
+    public val dangerousToolPrefixes: List<String>,
+    public val features: DeploymentFeatures,
+)
+
+/**
+ * `GetClientConfigResponseBridge` model.
+ */
+@Serializable
+public data class GetClientConfigResponseBridge(
+    @SerialName("heartbeat_interval_secs")
+    public val heartbeatIntervalSecs: Long? = null,
+    @SerialName("poll_timeout_ms")
+    public val pollTimeoutMs: Long? = null,
+    @SerialName("poll_http_timeout_secs")
+    public val pollHTTPTimeoutSecs: Long? = null,
+    @SerialName("approval_max_wait_secs")
+    public val approvalMaxWaitSecs: Long? = null,
+    @SerialName("approval_poll_interval_secs")
+    public val approvalPollIntervalSecs: Long? = null,
+)
+
+/**
+ * `GetClientConfigResponseLimits` model.
+ */
+@Serializable
+public data class GetClientConfigResponseLimits(
+    @SerialName("tool_timeout_secs")
+    public val toolTimeoutSecs: Long? = null,
+    @SerialName("shell_timeout_secs")
+    public val shellTimeoutSecs: Long? = null,
+    @SerialName("http_timeout_secs")
+    public val httpTimeoutSecs: Long? = null,
+    @SerialName("max_file_size_bytes")
+    public val maxFileSizeBytes: Long? = null,
+    @SerialName("max_http_response_bytes")
+    public val maxHTTPResponseBytes: Long? = null,
+    @SerialName("max_shell_output_bytes")
+    public val maxShellOutputBytes: Long? = null,
+    @SerialName("max_shell_execs")
+    public val maxShellExecs: Long? = null,
+    @SerialName("wasm_shell_timeout_ms")
+    public val wasmShellTimeoutMs: Long? = null,
+)
+
+/**
+ * `GetClientConfigResponsePricingValue` model.
+ */
+@Serializable
+public data class GetClientConfigResponsePricingValue(
+    @SerialName("input_per_million")
+    public val inputPerMillion: Double,
+    @SerialName("output_per_million")
+    public val outputPerMillion: Double,
 )
 
 /**
@@ -13787,6 +14417,14 @@ public data class GetImmutableAuditResponse(
 )
 
 /**
+ * `GetJobApplicationResponse` model.
+ */
+@Serializable
+public data class GetJobApplicationResponse(
+    public val application: JobApplication,
+)
+
+/**
  * `GetLinkPreviewResponse` model.
  */
 @Serializable
@@ -13818,6 +14456,27 @@ public data class GetMarketplaceCategoriesResponse(
 @Serializable
 public data class GetMarkupConfigResponse(
     public val markup: JsonObject? = null,
+)
+
+/**
+ * `GetMcpoAuthClientMetadataResponse` model.
+ */
+@Serializable
+public data class GetMcpoAuthClientMetadataResponse(
+    @SerialName("client_id")
+    public val clientId: String,
+    @SerialName("client_name")
+    public val clientName: String? = null,
+    @SerialName("client_uri")
+    public val clientURI: String? = null,
+    @SerialName("redirect_uris")
+    public val redirectUris: List<String>,
+    @SerialName("grant_types")
+    public val grantTypes: List<String>? = null,
+    @SerialName("response_types")
+    public val responseTypes: List<String>? = null,
+    @SerialName("token_endpoint_auth_method")
+    public val tokenEndpointAuthMethod: String? = null,
 )
 
 /**
@@ -14132,6 +14791,32 @@ public data class GetPublicBlogPostResponse(
 @Serializable
 public data class GetPublicFeaturedAgentResponse(
     public val agent: JsonObject? = null,
+)
+
+/**
+ * `GetPublicJobResponse` model.
+ */
+@Serializable
+public data class GetPublicJobResponse(
+    public val job: PublicJob,
+    /**
+     * The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+     * on/off decision need no second call.
+     */
+    public val careers: GetPublicJobResponseCareers,
+)
+
+/**
+ * The page settings — the same object as the list's — so JSON-LD `hiringOrganization` and the
+ * on/off decision need no second call.
+ */
+@Serializable
+public data class GetPublicJobResponseCareers(
+    public val enabled: Boolean,
+    public val title: String,
+    public val description: String,
+    @SerialName("company_name")
+    public val companyName: String,
 )
 
 /**
@@ -15849,6 +16534,45 @@ public data class IngestMemoryResponseEntry(
 )
 
 /**
+ * `InstallEssentialsOnHeadAgentsResponse` model.
+ */
+@Serializable
+public data class InstallEssentialsOnHeadAgentsResponse(
+    /**
+     * Tenants visited.
+     */
+    public val scanned: Long,
+    /**
+     * Head agents that received the SPEC on this run.
+     */
+    public val updated: Long,
+    @SerialName("already_present")
+    public val alreadyPresent: Long,
+    @SerialName("no_head_agent")
+    public val noHeadAgent: Long,
+    /**
+     * Absent when nothing failed.
+     */
+    public val errors: List<InstallEssentialsOnHeadAgentsResponseError>? = null,
+)
+
+/**
+ * `InstallEssentialsOnHeadAgentsResponseError` model.
+ */
+@Serializable
+public data class InstallEssentialsOnHeadAgentsResponseError(
+    /**
+     * Deprecated spelling of `tenant_id` — the same value, kept for the compatibility window and
+     * removed in the next breaking release (the one that moves `X-API-Version`). Read `tenant_id`.
+     * Deprecated by the API.
+     */
+    public val tenantId: String,
+    public val error: String,
+    @SerialName("tenant_id")
+    public val tenantId_: String,
+)
+
+/**
  * OAuth/API integration record (Slack, GitHub, Linear, etc.).
  */
 @Serializable
@@ -16017,8 +16741,37 @@ public data class Invite(
 @Serializable
 public data class InviteUserRequest(
     public val email: String,
-    public val role: String,
+    public val role: InviteUserRequestRole,
 )
+
+/**
+ * `InviteUserRequestRole` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = InviteUserRequestRoleSerializer::class)
+@JvmInline
+public value class InviteUserRequestRole(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ADMIN: InviteUserRequestRole = InviteUserRequestRole("admin")
+        public val DEVELOPER: InviteUserRequestRole = InviteUserRequestRole("developer")
+        public val VIEWER: InviteUserRequestRole = InviteUserRequestRole("viewer")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<InviteUserRequestRole> = listOf(ADMIN, DEVELOPER, VIEWER)
+    }
+}
+
+public object InviteUserRequestRoleSerializer : KSerializer<InviteUserRequestRole> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.InviteUserRequestRole", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: InviteUserRequestRole): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): InviteUserRequestRole = InviteUserRequestRole(decoder.decodeString())
+}
 
 /**
  * `InviteUserResponse` model.
@@ -16103,6 +16856,460 @@ public data class IssueArbiterRulingRequest(
 public data class IssueArbiterRulingResponse(
     public val ok: Boolean? = null,
 )
+
+/**
+ * A vacancy as the admin sees it. The public view (`PublicJob`) is this with a non-public
+ * `salary` set to null and three derived fields added. No field names age, gender or any other
+ * ground the Ukrainian advertising law (art. 24-1) forbids a vacancy to require;
+ * `experience_years_min` and `english_level` are the permitted requirements.
+ */
+@Serializable
+public data class Job(
+    public val id: String,
+    /**
+     * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+     */
+    public val slug: String,
+    /**
+     * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+     */
+    @SerialName("previous_slugs")
+    public val previousSlugs: List<String>,
+    /**
+     * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+     * the public.
+     */
+    public val status: JobStatus,
+    /**
+     * The language the texts are written in.
+     */
+    public val language: VideoOrderLocale,
+    public val title: String,
+    /**
+     * Plain text for the card, the meta description and the OG text.
+     */
+    public val summary: String,
+    /**
+     * Markdown.
+     */
+    public val description: String,
+    public val responsibilities: List<String>,
+    public val requirements: List<String>,
+    @SerialName("nice_to_have")
+    public val niceToHave: List<String>,
+    public val benefits: List<String>,
+    /**
+     * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+     */
+    public val category: String,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    /**
+     * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+     * internship → INTERN, the rest upper-cased.
+     */
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType,
+    /**
+     * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+     * Google requires.
+     */
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType,
+    public val location: JobLocation,
+    /**
+     * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+     */
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<String>,
+    /**
+     * CEFR; `none` = not required.
+     */
+    @SerialName("english_level")
+    public val englishLevel: JobEnglishLevel? = null,
+    /**
+     * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+     */
+    @SerialName("experience_years_min")
+    public val experienceYearsMin: Long? = null,
+    public val skills: List<String>,
+    public val salary: JobSalary? = null,
+    /**
+     * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+     * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+     * is the simplest way to comply.
+     */
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean,
+    public val apply: JobApply,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+    /**
+     * JSON-LD `datePosted`.
+     */
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    /**
+     * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+     * no applications.
+     */
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+    /**
+     * When it was actually closed.
+     */
+    @SerialName("closed_at")
+    public val closedAt: String? = null,
+)
+
+/**
+ * A candidate's application, as the admin sees it. Personal data: deleted `retention_days`
+ * after the vacancy closes, or on `DELETE`.
+ */
+@Serializable
+public data class JobApplication(
+    public val id: String,
+    @SerialName("job_id")
+    public val jobId: String,
+    public val status: JobApplicationStatus,
+    public val name: String,
+    public val email: String,
+    public val phone: String? = null,
+    public val links: List<String>,
+    @SerialName("cover_letter")
+    public val coverLetter: String? = null,
+    public val cv: ApplicationCv? = null,
+    public val locale: String? = null,
+    /**
+     * Where the candidate came from, as the form sent it.
+     */
+    public val source: String? = null,
+    /**
+     * When the privacy consent was given.
+     */
+    @SerialName("consent_at")
+    public val consentAt: String,
+    /**
+     * Separate, never pre-ticked: the candidate agreed to be kept for other roles.
+     */
+    @SerialName("talent_pool_consent_at")
+    public val talentPoolConsentAt: String? = null,
+    /**
+     * Set when the vacancy closes; the daily sweep deletes the application after it.
+     */
+    @SerialName("retain_until")
+    public val retainUntil: String? = null,
+    /**
+     * Reviewer's private notes.
+     */
+    public val notes: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+)
+
+/**
+ * `JobApplicationStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobApplicationStatusSerializer::class)
+@JvmInline
+public value class JobApplicationStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NEW: JobApplicationStatus = JobApplicationStatus("new")
+        public val REVIEWING: JobApplicationStatus = JobApplicationStatus("reviewing")
+        public val INTERVIEW: JobApplicationStatus = JobApplicationStatus("interview")
+        public val OFFER: JobApplicationStatus = JobApplicationStatus("offer")
+        public val HIRED: JobApplicationStatus = JobApplicationStatus("hired")
+        public val REJECTED: JobApplicationStatus = JobApplicationStatus("rejected")
+        public val WITHDRAWN: JobApplicationStatus = JobApplicationStatus("withdrawn")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobApplicationStatus> = listOf(NEW, REVIEWING, INTERVIEW, OFFER, HIRED, REJECTED, WITHDRAWN)
+    }
+}
+
+public object JobApplicationStatusSerializer : KSerializer<JobApplicationStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobApplicationStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobApplicationStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobApplicationStatus = JobApplicationStatus(decoder.decodeString())
+}
+
+/**
+ * How a candidate applies. `form`: `POST /api/v1/public/jobs/{slug}/apply`. `external`: send
+ * them to `url`. `email`: tell them to write to `email`. The two requirement flags apply to
+ * the form.
+ */
+@Serializable
+public data class JobApply(
+    public val mode: JobApplyMode,
+    public val url: String? = null,
+    public val email: String? = null,
+    @SerialName("requires_cv")
+    public val requiresCv: Boolean,
+    @SerialName("requires_cover_letter")
+    public val requiresCoverLetter: Boolean,
+)
+
+/**
+ * `JobApplyMode` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobApplyModeSerializer::class)
+@JvmInline
+public value class JobApplyMode(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FORM: JobApplyMode = JobApplyMode("form")
+        public val EXTERNAL: JobApplyMode = JobApplyMode("external")
+        public val EMAIL: JobApplyMode = JobApplyMode("email")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobApplyMode> = listOf(FORM, EXTERNAL, EMAIL)
+    }
+}
+
+public object JobApplyModeSerializer : KSerializer<JobApplyMode> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobApplyMode", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobApplyMode): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobApplyMode = JobApplyMode(decoder.decodeString())
+}
+
+/**
+ * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+ * internship → INTERN, the rest upper-cased.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobEmploymentTypeSerializer::class)
+@JvmInline
+public value class JobEmploymentType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FULL_TIME: JobEmploymentType = JobEmploymentType("full_time")
+        public val PART_TIME: JobEmploymentType = JobEmploymentType("part_time")
+        public val CONTRACT: JobEmploymentType = JobEmploymentType("contract")
+        public val TEMPORARY: JobEmploymentType = JobEmploymentType("temporary")
+        public val INTERNSHIP: JobEmploymentType = JobEmploymentType("internship")
+        public val VOLUNTEER: JobEmploymentType = JobEmploymentType("volunteer")
+        public val PER_DIEM: JobEmploymentType = JobEmploymentType("per_diem")
+        public val OTHER: JobEmploymentType = JobEmploymentType("other")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobEmploymentType> = listOf(FULL_TIME, PART_TIME, CONTRACT, TEMPORARY, INTERNSHIP, VOLUNTEER, PER_DIEM, OTHER)
+    }
+}
+
+public object JobEmploymentTypeSerializer : KSerializer<JobEmploymentType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobEmploymentType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobEmploymentType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobEmploymentType = JobEmploymentType(decoder.decodeString())
+}
+
+/**
+ * CEFR; `none` = not required.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobEnglishLevelSerializer::class)
+@JvmInline
+public value class JobEnglishLevel(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val NONE: JobEnglishLevel = JobEnglishLevel("none")
+        public val A1: JobEnglishLevel = JobEnglishLevel("a1")
+        public val A2: JobEnglishLevel = JobEnglishLevel("a2")
+        public val B1: JobEnglishLevel = JobEnglishLevel("b1")
+        public val B2: JobEnglishLevel = JobEnglishLevel("b2")
+        public val C1: JobEnglishLevel = JobEnglishLevel("c1")
+        public val C2: JobEnglishLevel = JobEnglishLevel("c2")
+        public val NATIVE: JobEnglishLevel = JobEnglishLevel("native")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobEnglishLevel> = listOf(NONE, A1, A2, B1, B2, C1, C2, NATIVE)
+    }
+}
+
+public object JobEnglishLevelSerializer : KSerializer<JobEnglishLevel> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobEnglishLevel", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobEnglishLevel): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobEnglishLevel = JobEnglishLevel(decoder.decodeString())
+}
+
+/**
+ * `JobLocation` model.
+ */
+@Serializable
+public data class JobLocation(
+    public val city: String? = null,
+    /**
+     * ISO 3166-1 alpha-2, upper-case.
+     */
+    public val country: String? = null,
+)
+
+/**
+ * A pay range. At least one bound is present. JSON-LD: `baseSalary` as a `MonetaryAmount`
+ * whose `value.unitText` is `period` upper-cased.
+ */
+@Serializable
+public data class JobSalary(
+    public val min: Double? = null,
+    public val max: Double? = null,
+    /**
+     * ISO 4217, upper-case.
+     */
+    public val currency: String,
+    public val period: JobSalaryPeriod,
+)
+
+/**
+ * `JobSalaryPeriod` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobSalaryPeriodSerializer::class)
+@JvmInline
+public value class JobSalaryPeriod(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val HOUR: JobSalaryPeriod = JobSalaryPeriod("hour")
+        public val DAY: JobSalaryPeriod = JobSalaryPeriod("day")
+        public val WEEK: JobSalaryPeriod = JobSalaryPeriod("week")
+        public val MONTH: JobSalaryPeriod = JobSalaryPeriod("month")
+        public val YEAR: JobSalaryPeriod = JobSalaryPeriod("year")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobSalaryPeriod> = listOf(HOUR, DAY, WEEK, MONTH, YEAR)
+    }
+}
+
+public object JobSalaryPeriodSerializer : KSerializer<JobSalaryPeriod> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobSalaryPeriod", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobSalaryPeriod): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobSalaryPeriod = JobSalaryPeriod(decoder.decodeString())
+}
+
+/**
+ * `JobSeniority` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobSenioritySerializer::class)
+@JvmInline
+public value class JobSeniority(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val INTERN: JobSeniority = JobSeniority("intern")
+        public val JUNIOR: JobSeniority = JobSeniority("junior")
+        public val MIDDLE: JobSeniority = JobSeniority("middle")
+        public val SENIOR: JobSeniority = JobSeniority("senior")
+        public val LEAD: JobSeniority = JobSeniority("lead")
+        public val PRINCIPAL: JobSeniority = JobSeniority("principal")
+        public val HEAD: JobSeniority = JobSeniority("head")
+        public val DIRECTOR: JobSeniority = JobSeniority("director")
+        public val EXECUTIVE: JobSeniority = JobSeniority("executive")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobSeniority> = listOf(INTERN, JUNIOR, MIDDLE, SENIOR, LEAD, PRINCIPAL, HEAD, DIRECTOR, EXECUTIVE)
+    }
+}
+
+public object JobSenioritySerializer : KSerializer<JobSeniority> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobSeniority", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobSeniority): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobSeniority = JobSeniority(decoder.decodeString())
+}
+
+/**
+ * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+ * the public.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobStatusSerializer::class)
+@JvmInline
+public value class JobStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val DRAFT: JobStatus = JobStatus("draft")
+        public val PUBLISHED: JobStatus = JobStatus("published")
+        public val CLOSED: JobStatus = JobStatus("closed")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobStatus> = listOf(DRAFT, PUBLISHED, CLOSED)
+    }
+}
+
+public object JobStatusSerializer : KSerializer<JobStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobStatus = JobStatus(decoder.decodeString())
+}
+
+/**
+ * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+ * Google requires.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = JobWorkplaceTypeSerializer::class)
+@JvmInline
+public value class JobWorkplaceType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val REMOTE: JobWorkplaceType = JobWorkplaceType("remote")
+        public val HYBRID: JobWorkplaceType = JobWorkplaceType("hybrid")
+        public val ONSITE: JobWorkplaceType = JobWorkplaceType("onsite")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<JobWorkplaceType> = listOf(REMOTE, HYBRID, ONSITE)
+    }
+}
+
+public object JobWorkplaceTypeSerializer : KSerializer<JobWorkplaceType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.JobWorkplaceType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: JobWorkplaceType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): JobWorkplaceType = JobWorkplaceType(decoder.decodeString())
+}
 
 /**
  * A JSON-RPC 2.0 envelope. Exactly one of `result` and `error` is present.
@@ -16476,7 +17683,7 @@ public data class KnowledgeBaseUpdate(
 public data class LandingConfigSection(
     @SerialName("public_agent_id")
     public val publicAgentId: String? = null,
-    public val texts: Map<String, Value>,
+    public val texts: Map<String, LandingConfigSectionTextsValue>,
     @SerialName("multilang_enabled")
     public val multilangEnabled: Boolean,
     @SerialName("default_locale")
@@ -16507,6 +17714,15 @@ public data class LandingConfigSectionPartner(
 public data class LandingConfigSectionPartnerLogo(
     public val slug: String? = null,
     public val url: String? = null,
+)
+
+/**
+ * `LandingConfigSectionTextsValue` model.
+ */
+@Serializable
+public data class LandingConfigSectionTextsValue(
+    public val en: String? = null,
+    public val uk: String? = null,
 )
 
 /**
@@ -16727,6 +17943,15 @@ public data class ListAdminIntegrationOAuthProvidersResponseProvider(
      * credentials reports false here, so this is readiness rather than the stored flag.
      */
     public val enabled: Boolean,
+)
+
+/**
+ * `ListAdminJobsResponse` model.
+ */
+@Serializable
+public data class ListAdminJobsResponse(
+    public val items: List<AdminJob>,
+    public val total: Long,
 )
 
 /**
@@ -17283,6 +18508,24 @@ public data class ListInvitesResponse(
 )
 
 /**
+ * `ListJobApplicationsResponse` model.
+ */
+@Serializable
+public data class ListJobApplicationsResponse(
+    public val items: List<JobApplication>,
+    public val total: Long,
+    public val page: Long,
+    public val limit: Long,
+    @SerialName("total_pages")
+    public val totalPages: Long,
+    /**
+     * One key per `ApplicationStatus`.
+     */
+    @SerialName("counts_by_status")
+    public val countsByStatus: JsonObject,
+)
+
+/**
  * `ListKbDocumentsResponse` model.
  */
 @Serializable
@@ -17356,6 +18599,15 @@ public data class ListLLMModelsResponse(
      */
     @SerialName("default_model")
     public val defaultModel: String? = null,
+)
+
+/**
+ * `ListMCPCatalogResponse` model.
+ */
+@Serializable
+public data class ListMCPCatalogResponse(
+    public val items: List<MCPCatalogEntry>,
+    public val total: Long,
 )
 
 /**
@@ -17707,6 +18959,33 @@ public object ListPublicIntegrationsResponseConnectorAuthTypeSerializer : KSeria
 }
 
 /**
+ * `ListPublicJobsResponse` model.
+ */
+@Serializable
+public data class ListPublicJobsResponse(
+    public val careers: ListPublicJobsResponseCareers,
+    public val items: List<PublicJobSummary>,
+    public val facets: CareersFacets,
+    public val total: Long,
+    public val page: Long,
+    public val limit: Long,
+    @SerialName("total_pages")
+    public val totalPages: Long,
+)
+
+/**
+ * `ListPublicJobsResponseCareers` model.
+ */
+@Serializable
+public data class ListPublicJobsResponseCareers(
+    public val enabled: Boolean,
+    public val title: String,
+    public val description: String,
+    @SerialName("company_name")
+    public val companyName: String,
+)
+
+/**
  * `ListPublicPlansResponse` model.
  */
 @Serializable
@@ -17775,6 +19054,63 @@ public data class ListPublicVideoTemplatesResponseStats(
     @SerialName("videos_total")
     public val videosTotal: Long,
 )
+
+/**
+ * `ListRegistrySigningKeysResponse` model.
+ */
+@Serializable
+public data class ListRegistrySigningKeysResponse(
+    public val keys: List<ListRegistrySigningKeysResponseKey>,
+)
+
+/**
+ * `ListRegistrySigningKeysResponseKey` model.
+ */
+@Serializable
+public data class ListRegistrySigningKeysResponseKey(
+    public val alg: ListRegistrySigningKeysResponseKeyAlg,
+    @SerialName("key_id")
+    public val keyId: String,
+    /**
+     * Base64 of the raw 32-byte Ed25519 public key.
+     */
+    @SerialName("public_key")
+    public val publicKey: String,
+    @SerialName("created_at")
+    public val createdAt: String,
+    /**
+     * Absent while the key is active. Refuse signatures with `signed_at` later than this.
+     */
+    @SerialName("retired_at")
+    public val retiredAt: String? = null,
+)
+
+/**
+ * `ListRegistrySigningKeysResponseKeyAlg` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListRegistrySigningKeysResponseKeyAlgSerializer::class)
+@JvmInline
+public value class ListRegistrySigningKeysResponseKeyAlg(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val ED25519: ListRegistrySigningKeysResponseKeyAlg = ListRegistrySigningKeysResponseKeyAlg("ed25519")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListRegistrySigningKeysResponseKeyAlg> = listOf(ED25519)
+    }
+}
+
+public object ListRegistrySigningKeysResponseKeyAlgSerializer : KSerializer<ListRegistrySigningKeysResponseKeyAlg> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListRegistrySigningKeysResponseKeyAlg", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListRegistrySigningKeysResponseKeyAlg): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListRegistrySigningKeysResponseKeyAlg = ListRegistrySigningKeysResponseKeyAlg(decoder.decodeString())
+}
 
 /**
  * `ListRunArtifactsResponse` model.
@@ -17926,6 +19262,63 @@ public data class ListSessionDrawingsResponse(
 )
 
 /**
+ * `ListSessionsArchived` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListSessionsArchivedSerializer::class)
+@JvmInline
+public value class ListSessionsArchived(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FALSE: ListSessionsArchived = ListSessionsArchived("false")
+        public val TRUE: ListSessionsArchived = ListSessionsArchived("true")
+        public val ALL: ListSessionsArchived = ListSessionsArchived("all")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListSessionsArchived> = listOf(FALSE, TRUE, ALL)
+    }
+}
+
+public object ListSessionsArchivedSerializer : KSerializer<ListSessionsArchived> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListSessionsArchived", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListSessionsArchived): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListSessionsArchived = ListSessionsArchived(decoder.decodeString())
+}
+
+/**
+ * `ListSessionsPinned` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = ListSessionsPinnedSerializer::class)
+@JvmInline
+public value class ListSessionsPinned(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val TRUE: ListSessionsPinned = ListSessionsPinned("true")
+        public val FALSE: ListSessionsPinned = ListSessionsPinned("false")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<ListSessionsPinned> = listOf(TRUE, FALSE)
+    }
+}
+
+public object ListSessionsPinnedSerializer : KSerializer<ListSessionsPinned> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.ListSessionsPinned", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: ListSessionsPinned): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): ListSessionsPinned = ListSessionsPinned(decoder.decodeString())
+}
+
+/**
  * `ListSessionsResponse` model.
  */
 @Serializable
@@ -17941,6 +19334,25 @@ public data class ListSessionsResponse(
  */
 @Serializable
 public data class ListSessionsResponseItem(
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+     * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+     * removes those metadata keys.
+     */
+    public val archived: Boolean? = null,
+    @SerialName("archived_at")
+    public val archivedAt: String? = null,
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+     * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+     * the flag removes the metadata key.
+     */
+    public val pinned: Boolean? = null,
+    /**
+     * When it was pinned; order the pinned group by it.
+     */
+    @SerialName("pinned_at")
+    public val pinnedAt: String? = null,
     @SerialName("created_by")
     public val createdBy: String? = null,
     @SerialName("session_id")
@@ -17956,6 +19368,12 @@ public data class ListSessionsResponseItem(
     public val runs: List<String>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    /**
+     * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+     * writes that only set `title`, `project_id` or the legacy
+     * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+     * by it.
+     */
     @SerialName("updated_at")
     public val updatedAt: String? = null,
     @SerialName("expires_at")
@@ -19000,6 +20418,284 @@ public data class MaterializeCanvasSquadResponse(
 )
 
 /**
+ * A vendor-hosted MCP server that connects in one step. Every entry was measured on the wire:
+ * an `oauth` entry answers with an OAuth challenge, its authorization server supports PKCE
+ * S256, and the platform can obtain a client_id there without a human; a `none` entry is run
+ * by the data's own publisher, answers without credentials and lists its tools.
+ */
+@Serializable
+public data class MCPCatalogEntry(
+    public val id: String,
+    public val name: String,
+    public val category: MCPCatalogEntryCategory,
+    public val description: String,
+    /**
+     * `description` in Ukrainian, for a uk interface.
+     */
+    @SerialName("description_uk")
+    public val descriptionUk: String,
+    public val url: String,
+    /**
+     * A read-only endpoint, where the vendor offers one.
+     */
+    @SerialName("read_only_url")
+    public val readOnlyURL: String? = null,
+    /**
+     * `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+     * answers 201 at once, with no sign-in.
+     */
+    public val auth: MCPCatalogEntryAuth,
+    public val access: MCPCatalogEntryAccess,
+    /**
+     * What the vendor's tools can do that cannot be taken back: `money` (charges, refunds,
+     * payouts, payroll, payment requests), `send` (email, sequences, replies, documents for
+     * signature, on the tenant's behalf), `delete` (write or delete records wholesale). Empty when
+     * none apply. Build a warning from this list so it says only what is true of the entry.
+     */
+    public val risks: List<MCPCatalogEntryRisk>,
+    /**
+     * `risks` is not empty. Connect prefers `read_only_url` for these unless `read_only: false` is
+     * sent.
+     */
+    public val sensitive: Boolean,
+    @SerialName("docs_url")
+    public val docsURL: String,
+    /**
+     * Vendor domain, for the icon.
+     */
+    public val domain: String,
+    /**
+     * A plan or admin switch the person needs.
+     */
+    public val note: String? = null,
+    /**
+     * `note` in Ukrainian; present exactly when `note` is.
+     */
+    @SerialName("note_uk")
+    public val noteUk: String? = null,
+)
+
+/**
+ * `MCPCatalogEntryAccess` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPCatalogEntryAccessSerializer::class)
+@JvmInline
+public value class MCPCatalogEntryAccess(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val READ: MCPCatalogEntryAccess = MCPCatalogEntryAccess("read")
+        public val READ_WRITE: MCPCatalogEntryAccess = MCPCatalogEntryAccess("read_write")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPCatalogEntryAccess> = listOf(READ, READ_WRITE)
+    }
+}
+
+public object MCPCatalogEntryAccessSerializer : KSerializer<MCPCatalogEntryAccess> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPCatalogEntryAccess", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPCatalogEntryAccess): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPCatalogEntryAccess = MCPCatalogEntryAccess(decoder.decodeString())
+}
+
+/**
+ * `oauth`: the person signs in at the vendor. `none`: a public server (open data) — connect
+ * answers 201 at once, with no sign-in.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPCatalogEntryAuthSerializer::class)
+@JvmInline
+public value class MCPCatalogEntryAuth(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val OAUTH: MCPCatalogEntryAuth = MCPCatalogEntryAuth("oauth")
+        public val NONE: MCPCatalogEntryAuth = MCPCatalogEntryAuth("none")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPCatalogEntryAuth> = listOf(OAUTH, NONE)
+    }
+}
+
+public object MCPCatalogEntryAuthSerializer : KSerializer<MCPCatalogEntryAuth> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPCatalogEntryAuth", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPCatalogEntryAuth): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPCatalogEntryAuth = MCPCatalogEntryAuth(decoder.decodeString())
+}
+
+/**
+ * `MCPCatalogEntryCategory` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPCatalogEntryCategorySerializer::class)
+@JvmInline
+public value class MCPCatalogEntryCategory(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val FINANCE: MCPCatalogEntryCategory = MCPCatalogEntryCategory("finance")
+        public val SALES: MCPCatalogEntryCategory = MCPCatalogEntryCategory("sales")
+        public val MARKETING: MCPCatalogEntryCategory = MCPCatalogEntryCategory("marketing")
+        public val ANALYTICS: MCPCatalogEntryCategory = MCPCatalogEntryCategory("analytics")
+        public val SUPPORT: MCPCatalogEntryCategory = MCPCatalogEntryCategory("support")
+        public val PEOPLE: MCPCatalogEntryCategory = MCPCatalogEntryCategory("people")
+        public val OPERATIONS: MCPCatalogEntryCategory = MCPCatalogEntryCategory("operations")
+        public val MEETINGS: MCPCatalogEntryCategory = MCPCatalogEntryCategory("meetings")
+        public val COMPLIANCE: MCPCatalogEntryCategory = MCPCatalogEntryCategory("compliance")
+        public val DATA: MCPCatalogEntryCategory = MCPCatalogEntryCategory("data")
+        public val OPEN_DATA: MCPCatalogEntryCategory = MCPCatalogEntryCategory("open_data")
+        public val MARKETS: MCPCatalogEntryCategory = MCPCatalogEntryCategory("markets")
+        public val RESEARCH: MCPCatalogEntryCategory = MCPCatalogEntryCategory("research")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPCatalogEntryCategory> = listOf(FINANCE, SALES, MARKETING, ANALYTICS, SUPPORT, PEOPLE, OPERATIONS, MEETINGS, COMPLIANCE, DATA, OPEN_DATA, MARKETS, RESEARCH)
+    }
+}
+
+public object MCPCatalogEntryCategorySerializer : KSerializer<MCPCatalogEntryCategory> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPCatalogEntryCategory", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPCatalogEntryCategory): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPCatalogEntryCategory = MCPCatalogEntryCategory(decoder.decodeString())
+}
+
+/**
+ * `MCPCatalogEntryRisk` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPCatalogEntryRiskSerializer::class)
+@JvmInline
+public value class MCPCatalogEntryRisk(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val MONEY: MCPCatalogEntryRisk = MCPCatalogEntryRisk("money")
+        public val SEND: MCPCatalogEntryRisk = MCPCatalogEntryRisk("send")
+        public val DELETE: MCPCatalogEntryRisk = MCPCatalogEntryRisk("delete")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPCatalogEntryRisk> = listOf(MONEY, SEND, DELETE)
+    }
+}
+
+public object MCPCatalogEntryRiskSerializer : KSerializer<MCPCatalogEntryRisk> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPCatalogEntryRisk", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPCatalogEntryRisk): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPCatalogEntryRisk = MCPCatalogEntryRisk(decoder.decodeString())
+}
+
+/**
+ * Exactly one of `catalog_id` and `url`.
+ */
+@Serializable
+public data class MCPConnectRequest(
+    @SerialName("catalog_id")
+    public val catalogId: String? = null,
+    /**
+     * Any streamable-HTTP MCP server, for one outside the catalog.
+     */
+    public val url: String? = null,
+    public val name: String? = null,
+    /**
+     * Agents that get the server's tools. Empty connects it to nobody yet.
+     */
+    @SerialName("agent_ids")
+    public val agentIds: List<String>? = null,
+    /**
+     * Use the vendor's read-only endpoint when it has one. Defaults to the entry's `sensitive`.
+     */
+    @SerialName("read_only")
+    public val readOnly: Boolean? = null,
+    @SerialName("return_to")
+    public val returnTo: MCPOAuthReturnTo? = null,
+)
+
+/**
+ * `authorization_required`: open `authorize_url` in a browser; the vendor returns to
+ * `/api/v1/mcp/oauth/callback`, which hands `state` and `code` to
+ * `{public_base_url}/mcp/oauth/callback`, which calls `POST /mcp/oauth/complete`. `connected`:
+ * the server is stored and its live session opened (or `connect_error` says why not).
+ */
+@Serializable
+public data class MCPConnectResult(
+    public val status: MCPConnectResultStatus,
+    /**
+     * Always https. A client should refuse anything else.
+     */
+    @SerialName("authorize_url")
+    public val authorizeURL: String? = null,
+    /**
+     * Exactly where the callback's final 302 will land: `return_to` when one was sent, else
+     * `{public_base_url}/mcp/oauth/callback`. A client that intercepts the navigation itself
+     * matches on this rather than on a host it knows.
+     */
+    @SerialName("callback_url")
+    public val callbackURL: String? = null,
+    public val state: String? = null,
+    /**
+     * The started connection is forgotten after this (10 minutes).
+     */
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    public val server: MCPServer? = null,
+    /**
+     * Tool names the live session listed.
+     */
+    public val tools: List<String>? = null,
+    @SerialName("connect_error")
+    public val connectError: String? = null,
+    /**
+     * The server was already connected; the agents were added to it.
+     */
+    @SerialName("already_connected")
+    public val alreadyConnected: Boolean? = null,
+)
+
+/**
+ * `MCPConnectResultStatus` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPConnectResultStatusSerializer::class)
+@JvmInline
+public value class MCPConnectResultStatus(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val AUTHORIZATION_REQUIRED: MCPConnectResultStatus = MCPConnectResultStatus("authorization_required")
+        public val CONNECTED: MCPConnectResultStatus = MCPConnectResultStatus("connected")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPConnectResultStatus> = listOf(AUTHORIZATION_REQUIRED, CONNECTED)
+    }
+}
+
+public object MCPConnectResultStatusSerializer : KSerializer<MCPConnectResultStatus> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPConnectResultStatus", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPConnectResultStatus): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPConnectResultStatus = MCPConnectResultStatus(decoder.decodeString())
+}
+
+/**
  * `McpjsonRpcRequest` model.
  */
 @Serializable
@@ -19009,6 +20705,37 @@ public data class McpjsonRpcRequest(
     public val params: JsonObject? = null,
     public val id: JsonElement? = null,
 )
+
+/**
+ * For a native client that cannot catch the https hop: the callback's final 302 goes here
+ * instead of `{public_base_url}/mcp/oauth/callback`, carrying `state` and either `code` or
+ * `error` (plus `error_description` when the vendor gave one). Every outcome takes this hop.
+ * Exact values only; anything else is 400. Omit it for the web app.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = MCPOAuthReturnToSerializer::class)
+@JvmInline
+public value class MCPOAuthReturnTo(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val UARP_MCP_OAUTH_CALLBACK: MCPOAuthReturnTo = MCPOAuthReturnTo("uarp://mcp/oauth/callback")
+        public val SNAGA_MCP_OAUTH_CALLBACK: MCPOAuthReturnTo = MCPOAuthReturnTo("snaga://mcp/oauth/callback")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<MCPOAuthReturnTo> = listOf(UARP_MCP_OAUTH_CALLBACK, SNAGA_MCP_OAUTH_CALLBACK)
+    }
+}
+
+public object MCPOAuthReturnToSerializer : KSerializer<MCPOAuthReturnTo> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.MCPOAuthReturnTo", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: MCPOAuthReturnTo): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): MCPOAuthReturnTo = MCPOAuthReturnTo(decoder.decodeString())
+}
 
 /**
  * An MCP server as returned. `env` and `env_encrypted` are stripped; only the COUNT is
@@ -19064,7 +20791,12 @@ public data class MCPServer(
  */
 @Serializable
 public data class MCPServerAuth(
+    /**
+     * `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+     * /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
+     */
     public val type: MCPServerAuthType,
+    public val oauth: MCPServerOAuth? = null,
     /**
      * Header carrying the secret. Default `Authorization`. Must be an RFC 9110 field name, and may
      * not be one the platform sets itself (`Origin`, `Host`, `Content-Type`, `Accept`).
@@ -19082,7 +20814,8 @@ public data class MCPServerAuth(
 )
 
 /**
- * `MCPServerAuthType` values.
+ * `oauth` is written only by the connect flow (`POST /mcp/connect` → `POST
+ * /mcp/oauth/complete`); `POST`/`PATCH /mcp/servers` refuse it.
  */
 ///
 /**
@@ -19097,9 +20830,10 @@ public value class MCPServerAuthType(public val value: String) {
     public companion object {
         public val NONE: MCPServerAuthType = MCPServerAuthType("none")
         public val API_KEY: MCPServerAuthType = MCPServerAuthType("api_key")
+        public val OAUTH: MCPServerAuthType = MCPServerAuthType("oauth")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<MCPServerAuthType> = listOf(NONE, API_KEY)
+        public val knownValues: List<MCPServerAuthType> = listOf(NONE, API_KEY, OAUTH)
     }
 }
 
@@ -19108,6 +20842,52 @@ public object MCPServerAuthTypeSerializer : KSerializer<MCPServerAuthType> {
     override fun serialize(encoder: Encoder, value: MCPServerAuthType): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): MCPServerAuthType = MCPServerAuthType(decoder.decodeString())
 }
+
+/**
+ * The non-secret half of an OAuth connection. Access token, refresh token and any client
+ * secret live in the record's encrypted `env` and are never returned.
+ */
+@Serializable
+public data class MCPServerOAuth(
+    /**
+     * The authorization server.
+     */
+    public val issuer: String,
+    @SerialName("token_endpoint")
+    public val tokenEndpoint: String,
+    @SerialName("client_id")
+    public val clientId: String,
+    @SerialName("token_endpoint_auth_method")
+    public val tokenEndpointAuthMethod: String,
+    /**
+     * The resource the token is bound to (RFC 8707).
+     */
+    public val resource: String,
+    public val scopes: List<String>,
+    /**
+     * Access-token expiry. The platform refreshes before it.
+     */
+    @SerialName("expires_at")
+    public val expiresAt: String? = null,
+    /**
+     * User who granted access.
+     */
+    @SerialName("connected_by")
+    public val connectedBy: String? = null,
+    @SerialName("connected_at")
+    public val connectedAt: String,
+    /**
+     * True when the vendor refused a refresh (revoked or expired grant). The server's tools are
+     * withheld until the person reconnects with `POST /mcp/servers/{serverId}/reconnect`.
+     */
+    @SerialName("needs_reauth")
+    public val needsReauth: Boolean? = null,
+    /**
+     * Catalog entry it came from.
+     */
+    @SerialName("catalog_id")
+    public val catalogId: String? = null,
+)
 
 /**
  * `MCPServerStatus` values.
@@ -21270,6 +23050,68 @@ public data class PatchMeResponseUser(
  */
 @Serializable(with = PatchTenantRequestSerializer::class)
 public data class PatchTenantRequest(
+    public val name: String? = null,
+    /**
+     * The public handle. An invalid slug answers 422; one held by another tenant answers 409.
+     */
+    public val slug: String? = null,
+    public val description: String? = null,
+    /**
+     * Trimmed and cut to 2000 characters.
+     */
+    @SerialName("logo_url")
+    public val logoURL: String? = null,
+    /**
+     * Shallow-merged into the stored branding.
+     */
+    public val branding: TenantBranding? = null,
+    public val public: Boolean? = null,
+    /**
+     * An agent of this tenant (404 otherwise); setting it publishes that agent. Null clears.
+     */
+    @SerialName("public_agent_id")
+    public val publicAgentId: String? = null,
+    /**
+     * Replaced whole. More than 50 answers 422. Null clears.
+     */
+    @SerialName("published_agent_ids")
+    public val publishedAgentIds: List<String>? = null,
+    /**
+     * Shallow-merged.
+     */
+    @SerialName("public_settings")
+    public val publicSettings: TenantPublicSettings? = null,
+    /**
+     * Shallow-merged. `legal_hold`, `suspended`, `max_concurrent_runs_override`, `default_model`
+     * and `default_provider` are stripped before the write.
+     */
+    public val settings: JsonObject? = null,
+    /**
+     * An agent of this tenant (404 otherwise). Null clears.
+     */
+    @SerialName("head_agent_id")
+    public val headAgentId: String? = null,
+    /**
+     * A workspace of this tenant (404 otherwise). Null clears.
+     */
+    @SerialName("shared_workspace_id")
+    public val sharedWorkspaceId: String? = null,
+    /**
+     * `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+     * public profile — `public: true`, here or already stored (422 without it).
+     */
+    @SerialName("custom_domain")
+    public val customDomain: PatchTenantRequestCustomDomain? = null,
+    /**
+     * Replaced whole (its `stats` and `published_at` are kept).
+     */
+    @SerialName("marketplace_listing")
+    public val marketplaceListing: PatchTenantRequestMarketplaceListing? = null,
+    /**
+     * Can be set; a set hold cannot be cleared here (403).
+     */
+    @SerialName("legal_hold")
+    public val legalHold: Boolean? = null,
     @SerialName("social_links")
     public val socialLinks: TenantSocialLinks? = null,
     /**
@@ -21285,11 +23127,73 @@ public object PatchTenantRequestSerializer : KSerializer<PatchTenantRequest> {
     @Serializable
     @SerialName("PatchTenantRequest")
     private data class Surrogate(
+        val name: String? = null,
+        /**
+         * The public handle. An invalid slug answers 422; one held by another tenant answers 409.
+         */
+        val slug: String? = null,
+        val description: String? = null,
+        /**
+         * Trimmed and cut to 2000 characters.
+         */
+        @SerialName("logo_url")
+        val logoURL: String? = null,
+        /**
+         * Shallow-merged into the stored branding.
+         */
+        val branding: TenantBranding? = null,
+        val public: Boolean? = null,
+        /**
+         * An agent of this tenant (404 otherwise); setting it publishes that agent. Null clears.
+         */
+        @SerialName("public_agent_id")
+        val publicAgentId: String? = null,
+        /**
+         * Replaced whole. More than 50 answers 422. Null clears.
+         */
+        @SerialName("published_agent_ids")
+        val publishedAgentIds: List<String>? = null,
+        /**
+         * Shallow-merged.
+         */
+        @SerialName("public_settings")
+        val publicSettings: TenantPublicSettings? = null,
+        /**
+         * Shallow-merged. `legal_hold`, `suspended`, `max_concurrent_runs_override`, `default_model`
+         * and `default_provider` are stripped before the write.
+         */
+        val settings: JsonObject? = null,
+        /**
+         * An agent of this tenant (404 otherwise). Null clears.
+         */
+        @SerialName("head_agent_id")
+        val headAgentId: String? = null,
+        /**
+         * A workspace of this tenant (404 otherwise). Null clears.
+         */
+        @SerialName("shared_workspace_id")
+        val sharedWorkspaceId: String? = null,
+        /**
+         * `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+         * public profile — `public: true`, here or already stored (422 without it).
+         */
+        @SerialName("custom_domain")
+        val customDomain: PatchTenantRequestCustomDomain? = null,
+        /**
+         * Replaced whole (its `stats` and `published_at` are kept).
+         */
+        @SerialName("marketplace_listing")
+        val marketplaceListing: PatchTenantRequestMarketplaceListing? = null,
+        /**
+         * Can be set; a set hold cannot be cleared here (403).
+         */
+        @SerialName("legal_hold")
+        val legalHold: Boolean? = null,
         @SerialName("social_links")
         val socialLinks: TenantSocialLinks? = null,
     )
 
-    private val declaredNames: Set<String> = setOf("social_links")
+    private val declaredNames: Set<String> = setOf("name", "slug", "description", "logo_url", "branding", "public", "public_agent_id", "published_agent_ids", "public_settings", "settings", "head_agent_id", "shared_workspace_id", "custom_domain", "marketplace_listing", "legal_hold", "social_links")
 
     override val descriptor: SerialDescriptor = Surrogate.serializer().descriptor
 
@@ -21299,6 +23203,21 @@ public object PatchTenantRequestSerializer : KSerializer<PatchTenantRequest> {
         val node = input.decodeJsonElement().jsonObject
         val declared = input.json.decodeFromJsonElement(Surrogate.serializer(), node)
         return PatchTenantRequest(
+            name = declared.name,
+            slug = declared.slug,
+            description = declared.description,
+            logoURL = declared.logoURL,
+            branding = declared.branding,
+            public = declared.public,
+            publicAgentId = declared.publicAgentId,
+            publishedAgentIds = declared.publishedAgentIds,
+            publicSettings = declared.publicSettings,
+            settings = declared.settings,
+            headAgentId = declared.headAgentId,
+            sharedWorkspaceId = declared.sharedWorkspaceId,
+            customDomain = declared.customDomain,
+            marketplaceListing = declared.marketplaceListing,
+            legalHold = declared.legalHold,
             socialLinks = declared.socialLinks,
             additionalProperties = JsonObject(node.filterKeys { it !in declaredNames }),
         )
@@ -21308,12 +23227,52 @@ public object PatchTenantRequestSerializer : KSerializer<PatchTenantRequest> {
         val output = encoder as? JsonEncoder
             ?: throw SerializationException("PatchTenantRequest can only be written as JSON")
         val declared = Surrogate(
+            name = value.name,
+            slug = value.slug,
+            description = value.description,
+            logoURL = value.logoURL,
+            branding = value.branding,
+            public = value.public,
+            publicAgentId = value.publicAgentId,
+            publishedAgentIds = value.publishedAgentIds,
+            publicSettings = value.publicSettings,
+            settings = value.settings,
+            headAgentId = value.headAgentId,
+            sharedWorkspaceId = value.sharedWorkspaceId,
+            customDomain = value.customDomain,
+            marketplaceListing = value.marketplaceListing,
+            legalHold = value.legalHold,
             socialLinks = value.socialLinks,
         )
         val rendered = output.json.encodeToJsonElement(Surrogate.serializer(), declared).jsonObject
         output.encodeJsonElement(JsonObject(rendered + value.additionalProperties))
     }
 }
+
+/**
+ * `{domain}` to claim a domain, null to release it. Needs the pro plan (403 without it) and a
+ * public profile — `public: true`, here or already stored (422 without it).
+ */
+@Serializable
+public data class PatchTenantRequestCustomDomain(
+    public val domain: String? = null,
+)
+
+/**
+ * Replaced whole (its `stats` and `published_at` are kept).
+ */
+@Serializable
+public data class PatchTenantRequestMarketplaceListing(
+    public val enabled: Boolean? = null,
+    public val category: String? = null,
+    public val tags: List<String>? = null,
+    @SerialName("short_description")
+    public val shortDescription: String? = null,
+    @SerialName("long_description")
+    public val longDescription: String? = null,
+    @SerialName("featured_agents")
+    public val featuredAgents: List<String>? = null,
+)
 
 /**
  * `PauseCompanyResponse` model.
@@ -22501,6 +24460,159 @@ public data class PublicDomainLookupResponse(
 )
 
 /**
+ * `PublicJob` model.
+ */
+@Serializable
+public data class PublicJob(
+    public val id: String,
+    /**
+     * Derived from the title; a title change renames it and keeps the old one in `previous_slugs`.
+     */
+    public val slug: String,
+    /**
+     * Every earlier slug still resolves on the public read, so a client can 301 to `slug`.
+     */
+    @SerialName("previous_slugs")
+    public val previousSlugs: List<String>,
+    /**
+     * `closed` keeps the public page reachable ("this role was filled"); `draft` does not exist to
+     * the public.
+     */
+    public val status: JobStatus,
+    /**
+     * The language the texts are written in.
+     */
+    public val language: VideoOrderLocale,
+    public val title: String,
+    /**
+     * Plain text for the card, the meta description and the OG text.
+     */
+    public val summary: String,
+    /**
+     * Markdown.
+     */
+    public val description: String,
+    public val responsibilities: List<String>,
+    public val requirements: List<String>,
+    @SerialName("nice_to_have")
+    public val niceToHave: List<String>,
+    public val benefits: List<String>,
+    /**
+     * Free text; the values the admin form proposes and the filter groups by are `JobCategory`.
+     */
+    public val category: String,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    /**
+     * schema.org `employmentType` in snake_case: full_time → FULL_TIME, contract → CONTRACTOR,
+     * internship → INTERN, the rest upper-cased.
+     */
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType,
+    /**
+     * `remote` is JSON-LD `jobLocationType: TELECOMMUTE`, and then `applicant_countries` is what
+     * Google requires.
+     */
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType,
+    public val location: JobLocation,
+    /**
+     * ISO 3166-1 alpha-2 countries a remote hire may live in; empty = anywhere.
+     */
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<String>,
+    /**
+     * CEFR; `none` = not required.
+     */
+    @SerialName("english_level")
+    public val englishLevel: JobEnglishLevel? = null,
+    /**
+     * JSON-LD `experienceRequirements.monthsOfExperience` is this × 12.
+     */
+    @SerialName("experience_years_min")
+    public val experienceYearsMin: Long? = null,
+    public val skills: List<String>,
+    public val salary: JobSalary? = null,
+    /**
+     * False with a salary set: known internally, not disclosed. The EU pay-transparency directive
+     * (2023/970 art. 5) entitles a candidate to the range before the interview; publishing it here
+     * is the simplest way to comply.
+     */
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean,
+    public val apply: JobApply,
+    @SerialName("created_at")
+    public val createdAt: String,
+    @SerialName("updated_at")
+    public val updatedAt: String,
+    /**
+     * JSON-LD `datePosted`.
+     */
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    /**
+     * Planned close (JSON-LD `validThrough`); past it the vacancy leaves the public list and takes
+     * no applications.
+     */
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+    /**
+     * When it was actually closed.
+     */
+    @SerialName("closed_at")
+    public val closedAt: String? = null,
+    /**
+     * `apply.mode` is `form` (JSON-LD `directApply`).
+     */
+    @SerialName("direct_apply")
+    public val directApply: Boolean,
+    /**
+     * Published and not past `closes_at`. False on a closed vacancy, whose page still answers 200.
+     */
+    @SerialName("applications_open")
+    public val applicationsOpen: Boolean,
+    /**
+     * 5242880: refuse a larger file before uploading it.
+     */
+    @SerialName("cv_max_bytes")
+    public val cvMaxBytes: Long,
+    /**
+     * What the server accepts, checked by content.
+     */
+    @SerialName("cv_mime_types")
+    public val cvMimeTypes: List<String>,
+)
+
+/**
+ * One card of the public list.
+ */
+@Serializable
+public data class PublicJobSummary(
+    public val id: String,
+    public val slug: String,
+    public val title: String,
+    public val summary: String,
+    public val category: String,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType,
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType,
+    public val location: JobLocation,
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<String>,
+    public val salary: JobSalary? = null,
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean,
+    public val language: VideoOrderLocale,
+    @SerialName("published_at")
+    public val publishedAt: String? = null,
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+)
+
+/**
  * `PublicPlan` model.
  */
 @Serializable
@@ -23080,6 +25192,30 @@ public data class PushBridgeTaskEventsResponse(
 )
 
 /**
+ * `PutCareersConfigRequest` model.
+ */
+@Serializable
+public data class PutCareersConfigRequest(
+    public val enabled: Boolean? = null,
+    public val title: String? = null,
+    public val description: String? = null,
+    @SerialName("company_name")
+    public val companyName: String? = null,
+    @SerialName("notify_emails")
+    public val notifyEmails: List<String>? = null,
+    @SerialName("retention_days")
+    public val retentionDays: Long? = null,
+)
+
+/**
+ * `PutCareersConfigResponse` model.
+ */
+@Serializable
+public data class PutCareersConfigResponse(
+    public val config: CareersConfig,
+)
+
+/**
  * A limit refusal. `code` separates a throttle from a wall: `rate_limit_exceeded` clears in
  * seconds (see `Retry-After`); `quota_exceeded` clears at `quota.resets_at`; `limit_reached`
  * does not clear on a clock and needs a plan change; `run_quota_exceeded` is the run
@@ -23221,6 +25357,15 @@ public data class ReadinessReport(
     public val status: String,
     public val timestamp: String,
     public val components: JsonObject,
+)
+
+/**
+ * `ReconnectMCPServerRequest` model.
+ */
+@Serializable
+public data class ReconnectMCPServerRequest(
+    @SerialName("return_to")
+    public val returnTo: MCPOAuthReturnTo? = null,
 )
 
 /**
@@ -25086,6 +27231,261 @@ public data class RunEvaluationRequest(
 )
 
 /**
+ * One run event as it is stored and replayed. `payload` depends on `type`; for a type without
+ * a typed payload it is an object of whatever the emitter recorded.
+ */
+@Serializable
+public data class RunEvent(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventType,
+    /**
+     * Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+     */
+    public val seq: Long,
+    public val payload: JsonObject,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("span_id")
+    public val spanId: String? = null,
+    @SerialName("trace_context")
+    public val traceContext: RunEventTraceContext? = null,
+)
+
+/**
+ * `RunEventTraceContext` model.
+ */
+@Serializable
+public data class RunEventTraceContext(
+    public val traceparent: String? = null,
+    public val tracestate: String? = null,
+)
+
+/**
+ * Every event type the runtime defines. Measured on the production event log 2026-10-05: 31 of
+ * these occurred, all members. A type outside this list is a contract defect, not a
+ * forward-compatible addition — but a client should still ignore an unknown one rather than
+ * fail, which is how a new type arrives before a client knows it.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunEventTypeSerializer::class)
+@JvmInline
+public value class RunEventType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val RUN_CREATED: RunEventType = RunEventType("run.created")
+        public val RUN_STARTED: RunEventType = RunEventType("run.started")
+        public val RUN_COMPLETED: RunEventType = RunEventType("run.completed")
+        public val RUN_FAILED: RunEventType = RunEventType("run.failed")
+        public val RUN_CANCELLED: RunEventType = RunEventType("run.cancelled")
+        public val RUN_TIMEOUT: RunEventType = RunEventType("run.timeout")
+        public val RUN_GUARDRAIL_BLOCKED: RunEventType = RunEventType("run.guardrail_blocked")
+        public val RUN_AWAITING_APPROVAL: RunEventType = RunEventType("run.awaiting_approval")
+        public val RUN_AWAITING_INPUT: RunEventType = RunEventType("run.awaiting_input")
+        public val RUN_INPUT_RECEIVED: RunEventType = RunEventType("run.input_received")
+        public val RUN_APPROVED: RunEventType = RunEventType("run.approved")
+        public val RUN_REJECTED: RunEventType = RunEventType("run.rejected")
+        public val RUN_CHECKPOINT: RunEventType = RunEventType("run.checkpoint")
+        public val RUN_PAUSED: RunEventType = RunEventType("run.paused")
+        public val RUN_RESUMED: RunEventType = RunEventType("run.resumed")
+        public val RUN_RESTORED: RunEventType = RunEventType("run.restored")
+        public val RUN_AFFECT: RunEventType = RunEventType("run.affect")
+        public val LLM_REQUEST: RunEventType = RunEventType("llm.request")
+        public val LLM_RESPONSE: RunEventType = RunEventType("llm.response")
+        public val LLM_ERROR: RunEventType = RunEventType("llm.error")
+        public val LLM_THINKING: RunEventType = RunEventType("llm.thinking")
+        public val LLM_CHUNK: RunEventType = RunEventType("llm.chunk")
+        public val LLM_TIMEOUT: RunEventType = RunEventType("llm.timeout")
+        public val LLM_FALLBACK: RunEventType = RunEventType("llm.fallback")
+        public val STEP_PLAN: RunEventType = RunEventType("step.plan")
+        public val STEP_ACT: RunEventType = RunEventType("step.act")
+        public val STEP_EVALUATE: RunEventType = RunEventType("step.evaluate")
+        public val STEP_THINKING: RunEventType = RunEventType("step.thinking")
+        public val TOOL_CALL: RunEventType = RunEventType("tool.call")
+        public val TOOL_RESULT: RunEventType = RunEventType("tool.result")
+        public val TOOL_ERROR: RunEventType = RunEventType("tool.error")
+        public val TOOL_TIMEOUT: RunEventType = RunEventType("tool.timeout")
+        public val GUARDRAIL_CHECK: RunEventType = RunEventType("guardrail.check")
+        public val GUARDRAIL_VIOLATION: RunEventType = RunEventType("guardrail.violation")
+        public val GUARDRAIL_CUSTOM_CHECK: RunEventType = RunEventType("guardrail.custom.check")
+        public val GUARDRAIL_CUSTOM_VIOLATION: RunEventType = RunEventType("guardrail.custom.violation")
+        public val MEMORY_RETRIEVAL: RunEventType = RunEventType("memory.retrieval")
+        public val MEMORY_EXTRACTION: RunEventType = RunEventType("memory.extraction")
+        public val MEMORY_STORED: RunEventType = RunEventType("memory.stored")
+        public val MEMORY_EVICTED: RunEventType = RunEventType("memory.evicted")
+        public val SESSION_CONTEXT_COMPACTED: RunEventType = RunEventType("session.context_compacted")
+        public val SESSION_CREATED: RunEventType = RunEventType("session.created")
+        public val SESSION_CLOSED: RunEventType = RunEventType("session.closed")
+        public val TEAM_MESSAGE: RunEventType = RunEventType("team.message")
+        public val TEAM_ROUND_START: RunEventType = RunEventType("team.round_start")
+        public val TEAM_ROUND_END: RunEventType = RunEventType("team.round_end")
+        public val TEAM_DELEGATE: RunEventType = RunEventType("team.delegate")
+        public val TEAM_BROADCAST: RunEventType = RunEventType("team.broadcast")
+        public val TEAM_MERGE: RunEventType = RunEventType("team.merge")
+        public val TEAM_HANDOFF: RunEventType = RunEventType("team.handoff")
+        public val CHILD_RUN_COMPLETED: RunEventType = RunEventType("child_run.completed")
+        public val CHILD_RUN_FAILED: RunEventType = RunEventType("child_run.failed")
+        public val COMPANY_TICK_START: RunEventType = RunEventType("company.tick_start")
+        public val COMPANY_TICK_END: RunEventType = RunEventType("company.tick_end")
+        public val COMPANY_PAUSED: RunEventType = RunEventType("company.paused")
+        public val COMPANY_RESUMED: RunEventType = RunEventType("company.resumed")
+        public val COMPANY_BUDGET_UPDATED: RunEventType = RunEventType("company.budget_updated")
+        public val COMPANY_ESCALATION: RunEventType = RunEventType("company.escalation")
+        public val COMPANY_OBJECTIVE_UPDATED: RunEventType = RunEventType("company.objective_updated")
+        public val CIRCUIT_BREAKER_OPENED: RunEventType = RunEventType("circuit_breaker.opened")
+        public val CIRCUIT_BREAKER_CLOSED: RunEventType = RunEventType("circuit_breaker.closed")
+        public val CIRCUIT_BREAKER_HALF_OPEN: RunEventType = RunEventType("circuit_breaker.half_open")
+        public val STREAMING_STARTED: RunEventType = RunEventType("streaming.started")
+        public val STREAMING_COMPLETED: RunEventType = RunEventType("streaming.completed")
+        public val STREAMING_ERROR: RunEventType = RunEventType("streaming.error")
+        public val STREAMING_BUFFER_TRUNCATED: RunEventType = RunEventType("streaming.buffer_truncated")
+        public val RUN_STEP_STARTED: RunEventType = RunEventType("run.step_started")
+        public val RUN_STEP_COMPLETED: RunEventType = RunEventType("run.step_completed")
+        public val BUDGET_SOFT_THRESHOLD_CROSSED: RunEventType = RunEventType("budget.soft_threshold_crossed")
+        public val BUDGET_HARD_LIMIT_REACHED: RunEventType = RunEventType("budget.hard_limit_reached")
+        public val TENANT_CREATED: RunEventType = RunEventType("tenant.created")
+        public val TENANT_SUSPENDED: RunEventType = RunEventType("tenant.suspended")
+        public val TENANT_PURGED: RunEventType = RunEventType("tenant.purged")
+        public val CONFIG_UPDATED: RunEventType = RunEventType("config.updated")
+        public val WEBHOOK_DELIVERED: RunEventType = RunEventType("webhook.delivered")
+        public val WEBHOOK_FAILED: RunEventType = RunEventType("webhook.failed")
+        public val CRON_FIRED: RunEventType = RunEventType("cron.fired")
+        public val AGENT_VERSION_CREATED: RunEventType = RunEventType("agent.version_created")
+        public val AGENT_ROLLBACK: RunEventType = RunEventType("agent.rollback")
+        public val MCP_SERVER_LOG: RunEventType = RunEventType("mcp.server_log")
+        public val ORCHESTRATION_STARTED: RunEventType = RunEventType("orchestration.started")
+        public val ORCHESTRATION_PLANNED: RunEventType = RunEventType("orchestration.planned")
+        public val ORCHESTRATION_REPLANNED: RunEventType = RunEventType("orchestration.replanned")
+        public val ORCHESTRATION_TASK_STARTED: RunEventType = RunEventType("orchestration.task_started")
+        public val ORCHESTRATION_TASK_COMPLETED: RunEventType = RunEventType("orchestration.task_completed")
+        public val ORCHESTRATION_TASK_FAILED: RunEventType = RunEventType("orchestration.task_failed")
+        public val ORCHESTRATION_CHECKPOINT: RunEventType = RunEventType("orchestration.checkpoint")
+        public val ORCHESTRATION_POLICY_VIOLATION: RunEventType = RunEventType("orchestration.policy_violation")
+        public val ORCHESTRATION_QUALITY_REPORT: RunEventType = RunEventType("orchestration.quality_report")
+        public val ORCHESTRATION_COMPLETED: RunEventType = RunEventType("orchestration.completed")
+        public val ORCHESTRATION_FAILED: RunEventType = RunEventType("orchestration.failed")
+        public val GRAPH_AGENT_SPAWNED: RunEventType = RunEventType("graph.agent_spawned")
+        public val GRAPH_AGENT_TERMINATED: RunEventType = RunEventType("graph.agent_terminated")
+        public val GRAPH_TASK_DELEGATED: RunEventType = RunEventType("graph.task_delegated")
+        public val GRAPH_EDGE_ADDED: RunEventType = RunEventType("graph.edge_added")
+        public val GRAPH_EDGE_REMOVED: RunEventType = RunEventType("graph.edge_removed")
+        public val PLAN_CREATED: RunEventType = RunEventType("plan.created")
+        public val PLAN_UPDATED: RunEventType = RunEventType("plan.updated")
+        public val PLAN_SUB_GOAL_COMPLETED: RunEventType = RunEventType("plan.sub_goal_completed")
+        public val PLAN_SUB_GOAL_ABANDONED: RunEventType = RunEventType("plan.sub_goal_abandoned")
+        public val MCP_TOOL_CALLED: RunEventType = RunEventType("mcp.tool_called")
+        public val MCP_SERVER_CONNECTED: RunEventType = RunEventType("mcp.server_connected")
+        public val MCP_SERVER_DISCONNECTED: RunEventType = RunEventType("mcp.server_disconnected")
+        public val A2A_TASK_SENT: RunEventType = RunEventType("a2a.task_sent")
+        public val A2A_TASK_RECEIVED: RunEventType = RunEventType("a2a.task_received")
+        public val MEMORY_COMPRESSED: RunEventType = RunEventType("memory.compressed")
+        public val CAPABILITY_BEST_AGENT_SELECTED: RunEventType = RunEventType("capability.best_agent_selected")
+        public val IDENTITY_CREATED: RunEventType = RunEventType("identity.created")
+        public val IDENTITY_ROTATED: RunEventType = RunEventType("identity.rotated")
+        public val MESSAGE_SIGNED: RunEventType = RunEventType("message.signed")
+        public val MESSAGE_VERIFIED: RunEventType = RunEventType("message.verified")
+        public val MESSAGE_REPLAY_BLOCKED: RunEventType = RunEventType("message.replay_blocked")
+        public val CONSTITUTION_BOOTSTRAPPED: RunEventType = RunEventType("constitution.bootstrapped")
+        public val CONSTITUTION_AMENDED: RunEventType = RunEventType("constitution.amended")
+        public val CONSTITUTION_CHECK_PASSED: RunEventType = RunEventType("constitution.check_passed")
+        public val CONSTITUTION_CHECK_BLOCKED: RunEventType = RunEventType("constitution.check_blocked")
+        public val CONSTITUTION_VIOLATION: RunEventType = RunEventType("constitution.violation")
+        public val LEDGER_APPENDED: RunEventType = RunEventType("ledger.appended")
+        public val LEDGER_INTEGRITY_CHECKED: RunEventType = RunEventType("ledger.integrity_checked")
+        public val PERMISSION_CHECKED: RunEventType = RunEventType("permission.checked")
+        public val PERMISSION_DENIED: RunEventType = RunEventType("permission.denied")
+        public val PERMISSION_SPAWN_BLOCKED: RunEventType = RunEventType("permission.spawn_blocked")
+        public val ATTESTATION_CREATED: RunEventType = RunEventType("attestation.created")
+        public val ATTESTATION_VERIFIED: RunEventType = RunEventType("attestation.verified")
+        public val ATTESTATION_INVALID: RunEventType = RunEventType("attestation.invalid")
+        public val ARBITRATION_CASE_OPENED: RunEventType = RunEventType("arbitration.case_opened")
+        public val ARBITRATION_RULING_SUBMITTED: RunEventType = RunEventType("arbitration.ruling_submitted")
+        public val ARBITRATION_APPEAL_FILED: RunEventType = RunEventType("arbitration.appeal_filed")
+        public val VOTING_PROPOSAL_CREATED: RunEventType = RunEventType("voting.proposal_created")
+        public val VOTING_BALLOT_CAST: RunEventType = RunEventType("voting.ballot_cast")
+        public val VOTING_TALLIED: RunEventType = RunEventType("voting.tallied")
+        public val VOTING_VETOED: RunEventType = RunEventType("voting.vetoed")
+        public val RESOURCE_SPENT: RunEventType = RunEventType("resource.spent")
+        public val RESOURCE_EARNED: RunEventType = RunEventType("resource.earned")
+        public val RESOURCE_TRANSFERRED: RunEventType = RunEventType("resource.transferred")
+        public val RESOURCE_INSUFFICIENT: RunEventType = RunEventType("resource.insufficient")
+        public val AMBASSADOR_VETO_ISSUED: RunEventType = RunEventType("ambassador.veto_issued")
+        public val AMBASSADOR_REQUEST_SUBMITTED: RunEventType = RunEventType("ambassador.request_submitted")
+        public val BUILDER_DESIGN_SUBMITTED: RunEventType = RunEventType("builder.design_submitted")
+        public val BUILDER_DESIGN_APPROVED: RunEventType = RunEventType("builder.design_approved")
+        public val BUILDER_DESIGN_SPAWNED: RunEventType = RunEventType("builder.design_spawned")
+        public val EMERGENCY_SAFE_MODE_ACTIVATED: RunEventType = RunEventType("emergency.safe_mode_activated")
+        public val EMERGENCY_SAFE_MODE_DEACTIVATED: RunEventType = RunEventType("emergency.safe_mode_deactivated")
+        public val EMERGENCY_DEADLOCK_DETECTED: RunEventType = RunEventType("emergency.deadlock_detected")
+        public val GOAL_SELF_FORMULATED: RunEventType = RunEventType("goal.self_formulated")
+        public val GOAL_APPROVED: RunEventType = RunEventType("goal.approved")
+        public val IMPROVEMENT_PROPOSED: RunEventType = RunEventType("improvement.proposed")
+        public val IMPROVEMENT_SANDBOX_TESTED: RunEventType = RunEventType("improvement.sandbox_tested")
+        public val IMPROVEMENT_APPLIED: RunEventType = RunEventType("improvement.applied")
+        public val COLLECTIVE_INSIGHT_PUBLISHED: RunEventType = RunEventType("collective.insight_published")
+        public val COLLECTIVE_INSIGHTS_RETRIEVED: RunEventType = RunEventType("collective.insights_retrieved")
+        public val COLLECTIVE_REVIEW_REQUESTED: RunEventType = RunEventType("collective.review_requested")
+        public val COLLECTIVE_POLL_CREATED: RunEventType = RunEventType("collective.poll_created")
+        public val COLLECTIVE_AGENT_RATED: RunEventType = RunEventType("collective.agent_rated")
+        public val COLLECTIVE_FEEDBACK_REQUESTED: RunEventType = RunEventType("collective.feedback_requested")
+        public val COLLECTIVE_REFLECTION_COMPLETED: RunEventType = RunEventType("collective.reflection_completed")
+        public val COLLECTIVE_APPROACHES_COMPARED: RunEventType = RunEventType("collective.approaches_compared")
+        public val COLLECTIVE_LESSON_LOGGED: RunEventType = RunEventType("collective.lesson_logged")
+        public val COLLECTIVE_TEAM_FORMED: RunEventType = RunEventType("collective.team_formed")
+        public val COLLECTIVE_TEAM_JOINED: RunEventType = RunEventType("collective.team_joined")
+        public val COLLECTIVE_TEAM_LEFT: RunEventType = RunEventType("collective.team_left")
+        public val COLLECTIVE_TEAM_BROADCAST: RunEventType = RunEventType("collective.team_broadcast")
+        public val COLLECTIVE_SPECIALIST_REQUESTED: RunEventType = RunEventType("collective.specialist_requested")
+        public val COLLECTIVE_BUDGET_REQUESTED: RunEventType = RunEventType("collective.budget_requested")
+        public val COLLECTIVE_TOKENS_TRANSFERRED: RunEventType = RunEventType("collective.tokens_transferred")
+        public val COLLECTIVE_TASK_POSTED: RunEventType = RunEventType("collective.task_posted")
+        public val COLLECTIVE_BID_PLACED: RunEventType = RunEventType("collective.bid_placed")
+        public val COLLECTIVE_BID_ACCEPTED: RunEventType = RunEventType("collective.bid_accepted")
+        public val COLLECTIVE_COST_REPORTED: RunEventType = RunEventType("collective.cost_reported")
+        public val SENSOR_URL_WATCH_CREATED: RunEventType = RunEventType("sensor.url_watch_created")
+        public val SENSOR_RSS_WATCH_CREATED: RunEventType = RunEventType("sensor.rss_watch_created")
+        public val SENSOR_WEBHOOK_LISTENER_CREATED: RunEventType = RunEventType("sensor.webhook_listener_created")
+        public val SENSOR_CHECK_SCHEDULED: RunEventType = RunEventType("sensor.check_scheduled")
+        public val SENSOR_EVENT_SUBSCRIPTION_CREATED: RunEventType = RunEventType("sensor.event_subscription_created")
+        public val SENSOR_TRIGGERED: RunEventType = RunEventType("sensor.triggered")
+        public val COLLECTIVE_REPORT_PRESENTED: RunEventType = RunEventType("collective.report_presented")
+        public val COLLECTIVE_ESCALATION: RunEventType = RunEventType("collective.escalation")
+        public val COLLECTIVE_ANOMALY_REPORTED: RunEventType = RunEventType("collective.anomaly_reported")
+        public val COLLECTIVE_HUMAN_OVERRIDE: RunEventType = RunEventType("collective.human_override")
+        public val COLLECTIVE_COLLECTIVE_PAUSED: RunEventType = RunEventType("collective.collective_paused")
+        public val COLLECTIVE_VERIFICATION_REQUESTED: RunEventType = RunEventType("collective.verification_requested")
+        public val STRATEGY_CREATED: RunEventType = RunEventType("strategy.created")
+        public val STRATEGY_KPI_UPDATED: RunEventType = RunEventType("strategy.kpi_updated")
+        public val DOCUMENT_EDIT_START: RunEventType = RunEventType("document.edit_start")
+        public val DOCUMENT_EDIT_CHUNK: RunEventType = RunEventType("document.edit_chunk")
+        public val DOCUMENT_EDIT_COMPLETE: RunEventType = RunEventType("document.edit_complete")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunEventType> = listOf(RUN_CREATED, RUN_STARTED, RUN_COMPLETED, RUN_FAILED, RUN_CANCELLED, RUN_TIMEOUT, RUN_GUARDRAIL_BLOCKED, RUN_AWAITING_APPROVAL, RUN_AWAITING_INPUT, RUN_INPUT_RECEIVED, RUN_APPROVED, RUN_REJECTED, RUN_CHECKPOINT, RUN_PAUSED, RUN_RESUMED, RUN_RESTORED, RUN_AFFECT, LLM_REQUEST, LLM_RESPONSE, LLM_ERROR, LLM_THINKING, LLM_CHUNK, LLM_TIMEOUT, LLM_FALLBACK, STEP_PLAN, STEP_ACT, STEP_EVALUATE, STEP_THINKING, TOOL_CALL, TOOL_RESULT, TOOL_ERROR, TOOL_TIMEOUT, GUARDRAIL_CHECK, GUARDRAIL_VIOLATION, GUARDRAIL_CUSTOM_CHECK, GUARDRAIL_CUSTOM_VIOLATION, MEMORY_RETRIEVAL, MEMORY_EXTRACTION, MEMORY_STORED, MEMORY_EVICTED, SESSION_CONTEXT_COMPACTED, SESSION_CREATED, SESSION_CLOSED, TEAM_MESSAGE, TEAM_ROUND_START, TEAM_ROUND_END, TEAM_DELEGATE, TEAM_BROADCAST, TEAM_MERGE, TEAM_HANDOFF, CHILD_RUN_COMPLETED, CHILD_RUN_FAILED, COMPANY_TICK_START, COMPANY_TICK_END, COMPANY_PAUSED, COMPANY_RESUMED, COMPANY_BUDGET_UPDATED, COMPANY_ESCALATION, COMPANY_OBJECTIVE_UPDATED, CIRCUIT_BREAKER_OPENED, CIRCUIT_BREAKER_CLOSED, CIRCUIT_BREAKER_HALF_OPEN, STREAMING_STARTED, STREAMING_COMPLETED, STREAMING_ERROR, STREAMING_BUFFER_TRUNCATED, RUN_STEP_STARTED, RUN_STEP_COMPLETED, BUDGET_SOFT_THRESHOLD_CROSSED, BUDGET_HARD_LIMIT_REACHED, TENANT_CREATED, TENANT_SUSPENDED, TENANT_PURGED, CONFIG_UPDATED, WEBHOOK_DELIVERED, WEBHOOK_FAILED, CRON_FIRED, AGENT_VERSION_CREATED, AGENT_ROLLBACK, MCP_SERVER_LOG, ORCHESTRATION_STARTED, ORCHESTRATION_PLANNED, ORCHESTRATION_REPLANNED, ORCHESTRATION_TASK_STARTED, ORCHESTRATION_TASK_COMPLETED, ORCHESTRATION_TASK_FAILED, ORCHESTRATION_CHECKPOINT, ORCHESTRATION_POLICY_VIOLATION, ORCHESTRATION_QUALITY_REPORT, ORCHESTRATION_COMPLETED, ORCHESTRATION_FAILED, GRAPH_AGENT_SPAWNED, GRAPH_AGENT_TERMINATED, GRAPH_TASK_DELEGATED, GRAPH_EDGE_ADDED, GRAPH_EDGE_REMOVED, PLAN_CREATED, PLAN_UPDATED, PLAN_SUB_GOAL_COMPLETED, PLAN_SUB_GOAL_ABANDONED, MCP_TOOL_CALLED, MCP_SERVER_CONNECTED, MCP_SERVER_DISCONNECTED, A2A_TASK_SENT, A2A_TASK_RECEIVED, MEMORY_COMPRESSED, CAPABILITY_BEST_AGENT_SELECTED, IDENTITY_CREATED, IDENTITY_ROTATED, MESSAGE_SIGNED, MESSAGE_VERIFIED, MESSAGE_REPLAY_BLOCKED, CONSTITUTION_BOOTSTRAPPED, CONSTITUTION_AMENDED, CONSTITUTION_CHECK_PASSED, CONSTITUTION_CHECK_BLOCKED, CONSTITUTION_VIOLATION, LEDGER_APPENDED, LEDGER_INTEGRITY_CHECKED, PERMISSION_CHECKED, PERMISSION_DENIED, PERMISSION_SPAWN_BLOCKED, ATTESTATION_CREATED, ATTESTATION_VERIFIED, ATTESTATION_INVALID, ARBITRATION_CASE_OPENED, ARBITRATION_RULING_SUBMITTED, ARBITRATION_APPEAL_FILED, VOTING_PROPOSAL_CREATED, VOTING_BALLOT_CAST, VOTING_TALLIED, VOTING_VETOED, RESOURCE_SPENT, RESOURCE_EARNED, RESOURCE_TRANSFERRED, RESOURCE_INSUFFICIENT, AMBASSADOR_VETO_ISSUED, AMBASSADOR_REQUEST_SUBMITTED, BUILDER_DESIGN_SUBMITTED, BUILDER_DESIGN_APPROVED, BUILDER_DESIGN_SPAWNED, EMERGENCY_SAFE_MODE_ACTIVATED, EMERGENCY_SAFE_MODE_DEACTIVATED, EMERGENCY_DEADLOCK_DETECTED, GOAL_SELF_FORMULATED, GOAL_APPROVED, IMPROVEMENT_PROPOSED, IMPROVEMENT_SANDBOX_TESTED, IMPROVEMENT_APPLIED, COLLECTIVE_INSIGHT_PUBLISHED, COLLECTIVE_INSIGHTS_RETRIEVED, COLLECTIVE_REVIEW_REQUESTED, COLLECTIVE_POLL_CREATED, COLLECTIVE_AGENT_RATED, COLLECTIVE_FEEDBACK_REQUESTED, COLLECTIVE_REFLECTION_COMPLETED, COLLECTIVE_APPROACHES_COMPARED, COLLECTIVE_LESSON_LOGGED, COLLECTIVE_TEAM_FORMED, COLLECTIVE_TEAM_JOINED, COLLECTIVE_TEAM_LEFT, COLLECTIVE_TEAM_BROADCAST, COLLECTIVE_SPECIALIST_REQUESTED, COLLECTIVE_BUDGET_REQUESTED, COLLECTIVE_TOKENS_TRANSFERRED, COLLECTIVE_TASK_POSTED, COLLECTIVE_BID_PLACED, COLLECTIVE_BID_ACCEPTED, COLLECTIVE_COST_REPORTED, SENSOR_URL_WATCH_CREATED, SENSOR_RSS_WATCH_CREATED, SENSOR_WEBHOOK_LISTENER_CREATED, SENSOR_CHECK_SCHEDULED, SENSOR_EVENT_SUBSCRIPTION_CREATED, SENSOR_TRIGGERED, COLLECTIVE_REPORT_PRESENTED, COLLECTIVE_ESCALATION, COLLECTIVE_ANOMALY_REPORTED, COLLECTIVE_HUMAN_OVERRIDE, COLLECTIVE_COLLECTIVE_PAUSED, COLLECTIVE_VERIFICATION_REQUESTED, STRATEGY_CREATED, STRATEGY_KPI_UPDATED, DOCUMENT_EDIT_START, DOCUMENT_EDIT_CHUNK, DOCUMENT_EDIT_COMPLETE)
+    }
+}
+
+public object RunEventTypeSerializer : KSerializer<RunEventType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunEventType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunEventType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunEventType = RunEventType(decoder.decodeString())
+}
+
+/**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
  * agent takes the run (run-dispatch.ts, bridge.ts); `async` is only ever an echo of a
  * client-supplied value and has never been stored on production (measured 2026-09-10 over 8605
@@ -25562,6 +27962,139 @@ public object RunStepStatusSerializer : KSerializer<RunStepStatus> {
     override fun serialize(encoder: Encoder, value: RunStepStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): RunStepStatus = RunStepStatus(decoder.decodeString())
 }
+
+/**
+ * The closing frame (`event: done`). Clients close on this, not on `run.completed`. When a
+ * guardrail withheld the output, `output` is null and `guardrail_blocked` is true.
+ */
+@Serializable
+public data class RunStreamDone(
+    @SerialName("run_id")
+    public val runId: String,
+    public val status: JsonElement,
+    public val metrics: RunMetrics? = null,
+    public val output: JsonElement? = null,
+    public val error: JsonElement? = null,
+    @SerialName("cost_usd")
+    public val costUsd: Double? = null,
+    @SerialName("guardrail_blocked")
+    public val guardrailBlocked: Boolean? = null,
+    @SerialName("_guardrail_violation")
+    public val guardrailViolation: JsonElement? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamDoneStreamType,
+)
+
+/**
+ * `RunStreamDoneStreamType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamDoneStreamTypeSerializer::class)
+@JvmInline
+public value class RunStreamDoneStreamType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LIFECYCLE: RunStreamDoneStreamType = RunStreamDoneStreamType("lifecycle")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamDoneStreamType> = listOf(LIFECYCLE)
+    }
+}
+
+public object RunStreamDoneStreamTypeSerializer : KSerializer<RunStreamDoneStreamType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamDoneStreamType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamDoneStreamType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamDoneStreamType = RunStreamDoneStreamType(decoder.decodeString())
+}
+
+/**
+ * A run event on `GET /runs/{runId}/events`: the stored event plus `stream_type` (the bucket
+ * to filter on: `run.*` lifecycle except the cosmetic `run.affect`, `llm.chunk` assistant,
+ * `tool.*` tool, anything else other) and per-frame `_chunk_id` / `_chunk_index`. With
+ * `?flat=1` the payload's fields are merged into the top level instead of nested under
+ * `payload`.
+ */
+@Serializable
+public data class RunStreamEvent(
+    @SerialName("event_id")
+    public val eventId: String,
+    @SerialName("tenant_id")
+    public val tenantId: String? = null,
+    @SerialName("run_id")
+    public val runId: String,
+    @SerialName("session_id")
+    public val sessionId: String? = null,
+    public val type: RunEventType,
+    /**
+     * Monotonic within the run. The SSE `id` carries it for `Last-Event-ID`.
+     */
+    public val seq: Long,
+    public val payload: JsonObject,
+    public val timestamp: String,
+    @SerialName("step_id")
+    public val stepId: String? = null,
+    @SerialName("parent_event_id")
+    public val parentEventId: String? = null,
+    @SerialName("span_id")
+    public val spanId: String? = null,
+    @SerialName("trace_context")
+    public val traceContext: RunStreamEventTraceContext? = null,
+    @SerialName("stream_type")
+    public val streamType: RunStreamEventStreamType,
+    @SerialName("_chunk_id")
+    public val chunkId: String? = null,
+    @SerialName("_chunk_index")
+    public val chunkIndex: Long? = null,
+    /**
+     * Present on an `llm.chunk` a streaming guardrail redacted.
+     */
+    @SerialName("_guardrail_violation")
+    public val guardrailViolation: JsonElement? = null,
+)
+
+/**
+ * `RunStreamEventStreamType` values.
+ */
+///
+/**
+ * Values the API adds later decode unchanged, so a new server-side case never breaks an
+ * existing client.
+ */
+@Serializable(with = RunStreamEventStreamTypeSerializer::class)
+@JvmInline
+public value class RunStreamEventStreamType(public val value: String) {
+    override fun toString(): String = value
+
+    public companion object {
+        public val LIFECYCLE: RunStreamEventStreamType = RunStreamEventStreamType("lifecycle")
+        public val ASSISTANT: RunStreamEventStreamType = RunStreamEventStreamType("assistant")
+        public val TOOL: RunStreamEventStreamType = RunStreamEventStreamType("tool")
+        public val OTHER: RunStreamEventStreamType = RunStreamEventStreamType("other")
+
+        /** Every value the spec declared at generation time. */
+        public val knownValues: List<RunStreamEventStreamType> = listOf(LIFECYCLE, ASSISTANT, TOOL, OTHER)
+    }
+}
+
+public object RunStreamEventStreamTypeSerializer : KSerializer<RunStreamEventStreamType> {
+    override val descriptor: SerialDescriptor = PrimitiveSerialDescriptor("ai.snaga.uarp.models.RunStreamEventStreamType", PrimitiveKind.STRING)
+    override fun serialize(encoder: Encoder, value: RunStreamEventStreamType): Unit = encoder.encodeString(value.value)
+    override fun deserialize(decoder: Decoder): RunStreamEventStreamType = RunStreamEventStreamType(decoder.decodeString())
+}
+
+/**
+ * `RunStreamEventTraceContext` model.
+ */
+@Serializable
+public data class RunStreamEventTraceContext(
+    public val traceparent: String? = null,
+    public val tracestate: String? = null,
+)
 
 /**
  * `RunWorkspaceCommandRequest` model.
@@ -26175,6 +28708,25 @@ public data class SensorWebhookResponse(
  */
 @Serializable
 public data class Session(
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not archived. Older web records that kept
+     * `metadata.archived: true` read as archived here and in the list filters; writing the flag
+     * removes those metadata keys.
+     */
+    public val archived: Boolean? = null,
+    @SerialName("archived_at")
+    public val archivedAt: String? = null,
+    /**
+     * Set by `PUT /sessions/{id}`. Absent when not pinned. Older web records that kept
+     * `metadata.pinned_at` read as pinned (with that time) here and in the list filters; writing
+     * the flag removes the metadata key.
+     */
+    public val pinned: Boolean? = null,
+    /**
+     * When it was pinned; order the pinned group by it.
+     */
+    @SerialName("pinned_at")
+    public val pinnedAt: String? = null,
     @SerialName("created_by")
     public val createdBy: String? = null,
     @SerialName("session_id")
@@ -26190,6 +28742,12 @@ public data class Session(
     public val runs: List<String>? = null,
     @SerialName("created_at")
     public val createdAt: String? = null,
+    /**
+     * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
+     * writes that only set `title`, `project_id` or the legacy
+     * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
+     * by it.
+     */
     @SerialName("updated_at")
     public val updatedAt: String? = null,
     @SerialName("expires_at")
@@ -27161,7 +29719,7 @@ public data class SpecToolCatalog(
      * Tool name → the SPEC that owns it and the view to render its output with. Integration
      * aliases map onto their base tool's view.
      */
-    public val tools: Map<String, Value2>,
+    public val tools: Map<String, SpecToolCatalogToolsValue>,
 )
 
 /**
@@ -27280,6 +29838,20 @@ public object SpecToolCatalogSpecStatusSerializer : KSerializer<SpecToolCatalogS
     override fun serialize(encoder: Encoder, value: SpecToolCatalogSpecStatus): Unit = encoder.encodeString(value.value)
     override fun deserialize(decoder: Decoder): SpecToolCatalogSpecStatus = SpecToolCatalogSpecStatus(decoder.decodeString())
 }
+
+/**
+ * `SpecToolCatalogToolsValue` model.
+ */
+@Serializable
+public data class SpecToolCatalogToolsValue(
+    @SerialName("spec_id")
+    public val specId: String,
+    /**
+     * The parsed view document, or null when the stored view was unparseable.
+     */
+    @SerialName("output_view")
+    public val outputView: JsonElement,
+)
 
 /**
  * `StartMissionRequest` model.
@@ -29400,7 +31972,12 @@ public data class TestLLMProviderKeyResponse(
      */
     public val success: Boolean,
     /**
-     * Why it failed. Absent on success.
+     * Whose key was tested: `user` is the caller's own stored key, the others are the fallback the
+     * runtime resolves to. Null when no key was found.
+     */
+    public val level: String? = null,
+    /**
+     * What happened: why it failed, or that the key is valid.
      */
     public val message: String? = null,
 )
@@ -30281,6 +32858,86 @@ public data class UpdateAdminIntegrationsResponseIntegration(
 )
 
 /**
+ * `UpdateAdminJobRequest` model.
+ */
+@Serializable
+public data class UpdateAdminJobRequest(
+    public val title: String? = null,
+    public val summary: String? = null,
+    public val description: String? = null,
+    public val responsibilities: List<String>? = null,
+    public val requirements: List<String>? = null,
+    @SerialName("nice_to_have")
+    public val niceToHave: List<String>? = null,
+    public val benefits: List<String>? = null,
+    public val category: String? = null,
+    public val department: String? = null,
+    public val seniority: JobSeniority? = null,
+    @SerialName("employment_type")
+    public val employmentType: JobEmploymentType? = null,
+    @SerialName("workplace_type")
+    public val workplaceType: JobWorkplaceType? = null,
+    public val location: UpdateAdminJobRequestLocation? = null,
+    @SerialName("applicant_countries")
+    public val applicantCountries: List<JsonElement>? = null,
+    @SerialName("english_level")
+    public val englishLevel: JobEnglishLevel? = null,
+    @SerialName("experience_years_min")
+    public val experienceYearsMin: Long? = null,
+    public val skills: List<String>? = null,
+    public val salary: UpdateAdminJobRequestSalary? = null,
+    @SerialName("salary_public")
+    public val salaryPublic: Boolean? = null,
+    public val apply: UpdateAdminJobRequestApply? = null,
+    public val language: VideoOrderLocale? = null,
+    public val status: JobStatus? = null,
+    @SerialName("closes_at")
+    public val closesAt: String? = null,
+)
+
+/**
+ * `UpdateAdminJobRequestApply` model.
+ */
+@Serializable
+public data class UpdateAdminJobRequestApply(
+    public val mode: JobApplyMode,
+    public val url: String? = null,
+    public val email: String? = null,
+    @SerialName("requires_cv")
+    public val requiresCv: Boolean? = null,
+    @SerialName("requires_cover_letter")
+    public val requiresCoverLetter: Boolean? = null,
+)
+
+/**
+ * `UpdateAdminJobRequestLocation` model.
+ */
+@Serializable
+public data class UpdateAdminJobRequestLocation(
+    public val city: String? = null,
+    public val country: JsonElement? = null,
+)
+
+/**
+ * `UpdateAdminJobRequestSalary` model.
+ */
+@Serializable
+public data class UpdateAdminJobRequestSalary(
+    public val min: Double? = null,
+    public val max: Double? = null,
+    public val currency: JsonElement,
+    public val period: JobSalaryPeriod,
+)
+
+/**
+ * `UpdateAdminJobResponse` model.
+ */
+@Serializable
+public data class UpdateAdminJobResponse(
+    public val job: Job,
+)
+
+/**
  * `UpdateAdminLLMAdaptersConfigRequest` model.
  */
 @Serializable
@@ -30296,7 +32953,7 @@ public data class UpdateAdminLLMAdaptersConfigRequest(
     @SerialName("circuit_breaker")
     public val circuitBreaker: UpdateAdminLLMAdaptersConfigRequestCircuitBreaker? = null,
     @SerialName("provider_rate_limits")
-    public val providerRateLimits: Map<String, Value6>? = null,
+    public val providerRateLimits: Map<String, UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue>? = null,
 )
 
 /**
@@ -30310,6 +32967,14 @@ public data class UpdateAdminLLMAdaptersConfigRequestCircuitBreaker(
     public val resetTimeoutMs: Long? = null,
     @SerialName("half_open_max_requests")
     public val halfOpenMaxRequests: Long? = null,
+)
+
+/**
+ * `UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue` model.
+ */
+@Serializable
+public data class UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue(
+    public val rpm: Long,
 )
 
 /**
@@ -31518,6 +34183,23 @@ public data class UpdateIntegrationRequest(
 )
 
 /**
+ * `UpdateJobApplicationRequest` model.
+ */
+@Serializable
+public data class UpdateJobApplicationRequest(
+    public val status: JobApplicationStatus? = null,
+    public val notes: String? = null,
+)
+
+/**
+ * `UpdateJobApplicationResponse` model.
+ */
+@Serializable
+public data class UpdateJobApplicationResponse(
+    public val application: JobApplication,
+)
+
+/**
  * `UpdateMarkupConfigRequest` model.
  */
 @Serializable
@@ -31897,6 +34579,16 @@ public data class UpdateSessionRequest(
      * longer need; this is a label bag, not content.
      */
     public val metadata: JsonObject? = null,
+    /**
+     * true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
+     * stays readable by id, and the next message sent to it unarchives it. false unarchives.
+     */
+    public val archived: Boolean? = null,
+    /**
+     * true pins the session for every client (`GET /sessions?pinned=true`); pinning again keeps
+     * the first `pinned_at`. false unpins.
+     */
+    public val pinned: Boolean? = null,
     /**
      * Per-conversation model override. Send null to clear (revert to agent default), or {
      * provider, model_ref, endpoint_url?, capabilities? } to set. The runtime governance allowlist
@@ -32656,73 +35348,6 @@ public data class ValidationPolicy(
 )
 
 /**
- * `Value` model.
- */
-@Serializable
-public data class Value(
-    public val en: String? = null,
-    public val uk: String? = null,
-)
-
-/**
- * `Value2` model.
- */
-@Serializable
-public data class Value2(
-    @SerialName("spec_id")
-    public val specId: String,
-    /**
-     * The parsed view document, or null when the stored view was unparseable.
-     */
-    @SerialName("output_view")
-    public val outputView: JsonElement,
-)
-
-/**
- * `Value3` model.
- */
-@Serializable
-public data class Value3(
-    public val x: Double,
-    public val y: Double,
-)
-
-/**
- * `Value4` model.
- */
-@Serializable
-public data class Value4(
-    public val x: Double,
-    public val y: Double,
-)
-
-/**
- * `Value5` model.
- */
-@Serializable
-public data class Value5(
-    public val from: JsonElement? = null,
-    public val to: JsonElement? = null,
-)
-
-/**
- * `Value6` model.
- */
-@Serializable
-public data class Value6(
-    public val rpm: Long,
-)
-
-/**
- * `Value7` model.
- */
-@Serializable
-public data class Value7(
-    public val en: String? = null,
-    public val uk: String? = null,
-)
-
-/**
  * Since 2026-09-30 the API key is returned here once and never e-mailed (register.ts
  * handleVerifyEmail).
  */
@@ -32925,7 +35550,7 @@ public object VideoOrderFailureCodeSerializer : KSerializer<VideoOrderFailureCod
 }
 
 /**
- * `VideoOrderLocale` values.
+ * The language the texts are written in.
  */
 ///
 /**

@@ -253,6 +253,26 @@ class Handler(BaseHTTPRequestHandler):
             #  as application/x-www-form-urlencoded). The bytes are compared
             #  exactly; the answer is the 200 the spec declares.
             return self._json(200, {"api_key": "uarp_contract_form", "email": "a@b.c"})
+        if path == "/api/v1/public/jobs" and self.command == "GET":
+            #  Scenario 21: the document's first array query parameters
+            #  (`style: form, explode: true`) — the key once per item, in
+            #  order. The answer is the smallest body the schema accepts.
+            return self._json(
+                200,
+                {
+                    "careers": {"enabled": True, "title": "t", "description": "d", "company_name": "c"},
+                    "items": [],
+                    "facets": {
+                        "categories": [], "departments": [], "workplace_types": [], "employment_types": [],
+                        "seniorities": [], "countries": [], "cities": [],
+                    },
+                    "total": 0, "page": 1, "limit": 20, "total_pages": 0,
+                },
+            )
+        if path == "/api/v1/public/jobs/dev/apply" and self.command == "POST":
+            #  Scenario 22: an array in a multipart body, sent as one JSON
+            #  array text part (`links`).
+            return self._json(201, {"application": {"id": "00000000-0000-4000-8000-000000000022"}})
         if path == "/api/v1/runs/r1/events":
             frames = (
                 b"id: 1\nevent: llm.chunk\ndata: {\"text\":\"he\"}\n\n"

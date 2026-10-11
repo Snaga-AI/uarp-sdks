@@ -11,8 +11,11 @@ public struct MissionsAPI: Sendable {
 
     /// Abort a mission
     ///
-    /// Terminal and not resumable. The in-flight walk is signalled to stop between objectives, so
-    /// an abort ends spending rather than only marking the record. The body is optional.
+    /// Terminal and not resumable. The run an objective has in flight is cancelled and the walk
+    /// stops, so an abort ends spending rather than only marking the record; that objective is left
+    /// `blocked`, its result unjudged. (Until 2026-10-10 the walk stopped only between objectives,
+    /// and the run in flight spent to its end and was then marked `completed`.) The body is
+    /// optional.
     ///
     /// MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
     /// either is off the route answers **404** with a plain body — deliberately the same answer as

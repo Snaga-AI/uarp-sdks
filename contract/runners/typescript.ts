@@ -136,8 +136,19 @@ const signedIn = await client.auth.completeOAuthLoginFormPost('apple', {
   user: '{"name":"А Б","email":"a@b.c"}',
 });
 
+// 21. array query parameters: the key once per item, in declaration order
+const jobs = await client.public.listPublicJobs({ seniority: ['junior', 'senior'], country: ['UA'] });
+
+// 22. an array in a multipart body: one JSON array text part
+const applied = await client.public.applyToJob('dev', {
+  name: 'А Б',
+  email: 'a@b.c',
+  consent: 'true',
+  links: ['https://a.example/x?y=1', 'https://b.example/'],
+});
+
 // One report: the server keeps the last one per language, so probes from
-// 16 to 20 travel together.
+// 16 to 22 travel together.
 await report('typescript', {
   status: probe.status,
   error_is_absent: String(probe.error === undefined || probe.error === null),
@@ -151,6 +162,8 @@ await report('typescript', {
   post_stream_refusal: postStreamRefusal,
   post_stream_plain: postStreamPlain,
   form_post_email: signedIn.email,
+  jobs_total: String(jobs.total),
+  application_id: applied.application.id,
 });
 
 console.log('typescript runner done');

@@ -65,7 +65,12 @@ package UARP.API.Scheduler is
    --  comma-lists of literal minutes are the deliberate exception). `timezone` must be a real IANA
    --  name, or the schedule would save as active and never fire. Scheduling is refused for agents
    --  that run on a local bridge, since a cron fire would create a cloud run the bridge never
-   --  claims, and setting a schedule on a platform agent is super-admin only.
+   --  claims, and setting a schedule on a platform agent is super-admin only. Each schedule fires
+   --  a fixed 0-9 minutes after the cron time (a per-agent offset that spreads load; `0 9 * * *`
+   --  may fire at 09:02) - `next_fire_at` always shows the real instant. A PUT changes the
+   --  configuration of the same schedule: `last_fired_at` is kept, and `consecutive_failures` is
+   --  kept unless the PUT turns a paused schedule back on (since 2026-10-08; before, every PUT
+   --  erased both).
    --
    --  PUT /api/v1/agents/{agentId}/schedule
    --

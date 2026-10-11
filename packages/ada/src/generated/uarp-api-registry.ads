@@ -63,6 +63,36 @@ package UARP.API.Registry is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Registry_Spec_Feature_State;
 
+   --  Add @platform/essentials to every head agent (super-admin)
+   --
+   --  One-shot grandfathering for tenants created before Phase 1: every tenant's head agent gets
+   --  `@platform/essentials@1.0.0` in its `specs`. Idempotent - a head agent that already has it
+   --  is counted in `already_present`; a tenant with no head agent yet in `no_head_agent`
+   --  (onboarding installs it at promotion). `errors` is present ONLY when at least one tenant
+   --  failed; the status is still 200 and the other counts stay meaningful. Super-admin only; no
+   --  request body.
+   --
+   --  POST /api/v1/registry/admin/specs/install-essentials
+   function Install_Essentials_On_Head_Agents
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Install_Essentials_On_Head_Agents_Response;
+
+   --  List the registry's SPEC-signing public keys
+   --
+   --  The Ed25519 public keys a client verifies `[ownership].signature` against, offline. A
+   --  retired key stays listed with `retired_at`; a signature whose `signed_at` is later than that
+   --  must be refused. 501 `SIGNING_NOT_CONFIGURED` when this deployment signs nothing
+   --  (`spec_registry.signing_mode = "off"`) - `features.spec_signing` in `GET
+   --  /api/v1/client-config` says which. Requires an authenticated caller (measured 2026-10-05:
+   --  401 without one), any scope.
+   --
+   --  GET /api/v1/registry/keys
+   function List_Registry_Signing_Keys
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Registry_Signing_Keys_Response;
+
    --  Admin: list all specs (regardless of visibility)
    --
    --  Lists every SPEC in the registry regardless of tenant or visibility; super-admin only, and

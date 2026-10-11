@@ -106,12 +106,14 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     /**
      * Platform-wide analytics overview
      *
-     * Platform-wide funnel and traffic overview over the last `days` days (default 30, capped at
-     * 90): per-event-type totals, a daily timeseries, the signup and revenue funnel with its
-     * conversion percentages, and the top countries, devices, browsers, referrers and UTM sources.
-     * Unique visitors are counted over a fixed 30-day window regardless of `days`, because that
-     * section scans raw events rather than the daily counters. Requires the `admin` scope and
-     * super-admin identity.
+     * Platform-wide traffic overview over the last `days` days (default 30, capped at 90), plus
+     * prospective workspace signup cohorts: successful human-associated root tasks, activity on
+     * distinct UTC task-start dates, positive live Stripe payments and day-1/day-7 activity with
+     * mature denominators. Cohort outcomes accumulate up to as_of and only include new signups
+     * recorded since tracking_since. complete=false means the bounded scan is partial; do not
+     * display exact percentages. Legacy revenue_funnel contains event counts, not successful
+     * activation or confirmed paid conversion. Unique visitors use a fixed 30-day window. Requires
+     * the admin scope and super-admin identity.
      *
      * `GET /api/v1/admin/analytics/overview`
      *
@@ -909,6 +911,31 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Create a vacancy
+     *
+     * The body is `CreateJobSchema`: `title`, `category`, `employment_type` and `workplace_type`
+     * are required, everything else has a default (`status` `draft`, `apply` the form with a CV
+     * required, `language` `en`, empty lists, no salary). The slug is derived from the title and
+     * made unique; `status: published` stamps `published_at`. Country and currency codes are
+     * upper-cased on the way in.
+     *
+     * `POST /api/v1/admin/jobs`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun createAdminJob(body: CreateAdminJobRequest, options: RequestOptions = RequestOptions()): CreateAdminJobResponse {
+        return client.request<CreateAdminJobResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/admin/jobs",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Create custom provider
      *
      * Registers a custom provider: `id`, `name`, `default_endpoint` and optionally `canonical`,
@@ -944,8 +971,13 @@ public class AdminApi internal constructor(private val client: UarpClient) {
      * `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
      * defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
      * claim are written in one commit; a `slug` the caller chose that another tenant holds is
-     * refused with 409, and a slug derived from `name` that collides is lengthened instead.
-     * Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
+     * refused with 409, and a slug derived from `name` that collides is lengthened instead. An
+     * optional `email` is the client's sign-in address: it is linked to the new tenant
+     * (`email_to_tenant`, `tenant_primary_email`), so the client's first sign-in lands in this
+     * tenant as its owner; an address that already signs in to a tenant is refused with 409 and
+     * nothing is created (since 2026-10-09; before, the field was dropped and the client's sign-in
+     * made a second tenant). Answers 201 with the new tenant and writes a `tenant.created` audit
+     * entry. Super-admin only.
      *
      * `POST /api/v1/admin/tenants`
      *
@@ -1002,6 +1034,27 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/admin/integration-oauth-providers/${encodePathSegment(provider.toString())}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Delete a vacancy and its applications
+     *
+     * Every application under it is deleted, CV bytes included, and every slug it ever had stops
+     * resolving. Prefer `status: closed` for a filled role — the public page then says so.
+     *
+     * `DELETE /api/v1/admin/jobs/{jobId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun deleteAdminJob(jobId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}",
                 idempotent = true,
                 options = options,
             )
@@ -1077,6 +1130,47 @@ public class AdminApi internal constructor(private val client: UarpClient) {
                 method = "DELETE",
                 path = "/api/v1/admin/testers/android/${encodePathSegment(email)}",
                 idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Erase an application
+     *
+     * The record, its dedupe index and its CV bytes. This is how an erasure request is honoured
+     * before retention would.
+     *
+     * `DELETE /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun deleteJobApplication(jobId: String, applicationId: String, options: RequestOptions = RequestOptions()) {
+        client.requestUnit(
+            RequestSpec(
+                method = "DELETE",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}/applications/${encodePathSegment(applicationId)}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * The candidate's CV
+     *
+     * The bytes as uploaded, with `Content-Disposition: attachment` and the sanitised filename.
+     * `Cache-Control: private, no-store`.
+     *
+     * `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}/cv`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun downloadJobApplicationCv(jobId: String, applicationId: String, options: RequestOptions = RequestOptions()): ByteArray {
+        return client.requestBytes(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}/applications/${encodePathSegment(applicationId)}/cv",
                 options = options,
             )
         )
@@ -1175,6 +1269,23 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/admin/integration-oauth-providers/${encodePathSegment(provider.toString())}",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * One vacancy, with applicant counts
+     *
+     * `GET /api/v1/admin/jobs/{jobId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun getAdminJob(jobId: String, options: RequestOptions = RequestOptions()): GetAdminJobResponse {
+        return client.request<GetAdminJobResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}",
                 options = options,
             )
         )
@@ -1335,6 +1446,23 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     )
 
     /**
+     * Careers page settings
+     *
+     * `GET /api/v1/admin/jobs/config`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun getCareersConfig(options: RequestOptions = RequestOptions()): GetCareersConfigResponse {
+        return client.request<GetCareersConfigResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs/config",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * EU AI Act conformity report
      *
      * Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
@@ -1385,6 +1513,23 @@ public class AdminApi internal constructor(private val client: UarpClient) {
                 method = "GET",
                 path = "/api/v1/admin/immutable-audit",
                 query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * One application
+     *
+     * `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun getJobApplication(jobId: String, applicationId: String, options: RequestOptions = RequestOptions()): GetJobApplicationResponse {
+        return client.request<GetJobApplicationResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}/applications/${encodePathSegment(applicationId)}",
                 options = options,
             )
         )
@@ -1639,6 +1784,26 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Every vacancy, drafts and closed included
+     *
+     * Unpaged, newest first, each with its applicant counts so the list can show "3 new" without a
+     * second call.
+     *
+     * `GET /api/v1/admin/jobs`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun listAdminJobs(options: RequestOptions = RequestOptions()): ListAdminJobsResponse {
+        return client.request<ListAdminJobsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * List providers with admin settings
      *
      * Lists every provider registered on the platform with its admin-side settings: name,
@@ -1727,6 +1892,32 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Applications to a vacancy
+     *
+     * Newest first, paged. `counts_by_status` counts every application of the vacancy BEFORE the
+     * `status` filter; `total` counts after it.
+     *
+     * `GET /api/v1/admin/jobs/{jobId}/applications`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun listJobApplications(jobId: String, status: JobApplicationStatus? = null, page: Long? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListJobApplicationsResponse {
+        val query = buildList {
+            if (status != null) add("status" to status.value)
+            if (page != null) add("page" to page.toString())
+            if (limit != null) add("limit" to limit.toString())
+        }
+        return client.request<ListJobApplicationsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}/applications",
+                query = query,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * List all tenants (super admin only)
      *
      * Lists every tenant in the platform registry (paged internally, no upper bound), each record
@@ -1768,6 +1959,28 @@ public class AdminApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "DELETE",
                 path = "/api/v1/admin/tenants/${encodePathSegment(tenantId)}",
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Change the careers page settings
+     *
+     * WRITE SEMANTICS: merges. A field the body omits keeps its stored value; `notify_emails` sent
+     * replaces the stored list whole. The body is `PutCareersConfigSchema`, every field optional.
+     *
+     * `PUT /api/v1/admin/jobs/config`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun putCareersConfig(body: PutCareersConfigRequest, options: RequestOptions = RequestOptions()): PutCareersConfigResponse {
+        return client.request<PutCareersConfigResponse>(
+            RequestSpec(
+                method = "PUT",
+                path = "/api/v1/admin/jobs/config",
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
@@ -2070,6 +2283,35 @@ public class AdminApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * Edit a vacancy
+     *
+     * WRITE SEMANTICS: merges at the top level — a field the body omits keeps its stored value —
+     * and every array (`responsibilities`, `requirements`, `nice_to_have`, `benefits`,
+     * `applicant_countries`, `skills`) and every object (`location`, `salary`, `apply`) sent
+     * REPLACES the stored one whole; `salary: null` removes the salary. The body is
+     * `UpdateJobSchema`, every field optional. A new `title` renames the slug and keeps the old
+     * one in `previous_slugs`. Status transitions stamp dates: to `published` sets `published_at`
+     * (first time) and clears `closed_at`; to `closed` sets `closed_at` and gives every
+     * application a `retain_until` of `closed_at + retention_days`; back out of `closed` clears
+     * both.
+     *
+     * `PATCH /api/v1/admin/jobs/{jobId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun updateAdminJob(jobId: String, body: UpdateAdminJobRequest, options: RequestOptions = RequestOptions()): UpdateAdminJobResponse {
+        return client.request<UpdateAdminJobResponse>(
+            RequestSpec(
+                method = "PATCH",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}",
+                body = Body.Json(uarpJson.encodeToString(body)),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Update pricing configuration
      *
      * Replaces the stored pricing override with the current effective pricing merged field by
@@ -2183,6 +2425,28 @@ public class AdminApi internal constructor(private val client: UarpClient) {
                 method = "PATCH",
                 path = "/api/v1/admin/feedback/${encodePathSegment(reportId)}",
                 body = body?.let { Body.Json(uarpJson.encodeToString(it)) },
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * Move an application along, or annotate it
+     *
+     * WRITE SEMANTICS: merges. `status` and `notes` are the only writable fields; each replaces
+     * its stored value when sent and is kept when omitted. There is no array in the body.
+     *
+     * `PATCH /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+     *
+     * Required scopes: `admin`.
+     */
+    public suspend fun updateJobApplication(jobId: String, applicationId: String, body: UpdateJobApplicationRequest, options: RequestOptions = RequestOptions()): UpdateJobApplicationResponse {
+        return client.request<UpdateJobApplicationResponse>(
+            RequestSpec(
+                method = "PATCH",
+                path = "/api/v1/admin/jobs/${encodePathSegment(jobId)}/applications/${encodePathSegment(applicationId)}",
+                body = Body.Json(uarpJson.encodeToString(body)),
                 idempotent = true,
                 options = options,
             )
