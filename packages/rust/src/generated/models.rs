@@ -19586,8 +19586,8 @@ pub struct ListSessionsResponseItem {
     pub runs: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-    /// writes that only set `title`, `project_id` or the legacy
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+    /// switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
     /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
     /// by it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -28897,8 +28897,8 @@ pub struct Session {
     pub runs: Option<Vec<String>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub created_at: Option<String>,
-    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-    /// writes that only set `title`, `project_id` or the legacy
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+    /// switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
     /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
     /// by it.
     #[serde(default, skip_serializing_if = "Option::is_none")]

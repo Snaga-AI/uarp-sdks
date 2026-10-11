@@ -6,6 +6,14 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+Build `928c3ff3`, canonical digest `5c648b18194112cb`. No count moves (585
+paths, 789 operations, 382 schemas). The only change is the description of
+`Session.updated_at`: creating or switching a branch no longer moves it,
+alongside pinning and archiving. It reaches the doc comments in all five
+languages and nothing else.
+
 ## 0.9.0 — 2026-10-10
 
 Build `917d6ba8`, canonical digest `945fb7ee308afd8b`. Against 0.8.0: 568 →

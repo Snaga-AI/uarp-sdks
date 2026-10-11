@@ -10494,8 +10494,8 @@ export interface ListSessionsResponseItem {
   runs?: string[];
   created_at?: string;
   /**
-   * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-   * writes that only set `title`, `project_id` or the legacy
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+   * switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
    * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
    * by it.
    */
@@ -15450,8 +15450,8 @@ export interface Session {
   runs?: string[];
   created_at?: string;
   /**
-   * Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-   * writes that only set `title`, `project_id` or the legacy
+   * Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+   * switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
    * `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
    * by it.
    */
