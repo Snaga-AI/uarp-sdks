@@ -107,9 +107,11 @@ public struct SessionsAPI: Sendable {
     /// instead of minting a second one — so a `200` here means an existing session was reused. The
     /// reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}`
     /// merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was
-    /// silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch
-    /// `main`, expires 24 hours later, and gets a lightweight preview record written alongside it
-    /// for the session list.
+    /// silently dropped. `422` when `agent_id` is not a UUID. `metadata.project_id` files the new
+    /// chat under a project that must exist and that the caller may edit — `404` otherwise, `403`
+    /// when it is shared with them view-only. A new session starts on branch `main`, expires 24
+    /// hours later, and gets a lightweight preview record written alongside it for the session
+    /// list.
     ///
     /// `POST /api/v1/sessions`
     ///

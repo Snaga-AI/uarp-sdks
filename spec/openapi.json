@@ -1393,7 +1393,8 @@
                     },
                     "expected_output": {
                         "type": "object",
-                        "additionalProperties": true
+                        "additionalProperties": true,
+                        "description": "What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every string value (e.g. `{\"text\": \"Paris\"}`) must appear in the answer, case-insensitive. A case with an expectation passes only when it is met."
                     },
                     "expected_tool_calls": {
                         "type": "array",
@@ -5835,6 +5836,7 @@
                             "LLM_ERROR",
                             "MAX_DURATION_EXCEEDED",
                             "MAX_TOKENS_EXCEEDED",
+                            "METHOD_NOT_ALLOWED",
                             "MIGRATION_CONFLICT",
                             "MISSING_FIELD",
                             "MISSION_ALREADY_RUNNING",
@@ -5931,7 +5933,7 @@
                             "video_regen_unavailable",
                             "video_slot_invalid"
                         ],
-                        "description": "What a client should DO about this, as a value it can switch on — `detail` is for the person reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the document and the wire cannot drift apart. Two casings are on the wire and both are load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the hand-written limit refusals, and clients match on each exactly. Absent when the refusal has no machine-readable class."
+                        "description": "What a client should DO about this, as a value it can switch on — `detail` is for the person reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the document and the wire cannot drift apart. Two casings are on the wire and both are load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the hand-written limit refusals, and clients match on each exactly. Present on every 400, 401, 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`, `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer code only when its call site names one. Other statuses: absent when there is no machine-readable class."
                     },
                     "correlationId": {
                         "type": "string",
@@ -13058,6 +13060,29 @@
                     },
                     "price_currency": {
                         "type": "string"
+                    },
+                    "price_interval": {
+                        "type": [
+                            "string",
+                            "null"
+                        ],
+                        "enum": [
+                            "day",
+                            "week",
+                            "month",
+                            "year",
+                            "one_time",
+                            null
+                        ],
+                        "description": "How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it as \"99,00 $ / month\". `one_time` for a one-off price. Null for free, for a plan with no Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed period."
+                    },
+                    "price_interval_count": {
+                        "type": [
+                            "integer",
+                            "null"
+                        ],
+                        "minimum": 1,
+                        "description": "Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval` is null or `one_time`."
                     },
                     "quotas": {
                         "type": "object"
@@ -26099,7 +26124,7 @@
             "post": {
                 "operationId": "createSession",
                 "summary": "Create a session",
-                "description": "Opens a conversation against an existing agent and returns it with `201`. `404` when the agent id is unknown in this tenant, and `403` when the plan's `max_active_sessions` is already reached by sessions that are both `active` and not past their expiry. To absorb double-submits the handler first looks for an active session on the same agent, created within the last 30 seconds, with no messages and no runs, and returns THAT with `200` instead of minting a second one — so a `200` here means an existing session was reused. The reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}` merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was silently dropped. `422` when `agent_id` is not a UUID. A new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview record written alongside it for the session list.",
+                "description": "Opens a conversation against an existing agent and returns it with `201`. `404` when the agent id is unknown in this tenant, and `403` when the plan's `max_active_sessions` is already reached by sessions that are both `active` and not past their expiry. To absorb double-submits the handler first looks for an active session on the same agent, created within the last 30 seconds, with no messages and no runs, and returns THAT with `200` instead of minting a second one — so a `200` here means an existing session was reused. The reused session takes this request's `metadata` (merged over its own, as `PUT /sessions/{id}` merges) and `team_id`; until 2026-09-23 it came back untouched and a second title was silently dropped. `422` when `agent_id` is not a UUID. `metadata.project_id` files the new chat under a project that must exist and that the caller may edit — `404` otherwise, `403` when it is shared with them view-only. A new session starts on branch `main`, expires 24 hours later, and gets a lightweight preview record written alongside it for the session list.",
                 "tags": [
                     "Sessions"
                 ],
@@ -26512,7 +26537,7 @@
                                     "metadata": {
                                         "type": "object",
                                         "additionalProperties": true,
-                                        "description": "MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key it names is overwritten. The platform writes its own keys here (`project_id`, `_public`, `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong. Because it merges, the limits are measured on the RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming the number reached. Remove keys you no longer need; this is a label bag, not content."
+                                        "description": "MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key it names is overwritten. The platform writes its own keys here (`project_id`, `_public`, `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong. `project_id` files the chat under a project: it must name a project that exists and that the caller may edit — otherwise 404 (403 for a private project shared with the caller view-only); `null` takes the chat out. Because it merges, the limits are measured on the RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming the number reached. Remove keys you no longer need; this is a label bag, not content."
                                     },
                                     "archived": {
                                         "type": "boolean",
@@ -33710,9 +33735,18 @@
                                         "type": "string",
                                         "maxLength": 10485760
                                     },
-                                    "agent_version": {
-                                        "type": "string",
-                                        "maxLength": 10485760
+                                    "scorers": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string",
+                                            "maxLength": 10485760
+                                        },
+                                        "description": "Scorers to apply, by name — built-in (task_success, tool_accuracy, step_efficiency, safety, latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output, llm_judge) or a custom one. Default: the platform's default set. A case with `expected_output` is always judged on its content: when none of exact_match / contains / regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it, and such a case passes only when every content score is 1.",
+                                        "maxItems": 5242880
+                                    },
+                                    "auto_rollback_on_regression": {
+                                        "type": "boolean",
+                                        "description": "Roll the agent back to its previous version when this run regresses against the last one on the same dataset — an automated write with no human in the loop."
                                     }
                                 }
                             }
@@ -54310,6 +54344,29 @@
                                                     },
                                                     "price_currency": {
                                                         "type": "string"
+                                                    },
+                                                    "price_interval": {
+                                                        "type": [
+                                                            "string",
+                                                            "null"
+                                                        ],
+                                                        "enum": [
+                                                            "day",
+                                                            "week",
+                                                            "month",
+                                                            "year",
+                                                            "one_time",
+                                                            null
+                                                        ],
+                                                        "description": "How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it as \"99,00 $ / month\". `one_time` for a one-off price. Null for free, for a plan with no Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed period."
+                                                    },
+                                                    "price_interval_count": {
+                                                        "type": [
+                                                            "integer",
+                                                            "null"
+                                                        ],
+                                                        "minimum": 1,
+                                                        "description": "Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval` is null or `one_time`."
                                                     }
                                                 }
                                             }

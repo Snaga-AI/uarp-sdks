@@ -6,13 +6,52 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## 0.10.0 — 2026-10-12
 
-Build `928c3ff3`, canonical digest `5c648b18194112cb`. No count moves (585
-paths, 789 operations, 382 schemas). The only change is the description of
-`Session.updated_at`: creating or switching a branch no longer moves it,
-alongside pinning and archiving. It reaches the doc comments in all five
-languages and nothing else.
+Build `0db7945f`, canonical digest `68d0c59b8cb92f65`. Against 0.9.0 the
+counts do not move: 585 paths, 789 operations, 382 schemas.
+
+**The minor moves** because one exported field goes away (below). Under 1.0 a
+caret does not cross the minor, so `^0.9` keeps building against 0.9.x.
+
+### Removed — `RunEvaluationRequest.agent_version`
+
+The document no longer declares it on `POST /agents/{agentId}/evaluations`.
+The route never read it, so a value sent there did nothing. Code that set it
+stops compiling; delete the line.
+
+### Added
+
+- `price_interval` and `price_interval_count` on every plan from
+  `GET /billing/plans` and `GET /public/plans`. They give how often
+  `price_amount_cents` bills: `"99,00 $ / month"`, or every 3 months for a
+  quarterly price. Both are null for a free plan and whenever Stripe cannot be
+  read; show the amount alone then. `price_interval` is typed as a nullable
+  string, not an enum. The document lists `day`, `week`, `month`, `year` and
+  `one_time` together with `null`, and the generator still types any enum
+  that lists `null` as a plain string. Seventeen fields elsewhere already
+  work that way.
+- `scorers` (names of the scorers to apply) and `auto_rollback_on_regression`
+  on `RunEvaluationRequest`.
+- `METHOD_NOT_ALLOWED` in `ErrorCode`. Every 400, 401, 404, 405, 409, 413, 422
+  and 429 now carries a `code`; a 403 carries one only where its call site
+  names it.
+
+### Changed — descriptions only
+
+`Session.updated_at`: creating or switching a branch (build `928c3ff3`), like
+pinning and archiving, does not move it. `POST /sessions` and the `metadata`
+of `PUT /sessions/{sessionId}`: `metadata.project_id` must name an existing
+project the caller may edit, or the call answers 404 or 403.
+`EvalCase.expected_output` is described.
+
+### Read on the wire
+
+`GET /public/plans` needs no key, so the plan fields were read on production
+on 2026-10-12: four plans. `free` has `price_interval` and
+`price_interval_count` both null. `starter`, `pro` and `enterprise` have
+`"month"` and `1`. `GET /billing/plans` needs a key, which is not available
+here, so it was not read.
 
 ## 0.9.0 — 2026-10-10
 

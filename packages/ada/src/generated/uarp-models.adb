@@ -30961,6 +30961,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Max_Duration_Exceeded, Raw => UARP.Types."+" (Value));
       elsif Value = "MAX_TOKENS_EXCEEDED" then
          return (Kind => Error_Code_Max_Tokens_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "METHOD_NOT_ALLOWED" then
+         return (Kind => Error_Code_Method_Not_Allowed, Raw => UARP.Types."+" (Value));
       elsif Value = "MIGRATION_CONFLICT" then
          return (Kind => Error_Code_Migration_Conflict, Raw => UARP.Types."+" (Value));
       elsif Value = "MISSING_FIELD" then
@@ -31233,6 +31235,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("MAX_DURATION_EXCEEDED"));
          when Error_Code_Max_Tokens_Exceeded =>
             return (Kind => Kind, Raw => UARP.Types."+" ("MAX_TOKENS_EXCEEDED"));
+         when Error_Code_Method_Not_Allowed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("METHOD_NOT_ALLOWED"));
          when Error_Code_Migration_Conflict =>
             return (Kind => Kind, Raw => UARP.Types."+" ("MIGRATION_CONFLICT"));
          when Error_Code_Missing_Field =>
@@ -45787,6 +45791,12 @@ package body UARP.Models is
       if Model.Has_Price_Currency then
          JS.Set (Result, "price_currency", JS.JSON.Create (Model.Price_Currency));
       end if;
+      if Model.Has_Price_Interval then
+         JS.Set (Result, "price_interval", JS.JSON.Create (Model.Price_Interval));
+      end if;
+      if Model.Has_Price_Interval_Count then
+         JS.Set (Result, "price_interval_count", JS.JSON.Create (Model.Price_Interval_Count));
+      end if;
       return Result;
    end To_JSON;
 
@@ -45820,6 +45830,14 @@ package body UARP.Models is
       if JS.Present (Node, "price_currency") then
          Result.Has_Price_Currency := True;
          Result.Price_Currency := JS.As_Text (JS.Get_Value (Node, "price_currency"));
+      end if;
+      if JS.Present (Node, "price_interval") then
+         Result.Has_Price_Interval := True;
+         Result.Price_Interval := JS.As_Text (JS.Get_Value (Node, "price_interval"));
+      end if;
+      if JS.Present (Node, "price_interval_count") then
+         Result.Has_Price_Interval_Count := True;
+         Result.Price_Interval_Count := JS.As_Integer (JS.Get_Value (Node, "price_interval_count"));
       end if;
       return Result;
    end From_JSON;
@@ -50096,6 +50114,12 @@ package body UARP.Models is
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
       JS.Set (Result, "price_amount_cents", JS.JSON.Create (Model.Price_Amount_Cents));
       JS.Set (Result, "price_currency", JS.JSON.Create (Model.Price_Currency));
+      if Model.Has_Price_Interval then
+         JS.Set (Result, "price_interval", JS.JSON.Create (Model.Price_Interval));
+      end if;
+      if Model.Has_Price_Interval_Count then
+         JS.Set (Result, "price_interval_count", JS.JSON.Create (Model.Price_Interval_Count));
+      end if;
       JS.Set (Result, "quotas", Model.Quotas);
       if Model.Has_Queue_Tier then
          JS.Set (Result, "queue_tier", To_JSON (Model.Queue_Tier));
@@ -50126,6 +50150,14 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "price_currency") then
          Result.Price_Currency := JS.As_Text (JS.Get_Value (Node, "price_currency"));
+      end if;
+      if JS.Present (Node, "price_interval") then
+         Result.Has_Price_Interval := True;
+         Result.Price_Interval := JS.As_Text (JS.Get_Value (Node, "price_interval"));
+      end if;
+      if JS.Present (Node, "price_interval_count") then
+         Result.Has_Price_Interval_Count := True;
+         Result.Price_Interval_Count := JS.As_Integer (JS.Get_Value (Node, "price_interval_count"));
       end if;
       if JS.Present (Node, "quotas") then
          Result.Quotas := JS.Get_Value (Node, "quotas");
@@ -64979,8 +65011,18 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "dataset_id", JS.JSON.Create (Model.Dataset_Id));
-      if Model.Has_Agent_Version then
-         JS.Set (Result, "agent_version", JS.JSON.Create (Model.Agent_Version));
+      if Model.Has_Scorers then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Scorers loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "scorers", Items);
+         end;
+      end if;
+      if Model.Has_Auto_Rollback_On_Regression then
+         JS.Set (Result, "auto_rollback_on_regression", JS.JSON.Create (Model.Auto_Rollback_On_Regression));
       end if;
       return Result;
    end To_JSON;
@@ -64991,9 +65033,19 @@ package body UARP.Models is
       if JS.Present (Node, "dataset_id") then
          Result.Dataset_Id := JS.As_Text (JS.Get_Value (Node, "dataset_id"));
       end if;
-      if JS.Present (Node, "agent_version") then
-         Result.Has_Agent_Version := True;
-         Result.Agent_Version := JS.As_Text (JS.Get_Value (Node, "agent_version"));
+      if JS.Present (Node, "scorers") then
+         Result.Has_Scorers := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "scorers");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Scorers.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "auto_rollback_on_regression") then
+         Result.Has_Auto_Rollback_On_Regression := True;
+         Result.Auto_Rollback_On_Regression := JS.As_Boolean (JS.Get_Value (Node, "auto_rollback_on_regression"));
       end if;
       return Result;
    end From_JSON;

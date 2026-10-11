@@ -6776,8 +6776,13 @@ export interface Error {
    * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
    * document and the wire cannot drift apart. Two casings are on the wire and both are
    * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-   * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-   * no machine-readable class.
+   * hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+   * 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+   * status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+   * `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+   * 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+   * code only when its call site names one. Other statuses: absent when there is no
+   * machine-readable class.
    */
   code?: ErrorCode;
   /**
@@ -6823,12 +6828,17 @@ export interface Error {
  * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
  * document and the wire cannot drift apart. Two casings are on the wire and both are
  * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
- * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
- * no machine-readable class.
+ * hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+ * 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+ * status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+ * `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+ * 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+ * code only when its call site names one. Other statuses: absent when there is no
+ * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -6915,6 +6925,12 @@ export interface EstimateRunCostRequest {
 export interface EvalCase {
   case_id: string;
   input: JsonObject;
+  /**
+   * What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the
+   * output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every
+   * string value (e.g. `{"text": "Paris"}`) must appear in the answer, case-insensitive. A case
+   * with an expectation passes only when it is met.
+   */
   expected_output?: JsonObject;
   expected_tool_calls?: string[];
   tags: string[];
@@ -9864,6 +9880,18 @@ export interface ListBillingPlansResponsePlan {
   checkout_available?: boolean;
   price_amount_cents?: number;
   price_currency?: string;
+  /**
+   * How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+   * as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+   * Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+   * period.
+   */
+  price_interval?: string | null;
+  /**
+   * Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+   * is null or `one_time`.
+   */
+  price_interval_count?: number | null;
 }
 
 export interface ListBillingSpecPackagesResponse {
@@ -13360,6 +13388,18 @@ export interface PublicPlan {
   name: string;
   price_amount_cents: number;
   price_currency: string;
+  /**
+   * How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+   * as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+   * Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+   * period.
+   */
+  price_interval?: string | null;
+  /**
+   * Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+   * is null or `one_time`.
+   */
+  price_interval_count?: number | null;
   quotas: JsonObject;
   /**
    * The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
@@ -14767,7 +14807,20 @@ export const RUN_COST_ESTIMATE_ESTIMATE_CONFIDENCE_VALUES = ['low', 'medium', 'h
 
 export interface RunEvaluationRequest {
   dataset_id: string;
-  agent_version?: string;
+  /**
+   * Scorers to apply, by name — built-in (task_success, tool_accuracy, step_efficiency, safety,
+   * latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output,
+   * llm_judge) or a custom one. Default: the platform's default set. A case with
+   * `expected_output` is always judged on its content: when none of exact_match / contains /
+   * regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it,
+   * and such a case passes only when every content score is 1.
+   */
+  scorers?: string[];
+  /**
+   * Roll the agent back to its previous version when this run regresses against the last one on
+   * the same dataset — an automated write with no human in the loop.
+   */
+  auto_rollback_on_regression?: boolean;
 }
 
 /**
@@ -18543,10 +18596,12 @@ export interface UpdateSessionRequest {
    * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
    * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
    * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
-   * Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
-   * most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
-   * request is refused with 422 and a `detail` naming the number reached. Remove keys you no
-   * longer need; this is a label bag, not content.
+   * `project_id` files the chat under a project: it must name a project that exists and that the
+   * caller may edit — otherwise 404 (403 for a private project shared with the caller
+   * view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+   * RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+   * 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+   * the number reached. Remove keys you no longer need; this is a label bag, not content.
    */
   metadata?: JsonObject;
   /**
