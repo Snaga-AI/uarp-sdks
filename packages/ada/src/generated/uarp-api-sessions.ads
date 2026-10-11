@@ -76,6 +76,14 @@ package UARP.API.Sessions is
       --  Opaque pagination cursor returned by previous page response.
       Has_Cursor : Boolean := False;
       Cursor : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  `false` (default) leaves archived sessions out, so a client that knows nothing of archiving
+      --  keeps the list it always had; `true` lists only archived ones; `all` lists both.
+      Has_Archived : Boolean := False;
+      Archived : UARP.Models.List_Sessions_Archived;
+      --  `true` lists only pinned sessions (fetch them separately and show them first); `false` only
+      --  unpinned ones. Absent: no pin filter.
+      Has_Pinned : Boolean := False;
+      Pinned : UARP.Models.List_Sessions_Pinned;
    end record;
 
    No_List_Sessions_Params : constant List_Sessions_Params := (others => <>);
@@ -122,11 +130,15 @@ package UARP.API.Sessions is
 
    --  Switch active branch
    --
-   --  Switches which branch subsequent messages in this session extend. `main` is always accepted;
-   --  any other id must name a branch of this session, otherwise `404`, and that branch must still
-   --  be `active`, otherwise `422`. The switch is a read-modify-write under optimistic
-   --  concurrency, retried on conflict, so it cannot be lost to a concurrent session update.
-   --  Returns `{session_id, active_branch}`; no history is copied or deleted.
+   --  Switches which branch subsequent messages in this session extend. A message sent while a
+   --  branch is active is recorded on it (its `run_id` joins the branch's `runs`), the model
+   --  answering it is given that branch's conversation, and `GET /sessions/{sessionId}` and
+   --  `/messages` show the active branch's turns: its parent's up to the fork point, then its own.
+   --  Main does not show a branch's turns. `main` is always accepted; any other id must name a
+   --  branch of this session, otherwise `404`, and that branch must still be `active`, otherwise
+   --  `422`. The switch is a read-modify-write under optimistic concurrency, retried on conflict,
+   --  so it cannot be lost to a concurrent session update. Returns `{session_id, active_branch}`;
+   --  no history is copied or deleted - switching back shows the other branch's turns again.
    --
    --  PUT /api/v1/sessions/{sessionId}/branches/{branchId}/activate
    --
@@ -156,9 +168,12 @@ package UARP.API.Sessions is
    --  Close a session
    --
    --  Deletes the session and everything it owns: its runs, their events and message feedback, the
-   --  share link (and its public lookup), annotations, and its todos with their schedules and
-   --  watchers. Refused with 423 while the tenant is under legal hold. Irreversible - there is no
-   --  restore; `POST /sessions/bulk-delete` runs the same cascade.
+   --  share link (and its public lookup), annotations, its todos with their schedules and
+   --  watchers, the memory entries extracted from its runs (on the agent or on the shared store),
+   --  its activity-feed rows, its recall card, every later session's recall card that quotes it
+   --  (since 2026-10-08), and the agent's pins of its messages (since 2026-10-09). Refused with
+   --  423 while the tenant is under legal hold. Irreversible - there is no restore; `POST
+   --  /sessions/bulk-delete` runs the same cascade.
    --
    --  DELETE /api/v1/sessions/{sessionId}
    --
@@ -235,10 +250,14 @@ package UARP.API.Sessions is
 
    --  Create a branch point in session
    --
-   --  A session holds at most 100 branches. The 101st is refused with 422; `detail` names the
-   --  count and points at `DELETE /sessions/{id}/branches/{branchId}`. The count is taken inside
-   --  the compare-and-set body against the fresh session, so two concurrent creators cannot both
-   --  see 99 and both write. There is no paging over the branch list.
+   --  Forks the conversation: the branch holds its parent's turns up to `fork_point_run_id`, then
+   --  its own. `parent_branch_id` defaults to the active branch and must be `main` or a branch of
+   --  this session (otherwise `422`); `fork_point_run_id` defaults to the parent's last run and
+   --  must be a run of the parent's conversation (otherwise `422`). Activate the branch to
+   --  continue on it. A session holds at most 100 branches. The 101st is refused with 422;
+   --  `detail` names the count and points at `DELETE /sessions/{id}/branches/{branchId}`. The
+   --  count is taken inside the compare-and-set body against the fresh session, so two concurrent
+   --  creators cannot both see 99 and both write. There is no paging over the branch list.
    --
    --  POST /api/v1/sessions/{sessionId}/branch
    --
@@ -327,12 +346,12 @@ package UARP.API.Sessions is
    --  Delete a branch
    --
    --  Deletes the branch record and everything the runs it lists own: those runs, their events and
-   --  message feedback; the run ids leave the session's `runs` too. Refused with 422 for `main`
-   --  (the session's own timeline, not a branch record), with 409 while the branch is the
-   --  session's active branch (activate another first) or has child branches (delete them first),
-   --  and with 423 while the tenant is under legal hold. Irreversible - there is no restore. Until
-   --  2026-09-12 branches could only be created, listed and activated, so every probe left one
-   --  behind.
+   --  message feedback, and the branch's turns in the session's conversation; the run ids leave
+   --  the session's `runs` too. Refused with 422 for `main` (the session's own timeline, not a
+   --  branch record), with 409 while the branch is the session's active branch (activate another
+   --  first) or has child branches (delete them first), and with 423 while the tenant is under
+   --  legal hold. Irreversible - there is no restore. Until 2026-09-12 branches could only be
+   --  created, listed and activated, so every probe left one behind.
    --
    --  DELETE /api/v1/sessions/{sessionId}/branches/{branchId}
    --
@@ -397,9 +416,11 @@ package UARP.API.Sessions is
 
    --  Get a session
    --
-   --  Returns the session record with its conversation timeline. `404` when the session does not
-   --  exist, and `404` again - not `403` - when it is filed under a private project the caller
-   --  cannot open, because the existence of that project and of the chats in it is itself
+   --  Returns the session record with its conversation timeline. When the session has branches,
+   --  the timeline is the ACTIVE branch's (`active_branch`): its parent's turns up to the fork
+   --  point, then its own; `runs` still lists every run of the session. `404` when the session
+   --  does not exist, and `404` again - not `403` - when it is filed under a private project the
+   --  caller cannot open, because the existence of that project and of the chats in it is itself
    --  confidential. Assistant turns are enriched from their runs: public run metrics, the billable
    --  `cost_usd`, an `output_truncated` marker for a reply that was cut off, and `from_todo` for a
    --  turn a scheduled todo started; runs still in flight are stitched in from `session.runs` so a
@@ -662,15 +683,18 @@ package UARP.API.Sessions is
 
    --  Resolve shared session (no auth)
    --
-   --  Resolves a share link into the read-only view of the session behind it. No authentication -
-   --  the share id is the credential - so `404` covers both a link that never existed and one that
-   --  has expired (an expired lookup row is deleted as it is read). The body carries the
-   --  transcript with compacted entries dropped and any file link rewritten to the share-scoped
-   --  path, the plan as titles and statuses only, an execution summary for the last 20 runs (tool
-   --  NAMES, per-step outcome and latency, run status and duration) and the names, types and sizes
-   --  of the artifacts. Nothing that could reach an authenticated resource travels: no run ids, no
-   --  todo ids, no tool arguments or outputs, no instructions. The response is sent
-   --  `Cache-Control: private, no-store`.
+   --  Resolves a share link into the read-only view of the session behind it - the conversation
+   --  its owner sees: on a session with branches, the active branch's turns. No authentication -
+   --  the share id is the credential - so `404` covers a link that never existed, one that has
+   --  expired, and one that is no longer the session's current link - replaced by a later share,
+   --  revoked, or of a deleted session (since 2026-10-09; before, a replaced link kept serving the
+   --  chat even after the current one was revoked). Such a row is deleted as it is read. The body
+   --  carries the transcript with compacted entries dropped and any file link rewritten to the
+   --  share-scoped path, the plan as titles and statuses only, an execution summary for the last
+   --  20 runs (tool NAMES, per-step outcome and latency, run status and duration) and the names,
+   --  types and sizes of the artifacts. Nothing that could reach an authenticated resource
+   --  travels: no run ids, no todo ids, no tool arguments or outputs, no instructions. The
+   --  response is sent `Cache-Control: private, no-store`.
    --
    --  GET /api/v1/shared/{shareId}
    function Resolve_Shared_Session

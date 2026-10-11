@@ -4,6 +4,8 @@ import { APIResource } from '../../core/resource.js';
 import type { RequestOptions } from '../../core/transport.js';
 import { pick } from '../../core/util.js';
 import type {
+  InstallEssentialsOnHeadAgentsResponse,
+  ListRegistrySigningKeysResponse,
   RegistryAdminListSpecsResponse,
   RegistryGetFileResponse,
   RegistryGetReadmeResponse,
@@ -75,6 +77,47 @@ export class RegistryResource extends APIResource {
       method: 'POST',
       path: `/api/v1/registry/admin/specs/${encodeURIComponent(String(scope))}/${encodeURIComponent(String(name))}/feature`,
       idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Add @platform/essentials to every head agent (super-admin)
+   *
+   * One-shot grandfathering for tenants created before Phase 1: every tenant's head agent gets
+   * `@platform/essentials@1.0.0` in its `specs`. Idempotent — a head agent that already has it
+   * is counted in `already_present`; a tenant with no head agent yet in `no_head_agent`
+   * (onboarding installs it at promotion). `errors` is present ONLY when at least one tenant
+   * failed; the status is still 200 and the other counts stay meaningful. Super-admin only; no
+   * request body.
+   *
+   * `POST /api/v1/registry/admin/specs/install-essentials`
+   */
+  installEssentialsOnHeadAgents(options?: RequestOptions): Promise<InstallEssentialsOnHeadAgentsResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: '/api/v1/registry/admin/specs/install-essentials',
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * List the registry's SPEC-signing public keys
+   *
+   * The Ed25519 public keys a client verifies `[ownership].signature` against, offline. A
+   * retired key stays listed with `retired_at`; a signature whose `signed_at` is later than that
+   * must be refused. 501 `SIGNING_NOT_CONFIGURED` when this deployment signs nothing
+   * (`spec_registry.signing_mode = "off"`) — `features.spec_signing` in `GET
+   * /api/v1/client-config` says which. Requires an authenticated caller (measured 2026-10-05:
+   * 401 without one), any scope.
+   *
+   * `GET /api/v1/registry/keys`
+   */
+  listRegistrySigningKeys(options?: RequestOptions): Promise<ListRegistrySigningKeysResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/registry/keys',
       options,
     });
   }

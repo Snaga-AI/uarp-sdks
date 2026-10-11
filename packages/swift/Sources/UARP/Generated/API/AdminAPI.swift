@@ -83,12 +83,14 @@ public struct AdminAPI: Sendable {
 
     /// Platform-wide analytics overview
     ///
-    /// Platform-wide funnel and traffic overview over the last `days` days (default 30, capped at
-    /// 90): per-event-type totals, a daily timeseries, the signup and revenue funnel with its
-    /// conversion percentages, and the top countries, devices, browsers, referrers and UTM sources.
-    /// Unique visitors are counted over a fixed 30-day window regardless of `days`, because that
-    /// section scans raw events rather than the daily counters. Requires the `admin` scope and
-    /// super-admin identity.
+    /// Platform-wide traffic overview over the last `days` days (default 30, capped at 90), plus
+    /// prospective workspace signup cohorts: successful human-associated root tasks, activity on
+    /// distinct UTC task-start dates, positive live Stripe payments and day-1/day-7 activity with
+    /// mature denominators. Cohort outcomes accumulate up to as_of and only include new signups
+    /// recorded since tracking_since. complete=false means the bounded scan is partial; do not
+    /// display exact percentages. Legacy revenue_funnel contains event counts, not successful
+    /// activation or confirmed paid conversion. Unique visitors use a fixed 30-day window. Requires
+    /// the admin scope and super-admin identity.
     ///
     /// `GET /api/v1/admin/analytics/overview`
     ///
@@ -770,6 +772,27 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Create a vacancy
+    ///
+    /// The body is `CreateJobSchema`: `title`, `category`, `employment_type` and `workplace_type`
+    /// are required, everything else has a default (`status` `draft`, `apply` the form with a CV
+    /// required, `language` `en`, empty lists, no salary). The slug is derived from the title and
+    /// made unique; `status: published` stamps `published_at`. Country and currency codes are
+    /// upper-cased on the way in.
+    ///
+    /// `POST /api/v1/admin/jobs`
+    ///
+    /// Required scopes: `admin`.
+    public func createAdminJob(body: CreateAdminJobRequest, options: RequestOptions = .init()) async throws -> CreateAdminJobResponse {
+        return try await client.send(RequestSpec(
+            method: "POST",
+            path: "/api/v1/admin/jobs",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Create custom provider
     ///
     /// Registers a custom provider: `id`, `name`, `default_endpoint` and optionally `canonical`,
@@ -801,8 +824,13 @@ public struct AdminAPI: Sendable {
     /// `name`, `status` to `active`, `plan` to `free`, and `quotas` and `settings` to the platform
     /// defaults when omitted. The record, its registry row (`{tenant_id, name, slug}`) and the slug
     /// claim are written in one commit; a `slug` the caller chose that another tenant holds is
-    /// refused with 409, and a slug derived from `name` that collides is lengthened instead.
-    /// Answers 201 with the new tenant and writes a `tenant.created` audit entry. Super-admin only.
+    /// refused with 409, and a slug derived from `name` that collides is lengthened instead. An
+    /// optional `email` is the client's sign-in address: it is linked to the new tenant
+    /// (`email_to_tenant`, `tenant_primary_email`), so the client's first sign-in lands in this
+    /// tenant as its owner; an address that already signs in to a tenant is refused with 409 and
+    /// nothing is created (since 2026-10-09; before, the field was dropped and the client's sign-in
+    /// made a second tenant). Answers 201 with the new tenant and writes a `tenant.created` audit
+    /// entry. Super-admin only.
     ///
     /// `POST /api/v1/admin/tenants`
     ///
@@ -849,6 +877,23 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/admin/integration-oauth-providers/\(encodePathSegment(provider.rawValue))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Delete a vacancy and its applications
+    ///
+    /// Every application under it is deleted, CV bytes included, and every slug it ever had stops
+    /// resolving. Prefer `status: closed` for a filled role — the public page then says so.
+    ///
+    /// `DELETE /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteAdminJob(jobId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))",
             idempotent: true,
             options: options
         ))
@@ -912,6 +957,39 @@ public struct AdminAPI: Sendable {
             method: "DELETE",
             path: "/api/v1/admin/testers/android/\(encodePathSegment(email))",
             idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Erase an application
+    ///
+    /// The record, its dedupe index and its CV bytes. This is how an erasure request is honoured
+    /// before retention would.
+    ///
+    /// `DELETE /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    public func deleteJobApplication(jobId: String, applicationId: String, options: RequestOptions = .init()) async throws {
+        try await client.sendVoid(RequestSpec(
+            method: "DELETE",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))/applications/\(encodePathSegment(applicationId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// The candidate's CV
+    ///
+    /// The bytes as uploaded, with `Content-Disposition: attachment` and the sanitised filename.
+    /// `Cache-Control: private, no-store`.
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}/cv`
+    ///
+    /// Required scopes: `admin`.
+    public func downloadJobApplicationCv(jobId: String, applicationId: String, options: RequestOptions = .init()) async throws -> Data {
+        return try await client.sendData(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))/applications/\(encodePathSegment(applicationId))/cv",
             options: options
         ))
     }
@@ -997,6 +1075,19 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "GET",
             path: "/api/v1/admin/integration-oauth-providers/\(encodePathSegment(provider.rawValue))",
+            options: options
+        ))
+    }
+
+    /// One vacancy, with applicant counts
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    public func getAdminJob(jobId: String, options: RequestOptions = .init()) async throws -> GetAdminJobResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))",
             options: options
         ))
     }
@@ -1136,6 +1227,19 @@ public struct AdminAPI: Sendable {
         )
     }
 
+    /// Careers page settings
+    ///
+    /// `GET /api/v1/admin/jobs/config`
+    ///
+    /// Required scopes: `admin`.
+    public func getCareersConfig(options: RequestOptions = .init()) async throws -> GetCareersConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs/config",
+            options: options
+        ))
+    }
+
     /// EU AI Act conformity report
     ///
     /// Generates the EU AI Act Annex VI conformity report for the calling admin's own tenant, taken
@@ -1189,6 +1293,19 @@ public struct AdminAPI: Sendable {
             method: "GET",
             path: "/api/v1/admin/immutable-audit",
             query: query,
+            options: options
+        ))
+    }
+
+    /// One application
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    public func getJobApplication(jobId: String, applicationId: String, options: RequestOptions = .init()) async throws -> GetJobApplicationResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))/applications/\(encodePathSegment(applicationId))",
             options: options
         ))
     }
@@ -1402,6 +1519,22 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Every vacancy, drafts and closed included
+    ///
+    /// Unpaged, newest first, each with its applicant counts so the list can show "3 new" without a
+    /// second call.
+    ///
+    /// `GET /api/v1/admin/jobs`
+    ///
+    /// Required scopes: `admin`.
+    public func listAdminJobs(options: RequestOptions = .init()) async throws -> ListAdminJobsResponse {
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs",
+            options: options
+        ))
+    }
+
     /// List providers with admin settings
     ///
     /// Lists every provider registered on the platform with its admin-side settings: name,
@@ -1484,6 +1617,33 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Applications to a vacancy
+    ///
+    /// Newest first, paged. `counts_by_status` counts every application of the vacancy BEFORE the
+    /// `status` filter; `total` counts after it.
+    ///
+    /// `GET /api/v1/admin/jobs/{jobId}/applications`
+    ///
+    /// Required scopes: `admin`.
+    public func listJobApplications(jobId: String, status: JobApplicationStatus? = nil, page: Int? = nil, limit: Int? = nil, options: RequestOptions = .init()) async throws -> ListJobApplicationsResponse {
+        var query: [URLQueryItem] = []
+        if let status {
+            query.append(URLQueryItem(name: "status", value: status.rawValue))
+        }
+        if let page {
+            query.append(URLQueryItem(name: "page", value: String(page)))
+        }
+        if let limit {
+            query.append(URLQueryItem(name: "limit", value: String(limit)))
+        }
+        return try await client.send(RequestSpec(
+            method: "GET",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))/applications",
+            query: query,
+            options: options
+        ))
+    }
+
     /// List all tenants (super admin only)
     ///
     /// Lists every tenant in the platform registry (paged internally, no upper bound), each record
@@ -1519,6 +1679,24 @@ public struct AdminAPI: Sendable {
         return try await client.send(RequestSpec(
             method: "DELETE",
             path: "/api/v1/admin/tenants/\(encodePathSegment(tenantId))",
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Change the careers page settings
+    ///
+    /// WRITE SEMANTICS: merges. A field the body omits keeps its stored value; `notify_emails` sent
+    /// replaces the stored list whole. The body is `PutCareersConfigSchema`, every field optional.
+    ///
+    /// `PUT /api/v1/admin/jobs/config`
+    ///
+    /// Required scopes: `admin`.
+    public func putCareersConfig(body: PutCareersConfigRequest, options: RequestOptions = .init()) async throws -> PutCareersConfigResponse {
+        return try await client.send(RequestSpec(
+            method: "PUT",
+            path: "/api/v1/admin/jobs/config",
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))
@@ -1785,6 +1963,31 @@ public struct AdminAPI: Sendable {
         ))
     }
 
+    /// Edit a vacancy
+    ///
+    /// WRITE SEMANTICS: merges at the top level — a field the body omits keeps its stored value —
+    /// and every array (`responsibilities`, `requirements`, `nice_to_have`, `benefits`,
+    /// `applicant_countries`, `skills`) and every object (`location`, `salary`, `apply`) sent
+    /// REPLACES the stored one whole; `salary: null` removes the salary. The body is
+    /// `UpdateJobSchema`, every field optional. A new `title` renames the slug and keeps the old
+    /// one in `previous_slugs`. Status transitions stamp dates: to `published` sets `published_at`
+    /// (first time) and clears `closed_at`; to `closed` sets `closed_at` and gives every
+    /// application a `retain_until` of `closed_at + retention_days`; back out of `closed` clears
+    /// both.
+    ///
+    /// `PATCH /api/v1/admin/jobs/{jobId}`
+    ///
+    /// Required scopes: `admin`.
+    public func updateAdminJob(jobId: String, body: UpdateAdminJobRequest, options: RequestOptions = .init()) async throws -> UpdateAdminJobResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))",
+            body: try client.encode(body),
+            idempotent: true,
+            options: options
+        ))
+    }
+
     /// Update pricing configuration
     ///
     /// Replaces the stored pricing override with the current effective pricing merged field by
@@ -1886,6 +2089,24 @@ public struct AdminAPI: Sendable {
             method: "PATCH",
             path: "/api/v1/admin/feedback/\(encodePathSegment(reportId))",
             body: encodedBody,
+            idempotent: true,
+            options: options
+        ))
+    }
+
+    /// Move an application along, or annotate it
+    ///
+    /// WRITE SEMANTICS: merges. `status` and `notes` are the only writable fields; each replaces
+    /// its stored value when sent and is kept when omitted. There is no array in the body.
+    ///
+    /// `PATCH /api/v1/admin/jobs/{jobId}/applications/{applicationId}`
+    ///
+    /// Required scopes: `admin`.
+    public func updateJobApplication(jobId: String, applicationId: String, body: UpdateJobApplicationRequest, options: RequestOptions = .init()) async throws -> UpdateJobApplicationResponse {
+        return try await client.send(RequestSpec(
+            method: "PATCH",
+            path: "/api/v1/admin/jobs/\(encodePathSegment(jobId))/applications/\(encodePathSegment(applicationId))",
+            body: try client.encode(body),
             idempotent: true,
             options: options
         ))

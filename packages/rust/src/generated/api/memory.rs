@@ -204,9 +204,12 @@ impl MemoryApi {
     /// 20 and is clamped to 1..200. `total` is the agent's whole count of (non-archived) entries,
     /// not the page length; while more exist, `has_more` is true and `cursor` continues the listing
     /// when passed back as `?cursor=`. Reading the list does not count as recalling an entry (it no
-    /// longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). This is a listing with no
-    /// query — use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance. 404 when
-    /// the agent does not exist.
+    /// longer bumps `access_count`/`last_accessed_at`, since 2026-09-23). Includes the entries this
+    /// agent wrote to the tenant's shared memory store (`created_by_agent_id`), where extraction
+    /// stores by default — before 2026-10-08 those were missing here; `GET`, `PUT` and `DELETE
+    /// /memory/{entryId}` reach them too, and never an entry another agent wrote. This is a listing
+    /// with no query — use `POST /api/v1/agents/{agentId}/memory/search` to retrieve by relevance.
+    /// 404 when the agent does not exist.
     ///
     /// `GET /api/v1/agents/{agentId}/memory`
     ///

@@ -24,6 +24,35 @@ package body UARP.API.Registry is
              Options => Options));
    end Feature_Registry_Spec;
 
+   function Install_Essentials_On_Head_Agents
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Install_Essentials_On_Head_Agents_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/registry/admin/specs/install-essentials",
+             Idempotent => True,
+             Options => Options));
+   end Install_Essentials_On_Head_Agents;
+
+   function List_Registry_Signing_Keys
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Registry_Signing_Keys_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "GET",
+             "/api/v1/registry/keys",
+             Options => Options));
+   end List_Registry_Signing_Keys;
+
    function Registry_Admin_List_Specs
      (Self : Client_Type;
       Params : Registry_Admin_List_Specs_Params := No_Registry_Admin_List_Specs_Params;

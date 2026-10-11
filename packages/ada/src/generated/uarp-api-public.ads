@@ -90,6 +90,35 @@ package UARP.API.Public is
 
    No_List_Public_Blog_Posts_Params : constant List_Public_Blog_Posts_Params := (others => <>);
 
+   --  Query and header parameters for `listPublicJobs`.
+   type List_Public_Jobs_Params is record
+      --  Any of; repeatable.
+      Has_Workplace_Type : Boolean := False;
+      Workplace_Type : UARP.Models.Job_Workplace_Type_Vectors.Vector;
+      --  Any of; repeatable.
+      Has_Employment_Type : Boolean := False;
+      Employment_Type : UARP.Models.Job_Employment_Type_Vectors.Vector;
+      --  Any of; repeatable. A vacancy without a seniority never matches.
+      Has_Seniority : Boolean := False;
+      Seniority : UARP.Models.Job_Seniority_Vectors.Vector;
+      --  Exact match on `category`, case-insensitive.
+      Has_Category : Boolean := False;
+      Category : UARP.Types.Text_Vectors.Vector;
+      --  `location.country`, ISO 3166-1 alpha-2.
+      Has_Country : Boolean := False;
+      Country : UARP.Types.Text_Vectors.Vector;
+      --  Free text across title, summary, description and skills.
+      Has_Q : Boolean := False;
+      Q : UARP.Types.Text := UARP.Types.Empty_Text;
+      Has_Page : Boolean := False;
+      Page : UARP.Types.Integer_Value := 0;
+      --  Clamped into 1-50.
+      Has_Limit : Boolean := False;
+      Limit : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_List_Public_Jobs_Params : constant List_Public_Jobs_Params := (others => <>);
+
    --  Query and header parameters for `listPublicTenants`.
    type List_Public_Tenants_Params is record
       Has_Category : Boolean := False;
@@ -148,6 +177,28 @@ package UARP.API.Public is
    end record;
 
    No_Retry_Public_Video_Order_Params : constant Retry_Public_Video_Order_Params := (others => <>);
+
+   --  Apply to a vacancy
+   --
+   --  Multipart form. The CV is checked by content - a PDF by its magic number, a .docx by the zip
+   --  magic plus its extension, a Markdown or plain-text file by being valid UTF-8 with no NUL
+   --  byte (the extension picks between the two) - never by the declared type, and stored durably;
+   --  the application record carries its `file_id`. One application per e-mail address per vacancy
+   --  (409 `duplicate_application`). `links` may be repeated or sent once as a JSON array; at most
+   --  5, each an http(s) URL. `consent` must be a truthy string (`true`, `1`, `on`, `yes`);
+   --  `talent_pool_consent` is separate and optional. `website` is a honeypot: a filled one gets
+   --  201 and nothing is stored. Refused with 409 `job_closed` when the vacancy is closed or past
+   --  `closes_at`, and 409 `job_apply_elsewhere` when `apply.mode` is not `form` (the detail names
+   --  where to apply). Per client address, at most 10 applications an hour (429). The configured
+   --  addresses are mailed on each stored application, best effort.
+   --
+   --  POST /api/v1/public/jobs/{slug}/apply
+   function Apply_To_Job
+     (Self : Client_Type;
+      Slug : String;
+      Payload : UARP.Models.Apply_To_Job_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Apply_To_Job_Response;
 
    --  Cancel a run of this chat
    --
@@ -367,6 +418,19 @@ package UARP.API.Public is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Types.Text;
 
+   --  One vacancy
+   --
+   --  A published vacancy, or a CLOSED one - `applications_open` is then false and `closed_at` is
+   --  set, so the page can say the role was filled instead of 404. A draft answers 404 exactly
+   --  like an unknown slug.
+   --
+   --  GET /api/v1/public/jobs/{slug}
+   function Get_Public_Job
+     (Self : Client_Type;
+      Slug : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Get_Public_Job_Response;
+
    --  Get public session
    --
    --  Returns the transcript of an anonymous session to the holder of its token: the agent's name,
@@ -532,6 +596,22 @@ package UARP.API.Public is
      (Self : Client_Type;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Public_Integrations_Response;
+
+   --  List open vacancies
+   --
+   --  Published vacancies not past `closes_at`, newest first, paged with `page` and `limit` like
+   --  the blog. Every filter is repeatable (or comma-separated) and matched case-insensitively;
+   --  `q` searches title, summary, description and skills. `facets` is computed over every OPEN
+   --  vacancy before the filters are applied, so a filter UI lists only values that exist. `total`
+   --  and `total_pages` count AFTER the filters. A non-public salary is sent as `null` with
+   --  `salary_public: false`. Anonymous; shares the public-read rate bucket.
+   --
+   --  GET /api/v1/public/jobs
+   function List_Public_Jobs
+     (Self : Client_Type;
+      Params : List_Public_Jobs_Params := No_List_Public_Jobs_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.List_Public_Jobs_Response;
 
    --  List public plans
    --

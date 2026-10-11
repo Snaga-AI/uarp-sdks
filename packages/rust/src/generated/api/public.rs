@@ -87,6 +87,34 @@ pub struct ListPublicBlogPostsParams {
     pub limit: Option<i64>,
 }
 
+/// Query and header parameters for `listPublicJobs`.
+#[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
+pub struct ListPublicJobsParams {
+    /// Any of; repeatable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub workplace_type: Option<Vec<models::JobWorkplaceType>>,
+    /// Any of; repeatable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub employment_type: Option<Vec<models::JobEmploymentType>>,
+    /// Any of; repeatable. A vacancy without a seniority never matches.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub seniority: Option<Vec<models::JobSeniority>>,
+    /// Exact match on `category`, case-insensitive.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub category: Option<Vec<String>>,
+    /// `location.country`, ISO 3166-1 alpha-2.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub country: Option<Vec<String>>,
+    /// Free text across title, summary, description and skills.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub q: Option<String>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub page: Option<i64>,
+    /// Clamped into 1–50.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub limit: Option<i64>,
+}
+
 /// Query and header parameters for `listPublicTenants`.
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct ListPublicTenantsParams {
@@ -158,6 +186,67 @@ impl Client {
 }
 
 impl PublicApi {
+    /// Apply to a vacancy
+    ///
+    /// Multipart form. The CV is checked by content — a PDF by its magic number, a .docx by the zip
+    /// magic plus its extension, a Markdown or plain-text file by being valid UTF-8 with no NUL
+    /// byte (the extension picks between the two) — never by the declared type, and stored durably;
+    /// the application record carries its `file_id`. One application per e-mail address per vacancy
+    /// (409 `duplicate_application`). `links` may be repeated or sent once as a JSON array; at most
+    /// 5, each an http(s) URL. `consent` must be a truthy string (`true`, `1`, `on`, `yes`);
+    /// `talent_pool_consent` is separate and optional. `website` is a honeypot: a filled one gets
+    /// 201 and nothing is stored. Refused with 409 `job_closed` when the vacancy is closed or past
+    /// `closes_at`, and 409 `job_apply_elsewhere` when `apply.mode` is not `form` (the detail names
+    /// where to apply). Per client address, at most 10 applications an hour (429). The configured
+    /// addresses are mailed on each stored application, best effort.
+    ///
+    /// `POST /api/v1/public/jobs/{slug}/apply`
+    pub async fn apply_to_job(&self, slug: &str, body: &models::ApplyToJobRequest) -> Result<models::ApplyToJobResponse> {
+        self.client
+            .request_multipart(
+                Request {
+                    method: Method::POST,
+                    path: format!("/api/v1/public/jobs/{}/apply", encode_path(slug)),
+                    query: NO_QUERY,
+                    body: NO_BODY,
+                    headers: Vec::new(),
+                    idempotent: true,
+                },
+                || {
+                    let mut form = reqwest::multipart::Form::new();
+                    form = form.text("name", field_text(&body.name)?);
+                    form = form.text("email", field_text(&body.email)?);
+                    if let Some(value) = &body.phone {
+                        form = form.text("phone", field_text(value)?);
+                    }
+                    if let Some(value) = &body.cover_letter {
+                        form = form.text("cover_letter", field_text(value)?);
+                    }
+                    if let Some(value) = &body.links {
+                        form = form.text("links", field_text(value)?);
+                    }
+                    if let Some(file) = &body.cv {
+                        form = form.part("cv", file.clone().into_part()?);
+                    }
+                    form = form.text("consent", field_text(&body.consent)?);
+                    if let Some(value) = &body.talent_pool_consent {
+                        form = form.text("talent_pool_consent", field_text(value)?);
+                    }
+                    if let Some(value) = &body.locale {
+                        form = form.text("locale", field_text(value)?);
+                    }
+                    if let Some(value) = &body.source {
+                        form = form.text("source", field_text(value)?);
+                    }
+                    if let Some(value) = &body.website {
+                        form = form.text("website", field_text(value)?);
+                    }
+                    Ok(form)
+                },
+            )
+            .await
+    }
+
     /// Cancel a run of this chat
     ///
     /// Cancels a run that belongs to this public session. No body. A run id from outside the
@@ -500,6 +589,26 @@ impl PublicApi {
             .await
     }
 
+    /// One vacancy
+    ///
+    /// A published vacancy, or a CLOSED one — `applications_open` is then false and `closed_at` is
+    /// set, so the page can say the role was filled instead of 404. A draft answers 404 exactly
+    /// like an unknown slug.
+    ///
+    /// `GET /api/v1/public/jobs/{slug}`
+    pub async fn get_public_job(&self, slug: &str) -> Result<models::GetPublicJobResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/public/jobs/{}", encode_path(slug)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// Get public session
     ///
     /// Returns the transcript of an anonymous session to the holder of its token: the agent's name,
@@ -744,6 +853,29 @@ impl PublicApi {
                 method: Method::GET,
                 path: "/api/v1/public/integrations".to_string(),
                 query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
+    /// List open vacancies
+    ///
+    /// Published vacancies not past `closes_at`, newest first, paged with `page` and `limit` like
+    /// the blog. Every filter is repeatable (or comma-separated) and matched case-insensitively;
+    /// `q` searches title, summary, description and skills. `facets` is computed over every OPEN
+    /// vacancy before the filters are applied, so a filter UI lists only values that exist. `total`
+    /// and `total_pages` count AFTER the filters. A non-public salary is sent as `null` with
+    /// `salary_public: false`. Anonymous; shares the public-read rate bucket.
+    ///
+    /// `GET /api/v1/public/jobs`
+    pub async fn list_public_jobs(&self, params: &ListPublicJobsParams) -> Result<models::ListPublicJobsResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: "/api/v1/public/jobs".to_string(),
+                query: Some(params),
                 body: NO_BODY,
                 headers: Vec::new(),
                 idempotent: false,

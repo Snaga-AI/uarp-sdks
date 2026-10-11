@@ -7,6 +7,8 @@ import type { EventStream } from '../../core/sse.js';
 import { autoPaginate } from '../../core/pagination.js';
 import type {
   AndroidTesterSignupResult,
+  ApplyToJobRequest,
+  ApplyToJobResponse,
   BinaryInput,
   CancelPublicSessionRunResponse,
   ContentReportAccepted,
@@ -20,11 +22,16 @@ import type {
   GetLinkPreviewResponse,
   GetPublicBlogPostResponse,
   GetPublicFeaturedAgentResponse,
+  GetPublicJobResponse,
   GetPublicStateResponse,
   GetRegistrationStatusResponse,
+  JobEmploymentType,
+  JobSeniority,
+  JobWorkplaceType,
   LandingOverrides,
   ListPublicBlogPostsResponse,
   ListPublicIntegrationsResponse,
+  ListPublicJobsResponse,
   ListPublicPlansResponse,
   ListPublicStatesResponse,
   ListPublicTenantsResponse,
@@ -136,6 +143,41 @@ export interface ListPublicBlogPostsParams {
 }
 
 /**
+ * Query and header parameters for `listPublicJobs`.
+ */
+export interface ListPublicJobsParams {
+  /**
+   * Any of; repeatable.
+   */
+  workplace_type?: JobWorkplaceType[];
+  /**
+   * Any of; repeatable.
+   */
+  employment_type?: JobEmploymentType[];
+  /**
+   * Any of; repeatable. A vacancy without a seniority never matches.
+   */
+  seniority?: JobSeniority[];
+  /**
+   * Exact match on `category`, case-insensitive.
+   */
+  category?: string[];
+  /**
+   * `location.country`, ISO 3166-1 alpha-2.
+   */
+  country?: string[];
+  /**
+   * Free text across title, summary, description and skills.
+   */
+  q?: string;
+  page?: number;
+  /**
+   * Clamped into 1–50.
+   */
+  limit?: number;
+}
+
+/**
  * Query and header parameters for `listPublicTenants`.
  */
 export interface ListPublicTenantsParams {
@@ -201,6 +243,33 @@ export interface RetryPublicVideoOrderParams {
  * Unauthenticated public-facing endpoints
  */
 export class PublicResource extends APIResource {
+  /**
+   * Apply to a vacancy
+   *
+   * Multipart form. The CV is checked by content — a PDF by its magic number, a .docx by the zip
+   * magic plus its extension, a Markdown or plain-text file by being valid UTF-8 with no NUL
+   * byte (the extension picks between the two) — never by the declared type, and stored durably;
+   * the application record carries its `file_id`. One application per e-mail address per vacancy
+   * (409 `duplicate_application`). `links` may be repeated or sent once as a JSON array; at most
+   * 5, each an http(s) URL. `consent` must be a truthy string (`true`, `1`, `on`, `yes`);
+   * `talent_pool_consent` is separate and optional. `website` is a honeypot: a filled one gets
+   * 201 and nothing is stored. Refused with 409 `job_closed` when the vacancy is closed or past
+   * `closes_at`, and 409 `job_apply_elsewhere` when `apply.mode` is not `form` (the detail names
+   * where to apply). Per client address, at most 10 applications an hour (429). The configured
+   * addresses are mailed on each stored application, best effort.
+   *
+   * `POST /api/v1/public/jobs/{slug}/apply`
+   */
+  applyToJob(slug: string, body: ApplyToJobRequest, options?: RequestOptions): Promise<ApplyToJobResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/public/jobs/${encodeURIComponent(String(slug))}/apply`,
+      multipart: body,
+      idempotent: true,
+      options,
+    });
+  }
+
   /**
    * Cancel a run of this chat
    *
@@ -496,6 +565,23 @@ export class PublicResource extends APIResource {
   }
 
   /**
+   * One vacancy
+   *
+   * A published vacancy, or a CLOSED one — `applications_open` is then false and `closed_at` is
+   * set, so the page can say the role was filled instead of 404. A draft answers 404 exactly
+   * like an unknown slug.
+   *
+   * `GET /api/v1/public/jobs/{slug}`
+   */
+  getPublicJob(slug: string, options?: RequestOptions): Promise<GetPublicJobResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/public/jobs/${encodeURIComponent(String(slug))}`,
+      options,
+    });
+  }
+
+  /**
    * Get public session
    *
    * Returns the transcript of an anonymous session to the holder of its token: the agent's name,
@@ -709,6 +795,27 @@ export class PublicResource extends APIResource {
     return this._client.request({
       method: 'GET',
       path: '/api/v1/public/integrations',
+      options,
+    });
+  }
+
+  /**
+   * List open vacancies
+   *
+   * Published vacancies not past `closes_at`, newest first, paged with `page` and `limit` like
+   * the blog. Every filter is repeatable (or comma-separated) and matched case-insensitively;
+   * `q` searches title, summary, description and skills. `facets` is computed over every OPEN
+   * vacancy before the filters are applied, so a filter UI lists only values that exist. `total`
+   * and `total_pages` count AFTER the filters. A non-public salary is sent as `null` with
+   * `salary_public: false`. Anonymous; shares the public-read rate bucket.
+   *
+   * `GET /api/v1/public/jobs`
+   */
+  listPublicJobs(params?: ListPublicJobsParams, options?: RequestOptions): Promise<ListPublicJobsResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: '/api/v1/public/jobs',
+      query: pick(params, ['workplace_type', 'employment_type', 'seniority', 'category', 'country', 'q', 'page', 'limit']),
       options,
     });
   }

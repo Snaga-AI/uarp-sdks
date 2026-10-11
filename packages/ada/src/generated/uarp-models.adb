@@ -2197,6 +2197,113 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D1) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "eligible", JS.JSON.Create (Model.Eligible));
+      JS.Set (Result, "returned", JS.JSON.Create (Model.Returned));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D1 is
+      Result : Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D1;
+   begin
+      if JS.Present (Node, "eligible") then
+         Result.Eligible := JS.As_Integer (JS.Get_Value (Node, "eligible"));
+      end if;
+      if JS.Present (Node, "returned") then
+         Result.Returned := JS.As_Integer (JS.Get_Value (Node, "returned"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D7) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "eligible", JS.JSON.Create (Model.Eligible));
+      JS.Set (Result, "returned", JS.JSON.Create (Model.Returned));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D7 is
+      Result : Admin_Analytics_Overview_Response_Product_Cohorts_Retention_D7;
+   begin
+      if JS.Present (Node, "eligible") then
+         Result.Eligible := JS.As_Integer (JS.Get_Value (Node, "eligible"));
+      end if;
+      if JS.Present (Node, "returned") then
+         Result.Returned := JS.As_Integer (JS.Get_Value (Node, "returned"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Admin_Analytics_Overview_Response_Product_Cohorts_Retention) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "d1", To_JSON (Model.D1));
+      JS.Set (Result, "d7", To_JSON (Model.D7));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Analytics_Overview_Response_Product_Cohorts_Retention is
+      Result : Admin_Analytics_Overview_Response_Product_Cohorts_Retention;
+   begin
+      if JS.Present (Node, "d1") then
+         Result.D1 := From_JSON (JS.Get_Value (Node, "d1"));
+      end if;
+      if JS.Present (Node, "d7") then
+         Result.D7 := From_JSON (JS.Get_Value (Node, "d7"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Admin_Analytics_Overview_Response_Product_Cohorts) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Tracking_Since then
+         JS.Set (Result, "tracking_since", JS.JSON.Create (Model.Tracking_Since));
+      end if;
+      JS.Set (Result, "as_of", JS.JSON.Create (Model.As_Of));
+      JS.Set (Result, "complete", JS.JSON.Create (Model.Complete));
+      JS.Set (Result, "signups", JS.JSON.Create (Model.Signups));
+      JS.Set (Result, "successful", JS.JSON.Create (Model.Successful));
+      JS.Set (Result, "repeat", JS.JSON.Create (Model.Repeat));
+      JS.Set (Result, "paid", JS.JSON.Create (Model.Paid));
+      JS.Set (Result, "retention", To_JSON (Model.Retention));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Analytics_Overview_Response_Product_Cohorts is
+      Result : Admin_Analytics_Overview_Response_Product_Cohorts;
+   begin
+      if JS.Present (Node, "tracking_since") then
+         Result.Has_Tracking_Since := True;
+         Result.Tracking_Since := JS.As_Text (JS.Get_Value (Node, "tracking_since"));
+      end if;
+      if JS.Present (Node, "as_of") then
+         Result.As_Of := JS.As_Text (JS.Get_Value (Node, "as_of"));
+      end if;
+      if JS.Present (Node, "complete") then
+         Result.Complete := JS.As_Boolean (JS.Get_Value (Node, "complete"));
+      end if;
+      if JS.Present (Node, "signups") then
+         Result.Signups := JS.As_Integer (JS.Get_Value (Node, "signups"));
+      end if;
+      if JS.Present (Node, "successful") then
+         Result.Successful := JS.As_Integer (JS.Get_Value (Node, "successful"));
+      end if;
+      if JS.Present (Node, "repeat") then
+         Result.Repeat := JS.As_Integer (JS.Get_Value (Node, "repeat"));
+      end if;
+      if JS.Present (Node, "paid") then
+         Result.Paid := JS.As_Integer (JS.Get_Value (Node, "paid"));
+      end if;
+      if JS.Present (Node, "retention") then
+         Result.Retention := From_JSON (JS.Get_Value (Node, "retention"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Analytics_Timeseries_Point) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -2287,6 +2394,9 @@ package body UARP.Models is
       if Model.Has_Conversion_Rate then
          JS.Set (Result, "conversion_rate", JS.JSON.Create (Model.Conversion_Rate));
       end if;
+      if Model.Has_Product_Cohorts then
+         JS.Set (Result, "product_cohorts", To_JSON (Model.Product_Cohorts));
+      end if;
       if Model.Has_Timeseries then
          declare
             Items : JS.JSON_Array := JS.JSON.Empty_Array;
@@ -2372,6 +2482,10 @@ package body UARP.Models is
       if JS.Present (Node, "conversion_rate") then
          Result.Has_Conversion_Rate := True;
          Result.Conversion_Rate := JS.As_Float (JS.Get_Value (Node, "conversion_rate"));
+      end if;
+      if JS.Present (Node, "product_cohorts") then
+         Result.Has_Product_Cohorts := True;
+         Result.Product_Cohorts := From_JSON (JS.Get_Value (Node, "product_cohorts"));
       end if;
       if JS.Present (Node, "timeseries") then
          Result.Has_Timeseries := True;
@@ -4185,7 +4299,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Landing_Config_Section_Texts_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_En then
@@ -4197,8 +4311,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value is
-      Result : Value;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Landing_Config_Section_Texts_Value is
+      Result : Landing_Config_Section_Texts_Value;
    begin
       if JS.Present (Node, "en") then
          Result.Has_En := True;
@@ -5068,6 +5182,731 @@ package body UARP.Models is
                Result.Integrations.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Job_Status (Value : String) return Job_Status is
+   begin
+      if Value = "draft" then
+         return (Kind => Job_Status_Draft, Raw => UARP.Types."+" (Value));
+      elsif Value = "published" then
+         return (Kind => Job_Status_Published, Raw => UARP.Types."+" (Value));
+      elsif Value = "closed" then
+         return (Kind => Job_Status_Closed, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Status;
+
+   function To_Job_Status (Kind : Job_Status_Kind) return Job_Status is
+   begin
+      case Kind is
+         when Job_Status_Draft =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("draft"));
+         when Job_Status_Published =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("published"));
+         when Job_Status_Closed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("closed"));
+         when Job_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Status;
+
+   function Image (Model : Job_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Status is
+      (To_Job_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Video_Order_Locale (Value : String) return Video_Order_Locale is
+   begin
+      if Value = "en" then
+         return (Kind => Video_Order_Locale_En, Raw => UARP.Types."+" (Value));
+      elsif Value = "uk" then
+         return (Kind => Video_Order_Locale_Uk, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Video_Order_Locale_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Video_Order_Locale;
+
+   function To_Video_Order_Locale (Kind : Video_Order_Locale_Kind) return Video_Order_Locale is
+   begin
+      case Kind is
+         when Video_Order_Locale_En =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("en"));
+         when Video_Order_Locale_Uk =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("uk"));
+         when Video_Order_Locale_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Video_Order_Locale;
+
+   function Image (Model : Video_Order_Locale) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Video_Order_Locale (Model.Kind).Raw));
+
+   function To_JSON (Model : Video_Order_Locale) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Video_Order_Locale is
+      (To_Video_Order_Locale (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Job_Seniority (Value : String) return Job_Seniority is
+   begin
+      if Value = "intern" then
+         return (Kind => Job_Seniority_Intern, Raw => UARP.Types."+" (Value));
+      elsif Value = "junior" then
+         return (Kind => Job_Seniority_Junior, Raw => UARP.Types."+" (Value));
+      elsif Value = "middle" then
+         return (Kind => Job_Seniority_Middle, Raw => UARP.Types."+" (Value));
+      elsif Value = "senior" then
+         return (Kind => Job_Seniority_Senior, Raw => UARP.Types."+" (Value));
+      elsif Value = "lead" then
+         return (Kind => Job_Seniority_Lead, Raw => UARP.Types."+" (Value));
+      elsif Value = "principal" then
+         return (Kind => Job_Seniority_Principal, Raw => UARP.Types."+" (Value));
+      elsif Value = "head" then
+         return (Kind => Job_Seniority_Head, Raw => UARP.Types."+" (Value));
+      elsif Value = "director" then
+         return (Kind => Job_Seniority_Director, Raw => UARP.Types."+" (Value));
+      elsif Value = "executive" then
+         return (Kind => Job_Seniority_Executive, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Seniority_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Seniority;
+
+   function To_Job_Seniority (Kind : Job_Seniority_Kind) return Job_Seniority is
+   begin
+      case Kind is
+         when Job_Seniority_Intern =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("intern"));
+         when Job_Seniority_Junior =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("junior"));
+         when Job_Seniority_Middle =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("middle"));
+         when Job_Seniority_Senior =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("senior"));
+         when Job_Seniority_Lead =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lead"));
+         when Job_Seniority_Principal =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("principal"));
+         when Job_Seniority_Head =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("head"));
+         when Job_Seniority_Director =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("director"));
+         when Job_Seniority_Executive =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("executive"));
+         when Job_Seniority_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Seniority;
+
+   function Image (Model : Job_Seniority) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Seniority (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Seniority) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Seniority is
+      (To_Job_Seniority (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Job_Employment_Type (Value : String) return Job_Employment_Type is
+   begin
+      if Value = "full_time" then
+         return (Kind => Job_Employment_Type_Full_Time, Raw => UARP.Types."+" (Value));
+      elsif Value = "part_time" then
+         return (Kind => Job_Employment_Type_Part_Time, Raw => UARP.Types."+" (Value));
+      elsif Value = "contract" then
+         return (Kind => Job_Employment_Type_Contract, Raw => UARP.Types."+" (Value));
+      elsif Value = "temporary" then
+         return (Kind => Job_Employment_Type_Temporary, Raw => UARP.Types."+" (Value));
+      elsif Value = "internship" then
+         return (Kind => Job_Employment_Type_Internship, Raw => UARP.Types."+" (Value));
+      elsif Value = "volunteer" then
+         return (Kind => Job_Employment_Type_Volunteer, Raw => UARP.Types."+" (Value));
+      elsif Value = "per_diem" then
+         return (Kind => Job_Employment_Type_Per_Diem, Raw => UARP.Types."+" (Value));
+      elsif Value = "other" then
+         return (Kind => Job_Employment_Type_Other, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Employment_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Employment_Type;
+
+   function To_Job_Employment_Type (Kind : Job_Employment_Type_Kind) return Job_Employment_Type is
+   begin
+      case Kind is
+         when Job_Employment_Type_Full_Time =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("full_time"));
+         when Job_Employment_Type_Part_Time =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("part_time"));
+         when Job_Employment_Type_Contract =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("contract"));
+         when Job_Employment_Type_Temporary =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("temporary"));
+         when Job_Employment_Type_Internship =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("internship"));
+         when Job_Employment_Type_Volunteer =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("volunteer"));
+         when Job_Employment_Type_Per_Diem =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("per_diem"));
+         when Job_Employment_Type_Other =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("other"));
+         when Job_Employment_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Employment_Type;
+
+   function Image (Model : Job_Employment_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Employment_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Employment_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Employment_Type is
+      (To_Job_Employment_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Job_Workplace_Type (Value : String) return Job_Workplace_Type is
+   begin
+      if Value = "remote" then
+         return (Kind => Job_Workplace_Type_Remote, Raw => UARP.Types."+" (Value));
+      elsif Value = "hybrid" then
+         return (Kind => Job_Workplace_Type_Hybrid, Raw => UARP.Types."+" (Value));
+      elsif Value = "onsite" then
+         return (Kind => Job_Workplace_Type_Onsite, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Workplace_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Workplace_Type;
+
+   function To_Job_Workplace_Type (Kind : Job_Workplace_Type_Kind) return Job_Workplace_Type is
+   begin
+      case Kind is
+         when Job_Workplace_Type_Remote =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("remote"));
+         when Job_Workplace_Type_Hybrid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("hybrid"));
+         when Job_Workplace_Type_Onsite =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("onsite"));
+         when Job_Workplace_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Workplace_Type;
+
+   function Image (Model : Job_Workplace_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Workplace_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Workplace_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Workplace_Type is
+      (To_Job_Workplace_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Job_Location) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_City then
+         JS.Set (Result, "city", JS.JSON.Create (Model.City));
+      end if;
+      if Model.Has_Country then
+         JS.Set (Result, "country", JS.JSON.Create (Model.Country));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Location is
+      Result : Job_Location;
+   begin
+      if JS.Present (Node, "city") then
+         Result.Has_City := True;
+         Result.City := JS.As_Text (JS.Get_Value (Node, "city"));
+      end if;
+      if JS.Present (Node, "country") then
+         Result.Has_Country := True;
+         Result.Country := JS.As_Text (JS.Get_Value (Node, "country"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Job_English_Level (Value : String) return Job_English_Level is
+   begin
+      if Value = "none" then
+         return (Kind => Job_English_Level_None, Raw => UARP.Types."+" (Value));
+      elsif Value = "a1" then
+         return (Kind => Job_English_Level_A1, Raw => UARP.Types."+" (Value));
+      elsif Value = "a2" then
+         return (Kind => Job_English_Level_A2, Raw => UARP.Types."+" (Value));
+      elsif Value = "b1" then
+         return (Kind => Job_English_Level_B1, Raw => UARP.Types."+" (Value));
+      elsif Value = "b2" then
+         return (Kind => Job_English_Level_B2, Raw => UARP.Types."+" (Value));
+      elsif Value = "c1" then
+         return (Kind => Job_English_Level_C1, Raw => UARP.Types."+" (Value));
+      elsif Value = "c2" then
+         return (Kind => Job_English_Level_C2, Raw => UARP.Types."+" (Value));
+      elsif Value = "native" then
+         return (Kind => Job_English_Level_Native, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_English_Level_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_English_Level;
+
+   function To_Job_English_Level (Kind : Job_English_Level_Kind) return Job_English_Level is
+   begin
+      case Kind is
+         when Job_English_Level_None =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("none"));
+         when Job_English_Level_A1 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("a1"));
+         when Job_English_Level_A2 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("a2"));
+         when Job_English_Level_B1 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("b1"));
+         when Job_English_Level_B2 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("b2"));
+         when Job_English_Level_C1 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("c1"));
+         when Job_English_Level_C2 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("c2"));
+         when Job_English_Level_Native =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("native"));
+         when Job_English_Level_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_English_Level;
+
+   function Image (Model : Job_English_Level) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_English_Level (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_English_Level) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_English_Level is
+      (To_Job_English_Level (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_Job_Salary_Period (Value : String) return Job_Salary_Period is
+   begin
+      if Value = "hour" then
+         return (Kind => Job_Salary_Period_Hour, Raw => UARP.Types."+" (Value));
+      elsif Value = "day" then
+         return (Kind => Job_Salary_Period_Day, Raw => UARP.Types."+" (Value));
+      elsif Value = "week" then
+         return (Kind => Job_Salary_Period_Week, Raw => UARP.Types."+" (Value));
+      elsif Value = "month" then
+         return (Kind => Job_Salary_Period_Month, Raw => UARP.Types."+" (Value));
+      elsif Value = "year" then
+         return (Kind => Job_Salary_Period_Year, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Salary_Period_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Salary_Period;
+
+   function To_Job_Salary_Period (Kind : Job_Salary_Period_Kind) return Job_Salary_Period is
+   begin
+      case Kind is
+         when Job_Salary_Period_Hour =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("hour"));
+         when Job_Salary_Period_Day =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("day"));
+         when Job_Salary_Period_Week =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("week"));
+         when Job_Salary_Period_Month =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("month"));
+         when Job_Salary_Period_Year =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("year"));
+         when Job_Salary_Period_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Salary_Period;
+
+   function Image (Model : Job_Salary_Period) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Salary_Period (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Salary_Period) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Salary_Period is
+      (To_Job_Salary_Period (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Job_Salary) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Min then
+         JS.Set (Result, "min", JS.JSON.Create (Model.Min));
+      end if;
+      if Model.Has_Max then
+         JS.Set (Result, "max", JS.JSON.Create (Model.Max));
+      end if;
+      JS.Set (Result, "currency", JS.JSON.Create (Model.Currency));
+      JS.Set (Result, "period", To_JSON (Model.Period));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Salary is
+      Result : Job_Salary;
+   begin
+      if JS.Present (Node, "min") then
+         Result.Has_Min := True;
+         Result.Min := JS.As_Float (JS.Get_Value (Node, "min"));
+      end if;
+      if JS.Present (Node, "max") then
+         Result.Has_Max := True;
+         Result.Max := JS.As_Float (JS.Get_Value (Node, "max"));
+      end if;
+      if JS.Present (Node, "currency") then
+         Result.Currency := JS.As_Text (JS.Get_Value (Node, "currency"));
+      end if;
+      if JS.Present (Node, "period") then
+         Result.Period := From_JSON (JS.Get_Value (Node, "period"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Job_Apply_Mode (Value : String) return Job_Apply_Mode is
+   begin
+      if Value = "form" then
+         return (Kind => Job_Apply_Mode_Form, Raw => UARP.Types."+" (Value));
+      elsif Value = "external" then
+         return (Kind => Job_Apply_Mode_External, Raw => UARP.Types."+" (Value));
+      elsif Value = "email" then
+         return (Kind => Job_Apply_Mode_Email, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Apply_Mode_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Apply_Mode;
+
+   function To_Job_Apply_Mode (Kind : Job_Apply_Mode_Kind) return Job_Apply_Mode is
+   begin
+      case Kind is
+         when Job_Apply_Mode_Form =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("form"));
+         when Job_Apply_Mode_External =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("external"));
+         when Job_Apply_Mode_Email =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("email"));
+         when Job_Apply_Mode_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Apply_Mode;
+
+   function Image (Model : Job_Apply_Mode) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Apply_Mode (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Apply_Mode) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Apply_Mode is
+      (To_Job_Apply_Mode (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Job_Apply) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "mode", To_JSON (Model.Mode));
+      if Model.Has_URL then
+         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      end if;
+      if Model.Has_Email then
+         JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      end if;
+      JS.Set (Result, "requires_cv", JS.JSON.Create (Model.Requires_Cv));
+      JS.Set (Result, "requires_cover_letter", JS.JSON.Create (Model.Requires_Cover_Letter));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Apply is
+      Result : Job_Apply;
+   begin
+      if JS.Present (Node, "mode") then
+         Result.Mode := From_JSON (JS.Get_Value (Node, "mode"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.Has_URL := True;
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Has_Email := True;
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      if JS.Present (Node, "requires_cv") then
+         Result.Requires_Cv := JS.As_Boolean (JS.Get_Value (Node, "requires_cv"));
+      end if;
+      if JS.Present (Node, "requires_cover_letter") then
+         Result.Requires_Cover_Letter := JS.As_Boolean (JS.Get_Value (Node, "requires_cover_letter"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Admin_Job) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Previous_Slugs loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "previous_slugs", Items);
+      end;
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "language", To_JSON (Model.Language));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Responsibilities loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "responsibilities", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Requirements loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "requirements", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Nice_To_Have loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "nice_to_have", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Benefits loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "benefits", Items);
+      end;
+      JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      JS.Set (Result, "location", To_JSON (Model.Location));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Applicant_Countries loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "applicant_countries", Items);
+      end;
+      if Model.Has_English_Level then
+         JS.Set (Result, "english_level", To_JSON (Model.English_Level));
+      end if;
+      if Model.Has_Experience_Years_Min then
+         JS.Set (Result, "experience_years_min", JS.JSON.Create (Model.Experience_Years_Min));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Skills loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "skills", Items);
+      end;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      JS.Set (Result, "apply", To_JSON (Model.Apply));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      if Model.Has_Published_At then
+         JS.Set (Result, "published_at", JS.JSON.Create (Model.Published_At));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      if Model.Has_Closed_At then
+         JS.Set (Result, "closed_at", JS.JSON.Create (Model.Closed_At));
+      end if;
+      JS.Set (Result, "applications_count", JS.JSON.Create (Model.Applications_Count));
+      JS.Set (Result, "new_applications_count", JS.JSON.Create (Model.New_Applications_Count));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Job is
+      Result : Admin_Job;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "slug") then
+         Result.Slug := JS.As_Text (JS.Get_Value (Node, "slug"));
+      end if;
+      if JS.Present (Node, "previous_slugs") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "previous_slugs");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Previous_Slugs.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "responsibilities") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "responsibilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Responsibilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "requirements") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "requirements");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Requirements.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "nice_to_have") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "nice_to_have");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Nice_To_Have.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "benefits") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "benefits");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Benefits.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "english_level") then
+         Result.Has_English_Level := True;
+         Result.English_Level := From_JSON (JS.Get_Value (Node, "english_level"));
+      end if;
+      if JS.Present (Node, "experience_years_min") then
+         Result.Has_Experience_Years_Min := True;
+         Result.Experience_Years_Min := JS.As_Integer (JS.Get_Value (Node, "experience_years_min"));
+      end if;
+      if JS.Present (Node, "skills") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "skills");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Skills.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "apply") then
+         Result.Apply := From_JSON (JS.Get_Value (Node, "apply"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      if JS.Present (Node, "published_at") then
+         Result.Has_Published_At := True;
+         Result.Published_At := JS.As_Text (JS.Get_Value (Node, "published_at"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      if JS.Present (Node, "closed_at") then
+         Result.Has_Closed_At := True;
+         Result.Closed_At := JS.As_Text (JS.Get_Value (Node, "closed_at"));
+      end if;
+      if JS.Present (Node, "applications_count") then
+         Result.Applications_Count := JS.As_Integer (JS.Get_Value (Node, "applications_count"));
+      end if;
+      if JS.Present (Node, "new_applications_count") then
+         Result.New_Applications_Count := JS.As_Integer (JS.Get_Value (Node, "new_applications_count"));
       end if;
       return Result;
    end From_JSON;
@@ -6813,7 +7652,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value7) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Admin_Put_Landing_Config_Request_Texts_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_En then
@@ -6825,8 +7664,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value7 is
-      Result : Value7;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Admin_Put_Landing_Config_Request_Texts_Value is
+      Result : Admin_Put_Landing_Config_Request_Texts_Value;
    begin
       if JS.Present (Node, "en") then
          Result.Has_En := True;
@@ -6838,40 +7677,6 @@ package body UARP.Models is
       end if;
       return Result;
    end From_JSON;
-
-   function To_Video_Order_Locale (Value : String) return Video_Order_Locale is
-   begin
-      if Value = "en" then
-         return (Kind => Video_Order_Locale_En, Raw => UARP.Types."+" (Value));
-      elsif Value = "uk" then
-         return (Kind => Video_Order_Locale_Uk, Raw => UARP.Types."+" (Value));
-      else
-         return (Kind => Video_Order_Locale_Unrecognized, Raw => UARP.Types."+" (Value));
-      end if;
-   end To_Video_Order_Locale;
-
-   function To_Video_Order_Locale (Kind : Video_Order_Locale_Kind) return Video_Order_Locale is
-   begin
-      case Kind is
-         when Video_Order_Locale_En =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("en"));
-         when Video_Order_Locale_Uk =>
-            return (Kind => Kind, Raw => UARP.Types."+" ("uk"));
-         when Video_Order_Locale_Unrecognized =>
-            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
-      end case;
-   end To_Video_Order_Locale;
-
-   function Image (Model : Video_Order_Locale) return String is
-      (if UARP.Types.SU.Length (Model.Raw) > 0
-         then UARP.Types.SU.To_String (Model.Raw)
-         else UARP.Types.SU.To_String (To_Video_Order_Locale (Model.Kind).Raw));
-
-   function To_JSON (Model : Video_Order_Locale) return UARP.JSON_Support.JSON_Value is
-      (JS.JSON.Create (Image (Model)));
-
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Video_Order_Locale is
-      (To_Video_Order_Locale (UARP.Types."+" (JS.As_Text (Node))));
 
    function To_Admin_Put_Landing_Config_Request_Partner_Logo_Slug (Value : String) return Admin_Put_Landing_Config_Request_Partner_Logo_Slug is
    begin
@@ -15561,6 +16366,9 @@ package body UARP.Models is
       if Model.Has_Device_Label then
          JS.Set (Result, "device_label", JS.JSON.Create (Model.Device_Label));
       end if;
+      if Model.Has_Authorization_Code then
+         JS.Set (Result, "authorization_code", JS.JSON.Create (Model.Authorization_Code));
+      end if;
       return Result;
    end To_JSON;
 
@@ -15582,6 +16390,10 @@ package body UARP.Models is
          Result.Has_Device_Label := True;
          Result.Device_Label := JS.As_Text (JS.Get_Value (Node, "device_label"));
       end if;
+      if JS.Present (Node, "authorization_code") then
+         Result.Has_Authorization_Code := True;
+         Result.Authorization_Code := JS.As_Text (JS.Get_Value (Node, "authorization_code"));
+      end if;
       return Result;
    end From_JSON;
 
@@ -15601,6 +16413,76 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "email") then
          Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Application_Cv_Mime_Type (Value : String) return Application_Cv_Mime_Type is
+   begin
+      if Value = "application/pdf" then
+         return (Kind => Application_Cv_Mime_Type_Application_PDF, Raw => UARP.Types."+" (Value));
+      elsif Value = "application/vnd.openxmlformats-officedocument.wordprocessingml.document" then
+         return (Kind => Application_Cv_Mime_Type_Application_Vnd_Openxmlformats_Officedocument_Wordprocessingml_Document, Raw => UARP.Types."+" (Value));
+      elsif Value = "text/markdown" then
+         return (Kind => Application_Cv_Mime_Type_Text_Markdown, Raw => UARP.Types."+" (Value));
+      elsif Value = "text/plain" then
+         return (Kind => Application_Cv_Mime_Type_Text_Plain, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Application_Cv_Mime_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Application_Cv_Mime_Type;
+
+   function To_Application_Cv_Mime_Type (Kind : Application_Cv_Mime_Type_Kind) return Application_Cv_Mime_Type is
+   begin
+      case Kind is
+         when Application_Cv_Mime_Type_Application_PDF =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("application/pdf"));
+         when Application_Cv_Mime_Type_Application_Vnd_Openxmlformats_Officedocument_Wordprocessingml_Document =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("application/vnd.openxmlformats-officedocument.wordprocessingml.document"));
+         when Application_Cv_Mime_Type_Text_Markdown =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("text/markdown"));
+         when Application_Cv_Mime_Type_Text_Plain =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("text/plain"));
+         when Application_Cv_Mime_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Application_Cv_Mime_Type;
+
+   function Image (Model : Application_Cv_Mime_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Application_Cv_Mime_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Application_Cv_Mime_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Application_Cv_Mime_Type is
+      (To_Application_Cv_Mime_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Application_Cv) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "file_id", JS.JSON.Create (Model.File_Id));
+      JS.Set (Result, "filename", JS.JSON.Create (Model.Filename));
+      JS.Set (Result, "size_bytes", JS.JSON.Create (Model.Size_Bytes));
+      JS.Set (Result, "mime_type", To_JSON (Model.Mime_Type));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Application_Cv is
+      Result : Application_Cv;
+   begin
+      if JS.Present (Node, "file_id") then
+         Result.File_Id := JS.As_Text (JS.Get_Value (Node, "file_id"));
+      end if;
+      if JS.Present (Node, "filename") then
+         Result.Filename := JS.As_Text (JS.Get_Value (Node, "filename"));
+      end if;
+      if JS.Present (Node, "size_bytes") then
+         Result.Size_Bytes := JS.As_Integer (JS.Get_Value (Node, "size_bytes"));
+      end if;
+      if JS.Present (Node, "mime_type") then
+         Result.Mime_Type := From_JSON (JS.Get_Value (Node, "mime_type"));
       end if;
       return Result;
    end From_JSON;
@@ -15953,6 +16835,192 @@ package body UARP.Models is
                Result.Todos.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Apply_To_Job_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      if Model.Has_Phone then
+         JS.Set (Result, "phone", JS.JSON.Create (Model.Phone));
+      end if;
+      if Model.Has_Cover_Letter then
+         JS.Set (Result, "cover_letter", JS.JSON.Create (Model.Cover_Letter));
+      end if;
+      if Model.Has_Links then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Links loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "links", Items);
+         end;
+      end if;
+      if Model.Has_Cv then
+         JS.Set (Result, "cv", JS.JSON.Create (Model.Cv));
+      end if;
+      JS.Set (Result, "consent", JS.JSON.Create (Model.Consent));
+      if Model.Has_Talent_Pool_Consent then
+         JS.Set (Result, "talent_pool_consent", JS.JSON.Create (Model.Talent_Pool_Consent));
+      end if;
+      if Model.Has_Locale then
+         JS.Set (Result, "locale", JS.JSON.Create (Model.Locale));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      if Model.Has_Website then
+         JS.Set (Result, "website", JS.JSON.Create (Model.Website));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Apply_To_Job_Request is
+      Result : Apply_To_Job_Request;
+   begin
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      if JS.Present (Node, "phone") then
+         Result.Has_Phone := True;
+         Result.Phone := JS.As_Text (JS.Get_Value (Node, "phone"));
+      end if;
+      if JS.Present (Node, "cover_letter") then
+         Result.Has_Cover_Letter := True;
+         Result.Cover_Letter := JS.As_Text (JS.Get_Value (Node, "cover_letter"));
+      end if;
+      if JS.Present (Node, "links") then
+         Result.Has_Links := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "links");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Links.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "cv") then
+         Result.Has_Cv := True;
+         Result.Cv := JS.As_Text (JS.Get_Value (Node, "cv"));
+      end if;
+      if JS.Present (Node, "consent") then
+         Result.Consent := JS.As_Text (JS.Get_Value (Node, "consent"));
+      end if;
+      if JS.Present (Node, "talent_pool_consent") then
+         Result.Has_Talent_Pool_Consent := True;
+         Result.Talent_Pool_Consent := JS.As_Text (JS.Get_Value (Node, "talent_pool_consent"));
+      end if;
+      if JS.Present (Node, "locale") then
+         Result.Has_Locale := True;
+         Result.Locale := JS.As_Text (JS.Get_Value (Node, "locale"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "website") then
+         Result.Has_Website := True;
+         Result.Website := JS.As_Text (JS.Get_Value (Node, "website"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Job_Application_Status (Value : String) return Job_Application_Status is
+   begin
+      if Value = "new" then
+         return (Kind => Job_Application_Status_New, Raw => UARP.Types."+" (Value));
+      elsif Value = "reviewing" then
+         return (Kind => Job_Application_Status_Reviewing, Raw => UARP.Types."+" (Value));
+      elsif Value = "interview" then
+         return (Kind => Job_Application_Status_Interview, Raw => UARP.Types."+" (Value));
+      elsif Value = "offer" then
+         return (Kind => Job_Application_Status_Offer, Raw => UARP.Types."+" (Value));
+      elsif Value = "hired" then
+         return (Kind => Job_Application_Status_Hired, Raw => UARP.Types."+" (Value));
+      elsif Value = "rejected" then
+         return (Kind => Job_Application_Status_Rejected, Raw => UARP.Types."+" (Value));
+      elsif Value = "withdrawn" then
+         return (Kind => Job_Application_Status_Withdrawn, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Job_Application_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Job_Application_Status;
+
+   function To_Job_Application_Status (Kind : Job_Application_Status_Kind) return Job_Application_Status is
+   begin
+      case Kind is
+         when Job_Application_Status_New =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("new"));
+         when Job_Application_Status_Reviewing =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("reviewing"));
+         when Job_Application_Status_Interview =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("interview"));
+         when Job_Application_Status_Offer =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("offer"));
+         when Job_Application_Status_Hired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("hired"));
+         when Job_Application_Status_Rejected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("rejected"));
+         when Job_Application_Status_Withdrawn =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("withdrawn"));
+         when Job_Application_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Job_Application_Status;
+
+   function Image (Model : Job_Application_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Job_Application_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : Job_Application_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Application_Status is
+      (To_Job_Application_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Apply_To_Job_Response_Application) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      if Model.Has_Status then
+         JS.Set (Result, "status", To_JSON (Model.Status));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Apply_To_Job_Response_Application is
+      Result : Apply_To_Job_Response_Application;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Has_Status := True;
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Apply_To_Job_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "application", To_JSON (Model.Application));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Apply_To_Job_Response is
+      Result : Apply_To_Job_Response;
+   begin
+      if JS.Present (Node, "application") then
+         Result.Application := From_JSON (JS.Get_Value (Node, "application"));
       end if;
       return Result;
    end From_JSON;
@@ -18546,6 +19614,186 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Careers_Config) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      JS.Set (Result, "company_name", JS.JSON.Create (Model.Company_Name));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Notify_Emails loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "notify_emails", Items);
+      end;
+      JS.Set (Result, "retention_days", JS.JSON.Create (Model.Retention_Days));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Careers_Config is
+      Result : Careers_Config;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "company_name") then
+         Result.Company_Name := JS.As_Text (JS.Get_Value (Node, "company_name"));
+      end if;
+      if JS.Present (Node, "notify_emails") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "notify_emails");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Notify_Emails.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "retention_days") then
+         Result.Retention_Days := JS.As_Integer (JS.Get_Value (Node, "retention_days"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Careers_Facets) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Categories loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "categories", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Departments loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "departments", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Workplace_Types loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "workplace_types", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Employment_Types loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "employment_types", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Seniorities loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "seniorities", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Countries loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "countries", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Cities loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "cities", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Careers_Facets is
+      Result : Careers_Facets;
+   begin
+      if JS.Present (Node, "categories") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "categories");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Categories.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "departments") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "departments");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Departments.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "workplace_types") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "workplace_types");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Workplace_Types.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "employment_types") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "employment_types");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Employment_Types.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "seniorities") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "seniorities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Seniorities.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "countries") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "cities") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "cities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Cities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Cast_Ballot_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -19743,6 +20991,26 @@ package body UARP.Models is
       if JS.Present (Node, "config") then
          Result.Has_Config := True;
          Result.Config := JS.Get_Value (Node, "config");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Complete_Mcpo_Auth_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "state", JS.JSON.Create (Model.State));
+      JS.Set (Result, "code", JS.JSON.Create (Model.Code));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Complete_Mcpo_Auth_Request is
+      Result : Complete_Mcpo_Auth_Request;
+   begin
+      if JS.Present (Node, "state") then
+         Result.State := JS.As_Text (JS.Get_Value (Node, "state"));
+      end if;
+      if JS.Present (Node, "code") then
+         Result.Code := JS.As_Text (JS.Get_Value (Node, "code"));
       end if;
       return Result;
    end From_JSON;
@@ -21571,6 +22839,599 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Create_Admin_Job_Request_Location) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_City then
+         JS.Set (Result, "city", JS.JSON.Create (Model.City));
+      end if;
+      if Model.Has_Country then
+         JS.Set (Result, "country", Model.Country);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Location is
+      Result : Create_Admin_Job_Request_Location;
+   begin
+      if JS.Present (Node, "city") then
+         Result.Has_City := True;
+         Result.City := JS.As_Text (JS.Get_Value (Node, "city"));
+      end if;
+      if JS.Present (Node, "country") then
+         Result.Has_Country := True;
+         Result.Country := JS.Get_Value (Node, "country");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Create_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Min then
+         JS.Set (Result, "min", JS.JSON.Create (Model.Min));
+      end if;
+      if Model.Has_Max then
+         JS.Set (Result, "max", JS.JSON.Create (Model.Max));
+      end if;
+      JS.Set (Result, "currency", Model.Currency);
+      JS.Set (Result, "period", To_JSON (Model.Period));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Salary is
+      Result : Create_Admin_Job_Request_Salary;
+   begin
+      if JS.Present (Node, "min") then
+         Result.Has_Min := True;
+         Result.Min := JS.As_Float (JS.Get_Value (Node, "min"));
+      end if;
+      if JS.Present (Node, "max") then
+         Result.Has_Max := True;
+         Result.Max := JS.As_Float (JS.Get_Value (Node, "max"));
+      end if;
+      if JS.Present (Node, "currency") then
+         Result.Currency := JS.Get_Value (Node, "currency");
+      end if;
+      if JS.Present (Node, "period") then
+         Result.Period := From_JSON (JS.Get_Value (Node, "period"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Create_Admin_Job_Request_Apply) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "mode", To_JSON (Model.Mode));
+      if Model.Has_URL then
+         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      end if;
+      if Model.Has_Email then
+         JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      end if;
+      if Model.Has_Requires_Cv then
+         JS.Set (Result, "requires_cv", JS.JSON.Create (Model.Requires_Cv));
+      end if;
+      if Model.Has_Requires_Cover_Letter then
+         JS.Set (Result, "requires_cover_letter", JS.JSON.Create (Model.Requires_Cover_Letter));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request_Apply is
+      Result : Create_Admin_Job_Request_Apply;
+   begin
+      if JS.Present (Node, "mode") then
+         Result.Mode := From_JSON (JS.Get_Value (Node, "mode"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.Has_URL := True;
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Has_Email := True;
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      if JS.Present (Node, "requires_cv") then
+         Result.Has_Requires_Cv := True;
+         Result.Requires_Cv := JS.As_Boolean (JS.Get_Value (Node, "requires_cv"));
+      end if;
+      if JS.Present (Node, "requires_cover_letter") then
+         Result.Has_Requires_Cover_Letter := True;
+         Result.Requires_Cover_Letter := JS.As_Boolean (JS.Get_Value (Node, "requires_cover_letter"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Create_Admin_Job_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      if Model.Has_Summary then
+         JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      end if;
+      if Model.Has_Description then
+         JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      end if;
+      if Model.Has_Responsibilities then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Responsibilities loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "responsibilities", Items);
+         end;
+      end if;
+      if Model.Has_Requirements then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Requirements loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "requirements", Items);
+         end;
+      end if;
+      if Model.Has_Nice_To_Have then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Nice_To_Have loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "nice_to_have", Items);
+         end;
+      end if;
+      if Model.Has_Benefits then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Benefits loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "benefits", Items);
+         end;
+      end if;
+      JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      if Model.Has_Location then
+         JS.Set (Result, "location", To_JSON (Model.Location));
+      end if;
+      if Model.Has_Applicant_Countries then
+         JS.Set (Result, "applicant_countries", Model.Applicant_Countries);
+      end if;
+      if Model.Has_English_Level then
+         JS.Set (Result, "english_level", To_JSON (Model.English_Level));
+      end if;
+      if Model.Has_Experience_Years_Min then
+         JS.Set (Result, "experience_years_min", JS.JSON.Create (Model.Experience_Years_Min));
+      end if;
+      if Model.Has_Skills then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Skills loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "skills", Items);
+         end;
+      end if;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      if Model.Has_Salary_Public then
+         JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      end if;
+      if Model.Has_Apply then
+         JS.Set (Result, "apply", To_JSON (Model.Apply));
+      end if;
+      if Model.Has_Language then
+         JS.Set (Result, "language", To_JSON (Model.Language));
+      end if;
+      if Model.Has_Status then
+         JS.Set (Result, "status", To_JSON (Model.Status));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Request is
+      Result : Create_Admin_Job_Request;
+   begin
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Has_Summary := True;
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Has_Description := True;
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "responsibilities") then
+         Result.Has_Responsibilities := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "responsibilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Responsibilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "requirements") then
+         Result.Has_Requirements := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "requirements");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Requirements.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "nice_to_have") then
+         Result.Has_Nice_To_Have := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "nice_to_have");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Nice_To_Have.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "benefits") then
+         Result.Has_Benefits := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "benefits");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Benefits.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Has_Location := True;
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         Result.Has_Applicant_Countries := True;
+         Result.Applicant_Countries := JS.Get_Value (Node, "applicant_countries");
+      end if;
+      if JS.Present (Node, "english_level") then
+         Result.Has_English_Level := True;
+         Result.English_Level := From_JSON (JS.Get_Value (Node, "english_level"));
+      end if;
+      if JS.Present (Node, "experience_years_min") then
+         Result.Has_Experience_Years_Min := True;
+         Result.Experience_Years_Min := JS.As_Integer (JS.Get_Value (Node, "experience_years_min"));
+      end if;
+      if JS.Present (Node, "skills") then
+         Result.Has_Skills := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "skills");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Skills.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Has_Salary_Public := True;
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "apply") then
+         Result.Has_Apply := True;
+         Result.Apply := From_JSON (JS.Get_Value (Node, "apply"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Has_Language := True;
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Has_Status := True;
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Job) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Previous_Slugs loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "previous_slugs", Items);
+      end;
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "language", To_JSON (Model.Language));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Responsibilities loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "responsibilities", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Requirements loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "requirements", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Nice_To_Have loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "nice_to_have", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Benefits loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "benefits", Items);
+      end;
+      JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      JS.Set (Result, "location", To_JSON (Model.Location));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Applicant_Countries loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "applicant_countries", Items);
+      end;
+      if Model.Has_English_Level then
+         JS.Set (Result, "english_level", To_JSON (Model.English_Level));
+      end if;
+      if Model.Has_Experience_Years_Min then
+         JS.Set (Result, "experience_years_min", JS.JSON.Create (Model.Experience_Years_Min));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Skills loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "skills", Items);
+      end;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      JS.Set (Result, "apply", To_JSON (Model.Apply));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      if Model.Has_Published_At then
+         JS.Set (Result, "published_at", JS.JSON.Create (Model.Published_At));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      if Model.Has_Closed_At then
+         JS.Set (Result, "closed_at", JS.JSON.Create (Model.Closed_At));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job is
+      Result : Job;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "slug") then
+         Result.Slug := JS.As_Text (JS.Get_Value (Node, "slug"));
+      end if;
+      if JS.Present (Node, "previous_slugs") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "previous_slugs");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Previous_Slugs.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "responsibilities") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "responsibilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Responsibilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "requirements") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "requirements");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Requirements.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "nice_to_have") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "nice_to_have");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Nice_To_Have.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "benefits") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "benefits");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Benefits.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "english_level") then
+         Result.Has_English_Level := True;
+         Result.English_Level := From_JSON (JS.Get_Value (Node, "english_level"));
+      end if;
+      if JS.Present (Node, "experience_years_min") then
+         Result.Has_Experience_Years_Min := True;
+         Result.Experience_Years_Min := JS.As_Integer (JS.Get_Value (Node, "experience_years_min"));
+      end if;
+      if JS.Present (Node, "skills") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "skills");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Skills.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "apply") then
+         Result.Apply := From_JSON (JS.Get_Value (Node, "apply"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      if JS.Present (Node, "published_at") then
+         Result.Has_Published_At := True;
+         Result.Published_At := JS.As_Text (JS.Get_Value (Node, "published_at"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      if JS.Present (Node, "closed_at") then
+         Result.Has_Closed_At := True;
+         Result.Closed_At := JS.As_Text (JS.Get_Value (Node, "closed_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Create_Admin_Job_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "job", To_JSON (Model.Job));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Admin_Job_Response is
+      Result : Create_Admin_Job_Response;
+   begin
+      if JS.Present (Node, "job") then
+         Result.Job := From_JSON (JS.Get_Value (Node, "job"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_Create_Admin_Provider_Request_Canonical (Value : String) return Create_Admin_Provider_Request_Canonical is
    begin
       if Value = "openai_compat" then
@@ -22948,6 +24809,8 @@ package body UARP.Models is
          return (Kind => MCP_Server_Auth_Type_None, Raw => UARP.Types."+" (Value));
       elsif Value = "api_key" then
          return (Kind => MCP_Server_Auth_Type_API_Key, Raw => UARP.Types."+" (Value));
+      elsif Value = "oauth" then
+         return (Kind => MCP_Server_Auth_Type_Oauth, Raw => UARP.Types."+" (Value));
       else
          return (Kind => MCP_Server_Auth_Type_Unrecognized, Raw => UARP.Types."+" (Value));
       end if;
@@ -22960,6 +24823,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("none"));
          when MCP_Server_Auth_Type_API_Key =>
             return (Kind => Kind, Raw => UARP.Types."+" ("api_key"));
+         when MCP_Server_Auth_Type_Oauth =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("oauth"));
          when MCP_Server_Auth_Type_Unrecognized =>
             return (Kind => Kind, Raw => UARP.Types.Empty_Text);
       end case;
@@ -22976,10 +24841,94 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_Auth_Type is
       (To_MCP_Server_Auth_Type (UARP.Types."+" (JS.As_Text (Node))));
 
+   function To_JSON (Model : MCP_Server_O_Auth) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "issuer", JS.JSON.Create (Model.Issuer));
+      JS.Set (Result, "token_endpoint", JS.JSON.Create (Model.Token_Endpoint));
+      JS.Set (Result, "client_id", JS.JSON.Create (Model.Client_Id));
+      JS.Set (Result, "token_endpoint_auth_method", JS.JSON.Create (Model.Token_Endpoint_Auth_Method));
+      JS.Set (Result, "resource", JS.JSON.Create (Model.Resource));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Scopes loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "scopes", Items);
+      end;
+      if Model.Has_Expires_At then
+         JS.Set (Result, "expires_at", JS.JSON.Create (Model.Expires_At));
+      end if;
+      if Model.Has_Connected_By then
+         JS.Set (Result, "connected_by", JS.JSON.Create (Model.Connected_By));
+      end if;
+      JS.Set (Result, "connected_at", JS.JSON.Create (Model.Connected_At));
+      if Model.Has_Needs_Reauth then
+         JS.Set (Result, "needs_reauth", JS.JSON.Create (Model.Needs_Reauth));
+      end if;
+      if Model.Has_Catalog_Id then
+         JS.Set (Result, "catalog_id", JS.JSON.Create (Model.Catalog_Id));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Server_O_Auth is
+      Result : MCP_Server_O_Auth;
+   begin
+      if JS.Present (Node, "issuer") then
+         Result.Issuer := JS.As_Text (JS.Get_Value (Node, "issuer"));
+      end if;
+      if JS.Present (Node, "token_endpoint") then
+         Result.Token_Endpoint := JS.As_Text (JS.Get_Value (Node, "token_endpoint"));
+      end if;
+      if JS.Present (Node, "client_id") then
+         Result.Client_Id := JS.As_Text (JS.Get_Value (Node, "client_id"));
+      end if;
+      if JS.Present (Node, "token_endpoint_auth_method") then
+         Result.Token_Endpoint_Auth_Method := JS.As_Text (JS.Get_Value (Node, "token_endpoint_auth_method"));
+      end if;
+      if JS.Present (Node, "resource") then
+         Result.Resource := JS.As_Text (JS.Get_Value (Node, "resource"));
+      end if;
+      if JS.Present (Node, "scopes") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "scopes");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Scopes.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "expires_at") then
+         Result.Has_Expires_At := True;
+         Result.Expires_At := JS.As_Text (JS.Get_Value (Node, "expires_at"));
+      end if;
+      if JS.Present (Node, "connected_by") then
+         Result.Has_Connected_By := True;
+         Result.Connected_By := JS.As_Text (JS.Get_Value (Node, "connected_by"));
+      end if;
+      if JS.Present (Node, "connected_at") then
+         Result.Connected_At := JS.As_Text (JS.Get_Value (Node, "connected_at"));
+      end if;
+      if JS.Present (Node, "needs_reauth") then
+         Result.Has_Needs_Reauth := True;
+         Result.Needs_Reauth := JS.As_Boolean (JS.Get_Value (Node, "needs_reauth"));
+      end if;
+      if JS.Present (Node, "catalog_id") then
+         Result.Has_Catalog_Id := True;
+         Result.Catalog_Id := JS.As_Text (JS.Get_Value (Node, "catalog_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : MCP_Server_Auth) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "type", To_JSON (Model.Type_K));
+      if Model.Has_Oauth then
+         JS.Set (Result, "oauth", To_JSON (Model.Oauth));
+      end if;
       if Model.Has_Header then
          JS.Set (Result, "header", JS.JSON.Create (Model.Header));
       end if;
@@ -22997,6 +24946,10 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "type") then
          Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "oauth") then
+         Result.Has_Oauth := True;
+         Result.Oauth := From_JSON (JS.Get_Value (Node, "oauth"));
       end if;
       if JS.Present (Node, "header") then
          Result.Has_Header := True;
@@ -24791,10 +26744,36 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Create_Session_Todo_Request_Recurrence) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "cron", JS.JSON.Create (Model.Cron));
+      if Model.Has_Timezone then
+         JS.Set (Result, "timezone", JS.JSON.Create (Model.Timezone));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Create_Session_Todo_Request_Recurrence is
+      Result : Create_Session_Todo_Request_Recurrence;
+   begin
+      if JS.Present (Node, "cron") then
+         Result.Cron := JS.As_Text (JS.Get_Value (Node, "cron"));
+      end if;
+      if JS.Present (Node, "timezone") then
+         Result.Has_Timezone := True;
+         Result.Timezone := JS.As_Text (JS.Get_Value (Node, "timezone"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Create_Session_Todo_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      if Model.Has_Instructions then
+         JS.Set (Result, "instructions", JS.JSON.Create (Model.Instructions));
+      end if;
       if Model.Has_Description then
          JS.Set (Result, "description", JS.JSON.Create (Model.Description));
       end if;
@@ -24804,8 +26783,23 @@ package body UARP.Models is
       if Model.Has_Assign_Agent_Id then
          JS.Set (Result, "assign_agent_id", JS.JSON.Create (Model.Assign_Agent_Id));
       end if;
+      if Model.Has_Assign_Team_Id then
+         JS.Set (Result, "assign_team_id", JS.JSON.Create (Model.Assign_Team_Id));
+      end if;
       if Model.Has_Status then
          JS.Set (Result, "status", JS.JSON.Create (Model.Status));
+      end if;
+      if Model.Has_Recurrence then
+         JS.Set (Result, "recurrence", To_JSON (Model.Recurrence));
+      end if;
+      if Model.Has_Require_Confirmation then
+         JS.Set (Result, "require_confirmation", JS.JSON.Create (Model.Require_Confirmation));
+      end if;
+      if Model.Has_Order_Index then
+         JS.Set (Result, "order_index", JS.JSON.Create (Model.Order_Index));
+      end if;
+      if Model.Has_Parent_Task_Id then
+         JS.Set (Result, "parent_task_id", JS.JSON.Create (Model.Parent_Task_Id));
       end if;
       return Result;
    end To_JSON;
@@ -24815,6 +26809,10 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "title") then
          Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "instructions") then
+         Result.Has_Instructions := True;
+         Result.Instructions := JS.As_Text (JS.Get_Value (Node, "instructions"));
       end if;
       if JS.Present (Node, "description") then
          Result.Has_Description := True;
@@ -24828,9 +26826,29 @@ package body UARP.Models is
          Result.Has_Assign_Agent_Id := True;
          Result.Assign_Agent_Id := JS.As_Text (JS.Get_Value (Node, "assign_agent_id"));
       end if;
+      if JS.Present (Node, "assign_team_id") then
+         Result.Has_Assign_Team_Id := True;
+         Result.Assign_Team_Id := JS.As_Text (JS.Get_Value (Node, "assign_team_id"));
+      end if;
       if JS.Present (Node, "status") then
          Result.Has_Status := True;
          Result.Status := JS.As_Text (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "recurrence") then
+         Result.Has_Recurrence := True;
+         Result.Recurrence := From_JSON (JS.Get_Value (Node, "recurrence"));
+      end if;
+      if JS.Present (Node, "require_confirmation") then
+         Result.Has_Require_Confirmation := True;
+         Result.Require_Confirmation := JS.As_Boolean (JS.Get_Value (Node, "require_confirmation"));
+      end if;
+      if JS.Present (Node, "order_index") then
+         Result.Has_Order_Index := True;
+         Result.Order_Index := JS.As_Float (JS.Get_Value (Node, "order_index"));
+      end if;
+      if JS.Present (Node, "parent_task_id") then
+         Result.Has_Parent_Task_Id := True;
+         Result.Parent_Task_Id := JS.As_Text (JS.Get_Value (Node, "parent_task_id"));
       end if;
       return Result;
    end From_JSON;
@@ -25422,6 +27440,9 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      if Model.Has_Email then
+         JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      end if;
       if Model.Has_Slug then
          JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
       end if;
@@ -25448,6 +27469,10 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "name") then
          Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Has_Email := True;
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
       end if;
       if JS.Present (Node, "slug") then
          Result.Has_Slug := True;
@@ -26961,6 +28986,9 @@ package body UARP.Models is
          JS.Set (Result, "tenants", Items);
       end;
       JS.Set (Result, "sessions_revoked", JS.JSON.Create (Model.Sessions_Revoked));
+      if Model.Has_Apple_Tokens_Revoked then
+         JS.Set (Result, "apple_tokens_revoked", JS.JSON.Create (Model.Apple_Tokens_Revoked));
+      end if;
       JS.Set (Result, "erased", To_JSON (Model.Erased));
       declare
          Items : JS.JSON_Array := JS.JSON.Empty_Array;
@@ -26990,6 +29018,10 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "sessions_revoked") then
          Result.Sessions_Revoked := JS.As_Integer (JS.Get_Value (Node, "sessions_revoked"));
+      end if;
+      if JS.Present (Node, "apple_tokens_revoked") then
+         Result.Has_Apple_Tokens_Revoked := True;
+         Result.Apple_Tokens_Revoked := JS.As_Integer (JS.Get_Value (Node, "apple_tokens_revoked"));
       end if;
       if JS.Present (Node, "erased") then
          Result.Erased := From_JSON (JS.Get_Value (Node, "erased"));
@@ -27424,6 +29456,54 @@ package body UARP.Models is
 
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Delete_Workspace_File_Trash is
       (To_Delete_Workspace_File_Trash (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Deployment_Features) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "governance", JS.JSON.Create (Model.Governance));
+      JS.Set (Result, "billing", JS.JSON.Create (Model.Billing));
+      JS.Set (Result, "mfa", JS.JSON.Create (Model.Mfa));
+      JS.Set (Result, "web_search", JS.JSON.Create (Model.Web_Search));
+      JS.Set (Result, "speech_to_text", JS.JSON.Create (Model.Speech_To_Text));
+      JS.Set (Result, "text_to_speech", JS.JSON.Create (Model.Text_To_Speech));
+      JS.Set (Result, "embeddings", JS.JSON.Create (Model.Embeddings));
+      JS.Set (Result, "spec_signing", JS.JSON.Create (Model.Spec_Signing));
+      JS.Set (Result, "marketplace_invoke", JS.JSON.Create (Model.Marketplace_Invoke));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Deployment_Features is
+      Result : Deployment_Features;
+   begin
+      if JS.Present (Node, "governance") then
+         Result.Governance := JS.As_Boolean (JS.Get_Value (Node, "governance"));
+      end if;
+      if JS.Present (Node, "billing") then
+         Result.Billing := JS.As_Boolean (JS.Get_Value (Node, "billing"));
+      end if;
+      if JS.Present (Node, "mfa") then
+         Result.Mfa := JS.As_Boolean (JS.Get_Value (Node, "mfa"));
+      end if;
+      if JS.Present (Node, "web_search") then
+         Result.Web_Search := JS.As_Boolean (JS.Get_Value (Node, "web_search"));
+      end if;
+      if JS.Present (Node, "speech_to_text") then
+         Result.Speech_To_Text := JS.As_Boolean (JS.Get_Value (Node, "speech_to_text"));
+      end if;
+      if JS.Present (Node, "text_to_speech") then
+         Result.Text_To_Speech := JS.As_Boolean (JS.Get_Value (Node, "text_to_speech"));
+      end if;
+      if JS.Present (Node, "embeddings") then
+         Result.Embeddings := JS.As_Boolean (JS.Get_Value (Node, "embeddings"));
+      end if;
+      if JS.Present (Node, "spec_signing") then
+         Result.Spec_Signing := JS.As_Boolean (JS.Get_Value (Node, "spec_signing"));
+      end if;
+      if JS.Present (Node, "marketplace_invoke") then
+         Result.Marketplace_Invoke := JS.As_Boolean (JS.Get_Value (Node, "marketplace_invoke"));
+      end if;
+      return Result;
+   end From_JSON;
 
    function To_Design_Request_Status (Value : String) return Design_Request_Status is
    begin
@@ -28809,6 +30889,8 @@ package body UARP.Models is
    begin
       if Value = "AAR_NOT_AVAILABLE" then
          return (Kind => Error_Code_Aar_Not_Available, Raw => UARP.Types."+" (Value));
+      elsif Value = "ACTIVE_TENANT_NOT_SUPPORTED" then
+         return (Kind => Error_Code_Active_Tenant_Not_Supported, Raw => UARP.Types."+" (Value));
       elsif Value = "ALREADY_EXISTS" then
          return (Kind => Error_Code_Already_Exists, Raw => UARP.Types."+" (Value));
       elsif Value = "ANON_BUSY" then
@@ -28951,6 +31033,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Size_Limit, Raw => UARP.Types."+" (Value));
       elsif Value = "SPEC_NOT_FOUND" then
          return (Kind => Error_Code_Spec_Not_Found, Raw => UARP.Types."+" (Value));
+      elsif Value = "STARTED_BY_ANOTHER_USER" then
+         return (Kind => Error_Code_Started_By_Another_User, Raw => UARP.Types."+" (Value));
       elsif Value = "TASK_GRAPH_FAILED" then
          return (Kind => Error_Code_Task_Graph_Failed, Raw => UARP.Types."+" (Value));
       elsif Value = "TEAM_ABORT" then
@@ -28985,6 +31069,14 @@ package body UARP.Models is
          return (Kind => Error_Code_Approval_Rejected, Raw => UARP.Types."+" (Value));
       elsif Value = "billing_not_configured" then
          return (Kind => Error_Code_Billing_Not_Configured, Raw => UARP.Types."+" (Value));
+      elsif Value = "consent_required" then
+         return (Kind => Error_Code_Consent_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "cv_invalid" then
+         return (Kind => Error_Code_Cv_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "cv_too_large" then
+         return (Kind => Error_Code_Cv_Too_Large, Raw => UARP.Types."+" (Value));
+      elsif Value = "duplicate_application" then
+         return (Kind => Error_Code_Duplicate_Application, Raw => UARP.Types."+" (Value));
       elsif Value = "governance_not_enabled" then
          return (Kind => Error_Code_Governance_Not_Enabled, Raw => UARP.Types."+" (Value));
       elsif Value = "incomplete_record" then
@@ -28993,6 +31085,10 @@ package body UARP.Models is
          return (Kind => Error_Code_Inert_Policy_Field, Raw => UARP.Types."+" (Value));
       elsif Value = "inert_public_config_field" then
          return (Kind => Error_Code_Inert_Public_Config_Field, Raw => UARP.Types."+" (Value));
+      elsif Value = "job_apply_elsewhere" then
+         return (Kind => Error_Code_Job_Apply_Elsewhere, Raw => UARP.Types."+" (Value));
+      elsif Value = "job_closed" then
+         return (Kind => Error_Code_Job_Closed, Raw => UARP.Types."+" (Value));
       elsif Value = "kb_chunk_limit" then
          return (Kind => Error_Code_Kb_Chunk_Limit, Raw => UARP.Types."+" (Value));
       elsif Value = "kb_document_body_invalid" then
@@ -29029,6 +31125,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Rate_Limited, Raw => UARP.Types."+" (Value));
       elsif Value = "resource_limit_reached" then
          return (Kind => Error_Code_Resource_Limit_Reached, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_approval_expired" then
+         return (Kind => Error_Code_Run_Approval_Expired, Raw => UARP.Types."+" (Value));
       elsif Value = "run_input_timeout" then
          return (Kind => Error_Code_Run_Input_Timeout, Raw => UARP.Types."+" (Value));
       elsif Value = "run_never_claimed" then
@@ -29037,6 +31135,8 @@ package body UARP.Models is
          return (Kind => Error_Code_Run_Orphaned_Restart, Raw => UARP.Types."+" (Value));
       elsif Value = "run_quota_exceeded" then
          return (Kind => Error_Code_Run_Quota_Exceeded, Raw => UARP.Types."+" (Value));
+      elsif Value = "run_stalled" then
+         return (Kind => Error_Code_Run_Stalled, Raw => UARP.Types."+" (Value));
       elsif Value = "secret_would_move" then
          return (Kind => Error_Code_Secret_Would_Move, Raw => UARP.Types."+" (Value));
       elsif Value = "video_consent_required" then
@@ -29061,6 +31161,8 @@ package body UARP.Models is
       case Kind is
          when Error_Code_Aar_Not_Available =>
             return (Kind => Kind, Raw => UARP.Types."+" ("AAR_NOT_AVAILABLE"));
+         when Error_Code_Active_Tenant_Not_Supported =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ACTIVE_TENANT_NOT_SUPPORTED"));
          when Error_Code_Already_Exists =>
             return (Kind => Kind, Raw => UARP.Types."+" ("ALREADY_EXISTS"));
          when Error_Code_Anon_Busy =>
@@ -29203,6 +31305,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("SIZE_LIMIT"));
          when Error_Code_Spec_Not_Found =>
             return (Kind => Kind, Raw => UARP.Types."+" ("SPEC_NOT_FOUND"));
+         when Error_Code_Started_By_Another_User =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("STARTED_BY_ANOTHER_USER"));
          when Error_Code_Task_Graph_Failed =>
             return (Kind => Kind, Raw => UARP.Types."+" ("TASK_GRAPH_FAILED"));
          when Error_Code_Team_Abort =>
@@ -29237,6 +31341,14 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("approval_rejected"));
          when Error_Code_Billing_Not_Configured =>
             return (Kind => Kind, Raw => UARP.Types."+" ("billing_not_configured"));
+         when Error_Code_Consent_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("consent_required"));
+         when Error_Code_Cv_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("cv_invalid"));
+         when Error_Code_Cv_Too_Large =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("cv_too_large"));
+         when Error_Code_Duplicate_Application =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("duplicate_application"));
          when Error_Code_Governance_Not_Enabled =>
             return (Kind => Kind, Raw => UARP.Types."+" ("governance_not_enabled"));
          when Error_Code_Incomplete_Record =>
@@ -29245,6 +31357,10 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("inert_policy_field"));
          when Error_Code_Inert_Public_Config_Field =>
             return (Kind => Kind, Raw => UARP.Types."+" ("inert_public_config_field"));
+         when Error_Code_Job_Apply_Elsewhere =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("job_apply_elsewhere"));
+         when Error_Code_Job_Closed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("job_closed"));
          when Error_Code_Kb_Chunk_Limit =>
             return (Kind => Kind, Raw => UARP.Types."+" ("kb_chunk_limit"));
          when Error_Code_Kb_Document_Body_Invalid =>
@@ -29281,6 +31397,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("rate_limited"));
          when Error_Code_Resource_Limit_Reached =>
             return (Kind => Kind, Raw => UARP.Types."+" ("resource_limit_reached"));
+         when Error_Code_Run_Approval_Expired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_approval_expired"));
          when Error_Code_Run_Input_Timeout =>
             return (Kind => Kind, Raw => UARP.Types."+" ("run_input_timeout"));
          when Error_Code_Run_Never_Claimed =>
@@ -29289,6 +31407,8 @@ package body UARP.Models is
             return (Kind => Kind, Raw => UARP.Types."+" ("run_orphaned_restart"));
          when Error_Code_Run_Quota_Exceeded =>
             return (Kind => Kind, Raw => UARP.Types."+" ("run_quota_exceeded"));
+         when Error_Code_Run_Stalled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run_stalled"));
          when Error_Code_Secret_Would_Move =>
             return (Kind => Kind, Raw => UARP.Types."+" ("secret_would_move"));
          when Error_Code_Video_Consent_Required =>
@@ -30729,7 +32849,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value4) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Fleet_Layout_Positions_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "x", JS.JSON.Create (Model.X));
@@ -30737,8 +32857,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value4 is
-      Result : Value4;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fleet_Layout_Positions_Value is
+      Result : Fleet_Layout_Positions_Value;
    begin
       if JS.Present (Node, "x") then
          Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
@@ -30987,7 +33107,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value3) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Fleet_Layout_Update_Positions_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "x", JS.JSON.Create (Model.X));
@@ -30995,8 +33115,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value3 is
-      Result : Value3;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Fleet_Layout_Update_Positions_Value is
+      Result : Fleet_Layout_Update_Positions_Value;
    begin
       if JS.Present (Node, "x") then
          Result.X := JS.As_Float (JS.Get_Value (Node, "x"));
@@ -31534,6 +33654,22 @@ package body UARP.Models is
                Result.Scopes.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Admin_Job_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "job", To_JSON (Model.Job));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Admin_Job_Response is
+      Result : Get_Admin_Job_Response;
+   begin
+      if JS.Present (Node, "job") then
+         Result.Job := From_JSON (JS.Get_Value (Node, "job"));
       end if;
       return Result;
    end From_JSON;
@@ -32507,7 +34643,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value5) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Get_Agent_Version_Diff_Response_Diff_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       if Model.Has_From then
@@ -32519,8 +34655,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value5 is
-      Result : Value5;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Agent_Version_Diff_Response_Diff_Value is
+      Result : Get_Agent_Version_Diff_Response_Diff_Value;
    begin
       if JS.Present (Node, "from") then
          Result.Has_From := True;
@@ -33208,28 +35344,198 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Get_Careers_Config_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "config", To_JSON (Model.Config));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Careers_Config_Response is
+      Result : Get_Careers_Config_Response;
+   begin
+      if JS.Present (Node, "config") then
+         Result.Config := From_JSON (JS.Get_Value (Node, "config"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Client_Config_Response_Pricing_Value) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "input_per_million", JS.JSON.Create (Model.Input_Per_Million));
+      JS.Set (Result, "output_per_million", JS.JSON.Create (Model.Output_Per_Million));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Client_Config_Response_Pricing_Value is
+      Result : Get_Client_Config_Response_Pricing_Value;
+   begin
+      if JS.Present (Node, "input_per_million") then
+         Result.Input_Per_Million := JS.As_Float (JS.Get_Value (Node, "input_per_million"));
+      end if;
+      if JS.Present (Node, "output_per_million") then
+         Result.Output_Per_Million := JS.As_Float (JS.Get_Value (Node, "output_per_million"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Client_Config_Response_Bridge) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Heartbeat_Interval_Secs then
+         JS.Set (Result, "heartbeat_interval_secs", JS.JSON.Create (Model.Heartbeat_Interval_Secs));
+      end if;
+      if Model.Has_Poll_Timeout_Ms then
+         JS.Set (Result, "poll_timeout_ms", JS.JSON.Create (Model.Poll_Timeout_Ms));
+      end if;
+      if Model.Has_Poll_HTTP_Timeout_Secs then
+         JS.Set (Result, "poll_http_timeout_secs", JS.JSON.Create (Model.Poll_HTTP_Timeout_Secs));
+      end if;
+      if Model.Has_Approval_Max_Wait_Secs then
+         JS.Set (Result, "approval_max_wait_secs", JS.JSON.Create (Model.Approval_Max_Wait_Secs));
+      end if;
+      if Model.Has_Approval_Poll_Interval_Secs then
+         JS.Set (Result, "approval_poll_interval_secs", JS.JSON.Create (Model.Approval_Poll_Interval_Secs));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Client_Config_Response_Bridge is
+      Result : Get_Client_Config_Response_Bridge;
+   begin
+      if JS.Present (Node, "heartbeat_interval_secs") then
+         Result.Has_Heartbeat_Interval_Secs := True;
+         Result.Heartbeat_Interval_Secs := JS.As_Integer (JS.Get_Value (Node, "heartbeat_interval_secs"));
+      end if;
+      if JS.Present (Node, "poll_timeout_ms") then
+         Result.Has_Poll_Timeout_Ms := True;
+         Result.Poll_Timeout_Ms := JS.As_Integer (JS.Get_Value (Node, "poll_timeout_ms"));
+      end if;
+      if JS.Present (Node, "poll_http_timeout_secs") then
+         Result.Has_Poll_HTTP_Timeout_Secs := True;
+         Result.Poll_HTTP_Timeout_Secs := JS.As_Integer (JS.Get_Value (Node, "poll_http_timeout_secs"));
+      end if;
+      if JS.Present (Node, "approval_max_wait_secs") then
+         Result.Has_Approval_Max_Wait_Secs := True;
+         Result.Approval_Max_Wait_Secs := JS.As_Integer (JS.Get_Value (Node, "approval_max_wait_secs"));
+      end if;
+      if JS.Present (Node, "approval_poll_interval_secs") then
+         Result.Has_Approval_Poll_Interval_Secs := True;
+         Result.Approval_Poll_Interval_Secs := JS.As_Integer (JS.Get_Value (Node, "approval_poll_interval_secs"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Client_Config_Response_Limits) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Tool_Timeout_Secs then
+         JS.Set (Result, "tool_timeout_secs", JS.JSON.Create (Model.Tool_Timeout_Secs));
+      end if;
+      if Model.Has_Shell_Timeout_Secs then
+         JS.Set (Result, "shell_timeout_secs", JS.JSON.Create (Model.Shell_Timeout_Secs));
+      end if;
+      if Model.Has_HTTP_Timeout_Secs then
+         JS.Set (Result, "http_timeout_secs", JS.JSON.Create (Model.HTTP_Timeout_Secs));
+      end if;
+      if Model.Has_Max_File_Size_Bytes then
+         JS.Set (Result, "max_file_size_bytes", JS.JSON.Create (Model.Max_File_Size_Bytes));
+      end if;
+      if Model.Has_Max_HTTP_Response_Bytes then
+         JS.Set (Result, "max_http_response_bytes", JS.JSON.Create (Model.Max_HTTP_Response_Bytes));
+      end if;
+      if Model.Has_Max_Shell_Output_Bytes then
+         JS.Set (Result, "max_shell_output_bytes", JS.JSON.Create (Model.Max_Shell_Output_Bytes));
+      end if;
+      if Model.Has_Max_Shell_Execs then
+         JS.Set (Result, "max_shell_execs", JS.JSON.Create (Model.Max_Shell_Execs));
+      end if;
+      if Model.Has_Wasm_Shell_Timeout_Ms then
+         JS.Set (Result, "wasm_shell_timeout_ms", JS.JSON.Create (Model.Wasm_Shell_Timeout_Ms));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Client_Config_Response_Limits is
+      Result : Get_Client_Config_Response_Limits;
+   begin
+      if JS.Present (Node, "tool_timeout_secs") then
+         Result.Has_Tool_Timeout_Secs := True;
+         Result.Tool_Timeout_Secs := JS.As_Integer (JS.Get_Value (Node, "tool_timeout_secs"));
+      end if;
+      if JS.Present (Node, "shell_timeout_secs") then
+         Result.Has_Shell_Timeout_Secs := True;
+         Result.Shell_Timeout_Secs := JS.As_Integer (JS.Get_Value (Node, "shell_timeout_secs"));
+      end if;
+      if JS.Present (Node, "http_timeout_secs") then
+         Result.Has_HTTP_Timeout_Secs := True;
+         Result.HTTP_Timeout_Secs := JS.As_Integer (JS.Get_Value (Node, "http_timeout_secs"));
+      end if;
+      if JS.Present (Node, "max_file_size_bytes") then
+         Result.Has_Max_File_Size_Bytes := True;
+         Result.Max_File_Size_Bytes := JS.As_Integer (JS.Get_Value (Node, "max_file_size_bytes"));
+      end if;
+      if JS.Present (Node, "max_http_response_bytes") then
+         Result.Has_Max_HTTP_Response_Bytes := True;
+         Result.Max_HTTP_Response_Bytes := JS.As_Integer (JS.Get_Value (Node, "max_http_response_bytes"));
+      end if;
+      if JS.Present (Node, "max_shell_output_bytes") then
+         Result.Has_Max_Shell_Output_Bytes := True;
+         Result.Max_Shell_Output_Bytes := JS.As_Integer (JS.Get_Value (Node, "max_shell_output_bytes"));
+      end if;
+      if JS.Present (Node, "max_shell_execs") then
+         Result.Has_Max_Shell_Execs := True;
+         Result.Max_Shell_Execs := JS.As_Integer (JS.Get_Value (Node, "max_shell_execs"));
+      end if;
+      if JS.Present (Node, "wasm_shell_timeout_ms") then
+         Result.Has_Wasm_Shell_Timeout_Ms := True;
+         Result.Wasm_Shell_Timeout_Ms := JS.As_Integer (JS.Get_Value (Node, "wasm_shell_timeout_ms"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Get_Client_Config_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
-      if Model.Has_Features then
-         JS.Set (Result, "features", Model.Features);
-      end if;
-      if Model.Has_Providers then
-         JS.Set (Result, "providers", Model.Providers);
-      end if;
+      JS.Set (Result, "pricing", Model.Pricing);
+      JS.Set (Result, "bridge", To_JSON (Model.Bridge));
+      JS.Set (Result, "limits", To_JSON (Model.Limits));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Dangerous_Tool_Prefixes loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "dangerous_tool_prefixes", Items);
+      end;
+      JS.Set (Result, "features", To_JSON (Model.Features));
       return Result;
    end To_JSON;
 
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Client_Config_Response is
       Result : Get_Client_Config_Response;
    begin
-      if JS.Present (Node, "features") then
-         Result.Has_Features := True;
-         Result.Features := JS.Get_Value (Node, "features");
+      if JS.Present (Node, "pricing") then
+         Result.Pricing := JS.Get_Value (Node, "pricing");
       end if;
-      if JS.Present (Node, "providers") then
-         Result.Has_Providers := True;
-         Result.Providers := JS.Get_Value (Node, "providers");
+      if JS.Present (Node, "bridge") then
+         Result.Bridge := From_JSON (JS.Get_Value (Node, "bridge"));
+      end if;
+      if JS.Present (Node, "limits") then
+         Result.Limits := From_JSON (JS.Get_Value (Node, "limits"));
+      end if;
+      if JS.Present (Node, "dangerous_tool_prefixes") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "dangerous_tool_prefixes");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Dangerous_Tool_Prefixes.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "features") then
+         Result.Features := From_JSON (JS.Get_Value (Node, "features"));
       end if;
       return Result;
    end From_JSON;
@@ -34341,6 +36647,136 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Job_Application) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "job_id", JS.JSON.Create (Model.Job_Id));
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      if Model.Has_Phone then
+         JS.Set (Result, "phone", JS.JSON.Create (Model.Phone));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Links loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "links", Items);
+      end;
+      if Model.Has_Cover_Letter then
+         JS.Set (Result, "cover_letter", JS.JSON.Create (Model.Cover_Letter));
+      end if;
+      if Model.Has_Cv then
+         JS.Set (Result, "cv", To_JSON (Model.Cv));
+      end if;
+      if Model.Has_Locale then
+         JS.Set (Result, "locale", JS.JSON.Create (Model.Locale));
+      end if;
+      if Model.Has_Source then
+         JS.Set (Result, "source", JS.JSON.Create (Model.Source));
+      end if;
+      JS.Set (Result, "consent_at", JS.JSON.Create (Model.Consent_At));
+      if Model.Has_Talent_Pool_Consent_At then
+         JS.Set (Result, "talent_pool_consent_at", JS.JSON.Create (Model.Talent_Pool_Consent_At));
+      end if;
+      if Model.Has_Retain_Until then
+         JS.Set (Result, "retain_until", JS.JSON.Create (Model.Retain_Until));
+      end if;
+      JS.Set (Result, "notes", JS.JSON.Create (Model.Notes));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Job_Application is
+      Result : Job_Application;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "job_id") then
+         Result.Job_Id := JS.As_Text (JS.Get_Value (Node, "job_id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      if JS.Present (Node, "phone") then
+         Result.Has_Phone := True;
+         Result.Phone := JS.As_Text (JS.Get_Value (Node, "phone"));
+      end if;
+      if JS.Present (Node, "links") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "links");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Links.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "cover_letter") then
+         Result.Has_Cover_Letter := True;
+         Result.Cover_Letter := JS.As_Text (JS.Get_Value (Node, "cover_letter"));
+      end if;
+      if JS.Present (Node, "cv") then
+         Result.Has_Cv := True;
+         Result.Cv := From_JSON (JS.Get_Value (Node, "cv"));
+      end if;
+      if JS.Present (Node, "locale") then
+         Result.Has_Locale := True;
+         Result.Locale := JS.As_Text (JS.Get_Value (Node, "locale"));
+      end if;
+      if JS.Present (Node, "source") then
+         Result.Has_Source := True;
+         Result.Source := JS.As_Text (JS.Get_Value (Node, "source"));
+      end if;
+      if JS.Present (Node, "consent_at") then
+         Result.Consent_At := JS.As_Text (JS.Get_Value (Node, "consent_at"));
+      end if;
+      if JS.Present (Node, "talent_pool_consent_at") then
+         Result.Has_Talent_Pool_Consent_At := True;
+         Result.Talent_Pool_Consent_At := JS.As_Text (JS.Get_Value (Node, "talent_pool_consent_at"));
+      end if;
+      if JS.Present (Node, "retain_until") then
+         Result.Has_Retain_Until := True;
+         Result.Retain_Until := JS.As_Text (JS.Get_Value (Node, "retain_until"));
+      end if;
+      if JS.Present (Node, "notes") then
+         Result.Notes := JS.As_Text (JS.Get_Value (Node, "notes"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Job_Application_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "application", To_JSON (Model.Application));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Job_Application_Response is
+      Result : Get_Job_Application_Response;
+   begin
+      if JS.Present (Node, "application") then
+         Result.Application := From_JSON (JS.Get_Value (Node, "application"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Link_Preview) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -34544,6 +36980,100 @@ package body UARP.Models is
       if JS.Present (Node, "markup") then
          Result.Has_Markup := True;
          Result.Markup := JS.Get_Value (Node, "markup");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Mcpo_Auth_Client_Metadata_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "client_id", JS.JSON.Create (Model.Client_Id));
+      if Model.Has_Client_Name then
+         JS.Set (Result, "client_name", JS.JSON.Create (Model.Client_Name));
+      end if;
+      if Model.Has_Client_URI then
+         JS.Set (Result, "client_uri", JS.JSON.Create (Model.Client_URI));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Redirect_Uris loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "redirect_uris", Items);
+      end;
+      if Model.Has_Grant_Types then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Grant_Types loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "grant_types", Items);
+         end;
+      end if;
+      if Model.Has_Response_Types then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Response_Types loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "response_types", Items);
+         end;
+      end if;
+      if Model.Has_Token_Endpoint_Auth_Method then
+         JS.Set (Result, "token_endpoint_auth_method", JS.JSON.Create (Model.Token_Endpoint_Auth_Method));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Mcpo_Auth_Client_Metadata_Response is
+      Result : Get_Mcpo_Auth_Client_Metadata_Response;
+   begin
+      if JS.Present (Node, "client_id") then
+         Result.Client_Id := JS.As_Text (JS.Get_Value (Node, "client_id"));
+      end if;
+      if JS.Present (Node, "client_name") then
+         Result.Has_Client_Name := True;
+         Result.Client_Name := JS.As_Text (JS.Get_Value (Node, "client_name"));
+      end if;
+      if JS.Present (Node, "client_uri") then
+         Result.Has_Client_URI := True;
+         Result.Client_URI := JS.As_Text (JS.Get_Value (Node, "client_uri"));
+      end if;
+      if JS.Present (Node, "redirect_uris") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "redirect_uris");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Redirect_Uris.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "grant_types") then
+         Result.Has_Grant_Types := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "grant_types");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Grant_Types.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "response_types") then
+         Result.Has_Response_Types := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "response_types");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Response_Types.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "token_endpoint_auth_method") then
+         Result.Has_Token_Endpoint_Auth_Method := True;
+         Result.Token_Endpoint_Auth_Method := JS.As_Text (JS.Get_Value (Node, "token_endpoint_auth_method"));
       end if;
       return Result;
    end From_JSON;
@@ -35598,6 +38128,330 @@ package body UARP.Models is
       if JS.Present (Node, "agent") then
          Result.Has_Agent := True;
          Result.Agent := JS.Get_Value (Node, "agent");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Job) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Previous_Slugs loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "previous_slugs", Items);
+      end;
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      JS.Set (Result, "language", To_JSON (Model.Language));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Responsibilities loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "responsibilities", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Requirements loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "requirements", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Nice_To_Have loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "nice_to_have", Items);
+      end;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Benefits loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "benefits", Items);
+      end;
+      JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      JS.Set (Result, "location", To_JSON (Model.Location));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Applicant_Countries loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "applicant_countries", Items);
+      end;
+      if Model.Has_English_Level then
+         JS.Set (Result, "english_level", To_JSON (Model.English_Level));
+      end if;
+      if Model.Has_Experience_Years_Min then
+         JS.Set (Result, "experience_years_min", JS.JSON.Create (Model.Experience_Years_Min));
+      end if;
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Skills loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "skills", Items);
+      end;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      JS.Set (Result, "apply", To_JSON (Model.Apply));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      JS.Set (Result, "updated_at", JS.JSON.Create (Model.Updated_At));
+      if Model.Has_Published_At then
+         JS.Set (Result, "published_at", JS.JSON.Create (Model.Published_At));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      if Model.Has_Closed_At then
+         JS.Set (Result, "closed_at", JS.JSON.Create (Model.Closed_At));
+      end if;
+      JS.Set (Result, "direct_apply", JS.JSON.Create (Model.Direct_Apply));
+      JS.Set (Result, "applications_open", JS.JSON.Create (Model.Applications_Open));
+      JS.Set (Result, "cv_max_bytes", JS.JSON.Create (Model.Cv_Max_Bytes));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Cv_Mime_Types loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "cv_mime_types", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Job is
+      Result : Public_Job;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "slug") then
+         Result.Slug := JS.As_Text (JS.Get_Value (Node, "slug"));
+      end if;
+      if JS.Present (Node, "previous_slugs") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "previous_slugs");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Previous_Slugs.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "responsibilities") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "responsibilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Responsibilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "requirements") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "requirements");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Requirements.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "nice_to_have") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "nice_to_have");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Nice_To_Have.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "benefits") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "benefits");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Benefits.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "english_level") then
+         Result.Has_English_Level := True;
+         Result.English_Level := From_JSON (JS.Get_Value (Node, "english_level"));
+      end if;
+      if JS.Present (Node, "experience_years_min") then
+         Result.Has_Experience_Years_Min := True;
+         Result.Experience_Years_Min := JS.As_Integer (JS.Get_Value (Node, "experience_years_min"));
+      end if;
+      if JS.Present (Node, "skills") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "skills");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Skills.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "apply") then
+         Result.Apply := From_JSON (JS.Get_Value (Node, "apply"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "updated_at") then
+         Result.Updated_At := JS.As_Text (JS.Get_Value (Node, "updated_at"));
+      end if;
+      if JS.Present (Node, "published_at") then
+         Result.Has_Published_At := True;
+         Result.Published_At := JS.As_Text (JS.Get_Value (Node, "published_at"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      if JS.Present (Node, "closed_at") then
+         Result.Has_Closed_At := True;
+         Result.Closed_At := JS.As_Text (JS.Get_Value (Node, "closed_at"));
+      end if;
+      if JS.Present (Node, "direct_apply") then
+         Result.Direct_Apply := JS.As_Boolean (JS.Get_Value (Node, "direct_apply"));
+      end if;
+      if JS.Present (Node, "applications_open") then
+         Result.Applications_Open := JS.As_Boolean (JS.Get_Value (Node, "applications_open"));
+      end if;
+      if JS.Present (Node, "cv_max_bytes") then
+         Result.Cv_Max_Bytes := JS.As_Integer (JS.Get_Value (Node, "cv_max_bytes"));
+      end if;
+      if JS.Present (Node, "cv_mime_types") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "cv_mime_types");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Cv_Mime_Types.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Public_Job_Response_Careers) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      JS.Set (Result, "company_name", JS.JSON.Create (Model.Company_Name));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Public_Job_Response_Careers is
+      Result : Get_Public_Job_Response_Careers;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "company_name") then
+         Result.Company_Name := JS.As_Text (JS.Get_Value (Node, "company_name"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Get_Public_Job_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "job", To_JSON (Model.Job));
+      JS.Set (Result, "careers", To_JSON (Model.Careers));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Get_Public_Job_Response is
+      Result : Get_Public_Job_Response;
+   begin
+      if JS.Present (Node, "job") then
+         Result.Job := From_JSON (JS.Get_Value (Node, "job"));
+      end if;
+      if JS.Present (Node, "careers") then
+         Result.Careers := From_JSON (JS.Get_Value (Node, "careers"));
       end if;
       return Result;
    end From_JSON;
@@ -40149,6 +43003,78 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Install_Essentials_On_Head_Agents_Response_Error) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "tenantId", JS.JSON.Create (Model.Tenant_Id));
+      JS.Set (Result, "error", JS.JSON.Create (Model.Error));
+      JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id_X));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Install_Essentials_On_Head_Agents_Response_Error is
+      Result : Install_Essentials_On_Head_Agents_Response_Error;
+   begin
+      if JS.Present (Node, "tenantId") then
+         Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenantId"));
+      end if;
+      if JS.Present (Node, "error") then
+         Result.Error := JS.As_Text (JS.Get_Value (Node, "error"));
+      end if;
+      if JS.Present (Node, "tenant_id") then
+         Result.Tenant_Id_X := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Install_Essentials_On_Head_Agents_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "scanned", JS.JSON.Create (Model.Scanned));
+      JS.Set (Result, "updated", JS.JSON.Create (Model.Updated));
+      JS.Set (Result, "already_present", JS.JSON.Create (Model.Already_Present));
+      JS.Set (Result, "no_head_agent", JS.JSON.Create (Model.No_Head_Agent));
+      if Model.Has_Errors then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Errors loop
+               JS.JSON.Append (Items, To_JSON (Element));
+            end loop;
+            JS.Set (Result, "errors", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Install_Essentials_On_Head_Agents_Response is
+      Result : Install_Essentials_On_Head_Agents_Response;
+   begin
+      if JS.Present (Node, "scanned") then
+         Result.Scanned := JS.As_Integer (JS.Get_Value (Node, "scanned"));
+      end if;
+      if JS.Present (Node, "updated") then
+         Result.Updated := JS.As_Integer (JS.Get_Value (Node, "updated"));
+      end if;
+      if JS.Present (Node, "already_present") then
+         Result.Already_Present := JS.As_Integer (JS.Get_Value (Node, "already_present"));
+      end if;
+      if JS.Present (Node, "no_head_agent") then
+         Result.No_Head_Agent := JS.As_Integer (JS.Get_Value (Node, "no_head_agent"));
+      end if;
+      if JS.Present (Node, "errors") then
+         Result.Has_Errors := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "errors");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Errors.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Integration) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -40367,11 +43293,49 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Invite_User_Request_Role (Value : String) return Invite_User_Request_Role is
+   begin
+      if Value = "admin" then
+         return (Kind => Invite_User_Request_Role_Admin, Raw => UARP.Types."+" (Value));
+      elsif Value = "developer" then
+         return (Kind => Invite_User_Request_Role_Developer, Raw => UARP.Types."+" (Value));
+      elsif Value = "viewer" then
+         return (Kind => Invite_User_Request_Role_Viewer, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Invite_User_Request_Role_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Invite_User_Request_Role;
+
+   function To_Invite_User_Request_Role (Kind : Invite_User_Request_Role_Kind) return Invite_User_Request_Role is
+   begin
+      case Kind is
+         when Invite_User_Request_Role_Admin =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("admin"));
+         when Invite_User_Request_Role_Developer =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("developer"));
+         when Invite_User_Request_Role_Viewer =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("viewer"));
+         when Invite_User_Request_Role_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Invite_User_Request_Role;
+
+   function Image (Model : Invite_User_Request_Role) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Invite_User_Request_Role (Model.Kind).Raw));
+
+   function To_JSON (Model : Invite_User_Request_Role) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Invite_User_Request_Role is
+      (To_Invite_User_Request_Role (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_JSON (Model : Invite_User_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "email", JS.JSON.Create (Model.Email));
-      JS.Set (Result, "role", JS.JSON.Create (Model.Role));
+      JS.Set (Result, "role", To_JSON (Model.Role));
       return Result;
    end To_JSON;
 
@@ -40382,7 +43346,7 @@ package body UARP.Models is
          Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
       end if;
       if JS.Present (Node, "role") then
-         Result.Role := JS.As_Text (JS.Get_Value (Node, "role"));
+         Result.Role := From_JSON (JS.Get_Value (Node, "role"));
       end if;
       return Result;
    end From_JSON;
@@ -41620,6 +44584,39 @@ package body UARP.Models is
                Result.Providers.Append (From_JSON (JS.JSON.Get (Items, Index)));
             end loop;
          end;
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Admin_Jobs_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Admin_Jobs_Response is
+      Result : List_Admin_Jobs_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
       end if;
       return Result;
    end From_JSON;
@@ -43677,6 +46674,55 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : List_Job_Applications_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      JS.Set (Result, "page", JS.JSON.Create (Model.Page));
+      JS.Set (Result, "limit", JS.JSON.Create (Model.Limit));
+      JS.Set (Result, "total_pages", JS.JSON.Create (Model.Total_Pages));
+      JS.Set (Result, "counts_by_status", Model.Counts_By_Status);
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Job_Applications_Response is
+      Result : List_Job_Applications_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      if JS.Present (Node, "page") then
+         Result.Page := JS.As_Integer (JS.Get_Value (Node, "page"));
+      end if;
+      if JS.Present (Node, "limit") then
+         Result.Limit := JS.As_Integer (JS.Get_Value (Node, "limit"));
+      end if;
+      if JS.Present (Node, "total_pages") then
+         Result.Total_Pages := JS.As_Integer (JS.Get_Value (Node, "total_pages"));
+      end if;
+      if JS.Present (Node, "counts_by_status") then
+         Result.Counts_By_Status := JS.Get_Value (Node, "counts_by_status");
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : List_Kb_Documents_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -44005,6 +47051,317 @@ package body UARP.Models is
       if JS.Present (Node, "default_model") then
          Result.Has_Default_Model := True;
          Result.Default_Model := JS.As_Text (JS.Get_Value (Node, "default_model"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_MCP_Catalog_Entry_Category (Value : String) return MCP_Catalog_Entry_Category is
+   begin
+      if Value = "finance" then
+         return (Kind => MCP_Catalog_Entry_Category_Finance, Raw => UARP.Types."+" (Value));
+      elsif Value = "sales" then
+         return (Kind => MCP_Catalog_Entry_Category_Sales, Raw => UARP.Types."+" (Value));
+      elsif Value = "marketing" then
+         return (Kind => MCP_Catalog_Entry_Category_Marketing, Raw => UARP.Types."+" (Value));
+      elsif Value = "analytics" then
+         return (Kind => MCP_Catalog_Entry_Category_Analytics, Raw => UARP.Types."+" (Value));
+      elsif Value = "support" then
+         return (Kind => MCP_Catalog_Entry_Category_Support, Raw => UARP.Types."+" (Value));
+      elsif Value = "people" then
+         return (Kind => MCP_Catalog_Entry_Category_People, Raw => UARP.Types."+" (Value));
+      elsif Value = "operations" then
+         return (Kind => MCP_Catalog_Entry_Category_Operations, Raw => UARP.Types."+" (Value));
+      elsif Value = "meetings" then
+         return (Kind => MCP_Catalog_Entry_Category_Meetings, Raw => UARP.Types."+" (Value));
+      elsif Value = "compliance" then
+         return (Kind => MCP_Catalog_Entry_Category_Compliance, Raw => UARP.Types."+" (Value));
+      elsif Value = "data" then
+         return (Kind => MCP_Catalog_Entry_Category_Data, Raw => UARP.Types."+" (Value));
+      elsif Value = "open_data" then
+         return (Kind => MCP_Catalog_Entry_Category_Open_Data, Raw => UARP.Types."+" (Value));
+      elsif Value = "markets" then
+         return (Kind => MCP_Catalog_Entry_Category_Markets, Raw => UARP.Types."+" (Value));
+      elsif Value = "research" then
+         return (Kind => MCP_Catalog_Entry_Category_Research, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Catalog_Entry_Category_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Catalog_Entry_Category;
+
+   function To_MCP_Catalog_Entry_Category (Kind : MCP_Catalog_Entry_Category_Kind) return MCP_Catalog_Entry_Category is
+   begin
+      case Kind is
+         when MCP_Catalog_Entry_Category_Finance =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("finance"));
+         when MCP_Catalog_Entry_Category_Sales =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sales"));
+         when MCP_Catalog_Entry_Category_Marketing =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("marketing"));
+         when MCP_Catalog_Entry_Category_Analytics =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("analytics"));
+         when MCP_Catalog_Entry_Category_Support =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("support"));
+         when MCP_Catalog_Entry_Category_People =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("people"));
+         when MCP_Catalog_Entry_Category_Operations =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("operations"));
+         when MCP_Catalog_Entry_Category_Meetings =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("meetings"));
+         when MCP_Catalog_Entry_Category_Compliance =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("compliance"));
+         when MCP_Catalog_Entry_Category_Data =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("data"));
+         when MCP_Catalog_Entry_Category_Open_Data =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("open_data"));
+         when MCP_Catalog_Entry_Category_Markets =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("markets"));
+         when MCP_Catalog_Entry_Category_Research =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("research"));
+         when MCP_Catalog_Entry_Category_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Catalog_Entry_Category;
+
+   function Image (Model : MCP_Catalog_Entry_Category) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Catalog_Entry_Category (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Catalog_Entry_Category) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Catalog_Entry_Category is
+      (To_MCP_Catalog_Entry_Category (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_MCP_Catalog_Entry_Auth (Value : String) return MCP_Catalog_Entry_Auth is
+   begin
+      if Value = "oauth" then
+         return (Kind => MCP_Catalog_Entry_Auth_Oauth, Raw => UARP.Types."+" (Value));
+      elsif Value = "none" then
+         return (Kind => MCP_Catalog_Entry_Auth_None, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Catalog_Entry_Auth_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Catalog_Entry_Auth;
+
+   function To_MCP_Catalog_Entry_Auth (Kind : MCP_Catalog_Entry_Auth_Kind) return MCP_Catalog_Entry_Auth is
+   begin
+      case Kind is
+         when MCP_Catalog_Entry_Auth_Oauth =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("oauth"));
+         when MCP_Catalog_Entry_Auth_None =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("none"));
+         when MCP_Catalog_Entry_Auth_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Catalog_Entry_Auth;
+
+   function Image (Model : MCP_Catalog_Entry_Auth) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Catalog_Entry_Auth (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Catalog_Entry_Auth) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Catalog_Entry_Auth is
+      (To_MCP_Catalog_Entry_Auth (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_MCP_Catalog_Entry_Access (Value : String) return MCP_Catalog_Entry_Access is
+   begin
+      if Value = "read" then
+         return (Kind => MCP_Catalog_Entry_Access_Read, Raw => UARP.Types."+" (Value));
+      elsif Value = "read_write" then
+         return (Kind => MCP_Catalog_Entry_Access_Read_Write, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Catalog_Entry_Access_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Catalog_Entry_Access;
+
+   function To_MCP_Catalog_Entry_Access (Kind : MCP_Catalog_Entry_Access_Kind) return MCP_Catalog_Entry_Access is
+   begin
+      case Kind is
+         when MCP_Catalog_Entry_Access_Read =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("read"));
+         when MCP_Catalog_Entry_Access_Read_Write =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("read_write"));
+         when MCP_Catalog_Entry_Access_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Catalog_Entry_Access;
+
+   function Image (Model : MCP_Catalog_Entry_Access) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Catalog_Entry_Access (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Catalog_Entry_Access) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Catalog_Entry_Access is
+      (To_MCP_Catalog_Entry_Access (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_MCP_Catalog_Entry_Risk (Value : String) return MCP_Catalog_Entry_Risk is
+   begin
+      if Value = "money" then
+         return (Kind => MCP_Catalog_Entry_Risk_Money, Raw => UARP.Types."+" (Value));
+      elsif Value = "send" then
+         return (Kind => MCP_Catalog_Entry_Risk_Send, Raw => UARP.Types."+" (Value));
+      elsif Value = "delete" then
+         return (Kind => MCP_Catalog_Entry_Risk_Delete, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Catalog_Entry_Risk_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Catalog_Entry_Risk;
+
+   function To_MCP_Catalog_Entry_Risk (Kind : MCP_Catalog_Entry_Risk_Kind) return MCP_Catalog_Entry_Risk is
+   begin
+      case Kind is
+         when MCP_Catalog_Entry_Risk_Money =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("money"));
+         when MCP_Catalog_Entry_Risk_Send =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("send"));
+         when MCP_Catalog_Entry_Risk_Delete =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("delete"));
+         when MCP_Catalog_Entry_Risk_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Catalog_Entry_Risk;
+
+   function Image (Model : MCP_Catalog_Entry_Risk) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Catalog_Entry_Risk (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Catalog_Entry_Risk) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Catalog_Entry_Risk is
+      (To_MCP_Catalog_Entry_Risk (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : MCP_Catalog_Entry) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      JS.Set (Result, "category", To_JSON (Model.Category));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      JS.Set (Result, "description_uk", JS.JSON.Create (Model.Description_Uk));
+      JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      if Model.Has_Read_Only_URL then
+         JS.Set (Result, "read_only_url", JS.JSON.Create (Model.Read_Only_URL));
+      end if;
+      JS.Set (Result, "auth", To_JSON (Model.Auth));
+      JS.Set (Result, "access", To_JSON (Model.Access_K));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Risks loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "risks", Items);
+      end;
+      JS.Set (Result, "sensitive", JS.JSON.Create (Model.Sensitive));
+      JS.Set (Result, "docs_url", JS.JSON.Create (Model.Docs_URL));
+      JS.Set (Result, "domain", JS.JSON.Create (Model.Domain));
+      if Model.Has_Note then
+         JS.Set (Result, "note", JS.JSON.Create (Model.Note));
+      end if;
+      if Model.Has_Note_Uk then
+         JS.Set (Result, "note_uk", JS.JSON.Create (Model.Note_Uk));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Catalog_Entry is
+      Result : MCP_Catalog_Entry;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := From_JSON (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "description_uk") then
+         Result.Description_Uk := JS.As_Text (JS.Get_Value (Node, "description_uk"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "read_only_url") then
+         Result.Has_Read_Only_URL := True;
+         Result.Read_Only_URL := JS.As_Text (JS.Get_Value (Node, "read_only_url"));
+      end if;
+      if JS.Present (Node, "auth") then
+         Result.Auth := From_JSON (JS.Get_Value (Node, "auth"));
+      end if;
+      if JS.Present (Node, "access") then
+         Result.Access_K := From_JSON (JS.Get_Value (Node, "access"));
+      end if;
+      if JS.Present (Node, "risks") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "risks");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Risks.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "sensitive") then
+         Result.Sensitive := JS.As_Boolean (JS.Get_Value (Node, "sensitive"));
+      end if;
+      if JS.Present (Node, "docs_url") then
+         Result.Docs_URL := JS.As_Text (JS.Get_Value (Node, "docs_url"));
+      end if;
+      if JS.Present (Node, "domain") then
+         Result.Domain := JS.As_Text (JS.Get_Value (Node, "domain"));
+      end if;
+      if JS.Present (Node, "note") then
+         Result.Has_Note := True;
+         Result.Note := JS.As_Text (JS.Get_Value (Node, "note"));
+      end if;
+      if JS.Present (Node, "note_uk") then
+         Result.Has_Note_Uk := True;
+         Result.Note_Uk := JS.As_Text (JS.Get_Value (Node, "note_uk"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_MCP_Catalog_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_MCP_Catalog_Response is
+      Result : List_MCP_Catalog_Response;
+   begin
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
       end if;
       return Result;
    end From_JSON;
@@ -46394,6 +49751,191 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : List_Public_Jobs_Response_Careers) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      JS.Set (Result, "company_name", JS.JSON.Create (Model.Company_Name));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Public_Jobs_Response_Careers is
+      Result : List_Public_Jobs_Response_Careers;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "company_name") then
+         Result.Company_Name := JS.As_Text (JS.Get_Value (Node, "company_name"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Public_Job_Summary) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "id", JS.JSON.Create (Model.Id));
+      JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
+      JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      JS.Set (Result, "location", To_JSON (Model.Location));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Applicant_Countries loop
+            JS.JSON.Append (Items, JS.JSON.Create (Element));
+         end loop;
+         JS.Set (Result, "applicant_countries", Items);
+      end;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      JS.Set (Result, "language", To_JSON (Model.Language));
+      if Model.Has_Published_At then
+         JS.Set (Result, "published_at", JS.JSON.Create (Model.Published_At));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Public_Job_Summary is
+      Result : Public_Job_Summary;
+   begin
+      if JS.Present (Node, "id") then
+         Result.Id := JS.As_Text (JS.Get_Value (Node, "id"));
+      end if;
+      if JS.Present (Node, "slug") then
+         Result.Slug := JS.As_Text (JS.Get_Value (Node, "slug"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "applicant_countries");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Applicant_Countries.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "published_at") then
+         Result.Has_Published_At := True;
+         Result.Published_At := JS.As_Text (JS.Get_Value (Node, "published_at"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Public_Jobs_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "careers", To_JSON (Model.Careers));
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Items loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "items", Items);
+      end;
+      JS.Set (Result, "facets", To_JSON (Model.Facets));
+      JS.Set (Result, "total", JS.JSON.Create (Model.Total));
+      JS.Set (Result, "page", JS.JSON.Create (Model.Page));
+      JS.Set (Result, "limit", JS.JSON.Create (Model.Limit));
+      JS.Set (Result, "total_pages", JS.JSON.Create (Model.Total_Pages));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Public_Jobs_Response is
+      Result : List_Public_Jobs_Response;
+   begin
+      if JS.Present (Node, "careers") then
+         Result.Careers := From_JSON (JS.Get_Value (Node, "careers"));
+      end if;
+      if JS.Present (Node, "items") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "items");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Items.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "facets") then
+         Result.Facets := From_JSON (JS.Get_Value (Node, "facets"));
+      end if;
+      if JS.Present (Node, "total") then
+         Result.Total := JS.As_Integer (JS.Get_Value (Node, "total"));
+      end if;
+      if JS.Present (Node, "page") then
+         Result.Page := JS.As_Integer (JS.Get_Value (Node, "page"));
+      end if;
+      if JS.Present (Node, "limit") then
+         Result.Limit := JS.As_Integer (JS.Get_Value (Node, "limit"));
+      end if;
+      if JS.Present (Node, "total_pages") then
+         Result.Total_Pages := JS.As_Integer (JS.Get_Value (Node, "total_pages"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_Public_Plan_Queue_Tier (Value : String) return Public_Plan_Queue_Tier is
    begin
       if Value = "standard" then
@@ -47426,6 +50968,100 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_List_Registry_Signing_Keys_Response_Key_Alg (Value : String) return List_Registry_Signing_Keys_Response_Key_Alg is
+   begin
+      if Value = "ed25519" then
+         return (Kind => List_Registry_Signing_Keys_Response_Key_Alg_Ed25519, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => List_Registry_Signing_Keys_Response_Key_Alg_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_List_Registry_Signing_Keys_Response_Key_Alg;
+
+   function To_List_Registry_Signing_Keys_Response_Key_Alg (Kind : List_Registry_Signing_Keys_Response_Key_Alg_Kind) return List_Registry_Signing_Keys_Response_Key_Alg is
+   begin
+      case Kind is
+         when List_Registry_Signing_Keys_Response_Key_Alg_Ed25519 =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ed25519"));
+         when List_Registry_Signing_Keys_Response_Key_Alg_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_List_Registry_Signing_Keys_Response_Key_Alg;
+
+   function Image (Model : List_Registry_Signing_Keys_Response_Key_Alg) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_List_Registry_Signing_Keys_Response_Key_Alg (Model.Kind).Raw));
+
+   function To_JSON (Model : List_Registry_Signing_Keys_Response_Key_Alg) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Registry_Signing_Keys_Response_Key_Alg is
+      (To_List_Registry_Signing_Keys_Response_Key_Alg (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : List_Registry_Signing_Keys_Response_Key) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "alg", To_JSON (Model.Alg));
+      JS.Set (Result, "key_id", JS.JSON.Create (Model.Key_Id));
+      JS.Set (Result, "public_key", JS.JSON.Create (Model.Public_Key));
+      JS.Set (Result, "created_at", JS.JSON.Create (Model.Created_At));
+      if Model.Has_Retired_At then
+         JS.Set (Result, "retired_at", JS.JSON.Create (Model.Retired_At));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Registry_Signing_Keys_Response_Key is
+      Result : List_Registry_Signing_Keys_Response_Key;
+   begin
+      if JS.Present (Node, "alg") then
+         Result.Alg := From_JSON (JS.Get_Value (Node, "alg"));
+      end if;
+      if JS.Present (Node, "key_id") then
+         Result.Key_Id := JS.As_Text (JS.Get_Value (Node, "key_id"));
+      end if;
+      if JS.Present (Node, "public_key") then
+         Result.Public_Key := JS.As_Text (JS.Get_Value (Node, "public_key"));
+      end if;
+      if JS.Present (Node, "created_at") then
+         Result.Created_At := JS.As_Text (JS.Get_Value (Node, "created_at"));
+      end if;
+      if JS.Present (Node, "retired_at") then
+         Result.Has_Retired_At := True;
+         Result.Retired_At := JS.As_Text (JS.Get_Value (Node, "retired_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : List_Registry_Signing_Keys_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      declare
+         Items : JS.JSON_Array := JS.JSON.Empty_Array;
+      begin
+         for Element of Model.Keys loop
+            JS.JSON.Append (Items, To_JSON (Element));
+         end loop;
+         JS.Set (Result, "keys", Items);
+      end;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Registry_Signing_Keys_Response is
+      Result : List_Registry_Signing_Keys_Response;
+   begin
+      if JS.Present (Node, "keys") then
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "keys");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Keys.Append (From_JSON (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : List_Run_Artifacts_Response) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -48296,6 +51932,78 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_List_Sessions_Archived (Value : String) return List_Sessions_Archived is
+   begin
+      if Value = "false" then
+         return (Kind => List_Sessions_Archived_False, Raw => UARP.Types."+" (Value));
+      elsif Value = "true" then
+         return (Kind => List_Sessions_Archived_True, Raw => UARP.Types."+" (Value));
+      elsif Value = "all" then
+         return (Kind => List_Sessions_Archived_All, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => List_Sessions_Archived_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_List_Sessions_Archived;
+
+   function To_List_Sessions_Archived (Kind : List_Sessions_Archived_Kind) return List_Sessions_Archived is
+   begin
+      case Kind is
+         when List_Sessions_Archived_False =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("false"));
+         when List_Sessions_Archived_True =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("true"));
+         when List_Sessions_Archived_All =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("all"));
+         when List_Sessions_Archived_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_List_Sessions_Archived;
+
+   function Image (Model : List_Sessions_Archived) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_List_Sessions_Archived (Model.Kind).Raw));
+
+   function To_JSON (Model : List_Sessions_Archived) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Sessions_Archived is
+      (To_List_Sessions_Archived (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_List_Sessions_Pinned (Value : String) return List_Sessions_Pinned is
+   begin
+      if Value = "true" then
+         return (Kind => List_Sessions_Pinned_True, Raw => UARP.Types."+" (Value));
+      elsif Value = "false" then
+         return (Kind => List_Sessions_Pinned_False, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => List_Sessions_Pinned_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_List_Sessions_Pinned;
+
+   function To_List_Sessions_Pinned (Kind : List_Sessions_Pinned_Kind) return List_Sessions_Pinned is
+   begin
+      case Kind is
+         when List_Sessions_Pinned_True =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("true"));
+         when List_Sessions_Pinned_False =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("false"));
+         when List_Sessions_Pinned_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_List_Sessions_Pinned;
+
+   function Image (Model : List_Sessions_Pinned) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_List_Sessions_Pinned (Model.Kind).Raw));
+
+   function To_JSON (Model : List_Sessions_Pinned) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Sessions_Pinned is
+      (To_List_Sessions_Pinned (UARP.Types."+" (JS.As_Text (Node))));
+
    function To_Public_Session_View_Status (Value : String) return Public_Session_View_Status is
    begin
       if Value = "active" then
@@ -48405,6 +52113,18 @@ package body UARP.Models is
    function To_JSON (Model : List_Sessions_Response_Item) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Archived then
+         JS.Set (Result, "archived", JS.JSON.Create (Model.Archived));
+      end if;
+      if Model.Has_Archived_At then
+         JS.Set (Result, "archived_at", JS.JSON.Create (Model.Archived_At));
+      end if;
+      if Model.Has_Pinned then
+         JS.Set (Result, "pinned", JS.JSON.Create (Model.Pinned));
+      end if;
+      if Model.Has_Pinned_At then
+         JS.Set (Result, "pinned_at", JS.JSON.Create (Model.Pinned_At));
+      end if;
       if Model.Has_Created_By then
          JS.Set (Result, "created_by", JS.JSON.Create (Model.Created_By));
       end if;
@@ -48484,6 +52204,22 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return List_Sessions_Response_Item is
       Result : List_Sessions_Response_Item;
    begin
+      if JS.Present (Node, "archived") then
+         Result.Has_Archived := True;
+         Result.Archived := JS.As_Boolean (JS.Get_Value (Node, "archived"));
+      end if;
+      if JS.Present (Node, "archived_at") then
+         Result.Has_Archived_At := True;
+         Result.Archived_At := JS.As_Text (JS.Get_Value (Node, "archived_at"));
+      end if;
+      if JS.Present (Node, "pinned") then
+         Result.Has_Pinned := True;
+         Result.Pinned := JS.As_Boolean (JS.Get_Value (Node, "pinned"));
+      end if;
+      if JS.Present (Node, "pinned_at") then
+         Result.Has_Pinned_At := True;
+         Result.Pinned_At := JS.As_Text (JS.Get_Value (Node, "pinned_at"));
+      end if;
       if JS.Present (Node, "created_by") then
          Result.Has_Created_By := True;
          Result.Created_By := JS.As_Text (JS.Get_Value (Node, "created_by"));
@@ -53173,6 +56909,226 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Mcpo_Auth_Return_To (Value : String) return Mcpo_Auth_Return_To is
+   begin
+      if Value = "uarp://mcp/oauth/callback" then
+         return (Kind => Mcpo_Auth_Return_To_Uarp_MCP_Oauth_Callback, Raw => UARP.Types."+" (Value));
+      elsif Value = "snaga://mcp/oauth/callback" then
+         return (Kind => Mcpo_Auth_Return_To_Snaga_MCP_Oauth_Callback, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Mcpo_Auth_Return_To_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Mcpo_Auth_Return_To;
+
+   function To_Mcpo_Auth_Return_To (Kind : Mcpo_Auth_Return_To_Kind) return Mcpo_Auth_Return_To is
+   begin
+      case Kind is
+         when Mcpo_Auth_Return_To_Uarp_MCP_Oauth_Callback =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("uarp://mcp/oauth/callback"));
+         when Mcpo_Auth_Return_To_Snaga_MCP_Oauth_Callback =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("snaga://mcp/oauth/callback"));
+         when Mcpo_Auth_Return_To_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Mcpo_Auth_Return_To;
+
+   function Image (Model : Mcpo_Auth_Return_To) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Mcpo_Auth_Return_To (Model.Kind).Raw));
+
+   function To_JSON (Model : Mcpo_Auth_Return_To) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Mcpo_Auth_Return_To is
+      (To_Mcpo_Auth_Return_To (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : MCP_Connect_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Catalog_Id then
+         JS.Set (Result, "catalog_id", JS.JSON.Create (Model.Catalog_Id));
+      end if;
+      if Model.Has_URL then
+         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      end if;
+      if Model.Has_Name then
+         JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      end if;
+      if Model.Has_Agent_Ids then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Agent_Ids loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "agent_ids", Items);
+         end;
+      end if;
+      if Model.Has_Read_Only then
+         JS.Set (Result, "read_only", JS.JSON.Create (Model.Read_Only));
+      end if;
+      if Model.Has_Return_To then
+         JS.Set (Result, "return_to", To_JSON (Model.Return_To));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Connect_Request is
+      Result : MCP_Connect_Request;
+   begin
+      if JS.Present (Node, "catalog_id") then
+         Result.Has_Catalog_Id := True;
+         Result.Catalog_Id := JS.As_Text (JS.Get_Value (Node, "catalog_id"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.Has_URL := True;
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "name") then
+         Result.Has_Name := True;
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "agent_ids") then
+         Result.Has_Agent_Ids := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "agent_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Agent_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "read_only") then
+         Result.Has_Read_Only := True;
+         Result.Read_Only := JS.As_Boolean (JS.Get_Value (Node, "read_only"));
+      end if;
+      if JS.Present (Node, "return_to") then
+         Result.Has_Return_To := True;
+         Result.Return_To := From_JSON (JS.Get_Value (Node, "return_to"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_MCP_Connect_Result_Status (Value : String) return MCP_Connect_Result_Status is
+   begin
+      if Value = "authorization_required" then
+         return (Kind => MCP_Connect_Result_Status_Authorization_Required, Raw => UARP.Types."+" (Value));
+      elsif Value = "connected" then
+         return (Kind => MCP_Connect_Result_Status_Connected, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => MCP_Connect_Result_Status_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_MCP_Connect_Result_Status;
+
+   function To_MCP_Connect_Result_Status (Kind : MCP_Connect_Result_Status_Kind) return MCP_Connect_Result_Status is
+   begin
+      case Kind is
+         when MCP_Connect_Result_Status_Authorization_Required =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("authorization_required"));
+         when MCP_Connect_Result_Status_Connected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("connected"));
+         when MCP_Connect_Result_Status_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_MCP_Connect_Result_Status;
+
+   function Image (Model : MCP_Connect_Result_Status) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_MCP_Connect_Result_Status (Model.Kind).Raw));
+
+   function To_JSON (Model : MCP_Connect_Result_Status) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Connect_Result_Status is
+      (To_MCP_Connect_Result_Status (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : MCP_Connect_Result) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "status", To_JSON (Model.Status));
+      if Model.Has_Authorize_URL then
+         JS.Set (Result, "authorize_url", JS.JSON.Create (Model.Authorize_URL));
+      end if;
+      if Model.Has_Callback_URL then
+         JS.Set (Result, "callback_url", JS.JSON.Create (Model.Callback_URL));
+      end if;
+      if Model.Has_State then
+         JS.Set (Result, "state", JS.JSON.Create (Model.State));
+      end if;
+      if Model.Has_Expires_At then
+         JS.Set (Result, "expires_at", JS.JSON.Create (Model.Expires_At));
+      end if;
+      if Model.Has_Server then
+         JS.Set (Result, "server", To_JSON (Model.Server));
+      end if;
+      if Model.Has_Tools then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Tools loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "tools", Items);
+         end;
+      end if;
+      if Model.Has_Connect_Error then
+         JS.Set (Result, "connect_error", JS.JSON.Create (Model.Connect_Error));
+      end if;
+      if Model.Has_Already_Connected then
+         JS.Set (Result, "already_connected", JS.JSON.Create (Model.Already_Connected));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return MCP_Connect_Result is
+      Result : MCP_Connect_Result;
+   begin
+      if JS.Present (Node, "status") then
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "authorize_url") then
+         Result.Has_Authorize_URL := True;
+         Result.Authorize_URL := JS.As_Text (JS.Get_Value (Node, "authorize_url"));
+      end if;
+      if JS.Present (Node, "callback_url") then
+         Result.Has_Callback_URL := True;
+         Result.Callback_URL := JS.As_Text (JS.Get_Value (Node, "callback_url"));
+      end if;
+      if JS.Present (Node, "state") then
+         Result.Has_State := True;
+         Result.State := JS.As_Text (JS.Get_Value (Node, "state"));
+      end if;
+      if JS.Present (Node, "expires_at") then
+         Result.Has_Expires_At := True;
+         Result.Expires_At := JS.As_Text (JS.Get_Value (Node, "expires_at"));
+      end if;
+      if JS.Present (Node, "server") then
+         Result.Has_Server := True;
+         Result.Server := From_JSON (JS.Get_Value (Node, "server"));
+      end if;
+      if JS.Present (Node, "tools") then
+         Result.Has_Tools := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tools");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tools.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "connect_error") then
+         Result.Has_Connect_Error := True;
+         Result.Connect_Error := JS.As_Text (JS.Get_Value (Node, "connect_error"));
+      end if;
+      if JS.Present (Node, "already_connected") then
+         Result.Has_Already_Connected := True;
+         Result.Already_Connected := JS.As_Boolean (JS.Get_Value (Node, "already_connected"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Mcpjson_Rpc_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -55138,9 +59094,160 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Patch_Tenant_Request_Custom_Domain) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Domain then
+         JS.Set (Result, "domain", JS.JSON.Create (Model.Domain));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Tenant_Request_Custom_Domain is
+      Result : Patch_Tenant_Request_Custom_Domain;
+   begin
+      if JS.Present (Node, "domain") then
+         Result.Has_Domain := True;
+         Result.Domain := JS.As_Text (JS.Get_Value (Node, "domain"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Patch_Tenant_Request_Marketplace_Listing) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Enabled then
+         JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      end if;
+      if Model.Has_Category then
+         JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      end if;
+      if Model.Has_Tags then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Tags loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "tags", Items);
+         end;
+      end if;
+      if Model.Has_Short_Description then
+         JS.Set (Result, "short_description", JS.JSON.Create (Model.Short_Description));
+      end if;
+      if Model.Has_Long_Description then
+         JS.Set (Result, "long_description", JS.JSON.Create (Model.Long_Description));
+      end if;
+      if Model.Has_Featured_Agents then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Featured_Agents loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "featured_agents", Items);
+         end;
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Tenant_Request_Marketplace_Listing is
+      Result : Patch_Tenant_Request_Marketplace_Listing;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Has_Enabled := True;
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Has_Category := True;
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "tags") then
+         Result.Has_Tags := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "tags");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Tags.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "short_description") then
+         Result.Has_Short_Description := True;
+         Result.Short_Description := JS.As_Text (JS.Get_Value (Node, "short_description"));
+      end if;
+      if JS.Present (Node, "long_description") then
+         Result.Has_Long_Description := True;
+         Result.Long_Description := JS.As_Text (JS.Get_Value (Node, "long_description"));
+      end if;
+      if JS.Present (Node, "featured_agents") then
+         Result.Has_Featured_Agents := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "featured_agents");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Featured_Agents.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Patch_Tenant_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Name then
+         JS.Set (Result, "name", JS.JSON.Create (Model.Name));
+      end if;
+      if Model.Has_Slug then
+         JS.Set (Result, "slug", JS.JSON.Create (Model.Slug));
+      end if;
+      if Model.Has_Description then
+         JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      end if;
+      if Model.Has_Logo_URL then
+         JS.Set (Result, "logo_url", JS.JSON.Create (Model.Logo_URL));
+      end if;
+      if Model.Has_Branding then
+         JS.Set (Result, "branding", To_JSON (Model.Branding));
+      end if;
+      if Model.Has_Public then
+         JS.Set (Result, "public", JS.JSON.Create (Model.Public));
+      end if;
+      if Model.Has_Public_Agent_Id then
+         JS.Set (Result, "public_agent_id", JS.JSON.Create (Model.Public_Agent_Id));
+      end if;
+      if Model.Has_Published_Agent_Ids then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Published_Agent_Ids loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "published_agent_ids", Items);
+         end;
+      end if;
+      if Model.Has_Public_Settings then
+         JS.Set (Result, "public_settings", To_JSON (Model.Public_Settings));
+      end if;
+      if Model.Has_Settings then
+         JS.Set (Result, "settings", Model.Settings);
+      end if;
+      if Model.Has_Head_Agent_Id then
+         JS.Set (Result, "head_agent_id", JS.JSON.Create (Model.Head_Agent_Id));
+      end if;
+      if Model.Has_Shared_Workspace_Id then
+         JS.Set (Result, "shared_workspace_id", JS.JSON.Create (Model.Shared_Workspace_Id));
+      end if;
+      if Model.Has_Custom_Domain then
+         JS.Set (Result, "custom_domain", To_JSON (Model.Custom_Domain));
+      end if;
+      if Model.Has_Marketplace_Listing then
+         JS.Set (Result, "marketplace_listing", To_JSON (Model.Marketplace_Listing));
+      end if;
+      if Model.Has_Legal_Hold then
+         JS.Set (Result, "legal_hold", JS.JSON.Create (Model.Legal_Hold));
+      end if;
       if Model.Has_Social_Links then
          JS.Set (Result, "social_links", To_JSON (Model.Social_Links));
       end if;
@@ -55150,6 +59257,72 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Patch_Tenant_Request is
       Result : Patch_Tenant_Request;
    begin
+      if JS.Present (Node, "name") then
+         Result.Has_Name := True;
+         Result.Name := JS.As_Text (JS.Get_Value (Node, "name"));
+      end if;
+      if JS.Present (Node, "slug") then
+         Result.Has_Slug := True;
+         Result.Slug := JS.As_Text (JS.Get_Value (Node, "slug"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Has_Description := True;
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "logo_url") then
+         Result.Has_Logo_URL := True;
+         Result.Logo_URL := JS.As_Text (JS.Get_Value (Node, "logo_url"));
+      end if;
+      if JS.Present (Node, "branding") then
+         Result.Has_Branding := True;
+         Result.Branding := From_JSON (JS.Get_Value (Node, "branding"));
+      end if;
+      if JS.Present (Node, "public") then
+         Result.Has_Public := True;
+         Result.Public := JS.As_Boolean (JS.Get_Value (Node, "public"));
+      end if;
+      if JS.Present (Node, "public_agent_id") then
+         Result.Has_Public_Agent_Id := True;
+         Result.Public_Agent_Id := JS.As_Text (JS.Get_Value (Node, "public_agent_id"));
+      end if;
+      if JS.Present (Node, "published_agent_ids") then
+         Result.Has_Published_Agent_Ids := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "published_agent_ids");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Published_Agent_Ids.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "public_settings") then
+         Result.Has_Public_Settings := True;
+         Result.Public_Settings := From_JSON (JS.Get_Value (Node, "public_settings"));
+      end if;
+      if JS.Present (Node, "settings") then
+         Result.Has_Settings := True;
+         Result.Settings := JS.Get_Value (Node, "settings");
+      end if;
+      if JS.Present (Node, "head_agent_id") then
+         Result.Has_Head_Agent_Id := True;
+         Result.Head_Agent_Id := JS.As_Text (JS.Get_Value (Node, "head_agent_id"));
+      end if;
+      if JS.Present (Node, "shared_workspace_id") then
+         Result.Has_Shared_Workspace_Id := True;
+         Result.Shared_Workspace_Id := JS.As_Text (JS.Get_Value (Node, "shared_workspace_id"));
+      end if;
+      if JS.Present (Node, "custom_domain") then
+         Result.Has_Custom_Domain := True;
+         Result.Custom_Domain := From_JSON (JS.Get_Value (Node, "custom_domain"));
+      end if;
+      if JS.Present (Node, "marketplace_listing") then
+         Result.Has_Marketplace_Listing := True;
+         Result.Marketplace_Listing := From_JSON (JS.Get_Value (Node, "marketplace_listing"));
+      end if;
+      if JS.Present (Node, "legal_hold") then
+         Result.Has_Legal_Hold := True;
+         Result.Legal_Hold := JS.As_Boolean (JS.Get_Value (Node, "legal_hold"));
+      end if;
       if JS.Present (Node, "social_links") then
          Result.Has_Social_Links := True;
          Result.Social_Links := From_JSON (JS.Get_Value (Node, "social_links"));
@@ -57117,6 +61290,89 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Put_Careers_Config_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Enabled then
+         JS.Set (Result, "enabled", JS.JSON.Create (Model.Enabled));
+      end if;
+      if Model.Has_Title then
+         JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      end if;
+      if Model.Has_Description then
+         JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      end if;
+      if Model.Has_Company_Name then
+         JS.Set (Result, "company_name", JS.JSON.Create (Model.Company_Name));
+      end if;
+      if Model.Has_Notify_Emails then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Notify_Emails loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "notify_emails", Items);
+         end;
+      end if;
+      if Model.Has_Retention_Days then
+         JS.Set (Result, "retention_days", JS.JSON.Create (Model.Retention_Days));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Put_Careers_Config_Request is
+      Result : Put_Careers_Config_Request;
+   begin
+      if JS.Present (Node, "enabled") then
+         Result.Has_Enabled := True;
+         Result.Enabled := JS.As_Boolean (JS.Get_Value (Node, "enabled"));
+      end if;
+      if JS.Present (Node, "title") then
+         Result.Has_Title := True;
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Has_Description := True;
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "company_name") then
+         Result.Has_Company_Name := True;
+         Result.Company_Name := JS.As_Text (JS.Get_Value (Node, "company_name"));
+      end if;
+      if JS.Present (Node, "notify_emails") then
+         Result.Has_Notify_Emails := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "notify_emails");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Notify_Emails.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "retention_days") then
+         Result.Has_Retention_Days := True;
+         Result.Retention_Days := JS.As_Integer (JS.Get_Value (Node, "retention_days"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Put_Careers_Config_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "config", To_JSON (Model.Config));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Put_Careers_Config_Response is
+      Result : Put_Careers_Config_Response;
+   begin
+      if JS.Present (Node, "config") then
+         Result.Config := From_JSON (JS.Get_Value (Node, "config"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_Quota_Problem_Code (Value : String) return Quota_Problem_Code is
    begin
       if Value = "quota_exceeded" then
@@ -57464,6 +61720,25 @@ package body UARP.Models is
       end if;
       if JS.Present (Node, "components") then
          Result.Components := JS.Get_Value (Node, "components");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Reconnect_MCP_Server_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Return_To then
+         JS.Set (Result, "return_to", To_JSON (Model.Return_To));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Reconnect_MCP_Server_Request is
+      Result : Reconnect_MCP_Server_Request;
+   begin
+      if JS.Present (Node, "return_to") then
+         Result.Has_Return_To := True;
+         Result.Return_To := From_JSON (JS.Get_Value (Node, "return_to"));
       end if;
       return Result;
    end From_JSON;
@@ -60723,6 +64998,880 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_Run_Event_Type (Value : String) return Run_Event_Type is
+   begin
+      if Value = "run.created" then
+         return (Kind => Run_Event_Type_Run_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.started" then
+         return (Kind => Run_Event_Type_Run_Started, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.completed" then
+         return (Kind => Run_Event_Type_Run_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.failed" then
+         return (Kind => Run_Event_Type_Run_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.cancelled" then
+         return (Kind => Run_Event_Type_Run_Cancelled, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.timeout" then
+         return (Kind => Run_Event_Type_Run_Timeout, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.guardrail_blocked" then
+         return (Kind => Run_Event_Type_Run_Guardrail_Blocked, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.awaiting_approval" then
+         return (Kind => Run_Event_Type_Run_Awaiting_Approval, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.awaiting_input" then
+         return (Kind => Run_Event_Type_Run_Awaiting_Input, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.input_received" then
+         return (Kind => Run_Event_Type_Run_Input_Received, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.approved" then
+         return (Kind => Run_Event_Type_Run_Approved, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.rejected" then
+         return (Kind => Run_Event_Type_Run_Rejected, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.checkpoint" then
+         return (Kind => Run_Event_Type_Run_Checkpoint, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.paused" then
+         return (Kind => Run_Event_Type_Run_Paused, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.resumed" then
+         return (Kind => Run_Event_Type_Run_Resumed, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.restored" then
+         return (Kind => Run_Event_Type_Run_Restored, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.affect" then
+         return (Kind => Run_Event_Type_Run_Affect, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.request" then
+         return (Kind => Run_Event_Type_LLM_Request, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.response" then
+         return (Kind => Run_Event_Type_LLM_Response, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.error" then
+         return (Kind => Run_Event_Type_LLM_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.thinking" then
+         return (Kind => Run_Event_Type_LLM_Thinking, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.chunk" then
+         return (Kind => Run_Event_Type_LLM_Chunk, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.timeout" then
+         return (Kind => Run_Event_Type_LLM_Timeout, Raw => UARP.Types."+" (Value));
+      elsif Value = "llm.fallback" then
+         return (Kind => Run_Event_Type_LLM_Fallback, Raw => UARP.Types."+" (Value));
+      elsif Value = "step.plan" then
+         return (Kind => Run_Event_Type_Step_Plan, Raw => UARP.Types."+" (Value));
+      elsif Value = "step.act" then
+         return (Kind => Run_Event_Type_Step_Act, Raw => UARP.Types."+" (Value));
+      elsif Value = "step.evaluate" then
+         return (Kind => Run_Event_Type_Step_Evaluate, Raw => UARP.Types."+" (Value));
+      elsif Value = "step.thinking" then
+         return (Kind => Run_Event_Type_Step_Thinking, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool.call" then
+         return (Kind => Run_Event_Type_Tool_Call, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool.result" then
+         return (Kind => Run_Event_Type_Tool_Result, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool.error" then
+         return (Kind => Run_Event_Type_Tool_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool.timeout" then
+         return (Kind => Run_Event_Type_Tool_Timeout, Raw => UARP.Types."+" (Value));
+      elsif Value = "guardrail.check" then
+         return (Kind => Run_Event_Type_Guardrail_Check, Raw => UARP.Types."+" (Value));
+      elsif Value = "guardrail.violation" then
+         return (Kind => Run_Event_Type_Guardrail_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "guardrail.custom.check" then
+         return (Kind => Run_Event_Type_Guardrail_Custom_Check, Raw => UARP.Types."+" (Value));
+      elsif Value = "guardrail.custom.violation" then
+         return (Kind => Run_Event_Type_Guardrail_Custom_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "memory.retrieval" then
+         return (Kind => Run_Event_Type_Memory_Retrieval, Raw => UARP.Types."+" (Value));
+      elsif Value = "memory.extraction" then
+         return (Kind => Run_Event_Type_Memory_Extraction, Raw => UARP.Types."+" (Value));
+      elsif Value = "memory.stored" then
+         return (Kind => Run_Event_Type_Memory_Stored, Raw => UARP.Types."+" (Value));
+      elsif Value = "memory.evicted" then
+         return (Kind => Run_Event_Type_Memory_Evicted, Raw => UARP.Types."+" (Value));
+      elsif Value = "session.context_compacted" then
+         return (Kind => Run_Event_Type_Session_Context_Compacted, Raw => UARP.Types."+" (Value));
+      elsif Value = "session.created" then
+         return (Kind => Run_Event_Type_Session_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "session.closed" then
+         return (Kind => Run_Event_Type_Session_Closed, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.message" then
+         return (Kind => Run_Event_Type_Team_Message, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.round_start" then
+         return (Kind => Run_Event_Type_Team_Round_Start, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.round_end" then
+         return (Kind => Run_Event_Type_Team_Round_End, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.delegate" then
+         return (Kind => Run_Event_Type_Team_Delegate, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.broadcast" then
+         return (Kind => Run_Event_Type_Team_Broadcast, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.merge" then
+         return (Kind => Run_Event_Type_Team_Merge, Raw => UARP.Types."+" (Value));
+      elsif Value = "team.handoff" then
+         return (Kind => Run_Event_Type_Team_Handoff, Raw => UARP.Types."+" (Value));
+      elsif Value = "child_run.completed" then
+         return (Kind => Run_Event_Type_Child_Run_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "child_run.failed" then
+         return (Kind => Run_Event_Type_Child_Run_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.tick_start" then
+         return (Kind => Run_Event_Type_Company_Tick_Start, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.tick_end" then
+         return (Kind => Run_Event_Type_Company_Tick_End, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.paused" then
+         return (Kind => Run_Event_Type_Company_Paused, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.resumed" then
+         return (Kind => Run_Event_Type_Company_Resumed, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.budget_updated" then
+         return (Kind => Run_Event_Type_Company_Budget_Updated, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.escalation" then
+         return (Kind => Run_Event_Type_Company_Escalation, Raw => UARP.Types."+" (Value));
+      elsif Value = "company.objective_updated" then
+         return (Kind => Run_Event_Type_Company_Objective_Updated, Raw => UARP.Types."+" (Value));
+      elsif Value = "circuit_breaker.opened" then
+         return (Kind => Run_Event_Type_Circuit_Breaker_Opened, Raw => UARP.Types."+" (Value));
+      elsif Value = "circuit_breaker.closed" then
+         return (Kind => Run_Event_Type_Circuit_Breaker_Closed, Raw => UARP.Types."+" (Value));
+      elsif Value = "circuit_breaker.half_open" then
+         return (Kind => Run_Event_Type_Circuit_Breaker_Half_Open, Raw => UARP.Types."+" (Value));
+      elsif Value = "streaming.started" then
+         return (Kind => Run_Event_Type_Streaming_Started, Raw => UARP.Types."+" (Value));
+      elsif Value = "streaming.completed" then
+         return (Kind => Run_Event_Type_Streaming_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "streaming.error" then
+         return (Kind => Run_Event_Type_Streaming_Error, Raw => UARP.Types."+" (Value));
+      elsif Value = "streaming.buffer_truncated" then
+         return (Kind => Run_Event_Type_Streaming_Buffer_Truncated, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.step_started" then
+         return (Kind => Run_Event_Type_Run_Step_Started, Raw => UARP.Types."+" (Value));
+      elsif Value = "run.step_completed" then
+         return (Kind => Run_Event_Type_Run_Step_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "budget.soft_threshold_crossed" then
+         return (Kind => Run_Event_Type_Budget_Soft_Threshold_Crossed, Raw => UARP.Types."+" (Value));
+      elsif Value = "budget.hard_limit_reached" then
+         return (Kind => Run_Event_Type_Budget_Hard_Limit_Reached, Raw => UARP.Types."+" (Value));
+      elsif Value = "tenant.created" then
+         return (Kind => Run_Event_Type_Tenant_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "tenant.suspended" then
+         return (Kind => Run_Event_Type_Tenant_Suspended, Raw => UARP.Types."+" (Value));
+      elsif Value = "tenant.purged" then
+         return (Kind => Run_Event_Type_Tenant_Purged, Raw => UARP.Types."+" (Value));
+      elsif Value = "config.updated" then
+         return (Kind => Run_Event_Type_Config_Updated, Raw => UARP.Types."+" (Value));
+      elsif Value = "webhook.delivered" then
+         return (Kind => Run_Event_Type_Webhook_Delivered, Raw => UARP.Types."+" (Value));
+      elsif Value = "webhook.failed" then
+         return (Kind => Run_Event_Type_Webhook_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "cron.fired" then
+         return (Kind => Run_Event_Type_Cron_Fired, Raw => UARP.Types."+" (Value));
+      elsif Value = "agent.version_created" then
+         return (Kind => Run_Event_Type_Agent_Version_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "agent.rollback" then
+         return (Kind => Run_Event_Type_Agent_Rollback, Raw => UARP.Types."+" (Value));
+      elsif Value = "mcp.server_log" then
+         return (Kind => Run_Event_Type_MCP_Server_Log, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.started" then
+         return (Kind => Run_Event_Type_Orchestration_Started, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.planned" then
+         return (Kind => Run_Event_Type_Orchestration_Planned, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.replanned" then
+         return (Kind => Run_Event_Type_Orchestration_Replanned, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.task_started" then
+         return (Kind => Run_Event_Type_Orchestration_Task_Started, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.task_completed" then
+         return (Kind => Run_Event_Type_Orchestration_Task_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.task_failed" then
+         return (Kind => Run_Event_Type_Orchestration_Task_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.checkpoint" then
+         return (Kind => Run_Event_Type_Orchestration_Checkpoint, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.policy_violation" then
+         return (Kind => Run_Event_Type_Orchestration_Policy_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.quality_report" then
+         return (Kind => Run_Event_Type_Orchestration_Quality_Report, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.completed" then
+         return (Kind => Run_Event_Type_Orchestration_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "orchestration.failed" then
+         return (Kind => Run_Event_Type_Orchestration_Failed, Raw => UARP.Types."+" (Value));
+      elsif Value = "graph.agent_spawned" then
+         return (Kind => Run_Event_Type_Graph_Agent_Spawned, Raw => UARP.Types."+" (Value));
+      elsif Value = "graph.agent_terminated" then
+         return (Kind => Run_Event_Type_Graph_Agent_Terminated, Raw => UARP.Types."+" (Value));
+      elsif Value = "graph.task_delegated" then
+         return (Kind => Run_Event_Type_Graph_Task_Delegated, Raw => UARP.Types."+" (Value));
+      elsif Value = "graph.edge_added" then
+         return (Kind => Run_Event_Type_Graph_Edge_Added, Raw => UARP.Types."+" (Value));
+      elsif Value = "graph.edge_removed" then
+         return (Kind => Run_Event_Type_Graph_Edge_Removed, Raw => UARP.Types."+" (Value));
+      elsif Value = "plan.created" then
+         return (Kind => Run_Event_Type_Plan_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "plan.updated" then
+         return (Kind => Run_Event_Type_Plan_Updated, Raw => UARP.Types."+" (Value));
+      elsif Value = "plan.sub_goal_completed" then
+         return (Kind => Run_Event_Type_Plan_Sub_Goal_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "plan.sub_goal_abandoned" then
+         return (Kind => Run_Event_Type_Plan_Sub_Goal_Abandoned, Raw => UARP.Types."+" (Value));
+      elsif Value = "mcp.tool_called" then
+         return (Kind => Run_Event_Type_MCP_Tool_Called, Raw => UARP.Types."+" (Value));
+      elsif Value = "mcp.server_connected" then
+         return (Kind => Run_Event_Type_MCP_Server_Connected, Raw => UARP.Types."+" (Value));
+      elsif Value = "mcp.server_disconnected" then
+         return (Kind => Run_Event_Type_MCP_Server_Disconnected, Raw => UARP.Types."+" (Value));
+      elsif Value = "a2a.task_sent" then
+         return (Kind => Run_Event_Type_A2A_Task_Sent, Raw => UARP.Types."+" (Value));
+      elsif Value = "a2a.task_received" then
+         return (Kind => Run_Event_Type_A2A_Task_Received, Raw => UARP.Types."+" (Value));
+      elsif Value = "memory.compressed" then
+         return (Kind => Run_Event_Type_Memory_Compressed, Raw => UARP.Types."+" (Value));
+      elsif Value = "capability.best_agent_selected" then
+         return (Kind => Run_Event_Type_Capability_Best_Agent_Selected, Raw => UARP.Types."+" (Value));
+      elsif Value = "identity.created" then
+         return (Kind => Run_Event_Type_Identity_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "identity.rotated" then
+         return (Kind => Run_Event_Type_Identity_Rotated, Raw => UARP.Types."+" (Value));
+      elsif Value = "message.signed" then
+         return (Kind => Run_Event_Type_Message_Signed, Raw => UARP.Types."+" (Value));
+      elsif Value = "message.verified" then
+         return (Kind => Run_Event_Type_Message_Verified, Raw => UARP.Types."+" (Value));
+      elsif Value = "message.replay_blocked" then
+         return (Kind => Run_Event_Type_Message_Replay_Blocked, Raw => UARP.Types."+" (Value));
+      elsif Value = "constitution.bootstrapped" then
+         return (Kind => Run_Event_Type_Constitution_Bootstrapped, Raw => UARP.Types."+" (Value));
+      elsif Value = "constitution.amended" then
+         return (Kind => Run_Event_Type_Constitution_Amended, Raw => UARP.Types."+" (Value));
+      elsif Value = "constitution.check_passed" then
+         return (Kind => Run_Event_Type_Constitution_Check_Passed, Raw => UARP.Types."+" (Value));
+      elsif Value = "constitution.check_blocked" then
+         return (Kind => Run_Event_Type_Constitution_Check_Blocked, Raw => UARP.Types."+" (Value));
+      elsif Value = "constitution.violation" then
+         return (Kind => Run_Event_Type_Constitution_Violation, Raw => UARP.Types."+" (Value));
+      elsif Value = "ledger.appended" then
+         return (Kind => Run_Event_Type_Ledger_Appended, Raw => UARP.Types."+" (Value));
+      elsif Value = "ledger.integrity_checked" then
+         return (Kind => Run_Event_Type_Ledger_Integrity_Checked, Raw => UARP.Types."+" (Value));
+      elsif Value = "permission.checked" then
+         return (Kind => Run_Event_Type_Permission_Checked, Raw => UARP.Types."+" (Value));
+      elsif Value = "permission.denied" then
+         return (Kind => Run_Event_Type_Permission_Denied, Raw => UARP.Types."+" (Value));
+      elsif Value = "permission.spawn_blocked" then
+         return (Kind => Run_Event_Type_Permission_Spawn_Blocked, Raw => UARP.Types."+" (Value));
+      elsif Value = "attestation.created" then
+         return (Kind => Run_Event_Type_Attestation_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "attestation.verified" then
+         return (Kind => Run_Event_Type_Attestation_Verified, Raw => UARP.Types."+" (Value));
+      elsif Value = "attestation.invalid" then
+         return (Kind => Run_Event_Type_Attestation_Invalid, Raw => UARP.Types."+" (Value));
+      elsif Value = "arbitration.case_opened" then
+         return (Kind => Run_Event_Type_Arbitration_Case_Opened, Raw => UARP.Types."+" (Value));
+      elsif Value = "arbitration.ruling_submitted" then
+         return (Kind => Run_Event_Type_Arbitration_Ruling_Submitted, Raw => UARP.Types."+" (Value));
+      elsif Value = "arbitration.appeal_filed" then
+         return (Kind => Run_Event_Type_Arbitration_Appeal_Filed, Raw => UARP.Types."+" (Value));
+      elsif Value = "voting.proposal_created" then
+         return (Kind => Run_Event_Type_Voting_Proposal_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "voting.ballot_cast" then
+         return (Kind => Run_Event_Type_Voting_Ballot_Cast, Raw => UARP.Types."+" (Value));
+      elsif Value = "voting.tallied" then
+         return (Kind => Run_Event_Type_Voting_Tallied, Raw => UARP.Types."+" (Value));
+      elsif Value = "voting.vetoed" then
+         return (Kind => Run_Event_Type_Voting_Vetoed, Raw => UARP.Types."+" (Value));
+      elsif Value = "resource.spent" then
+         return (Kind => Run_Event_Type_Resource_Spent, Raw => UARP.Types."+" (Value));
+      elsif Value = "resource.earned" then
+         return (Kind => Run_Event_Type_Resource_Earned, Raw => UARP.Types."+" (Value));
+      elsif Value = "resource.transferred" then
+         return (Kind => Run_Event_Type_Resource_Transferred, Raw => UARP.Types."+" (Value));
+      elsif Value = "resource.insufficient" then
+         return (Kind => Run_Event_Type_Resource_Insufficient, Raw => UARP.Types."+" (Value));
+      elsif Value = "ambassador.veto_issued" then
+         return (Kind => Run_Event_Type_Ambassador_Veto_Issued, Raw => UARP.Types."+" (Value));
+      elsif Value = "ambassador.request_submitted" then
+         return (Kind => Run_Event_Type_Ambassador_Request_Submitted, Raw => UARP.Types."+" (Value));
+      elsif Value = "builder.design_submitted" then
+         return (Kind => Run_Event_Type_Builder_Design_Submitted, Raw => UARP.Types."+" (Value));
+      elsif Value = "builder.design_approved" then
+         return (Kind => Run_Event_Type_Builder_Design_Approved, Raw => UARP.Types."+" (Value));
+      elsif Value = "builder.design_spawned" then
+         return (Kind => Run_Event_Type_Builder_Design_Spawned, Raw => UARP.Types."+" (Value));
+      elsif Value = "emergency.safe_mode_activated" then
+         return (Kind => Run_Event_Type_Emergency_Safe_Mode_Activated, Raw => UARP.Types."+" (Value));
+      elsif Value = "emergency.safe_mode_deactivated" then
+         return (Kind => Run_Event_Type_Emergency_Safe_Mode_Deactivated, Raw => UARP.Types."+" (Value));
+      elsif Value = "emergency.deadlock_detected" then
+         return (Kind => Run_Event_Type_Emergency_Deadlock_Detected, Raw => UARP.Types."+" (Value));
+      elsif Value = "goal.self_formulated" then
+         return (Kind => Run_Event_Type_Goal_Self_Formulated, Raw => UARP.Types."+" (Value));
+      elsif Value = "goal.approved" then
+         return (Kind => Run_Event_Type_Goal_Approved, Raw => UARP.Types."+" (Value));
+      elsif Value = "improvement.proposed" then
+         return (Kind => Run_Event_Type_Improvement_Proposed, Raw => UARP.Types."+" (Value));
+      elsif Value = "improvement.sandbox_tested" then
+         return (Kind => Run_Event_Type_Improvement_Sandbox_Tested, Raw => UARP.Types."+" (Value));
+      elsif Value = "improvement.applied" then
+         return (Kind => Run_Event_Type_Improvement_Applied, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.insight_published" then
+         return (Kind => Run_Event_Type_Collective_Insight_Published, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.insights_retrieved" then
+         return (Kind => Run_Event_Type_Collective_Insights_Retrieved, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.review_requested" then
+         return (Kind => Run_Event_Type_Collective_Review_Requested, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.poll_created" then
+         return (Kind => Run_Event_Type_Collective_Poll_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.agent_rated" then
+         return (Kind => Run_Event_Type_Collective_Agent_Rated, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.feedback_requested" then
+         return (Kind => Run_Event_Type_Collective_Feedback_Requested, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.reflection_completed" then
+         return (Kind => Run_Event_Type_Collective_Reflection_Completed, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.approaches_compared" then
+         return (Kind => Run_Event_Type_Collective_Approaches_Compared, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.lesson_logged" then
+         return (Kind => Run_Event_Type_Collective_Lesson_Logged, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.team_formed" then
+         return (Kind => Run_Event_Type_Collective_Team_Formed, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.team_joined" then
+         return (Kind => Run_Event_Type_Collective_Team_Joined, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.team_left" then
+         return (Kind => Run_Event_Type_Collective_Team_Left, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.team_broadcast" then
+         return (Kind => Run_Event_Type_Collective_Team_Broadcast, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.specialist_requested" then
+         return (Kind => Run_Event_Type_Collective_Specialist_Requested, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.budget_requested" then
+         return (Kind => Run_Event_Type_Collective_Budget_Requested, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.tokens_transferred" then
+         return (Kind => Run_Event_Type_Collective_Tokens_Transferred, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.task_posted" then
+         return (Kind => Run_Event_Type_Collective_Task_Posted, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.bid_placed" then
+         return (Kind => Run_Event_Type_Collective_Bid_Placed, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.bid_accepted" then
+         return (Kind => Run_Event_Type_Collective_Bid_Accepted, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.cost_reported" then
+         return (Kind => Run_Event_Type_Collective_Cost_Reported, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.url_watch_created" then
+         return (Kind => Run_Event_Type_Sensor_URL_Watch_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.rss_watch_created" then
+         return (Kind => Run_Event_Type_Sensor_Rss_Watch_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.webhook_listener_created" then
+         return (Kind => Run_Event_Type_Sensor_Webhook_Listener_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.check_scheduled" then
+         return (Kind => Run_Event_Type_Sensor_Check_Scheduled, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.event_subscription_created" then
+         return (Kind => Run_Event_Type_Sensor_Event_Subscription_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "sensor.triggered" then
+         return (Kind => Run_Event_Type_Sensor_Triggered, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.report_presented" then
+         return (Kind => Run_Event_Type_Collective_Report_Presented, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.escalation" then
+         return (Kind => Run_Event_Type_Collective_Escalation, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.anomaly_reported" then
+         return (Kind => Run_Event_Type_Collective_Anomaly_Reported, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.human_override" then
+         return (Kind => Run_Event_Type_Collective_Human_Override, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.collective_paused" then
+         return (Kind => Run_Event_Type_Collective_Collective_Paused, Raw => UARP.Types."+" (Value));
+      elsif Value = "collective.verification_requested" then
+         return (Kind => Run_Event_Type_Collective_Verification_Requested, Raw => UARP.Types."+" (Value));
+      elsif Value = "strategy.created" then
+         return (Kind => Run_Event_Type_Strategy_Created, Raw => UARP.Types."+" (Value));
+      elsif Value = "strategy.kpi_updated" then
+         return (Kind => Run_Event_Type_Strategy_Kpi_Updated, Raw => UARP.Types."+" (Value));
+      elsif Value = "document.edit_start" then
+         return (Kind => Run_Event_Type_Document_Edit_Start, Raw => UARP.Types."+" (Value));
+      elsif Value = "document.edit_chunk" then
+         return (Kind => Run_Event_Type_Document_Edit_Chunk, Raw => UARP.Types."+" (Value));
+      elsif Value = "document.edit_complete" then
+         return (Kind => Run_Event_Type_Document_Edit_Complete, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Event_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Event_Type;
+
+   function To_Run_Event_Type (Kind : Run_Event_Type_Kind) return Run_Event_Type is
+   begin
+      case Kind is
+         when Run_Event_Type_Run_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.created"));
+         when Run_Event_Type_Run_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.started"));
+         when Run_Event_Type_Run_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.completed"));
+         when Run_Event_Type_Run_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.failed"));
+         when Run_Event_Type_Run_Cancelled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.cancelled"));
+         when Run_Event_Type_Run_Timeout =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.timeout"));
+         when Run_Event_Type_Run_Guardrail_Blocked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.guardrail_blocked"));
+         when Run_Event_Type_Run_Awaiting_Approval =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.awaiting_approval"));
+         when Run_Event_Type_Run_Awaiting_Input =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.awaiting_input"));
+         when Run_Event_Type_Run_Input_Received =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.input_received"));
+         when Run_Event_Type_Run_Approved =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.approved"));
+         when Run_Event_Type_Run_Rejected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.rejected"));
+         when Run_Event_Type_Run_Checkpoint =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.checkpoint"));
+         when Run_Event_Type_Run_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.paused"));
+         when Run_Event_Type_Run_Resumed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.resumed"));
+         when Run_Event_Type_Run_Restored =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.restored"));
+         when Run_Event_Type_Run_Affect =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.affect"));
+         when Run_Event_Type_LLM_Request =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.request"));
+         when Run_Event_Type_LLM_Response =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.response"));
+         when Run_Event_Type_LLM_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.error"));
+         when Run_Event_Type_LLM_Thinking =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.thinking"));
+         when Run_Event_Type_LLM_Chunk =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.chunk"));
+         when Run_Event_Type_LLM_Timeout =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.timeout"));
+         when Run_Event_Type_LLM_Fallback =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("llm.fallback"));
+         when Run_Event_Type_Step_Plan =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.plan"));
+         when Run_Event_Type_Step_Act =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.act"));
+         when Run_Event_Type_Step_Evaluate =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.evaluate"));
+         when Run_Event_Type_Step_Thinking =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("step.thinking"));
+         when Run_Event_Type_Tool_Call =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.call"));
+         when Run_Event_Type_Tool_Result =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.result"));
+         when Run_Event_Type_Tool_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.error"));
+         when Run_Event_Type_Tool_Timeout =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool.timeout"));
+         when Run_Event_Type_Guardrail_Check =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("guardrail.check"));
+         when Run_Event_Type_Guardrail_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("guardrail.violation"));
+         when Run_Event_Type_Guardrail_Custom_Check =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("guardrail.custom.check"));
+         when Run_Event_Type_Guardrail_Custom_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("guardrail.custom.violation"));
+         when Run_Event_Type_Memory_Retrieval =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("memory.retrieval"));
+         when Run_Event_Type_Memory_Extraction =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("memory.extraction"));
+         when Run_Event_Type_Memory_Stored =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("memory.stored"));
+         when Run_Event_Type_Memory_Evicted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("memory.evicted"));
+         when Run_Event_Type_Session_Context_Compacted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("session.context_compacted"));
+         when Run_Event_Type_Session_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("session.created"));
+         when Run_Event_Type_Session_Closed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("session.closed"));
+         when Run_Event_Type_Team_Message =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.message"));
+         when Run_Event_Type_Team_Round_Start =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.round_start"));
+         when Run_Event_Type_Team_Round_End =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.round_end"));
+         when Run_Event_Type_Team_Delegate =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.delegate"));
+         when Run_Event_Type_Team_Broadcast =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.broadcast"));
+         when Run_Event_Type_Team_Merge =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.merge"));
+         when Run_Event_Type_Team_Handoff =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("team.handoff"));
+         when Run_Event_Type_Child_Run_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("child_run.completed"));
+         when Run_Event_Type_Child_Run_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("child_run.failed"));
+         when Run_Event_Type_Company_Tick_Start =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.tick_start"));
+         when Run_Event_Type_Company_Tick_End =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.tick_end"));
+         when Run_Event_Type_Company_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.paused"));
+         when Run_Event_Type_Company_Resumed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.resumed"));
+         when Run_Event_Type_Company_Budget_Updated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.budget_updated"));
+         when Run_Event_Type_Company_Escalation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.escalation"));
+         when Run_Event_Type_Company_Objective_Updated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("company.objective_updated"));
+         when Run_Event_Type_Circuit_Breaker_Opened =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("circuit_breaker.opened"));
+         when Run_Event_Type_Circuit_Breaker_Closed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("circuit_breaker.closed"));
+         when Run_Event_Type_Circuit_Breaker_Half_Open =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("circuit_breaker.half_open"));
+         when Run_Event_Type_Streaming_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("streaming.started"));
+         when Run_Event_Type_Streaming_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("streaming.completed"));
+         when Run_Event_Type_Streaming_Error =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("streaming.error"));
+         when Run_Event_Type_Streaming_Buffer_Truncated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("streaming.buffer_truncated"));
+         when Run_Event_Type_Run_Step_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.step_started"));
+         when Run_Event_Type_Run_Step_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("run.step_completed"));
+         when Run_Event_Type_Budget_Soft_Threshold_Crossed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("budget.soft_threshold_crossed"));
+         when Run_Event_Type_Budget_Hard_Limit_Reached =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("budget.hard_limit_reached"));
+         when Run_Event_Type_Tenant_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tenant.created"));
+         when Run_Event_Type_Tenant_Suspended =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tenant.suspended"));
+         when Run_Event_Type_Tenant_Purged =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tenant.purged"));
+         when Run_Event_Type_Config_Updated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("config.updated"));
+         when Run_Event_Type_Webhook_Delivered =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("webhook.delivered"));
+         when Run_Event_Type_Webhook_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("webhook.failed"));
+         when Run_Event_Type_Cron_Fired =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("cron.fired"));
+         when Run_Event_Type_Agent_Version_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("agent.version_created"));
+         when Run_Event_Type_Agent_Rollback =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("agent.rollback"));
+         when Run_Event_Type_MCP_Server_Log =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("mcp.server_log"));
+         when Run_Event_Type_Orchestration_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.started"));
+         when Run_Event_Type_Orchestration_Planned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.planned"));
+         when Run_Event_Type_Orchestration_Replanned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.replanned"));
+         when Run_Event_Type_Orchestration_Task_Started =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.task_started"));
+         when Run_Event_Type_Orchestration_Task_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.task_completed"));
+         when Run_Event_Type_Orchestration_Task_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.task_failed"));
+         when Run_Event_Type_Orchestration_Checkpoint =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.checkpoint"));
+         when Run_Event_Type_Orchestration_Policy_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.policy_violation"));
+         when Run_Event_Type_Orchestration_Quality_Report =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.quality_report"));
+         when Run_Event_Type_Orchestration_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.completed"));
+         when Run_Event_Type_Orchestration_Failed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("orchestration.failed"));
+         when Run_Event_Type_Graph_Agent_Spawned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("graph.agent_spawned"));
+         when Run_Event_Type_Graph_Agent_Terminated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("graph.agent_terminated"));
+         when Run_Event_Type_Graph_Task_Delegated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("graph.task_delegated"));
+         when Run_Event_Type_Graph_Edge_Added =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("graph.edge_added"));
+         when Run_Event_Type_Graph_Edge_Removed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("graph.edge_removed"));
+         when Run_Event_Type_Plan_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("plan.created"));
+         when Run_Event_Type_Plan_Updated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("plan.updated"));
+         when Run_Event_Type_Plan_Sub_Goal_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("plan.sub_goal_completed"));
+         when Run_Event_Type_Plan_Sub_Goal_Abandoned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("plan.sub_goal_abandoned"));
+         when Run_Event_Type_MCP_Tool_Called =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("mcp.tool_called"));
+         when Run_Event_Type_MCP_Server_Connected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("mcp.server_connected"));
+         when Run_Event_Type_MCP_Server_Disconnected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("mcp.server_disconnected"));
+         when Run_Event_Type_A2A_Task_Sent =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("a2a.task_sent"));
+         when Run_Event_Type_A2A_Task_Received =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("a2a.task_received"));
+         when Run_Event_Type_Memory_Compressed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("memory.compressed"));
+         when Run_Event_Type_Capability_Best_Agent_Selected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("capability.best_agent_selected"));
+         when Run_Event_Type_Identity_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("identity.created"));
+         when Run_Event_Type_Identity_Rotated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("identity.rotated"));
+         when Run_Event_Type_Message_Signed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("message.signed"));
+         when Run_Event_Type_Message_Verified =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("message.verified"));
+         when Run_Event_Type_Message_Replay_Blocked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("message.replay_blocked"));
+         when Run_Event_Type_Constitution_Bootstrapped =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("constitution.bootstrapped"));
+         when Run_Event_Type_Constitution_Amended =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("constitution.amended"));
+         when Run_Event_Type_Constitution_Check_Passed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("constitution.check_passed"));
+         when Run_Event_Type_Constitution_Check_Blocked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("constitution.check_blocked"));
+         when Run_Event_Type_Constitution_Violation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("constitution.violation"));
+         when Run_Event_Type_Ledger_Appended =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ledger.appended"));
+         when Run_Event_Type_Ledger_Integrity_Checked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ledger.integrity_checked"));
+         when Run_Event_Type_Permission_Checked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("permission.checked"));
+         when Run_Event_Type_Permission_Denied =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("permission.denied"));
+         when Run_Event_Type_Permission_Spawn_Blocked =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("permission.spawn_blocked"));
+         when Run_Event_Type_Attestation_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("attestation.created"));
+         when Run_Event_Type_Attestation_Verified =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("attestation.verified"));
+         when Run_Event_Type_Attestation_Invalid =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("attestation.invalid"));
+         when Run_Event_Type_Arbitration_Case_Opened =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("arbitration.case_opened"));
+         when Run_Event_Type_Arbitration_Ruling_Submitted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("arbitration.ruling_submitted"));
+         when Run_Event_Type_Arbitration_Appeal_Filed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("arbitration.appeal_filed"));
+         when Run_Event_Type_Voting_Proposal_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("voting.proposal_created"));
+         when Run_Event_Type_Voting_Ballot_Cast =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("voting.ballot_cast"));
+         when Run_Event_Type_Voting_Tallied =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("voting.tallied"));
+         when Run_Event_Type_Voting_Vetoed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("voting.vetoed"));
+         when Run_Event_Type_Resource_Spent =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("resource.spent"));
+         when Run_Event_Type_Resource_Earned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("resource.earned"));
+         when Run_Event_Type_Resource_Transferred =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("resource.transferred"));
+         when Run_Event_Type_Resource_Insufficient =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("resource.insufficient"));
+         when Run_Event_Type_Ambassador_Veto_Issued =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ambassador.veto_issued"));
+         when Run_Event_Type_Ambassador_Request_Submitted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("ambassador.request_submitted"));
+         when Run_Event_Type_Builder_Design_Submitted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("builder.design_submitted"));
+         when Run_Event_Type_Builder_Design_Approved =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("builder.design_approved"));
+         when Run_Event_Type_Builder_Design_Spawned =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("builder.design_spawned"));
+         when Run_Event_Type_Emergency_Safe_Mode_Activated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("emergency.safe_mode_activated"));
+         when Run_Event_Type_Emergency_Safe_Mode_Deactivated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("emergency.safe_mode_deactivated"));
+         when Run_Event_Type_Emergency_Deadlock_Detected =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("emergency.deadlock_detected"));
+         when Run_Event_Type_Goal_Self_Formulated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("goal.self_formulated"));
+         when Run_Event_Type_Goal_Approved =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("goal.approved"));
+         when Run_Event_Type_Improvement_Proposed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("improvement.proposed"));
+         when Run_Event_Type_Improvement_Sandbox_Tested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("improvement.sandbox_tested"));
+         when Run_Event_Type_Improvement_Applied =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("improvement.applied"));
+         when Run_Event_Type_Collective_Insight_Published =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.insight_published"));
+         when Run_Event_Type_Collective_Insights_Retrieved =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.insights_retrieved"));
+         when Run_Event_Type_Collective_Review_Requested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.review_requested"));
+         when Run_Event_Type_Collective_Poll_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.poll_created"));
+         when Run_Event_Type_Collective_Agent_Rated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.agent_rated"));
+         when Run_Event_Type_Collective_Feedback_Requested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.feedback_requested"));
+         when Run_Event_Type_Collective_Reflection_Completed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.reflection_completed"));
+         when Run_Event_Type_Collective_Approaches_Compared =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.approaches_compared"));
+         when Run_Event_Type_Collective_Lesson_Logged =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.lesson_logged"));
+         when Run_Event_Type_Collective_Team_Formed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.team_formed"));
+         when Run_Event_Type_Collective_Team_Joined =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.team_joined"));
+         when Run_Event_Type_Collective_Team_Left =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.team_left"));
+         when Run_Event_Type_Collective_Team_Broadcast =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.team_broadcast"));
+         when Run_Event_Type_Collective_Specialist_Requested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.specialist_requested"));
+         when Run_Event_Type_Collective_Budget_Requested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.budget_requested"));
+         when Run_Event_Type_Collective_Tokens_Transferred =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.tokens_transferred"));
+         when Run_Event_Type_Collective_Task_Posted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.task_posted"));
+         when Run_Event_Type_Collective_Bid_Placed =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.bid_placed"));
+         when Run_Event_Type_Collective_Bid_Accepted =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.bid_accepted"));
+         when Run_Event_Type_Collective_Cost_Reported =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.cost_reported"));
+         when Run_Event_Type_Sensor_URL_Watch_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.url_watch_created"));
+         when Run_Event_Type_Sensor_Rss_Watch_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.rss_watch_created"));
+         when Run_Event_Type_Sensor_Webhook_Listener_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.webhook_listener_created"));
+         when Run_Event_Type_Sensor_Check_Scheduled =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.check_scheduled"));
+         when Run_Event_Type_Sensor_Event_Subscription_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.event_subscription_created"));
+         when Run_Event_Type_Sensor_Triggered =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("sensor.triggered"));
+         when Run_Event_Type_Collective_Report_Presented =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.report_presented"));
+         when Run_Event_Type_Collective_Escalation =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.escalation"));
+         when Run_Event_Type_Collective_Anomaly_Reported =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.anomaly_reported"));
+         when Run_Event_Type_Collective_Human_Override =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.human_override"));
+         when Run_Event_Type_Collective_Collective_Paused =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.collective_paused"));
+         when Run_Event_Type_Collective_Verification_Requested =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("collective.verification_requested"));
+         when Run_Event_Type_Strategy_Created =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("strategy.created"));
+         when Run_Event_Type_Strategy_Kpi_Updated =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("strategy.kpi_updated"));
+         when Run_Event_Type_Document_Edit_Start =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("document.edit_start"));
+         when Run_Event_Type_Document_Edit_Chunk =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("document.edit_chunk"));
+         when Run_Event_Type_Document_Edit_Complete =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("document.edit_complete"));
+         when Run_Event_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Event_Type;
+
+   function Image (Model : Run_Event_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Event_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Event_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_Type is
+      (To_Run_Event_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Event_Trace_Context) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Traceparent then
+         JS.Set (Result, "traceparent", JS.JSON.Create (Model.Traceparent));
+      end if;
+      if Model.Has_Tracestate then
+         JS.Set (Result, "tracestate", JS.JSON.Create (Model.Tracestate));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event_Trace_Context is
+      Result : Run_Event_Trace_Context;
+   begin
+      if JS.Present (Node, "traceparent") then
+         Result.Has_Traceparent := True;
+         Result.Traceparent := JS.As_Text (JS.Get_Value (Node, "traceparent"));
+      end if;
+      if JS.Present (Node, "tracestate") then
+         Result.Has_Tracestate := True;
+         Result.Tracestate := JS.As_Text (JS.Get_Value (Node, "tracestate"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Event) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      if Model.Has_Tenant_Id then
+         JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
+      end if;
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", Model.Payload);
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      if Model.Has_Span_Id then
+         JS.Set (Result, "span_id", JS.JSON.Create (Model.Span_Id));
+      end if;
+      if Model.Has_Trace_Context then
+         JS.Set (Result, "trace_context", To_JSON (Model.Trace_Context));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Event is
+      Result : Run_Event;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "tenant_id") then
+         Result.Has_Tenant_Id := True;
+         Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := JS.Get_Value (Node, "payload");
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "span_id") then
+         Result.Has_Span_Id := True;
+         Result.Span_Id := JS.As_Text (JS.Get_Value (Node, "span_id"));
+      end if;
+      if JS.Present (Node, "trace_context") then
+         Result.Has_Trace_Context := True;
+         Result.Trace_Context := From_JSON (JS.Get_Value (Node, "trace_context"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Run_Feedback_List_Feedback) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -60952,6 +66101,273 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "reconciliation") then
          Result.Reconciliation := From_JSON (JS.Get_Value (Node, "reconciliation"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Done_Stream_Type (Value : String) return Run_Stream_Done_Stream_Type is
+   begin
+      if Value = "lifecycle" then
+         return (Kind => Run_Stream_Done_Stream_Type_Lifecycle, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Done_Stream_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Done_Stream_Type;
+
+   function To_Run_Stream_Done_Stream_Type (Kind : Run_Stream_Done_Stream_Type_Kind) return Run_Stream_Done_Stream_Type is
+   begin
+      case Kind is
+         when Run_Stream_Done_Stream_Type_Lifecycle =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lifecycle"));
+         when Run_Stream_Done_Stream_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Done_Stream_Type;
+
+   function Image (Model : Run_Stream_Done_Stream_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Done_Stream_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Done_Stream_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Done_Stream_Type is
+      (To_Run_Stream_Done_Stream_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Stream_Done) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      JS.Set (Result, "status", Model.Status);
+      if Model.Has_Metrics then
+         JS.Set (Result, "metrics", To_JSON (Model.Metrics));
+      end if;
+      if Model.Has_Output then
+         JS.Set (Result, "output", Model.Output);
+      end if;
+      if Model.Has_Error then
+         JS.Set (Result, "error", Model.Error);
+      end if;
+      if Model.Has_Cost_Usd then
+         JS.Set (Result, "cost_usd", JS.JSON.Create (Model.Cost_Usd));
+      end if;
+      if Model.Has_Guardrail_Blocked then
+         JS.Set (Result, "guardrail_blocked", JS.JSON.Create (Model.Guardrail_Blocked));
+      end if;
+      if Model.Has_Guardrail_Violation then
+         JS.Set (Result, "_guardrail_violation", Model.Guardrail_Violation);
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Done is
+      Result : Run_Stream_Done;
+   begin
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Status := JS.Get_Value (Node, "status");
+      end if;
+      if JS.Present (Node, "metrics") then
+         Result.Has_Metrics := True;
+         Result.Metrics := From_JSON (JS.Get_Value (Node, "metrics"));
+      end if;
+      if JS.Present (Node, "output") then
+         Result.Has_Output := True;
+         Result.Output := JS.Get_Value (Node, "output");
+      end if;
+      if JS.Present (Node, "error") then
+         Result.Has_Error := True;
+         Result.Error := JS.Get_Value (Node, "error");
+      end if;
+      if JS.Present (Node, "cost_usd") then
+         Result.Has_Cost_Usd := True;
+         Result.Cost_Usd := JS.As_Float (JS.Get_Value (Node, "cost_usd"));
+      end if;
+      if JS.Present (Node, "guardrail_blocked") then
+         Result.Has_Guardrail_Blocked := True;
+         Result.Guardrail_Blocked := JS.As_Boolean (JS.Get_Value (Node, "guardrail_blocked"));
+      end if;
+      if JS.Present (Node, "_guardrail_violation") then
+         Result.Has_Guardrail_Violation := True;
+         Result.Guardrail_Violation := JS.Get_Value (Node, "_guardrail_violation");
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Run_Stream_Event_Trace_Context) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Traceparent then
+         JS.Set (Result, "traceparent", JS.JSON.Create (Model.Traceparent));
+      end if;
+      if Model.Has_Tracestate then
+         JS.Set (Result, "tracestate", JS.JSON.Create (Model.Tracestate));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Trace_Context is
+      Result : Run_Stream_Event_Trace_Context;
+   begin
+      if JS.Present (Node, "traceparent") then
+         Result.Has_Traceparent := True;
+         Result.Traceparent := JS.As_Text (JS.Get_Value (Node, "traceparent"));
+      end if;
+      if JS.Present (Node, "tracestate") then
+         Result.Has_Tracestate := True;
+         Result.Tracestate := JS.As_Text (JS.Get_Value (Node, "tracestate"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_Run_Stream_Event_Stream_Type (Value : String) return Run_Stream_Event_Stream_Type is
+   begin
+      if Value = "lifecycle" then
+         return (Kind => Run_Stream_Event_Stream_Type_Lifecycle, Raw => UARP.Types."+" (Value));
+      elsif Value = "assistant" then
+         return (Kind => Run_Stream_Event_Stream_Type_Assistant, Raw => UARP.Types."+" (Value));
+      elsif Value = "tool" then
+         return (Kind => Run_Stream_Event_Stream_Type_Tool, Raw => UARP.Types."+" (Value));
+      elsif Value = "other" then
+         return (Kind => Run_Stream_Event_Stream_Type_Other, Raw => UARP.Types."+" (Value));
+      else
+         return (Kind => Run_Stream_Event_Stream_Type_Unrecognized, Raw => UARP.Types."+" (Value));
+      end if;
+   end To_Run_Stream_Event_Stream_Type;
+
+   function To_Run_Stream_Event_Stream_Type (Kind : Run_Stream_Event_Stream_Type_Kind) return Run_Stream_Event_Stream_Type is
+   begin
+      case Kind is
+         when Run_Stream_Event_Stream_Type_Lifecycle =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("lifecycle"));
+         when Run_Stream_Event_Stream_Type_Assistant =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("assistant"));
+         when Run_Stream_Event_Stream_Type_Tool =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("tool"));
+         when Run_Stream_Event_Stream_Type_Other =>
+            return (Kind => Kind, Raw => UARP.Types."+" ("other"));
+         when Run_Stream_Event_Stream_Type_Unrecognized =>
+            return (Kind => Kind, Raw => UARP.Types.Empty_Text);
+      end case;
+   end To_Run_Stream_Event_Stream_Type;
+
+   function Image (Model : Run_Stream_Event_Stream_Type) return String is
+      (if UARP.Types.SU.Length (Model.Raw) > 0
+         then UARP.Types.SU.To_String (Model.Raw)
+         else UARP.Types.SU.To_String (To_Run_Stream_Event_Stream_Type (Model.Kind).Raw));
+
+   function To_JSON (Model : Run_Stream_Event_Stream_Type) return UARP.JSON_Support.JSON_Value is
+      (JS.JSON.Create (Image (Model)));
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event_Stream_Type is
+      (To_Run_Stream_Event_Stream_Type (UARP.Types."+" (JS.As_Text (Node))));
+
+   function To_JSON (Model : Run_Stream_Event) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "event_id", JS.JSON.Create (Model.Event_Id));
+      if Model.Has_Tenant_Id then
+         JS.Set (Result, "tenant_id", JS.JSON.Create (Model.Tenant_Id));
+      end if;
+      JS.Set (Result, "run_id", JS.JSON.Create (Model.Run_Id));
+      if Model.Has_Session_Id then
+         JS.Set (Result, "session_id", JS.JSON.Create (Model.Session_Id));
+      end if;
+      JS.Set (Result, "type", To_JSON (Model.Type_K));
+      JS.Set (Result, "seq", JS.JSON.Create (Model.Seq));
+      JS.Set (Result, "payload", Model.Payload);
+      JS.Set (Result, "timestamp", JS.JSON.Create (Model.Timestamp));
+      if Model.Has_Step_Id then
+         JS.Set (Result, "step_id", JS.JSON.Create (Model.Step_Id));
+      end if;
+      if Model.Has_Parent_Event_Id then
+         JS.Set (Result, "parent_event_id", JS.JSON.Create (Model.Parent_Event_Id));
+      end if;
+      if Model.Has_Span_Id then
+         JS.Set (Result, "span_id", JS.JSON.Create (Model.Span_Id));
+      end if;
+      if Model.Has_Trace_Context then
+         JS.Set (Result, "trace_context", To_JSON (Model.Trace_Context));
+      end if;
+      JS.Set (Result, "stream_type", To_JSON (Model.Stream_Type));
+      if Model.Has_Chunk_Id then
+         JS.Set (Result, "_chunk_id", JS.JSON.Create (Model.Chunk_Id));
+      end if;
+      if Model.Has_Chunk_Index then
+         JS.Set (Result, "_chunk_index", JS.JSON.Create (Model.Chunk_Index));
+      end if;
+      if Model.Has_Guardrail_Violation then
+         JS.Set (Result, "_guardrail_violation", Model.Guardrail_Violation);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Run_Stream_Event is
+      Result : Run_Stream_Event;
+   begin
+      if JS.Present (Node, "event_id") then
+         Result.Event_Id := JS.As_Text (JS.Get_Value (Node, "event_id"));
+      end if;
+      if JS.Present (Node, "tenant_id") then
+         Result.Has_Tenant_Id := True;
+         Result.Tenant_Id := JS.As_Text (JS.Get_Value (Node, "tenant_id"));
+      end if;
+      if JS.Present (Node, "run_id") then
+         Result.Run_Id := JS.As_Text (JS.Get_Value (Node, "run_id"));
+      end if;
+      if JS.Present (Node, "session_id") then
+         Result.Has_Session_Id := True;
+         Result.Session_Id := JS.As_Text (JS.Get_Value (Node, "session_id"));
+      end if;
+      if JS.Present (Node, "type") then
+         Result.Type_K := From_JSON (JS.Get_Value (Node, "type"));
+      end if;
+      if JS.Present (Node, "seq") then
+         Result.Seq := JS.As_Integer (JS.Get_Value (Node, "seq"));
+      end if;
+      if JS.Present (Node, "payload") then
+         Result.Payload := JS.Get_Value (Node, "payload");
+      end if;
+      if JS.Present (Node, "timestamp") then
+         Result.Timestamp := JS.As_Text (JS.Get_Value (Node, "timestamp"));
+      end if;
+      if JS.Present (Node, "step_id") then
+         Result.Has_Step_Id := True;
+         Result.Step_Id := JS.As_Text (JS.Get_Value (Node, "step_id"));
+      end if;
+      if JS.Present (Node, "parent_event_id") then
+         Result.Has_Parent_Event_Id := True;
+         Result.Parent_Event_Id := JS.As_Text (JS.Get_Value (Node, "parent_event_id"));
+      end if;
+      if JS.Present (Node, "span_id") then
+         Result.Has_Span_Id := True;
+         Result.Span_Id := JS.As_Text (JS.Get_Value (Node, "span_id"));
+      end if;
+      if JS.Present (Node, "trace_context") then
+         Result.Has_Trace_Context := True;
+         Result.Trace_Context := From_JSON (JS.Get_Value (Node, "trace_context"));
+      end if;
+      if JS.Present (Node, "stream_type") then
+         Result.Stream_Type := From_JSON (JS.Get_Value (Node, "stream_type"));
+      end if;
+      if JS.Present (Node, "_chunk_id") then
+         Result.Has_Chunk_Id := True;
+         Result.Chunk_Id := JS.As_Text (JS.Get_Value (Node, "_chunk_id"));
+      end if;
+      if JS.Present (Node, "_chunk_index") then
+         Result.Has_Chunk_Index := True;
+         Result.Chunk_Index := JS.As_Integer (JS.Get_Value (Node, "_chunk_index"));
+      end if;
+      if JS.Present (Node, "_guardrail_violation") then
+         Result.Has_Guardrail_Violation := True;
+         Result.Guardrail_Violation := JS.Get_Value (Node, "_guardrail_violation");
       end if;
       return Result;
    end From_JSON;
@@ -62170,6 +67586,18 @@ package body UARP.Models is
    function To_JSON (Model : Session) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
+      if Model.Has_Archived then
+         JS.Set (Result, "archived", JS.JSON.Create (Model.Archived));
+      end if;
+      if Model.Has_Archived_At then
+         JS.Set (Result, "archived_at", JS.JSON.Create (Model.Archived_At));
+      end if;
+      if Model.Has_Pinned then
+         JS.Set (Result, "pinned", JS.JSON.Create (Model.Pinned));
+      end if;
+      if Model.Has_Pinned_At then
+         JS.Set (Result, "pinned_at", JS.JSON.Create (Model.Pinned_At));
+      end if;
       if Model.Has_Created_By then
          JS.Set (Result, "created_by", JS.JSON.Create (Model.Created_By));
       end if;
@@ -62237,6 +67665,22 @@ package body UARP.Models is
    function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Session is
       Result : Session;
    begin
+      if JS.Present (Node, "archived") then
+         Result.Has_Archived := True;
+         Result.Archived := JS.As_Boolean (JS.Get_Value (Node, "archived"));
+      end if;
+      if JS.Present (Node, "archived_at") then
+         Result.Has_Archived_At := True;
+         Result.Archived_At := JS.As_Text (JS.Get_Value (Node, "archived_at"));
+      end if;
+      if JS.Present (Node, "pinned") then
+         Result.Has_Pinned := True;
+         Result.Pinned := JS.As_Boolean (JS.Get_Value (Node, "pinned"));
+      end if;
+      if JS.Present (Node, "pinned_at") then
+         Result.Has_Pinned_At := True;
+         Result.Pinned_At := JS.As_Text (JS.Get_Value (Node, "pinned_at"));
+      end if;
       if JS.Present (Node, "created_by") then
          Result.Has_Created_By := True;
          Result.Created_By := JS.As_Text (JS.Get_Value (Node, "created_by"));
@@ -64478,7 +69922,7 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value2) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Spec_Tool_Catalog_Tools_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "spec_id", JS.JSON.Create (Model.Spec_Id));
@@ -64486,8 +69930,8 @@ package body UARP.Models is
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value2 is
-      Result : Value2;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Spec_Tool_Catalog_Tools_Value is
+      Result : Spec_Tool_Catalog_Tools_Value;
    begin
       if JS.Present (Node, "spec_id") then
          Result.Spec_Id := JS.As_Text (JS.Get_Value (Node, "spec_id"));
@@ -66334,6 +71778,9 @@ package body UARP.Models is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "success", JS.JSON.Create (Model.Success));
+      if Model.Has_Level then
+         JS.Set (Result, "level", JS.JSON.Create (Model.Level));
+      end if;
       if Model.Has_Message then
          JS.Set (Result, "message", JS.JSON.Create (Model.Message));
       end if;
@@ -66345,6 +71792,10 @@ package body UARP.Models is
    begin
       if JS.Present (Node, "success") then
          Result.Success := JS.As_Boolean (JS.Get_Value (Node, "success"));
+      end if;
+      if JS.Present (Node, "level") then
+         Result.Has_Level := True;
+         Result.Level := JS.As_Text (JS.Get_Value (Node, "level"));
       end if;
       if JS.Present (Node, "message") then
          Result.Has_Message := True;
@@ -67942,6 +73393,364 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Update_Admin_Job_Request_Location) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_City then
+         JS.Set (Result, "city", JS.JSON.Create (Model.City));
+      end if;
+      if Model.Has_Country then
+         JS.Set (Result, "country", Model.Country);
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Location is
+      Result : Update_Admin_Job_Request_Location;
+   begin
+      if JS.Present (Node, "city") then
+         Result.Has_City := True;
+         Result.City := JS.As_Text (JS.Get_Value (Node, "city"));
+      end if;
+      if JS.Present (Node, "country") then
+         Result.Has_Country := True;
+         Result.Country := JS.Get_Value (Node, "country");
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Update_Admin_Job_Request_Salary) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Min then
+         JS.Set (Result, "min", JS.JSON.Create (Model.Min));
+      end if;
+      if Model.Has_Max then
+         JS.Set (Result, "max", JS.JSON.Create (Model.Max));
+      end if;
+      JS.Set (Result, "currency", Model.Currency);
+      JS.Set (Result, "period", To_JSON (Model.Period));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Salary is
+      Result : Update_Admin_Job_Request_Salary;
+   begin
+      if JS.Present (Node, "min") then
+         Result.Has_Min := True;
+         Result.Min := JS.As_Float (JS.Get_Value (Node, "min"));
+      end if;
+      if JS.Present (Node, "max") then
+         Result.Has_Max := True;
+         Result.Max := JS.As_Float (JS.Get_Value (Node, "max"));
+      end if;
+      if JS.Present (Node, "currency") then
+         Result.Currency := JS.Get_Value (Node, "currency");
+      end if;
+      if JS.Present (Node, "period") then
+         Result.Period := From_JSON (JS.Get_Value (Node, "period"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Update_Admin_Job_Request_Apply) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "mode", To_JSON (Model.Mode));
+      if Model.Has_URL then
+         JS.Set (Result, "url", JS.JSON.Create (Model.URL));
+      end if;
+      if Model.Has_Email then
+         JS.Set (Result, "email", JS.JSON.Create (Model.Email));
+      end if;
+      if Model.Has_Requires_Cv then
+         JS.Set (Result, "requires_cv", JS.JSON.Create (Model.Requires_Cv));
+      end if;
+      if Model.Has_Requires_Cover_Letter then
+         JS.Set (Result, "requires_cover_letter", JS.JSON.Create (Model.Requires_Cover_Letter));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request_Apply is
+      Result : Update_Admin_Job_Request_Apply;
+   begin
+      if JS.Present (Node, "mode") then
+         Result.Mode := From_JSON (JS.Get_Value (Node, "mode"));
+      end if;
+      if JS.Present (Node, "url") then
+         Result.Has_URL := True;
+         Result.URL := JS.As_Text (JS.Get_Value (Node, "url"));
+      end if;
+      if JS.Present (Node, "email") then
+         Result.Has_Email := True;
+         Result.Email := JS.As_Text (JS.Get_Value (Node, "email"));
+      end if;
+      if JS.Present (Node, "requires_cv") then
+         Result.Has_Requires_Cv := True;
+         Result.Requires_Cv := JS.As_Boolean (JS.Get_Value (Node, "requires_cv"));
+      end if;
+      if JS.Present (Node, "requires_cover_letter") then
+         Result.Has_Requires_Cover_Letter := True;
+         Result.Requires_Cover_Letter := JS.As_Boolean (JS.Get_Value (Node, "requires_cover_letter"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Update_Admin_Job_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Title then
+         JS.Set (Result, "title", JS.JSON.Create (Model.Title));
+      end if;
+      if Model.Has_Summary then
+         JS.Set (Result, "summary", JS.JSON.Create (Model.Summary));
+      end if;
+      if Model.Has_Description then
+         JS.Set (Result, "description", JS.JSON.Create (Model.Description));
+      end if;
+      if Model.Has_Responsibilities then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Responsibilities loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "responsibilities", Items);
+         end;
+      end if;
+      if Model.Has_Requirements then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Requirements loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "requirements", Items);
+         end;
+      end if;
+      if Model.Has_Nice_To_Have then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Nice_To_Have loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "nice_to_have", Items);
+         end;
+      end if;
+      if Model.Has_Benefits then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Benefits loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "benefits", Items);
+         end;
+      end if;
+      if Model.Has_Category then
+         JS.Set (Result, "category", JS.JSON.Create (Model.Category));
+      end if;
+      if Model.Has_Department then
+         JS.Set (Result, "department", JS.JSON.Create (Model.Department));
+      end if;
+      if Model.Has_Seniority then
+         JS.Set (Result, "seniority", To_JSON (Model.Seniority));
+      end if;
+      if Model.Has_Employment_Type then
+         JS.Set (Result, "employment_type", To_JSON (Model.Employment_Type));
+      end if;
+      if Model.Has_Workplace_Type then
+         JS.Set (Result, "workplace_type", To_JSON (Model.Workplace_Type));
+      end if;
+      if Model.Has_Location then
+         JS.Set (Result, "location", To_JSON (Model.Location));
+      end if;
+      if Model.Has_Applicant_Countries then
+         JS.Set (Result, "applicant_countries", Model.Applicant_Countries);
+      end if;
+      if Model.Has_English_Level then
+         JS.Set (Result, "english_level", To_JSON (Model.English_Level));
+      end if;
+      if Model.Has_Experience_Years_Min then
+         JS.Set (Result, "experience_years_min", JS.JSON.Create (Model.Experience_Years_Min));
+      end if;
+      if Model.Has_Skills then
+         declare
+            Items : JS.JSON_Array := JS.JSON.Empty_Array;
+         begin
+            for Element of Model.Skills loop
+               JS.JSON.Append (Items, JS.JSON.Create (Element));
+            end loop;
+            JS.Set (Result, "skills", Items);
+         end;
+      end if;
+      if Model.Has_Salary then
+         JS.Set (Result, "salary", To_JSON (Model.Salary));
+      end if;
+      if Model.Has_Salary_Public then
+         JS.Set (Result, "salary_public", JS.JSON.Create (Model.Salary_Public));
+      end if;
+      if Model.Has_Apply then
+         JS.Set (Result, "apply", To_JSON (Model.Apply));
+      end if;
+      if Model.Has_Language then
+         JS.Set (Result, "language", To_JSON (Model.Language));
+      end if;
+      if Model.Has_Status then
+         JS.Set (Result, "status", To_JSON (Model.Status));
+      end if;
+      if Model.Has_Closes_At then
+         JS.Set (Result, "closes_at", JS.JSON.Create (Model.Closes_At));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Request is
+      Result : Update_Admin_Job_Request;
+   begin
+      if JS.Present (Node, "title") then
+         Result.Has_Title := True;
+         Result.Title := JS.As_Text (JS.Get_Value (Node, "title"));
+      end if;
+      if JS.Present (Node, "summary") then
+         Result.Has_Summary := True;
+         Result.Summary := JS.As_Text (JS.Get_Value (Node, "summary"));
+      end if;
+      if JS.Present (Node, "description") then
+         Result.Has_Description := True;
+         Result.Description := JS.As_Text (JS.Get_Value (Node, "description"));
+      end if;
+      if JS.Present (Node, "responsibilities") then
+         Result.Has_Responsibilities := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "responsibilities");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Responsibilities.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "requirements") then
+         Result.Has_Requirements := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "requirements");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Requirements.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "nice_to_have") then
+         Result.Has_Nice_To_Have := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "nice_to_have");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Nice_To_Have.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "benefits") then
+         Result.Has_Benefits := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "benefits");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Benefits.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "category") then
+         Result.Has_Category := True;
+         Result.Category := JS.As_Text (JS.Get_Value (Node, "category"));
+      end if;
+      if JS.Present (Node, "department") then
+         Result.Has_Department := True;
+         Result.Department := JS.As_Text (JS.Get_Value (Node, "department"));
+      end if;
+      if JS.Present (Node, "seniority") then
+         Result.Has_Seniority := True;
+         Result.Seniority := From_JSON (JS.Get_Value (Node, "seniority"));
+      end if;
+      if JS.Present (Node, "employment_type") then
+         Result.Has_Employment_Type := True;
+         Result.Employment_Type := From_JSON (JS.Get_Value (Node, "employment_type"));
+      end if;
+      if JS.Present (Node, "workplace_type") then
+         Result.Has_Workplace_Type := True;
+         Result.Workplace_Type := From_JSON (JS.Get_Value (Node, "workplace_type"));
+      end if;
+      if JS.Present (Node, "location") then
+         Result.Has_Location := True;
+         Result.Location := From_JSON (JS.Get_Value (Node, "location"));
+      end if;
+      if JS.Present (Node, "applicant_countries") then
+         Result.Has_Applicant_Countries := True;
+         Result.Applicant_Countries := JS.Get_Value (Node, "applicant_countries");
+      end if;
+      if JS.Present (Node, "english_level") then
+         Result.Has_English_Level := True;
+         Result.English_Level := From_JSON (JS.Get_Value (Node, "english_level"));
+      end if;
+      if JS.Present (Node, "experience_years_min") then
+         Result.Has_Experience_Years_Min := True;
+         Result.Experience_Years_Min := JS.As_Integer (JS.Get_Value (Node, "experience_years_min"));
+      end if;
+      if JS.Present (Node, "skills") then
+         Result.Has_Skills := True;
+         declare
+            Items : constant JS.JSON_Array := JS.Get_Array (Node, "skills");
+         begin
+            for Index in 1 .. JS.JSON.Length (Items) loop
+               Result.Skills.Append (JS.As_Text (JS.JSON.Get (Items, Index)));
+            end loop;
+         end;
+      end if;
+      if JS.Present (Node, "salary") then
+         Result.Has_Salary := True;
+         Result.Salary := From_JSON (JS.Get_Value (Node, "salary"));
+      end if;
+      if JS.Present (Node, "salary_public") then
+         Result.Has_Salary_Public := True;
+         Result.Salary_Public := JS.As_Boolean (JS.Get_Value (Node, "salary_public"));
+      end if;
+      if JS.Present (Node, "apply") then
+         Result.Has_Apply := True;
+         Result.Apply := From_JSON (JS.Get_Value (Node, "apply"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Has_Language := True;
+         Result.Language := From_JSON (JS.Get_Value (Node, "language"));
+      end if;
+      if JS.Present (Node, "status") then
+         Result.Has_Status := True;
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "closes_at") then
+         Result.Has_Closes_At := True;
+         Result.Closes_At := JS.As_Text (JS.Get_Value (Node, "closes_at"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Update_Admin_Job_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "job", To_JSON (Model.Job));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_Job_Response is
+      Result : Update_Admin_Job_Response;
+   begin
+      if JS.Present (Node, "job") then
+         Result.Job := From_JSON (JS.Get_Value (Node, "job"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Update_Admin_LLM_Adapters_Config_Request_Circuit_Breaker) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -67975,15 +73784,15 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
-   function To_JSON (Model : Value6) return UARP.JSON_Support.JSON_Value is
+   function To_JSON (Model : Update_Admin_LLM_Adapters_Config_Request_Provider_Rate_Limits_Value) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
       JS.Set (Result, "rpm", JS.JSON.Create (Model.Rpm));
       return Result;
    end To_JSON;
 
-   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Value6 is
-      Result : Value6;
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Admin_LLM_Adapters_Config_Request_Provider_Rate_Limits_Value is
+      Result : Update_Admin_LLM_Adapters_Config_Request_Provider_Rate_Limits_Value;
    begin
       if JS.Present (Node, "rpm") then
          Result.Rpm := JS.As_Integer (JS.Get_Value (Node, "rpm"));
@@ -70914,6 +76723,48 @@ package body UARP.Models is
       return Result;
    end From_JSON;
 
+   function To_JSON (Model : Update_Job_Application_Request) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      if Model.Has_Status then
+         JS.Set (Result, "status", To_JSON (Model.Status));
+      end if;
+      if Model.Has_Notes then
+         JS.Set (Result, "notes", JS.JSON.Create (Model.Notes));
+      end if;
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Job_Application_Request is
+      Result : Update_Job_Application_Request;
+   begin
+      if JS.Present (Node, "status") then
+         Result.Has_Status := True;
+         Result.Status := From_JSON (JS.Get_Value (Node, "status"));
+      end if;
+      if JS.Present (Node, "notes") then
+         Result.Has_Notes := True;
+         Result.Notes := JS.As_Text (JS.Get_Value (Node, "notes"));
+      end if;
+      return Result;
+   end From_JSON;
+
+   function To_JSON (Model : Update_Job_Application_Response) return UARP.JSON_Support.JSON_Value is
+      Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
+   begin
+      JS.Set (Result, "application", To_JSON (Model.Application));
+      return Result;
+   end To_JSON;
+
+   function From_JSON (Node : UARP.JSON_Support.JSON_Value) return Update_Job_Application_Response is
+      Result : Update_Job_Application_Response;
+   begin
+      if JS.Present (Node, "application") then
+         Result.Application := From_JSON (JS.Get_Value (Node, "application"));
+      end if;
+      return Result;
+   end From_JSON;
+
    function To_JSON (Model : Update_Markup_Config_Request) return UARP.JSON_Support.JSON_Value is
       Result : constant UARP.JSON_Support.JSON_Value := JS.New_Object;
    begin
@@ -72152,6 +78003,12 @@ package body UARP.Models is
       if Model.Has_Metadata then
          JS.Set (Result, "metadata", Model.Metadata);
       end if;
+      if Model.Has_Archived then
+         JS.Set (Result, "archived", JS.JSON.Create (Model.Archived));
+      end if;
+      if Model.Has_Pinned then
+         JS.Set (Result, "pinned", JS.JSON.Create (Model.Pinned));
+      end if;
       if Model.Has_Model_Override then
          JS.Set (Result, "model_override", To_JSON (Model.Model_Override));
       end if;
@@ -72164,6 +78021,14 @@ package body UARP.Models is
       if JS.Present (Node, "metadata") then
          Result.Has_Metadata := True;
          Result.Metadata := JS.Get_Value (Node, "metadata");
+      end if;
+      if JS.Present (Node, "archived") then
+         Result.Has_Archived := True;
+         Result.Archived := JS.As_Boolean (JS.Get_Value (Node, "archived"));
+      end if;
+      if JS.Present (Node, "pinned") then
+         Result.Has_Pinned := True;
+         Result.Pinned := JS.As_Boolean (JS.Get_Value (Node, "pinned"));
       end if;
       if JS.Present (Node, "model_override") then
          Result.Has_Model_Override := True;

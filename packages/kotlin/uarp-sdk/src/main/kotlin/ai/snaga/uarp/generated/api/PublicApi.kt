@@ -25,6 +25,48 @@ import kotlinx.coroutines.flow.Flow
  */
 public class PublicApi internal constructor(private val client: UarpClient) {
     /**
+     * Apply to a vacancy
+     *
+     * Multipart form. The CV is checked by content — a PDF by its magic number, a .docx by the zip
+     * magic plus its extension, a Markdown or plain-text file by being valid UTF-8 with no NUL
+     * byte (the extension picks between the two) — never by the declared type, and stored durably;
+     * the application record carries its `file_id`. One application per e-mail address per vacancy
+     * (409 `duplicate_application`). `links` may be repeated or sent once as a JSON array; at most
+     * 5, each an http(s) URL. `consent` must be a truthy string (`true`, `1`, `on`, `yes`);
+     * `talent_pool_consent` is separate and optional. `website` is a honeypot: a filled one gets
+     * 201 and nothing is stored. Refused with 409 `job_closed` when the vacancy is closed or past
+     * `closes_at`, and 409 `job_apply_elsewhere` when `apply.mode` is not `form` (the detail names
+     * where to apply). Per client address, at most 10 applications an hour (429). The configured
+     * addresses are mailed on each stored application, best effort.
+     *
+     * `POST /api/v1/public/jobs/{slug}/apply`
+     */
+    public suspend fun applyToJob(slug: String, body: ApplyToJobRequest, options: RequestOptions = RequestOptions()): ApplyToJobResponse {
+        val parts = buildList {
+            add(Part.Text.of("name", body.name))
+            add(Part.Text.of("email", body.email))
+            body.phone?.let { add(Part.Text.of("phone", it)) }
+            body.coverLetter?.let { add(Part.Text.of("cover_letter", it)) }
+            body.links?.let { add(Part.Text.of("links", it)) }
+            body.cv?.let { add(Part.File("cv", it)) }
+            add(Part.Text.of("consent", body.consent))
+            body.talentPoolConsent?.let { add(Part.Text.of("talent_pool_consent", it)) }
+            body.locale?.let { add(Part.Text.of("locale", it)) }
+            body.source?.let { add(Part.Text.of("source", it)) }
+            body.website?.let { add(Part.Text.of("website", it)) }
+        }
+        return client.request<ApplyToJobResponse>(
+            RequestSpec(
+                method = "POST",
+                path = "/api/v1/public/jobs/${encodePathSegment(slug)}/apply",
+                body = Body.Multipart(parts),
+                idempotent = true,
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Cancel a run of this chat
      *
      * Cancels a run that belongs to this public session. No body. A run id from outside the
@@ -363,6 +405,25 @@ public class PublicApi internal constructor(private val client: UarpClient) {
     }
 
     /**
+     * One vacancy
+     *
+     * A published vacancy, or a CLOSED one — `applications_open` is then false and `closed_at` is
+     * set, so the page can say the role was filled instead of 404. A draft answers 404 exactly
+     * like an unknown slug.
+     *
+     * `GET /api/v1/public/jobs/{slug}`
+     */
+    public suspend fun getPublicJob(slug: String, options: RequestOptions = RequestOptions()): GetPublicJobResponse {
+        return client.request<GetPublicJobResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/jobs/${encodePathSegment(slug)}",
+                options = options,
+            )
+        )
+    }
+
+    /**
      * Get public session
      *
      * Returns the transcript of an anonymous session to the holder of its token: the agent's name,
@@ -617,6 +678,39 @@ public class PublicApi internal constructor(private val client: UarpClient) {
             RequestSpec(
                 method = "GET",
                 path = "/api/v1/public/integrations",
+                options = options,
+            )
+        )
+    }
+
+    /**
+     * List open vacancies
+     *
+     * Published vacancies not past `closes_at`, newest first, paged with `page` and `limit` like
+     * the blog. Every filter is repeatable (or comma-separated) and matched case-insensitively;
+     * `q` searches title, summary, description and skills. `facets` is computed over every OPEN
+     * vacancy before the filters are applied, so a filter UI lists only values that exist. `total`
+     * and `total_pages` count AFTER the filters. A non-public salary is sent as `null` with
+     * `salary_public: false`. Anonymous; shares the public-read rate bucket.
+     *
+     * `GET /api/v1/public/jobs`
+     */
+    public suspend fun listPublicJobs(workplaceType: List<JobWorkplaceType>? = null, employmentType: List<JobEmploymentType>? = null, seniority: List<JobSeniority>? = null, category: List<String>? = null, country: List<String>? = null, q: String? = null, page: Long? = null, limit: Long? = null, options: RequestOptions = RequestOptions()): ListPublicJobsResponse {
+        val query = buildList {
+            if (workplaceType != null) workplaceType.forEach { add("workplace_type" to it.value) }
+            if (employmentType != null) employmentType.forEach { add("employment_type" to it.value) }
+            if (seniority != null) seniority.forEach { add("seniority" to it.value) }
+            if (category != null) category.forEach { add("category" to it) }
+            if (country != null) country.forEach { add("country" to it) }
+            if (q != null) add("q" to q)
+            if (page != null) add("page" to page.toString())
+            if (limit != null) add("limit" to limit.toString())
+        }
+        return client.request<ListPublicJobsResponse>(
+            RequestSpec(
+                method = "GET",
+                path = "/api/v1/public/jobs",
+                query = query,
                 options = options,
             )
         )
