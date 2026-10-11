@@ -123,9 +123,9 @@ function CallingBody(): ReactElement {
       <p className="text-ink-soft">
         Operations are grouped by resource. Every argument and every result is typed —
         there is no <Term>any</Term> in the generated surface. Where
-        the API document describes no shape, the SDKs say so instead of inventing one: 60
-        operations take a free-form body and 243 return one, in the same places in all five
-        languages.
+        the API document describes no shape, the SDKs say so instead of inventing one: 8
+        to 12 operations take a free-form body and 6 to 9 return one, depending on how
+        each language types an array or a map of untyped values.
       </p>
       <Code language={language}>{CALLING[language]}</Code>
       <p className="text-ink-soft">
@@ -134,21 +134,21 @@ function CallingBody(): ReactElement {
         so explicitly.
       </p>
       <dl className="grid grid-cols-[auto_1fr] gap-x-5 gap-y-2 border-t border-rule-soft pt-4 text-sm text-ink-soft">
-        <dt className="font-medium text-ink">736 operations</dt>
+        <dt className="font-medium text-ink">789 operations</dt>
         <dd>
-          across 544 paths and 49 resource groups, counted at 0.7.0. Beside the ordinary
+          across 585 paths and 50 resource groups, counted at 0.9.0. Beside the ordinary
           list, create, read, update and delete are nested collections and named actions
           like <Term>cancel</Term>, <Term>approve</Term> and <Term>rollback</Term>.
         </dd>
-        <dt className="font-medium text-ink">163 of them admin</dt>
+        <dt className="font-medium text-ink">187 of them admin</dt>
         <dd>
           the two admin groups, which the{' '}
           <a className="text-accent underline underline-offset-2" href="https://snaga.ai/docs">API reference</a>{' '}
           leaves out — that is why it counts fewer than this page does. The SDKs
           generate all of them; you only ever see the group you call.
         </dd>
-        <dt className="font-medium text-ink">603 models</dt>
-        <dd>505 objects and 98 enumerations, each a named type in your language</dd>
+        <dt className="font-medium text-ink">1844 models</dt>
+        <dd>1543 objects and 301 enumerations, each a named type in your language</dd>
       </dl>
     </>
   );

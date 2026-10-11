@@ -19,8 +19,10 @@ cursor-paginated endpoints — plus the platform's auth, idempotency and retry s
 
 - **Typed models.** Every body the API document describes, including the ones it
   declares inline, is a named type in the target language. Where it describes
-  nothing the SDKs say so rather than inventing a shape: 60 operations take a
-  free-form request body and 243 return one, identically in all five languages.
+  nothing the SDKs say so rather than inventing a shape. Counted at 0.9.0, as
+  free-form bodies / results: TypeScript 8 / 6, Swift and Kotlin 8 / 9, Rust
+  9 / 9, Ada 12 / 9. The difference is only in how each language types an
+  array or a map of untyped values.
 - **Auth.** `Authorization: Bearer uarp_<prefix>_<secret>`, from an explicit key
   or from `UARP_API_KEY` / `SNAGA_API_KEY`.
 - **Idempotency.** Every mutating `/api/v1/*` call sends an `Idempotency-Key`,
