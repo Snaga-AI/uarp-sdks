@@ -253,10 +253,11 @@ directly, for endpoints the generated surface does not fit.
   callback) is built from its request record by `UARP.Form.Encode`: fields in
   schema order, unset ones left out, escaped byte for byte as
   `URLSearchParams` does (`+` for a space, `~` escaped).
-- Bodies that are a bare scalar, array or free-form object (60 endpoints) take
-  a `JSON_Value` rather than a generated record, and 243 operations return one
+- Bodies that are a bare scalar, array or free-form object (12 endpoints) take
+  a `JSON_Value` rather than a generated record, and 9 operations return one
   for the same reason — the API document describes no schema for their
-  responses. The other SDKs draw the line in exactly the same places.
+  responses. The other SDKs give some of these a typed array or map, so they
+  count 8 or 9 bodies and 6 to 9 results (at 0.9.0).
 - Streaming and unary calls are both safe to run from several tasks at once;
   libcurl's one-time global initialisation is serialised behind a protected
   object.
