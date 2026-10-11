@@ -25688,8 +25688,8 @@ public struct ListSessionsResponseItem: Codable, Hashable, Sendable {
     public var metadata: JSONObject?
     public var runs: [String]?
     public var createdAt: String?
-    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-    /// writes that only set `title`, `project_id` or the legacy
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+    /// switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
     /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
     /// by it.
     public var updatedAt: String?
@@ -37166,8 +37166,8 @@ public struct Session: Codable, Hashable, Sendable {
     public var metadata: JSONObject?
     public var runs: [String]?
     public var createdAt: String?
-    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-    /// writes that only set `title`, `project_id` or the legacy
+    /// Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+    /// switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
     /// `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
     /// by it.
     public var updatedAt: String?

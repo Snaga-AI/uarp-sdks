@@ -20606,8 +20606,8 @@ package UARP.Models is
       Runs : UARP.Types.Text_Vectors.Vector;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-      --  writes that only set `title`, `project_id` or the legacy
+      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+      --  switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
       --  `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
       --  by it.
       Has_Updated_At : Boolean := False;
@@ -26636,8 +26636,8 @@ package UARP.Models is
       Runs : UARP.Types.Text_Vectors.Vector;
       Has_Created_At : Boolean := False;
       Created_At : UARP.Types.Text := UARP.Types.Empty_Text;
-      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, and metadata
-      --  writes that only set `title`, `project_id` or the legacy
+      --  Last activity: a message, a run, or a metadata change. Pinning, archiving, creating or
+      --  switching a branch, and metadata writes that only set `title`, `project_id` or the legacy
       --  `pinned`/`pinned_at`/`archived`/`archived_at` keys leave it alone, so sort and mark unread
       --  by it.
       Has_Updated_At : Boolean := False;
