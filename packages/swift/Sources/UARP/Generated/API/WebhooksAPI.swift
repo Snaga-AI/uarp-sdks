@@ -10,14 +10,16 @@ public struct WebhooksAPI: Sendable {
 
     /// Create a webhook subscription
     ///
-    /// Registers a receiver for platform events. `url` and a non-empty `events` array are required,
-    /// and every event name must be one of the fixed enumeration (`run.completed`,
-    /// `quota.exceeded`, `company.budget_alert` and the rest); anything else fails body validation.
-    /// The URL is screened for SSRF before registration — with DNS resolution when the admin
-    /// webhooks policy enables the subscription-time check, with static checks plus the admin
-    /// denylist otherwise — and HTTPS is required when the deployment configures it. The tenant's
-    /// subscription cap is enforced. The signing secret is minted server-side and returned in full
-    /// only on this 201 response; every later read redacts it.
+    /// Registers a receiver for platform events. Initiative events are named `initiative.*` since
+    /// 2026-10-12; the old `company.*` names are still accepted here and stored as the
+    /// `initiative.*` name. `url` and a non-empty `events` array are required, and every event name
+    /// must be one of the fixed enumeration (`run.completed`, `quota.exceeded`,
+    /// `company.budget_alert` and the rest); anything else fails body validation. The URL is
+    /// screened for SSRF before registration — with DNS resolution when the admin webhooks policy
+    /// enables the subscription-time check, with static checks plus the admin denylist otherwise —
+    /// and HTTPS is required when the deployment configures it. The tenant's subscription cap is
+    /// enforced. The signing secret is minted server-side and returned in full only on this 201
+    /// response; every later read redacts it.
     ///
     /// `POST /api/v1/webhooks`
     ///

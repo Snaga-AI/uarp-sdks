@@ -3,12 +3,21 @@
 --  Tenant-scoped usage analytics
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 with UARP.Types;
 package UARP.API.Analytics is
 
    subtype Client_Type is UARP.Client.Client_Type;
    subtype Request_Options is UARP.Client.Request_Options;
+
+   --  Query and header parameters for `getMissionPerformance`.
+   type Get_Mission_Performance_Params is record
+      Has_Days : Boolean := False;
+      Days : UARP.Types.Integer_Value := 0;
+   end record;
+
+   No_Get_Mission_Performance_Params : constant Get_Mission_Performance_Params := (others => <>);
 
    --  Query and header parameters for `getPublicChatAnalytics`.
    type Get_Public_Chat_Analytics_Params is record
@@ -45,6 +54,25 @@ package UARP.API.Analytics is
 
    No_Tenant_Analytics_Agents_Params : constant Tenant_Analytics_Agents_Params := (others => <>);
 
+   --  How well the work goes - acceptance, revisions, cost, time
+   --
+   --  Over missions created in the last `days` (default 30, 1-365): missions and objectives by
+   --  status, failed objectives by reason, and the review record of objectives with
+   --  `review_required` - `accepted_first_pass`, `accepted_after_revision`, `rejected`,
+   --  `first_pass_rate` (first-pass / reviewed) and `avg_revisions`. `actions_rejected` counts
+   --  objectives ended because a person refused an action mid-run. `cost_per_completed_usd` and
+   --  `avg_minutes_to_complete` are over completed objectives. `by_agent` repeats the figures per
+   --  assignee (`team:<id>` for a squad). Requires the `analytics:read` scope. Since 2026-10-12.
+   --
+   --  GET /api/v1/analytics/missions
+   --
+   --  Required scopes: analytics:read.
+   function Get_Mission_Performance
+     (Self : Client_Type;
+      Params : Get_Mission_Performance_Params := No_Get_Mission_Performance_Params;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
    --  Public chat funnel
    --
    --  Visits, engagement and messages on the tenant's public chat surfaces, with
@@ -65,7 +93,8 @@ package UARP.API.Analytics is
    --  Runs waiting on a human
    --
    --  Approvals, input requests, paused and failed runs, each with a one-line summary of what is
-   --  being asked - tool names, the question, or the error.
+   --  being asked - and, in `reviews`, mission results waiting for a person's verdict - tool
+   --  names, the question, or the error.
    --
    --  `counts` is computed over the whole scan while `items` honours `limit`, so a truncated list
    --  still reports the true backlog.

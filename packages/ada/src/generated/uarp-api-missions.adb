@@ -38,6 +38,39 @@ package body UARP.API.Missions is
              Options => Options));
    end Authorize_Mission;
 
+   function Create_Mission_Schedule
+     (Self : Client_Type;
+      Payload : UARP.Models.Create_Mission_Schedule_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Create_Mission_Schedule_Response
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/missions/schedules",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Create_Mission_Schedule;
+
+   function Delete_Mission_Schedule
+     (Self : Client_Type;
+      Schedule_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "DELETE",
+          "/api/v1/missions/schedules/" & UARP.Types.Encode_Path_Segment (Schedule_Id),
+          Idempotent => True,
+          Options => Options);
+   end Delete_Mission_Schedule;
+
    function Get
      (Self : Client_Type;
       Mission_Id : String;
@@ -106,6 +139,19 @@ package body UARP.API.Missions is
              Options => Options));
    end List_Mission_Objectives;
 
+   function List_Mission_Schedules
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value
+   is
+   begin
+      return UARP.Client.Call
+         (Self,
+          "GET",
+          "/api/v1/missions/schedules",
+          Options => Options);
+   end List_Mission_Schedules;
+
    function Pause_Mission
      (Self : Client_Type;
       Mission_Id : String;
@@ -137,6 +183,26 @@ package body UARP.API.Missions is
              Idempotent => True,
              Options => Options));
    end Resume;
+
+   function Review_Mission_Objective
+     (Self : Client_Type;
+      Mission_Id : String;
+      Objective_Id : String;
+      Payload : UARP.Models.Review_Mission_Objective_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Objective
+   is
+   begin
+      return UARP.Models.From_JSON
+         (UARP.Client.Call
+            (Self,
+             "POST",
+             "/api/v1/missions/" & UARP.Types.Encode_Path_Segment (Mission_Id) & "/objectives/" & UARP.Types.Encode_Path_Segment (Objective_Id) & "/review",
+             Payload => UARP.Models.To_JSON (Payload),
+             Has_Payload => True,
+             Idempotent => True,
+             Options => Options));
+   end Review_Mission_Objective;
 
    function Run
      (Self : Client_Type;

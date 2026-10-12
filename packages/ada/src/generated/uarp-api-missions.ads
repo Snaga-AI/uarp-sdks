@@ -4,6 +4,7 @@
 --  after-action review
 
 with UARP.Client;
+with UARP.JSON_Support;
 with UARP.Models;
 with UARP.SSE;
 with UARP.Types;
@@ -68,6 +69,39 @@ package UARP.API.Missions is
       Mission_Id : String;
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Mission;
+
+   --  Run a mission plan on a cron
+   --
+   --  Stores `plan` (the same shape `POST /missions` takes) with a five-field `cron` - no faster
+   --  than every five minutes - and an optional IANA `timezone`; each fire starts a FRESH mission
+   --  from the plan through the same path as `POST /missions` with `plan`, filed under
+   --  `session_id` (or `schedule:<id>`) and created by the caller. Objectives, `review_required`,
+   --  rules of engagement and decision points all carry over, so a daily desk run stops for its
+   --  editor every day. `422` for a missing or invalid plan, cron or timezone. Answers 201 with
+   --  `schedule_id` and `next_fire_at`. Since 2026-10-12.
+   --
+   --  POST /api/v1/missions/schedules
+   --
+   --  Required scopes: agents:write.
+   function Create_Mission_Schedule
+     (Self : Client_Type;
+      Payload : UARP.Models.Create_Mission_Schedule_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Create_Mission_Schedule_Response;
+
+   --  Stop a mission schedule
+   --
+   --  Removes the schedule; missions it already started are untouched. `404` when no mission
+   --  schedule has that id. Since 2026-10-12.
+   --
+   --  DELETE /api/v1/missions/schedules/{scheduleId}
+   --
+   --  Required scopes: agents:write.
+   function Delete_Mission_Schedule
+     (Self : Client_Type;
+      Schedule_Id : String;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
 
    --  Read a mission
    --
@@ -140,6 +174,22 @@ package UARP.API.Missions is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.List_Mission_Objectives_Response;
 
+   --  Mission plans on a cron
+   --
+   --  Every mission schedule of the tenant: id, name, cron, timezone, status, next and last fire,
+   --  goal and objective count. Since 2026-10-12.
+   --
+   --  MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
+   --  either is off the route answers **404** with a plain body.
+   --
+   --  GET /api/v1/missions/schedules
+   --
+   --  Required scopes: agents:read.
+   function List_Mission_Schedules
+     (Self : Client_Type;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.JSON_Support.JSON_Value;
+
    --  Pause a running mission
    --
    --  Cooperative: the walk is asked to hold at the next safe point, so the record reaches
@@ -180,6 +230,32 @@ package UARP.API.Missions is
       Options : Request_Options := UARP.Client.Default_Options)
       return UARP.Models.Resume_Mission_Response;
 
+   --  Accept, revise or reject an objective's result
+   --
+   --  A person's verdict on a result held at `awaiting_review` (an objective with
+   --  `review_required`). `accept` completes it and the mission moves on; `revise` sends it back -
+   --  the agent is re-run with its previous version and `feedback`, which is not counted as a
+   --  failed attempt (at most 10 revisions, then `revision_limit_10`); `reject` fails it with
+   --  `abort_reason: rejected_by_person`. Answers the objective with `review` set; the mission
+   --  clears it once acted on. `409` unless the objective is `awaiting_review`, and while an
+   --  earlier verdict is still unread; `422` for an unknown `decision`, for `revise` without
+   --  `feedback`, and for feedback over 10 000 characters; `404` for a mission or objective that
+   --  does not exist or does not belong to it. Only POST is allowed (`405`). Since 2026-10-12.
+   --
+   --  MEF is gated twice: globally by the server flag and per tenant by `mef_config.enabled`. When
+   --  either is off the route answers **404** with a plain body.
+   --
+   --  POST /api/v1/missions/{missionId}/objectives/{objectiveId}/review
+   --
+   --  Required scopes: agents:write.
+   function Review_Mission_Objective
+     (Self : Client_Type;
+      Mission_Id : String;
+      Objective_Id : String;
+      Payload : UARP.Models.Review_Mission_Objective_Request;
+      Options : Request_Options := UARP.Client.Default_Options)
+      return UARP.Models.Objective;
+
    --  Start executing a mission
    --
    --  Answers immediately; the executor walk is detached. Watch progress on the event stream or by
@@ -206,7 +282,12 @@ package UARP.API.Missions is
 
    --  Start a mission
    --
-   --  Two ways in. Supply `plan` and it is used as written. Omit it and the server's LLM planner
+   --  Two ways in. Supply `plan` and it is used as written. While it executes, an objective whose
+   --  run stops for a person (an approval, a question, a pause) is WAITED ON until the person
+   --  decides - it shows in `GET /analytics/inbox` - and is not counted as a failed attempt
+   --  (before 2026-10-12 it was, and was re-dispatched until the mission failed). A person's
+   --  rejection ends that objective at once with `abort_reason: rejected_by_person` rather than
+   --  putting the refused work back in front of them. Omit it and the server's LLM planner
    --  decomposes `goal`, which requires `available_agents` and a planner wired on the server -
    --  without one the request is rejected with 400 rather than silently producing an empty
    --  mission.

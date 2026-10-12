@@ -8,16 +8,57 @@ the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
 ## Unreleased
 
-Build `0d6cf25b`, canonical digest `62752162b8e49f78`. No count moves (585 paths,
-789 operations, 382 schemas).
+Build `ef5b646d`, canonical digest `afe1d029d7e8030d`. Against 0.10.0: 585 →
+613 paths, 789 → 823 operations (+34, −0), 382 → 389 schemas, 50 → 52 groups,
+1845 → 1934 named types (+89, −0). Nothing is removed or renamed and no field
+becomes required, so code written against 0.10.0 keeps building. The eleven
+`/companies` operations now warn at compile time.
 
-### Added
+### Added — the Company Builder (`company` group)
 
-- `language` on the request of `POST /llm/audio/speech`: an optional language
-  tag for the generated speech.
+In this API a company is the tenant itself, so these live under
+`/tenants/me`: `getTenantCompany`, `updateTenantCompany` (PATCH, with
+`expected_version`; a stale one answers 409 `VERSION_CONFLICT`),
+`listTenantCompanyChanges`, `pauseTenantCompany`, `resumeTenantCompany`,
+`previewTenantCompanyPause`, `getTenantBlueprint`, the proposals
+(`listTenantProposals`, `createTenantProposal`, `getTenantProposal`,
+`applyTenantProposal`, `rejectTenantProposal`), `getTenantReadiness`,
+`startTenantTestRun`, `launchTenantCompany` and `getTenantCompanyOverview`.
+New schemas: `CompanyProfile`, `CompanyChange`, `CompanyProposal`,
+`CompanyProposalStep`, `CompanyReadinessItem`, `CompanyTestRun`.
+
+### Added — `/initiatives` (`initiatives` group); `/companies` is deprecated
+
+`/companies` is renamed to `/initiatives`. The eleven new operations are its
+twins: `listInitiatives` (with a paging helper), `createInitiative`,
+`getInitiative`, `updateInitiative`, `deleteInitiative`, `pauseInitiative`,
+`resumeInitiative`, `getInitiativeActivity`, `getInitiativeBudget`,
+`getInitiativeObjectives` and the event stream `streamInitiativeEvents`.
+Every `/companies` operation is marked deprecated in the document, and so in
+all five SDKs (`@deprecated`, `@available(*, deprecated)`, `#[deprecated]`,
+`@Deprecated`, and an Ada comment). They still work, and the server
+answers them as an alias.
+
+### Added — elsewhere
+
+- Mission schedules: `listMissionSchedules`, `createMissionSchedule`,
+  `deleteMissionSchedule` (schema `ScheduleShape`), and
+  `getMissionPerformance` (`GET /analytics/missions`).
+- `reviewMissionObjective` (`POST /missions/{id}/objectives/{oid}/review`).
+- `getRunSources` (`GET /runs/{id}/sources`) and `reviseRun`
+  (`POST /runs/{id}/revise`).
+- `language` on the request of `POST /llm/audio/speech` (build `0d6cf25b`):
+  an optional language tag for the generated speech.
 
 The validation 422 now carries `code: VALIDATION_ERROR`, a value `ErrorCode`
 already had, so no SDK type changes for it.
+
+### Not verified on the wire
+
+Every new operation needs a key, and none is available where this was cut.
+Their names, methods and paths come from the served document (checked against
+`GET /health` → `build_sha ef5b646d`), but none of their responses was read
+here.
 
 ## 0.10.0 — 2026-10-12
 
