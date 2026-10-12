@@ -71978,6 +71978,11 @@
                                         "type": "string",
                                         "maxLength": 10485760
                                     },
+                                    "language": {
+                                        "type": "string",
+                                        "description": "The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent: read from `input` — Ukrainian by its own letters (і ї є ґ), other Cyrillic as Russian — else left to the voice. Sent to the provider as `language`; a provider that refuses the parameter (400/422) is asked once more without it.",
+                                        "maxLength": 10485760
+                                    },
                                     "response_format": {
                                         "type": "string",
                                         "description": "Passed THROUGH to the configured speech provider unchanged — the platform neither validates nor translates it, so a rejection here is the provider's, not ours, and its message is the provider's too. Deliberately not an enum: the accepted set belongs to whichever provider is configured, and pinning one here would refuse values a future provider accepts. Measured on production 2026-09-01 by the iOS lane against the current provider: `raw`, `wav` and `mp3` work; `pcm_s16le` and `pcm_f32le` answer 400. `raw` streams chunked pcm_f32le/44100/mono with a first byte at roughly 0.4s, which is what progressive playback needs.",

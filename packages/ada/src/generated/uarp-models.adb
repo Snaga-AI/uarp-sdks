@@ -56034,6 +56034,9 @@ package body UARP.Models is
       if Model.Has_Voice then
          JS.Set (Result, "voice", JS.JSON.Create (Model.Voice));
       end if;
+      if Model.Has_Language then
+         JS.Set (Result, "language", JS.JSON.Create (Model.Language));
+      end if;
       if Model.Has_Response_Format then
          JS.Set (Result, "response_format", JS.JSON.Create (Model.Response_Format));
       end if;
@@ -56053,6 +56056,10 @@ package body UARP.Models is
       if JS.Present (Node, "voice") then
          Result.Has_Voice := True;
          Result.Voice := JS.As_Text (JS.Get_Value (Node, "voice"));
+      end if;
+      if JS.Present (Node, "language") then
+         Result.Has_Language := True;
+         Result.Language := JS.As_Text (JS.Get_Value (Node, "language"));
       end if;
       if JS.Present (Node, "response_format") then
          Result.Has_Response_Format := True;

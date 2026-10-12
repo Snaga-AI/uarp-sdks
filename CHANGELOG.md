@@ -6,6 +6,19 @@ All five SDKs share one version, cut from one tag. Set it with
 The format follows [Keep a Changelog](https://keepachangelog.com/1.1.0/), and
 the project uses [semantic versioning](https://semver.org/spec/v2.0.0.html).
 
+## Unreleased
+
+Build `0d6cf25b`, canonical digest `62752162b8e49f78`. No count moves (585 paths,
+789 operations, 382 schemas).
+
+### Added
+
+- `language` on the request of `POST /llm/audio/speech`: an optional language
+  tag for the generated speech.
+
+The validation 422 now carries `code: VALIDATION_ERROR`, a value `ErrorCode`
+already had, so no SDK type changes for it.
+
 ## 0.10.0 — 2026-10-12
 
 Build `0db7945f`, canonical digest `68d0c59b8cb92f65`. Against 0.9.0 the
