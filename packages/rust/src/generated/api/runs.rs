@@ -439,6 +439,34 @@ impl RunsApi {
             .await
     }
 
+    /// Where a run's facts came from
+    ///
+    /// Derived from the run's own tool events and its answer — nothing is stored, so every run has
+    /// one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+    /// browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+    /// without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+    /// read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+    /// ones to check first, since nothing the agent read holds them. URLs are compared without
+    /// trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+    /// results are recorded truncated, so a link deep in a very long result may be missed. `404`
+    /// when the run does not exist. Since 2026-10-12.
+    ///
+    /// `GET /api/v1/runs/{runId}/sources`
+    ///
+    /// Required scopes: `runs:read`.
+    pub async fn get_run_sources(&self, run_id: &str) -> Result<models::GetRunSourcesResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::GET,
+                path: format!("/api/v1/runs/{}/sources", encode_path(run_id)),
+                query: NO_QUERY,
+                body: NO_BODY,
+                headers: Vec::new(),
+                idempotent: false,
+            })
+            .await
+    }
+
     /// List steps for a run
     ///
     /// Returns the ordered list of steps executed during a run, with per-step metrics including
@@ -703,6 +731,34 @@ impl RunsApi {
             .request_json(Request {
                 method: Method::POST,
                 path: format!("/api/v1/runs/{}/resume", encode_path(run_id)),
+                query: NO_QUERY,
+                body: Some(body),
+                headers: Vec::new(),
+                idempotent: true,
+            })
+            .await
+    }
+
+    /// Decline the pending action with feedback, and let the run go on
+    ///
+    /// The third answer to a run waiting on approval, beside approve and reject: the person
+    /// declines the action AND says what to change, and the run continues. Every tool call the run
+    /// was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+    /// the model reads that as the outcome of what it tried and revises its work. Recorded on the
+    /// run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+    /// `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+    /// `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+    /// reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+    /// before, the only refusal (`reject`) failed the run.
+    ///
+    /// `POST /api/v1/runs/{runId}/revise`
+    ///
+    /// Required scopes: `runs:create`.
+    pub async fn revise_run(&self, run_id: &str, body: &models::ReviseRunRequest) -> Result<models::ReviseRunResponse> {
+        self.client
+            .request_json(Request {
+                method: Method::POST,
+                path: format!("/api/v1/runs/{}/revise", encode_path(run_id)),
                 query: NO_QUERY,
                 body: Some(body),
                 headers: Vec::new(),

@@ -18,6 +18,7 @@ import type {
   GetRunChangedFiles,
   GetRunQueuePositionResponse,
   GetRunResponse,
+  GetRunSourcesResponse,
   GetRunStepsResponse,
   ListRunArtifactsResponse,
   ListRunCheckpointsResponse,
@@ -31,6 +32,8 @@ import type {
   RespondToRunResponse,
   ResumeRunRequest,
   ResumeRunResponse,
+  ReviseRunRequest,
+  ReviseRunResponse,
   Run,
   RunApproveRequest,
   RunCostEstimate,
@@ -439,6 +442,31 @@ export class RunsResource extends APIResource {
   }
 
   /**
+   * Where a run's facts came from
+   *
+   * Derived from the run's own tool events and its answer — nothing is stored, so every run has
+   * one. Each source is a URL with `kind` `read` (the agent opened it: the `url` of a fetch /
+   * browse / read_feed call) or `found` (it appeared in a tool's result, e.g. a search hit,
+   * without being opened), the `tool`, and `cited` (the answer links to it); cited first, then
+   * read. `unsourced_links` are links IN the answer that no tool call or result contained — the
+   * ones to check first, since nothing the agent read holds them. URLs are compared without
+   * trailing punctuation, trailing slash or fragment. At most 300 sources (`truncated`). Tool
+   * results are recorded truncated, so a link deep in a very long result may be missed. `404`
+   * when the run does not exist. Since 2026-10-12.
+   *
+   * `GET /api/v1/runs/{runId}/sources`
+   *
+   * Required scopes: `runs:read`.
+   */
+  getRunSources(runId: string, options?: RequestOptions): Promise<GetRunSourcesResponse> {
+    return this._client.request({
+      method: 'GET',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/sources`,
+      options,
+    });
+  }
+
+  /**
    * List steps for a run
    *
    * Returns the ordered list of steps executed during a run, with per-step metrics including
@@ -667,6 +695,33 @@ export class RunsResource extends APIResource {
     return this._client.request({
       method: 'POST',
       path: `/api/v1/runs/${encodeURIComponent(String(runId))}/resume`,
+      body,
+      idempotent: true,
+      options,
+    });
+  }
+
+  /**
+   * Decline the pending action with feedback, and let the run go on
+   *
+   * The third answer to a run waiting on approval, beside approve and reject: the person
+   * declines the action AND says what to change, and the run continues. Every tool call the run
+   * was waiting on is answered with a result saying it was NOT carried out, carrying `feedback`;
+   * the model reads that as the outcome of what it tried and revises its work. Recorded on the
+   * run's `approvals` as `decision: revised` with the feedback as `reason`. Requires the
+   * `runs.approve` permission. `404` when the run does not exist; `409` unless its status is
+   * `awaiting_approval`, for a run on a local bridge (decided on that machine — approve or
+   * reject it), and when a concurrent write wins. `422` without `feedback`. Since 2026-10-12;
+   * before, the only refusal (`reject`) failed the run.
+   *
+   * `POST /api/v1/runs/{runId}/revise`
+   *
+   * Required scopes: `runs:create`.
+   */
+  reviseRun(runId: string, body: ReviseRunRequest, options?: RequestOptions): Promise<ReviseRunResponse> {
+    return this._client.request({
+      method: 'POST',
+      path: `/api/v1/runs/${encodeURIComponent(String(runId))}/revise`,
       body,
       idempotent: true,
       options,

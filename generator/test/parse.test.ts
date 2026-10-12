@@ -401,14 +401,20 @@ test('parses the production document into the expected shape', () => {
   // 766 -> 789 on 2026-10-10 (build 15987a5f): twenty-three and none removed —
   // the MCP one-click connect and its OAuth round trip (six, uarp #552), a
   // careers surface (twelve admin, three public), and two registry singles.
-  assert.equal(ops.length, 789);
+  // 789 -> 823 on 2026-10-12 (build ef5b646d): thirty-four and none removed —
+  // the Company Builder (sixteen under /tenants/me: company, blueprint,
+  // proposals, readiness, test run, launch, overview), eleven /initiatives
+  // twins of /companies (which are now all deprecated), mission schedules
+  // (three) and analytics, and a run's sources and revise.
+  assert.equal(ops.length, 823);
   // 43 -> 50: Canvas, Feedback, Me, Missions, Projects, Squads, Training.
   // 50 -> 51 on 2026-08-31: Creativity, from the sessions subtree above.
   // 51 -> 50 on 2026-09-10: Commerce is gone with its operations.
   // 50 -> 48 on 2026-09-10 (0.5.18): Training and Creativity gone too.
   // 48 -> 49 on 2026-09-14 (uarp #472): Drawings.
   // 49 -> 50 on 2026-10-05 (0.8.0): Anthropic Compat, for `/v1/messages`.
-  assert.equal(spec.groups.length, 50);
+  // 50 -> 52 on 2026-10-12 (build ef5b646d): Company and Initiatives.
+  assert.equal(spec.groups.length, 52);
   // 603 -> 608 on 2026-08-18: the Agent schema gained `specs`,
   // `auto_approve_tools`, `command_relationships`, `access_control` and
   // `metadata`, each nested object becoming its own named type. The server had
@@ -632,7 +638,11 @@ test('parses the production document into the expected shape', () => {
   // taken `Value6` and pushed the published Value6/Value7 along by one; map
   // value types are named after their map from here on (Value..Value7 ->
   // e.g. UpdateAdminLLMAdaptersConfigRequestProviderRateLimitsValue).
-  assert.equal(spec.types.length, 1845);
+  // 1845 -> 1934 on 2026-10-12 (build ef5b646d): +89, none removed — the
+  // Company Builder shapes (company profile, changes, proposals and their
+  // steps, readiness, test run, overview), the /initiatives twins, mission
+  // schedules and analytics, run sources and revise.
+  assert.equal(spec.types.length, 1934);
   // The seventeen keep the names 0.7.0 published.
   for (const name of ['AgentExecutionMode', 'AgentAutonomyLevel', 'GuardrailAction', 'TeamTopology', 'TeamPoliciesEffort', 'RiskClassificationUpdateLevel']) {
     assert.ok(spec.types.some((type) => type.name === name), `${name} keeps its published name`);
@@ -650,7 +660,9 @@ test('parses the production document into the expected shape', () => {
   // 14 -> 15 on 2026-09-16: `GET /companies/{companyId}/events`. Also
   // unrecorded at the time — the third of five numbers the same two unpushed
   // commits left behind.
-  assert.equal(ops.filter((o) => o.sse).length, 15);
+  // 15 -> 16 on 2026-10-12 (build ef5b646d): its twin,
+  // `GET /initiatives/{initiativeId}/events`.
+  assert.equal(ops.filter((o) => o.sse).length, 16);
   // 14 -> 15: `GET /training-jobs`.
   // 15 -> 16 on 2026-08-28: `listTeamRuns`. The handler has read `limit`
   // (default 50, ceiling 100) and `cursor` all along and neither was
@@ -674,7 +686,8 @@ test('parses the production document into the expected shape', () => {
   // evaluations, users and invites, webhook deliveries, squad and team chat
   // and runs, KB documents, governance violations, company activity and the
   // admin audit trail. Each now gets its paging helper.
-  assert.equal(ops.filter((o) => o.pagination).length, 35);
+  // 35 -> 36 on 2026-10-12 (build ef5b646d): `GET /initiatives`.
+  assert.equal(ops.filter((o) => o.pagination).length, 36);
   // 2 -> 3:  joins the two that were already
   // multipart. It is the reason for the type count above — a route that
   // takes a file and said so nowhere.

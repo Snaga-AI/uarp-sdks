@@ -122,7 +122,7 @@ public class MeApi internal constructor(private val client: UarpClient) {
     }
 
     /**
-     * Switch the active workspace
+     * Switch the active company (tenant)
      *
      * Requires a **user session (JWT)**. An API key is refused with 403, because a key is bound to
      * the tenant it was created in — create a key inside the target tenant instead. This endpoint

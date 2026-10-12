@@ -296,8 +296,11 @@ package UARP.API.Public is
    --  Unfurl a cited link into card metadata
    --
    --  Open Graph metadata for a URL an agent cited, so the client renders a card instead of a bare
-   --  link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched.
-   --  Every member of `preview` except `url` and `site` may be null.
+   --  link. SSRF-guarded: a private or loopback address is refused with 403 rather than fetched -
+   --  written as a literal, or as a name that resolves to one (`localtest.me`; since 2026-10-12 -
+   --  before, such a name answered 200 with an empty card, unfetched). A name that resolves to
+   --  nothing still answers 200 with the bare card. Every member of `preview` except `url` and
+   --  `site` may be null.
    --
    --  GET /api/v1/public/link-preview
    function Get_Link_Preview
@@ -848,9 +851,10 @@ package UARP.API.Public is
    --
    --  Server-Sent Events for an anonymous session: the run events of every run in the session,
    --  each with an id of `<runId>:<seq>`, so a client can resume by sending the last one as
-   --  `Last-Event-ID`. The session token is required (**401** when absent) and is verified inside
-   --  the stream - an invalid token arrives as an `error` event on an otherwise open stream rather
-   --  than an HTTP status. Each open stream takes a slot against the platform's concurrent-SSE
+   --  `Last-Event-ID`. The session token is required and must belong to THIS session: absent,
+   --  invalid, or another session's token is **401** before any stream opens (since 2026-10-12;
+   --  before, an invalid or foreign token got 200 and an `error` event, and still took one of the
+   --  session's SSE slots). Each open stream takes a slot against the platform's concurrent-SSE
    --  ceiling, keyed by public session rather than tenant, and exceeding it answers **429**.
    --  Anonymous, and limited to 240 requests per minute per IP by the router so reconnect storms
    --  do not trip the ordinary public cap.

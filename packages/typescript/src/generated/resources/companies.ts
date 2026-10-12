@@ -82,9 +82,14 @@ export class CompaniesResource extends APIResource {
    * otherwise) before it is assigned to the new company. Returns the full company record, 201.
    * Requires the `companies` write permission and the `agents:write` scope.
    *
+   * **Deprecated — use `/api/v1/initiatives`.** The same handler under the current noun.
+   * Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/companies`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   create(body: CompanyCreate, options?: RequestOptions): Promise<Company> {
     return this._client.request({
@@ -106,9 +111,14 @@ export class CompaniesResource extends APIResource {
    * because company creation claims none. Irreversible, 204; 404 first when the company does not
    * exist. Requires the `companies` delete permission and the `agents:write` scope.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `DELETE /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   delete(companyId: string, options?: RequestOptions): Promise<void> {
     return this._client.request({
@@ -129,9 +139,14 @@ export class CompaniesResource extends APIResource {
    * verb it does not serve is 405 with the allowed verbs named — both guards exist because such
    * requests used to fall through to the bare-record handlers.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   get(companyId: string, options?: RequestOptions): Promise<Company> {
     return this._client.request({
@@ -148,9 +163,14 @@ export class CompaniesResource extends APIResource {
    * to `run_id`, `created_at` and `success`. There is no paging and no window parameter — this
    * is a fixed recent-activity feed, not the run history. 404 when the company does not exist.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/activity`.** The same handler under
+   * the current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies/{companyId}/activity`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getCompanyActivity(companyId: string, params?: GetCompanyActivityParams, options?: RequestOptions): Promise<GetCompanyActivityResponse> {
     return this._client.request({
@@ -182,9 +202,14 @@ export class CompaniesResource extends APIResource {
    * the company record as the strategist ticks maintain it; nothing is recomputed from the run
    * ledger here. 404 when the company does not exist.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/budget`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies/{companyId}/budget`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getCompanyBudget(companyId: string, options?: RequestOptions): Promise<GetCompanyBudgetResponse> {
     return this._client.request({
@@ -204,9 +229,14 @@ export class CompaniesResource extends APIResource {
    * need not all belong to this company; it is bounded at 100,000 rows, past which the answer is
    * short and a warning is logged. 404 when the company does not exist.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/objectives`.** The same handler under
+   * the current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies/{companyId}/objectives`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   getCompanyObjectives(companyId: string, options?: RequestOptions): Promise<GetCompanyObjectivesResponse> {
     return this._client.request({
@@ -224,9 +254,14 @@ export class CompaniesResource extends APIResource {
    * carries `items`, `cursor` (null at the end) and `has_more`. Requires the `companies` read
    * permission and the `agents:read` scope, like every GET on this surface.
    *
+   * **Deprecated — use `/api/v1/initiatives`.** The same handler under the current noun.
+   * Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies`
    *
    * Required scopes: `agents:read`.
+   *
+   * @deprecated
    */
   list(params?: ListCompaniesParams, options?: RequestOptions): Promise<ListCompaniesResponse> {
     return this._client.request({
@@ -253,15 +288,26 @@ export class CompaniesResource extends APIResource {
   /**
    * Pause company operations
    *
-   * Sets the company's status to `paused` and emits a `company.paused` event. Only active
-   * companies are picked up by the strategist review tick, so pausing is what actually stops the
-   * company working. 404 when the company does not exist; idempotent — pausing an already-paused
-   * company answers the same `{status: "paused"}`. Requires the `companies` write permission and
-   * the `agents:write` scope.
+   * Pauses everything the initiative runs automatically (since 2026-10-12; before, only the
+   * strategist review tick): its strategist tick, scheduled runs of its agents (held, not
+   * deleted), webhook-, delegation-, mission- and squad-started runs of its agents (refused with
+   * `INITIATIVE_PAUSED`), and its automated runs already in flight (cancelled). A person's own
+   * chat with a company agent still runs. The answer adds `pause_scope`: `stopped[]`,
+   * `not_stopped[]`, `agents`, `squads`, `schedules_held`, `runs_cancelled[]`. Sets the
+   * company's status to `paused` and emits a `company.paused` event. Only active companies are
+   * picked up by the strategist review tick, so pausing is what actually stops the company
+   * working. 404 when the company does not exist; idempotent — pausing an already-paused company
+   * answers the same `{status: "paused"}`. Requires the `companies` write permission and the
+   * `agents:write` scope.
+   *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/pause`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
    *
    * `POST /api/v1/companies/{companyId}/pause`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   pauseCompany(companyId: string, options?: RequestOptions): Promise<PauseCompanyResponse> {
     return this._client.request({
@@ -279,9 +325,14 @@ export class CompaniesResource extends APIResource {
    * on, and emits a `company.resumed` event. 404 when the company does not exist; idempotent.
    * Requires the `companies` write permission and the `agents:write` scope.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/resume`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `POST /api/v1/companies/{companyId}/resume`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   resume(companyId: string, options?: RequestOptions): Promise<ResumeCompanyResponse> {
     return this._client.request({
@@ -301,11 +352,16 @@ export class CompaniesResource extends APIResource {
    * same per-tenant SSE connection ceiling as every other stream route
    * (`runtime.sse_max_connections_per_tenant`).
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}/events`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `GET /api/v1/companies/{companyId}/events`
    *
    * Required scopes: `agents:read`.
    *
    * Returns a server-sent event stream; iterate it with `for await`.
+   *
+   * @deprecated
    */
   streamCompanyEvents(companyId: string, params?: StreamCompanyEventsParams, options?: RequestOptions): EventStream {
     return this._client.stream({
@@ -327,9 +383,14 @@ export class CompaniesResource extends APIResource {
    * the manager's own CAS-fresh read so a concurrent tick's spend is not clobbered — and a
    * budget change emits a `company.budget_updated` event. Returns the updated company.
    *
+   * **Deprecated — use `/api/v1/initiatives/{initiativeId}`.** The same handler under the
+   * current noun. Responses here carry `Deprecation: true`; no removal date has been named.
+   *
    * `PUT /api/v1/companies/{companyId}`
    *
    * Required scopes: `agents:write`.
+   *
+   * @deprecated
    */
   update(companyId: string, body: CompanyUpdate, options?: RequestOptions): Promise<Company> {
     return this._client.request({

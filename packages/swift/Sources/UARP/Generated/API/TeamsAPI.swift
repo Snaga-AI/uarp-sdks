@@ -91,9 +91,13 @@ public struct TeamsAPI: Sendable {
     ///
     /// Creates a squad. Refused with 403 when the plan includes no teams or the tenant is at its
     /// team limit; the slot is then claimed atomically, so concurrent creates cannot both pass the
-    /// count check. A `swarm` topology needs `swarm_config` whose `initial_agent_id` exists; every
-    /// other topology needs an existing `supervisor_agent_id` and at least one worker that is not
-    /// the supervisor, with duplicate worker ids and unknown agent ids refused as 422. Policies not
+    /// count check. A `swarm` topology needs `swarm_config` whose `initial_agent_id` exists;
+    /// `supervisor`, `goal_driven` need an existing `supervisor_agent_id` and at least one worker
+    /// that is not the supervisor (a supervisor listed among its own workers is dropped).
+    /// `pipeline` and `round_robin` run their workers in order and no agent leads them:
+    /// `supervisor_agent_id` is optional there (the first worker stands in) and is kept among the
+    /// workers when listed — before 2026-10-12 it was required and then stripped, so the stage it
+    /// named never ran. Duplicate worker ids and unknown agent ids refused as 422. Policies not
     /// supplied take documented defaults (`max_rounds` 10, `early_termination` true,
     /// `max_delegation_depth` 3, and so on). A workspace is provisioned for the squad, or the
     /// `workspace_id` in the body is adopted when it belongs to the tenant; the workspace quota

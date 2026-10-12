@@ -14,6 +14,7 @@
 --    UARP.API.Bridge
 --    UARP.API.Canvas
 --    UARP.API.Companies
+--    UARP.API.Company
 --    UARP.API.Data_Explorer
 --    UARP.API.Drawings
 --    UARP.API.Evaluations
@@ -24,6 +25,7 @@
 --    UARP.API.Governance
 --    UARP.API.Guardrails
 --    UARP.API.Health
+--    UARP.API.Initiatives
 --    UARP.API.Integrations
 --    UARP.API.Knowledge
 --    UARP.API.LLM_Credentials

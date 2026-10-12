@@ -199,8 +199,8 @@ export interface AarRootCause {
   objective_id: string;
   /**
    * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
-   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
-   * → `external_error`. Branch on `code` for the precise reason.
+   * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
+   * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
    */
   category: AarRootCauseCategory;
   details: string;
@@ -213,8 +213,8 @@ export interface AarRootCause {
 
 /**
  * Coarse and closed. Derived from the objective's `abort_reason`: `budget_exhausted` and
- * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed` and `verifier_error`
- * → `external_error`. Branch on `code` for the precise reason.
+ * `exhausted_strikes_<n>` → `max_duration_exceeded`; `dependency_failed`, `not_dispatchable`
+ * and `verifier_error` → `external_error`. Branch on `code` for the precise reason.
  */
 export type AarRootCauseCategory = 'llm_timeout' | 'llm_idle' | 'llm_loop' | 'tool_error' | 'tool_truncation' | 'verification_failed' | 'authorization_denied' | 'external_error' | 'max_duration_exceeded' | 'unknown';
 
@@ -1832,6 +1832,14 @@ export interface AdminVoicePresets {
 
 export interface Agent {
   /**
+   * The initiative (`/initiatives`) this agent works for, when it has one. Its runs are charged
+   * to that initiative's budget, and automated runs are refused (`INITIATIVE_PAUSED`) while it
+   * is paused or (`INITIATIVE_BUDGET_EXHAUSTED`) out of budget; agents and squads it creates
+   * inherit it. Set on create (must exist, else 422) or PATCH (`null` removes it). Since
+   * 2026-10-12.
+   */
+  initiative_id?: string;
+  /**
    * SPECs installed on this agent, with version pin and granted permissions.
    */
   specs?: AgentSpec[];
@@ -2490,6 +2498,11 @@ export interface AgentToolOverrideUpdate {
  */
 export interface AgentUpdate {
   name?: string;
+  /**
+   * Move the agent into an initiative (must exist, else 422), or `null` to take it out. Since
+   * 2026-10-12.
+   */
+  initiative_id?: string | null;
   description?: string;
   /**
    * `prompts.system` is accepted and IGNORED: the per-agent system prompt is managed by the Head
@@ -2913,6 +2926,13 @@ export interface AgentUpdateSchedule {
   cron: string;
   timezone?: string;
   input?: JsonObject;
+  /**
+   * How many runs this schedule may have EXECUTING (queued or running) at once; a fire that
+   * would exceed it is skipped and the schedule moves to its next instant. A run waiting on a
+   * person (awaiting_input / awaiting_approval) does not count, so an unanswered question never
+   * stops the schedule. 0 means no limit. Enforced since 2026-10-12 — before, it was stored and
+   * runs overlapped regardless.
+   */
   max_concurrent_scheduled?: number;
   on_failure?: AgentScheduleConfigOnFailure;
   autonomous_mode?: boolean;
@@ -4284,9 +4304,20 @@ export interface CloseSessionResponse {
 }
 
 /**
- * Autonomous agent company — strategist + teams pursuing strategic goals.
+ * An **initiative** (`/initiatives`; until 2026-10-12 called a company): a long-running goal
+ * inside a company (tenant), pursued by a strategist agent that reviews it on a cycle. Not the
+ * founder's company — that is the tenant.
  */
 export interface Company {
+  /**
+   * The initiative's id. Read this one.
+   */
+  initiative_id?: string;
+  /**
+   * The same id under the resource's former name; kept for a compatibility window.
+   *
+   * @deprecated
+   */
   company_id: string;
   tenant_id: string;
   name: string;
@@ -4324,6 +4355,19 @@ export interface CompanyActivityEntry {
   success?: boolean;
 }
 
+export interface CompanyChange {
+  version: number;
+  at: string;
+  actor: string;
+  source: CompanyChangeSource;
+  summary: string;
+  fields?: string[];
+}
+
+export type CompanyChangeSource = 'api' | 'proposal' | 'template' | 'pause' | 'launch';
+
+export const COMPANY_CHANGE_SOURCE_VALUES = ['api', 'proposal', 'template', 'pause', 'launch'] as const;
+
 /**
  * Body for `POST /api/v1/companies` (`CreateCompanySchema`).
  */
@@ -4354,6 +4398,212 @@ export interface CompanyCreateBudget {
    * Metered by the platform. Ignored on create (set to 0) and on update.
    */
   spent_usd?: number;
+}
+
+/**
+ * The founder's company — which IS the tenant. Identity (`name`) comes from the tenant record;
+ * the rest is what the Company Builder adds. A tenant that never wrote a profile reads as an
+ * operating company: `status: active`, `version: 0`. `status` here is the founder's lifecycle
+ * and is NOT `tenant.status` (account/billing state).
+ */
+export interface CompanyProfile {
+  /**
+   * The tenant id.
+   */
+  company_id: string;
+  name: string;
+  /**
+   * The tenant's Head Agent.
+   */
+  chief_of_staff_agent_id: string | null;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone.
+   */
+  timezone?: string;
+  /**
+   * `draft` — being set up, no automated run starts (except the launch test run); `active` —
+   * operating; `paused` — every automated run stopped, a person's chat still answers.
+   */
+  status: CompanyProfileStatus;
+  /**
+   * Bumped on every accepted change; send it back as `expected_version`.
+   */
+  version: number;
+  template?: CompanyProfileTemplate;
+  launched_at?: string;
+  paused_at?: string;
+  pause_reason?: string;
+  updated_at?: string;
+  updated_by?: string;
+}
+
+/**
+ * `draft` — being set up, no automated run starts (except the launch test run); `active` —
+ * operating; `paused` — every automated run stopped, a person's chat still answers.
+ */
+export type CompanyProfileStatus = 'draft' | 'active' | 'paused';
+
+export const COMPANY_PROFILE_STATUS_VALUES = ['draft', 'active', 'paused'] as const;
+
+export interface CompanyProfileTemplate {
+  id?: string;
+  version?: string;
+}
+
+/**
+ * A change to the company waiting for — or decided by — a person.
+ */
+export interface CompanyProposal {
+  proposal_id: string;
+  status: CompanyProposalStatus;
+  summary: string;
+  rationale?: string;
+  operations: CompanyProposalOperation[];
+  /**
+   * The company version it was proposed against.
+   */
+  base_version: number;
+  diff: CompanyProposalDiffItem[];
+  required_role: CompanyProposalRequiredRole;
+  proposed_by: CompanyProposalProposedBy;
+  /**
+   * Not estimated yet (null) — arrives with plan fit.
+   */
+  estimated_monthly_cost_usd?: number | null;
+  created_at: string;
+  expires_at: string;
+  decided_at?: string;
+  decided_by?: string;
+  reject_reason?: string;
+  applied?: CompanyProposalStep[];
+  rolled_back?: CompanyProposalStep[];
+  failure?: CompanyProposalFailure;
+  /**
+   * The company version after a successful apply.
+   */
+  version?: number;
+}
+
+export interface CompanyProposalDiffItem {
+  index: number;
+  op: string;
+  target: string;
+  /**
+   * English fallback; render from `op` and `target`.
+   */
+  summary: string;
+  before?: JsonObject;
+  after?: JsonObject;
+  /**
+   * Removals: cannot be rolled back, applied last.
+   */
+  irreversible?: boolean;
+  /**
+   * `target` as a person reads it — `$ref:` and ids resolved to names.
+   */
+  target_name?: string;
+  /**
+   * Every agent / squad / schedule id or `$ref:` this operation mentions (agent_id,
+   * supervisor_agent_id, workers[].agent_id, …) → its name.
+   */
+  names?: JsonObject;
+  schedule_shape?: ScheduleShape;
+}
+
+export interface CompanyProposalFailure {
+  index?: number;
+  op?: string;
+  http_status?: number;
+  /**
+   * The failing route's own code (e.g. `resource_limit_reached` for a full plan,
+   * `VALIDATION_ERROR`), else one named for the status: VALIDATION_ERROR, FORBIDDEN, NOT_FOUND,
+   * CONFLICT, RATE_LIMITED, INTERNAL_ERROR. Localize from this; `message` is English fallback.
+   */
+  code?: string;
+  message?: string;
+  /**
+   * The failing route's own details — for `resource_limit_reached`: {resource, current_plan,
+   * used, limit}.
+   */
+  details?: JsonObject;
+}
+
+export interface CompanyProposalOperation {
+  op: CompanyProposalOperationOp;
+}
+
+export type CompanyProposalOperationOp = 'add_agent' | 'update_agent' | 'remove_agent' | 'set_agent_schedule' | 'set_approval_policy' | 'add_squad' | 'set_squad_members' | 'update_company' | 'set_budget' | 'add_mission_schedule' | 'remove_mission_schedule';
+
+export const COMPANY_PROPOSAL_OPERATION_OP_VALUES = ['add_agent', 'update_agent', 'remove_agent', 'set_agent_schedule', 'set_approval_policy', 'add_squad', 'set_squad_members', 'update_company', 'set_budget', 'add_mission_schedule', 'remove_mission_schedule'] as const;
+
+export interface CompanyProposalProposedBy {
+  kind: CompanyProposalProposedByKind;
+  id: string;
+  /**
+   * For an agent: the run it proposed from.
+   */
+  run_id?: string;
+  /**
+   * For an agent: the conversation it proposed in — show the card there.
+   */
+  session_id?: string;
+}
+
+export type CompanyProposalProposedByKind = 'agent' | 'person';
+
+export const COMPANY_PROPOSAL_PROPOSED_BY_KIND_VALUES = ['agent', 'person'] as const;
+
+export type CompanyProposalRequiredRole = 'admin';
+
+export const COMPANY_PROPOSAL_REQUIRED_ROLE_VALUES = ['admin'] as const;
+
+export type CompanyProposalStatus = 'pending' | 'applying' | 'applied' | 'failed' | 'rejected' | 'expired';
+
+export const COMPANY_PROPOSAL_STATUS_VALUES = ['pending', 'applying', 'applied', 'failed', 'rejected', 'expired'] as const;
+
+export interface CompanyProposalStep {
+  index: number;
+  op: string;
+  id?: string;
+  ref?: string;
+}
+
+export interface CompanyReadinessItem {
+  code: string;
+  /**
+   * English fallback.
+   */
+  message: string;
+  /**
+   * The API call that resolves it — a developer hint, not for display.
+   */
+  fix: string;
+}
+
+export interface CompanyTestRun {
+  run_id?: string;
+  agent_id?: string;
+  /**
+   * The company version it rehearsed.
+   */
+  version?: number;
+  started_at?: string;
+  finished_at?: string;
+  /**
+   * The run's status (queued, running, completed, failed, …).
+   */
+  status?: string;
+  passed?: boolean;
+  finished?: boolean;
+  error?: string;
+  /**
+   * Tools switched off for the rehearsal because they reach the outside world.
+   */
+  withheld_tools?: string[];
 }
 
 /**
@@ -4757,9 +5007,21 @@ export type ConversationEntryToolCallStatus = 'done' | 'error';
 
 export const CONVERSATION_ENTRY_TOOL_CALL_STATUS_VALUES = ['done', 'error'] as const;
 
+/**
+ * `source_path` and `dest_path`; the move route's spelling `from_path` / `to_path` is accepted
+ * too (since 2026-10-12). One of each pair is required — 422 otherwise.
+ */
 export interface CopyWorkspaceFileRequest {
-  source_path: string;
-  dest_path: string;
+  source_path?: string;
+  dest_path?: string;
+  /**
+   * Alias of `source_path`.
+   */
+  from_path?: string;
+  /**
+   * Alias of `dest_path`.
+   */
+  to_path?: string;
 }
 
 export interface CoreMemoryBlock {
@@ -5257,6 +5519,22 @@ export interface CreateMCPServerRequest {
   egress_allowlist?: string[];
 }
 
+export interface CreateMissionScheduleRequest {
+  cron: string;
+  timezone?: string;
+  plan: PlannedMission;
+  session_id?: string;
+  name?: string;
+}
+
+export interface CreateMissionScheduleResponse {
+  schedule_id?: string;
+  cron?: string;
+  timezone?: string;
+  next_fire_at?: string;
+  status?: string;
+}
+
 export interface CreateMyTenantRequest {
   name: string;
   slug?: string;
@@ -5618,6 +5896,13 @@ export interface CreateSpecPackageCheckoutSessionResponse {
   error: InvokeListingAgentResponseError;
   message: string;
   retry_after_seconds: number;
+}
+
+export interface CreateTenantProposalRequest {
+  summary: string;
+  rationale?: string;
+  operations: JsonObject[];
+  expected_version?: number;
 }
 
 export interface CreateTenantRequest {
@@ -6836,9 +7121,9 @@ export interface Error {
  * code only when its call site names one. Other statuses: absent when there is no
  * machine-readable class.
  */
-export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
+export type ErrorCode = 'AAR_NOT_AVAILABLE' | 'ACTIVE_TENANT_NOT_SUPPORTED' | 'ALREADY_EXISTS' | 'ANON_BUSY' | 'ARTIFACT_INTEGRITY_ERROR' | 'AUTH_ERROR' | 'BILLING_CANCELLED' | 'BILLING_DISPUTED' | 'BILLING_PAST_DUE' | 'BUDGET_EXCEEDED' | 'CHECKSUM_MISMATCH' | 'COMPANY_NOT_READY' | 'COMPANY_PAUSED' | 'CONCURRENCY_LIMIT' | 'CONCURRENT_MODIFICATION' | 'CONFIGURATION_ERROR' | 'CONFIRMATION_REQUIRED' | 'CONFLICT' | 'CONTEXT_LENGTH_EXCEEDED' | 'COUNT_LIMIT_REACHED' | 'DAILY_LIMIT' | 'DEPENDENCY_EXISTS' | 'EVENT_STORE_ERROR' | 'EXTERNAL_SERVICE_ERROR' | 'FEATURE_DISABLED' | 'FILE_TYPE_NOT_ALLOWED' | 'FORBIDDEN' | 'GUARDRAIL_VIOLATION' | 'IDEMPOTENCY_KEY_REUSED' | 'INITIATIVE_BUDGET_EXHAUSTED' | 'INITIATIVE_PAUSED' | 'INVALID_BODY' | 'INVALID_CURSOR' | 'INVALID_QUERY' | 'INVALID_REQUEST' | 'INVALID_SHARE_LIST' | 'INVALID_SHARE_TARGET' | 'INVALID_STATE_TRANSITION' | 'LLM_ERROR' | 'MAX_DURATION_EXCEEDED' | 'MAX_TOKENS_EXCEEDED' | 'METHOD_NOT_ALLOWED' | 'MIGRATION_CONFLICT' | 'MISSING_FIELD' | 'MISSION_ALREADY_RUNNING' | 'MISSION_CONCURRENCY_LIMIT' | 'MISSION_NOT_FOUND' | 'MISSION_NOT_RUNNABLE' | 'MISSION_NOT_RUNNING' | 'MISSION_ROUTE_NOT_FOUND' | 'NOT_BRIDGE_AGENT' | 'NOT_FOUND' | 'NOT_YANKED' | 'NO_RUNNABLE_TARGET' | 'OAUTH_FAILED' | 'PAYLOAD_TOO_LARGE' | 'PERSISTENCE_ERROR' | 'PLANNER_OUTPUT_INVALID' | 'PLANNER_REFUSED' | 'PRECONDITION_FAILED' | 'PREREQUISITE_MISSING' | 'PRICING_UNAVAILABLE' | 'PRIVATE_NOT_SHARED' | 'PROMO_REDEMPTION_FAILED' | 'PROPOSAL_EXPIRED' | 'QUOTA_EXCEEDED' | 'RATE_LIMIT_EXCEEDED' | 'REFERENCE_NOT_FOUND' | 'RESERVED_SCOPE' | 'RUN_ACTIVE' | 'RUN_CANCELLED' | 'SCOPE_MISMATCH' | 'SCOPE_TAKEN' | 'SEARCH_PROVIDER_NOT_CONFIGURED' | 'SEARCH_UPSTREAM_FAILED' | 'SEARCH_UPSTREAM_TIMEOUT' | 'SHARE_LIST_CONFLICT' | 'SIZE_LIMIT' | 'SPEC_NOT_FOUND' | 'STARTED_BY_ANOTHER_USER' | 'STRATEGIST_MODEL_UNCONFIGURED' | 'TASK_GRAPH_FAILED' | 'TEAM_ABORT' | 'TERMS_NOT_ACCEPTED' | 'TEXT_EXTRACTION_FAILED' | 'USER_REQUIRED' | 'VALIDATION_ERROR' | 'VERIFICATION_FAILED' | 'VERSION_CONFLICT' | 'VERSION_NOT_FOUND' | 'WORKSPACE_STORAGE_LIMIT' | 'WOULD_ORPHAN' | 'YANK_CONFLICT' | 'agent_deleted' | 'agent_not_found' | 'already_bootstrapped' | 'approval_rejected' | 'billing_not_configured' | 'consent_required' | 'cv_invalid' | 'cv_too_large' | 'duplicate_application' | 'governance_not_enabled' | 'incomplete_record' | 'inert_policy_field' | 'inert_public_config_field' | 'job_apply_elsewhere' | 'job_closed' | 'kb_chunk_limit' | 'kb_document_body_invalid' | 'kb_document_too_large' | 'kb_embedding_failed' | 'kb_storage_limit' | 'kb_text_extraction_failed' | 'limit_reached' | 'mfa_required' | 'no_eligible_arbiter' | 'plan_upgrade_required' | 'proposal_required' | 'provider_auth_failed' | 'provider_circuit_open' | 'provider_not_configured' | 'provider_rate_limited' | 'quota_exceeded' | 'rate_limited' | 'resource_limit_reached' | 'run_approval_expired' | 'run_input_timeout' | 'run_never_claimed' | 'run_orphaned_restart' | 'run_quota_exceeded' | 'run_stalled' | 'secret_would_move' | 'video_consent_required' | 'video_order_state' | 'video_photo_invalid' | 'video_photo_rejected' | 'video_regen_unavailable' | 'video_slot_invalid';
 
-export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
+export const ERROR_CODE_VALUES = ['AAR_NOT_AVAILABLE', 'ACTIVE_TENANT_NOT_SUPPORTED', 'ALREADY_EXISTS', 'ANON_BUSY', 'ARTIFACT_INTEGRITY_ERROR', 'AUTH_ERROR', 'BILLING_CANCELLED', 'BILLING_DISPUTED', 'BILLING_PAST_DUE', 'BUDGET_EXCEEDED', 'CHECKSUM_MISMATCH', 'COMPANY_NOT_READY', 'COMPANY_PAUSED', 'CONCURRENCY_LIMIT', 'CONCURRENT_MODIFICATION', 'CONFIGURATION_ERROR', 'CONFIRMATION_REQUIRED', 'CONFLICT', 'CONTEXT_LENGTH_EXCEEDED', 'COUNT_LIMIT_REACHED', 'DAILY_LIMIT', 'DEPENDENCY_EXISTS', 'EVENT_STORE_ERROR', 'EXTERNAL_SERVICE_ERROR', 'FEATURE_DISABLED', 'FILE_TYPE_NOT_ALLOWED', 'FORBIDDEN', 'GUARDRAIL_VIOLATION', 'IDEMPOTENCY_KEY_REUSED', 'INITIATIVE_BUDGET_EXHAUSTED', 'INITIATIVE_PAUSED', 'INVALID_BODY', 'INVALID_CURSOR', 'INVALID_QUERY', 'INVALID_REQUEST', 'INVALID_SHARE_LIST', 'INVALID_SHARE_TARGET', 'INVALID_STATE_TRANSITION', 'LLM_ERROR', 'MAX_DURATION_EXCEEDED', 'MAX_TOKENS_EXCEEDED', 'METHOD_NOT_ALLOWED', 'MIGRATION_CONFLICT', 'MISSING_FIELD', 'MISSION_ALREADY_RUNNING', 'MISSION_CONCURRENCY_LIMIT', 'MISSION_NOT_FOUND', 'MISSION_NOT_RUNNABLE', 'MISSION_NOT_RUNNING', 'MISSION_ROUTE_NOT_FOUND', 'NOT_BRIDGE_AGENT', 'NOT_FOUND', 'NOT_YANKED', 'NO_RUNNABLE_TARGET', 'OAUTH_FAILED', 'PAYLOAD_TOO_LARGE', 'PERSISTENCE_ERROR', 'PLANNER_OUTPUT_INVALID', 'PLANNER_REFUSED', 'PRECONDITION_FAILED', 'PREREQUISITE_MISSING', 'PRICING_UNAVAILABLE', 'PRIVATE_NOT_SHARED', 'PROMO_REDEMPTION_FAILED', 'PROPOSAL_EXPIRED', 'QUOTA_EXCEEDED', 'RATE_LIMIT_EXCEEDED', 'REFERENCE_NOT_FOUND', 'RESERVED_SCOPE', 'RUN_ACTIVE', 'RUN_CANCELLED', 'SCOPE_MISMATCH', 'SCOPE_TAKEN', 'SEARCH_PROVIDER_NOT_CONFIGURED', 'SEARCH_UPSTREAM_FAILED', 'SEARCH_UPSTREAM_TIMEOUT', 'SHARE_LIST_CONFLICT', 'SIZE_LIMIT', 'SPEC_NOT_FOUND', 'STARTED_BY_ANOTHER_USER', 'STRATEGIST_MODEL_UNCONFIGURED', 'TASK_GRAPH_FAILED', 'TEAM_ABORT', 'TERMS_NOT_ACCEPTED', 'TEXT_EXTRACTION_FAILED', 'USER_REQUIRED', 'VALIDATION_ERROR', 'VERIFICATION_FAILED', 'VERSION_CONFLICT', 'VERSION_NOT_FOUND', 'WORKSPACE_STORAGE_LIMIT', 'WOULD_ORPHAN', 'YANK_CONFLICT', 'agent_deleted', 'agent_not_found', 'already_bootstrapped', 'approval_rejected', 'billing_not_configured', 'consent_required', 'cv_invalid', 'cv_too_large', 'duplicate_application', 'governance_not_enabled', 'incomplete_record', 'inert_policy_field', 'inert_public_config_field', 'job_apply_elsewhere', 'job_closed', 'kb_chunk_limit', 'kb_document_body_invalid', 'kb_document_too_large', 'kb_embedding_failed', 'kb_storage_limit', 'kb_text_extraction_failed', 'limit_reached', 'mfa_required', 'no_eligible_arbiter', 'plan_upgrade_required', 'proposal_required', 'provider_auth_failed', 'provider_circuit_open', 'provider_not_configured', 'provider_rate_limited', 'quota_exceeded', 'rate_limited', 'resource_limit_reached', 'run_approval_expired', 'run_input_timeout', 'run_never_claimed', 'run_orphaned_restart', 'run_quota_exceeded', 'run_stalled', 'secret_would_move', 'video_consent_required', 'video_order_state', 'video_photo_invalid', 'video_photo_rejected', 'video_regen_unavailable', 'video_slot_invalid'] as const;
 
 export interface ErrorError {
   field?: string;
@@ -7063,9 +7348,9 @@ export interface FeedEntry {
   error?: string;
 }
 
-export type FeedEntryEventType = 'run.started' | 'run.completed' | 'run.failed' | 'run.timeout' | 'run.cancelled' | 'session.created' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.escalation' | 'team.round_start' | 'team.round_end' | 'objective.created' | 'objective.completed' | 'agent.created';
+export type FeedEntryEventType = 'run.started' | 'run.completed' | 'run.failed' | 'run.timeout' | 'run.cancelled' | 'session.created' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.escalation' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.escalation' | 'team.round_start' | 'team.round_end' | 'objective.created' | 'objective.completed' | 'agent.created';
 
-export const FEED_ENTRY_EVENT_TYPE_VALUES = ['run.started', 'run.completed', 'run.failed', 'run.timeout', 'run.cancelled', 'session.created', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.escalation', 'team.round_start', 'team.round_end', 'objective.created', 'objective.completed', 'agent.created'] as const;
+export const FEED_ENTRY_EVENT_TYPE_VALUES = ['run.started', 'run.completed', 'run.failed', 'run.timeout', 'run.cancelled', 'session.created', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.escalation', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.escalation', 'team.round_start', 'team.round_end', 'objective.created', 'objective.completed', 'agent.created'] as const;
 
 export interface FeedEntryMetrics {
   duration_ms?: number;
@@ -7861,6 +8146,14 @@ export interface GetHealthResponse {
    */
   pending_resumes?: number;
   /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview` (since 2026-10-12).
+   */
+  capabilities?: string[];
+  /**
    * Runs currently queued. After a restart this includes runs reconciliation re-queued, so it
    * falls as they are picked up — but it is a queue depth, not a count of recoveries.
    */
@@ -7874,6 +8167,23 @@ export const GET_HEALTH_RESPONSE_STATUS_VALUES = ['healthy', 'degraded', 'unheal
 export interface GetImmutableAuditResponse {
   events: ImmutableAuditEvent[];
   total: number;
+}
+
+export interface GetInitiativeActivityResponse {
+  entries?: CompanyActivityEntry[];
+}
+
+export interface GetInitiativeBudgetResponse {
+  total_usd?: number;
+  spent_usd?: number;
+  daily_limit_usd?: number;
+  alert_threshold_pct?: number;
+  remaining_usd?: number;
+}
+
+export interface GetInitiativeObjectivesResponse {
+  trees?: ObjectiveTree[];
+  objectives?: Objective[];
 }
 
 export interface GetJobApplicationResponse {
@@ -8334,6 +8644,24 @@ export interface GetRunResponseResourceLimits {
   max_cost_usd?: number;
 }
 
+export interface GetRunSourcesResponse {
+  run_id: string;
+  sources: GetRunSourcesResponseSource[];
+  unsourced_links: string[];
+  truncated: boolean;
+}
+
+export interface GetRunSourcesResponseSource {
+  url: string;
+  kind: GetRunSourcesResponseSourceKind;
+  tool: string;
+  cited: boolean;
+}
+
+export type GetRunSourcesResponseSourceKind = 'read' | 'found';
+
+export const GET_RUN_SOURCES_RESPONSE_SOURCE_KIND_VALUES = ['read', 'found'] as const;
+
 export interface GetRunStepsResponse {
   run_id: string;
   steps: RunStep[];
@@ -8487,6 +8815,265 @@ export interface GetTeamRunMessagesResponse {
   total: number;
 }
 
+export interface GetTenantBlueprintResponse {
+  company: CompanyProfile;
+  version: number;
+  chief_of_staff: GetTenantBlueprintResponseChiefOfStaffVariant1 | null;
+  departments: GetTenantBlueprintResponseDepartment[];
+  agents: GetTenantBlueprintResponseAgent[];
+  missions: GetTenantBlueprintResponseMissions;
+  schedules: GetTenantBlueprintResponseSchedule[];
+  knowledge_sources: GetTenantBlueprintResponseKnowledgeSource[];
+  integrations: GetTenantBlueprintResponseIntegration[];
+  governance: GetTenantBlueprintResponseGovernance;
+  entitlements: GetTenantBlueprintResponseEntitlements;
+  budget: GetTenantBlueprintResponseBudget | null;
+  missing_setup: GetTenantBlueprintResponseMissingSetupItem[];
+  deployment_state: GetTenantBlueprintResponseDeploymentState;
+}
+
+export interface GetTenantBlueprintResponseAgent {
+  agent_id?: string;
+  name?: string;
+  role?: string | null;
+  description?: string | null;
+  status?: string;
+  execution_mode?: string;
+  initiative_id?: string | null;
+  approval_required_tools?: string[];
+  autonomy?: string | null;
+  scheduled?: boolean;
+  is_chief_of_staff?: boolean;
+}
+
+export interface GetTenantBlueprintResponseBudget {
+  limit_usd?: number;
+  spent_usd?: number;
+  remaining_usd?: number;
+  period?: string;
+  hard_limit_reached?: boolean;
+}
+
+export interface GetTenantBlueprintResponseChiefOfStaffVariant1 {
+  agent_id?: string;
+  name?: string;
+  role?: string | null;
+  description?: string | null;
+  status?: string;
+  execution_mode?: string;
+  initiative_id?: string | null;
+  approval_required_tools?: string[];
+  autonomy?: string | null;
+  scheduled?: boolean;
+  is_chief_of_staff?: boolean;
+}
+
+export interface GetTenantBlueprintResponseDepartment {
+  squad_id?: string;
+  name?: string;
+  description?: string | null;
+  lead_agent_id?: string;
+  members?: GetTenantBlueprintResponseDepartmentMember[];
+}
+
+export interface GetTenantBlueprintResponseDepartmentMember {
+  agent_id?: string;
+  name?: string | null;
+  role?: string;
+}
+
+export interface GetTenantBlueprintResponseDeploymentState {
+  status?: CompanyProfileStatus;
+  launched_at?: string | null;
+  paused_at?: string | null;
+}
+
+export interface GetTenantBlueprintResponseEntitlements {
+  plan?: string;
+  quotas?: JsonObject;
+  usage?: JsonObject | null;
+  resources?: JsonObject | null;
+}
+
+export interface GetTenantBlueprintResponseGovernance {
+  approval_required_tools?: string[];
+  /**
+   * Localize from this; `external_action_policy` is English fallback.
+   */
+  external_action_code?: GetTenantBlueprintResponseGovernanceExternalActionCode;
+  /**
+   * Agents whose autonomy is full_auto.
+   */
+  agents_acting_alone?: string[];
+  external_action_policy?: string;
+}
+
+/**
+ * Localize from this; `external_action_policy` is English fallback.
+ */
+export type GetTenantBlueprintResponseGovernanceExternalActionCode = 'approval_required' | 'per_agent_autonomy';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_GOVERNANCE_EXTERNAL_ACTION_CODE_VALUES = ['approval_required', 'per_agent_autonomy'] as const;
+
+export interface GetTenantBlueprintResponseIntegration {
+  kind?: GetTenantBlueprintResponseIntegrationKind;
+  id?: string;
+  connector_id?: string | null;
+  name?: string;
+  status?: string;
+}
+
+export type GetTenantBlueprintResponseIntegrationKind = 'connector' | 'mcp_server';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_INTEGRATION_KIND_VALUES = ['connector', 'mcp_server'] as const;
+
+export interface GetTenantBlueprintResponseKnowledgeSource {
+  knowledge_base_id?: string;
+  name?: string;
+  documents?: number;
+  status?: string;
+}
+
+export interface GetTenantBlueprintResponseMissingSetupItem {
+  code: GetTenantBlueprintResponseMissingSetupItemCode;
+  message: string;
+  fix: string;
+}
+
+export type GetTenantBlueprintResponseMissingSetupItemCode = 'NO_OBJECTIVE' | 'NO_TIMEZONE' | 'NO_CHIEF_OF_STAFF' | 'NO_AGENTS' | 'NO_BUDGET' | 'NO_SCHEDULE';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_MISSING_SETUP_ITEM_CODE_VALUES = ['NO_OBJECTIVE', 'NO_TIMEZONE', 'NO_CHIEF_OF_STAFF', 'NO_AGENTS', 'NO_BUDGET', 'NO_SCHEDULE'] as const;
+
+export interface GetTenantBlueprintResponseMissions {
+  active?: number;
+  total?: number;
+  recent?: GetTenantBlueprintResponseMissionsRecentItem[];
+}
+
+export interface GetTenantBlueprintResponseMissionsRecentItem {
+  mission_id?: string;
+  goal?: string;
+  status?: string;
+  created_at?: string;
+}
+
+export interface GetTenantBlueprintResponseSchedule {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  agent_id?: string;
+  agent_name?: string | null;
+  schedule_id?: string;
+  name?: string;
+  cron?: string | null;
+  shape?: ScheduleShape;
+  timezone?: string | null;
+  status?: string;
+  next_fire_at?: string | null;
+}
+
+export type GetTenantBlueprintResponseScheduleKind = 'agent' | 'mission';
+
+export const GET_TENANT_BLUEPRINT_RESPONSE_SCHEDULE_KIND_VALUES = ['agent', 'mission'] as const;
+
+export interface GetTenantCompanyOverviewResponse {
+  generated_at: string;
+  window_days: number;
+  company: GetTenantCompanyOverviewResponseCompany;
+  /**
+   * Null when no cap is set.
+   */
+  spend: GetTenantCompanyOverviewResponseSpend | null;
+  decisions: GetTenantCompanyOverviewResponseDecisions;
+  /**
+   * The `GET /analytics/missions?days=` body for the same window.
+   */
+  work: JsonObject;
+  /**
+   * Up to 5 objectives completed in the window, newest first.
+   */
+  results: GetTenantCompanyOverviewResponseResult[];
+  problems: GetTenantCompanyOverviewResponseProblems;
+  activity: GetTenantCompanyOverviewResponseActivity;
+  /**
+   * Up to 5 next scheduled runs, soonest first.
+   */
+  next: GetTenantCompanyOverviewResponseNextItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseActivity {
+  runs?: number;
+  /**
+   * Every UTC day of the window, oldest first.
+   */
+  by_day?: GetTenantCompanyOverviewResponseActivityByDayItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseActivityByDayItem {
+  date?: string;
+  runs?: number;
+  failed?: number;
+}
+
+export interface GetTenantCompanyOverviewResponseCompany {
+  company_id?: string;
+  name?: string;
+  status?: CompanyProfileStatus;
+  version?: number;
+  launched_at?: string | null;
+  paused_at?: string | null;
+  chief_of_staff_agent_id?: string | null;
+}
+
+export interface GetTenantCompanyOverviewResponseDecisions {
+  total?: number;
+  approvals?: number;
+  inputs?: number;
+  reviews?: number;
+  proposals?: number;
+}
+
+export interface GetTenantCompanyOverviewResponseNextItem {
+  kind?: GetTenantBlueprintResponseScheduleKind;
+  id?: string;
+  name?: string;
+  next_fire_at?: string;
+  cron?: string | null;
+  shape?: ScheduleShape;
+}
+
+export interface GetTenantCompanyOverviewResponseProblems {
+  failed_runs?: number;
+  recent?: GetTenantCompanyOverviewResponseProblemsRecentItem[];
+}
+
+export interface GetTenantCompanyOverviewResponseProblemsRecentItem {
+  run_id?: string;
+  agent_id?: string;
+  agent_name?: string | null;
+  error_code?: string | null;
+  error?: string | null;
+  at?: string;
+}
+
+export interface GetTenantCompanyOverviewResponseResult {
+  objective_id?: string;
+  title?: string;
+  summary?: string;
+  completed_at?: string;
+}
+
+/**
+ * Null when no cap is set.
+ */
+export interface GetTenantCompanyOverviewResponseSpend {
+  limit_usd?: number;
+  spent_usd?: number;
+  remaining_usd?: number;
+  utilization?: number;
+  period?: string;
+  soft_alert?: boolean;
+  hard_limit_reached?: boolean;
+}
+
 export interface GetTenantDomainHealthResponse {
   /**
    * Hostname only — no scheme, no path.
@@ -8496,6 +9083,18 @@ export interface GetTenantDomainHealthResponse {
   updated_at?: string;
   dns?: DomainDnsLifecycle;
   cert?: DomainCertLifecycle;
+}
+
+export interface GetTenantReadinessResponse {
+  ready: boolean;
+  status: CompanyProfileStatus;
+  /**
+   * Send it back as `reviewed_version` to launch.
+   */
+  version: number;
+  blockers: CompanyReadinessItem[];
+  warnings: CompanyReadinessItem[];
+  test_run: CompanyTestRun;
 }
 
 export interface GetTenantUsageResponse {
@@ -8685,6 +9284,14 @@ export interface HealthCheckV1aliasResponse {
   build_time?: string;
   pending_resumes?: number;
   runs_queued?: number;
+  /**
+   * What this build can do, by name — gate a feature on it instead of on a 404. Names are added
+   * when a feature ships and never renamed: `initiatives`, `initiative_pause`, `mission_review`,
+   * `run_revise`, `run_sources`, `mission_schedules`, `mission_analytics`, `company_profile`,
+   * `company_pause`, `company_blueprint`, `company_pause_preview`, `company_proposals`,
+   * `company_launch`, `company_overview` (since 2026-10-12).
+   */
+  capabilities?: string[];
 }
 
 export interface HealthLiveResponse {
@@ -9616,6 +10223,10 @@ export interface LandingStats {
   total_tokens?: number;
 }
 
+export interface LaunchTenantCompanyRequest {
+  reviewed_version: number;
+}
+
 export interface LeaveTenantResponse {
   left: boolean;
   tenant_id: string;
@@ -10017,6 +10628,15 @@ export interface ListGoalsResponse {
 export interface ListGuardrailsResponse {
   guardrails: Guardrail[];
   total?: number;
+}
+
+export interface ListInitiativesResponse {
+  items: Company[];
+  /**
+   * Opaque cursor for the next page; null on the last page.
+   */
+  cursor: string | null;
+  has_more: boolean;
 }
 
 export interface ListIntegrationsCatalogResponse {
@@ -10654,6 +11274,16 @@ export interface ListTeamsResponse {
   total?: number;
 }
 
+export interface ListTenantCompanyChangesResponse {
+  items: CompanyChange[];
+  total: number;
+}
+
+export interface ListTenantProposalsResponse {
+  items: CompanyProposal[];
+  total: number;
+}
+
 export interface ListTenantsResponse {
   tenants?: Tenant[];
   total?: number;
@@ -10844,9 +11474,9 @@ export interface LLMSynthesizeSpeechRequest {
   voice?: string;
   /**
    * The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
-   * read from `input` — Ukrainian by its own letters (і ї є ґ), other Cyrillic as Russian — else
-   * left to the voice. Sent to the provider as `language`; a provider that refuses the parameter
-   * (400/422) is asked once more without it.
+   * read from `input` — Ukrainian by its own letters (і ї є ґ), Russian by its own (ы э ъ ё),
+   * any other Cyrillic as Ukrainian — else left to the voice. Sent to the provider as
+   * `language`; a provider that refuses the parameter (400/422) is asked once more without it.
    */
   language?: string;
   /**
@@ -11710,9 +12340,21 @@ export interface ModelInfo {
   voices?: string[];
 }
 
+/**
+ * `from_path` and `to_path`; the copy route's spelling `source_path` / `dest_path` is accepted
+ * too (since 2026-10-12). One of each pair is required — 422 otherwise.
+ */
 export interface MoveWorkspaceFileRequest {
-  from_path: string;
-  to_path: string;
+  from_path?: string;
+  to_path?: string;
+  /**
+   * Alias of `from_path`.
+   */
+  source_path?: string;
+  /**
+   * Alias of `to_path`.
+   */
+  dest_path?: string;
 }
 
 export interface Notification {
@@ -12170,7 +12812,9 @@ export interface Objective {
    */
   success_criteria: string[];
   /**
-   * Lifecycle, owned by the executor — PATCH cannot set it.
+   * Lifecycle, owned by the executor — PATCH cannot set it. `awaiting_review`: done and
+   * verified, waiting for a person (`review_required`). `skipped`: a decision point took another
+   * branch; settled, not failed.
    */
   status: ObjectiveStatus;
   priority: ObjectivePriority;
@@ -12199,9 +12843,12 @@ export interface Objective {
   deadline?: string;
   /**
    * Why the executor stopped on this objective: `exhausted_strikes_<n>`, `budget_exhausted`,
-   * `dependency_failed`, or `verifier_error` — the verifier could not reach a verdict (its judge
-   * errored or kept answering in an unparseable shape), which is the platform failing, not the
-   * agent's work; no strike is charged for it and the agent is not re-run.
+   * `dependency_failed`, `rejected_by_person` (a person refused its action or its result),
+   * `revision_limit_10`, `not_dispatchable` (it could not be run at all — no agent assigned, or
+   * one this tenant may not run; stopped at the first refusal, since 2026-10-12), or
+   * `verifier_error` — the verifier could not reach a verdict (its judge errored or kept
+   * answering in an unparseable shape), which is the platform failing, not the agent's work; no
+   * strike is charged for it and the agent is not re-run.
    */
   abort_reason?: string;
   /**
@@ -12209,6 +12856,28 @@ export interface Objective {
    * objectives that never ran under a mission and on those settled before 2026-09-22.
    */
   strikes_used?: number;
+  /**
+   * When true, a verified result waits at `awaiting_review` for a person: `POST
+   * /missions/{missionId}/objectives/{objectiveId}/review` accepts it, sends it back with
+   * feedback (the agent redoes it with its previous version and the feedback; not a strike; at
+   * most 10 times), or rejects it (`abort_reason: rejected_by_person`). A
+   * `mission.review_requested` notification is raised when it starts waiting. Since 2026-10-12.
+   */
+  review_required?: boolean;
+  /**
+   * A person's verdict not yet read by the mission; cleared once acted on.
+   */
+  review?: ObjectiveReview;
+  /**
+   * Times a person sent the result back for revision.
+   */
+  revisions?: number;
+  /**
+   * Provenance of the result held for review (single-agent objectives), condensed from `GET
+   * /runs/{runId}/sources`: links it cites, pages the agent read, and `unsourced_links` — links
+   * in the result that no tool call or result contained, which a reviewer checks first.
+   */
+  sources?: ObjectiveSources;
 }
 
 /**
@@ -12225,8 +12894,13 @@ export interface ObjectiveBudget {
 }
 
 /**
- * A branch in the plan: when `condition` holds, execution continues at the matching branch's
- * objective instead of the next one in order.
+ * A branch in the plan, resolved when this objective's result is accepted: the first branch
+ * whose `when` matches the result is taken — `when` is a case-insensitive substring, or
+ * `/regex/flags` — else `fallback_objective_id`. Every other target is `skipped` and does not
+ * run, nor does a step whose dependencies are all skipped; a step that also depends on a taken
+ * one runs (branches meet). In a submitted plan a target may be written `#<index>` into
+ * `plan.objectives`, resolved to the id when the mission is created. `condition` is the label
+ * the decision is logged under. Enforced since 2026-10-12 — before, every branch ran.
  */
 export interface ObjectiveDecisionPoint {
   condition: string;
@@ -12247,8 +12921,26 @@ export type ObjectivePriority = 'low' | 'medium' | 'high' | 'critical';
 export const OBJECTIVE_PRIORITY_VALUES = ['low', 'medium', 'high', 'critical'] as const;
 
 /**
+ * A person's verdict not yet read by the mission; cleared once acted on.
+ */
+export interface ObjectiveReview {
+  decision?: ObjectiveReviewDecision;
+  feedback?: string;
+  decided_by?: string;
+  decided_at?: string;
+}
+
+export type ObjectiveReviewDecision = 'accept' | 'revise' | 'reject';
+
+export const OBJECTIVE_REVIEW_DECISION_VALUES = ['accept', 'revise', 'reject'] as const;
+
+/**
  * Rules of engagement: what the objective may do alone, what needs a human, and what it must
- * never do.
+ * never do. Enforced since 2026-10-12 (stored and read by nothing before): an entry in
+ * `requires_approval` that names a tool gates that tool for a person on every run of the
+ * objective, an entry in `prohibited` that names a tool withholds it — neither offered to the
+ * model nor executable — and every entry, tool name or prose, is written into the agent's
+ * instruction along with `commanders_intent` and the deadline.
  */
 export interface ObjectiveRoE {
   autonomous_actions: string[];
@@ -12257,11 +12949,25 @@ export interface ObjectiveRoE {
 }
 
 /**
- * Lifecycle, owned by the executor — PATCH cannot set it.
+ * Provenance of the result held for review (single-agent objectives), condensed from `GET
+ * /runs/{runId}/sources`: links it cites, pages the agent read, and `unsourced_links` — links
+ * in the result that no tool call or result contained, which a reviewer checks first.
  */
-export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'completed' | 'failed';
+export interface ObjectiveSources {
+  run_id?: string;
+  cited?: string[];
+  read?: string[];
+  unsourced_links?: string[];
+}
 
-export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'completed', 'failed'] as const;
+/**
+ * Lifecycle, owned by the executor — PATCH cannot set it. `awaiting_review`: done and
+ * verified, waiting for a person (`review_required`). `skipped`: a decision point took another
+ * branch; settled, not failed.
+ */
+export type ObjectiveStatus = 'pending' | 'in_progress' | 'blocked' | 'awaiting_review' | 'completed' | 'failed' | 'skipped';
+
+export const OBJECTIVE_STATUS_VALUES = ['pending', 'in_progress', 'blocked', 'awaiting_review', 'completed', 'failed', 'skipped'] as const;
 
 /**
  * agent-teams/objective-tracker.ts ObjectiveTree — recursive.
@@ -12507,6 +13213,10 @@ export interface PauseCompanyResponse {
   status?: string;
 }
 
+export interface PauseInitiativeResponse {
+  status?: string;
+}
+
 export interface PauseMissionResponse {
   pausing: boolean;
   mission: Mission;
@@ -12515,6 +13225,83 @@ export interface PauseMissionResponse {
 export interface PauseRunResponse {
   paused: boolean;
   run_id: string;
+}
+
+export interface PauseTenantCompanyRequest {
+  reason?: string;
+}
+
+export interface PauseTenantCompanyResponse {
+  /**
+   * The tenant id.
+   */
+  company_id: string;
+  name: string;
+  /**
+   * The tenant's Head Agent.
+   */
+  chief_of_staff_agent_id: string | null;
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone.
+   */
+  timezone?: string;
+  /**
+   * `draft` — being set up, no automated run starts (except the launch test run); `active` —
+   * operating; `paused` — every automated run stopped, a person's chat still answers.
+   */
+  status: CompanyProfileStatus;
+  /**
+   * Bumped on every accepted change; send it back as `expected_version`.
+   */
+  version: number;
+  template?: PauseTenantCompanyResponseTemplate;
+  launched_at?: string;
+  paused_at?: string;
+  pause_reason?: string;
+  updated_at?: string;
+  updated_by?: string;
+  pause_scope: PauseTenantCompanyResponsePauseScope;
+}
+
+export interface PauseTenantCompanyResponsePauseScope {
+  /**
+   * What the pause reaches, as stable codes — localize from `code`; `text` is English fallback.
+   * Codes are added, never renamed.
+   */
+  items: PauseTenantCompanyResponsePauseScopeItem[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  stopped: string[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  not_stopped: string[];
+  schedules_held: number;
+  mission_schedules_held: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled: string[];
+}
+
+export interface PauseTenantCompanyResponsePauseScopeItem {
+  code: PreviewTenantCompanyPauseResponsePauseScopeItemCode;
+  effect: PreviewTenantCompanyPauseResponsePauseScopeItemEffect;
+  /**
+   * Present for agent_schedules, mission_schedules and in_flight_runs.
+   */
+  count?: number;
+  text: string;
+}
+
+export interface PauseTenantCompanyResponseTemplate {
+  id?: string;
+  version?: string;
 }
 
 /**
@@ -12572,7 +13359,12 @@ export interface PermissionSet {
 export interface PermissionSetUpdate {
   /**
    * Sending this field REPLACES the stored list (the handler stores the array as sent, it does
-   * not merge).
+   * not merge). A NON-EMPTY list limits the agent's own runs to exactly these tool names (since
+   * 2026-10-12): every other tool is neither offered to the model nor executed when called. An
+   * EMPTY list puts no limit on the agent's own runs (the same rule as `mcp.allowed_tools` on
+   * the agent) — but for spawning it still means no child tool is permitted, since a child's
+   * tools must be a subset of this list. Before 2026-10-12 the list was read only by the spawn
+   * gate and did not limit the agent itself.
    */
   allowed_tools?: string[];
   /**
@@ -12642,7 +13434,15 @@ export interface PlannedObjective {
    * Indices into `objectives`; must form a DAG or the plan is rejected.
    */
   depends_on_indices: number[];
+  /**
+   * The agent that runs this objective. One of `assigned_agent_id` / `assigned_team_id` is
+   * required in a plan you send — nothing assigns one later, so `POST /missions` and
+   * `/missions/schedules` refuse the plan with 422 (since 2026-10-12).
+   */
   assigned_agent_id?: string;
+  /**
+   * The squad that runs this objective, instead of an agent.
+   */
   assigned_team_id?: string;
   /**
    * Ceilings only — the spent_* counters are created by the server.
@@ -12652,6 +13452,14 @@ export interface PlannedObjective {
   roe?: ObjectiveRoE;
   deadline?: string;
   decision_points?: ObjectiveDecisionPoint[];
+  /**
+   * When true, a verified result waits at `awaiting_review` for a person: `POST
+   * /missions/{missionId}/objectives/{objectiveId}/review` accepts it, sends it back with
+   * feedback (the agent redoes it with its previous version and the feedback; not a strike; at
+   * most 10 times), or rejects it (`abort_reason: rejected_by_person`). A
+   * `mission.review_requested` notification is raised when it starts waiting. Since 2026-10-12.
+   */
+  review_required?: boolean;
 }
 
 /**
@@ -12893,6 +13701,51 @@ export interface PlaygroundTemplate {
   nodes: CanvasNode[];
   edges: CanvasEdge[];
 }
+
+export interface PreviewTenantCompanyPauseResponse {
+  status: CompanyProfileStatus;
+  pause_scope: PreviewTenantCompanyPauseResponsePauseScope;
+}
+
+export interface PreviewTenantCompanyPauseResponsePauseScope {
+  /**
+   * What the pause reaches, as stable codes — localize from `code`; `text` is English fallback.
+   * Codes are added, never renamed.
+   */
+  items: PreviewTenantCompanyPauseResponsePauseScopeItem[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  stopped: string[];
+  /**
+   * Plain sentences for display; not codes.
+   */
+  not_stopped: string[];
+  schedules_held: number;
+  mission_schedules_held: number;
+  /**
+   * Run ids.
+   */
+  runs_cancelled: string[];
+}
+
+export interface PreviewTenantCompanyPauseResponsePauseScopeItem {
+  code: PreviewTenantCompanyPauseResponsePauseScopeItemCode;
+  effect: PreviewTenantCompanyPauseResponsePauseScopeItemEffect;
+  /**
+   * Present for agent_schedules, mission_schedules and in_flight_runs.
+   */
+  count?: number;
+  text: string;
+}
+
+export type PreviewTenantCompanyPauseResponsePauseScopeItemCode = 'agent_schedules' | 'mission_schedules' | 'automated_runs' | 'in_flight_runs' | 'person_chat' | 'editing';
+
+export const PREVIEW_TENANT_COMPANY_PAUSE_RESPONSE_PAUSE_SCOPE_ITEM_CODE_VALUES = ['agent_schedules', 'mission_schedules', 'automated_runs', 'in_flight_runs', 'person_chat', 'editing'] as const;
+
+export type PreviewTenantCompanyPauseResponsePauseScopeItemEffect = 'stopped' | 'not_stopped';
+
+export const PREVIEW_TENANT_COMPANY_PAUSE_RESPONSE_PAUSE_SCOPE_ITEM_EFFECT_VALUES = ['stopped', 'not_stopped'] as const;
 
 /**
  * An ordered curriculum an agent delivers.
@@ -14086,6 +14939,10 @@ export interface RejectRunResponse {
   reason?: string;
 }
 
+export interface RejectTenantProposalRequest {
+  reason?: string;
+}
+
 export interface RemoveScheduleResponse {
   removed: boolean;
   agent_id: string;
@@ -14330,6 +15187,10 @@ export interface ResumeCompanyResponse {
   status?: string;
 }
 
+export interface ResumeInitiativeResponse {
+  status?: string;
+}
+
 export interface ResumeMissionResponse {
   accepted: boolean;
   mission: Mission;
@@ -14429,6 +15290,26 @@ export interface RetryPublicVideoOrderResponseVideo {
    * When the video is deleted.
    */
   expires_at: string | null;
+}
+
+export interface ReviewMissionObjectiveRequest {
+  decision: ObjectiveReviewDecision;
+  /**
+   * What to change (required for `revise`), or why not.
+   */
+  feedback?: string;
+}
+
+export interface ReviseRunRequest {
+  /**
+   * What to change. Handed to the agent as the result of the declined action.
+   */
+  feedback: string;
+}
+
+export interface ReviseRunResponse {
+  revised: boolean;
+  run_id: string;
 }
 
 export interface RevokeAPIKeyResponse {
@@ -14863,9 +15744,9 @@ export interface RunEventTraceContext {
  * forward-compatible addition — but a client should still ignore an unknown one rather than
  * fail, which is how a new type arrives before a client knows it.
  */
-export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'company.tick_start' | 'company.tick_end' | 'company.paused' | 'company.resumed' | 'company.budget_updated' | 'company.escalation' | 'company.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
+export type RunEventType = 'run.created' | 'run.started' | 'run.completed' | 'run.failed' | 'run.cancelled' | 'run.timeout' | 'run.guardrail_blocked' | 'run.awaiting_approval' | 'run.awaiting_input' | 'run.input_received' | 'run.approved' | 'run.rejected' | 'run.checkpoint' | 'run.paused' | 'run.resumed' | 'run.restored' | 'run.affect' | 'llm.request' | 'llm.response' | 'llm.error' | 'llm.thinking' | 'llm.chunk' | 'llm.timeout' | 'llm.fallback' | 'step.plan' | 'step.act' | 'step.evaluate' | 'step.thinking' | 'tool.call' | 'tool.result' | 'tool.error' | 'tool.timeout' | 'guardrail.check' | 'guardrail.violation' | 'guardrail.custom.check' | 'guardrail.custom.violation' | 'memory.retrieval' | 'memory.extraction' | 'memory.stored' | 'memory.evicted' | 'session.context_compacted' | 'session.created' | 'session.closed' | 'team.message' | 'team.round_start' | 'team.round_end' | 'team.delegate' | 'team.broadcast' | 'team.merge' | 'team.handoff' | 'child_run.completed' | 'child_run.failed' | 'initiative.tick_start' | 'initiative.tick_end' | 'initiative.paused' | 'initiative.resumed' | 'initiative.budget_updated' | 'initiative.escalation' | 'initiative.objective_updated' | 'circuit_breaker.opened' | 'circuit_breaker.closed' | 'circuit_breaker.half_open' | 'streaming.started' | 'streaming.completed' | 'streaming.error' | 'streaming.buffer_truncated' | 'run.step_started' | 'run.step_completed' | 'budget.soft_threshold_crossed' | 'budget.hard_limit_reached' | 'tenant.created' | 'tenant.suspended' | 'tenant.purged' | 'config.updated' | 'webhook.delivered' | 'webhook.failed' | 'cron.fired' | 'agent.version_created' | 'agent.rollback' | 'mcp.server_log' | 'orchestration.started' | 'orchestration.planned' | 'orchestration.replanned' | 'orchestration.task_started' | 'orchestration.task_completed' | 'orchestration.task_failed' | 'orchestration.checkpoint' | 'orchestration.policy_violation' | 'orchestration.quality_report' | 'orchestration.completed' | 'orchestration.failed' | 'graph.agent_spawned' | 'graph.agent_terminated' | 'graph.task_delegated' | 'graph.edge_added' | 'graph.edge_removed' | 'plan.created' | 'plan.updated' | 'plan.sub_goal_completed' | 'plan.sub_goal_abandoned' | 'mcp.tool_called' | 'mcp.server_connected' | 'mcp.server_disconnected' | 'a2a.task_sent' | 'a2a.task_received' | 'memory.compressed' | 'capability.best_agent_selected' | 'identity.created' | 'identity.rotated' | 'message.signed' | 'message.verified' | 'message.replay_blocked' | 'constitution.bootstrapped' | 'constitution.amended' | 'constitution.check_passed' | 'constitution.check_blocked' | 'constitution.violation' | 'ledger.appended' | 'ledger.integrity_checked' | 'permission.checked' | 'permission.denied' | 'permission.spawn_blocked' | 'attestation.created' | 'attestation.verified' | 'attestation.invalid' | 'arbitration.case_opened' | 'arbitration.ruling_submitted' | 'arbitration.appeal_filed' | 'voting.proposal_created' | 'voting.ballot_cast' | 'voting.tallied' | 'voting.vetoed' | 'resource.spent' | 'resource.earned' | 'resource.transferred' | 'resource.insufficient' | 'ambassador.veto_issued' | 'ambassador.request_submitted' | 'builder.design_submitted' | 'builder.design_approved' | 'builder.design_spawned' | 'emergency.safe_mode_activated' | 'emergency.safe_mode_deactivated' | 'emergency.deadlock_detected' | 'goal.self_formulated' | 'goal.approved' | 'improvement.proposed' | 'improvement.sandbox_tested' | 'improvement.applied' | 'collective.insight_published' | 'collective.insights_retrieved' | 'collective.review_requested' | 'collective.poll_created' | 'collective.agent_rated' | 'collective.feedback_requested' | 'collective.reflection_completed' | 'collective.approaches_compared' | 'collective.lesson_logged' | 'collective.team_formed' | 'collective.team_joined' | 'collective.team_left' | 'collective.team_broadcast' | 'collective.specialist_requested' | 'collective.budget_requested' | 'collective.tokens_transferred' | 'collective.task_posted' | 'collective.bid_placed' | 'collective.bid_accepted' | 'collective.cost_reported' | 'sensor.url_watch_created' | 'sensor.rss_watch_created' | 'sensor.webhook_listener_created' | 'sensor.check_scheduled' | 'sensor.event_subscription_created' | 'sensor.triggered' | 'collective.report_presented' | 'collective.escalation' | 'collective.anomaly_reported' | 'collective.human_override' | 'collective.collective_paused' | 'collective.verification_requested' | 'strategy.created' | 'strategy.kpi_updated' | 'document.edit_start' | 'document.edit_chunk' | 'document.edit_complete';
 
-export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'company.tick_start', 'company.tick_end', 'company.paused', 'company.resumed', 'company.budget_updated', 'company.escalation', 'company.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
+export const RUN_EVENT_TYPE_VALUES = ['run.created', 'run.started', 'run.completed', 'run.failed', 'run.cancelled', 'run.timeout', 'run.guardrail_blocked', 'run.awaiting_approval', 'run.awaiting_input', 'run.input_received', 'run.approved', 'run.rejected', 'run.checkpoint', 'run.paused', 'run.resumed', 'run.restored', 'run.affect', 'llm.request', 'llm.response', 'llm.error', 'llm.thinking', 'llm.chunk', 'llm.timeout', 'llm.fallback', 'step.plan', 'step.act', 'step.evaluate', 'step.thinking', 'tool.call', 'tool.result', 'tool.error', 'tool.timeout', 'guardrail.check', 'guardrail.violation', 'guardrail.custom.check', 'guardrail.custom.violation', 'memory.retrieval', 'memory.extraction', 'memory.stored', 'memory.evicted', 'session.context_compacted', 'session.created', 'session.closed', 'team.message', 'team.round_start', 'team.round_end', 'team.delegate', 'team.broadcast', 'team.merge', 'team.handoff', 'child_run.completed', 'child_run.failed', 'initiative.tick_start', 'initiative.tick_end', 'initiative.paused', 'initiative.resumed', 'initiative.budget_updated', 'initiative.escalation', 'initiative.objective_updated', 'circuit_breaker.opened', 'circuit_breaker.closed', 'circuit_breaker.half_open', 'streaming.started', 'streaming.completed', 'streaming.error', 'streaming.buffer_truncated', 'run.step_started', 'run.step_completed', 'budget.soft_threshold_crossed', 'budget.hard_limit_reached', 'tenant.created', 'tenant.suspended', 'tenant.purged', 'config.updated', 'webhook.delivered', 'webhook.failed', 'cron.fired', 'agent.version_created', 'agent.rollback', 'mcp.server_log', 'orchestration.started', 'orchestration.planned', 'orchestration.replanned', 'orchestration.task_started', 'orchestration.task_completed', 'orchestration.task_failed', 'orchestration.checkpoint', 'orchestration.policy_violation', 'orchestration.quality_report', 'orchestration.completed', 'orchestration.failed', 'graph.agent_spawned', 'graph.agent_terminated', 'graph.task_delegated', 'graph.edge_added', 'graph.edge_removed', 'plan.created', 'plan.updated', 'plan.sub_goal_completed', 'plan.sub_goal_abandoned', 'mcp.tool_called', 'mcp.server_connected', 'mcp.server_disconnected', 'a2a.task_sent', 'a2a.task_received', 'memory.compressed', 'capability.best_agent_selected', 'identity.created', 'identity.rotated', 'message.signed', 'message.verified', 'message.replay_blocked', 'constitution.bootstrapped', 'constitution.amended', 'constitution.check_passed', 'constitution.check_blocked', 'constitution.violation', 'ledger.appended', 'ledger.integrity_checked', 'permission.checked', 'permission.denied', 'permission.spawn_blocked', 'attestation.created', 'attestation.verified', 'attestation.invalid', 'arbitration.case_opened', 'arbitration.ruling_submitted', 'arbitration.appeal_filed', 'voting.proposal_created', 'voting.ballot_cast', 'voting.tallied', 'voting.vetoed', 'resource.spent', 'resource.earned', 'resource.transferred', 'resource.insufficient', 'ambassador.veto_issued', 'ambassador.request_submitted', 'builder.design_submitted', 'builder.design_approved', 'builder.design_spawned', 'emergency.safe_mode_activated', 'emergency.safe_mode_deactivated', 'emergency.deadlock_detected', 'goal.self_formulated', 'goal.approved', 'improvement.proposed', 'improvement.sandbox_tested', 'improvement.applied', 'collective.insight_published', 'collective.insights_retrieved', 'collective.review_requested', 'collective.poll_created', 'collective.agent_rated', 'collective.feedback_requested', 'collective.reflection_completed', 'collective.approaches_compared', 'collective.lesson_logged', 'collective.team_formed', 'collective.team_joined', 'collective.team_left', 'collective.team_broadcast', 'collective.specialist_requested', 'collective.budget_requested', 'collective.tokens_transferred', 'collective.task_posted', 'collective.bid_placed', 'collective.bid_accepted', 'collective.cost_reported', 'sensor.url_watch_created', 'sensor.rss_watch_created', 'sensor.webhook_listener_created', 'sensor.check_scheduled', 'sensor.event_subscription_created', 'sensor.triggered', 'collective.report_presented', 'collective.escalation', 'collective.anomaly_reported', 'collective.human_override', 'collective.collective_paused', 'collective.verification_requested', 'strategy.created', 'strategy.kpi_updated', 'document.edit_start', 'document.edit_chunk', 'document.edit_complete'] as const;
 
 /**
  * Absent for platform-dispatched cloud runs. `bridge` is written by the platform when a local
@@ -15320,6 +16201,41 @@ export interface ScheduleEntry {
 export type ScheduleEntryStatus = 'active' | 'paused' | 'error';
 
 export const SCHEDULE_ENTRY_STATUS_VALUES = ['active', 'paused', 'error'] as const;
+
+/**
+ * A cron in a shape clients localize; null when the cron is not one of these — show the cron.
+ * Weekdays are ISO (1 = Monday … 7 = Sunday).
+ */
+export type ScheduleShape = ScheduleShapeVariant2 | ScheduleShapeVariant3 | ScheduleShapeVariant4 | ScheduleShapeVariant5;
+
+export interface ScheduleShapeVariant2 {
+  every: 'hour';
+  minute: number;
+  /**
+   * Every N hours (N divides 24); absent = every hour.
+   */
+  interval?: number;
+}
+
+export interface ScheduleShapeVariant3 {
+  every: 'day';
+  /**
+   * HH:MM
+   */
+  time: string;
+}
+
+export interface ScheduleShapeVariant4 {
+  every: 'week';
+  weekdays: number[];
+  time: string;
+}
+
+export interface ScheduleShapeVariant5 {
+  every: 'month';
+  day: number;
+  time: string;
+}
 
 export interface ScheduleSummary {
   agent_id: string;
@@ -15958,6 +16874,12 @@ export interface SetScheduleRequest {
    */
   on_failure?: AgentScheduleConfigOnFailure;
   /**
+   * How many runs this schedule may have EXECUTING (queued or running) at once; a fire that
+   * would exceed it is skipped and the schedule moves to its next instant. A run waiting on a
+   * person (awaiting_input / awaiting_approval) does not count, so an unanswered question never
+   * stops the schedule. 0 means no limit. Enforced since 2026-10-12 — before, it was stored and
+   * runs overlapped regardless.
+   *
    * @default 1
    */
   max_concurrent_scheduled?: number;
@@ -16253,6 +17175,14 @@ export interface StartTeamRunResponse {
   team_run_id: string;
 }
 
+export interface StartTenantTestRunRequest {
+  agent_id?: string;
+  /**
+   * Default: a rehearsal of one work cycle against the company's objective.
+   */
+  message?: string;
+}
+
 /**
  * types/company.ts StrategicGoal — as stored; the create/update body is looser (goal_id
  * assigned by the server).
@@ -16444,6 +17374,10 @@ export interface TeamCreate {
    * @default "supervisor"
    */
   topology?: TeamTopology;
+  /**
+   * Required for `supervisor` and `goal_driven`. Optional for `pipeline` and `round_robin`
+   * (defaults to the first worker, which stays a stage). Ignored for `swarm`.
+   */
   supervisor_agent_id?: string;
   /**
    * Each entry REQUIRES `agent_id` — omitting it answers `422 workers.0.agent_id: Required`.
@@ -16854,6 +17788,17 @@ export interface TenantInbox {
   counts: TenantInboxCounts;
   items: InboxItem[];
   /**
+   * Mission objectives held at `awaiting_review`, oldest first — answer each with `POST
+   * /missions/{mission_id}/objectives/{objective_id}/review`. `unsourced_links` counts links in
+   * the result that no tool produced. Since 2026-10-12.
+   */
+  reviews?: TenantInboxReview[];
+  /**
+   * Company changes waiting for a person, newest first — open with `GET
+   * /tenants/me/proposals/{proposal_id}`, decide with `…/apply` or `…/reject`. Since 2026-10-12.
+   */
+  proposals?: TenantInboxProposal[];
+  /**
    * Run records inspected; the scan is capped.
    */
   scanned: number;
@@ -16876,6 +17821,47 @@ export interface TenantInboxCounts {
   input: number;
   paused: number;
   failed: number;
+  /**
+   * Mission results waiting for a person's verdict (since 2026-10-12); included in `total`.
+   */
+  review?: number;
+  /**
+   * Company changes proposed and waiting for a person (since 2026-10-12); included in `total`.
+   */
+  proposal?: number;
+}
+
+export interface TenantInboxProposal {
+  proposal_id: string;
+  summary: string;
+  proposed_by: TenantInboxProposalProposedBy;
+  /**
+   * How many changes.
+   */
+  operations: number;
+  /**
+   * It removes something.
+   */
+  irreversible: boolean;
+  created_at: string;
+  expires_at: string;
+}
+
+export interface TenantInboxProposalProposedBy {
+  kind?: CompanyProposalProposedByKind;
+  id?: string;
+  run_id?: string;
+  session_id?: string;
+}
+
+export interface TenantInboxReview {
+  objective_id?: string;
+  mission_id?: string | null;
+  title?: string;
+  summary?: string;
+  revisions?: number;
+  waiting_since?: string;
+  unsourced_links?: number;
 }
 
 export interface TenantMefConfigResponse {
@@ -18452,6 +19438,10 @@ export interface UpdateMissionObjectiveRequest {
   commanders_intent?: string;
   roe?: ObjectiveRoE;
   decision_points?: ObjectiveDecisionPoint[];
+  /**
+   * Hold the verified result for a person's review.
+   */
+  review_required?: boolean;
 }
 
 /**
@@ -18665,6 +19655,18 @@ export interface UpdateSquadGraphNodeRequest {
 export interface UpdateTeamGraphNodeRequest {
   status?: TeamGraphNodeStatus;
   goal_summary?: string;
+}
+
+export interface UpdateTenantCompanyRequest {
+  business_type?: string;
+  objective?: string;
+  description?: string;
+  target_customer?: string;
+  /**
+   * IANA time zone; anything else is 422.
+   */
+  timezone?: string;
+  expected_version?: number;
 }
 
 /**
@@ -19531,9 +20533,9 @@ export interface WebhookDeliveryAttempt {
   created_at: string;
 }
 
-export type WebhookDeliveryAttemptEventType = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
+export type WebhookDeliveryAttemptEventType = 'run.completed' | 'run.failed' | 'run.cancelled' | 'agent.created' | 'agent.updated' | 'agent.deleted' | 'quota.threshold' | 'quota.exceeded' | 'guardrail.violated' | 'billing.invoice.created' | 'billing.payment.failed' | 'eval.auto_rollback' | 'initiative.budget_alert' | 'initiative.budget_exceeded' | 'initiative.objective_failed' | 'initiative.goal_completed' | 'initiative.paused' | 'company.budget_alert' | 'company.budget_exceeded' | 'company.objective_failed' | 'company.goal_completed' | 'company.paused';
 
-export const WEBHOOK_DELIVERY_ATTEMPT_EVENT_TYPE_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
+export const WEBHOOK_DELIVERY_ATTEMPT_EVENT_TYPE_VALUES = ['run.completed', 'run.failed', 'run.cancelled', 'agent.created', 'agent.updated', 'agent.deleted', 'quota.threshold', 'quota.exceeded', 'guardrail.violated', 'billing.invoice.created', 'billing.payment.failed', 'eval.auto_rollback', 'initiative.budget_alert', 'initiative.budget_exceeded', 'initiative.objective_failed', 'initiative.goal_completed', 'initiative.paused', 'company.budget_alert', 'company.budget_exceeded', 'company.objective_failed', 'company.goal_completed', 'company.paused'] as const;
 
 export type WebhookDeliveryAttemptStatus = 'pending' | 'success' | 'failed';
 
