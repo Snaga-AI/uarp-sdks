@@ -26437,6 +26437,11 @@ public struct LLMSynthesizeSpeechRequest: Codable, Hashable, Sendable {
     public var model: String?
     public var input: String
     public var voice: String?
+    /// The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
+    /// read from `input` — Ukrainian by its own letters (і ї є ґ), other Cyrillic as Russian — else
+    /// left to the voice. Sent to the provider as `language`; a provider that refuses the parameter
+    /// (400/422) is asked once more without it.
+    public var language: String?
     /// Passed THROUGH to the configured speech provider unchanged — the platform neither validates
     /// nor translates it, so a rejection here is the provider's, not ours, and its message is the
     /// provider's too. Deliberately not an enum: the accepted set belongs to whichever provider is
@@ -26446,10 +26451,11 @@ public struct LLMSynthesizeSpeechRequest: Codable, Hashable, Sendable {
     /// with a first byte at roughly 0.4s, which is what progressive playback needs.
     public var responseFormat: String?
 
-    public init(model: String? = nil, input: String, voice: String? = nil, responseFormat: String? = nil) {
+    public init(model: String? = nil, input: String, voice: String? = nil, language: String? = nil, responseFormat: String? = nil) {
         self.model = model
         self.input = input
         self.voice = voice
+        self.language = language
         self.responseFormat = responseFormat
     }
 
@@ -26457,6 +26463,7 @@ public struct LLMSynthesizeSpeechRequest: Codable, Hashable, Sendable {
         case model = "model"
         case input = "input"
         case voice = "voice"
+        case language = "language"
         case responseFormat = "response_format"
     }
 }

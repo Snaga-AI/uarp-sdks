@@ -19903,6 +19903,13 @@ public data class LLMSynthesizeSpeechRequest(
     public val input: String,
     public val voice: String? = null,
     /**
+     * The spoken language as a tag (`uk`, `en`, `pt-BR`; the first two letters are sent). Absent:
+     * read from `input` — Ukrainian by its own letters (і ї є ґ), other Cyrillic as Russian — else
+     * left to the voice. Sent to the provider as `language`; a provider that refuses the parameter
+     * (400/422) is asked once more without it.
+     */
+    public val language: String? = null,
+    /**
      * Passed THROUGH to the configured speech provider unchanged — the platform neither validates
      * nor translates it, so a rejection here is the provider's, not ours, and its message is the
      * provider's too. Deliberately not an enum: the accepted set belongs to whichever provider is
