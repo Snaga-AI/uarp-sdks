@@ -12313,8 +12313,13 @@ public data class ErrorModel(
      * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
      * document and the wire cannot drift apart. Two casings are on the wire and both are
      * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-     * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-     * no machine-readable class.
+     * hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+     * 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+     * status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+     * `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+     * 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+     * code only when its call site names one. Other statuses: absent when there is no
+     * machine-readable class.
      */
     public val code: ErrorCode? = null,
     /**
@@ -12358,8 +12363,13 @@ public data class ErrorModel(
  * reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
  * document and the wire cannot drift apart. Two casings are on the wire and both are
  * load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
- * hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
- * no machine-readable class.
+ * hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+ * 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+ * status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+ * `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+ * 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+ * code only when its call site names one. Other statuses: absent when there is no
+ * machine-readable class.
  */
 ///
 /**
@@ -12409,6 +12419,7 @@ public value class ErrorCode(public val value: String) {
         public val LLM_ERROR: ErrorCode = ErrorCode("LLM_ERROR")
         public val MAX_DURATION_EXCEEDED: ErrorCode = ErrorCode("MAX_DURATION_EXCEEDED")
         public val MAX_TOKENS_EXCEEDED: ErrorCode = ErrorCode("MAX_TOKENS_EXCEEDED")
+        public val METHOD_NOT_ALLOWED: ErrorCode = ErrorCode("METHOD_NOT_ALLOWED")
         public val MIGRATION_CONFLICT: ErrorCode = ErrorCode("MIGRATION_CONFLICT")
         public val MISSING_FIELD: ErrorCode = ErrorCode("MISSING_FIELD")
         public val MISSION_ALREADY_RUNNING: ErrorCode = ErrorCode("MISSION_ALREADY_RUNNING")
@@ -12506,7 +12517,7 @@ public value class ErrorCode(public val value: String) {
         public val VIDEO_SLOT_INVALID: ErrorCode = ErrorCode("video_slot_invalid")
 
         /** Every value the spec declared at generation time. */
-        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
+        public val knownValues: List<ErrorCode> = listOf(AAR_NOT_AVAILABLE, ACTIVE_TENANT_NOT_SUPPORTED, ALREADY_EXISTS, ANON_BUSY, ARTIFACT_INTEGRITY_ERROR, AUTH_ERROR, BILLING_CANCELLED, BILLING_DISPUTED, BILLING_PAST_DUE, BUDGET_EXCEEDED, CHECKSUM_MISMATCH, CONCURRENCY_LIMIT, CONCURRENT_MODIFICATION, CONFIGURATION_ERROR, CONFIRMATION_REQUIRED, CONFLICT, CONTEXT_LENGTH_EXCEEDED, COUNT_LIMIT_REACHED, DAILY_LIMIT, DEPENDENCY_EXISTS, EVENT_STORE_ERROR, EXTERNAL_SERVICE_ERROR, FEATURE_DISABLED, FILE_TYPE_NOT_ALLOWED, FORBIDDEN, GUARDRAIL_VIOLATION, IDEMPOTENCY_KEY_REUSED, INVALID_BODY, INVALID_CURSOR, INVALID_QUERY, INVALID_REQUEST, INVALID_SHARE_LIST, INVALID_SHARE_TARGET, INVALID_STATE_TRANSITION, LLM_ERROR, MAX_DURATION_EXCEEDED, MAX_TOKENS_EXCEEDED, METHOD_NOT_ALLOWED, MIGRATION_CONFLICT, MISSING_FIELD, MISSION_ALREADY_RUNNING, MISSION_CONCURRENCY_LIMIT, MISSION_NOT_FOUND, MISSION_NOT_RUNNABLE, MISSION_NOT_RUNNING, MISSION_ROUTE_NOT_FOUND, NOT_BRIDGE_AGENT, NOT_FOUND, NOT_YANKED, NO_RUNNABLE_TARGET, OAUTH_FAILED, PAYLOAD_TOO_LARGE, PERSISTENCE_ERROR, PLANNER_OUTPUT_INVALID, PLANNER_REFUSED, PRECONDITION_FAILED, PREREQUISITE_MISSING, PRICING_UNAVAILABLE, PRIVATE_NOT_SHARED, PROMO_REDEMPTION_FAILED, QUOTA_EXCEEDED, RATE_LIMIT_EXCEEDED, REFERENCE_NOT_FOUND, RESERVED_SCOPE, RUN_ACTIVE, RUN_CANCELLED, SCOPE_MISMATCH, SCOPE_TAKEN, SEARCH_PROVIDER_NOT_CONFIGURED, SEARCH_UPSTREAM_FAILED, SEARCH_UPSTREAM_TIMEOUT, SHARE_LIST_CONFLICT, SIZE_LIMIT, SPEC_NOT_FOUND, STARTED_BY_ANOTHER_USER, TASK_GRAPH_FAILED, TEAM_ABORT, TERMS_NOT_ACCEPTED, TEXT_EXTRACTION_FAILED, USER_REQUIRED, VALIDATION_ERROR, VERIFICATION_FAILED, VERSION_CONFLICT, VERSION_NOT_FOUND, WORKSPACE_STORAGE_LIMIT, WOULD_ORPHAN, YANK_CONFLICT, AGENT_DELETED, AGENT_NOT_FOUND, ALREADY_BOOTSTRAPPED, APPROVAL_REJECTED, BILLING_NOT_CONFIGURED, CONSENT_REQUIRED, CV_INVALID, CV_TOO_LARGE, DUPLICATE_APPLICATION, GOVERNANCE_NOT_ENABLED, INCOMPLETE_RECORD, INERT_POLICY_FIELD, INERT_PUBLIC_CONFIG_FIELD, JOB_APPLY_ELSEWHERE, JOB_CLOSED, KB_CHUNK_LIMIT, KB_DOCUMENT_BODY_INVALID, KB_DOCUMENT_TOO_LARGE, KB_EMBEDDING_FAILED, KB_STORAGE_LIMIT, KB_TEXT_EXTRACTION_FAILED, LIMIT_REACHED, MFA_REQUIRED, NO_ELIGIBLE_ARBITER, PLAN_UPGRADE_REQUIRED, PROPOSAL_REQUIRED, PROVIDER_AUTH_FAILED, PROVIDER_CIRCUIT_OPEN, PROVIDER_NOT_CONFIGURED, PROVIDER_RATE_LIMITED, QUOTA_EXCEEDED_, RATE_LIMITED, RESOURCE_LIMIT_REACHED, RUN_APPROVAL_EXPIRED, RUN_INPUT_TIMEOUT, RUN_NEVER_CLAIMED, RUN_ORPHANED_RESTART, RUN_QUOTA_EXCEEDED, RUN_STALLED, SECRET_WOULD_MOVE, VIDEO_CONSENT_REQUIRED, VIDEO_ORDER_STATE, VIDEO_PHOTO_INVALID, VIDEO_PHOTO_REJECTED, VIDEO_REGEN_UNAVAILABLE, VIDEO_SLOT_INVALID)
     }
 }
 
@@ -12727,6 +12738,12 @@ public data class EvalCase(
     @SerialName("case_id")
     public val caseId: String,
     public val input: JsonObject,
+    /**
+     * What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the
+     * output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every
+     * string value (e.g. `{"text": "Paris"}`) must appear in the answer, case-insensitive. A case
+     * with an expectation passes only when it is met.
+     */
     @SerialName("expected_output")
     public val expectedOutput: JsonObject? = null,
     @SerialName("expected_tool_calls")
@@ -18251,6 +18268,20 @@ public data class ListBillingPlansResponsePlan(
     public val priceAmountCents: Long? = null,
     @SerialName("price_currency")
     public val priceCurrency: String? = null,
+    /**
+     * How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+     * as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+     * Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+     * period.
+     */
+    @SerialName("price_interval")
+    public val priceInterval: String? = null,
+    /**
+     * Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+     * is null or `one_time`.
+     */
+    @SerialName("price_interval_count")
+    public val priceIntervalCount: Long? = null,
 )
 
 /**
@@ -24623,6 +24654,20 @@ public data class PublicPlan(
     public val priceAmountCents: Long,
     @SerialName("price_currency")
     public val priceCurrency: String,
+    /**
+     * How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+     * as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+     * Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+     * period.
+     */
+    @SerialName("price_interval")
+    public val priceInterval: String? = null,
+    /**
+     * Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+     * is null or `one_time`.
+     */
+    @SerialName("price_interval_count")
+    public val priceIntervalCount: Long? = null,
     public val quotas: JsonObject,
     /**
      * The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
@@ -27226,8 +27271,21 @@ public object RunCostEstimateEstimateConfidenceSerializer : KSerializer<RunCostE
 public data class RunEvaluationRequest(
     @SerialName("dataset_id")
     public val datasetId: String,
-    @SerialName("agent_version")
-    public val agentVersion: String? = null,
+    /**
+     * Scorers to apply, by name — built-in (task_success, tool_accuracy, step_efficiency, safety,
+     * latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output,
+     * llm_judge) or a custom one. Default: the platform's default set. A case with
+     * `expected_output` is always judged on its content: when none of exact_match / contains /
+     * regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it,
+     * and such a case passes only when every content score is 1.
+     */
+    public val scorers: List<String>? = null,
+    /**
+     * Roll the agent back to its previous version when this run regresses against the last one on
+     * the same dataset — an automated write with no human in the loop.
+     */
+    @SerialName("auto_rollback_on_regression")
+    public val autoRollbackOnRegression: Boolean? = null,
 )
 
 /**
@@ -34573,10 +34631,12 @@ public data class UpdateSessionRequest(
      * MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
      * it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
      * `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
-     * Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
-     * most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
-     * request is refused with 422 and a `detail` naming the number reached. Remove keys you no
-     * longer need; this is a label bag, not content.
+     * `project_id` files the chat under a project: it must name a project that exists and that the
+     * caller may edit — otherwise 404 (403 for a private project shared with the caller
+     * view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+     * RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+     * 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+     * the number reached. Remove keys you no longer need; this is a label bag, not content.
      */
     public val metadata: JsonObject? = null,
     /**

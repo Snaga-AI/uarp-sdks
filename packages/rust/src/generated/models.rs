@@ -12031,8 +12031,13 @@ pub struct Error {
     /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
     /// document and the wire cannot drift apart. Two casings are on the wire and both are
     /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-    /// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-    /// no machine-readable class.
+    /// hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+    /// 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+    /// status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+    /// `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+    /// 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+    /// code only when its call site names one. Other statuses: absent when there is no
+    /// machine-readable class.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub code: Option<ErrorCode>,
     /// Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
@@ -12067,8 +12072,13 @@ pub struct Error {
 /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
 /// document and the wire cannot drift apart. Two casings are on the wire and both are
 /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-/// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-/// no machine-readable class.
+/// hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+/// 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+/// status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+/// `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+/// 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+/// code only when its call site names one. Other statuses: absent when there is no
+/// machine-readable class.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 pub enum ErrorCode {
     #[default]
@@ -12146,6 +12156,8 @@ pub enum ErrorCode {
     MaxDurationExceeded,
     #[serde(rename = "MAX_TOKENS_EXCEEDED")]
     MaxTokensExceeded,
+    #[serde(rename = "METHOD_NOT_ALLOWED")]
+    MethodNotAllowed,
     #[serde(rename = "MIGRATION_CONFLICT")]
     MigrationConflict,
     #[serde(rename = "MISSING_FIELD")]
@@ -12382,6 +12394,7 @@ impl ErrorCode {
             Self::LLMError => "LLM_ERROR",
             Self::MaxDurationExceeded => "MAX_DURATION_EXCEEDED",
             Self::MaxTokensExceeded => "MAX_TOKENS_EXCEEDED",
+            Self::MethodNotAllowed => "METHOD_NOT_ALLOWED",
             Self::MigrationConflict => "MIGRATION_CONFLICT",
             Self::MissingField => "MISSING_FIELD",
             Self::MissionAlreadyRunning => "MISSION_ALREADY_RUNNING",
@@ -12528,6 +12541,7 @@ impl From<&str> for ErrorCode {
             "LLM_ERROR" => Self::LLMError,
             "MAX_DURATION_EXCEEDED" => Self::MaxDurationExceeded,
             "MAX_TOKENS_EXCEEDED" => Self::MaxTokensExceeded,
+            "METHOD_NOT_ALLOWED" => Self::MethodNotAllowed,
             "MIGRATION_CONFLICT" => Self::MigrationConflict,
             "MISSING_FIELD" => Self::MissingField,
             "MISSION_ALREADY_RUNNING" => Self::MissionAlreadyRunning,
@@ -12924,6 +12938,10 @@ pub struct EstimateRunCostRequest {
 pub struct EvalCase {
     pub case_id: String,
     pub input: serde_json::Map<String, serde_json::Value>,
+    /// What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the
+    /// output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every
+    /// string value (e.g. `{"text": "Paris"}`) must appear in the answer, case-insensitive. A case
+    /// with an expectation passes only when it is met.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub expected_output: Option<serde_json::Map<String, serde_json::Value>>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -18624,6 +18642,16 @@ pub struct ListBillingPlansResponsePlan {
     pub price_amount_cents: Option<i64>,
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub price_currency: Option<String>,
+    /// How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+    /// as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+    /// Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+    /// period.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_interval: Option<String>,
+    /// Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+    /// is null or `one_time`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_interval_count: Option<i64>,
 }
 
 /// `ListBillingSpecPackagesResponse` model.
@@ -24285,6 +24313,16 @@ pub struct PublicPlan {
     pub name: String,
     pub price_amount_cents: i64,
     pub price_currency: String,
+    /// How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+    /// as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+    /// Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+    /// period.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_interval: Option<String>,
+    /// Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+    /// is null or `one_time`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub price_interval_count: Option<i64>,
     pub quotas: serde_json::Map<String, serde_json::Value>,
     /// The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
     /// word, not the scheduler's internal tier.
@@ -26863,8 +26901,18 @@ impl From<&str> for RunCostEstimateEstimateConfidence {
 #[derive(Debug, Clone, Default, PartialEq, Serialize, Deserialize)]
 pub struct RunEvaluationRequest {
     pub dataset_id: String,
+    /// Scorers to apply, by name — built-in (task_success, tool_accuracy, step_efficiency, safety,
+    /// latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output,
+    /// llm_judge) or a custom one. Default: the platform's default set. A case with
+    /// `expected_output` is always judged on its content: when none of exact_match / contains /
+    /// regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it,
+    /// and such a case passes only when every content score is 1.
     #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub agent_version: Option<String>,
+    pub scorers: Option<Vec<String>>,
+    /// Roll the agent back to its previous version when this run regresses against the last one on
+    /// the same dataset — an automated write with no human in the loop.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub auto_rollback_on_regression: Option<bool>,
 }
 
 /// One run event as it is stored and replayed. `payload` depends on `type`; for a type without
@@ -34390,10 +34438,12 @@ pub struct UpdateSessionRequest {
     /// MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
     /// it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
     /// `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
-    /// Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
-    /// most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
-    /// request is refused with 422 and a `detail` naming the number reached. Remove keys you no
-    /// longer need; this is a label bag, not content.
+    /// `project_id` files the chat under a project: it must name a project that exists and that the
+    /// caller may edit — otherwise 404 (403 for a private project shared with the caller
+    /// view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+    /// RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+    /// 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+    /// the number reached. Remove keys you no longer need; this is a label bag, not content.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Map<String, serde_json::Value>>,
     /// true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it

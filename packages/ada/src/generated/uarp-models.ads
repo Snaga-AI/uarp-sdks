@@ -12461,8 +12461,13 @@ package UARP.Models is
    --  reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
    --  document and the wire cannot drift apart. Two casings are on the wire and both are
    --  load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-   --  hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-   --  no machine-readable class.
+   --  hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+   --  404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+   --  status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+   --  `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) - since
+   --  2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+   --  code only when its call site names one. Other statuses: absent when there is no
+   --  machine-readable class.
    --  A value the API introduces later decodes as Error_Code_Unrecognized
    --  with the original text kept in Raw.
    type Error_Code_Kind is
@@ -12503,6 +12508,7 @@ package UARP.Models is
    Error_Code_LLM_Error,
    Error_Code_Max_Duration_Exceeded,
    Error_Code_Max_Tokens_Exceeded,
+   Error_Code_Method_Not_Allowed,
    Error_Code_Migration_Conflict,
    Error_Code_Missing_Field,
    Error_Code_Mission_Already_Running,
@@ -12667,8 +12673,13 @@ package UARP.Models is
       --  reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
       --  document and the wire cannot drift apart. Two casings are on the wire and both are
       --  load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-      --  hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-      --  no machine-readable class.
+      --  hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+      --  404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+      --  status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+      --  `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) - since
+      --  2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+      --  code only when its call site names one. Other statuses: absent when there is no
+      --  machine-readable class.
       Has_Code : Boolean := False;
       Code : UARP.Models.Error_Code;
       --  Request ID for tracing Deprecated spelling of `correlation_id` - the same value, kept for
@@ -12793,6 +12804,10 @@ package UARP.Models is
    type Eval_Case is record
       Case_Id : UARP.Types.Text := UARP.Types.Empty_Text;
       Input : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
+      --  What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the
+      --  output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every
+      --  string value (e.g. `{"text": "Paris"}`) must appear in the answer, case-insensitive. A case
+      --  with an expectation passes only when it is met.
       Has_Expected_Output : Boolean := False;
       Expected_Output : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       Has_Expected_Tool_Calls : Boolean := False;
@@ -18175,6 +18190,16 @@ package UARP.Models is
       Price_Amount_Cents : UARP.Types.Integer_Value := 0;
       Has_Price_Currency : Boolean := False;
       Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+      --  as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+      --  Stripe price, and when Stripe cannot be read - show the amount alone then, never a guessed
+      --  period.
+      Has_Price_Interval : Boolean := False;
+      Price_Interval : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+      --  is null or `one_time`.
+      Has_Price_Interval_Count : Boolean := False;
+      Price_Interval_Count : UARP.Types.Integer_Value := 0;
    end record;
 
    function To_JSON (Model : List_Billing_Plans_Response_Plan) return UARP.JSON_Support.JSON_Value;
@@ -19791,6 +19816,16 @@ package UARP.Models is
       Name : UARP.Types.Text := UARP.Types.Empty_Text;
       Price_Amount_Cents : UARP.Types.Integer_Value := 0;
       Price_Currency : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+      --  as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+      --  Stripe price, and when Stripe cannot be read - show the amount alone then, never a guessed
+      --  period.
+      Has_Price_Interval : Boolean := False;
+      Price_Interval : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+      --  is null or `one_time`.
+      Has_Price_Interval_Count : Boolean := False;
+      Price_Interval_Count : UARP.Types.Integer_Value := 0;
       Quotas : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       --  The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
       --  word, not the scheduler's internal tier.
@@ -25622,8 +25657,18 @@ package UARP.Models is
    --  `RunEvaluationRequest` model.
    type Run_Evaluation_Request is record
       Dataset_Id : UARP.Types.Text := UARP.Types.Empty_Text;
-      Has_Agent_Version : Boolean := False;
-      Agent_Version : UARP.Types.Text := UARP.Types.Empty_Text;
+      --  Scorers to apply, by name - built-in (task_success, tool_accuracy, step_efficiency, safety,
+      --  latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output,
+      --  llm_judge) or a custom one. Default: the platform's default set. A case with
+      --  `expected_output` is always judged on its content: when none of exact_match / contains /
+      --  regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it,
+      --  and such a case passes only when every content score is 1.
+      Has_Scorers : Boolean := False;
+      Scorers : UARP.Types.Text_Vectors.Vector;
+      --  Roll the agent back to its previous version when this run regresses against the last one on
+      --  the same dataset - an automated write with no human in the loop.
+      Has_Auto_Rollback_On_Regression : Boolean := False;
+      Auto_Rollback_On_Regression : Standard.Boolean := False;
    end record;
 
    function To_JSON (Model : Run_Evaluation_Request) return UARP.JSON_Support.JSON_Value;
@@ -30515,10 +30560,12 @@ package UARP.Models is
       --  MERGED into the stored bag, not replaced - a key this body omits keeps its value, and a key
       --  it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
       --  `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
-      --  Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
-      --  most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
-      --  request is refused with 422 and a `detail` naming the number reached. Remove keys you no
-      --  longer need; this is a label bag, not content.
+      --  `project_id` files the chat under a project: it must name a project that exists and that the
+      --  caller may edit - otherwise 404 (403 for a private project shared with the caller
+      --  view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+      --  RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+      --  8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+      --  the number reached. Remove keys you no longer need; this is a label bag, not content.
       Has_Metadata : Boolean := False;
       Metadata : UARP.JSON_Support.JSON_Value := UARP.JSON_Support.New_Object;
       --  true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it

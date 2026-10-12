@@ -16319,8 +16319,13 @@ public struct ErrorModel: Codable, Hashable, Sendable {
     /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
     /// document and the wire cannot drift apart. Two casings are on the wire and both are
     /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-    /// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-    /// no machine-readable class.
+    /// hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+    /// 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+    /// status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+    /// `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+    /// 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+    /// code only when its call site names one. Other statuses: absent when there is no
+    /// machine-readable class.
     public var code: ErrorCode?
     /// Request ID for tracing Deprecated spelling of `correlation_id` — the same value, kept for
     /// the compatibility window and removed in the next breaking release (the one that moves
@@ -16380,8 +16385,13 @@ public struct ErrorModel: Codable, Hashable, Sendable {
 /// reading. The enum is built from the one dictionary in `types/error-codes.ts`, so the
 /// document and the wire cannot drift apart. Two casings are on the wire and both are
 /// load-bearing: SCREAMING_SNAKE came from the `UarpError` hierarchy, lower_snake from the
-/// hand-written limit refusals, and clients match on each exactly. Absent when the refusal has
-/// no machine-readable class.
+/// hand-written limit refusals, and clients match on each exactly. Present on every 400, 401,
+/// 404, 405, 409, 413, 422 and 429: a refusal whose call site names no finer class carries its
+/// status's fallback (`INVALID_REQUEST`, `AUTH_ERROR`, `NOT_FOUND`, `METHOD_NOT_ALLOWED`,
+/// `CONFLICT`, `PAYLOAD_TOO_LARGE`, `VALIDATION_ERROR`, `RATE_LIMIT_EXCEEDED`) — since
+/// 2026-10-11, before which most 401/404/405 carried none. A 403 carries `FORBIDDEN` or a finer
+/// code only when its call site names one. Other statuses: absent when there is no
+/// machine-readable class.
 ///
 /// Values the API adds later decode into this type unchanged, so a new
 /// server-side case never breaks an existing client.
@@ -16434,6 +16444,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let llmError = ErrorCode(rawValue: "LLM_ERROR")
     public static let maxDurationExceeded = ErrorCode(rawValue: "MAX_DURATION_EXCEEDED")
     public static let maxTokensExceeded = ErrorCode(rawValue: "MAX_TOKENS_EXCEEDED")
+    public static let methodNotAllowed = ErrorCode(rawValue: "METHOD_NOT_ALLOWED")
     public static let migrationConflict = ErrorCode(rawValue: "MIGRATION_CONFLICT")
     public static let missingField = ErrorCode(rawValue: "MISSING_FIELD")
     public static let missionAlreadyRunning = ErrorCode(rawValue: "MISSION_ALREADY_RUNNING")
@@ -16531,7 +16542,7 @@ public struct ErrorCode: RawRepresentable, Codable, Hashable, Sendable, Expressi
     public static let videoSlotInvalid = ErrorCode(rawValue: "video_slot_invalid")
 
     /// Every value the spec declared at generation time.
-    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .externalServiceError, .featureDisabled, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyKeyReused, .invalidBody, .invalidCursor, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .llmError, .maxDurationExceeded, .maxTokensExceeded, .migrationConflict, .missingField, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .shareListConflict, .sizeLimit, .specNotFound, .startedByAnotherUser, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
+    public static let knownValues: [ErrorCode] = [.aarNotAvailable, .activeTenantNotSupported, .alreadyExists, .anonBusy, .artifactIntegrityError, .authError, .billingCancelled, .billingDisputed, .billingPastDue, .budgetExceeded, .checksumMismatch, .concurrencyLimit, .concurrentModification, .configurationError, .confirmationRequired, .conflict, .contextLengthExceeded, .countLimitReached, .dailyLimit, .dependencyExists, .eventStoreError, .externalServiceError, .featureDisabled, .fileTypeNotAllowed, .forbidden, .guardrailViolation, .idempotencyKeyReused, .invalidBody, .invalidCursor, .invalidQuery, .invalidRequest, .invalidShareList, .invalidShareTarget, .invalidStateTransition, .llmError, .maxDurationExceeded, .maxTokensExceeded, .methodNotAllowed, .migrationConflict, .missingField, .missionAlreadyRunning, .missionConcurrencyLimit, .missionNotFound, .missionNotRunnable, .missionNotRunning, .missionRouteNotFound, .notBridgeAgent, .notFound, .notYanked, .noRunnableTarget, .oauthFailed, .payloadTooLarge, .persistenceError, .plannerOutputInvalid, .plannerRefused, .preconditionFailed, .prerequisiteMissing, .pricingUnavailable, .privateNotShared, .promoRedemptionFailed, .quotaExceeded, .rateLimitExceeded, .referenceNotFound, .reservedScope, .runActive, .runCancelled, .scopeMismatch, .scopeTaken, .searchProviderNotConfigured, .searchUpstreamFailed, .searchUpstreamTimeout, .shareListConflict, .sizeLimit, .specNotFound, .startedByAnotherUser, .taskGraphFailed, .teamAbort, .termsNotAccepted, .textExtractionFailed, .userRequired, .validationError, .verificationFailed, .versionConflict, .versionNotFound, .workspaceStorageLimit, .wouldOrphan, .yankConflict, .agentDeleted, .agentNotFound, .alreadyBootstrapped, .approvalRejected, .billingNotConfigured, .consentRequired, .cvInvalid, .cvTooLarge, .duplicateApplication, .governanceNotEnabled, .incompleteRecord, .inertPolicyField, .inertPublicConfigField, .jobApplyElsewhere, .jobClosed, .kbChunkLimit, .kbDocumentBodyInvalid, .kbDocumentTooLarge, .kbEmbeddingFailed, .kbStorageLimit, .kbTextExtractionFailed, .limitReached, .mfaRequired, .noEligibleArbiter, .planUpgradeRequired, .proposalRequired, .providerAuthFailed, .providerCircuitOpen, .providerNotConfigured, .providerRateLimited, .quotaExceeded_, .rateLimited, .resourceLimitReached, .runApprovalExpired, .runInputTimeout, .runNeverClaimed, .runOrphanedRestart, .runQuotaExceeded, .runStalled, .secretWouldMove, .videoConsentRequired, .videoOrderState, .videoPhotoInvalid, .videoPhotoRejected, .videoRegenUnavailable, .videoSlotInvalid]
 }
 
 /// `ErrorError` model.
@@ -16745,6 +16756,10 @@ public struct EstimateRunCostRequest: Codable, Hashable, Sendable {
 public struct EvalCase: Codable, Hashable, Sendable {
     public var caseId: String
     public var input: JSONObject
+    /// What the answer must be. `regex` (a pattern the answer matches), `schema` (a JSON schema the
+    /// output satisfies), `patterns` (strings the answer contains) or `response`; otherwise every
+    /// string value (e.g. `{"text": "Paris"}`) must appear in the answer, case-insensitive. A case
+    /// with an expectation passes only when it is met.
     public var expectedOutput: JSONObject?
     public var expectedToolCalls: [String]?
     public var tags: [String]
@@ -24063,8 +24078,16 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
     public var checkoutAvailable: Bool?
     public var priceAmountCents: Int?
     public var priceCurrency: String?
+    /// How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+    /// as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+    /// Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+    /// period.
+    public var priceInterval: String?
+    /// Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+    /// is null or `one_time`.
+    public var priceIntervalCount: Int?
 
-    public init(id: String? = nil, name: String? = nil, limits: JSONObject? = nil, current: Bool? = nil, checkoutAvailable: Bool? = nil, priceAmountCents: Int? = nil, priceCurrency: String? = nil) {
+    public init(id: String? = nil, name: String? = nil, limits: JSONObject? = nil, current: Bool? = nil, checkoutAvailable: Bool? = nil, priceAmountCents: Int? = nil, priceCurrency: String? = nil, priceInterval: String? = nil, priceIntervalCount: Int? = nil) {
         self.id = id
         self.name = name
         self.limits = limits
@@ -24072,6 +24095,8 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
         self.checkoutAvailable = checkoutAvailable
         self.priceAmountCents = priceAmountCents
         self.priceCurrency = priceCurrency
+        self.priceInterval = priceInterval
+        self.priceIntervalCount = priceIntervalCount
     }
 
     private enum CodingKeys: String, CodingKey {
@@ -24082,6 +24107,8 @@ public struct ListBillingPlansResponsePlan: Codable, Hashable, Sendable {
         case checkoutAvailable = "checkout_available"
         case priceAmountCents = "price_amount_cents"
         case priceCurrency = "price_currency"
+        case priceInterval = "price_interval"
+        case priceIntervalCount = "price_interval_count"
     }
 }
 
@@ -31908,6 +31935,14 @@ public struct PublicPlan: Codable, Hashable, Sendable {
     public var name: String
     public var priceAmountCents: Int
     public var priceCurrency: String
+    /// How often `price_amount_cents` bills, read from the Stripe price wired to the plan: show it
+    /// as "99,00 $ / month". `one_time` for a one-off price. Null for free, for a plan with no
+    /// Stripe price, and when Stripe cannot be read — show the amount alone then, never a guessed
+    /// period.
+    public var priceInterval: String?
+    /// Bill every N `price_interval`s (3 with `month` = quarterly). Null whenever `price_interval`
+    /// is null or `one_time`.
+    public var priceIntervalCount: Int?
     public var quotas: JSONObject
     /// The queue the plan's runs wait in: `standard` on free, `priority` on paid plans. A public
     /// word, not the scheduler's internal tier.
@@ -31919,11 +31954,13 @@ public struct PublicPlan: Codable, Hashable, Sendable {
     /// Pay-as-you-go beyond the quota; `null` when the plan has none (free).
     public var overage: PublicPlanOverage?
 
-    public init(id: String, name: String, priceAmountCents: Int, priceCurrency: String, quotas: JSONObject, queueTier: PublicPlanQueueTier? = nil, effectiveConcurrentRuns: Int? = nil, reset: PublicPlanReset? = nil, overage: PublicPlanOverage? = nil) {
+    public init(id: String, name: String, priceAmountCents: Int, priceCurrency: String, priceInterval: String? = nil, priceIntervalCount: Int? = nil, quotas: JSONObject, queueTier: PublicPlanQueueTier? = nil, effectiveConcurrentRuns: Int? = nil, reset: PublicPlanReset? = nil, overage: PublicPlanOverage? = nil) {
         self.id = id
         self.name = name
         self.priceAmountCents = priceAmountCents
         self.priceCurrency = priceCurrency
+        self.priceInterval = priceInterval
+        self.priceIntervalCount = priceIntervalCount
         self.quotas = quotas
         self.queueTier = queueTier
         self.effectiveConcurrentRuns = effectiveConcurrentRuns
@@ -31936,6 +31973,8 @@ public struct PublicPlan: Codable, Hashable, Sendable {
         case name = "name"
         case priceAmountCents = "price_amount_cents"
         case priceCurrency = "price_currency"
+        case priceInterval = "price_interval"
+        case priceIntervalCount = "price_interval_count"
         case quotas = "quotas"
         case queueTier = "queue_tier"
         case effectiveConcurrentRuns = "effective_concurrent_runs"
@@ -35400,16 +35439,27 @@ public struct RunCostEstimateEstimateConfidence: RawRepresentable, Codable, Hash
 /// `RunEvaluationRequest` model.
 public struct RunEvaluationRequest: Codable, Hashable, Sendable {
     public var datasetId: String
-    public var agentVersion: String?
+    /// Scorers to apply, by name — built-in (task_success, tool_accuracy, step_efficiency, safety,
+    /// latency, cost_efficiency, exact_match, contains, regex_match, json_schema, expected_output,
+    /// llm_judge) or a custom one. Default: the platform's default set. A case with
+    /// `expected_output` is always judged on its content: when none of exact_match / contains /
+    /// regex_match / json_schema / expected_output is chosen, `expected_output` is applied to it,
+    /// and such a case passes only when every content score is 1.
+    public var scorers: [String]?
+    /// Roll the agent back to its previous version when this run regresses against the last one on
+    /// the same dataset — an automated write with no human in the loop.
+    public var autoRollbackOnRegression: Bool?
 
-    public init(datasetId: String, agentVersion: String? = nil) {
+    public init(datasetId: String, scorers: [String]? = nil, autoRollbackOnRegression: Bool? = nil) {
         self.datasetId = datasetId
-        self.agentVersion = agentVersion
+        self.scorers = scorers
+        self.autoRollbackOnRegression = autoRollbackOnRegression
     }
 
     private enum CodingKeys: String, CodingKey {
         case datasetId = "dataset_id"
-        case agentVersion = "agent_version"
+        case scorers = "scorers"
+        case autoRollbackOnRegression = "auto_rollback_on_regression"
     }
 }
 
@@ -45132,10 +45182,12 @@ public struct UpdateSessionRequest: Codable, Hashable, Sendable {
     /// MERGED into the stored bag, not replaced — a key this body omits keeps its value, and a key
     /// it names is overwritten. The platform writes its own keys here (`project_id`, `_public`,
     /// `temporary`, `_todo_id`, the preview fields), which is why replace semantics would be wrong.
-    /// Because it merges, the limits are measured on the RESULT and so accumulate across calls: at
-    /// most 100 keys, at most 64 KiB of JSON, and at most 8 levels of nesting. Past any of them the
-    /// request is refused with 422 and a `detail` naming the number reached. Remove keys you no
-    /// longer need; this is a label bag, not content.
+    /// `project_id` files the chat under a project: it must name a project that exists and that the
+    /// caller may edit — otherwise 404 (403 for a private project shared with the caller
+    /// view-only); `null` takes the chat out. Because it merges, the limits are measured on the
+    /// RESULT and so accumulate across calls: at most 100 keys, at most 64 KiB of JSON, and at most
+    /// 8 levels of nesting. Past any of them the request is refused with 422 and a `detail` naming
+    /// the number reached. Remove keys you no longer need; this is a label bag, not content.
     public var metadata: JSONObject?
     /// true archives the session: `GET /sessions` leaves it out unless `?archived=true|all`, it
     /// stays readable by id, and the next message sent to it unarchives it. false unarchives.
